@@ -759,6 +759,11 @@
         "@deepseek-ai/.+"
       ]
     },
+    "packages/bundle/team-control-plane": {
+      "ignoreDependencies": [
+        "@deepseek-ai/dsh-host-webserver"
+      ]
+    },
     "packages/experimental/agent-team": {
       "entry": [
         "tests/**/*.spec.ts",

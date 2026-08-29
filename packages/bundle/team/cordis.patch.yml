@@ -1,0 +1,31 @@
+# The dsh-team bundle patch: the Team Edition surface over the dsh-web-app
+# layer. Applied after dsh-base and dsh-web-app, so rows here override those
+# by id, with the profile's own cordis.patch.yml and any --patch overlays
+# still to come.
+#
+# A patch replaces the targeted row's whole `config`, so each row below
+# restates every key it owns. `inject` and `name` stay with the row the
+# earlier layer inserted.
+#
+# This layer currently owns one deployment fact: the loopback port. Team
+# identity, company resource transports, and the local handoff endpoints
+# arrive in later rows as their packages land.
+
+# ── the Team Runner's loopback address ─────────────────────────────────────
+
+# A Team Runner is a long-lived background service, while `dsh web` is a
+# foreground tool a developer starts by hand. Both are ordinary loopback
+# servers, so they cannot share a port: the second one to bind fails. Team
+# therefore defaults to 3090 and leaves 3080 to `dsh web`, letting a
+# developer run both without editing configuration.
+#
+# `--port` still wins over this default, and the port stays fixed rather than
+# scanned: a company entry point navigates the browser to a known address, so
+# a silently relocated Runner would be unreachable instead of merely absent.
+- id: webserver
+  config:
+    host: !!js ctx.webStartup.host ?? '127.0.0.1'
+    port: !!js ctx.webStartup.port ?? 3090
+    compression: gzip
+    compressionLevel: 1
+    compressionThresholdBytes: 1024

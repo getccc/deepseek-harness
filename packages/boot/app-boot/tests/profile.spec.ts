@@ -204,6 +204,23 @@ describe('loadProfile', () => {
       bundles: ['@deepseek-ai/dsh-sdk-minimal'],
       patchReload: 'startup',
     })
+    // Team stacks its own layer on top of the whole web surface rather than
+    // replacing it, so the browser application stays owned by one bundle.
+    expect(PROFILE_TEMPLATES.team).toEqual({
+      bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', '@deepseek-ai/dsh-team'],
+      patchReload: 'live',
+    })
+    // The Control Plane is standalone by construction: naming dsh-base, or any
+    // bundle that stacks it, would mount the Agent loop, filesystem, shell, and
+    // sandbox providers on a server that holds company credentials.
+    expect(PROFILE_TEMPLATES['team-control-plane']).toEqual({
+      bundles: ['@deepseek-ai/dsh-team-control-plane'],
+      patchReload: 'startup',
+    })
+    for (const bundle of PROFILE_TEMPLATES['team-control-plane']?.bundles ?? []) {
+      expect(bundle).not.toBe('@deepseek-ai/dsh-base')
+      expect(PROFILE_TEMPLATES.team?.bundles).not.toContain(bundle)
+    }
     try {
       loadProfile('t', 'web', anchor, home)
     } catch {

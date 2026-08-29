@@ -151,6 +151,22 @@ export const PROFILE_TEMPLATES: Record<string, ProfileTemplate> = {
     bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-sdk-app'],
     patchReload: 'startup',
   },
+  // Team layers over the same browser surface as `web`, so it keeps that
+  // template's live patch reload; the extra bundle only moves the loopback
+  // port today, and later carries the company-resource rows.
+  team: {
+    bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-web-app', '@deepseek-ai/dsh-team'],
+    patchReload: 'live',
+  },
+  // The Control Plane names one standalone bundle and deliberately omits
+  // dsh-base: base mounts the Agent loop, filesystem, subprocess, shell, and
+  // sandbox providers, and a server holding company credentials must carry
+  // none of them. Adding a bundle here that stacks base would reintroduce all
+  // of them at once, so the list stays a single entry.
+  'team-control-plane': {
+    bundles: ['@deepseek-ai/dsh-team-control-plane'],
+    patchReload: 'startup',
+  },
   'sdk-minimal': {
     bundles: ['@deepseek-ai/dsh-sdk-minimal'],
     patchReload: 'startup',

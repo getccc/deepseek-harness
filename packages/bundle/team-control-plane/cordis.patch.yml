@@ -1,0 +1,33 @@
+# Standalone Team Edition Control Plane application. Like dsh-sdk-minimal and
+# unlike every other Team row, this bundle does not layer over dsh-base: this
+# insert is the complete Cordis tree. User profile, home, and invocation
+# patches still apply above it.
+#
+# Not layering over dsh-base is the point, not an optimization. dsh-base mounts
+# the Agent loop, the local filesystem, subprocess, shell, and sandbox
+# providers — every capability that executes code on the machine it runs on.
+# The Control Plane holds company credentials and answers requests from every
+# member's Runner, so it must not carry any of them. The composition tests
+# assert their absence, and the profile template names no bundle that would
+# reintroduce them.
+#
+# Company services (Account, RBAC, Quota, Audit, Model Gateway, Knowledge MCP
+# Gateway, Private Catalog, Admin Web) insert into this list as their packages
+# land. Each addition must keep the absence assertions passing.
+
+- insert:
+    # The HTTP transport, and currently the whole application. It registers no
+    # routes of its own; the company services above claim theirs as they land.
+    #
+    # Loopback by default: a production deployment terminates TLS in a reverse
+    # proxy and does not expose this listener directly. A deployment that
+    # binds all interfaces states that in its own profile patch, restating
+    # every key this row owns.
+    - id: webserver
+      name: '@deepseek-ai/dsh-host-webserver'
+      config:
+        host: 127.0.0.1
+        port: 3095
+        compression: gzip
+        compressionLevel: 1
+        compressionThresholdBytes: 1024
