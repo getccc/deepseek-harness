@@ -269,6 +269,8 @@
     { "path": "./packages/bundle/sdk-minimal" },
     { "path": "./packages/access/access-control" },
     { "path": "./packages/access/access-control-sqlite" },
+    { "path": "./packages/access/audit" },
+    { "path": "./packages/access/audit-sqlite" },
     { "path": "./packages/account/account-auth" },
     { "path": "./packages/account/account-auth-password" },
     { "path": "./packages/account/account-store" },

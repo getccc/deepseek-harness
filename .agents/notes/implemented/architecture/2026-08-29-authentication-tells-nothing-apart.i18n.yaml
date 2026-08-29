@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-29-authentication-tells-nothing-apart.md
-2026-08-29-authentication-tells-nothing-apart.md: 78a372f775798b4d2fc3872f0a96ec48738e73c5
-2026-08-29-authentication-tells-nothing-apart.zh.md: 9f881055eb815f9bd3ac30d2b80881d333e29bbb
+2026-08-29-authentication-tells-nothing-apart.md: 624bd006e68233fb4d4fce739deb3d79aac961ef
+2026-08-29-authentication-tells-nothing-apart.zh.md: a206e7dcce54dc24632d50e1e350dc674e5ed7be

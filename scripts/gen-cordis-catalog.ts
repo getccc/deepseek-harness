@@ -55,6 +55,7 @@ export { REGION_BEGIN, REGION_END }
  */
 export const SERVICE_PAGE: Record<string, string> = {
   accessControl: 'access-control.md',
+  audit: 'audit.md',
   accountAuth: 'account.md',
   accountStore: 'account.md',
   agentLoop: 'core.md',
@@ -252,6 +253,13 @@ export const LINK_MAP: Readonly<Record<string, string>> = {
   Role: 'access-control.md',
   RoleId: 'access-control.md',
   UserGroup: 'access-control.md',
+  AuditActionName: 'audit.md',
+  AuditEvent: 'audit.md',
+  AuditMetadata: 'audit.md',
+  AuditOutcome: 'audit.md',
+  AuditQuery: 'audit.md',
+  AuditReason: 'audit.md',
+  AuditRecord: 'audit.md',
   AuthenticationOutcome: 'account.md',
   AccountUserStatus: 'account.md',
   CreateAccountUser: 'account.md',

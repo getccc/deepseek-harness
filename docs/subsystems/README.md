@@ -27,6 +27,7 @@ One page per subsystem of the DeepSeek Harness: what it is, the data structures 
 | [tools.md](tools.md) | `ToolDefinition` full fields, the schema DSL, `ToolExecution`/`ToolResult`, tool-presentation UI types, and the guarded execution pipeline |
 | [user-questions.md](user-questions.md) | the UI-backed human question/answer seam: `AskUserQuestionRequest`, answer/options vocabulary, provider API, error taxonomy |
 | [access-control.md](access-control.md) | default-deny authorization: the closed permission catalog, roles, type and resource grants, governed resources, and the policy revision |
+| [audit.md](audit.md) | the append-only audit trail: the closed action and metadata catalogs, the token rule, and the storage constraints that keep task content out |
 | [account.md](account.md) | organizations, member accounts, sign-in state, and the store seam that keeps identity separate from authentication method |
 | [approval.md](approval.md) | the one-shot user-approval seam: `ApprovalRequest`, `ApprovalOutcome`, per-session policy, audit events, and answerer contracts |
 | [attachment.md](attachment.md) | durable image identity and metadata, validation inputs, verified reads, and the `AttachmentStore` seam |

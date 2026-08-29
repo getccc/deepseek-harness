@@ -7,6 +7,18 @@ A service can be a core spine service, a swappable capability seam, or a bundle/
 
 ```mermaid
 flowchart LR
+  pkg_account_store["account-store"]
+  svc_accountStore["ctx.accountStore<br/>Team Edition organizations and member accounts"]
+  pkg_account_store_sqlite["account-store-sqlite"]
+  pkg_account_auth_password["account-auth-password"]
+  pkg_access_control_sqlite["access-control-sqlite"]
+  pkg_account_auth["account-auth"]
+  svc_accountAuth["ctx.accountAuth<br/>Proving a member is who they claim"]
+  pkg_access_control["access-control"]
+  svc_accessControl["ctx.accessControl<br/>Default-deny authorization over roles and grants"]
+  pkg_audit["audit"]
+  svc_audit["ctx.audit<br/>The append-only audit trail"]
+  pkg_audit_sqlite["audit-sqlite"]
   pkg_attachment["attachment"]
   svc_attachments["ctx.attachments<br/>Durable binary attachment storage"]
   pkg_attachment_local["attachment-local"]
@@ -217,6 +229,12 @@ flowchart LR
   pkg_cordis_host_runner["cordis-host-runner"]
   svc_dynamicCordisRunner["ctx.dynamicCordisRunner<br/>Dynamic Cordis package host runner"]
   svc_cordisInspect["ctx.cordisInspect<br/>Dynamic Cordis inspect registry"]
+  pkg_access_control --> svc_accessControl
+  pkg_access_control_sqlite --> svc_accessControl
+  pkg_account_auth --> svc_accountAuth
+  pkg_account_auth_password --> svc_accountAuth
+  pkg_account_store --> svc_accountStore
+  pkg_account_store_sqlite --> svc_accountStore
   pkg_agent --> svc_agents
   pkg_agent_default_model --> svc_agentDefaultModel
   pkg_agent_loop --> svc_agentLoop
@@ -231,6 +249,8 @@ flowchart LR
   pkg_api_workspace_controller --> svc_workspaceController
   pkg_attachment --> svc_attachments
   pkg_attachment_local --> svc_attachments
+  pkg_audit --> svc_audit
+  pkg_audit_sqlite --> svc_audit
   pkg_authorization --> svc_authorization
   pkg_bash_local --> svc_shell
   pkg_bash_sandbox --> svc_shell
@@ -333,6 +353,8 @@ flowchart LR
   pkg_workflow --> svc_workflowEngine
   pkg_workflow_worker_thread --> svc_workflowEngine
   pkg_workspace --> svc_workspaceRegistry
+  svc_accountStore --> pkg_access_control_sqlite
+  svc_accountStore --> pkg_account_auth_password
   svc_agentDefaultModel --> pkg_api_session_controller
   svc_agentDefaultModel --> pkg_headless
   svc_agentLoop --> pkg_agent_spine_demo
@@ -463,6 +485,10 @@ flowchart LR
 
 | ctx key | Role | Owner | Implementations | Direct consumers | Companion plugins | Note |
 | --- | --- | --- | --- | --- | --- | --- |
+| `ctx.accountStore` | `seam` | [`account-store`](../packages/account/account-store) | [`account-store-sqlite`](../packages/account/account-store-sqlite) | [`account-auth-password`](../packages/account/account-auth-password), [`access-control-sqlite`](../packages/access/access-control-sqlite) | - | Server-side only: the Control Plane composes it, no Runner mounts it. It also holds the organization policy revision every authorization cache keys on. |
+| `ctx.accountAuth` | `seam` | [`account-auth`](../packages/account/account-auth) | [`account-auth-password`](../packages/account/account-auth-password) | - | - | Verification is separate from the store so a second method arrives as a provider. The password provider stores a self-describing hash and rehashes on a successful verify. |
+| `ctx.accessControl` | `seam` | [`access-control`](../packages/access/access-control) | [`access-control-sqlite`](../packages/access/access-control-sqlite) | - | - | No explicit deny, no inheritance, no expression language, so a decision is explained by naming the grants that admitted it. Consumers arrive with the company-resource gateways. |
+| `ctx.audit` | `seam` | [`audit`](../packages/access/audit) | [`audit-sqlite`](../packages/access/audit-sqlite) | - | - | Closed action and metadata catalogs, and a token rule on every caller-supplied string, so a record cannot hold a member's work. Consumers arrive with the administrative operations that know a principal. |
 | `ctx.attachments` | `seam` | [`attachment`](../packages/attachment/attachment) | [`attachment-local`](../packages/attachment/attachment-local) | [`api-session-controller`](../packages/api/session-controller), [`tool-fs`](../packages/fs/tool-fs), [`llm-pi-ai`](../packages/llm/llm-pi-ai), [`llm-deepseek`](../packages/llm/llm-deepseek) | - | The host commits accepted images before session events; provider adapters resolve authorized durable references into provider-native content. |
 | `ctx.llm` | `seam` | [`llm`](../packages/llm/llm) | [`llm-deepseek`](../packages/llm/llm-deepseek), [`llm-pi-ai`](../packages/llm/llm-pi-ai), [`llm-replay`](../packages/test-support/llm-replay) | [`agent-loop`](../packages/core/agent-loop), [`compaction-basic`](../packages/compaction/compaction-basic) | - | Adapters register provider implementations; the loop and compaction call the provider-neutral stream service. |
 | `ctx.deepseekLlmApiExtensions` | `seam` | [`deepseek-llm-api-extensions`](../packages/llm/deepseek-llm-api-extensions) | [`session-log-deepseek`](../packages/session/session-log-deepseek), [`plugin-package-inventory-deepseek`](../packages/llm/plugin-package-inventory-deepseek) | [`llm-deepseek`](../packages/llm/llm-deepseek) | - | Plugins prepare independent top-level fields; the official adapter merges them and commits their delivery state after HTTP acceptance. |

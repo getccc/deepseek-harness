@@ -3,6 +3,10 @@
  * policy revision a decision quotes lives with the organization, not here.
  */
 
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
 import { Context } from '@deepseek-ai/cordis'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
@@ -10,12 +14,14 @@ import {
   UnknownPermissionError,
   UnknownRoleError,
   type AccessControl,
+  type GroupId,
   type ResourceId,
   type RoleId,
 } from '@deepseek-ai/dsh-access-control'
 import SqliteAccountStore from '@deepseek-ai/dsh-account-store-sqlite'
 import { UserId, type AccountStore, type OrgId } from '@deepseek-ai/dsh-account-store'
-import SqliteAccessControl from '../src/index.ts'
+import SqliteAccessControl, { ACCESS_CONTROL_SQLITE_APPLICATION_ID, SCHEMA_VERSION } from '../src/index.ts'
+import { applySchema } from '../src/schema.ts'
 
 let ctx: Context
 let store: AccountStore
@@ -334,5 +340,79 @@ describe('roles and resources', () => {
     await expect(access.registerResource({
       orgId, type: 'spaceship', externalRef: 'x', displayName: 'X',
     })).rejects.toBeInstanceOf(UnknownPermissionError)
+  })
+})
+
+describe('operations that name something absent', () => {
+  it('accepts enabling a resource the catalog does not hold, changing nothing', async () => {
+    await expect(access.setResourceEnabled('missing' as ResourceId, false)).resolves.toBeUndefined()
+    expect(await access.listResources(orgId, 'model')).toEqual([])
+  })
+
+  it('refuses a resource grant on a resource that does not exist', async () => {
+    const role = await access.createRole({ orgId, name: 'reader' })
+    await expect(access.grantResource(role.id, 'missing' as ResourceId, 'model.invoke'))
+      .rejects.toBeInstanceOf(UnknownPermissionError)
+  })
+
+  it('accepts unbinding a pair that is not bound', async () => {
+    const role = await access.createRole({ orgId, name: 'reader' })
+    await expect(access.unbindUserRole(alice, role.id)).resolves.toBeUndefined()
+    expect(await access.rolesOf(alice)).toEqual([])
+  })
+
+  it('refuses to add a member to a group that does not exist', async () => {
+    await expect(access.addGroupMember('missing' as GroupId, alice)).rejects.toThrow(/unknown group/u)
+  })
+})
+
+describe('opening a database', () => {
+  let dir: string
+  let path: string
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'dsh-access-'))
+    path = join(dir, 'access.sqlite')
+  })
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('stamps the application id and schema version', () => {
+    const db = new DatabaseSync(path)
+    applySchema(db)
+    expect((db.prepare('PRAGMA application_id').get() as { application_id: number }).application_id)
+      .toBe(ACCESS_CONTROL_SQLITE_APPLICATION_ID)
+    expect((db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version).toBe(SCHEMA_VERSION)
+    db.close()
+  })
+
+  it('refuses a file another application owns', () => {
+    const db = new DatabaseSync(path)
+    db.exec('PRAGMA application_id = 12345')
+    expect(() => { applySchema(db) }).toThrow(/another application/u)
+    db.close()
+  })
+
+  it('refuses a database a newer build wrote', () => {
+    const db = new DatabaseSync(path)
+    db.exec(`PRAGMA application_id = ${ACCESS_CONTROL_SQLITE_APPLICATION_ID}`)
+    db.exec(`PRAGMA user_version = ${SCHEMA_VERSION + 1}`)
+    expect(() => { applySchema(db) }).toThrow(/newer than this build/u)
+    db.close()
+  })
+
+  it('lets a storage failure that is not a duplicate name through unchanged', async () => {
+    const fiber = new Context()
+    await fiber.plugin(SqliteAccountStore, { path: ':memory:' }).await()
+    await fiber.plugin(SqliteAccessControl, { path }).await()
+    const control = fiber.get('accessControl') as AccessControl
+    const org = (await (fiber.get('accountStore') as AccountStore).createOrganization('Acme')).id
+    const db = new DatabaseSync(path)
+    db.exec('DROP TABLE role')
+    db.close()
+    await expect(control.createRole({ orgId: org, name: 'reader' })).rejects.toThrow(/no such table/u)
+    await fiber.fiber.dispose()
   })
 })

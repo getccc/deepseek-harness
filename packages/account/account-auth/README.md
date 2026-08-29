@@ -26,6 +26,15 @@ English | [中文](README.zh.md)
 ## Use this package
 
 ```ts
+import type { Context } from '@deepseek-ai/cordis'
+import type { OrgId } from '@deepseek-ai/dsh-account-store'
+import '@deepseek-ai/dsh-account-auth'
+
+declare const ctx: Context
+declare const orgId: OrgId
+declare const loginName: string
+declare const secret: string
+
 const outcome = await ctx.accountAuth.authenticate(orgId, loginName, secret)
 if (outcome.ok) {
   // outcome.userId is the account; outcome.mustChangePassword says whether it

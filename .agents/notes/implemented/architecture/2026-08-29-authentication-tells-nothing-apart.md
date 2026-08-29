@@ -17,6 +17,8 @@ Two other decisions had to be made with it. Where does the lockout policy live, 
 The outcome union has no reason field:
 
 ```ts
+import type { UserId } from '@deepseek-ai/dsh-account-store'
+
 type AuthenticationOutcome =
   | { ok: true; userId: UserId; mustChangePassword: boolean }
   | { ok: false }

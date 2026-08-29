@@ -36,6 +36,7 @@ kind: "package-group"
 <a id="related-documentation"></a>
 ## 相关文档
 
+- [账户子系统](../../docs/subsystems/account.zh.md)——身份模型、Credential 格式，以及一次登录如何被回答。
 - [能力接缝](../../docs/capability-seams.zh.md)——本能力族遵循的 Service Definition / Service Provider / Consumer 拆分。
 - [`team-control-plane/`](../bundle/team-control-plane/README.zh.md)——这些包被组合进的服务端 profile。
 

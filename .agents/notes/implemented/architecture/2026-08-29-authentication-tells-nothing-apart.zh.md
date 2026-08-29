@@ -17,6 +17,8 @@ Status: implemented
 结果联合类型没有原因字段：
 
 ```ts
+import type { UserId } from '@deepseek-ai/dsh-account-store'
+
 type AuthenticationOutcome =
   | { ok: true; userId: UserId; mustChangePassword: boolean }
   | { ok: false }

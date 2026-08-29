@@ -9,6 +9,62 @@ This file is GENERATED from source (`scripts/gen-config-catalog.ts`) and verifie
 
 A `Requires:` line lists the service keys the plugin `inject`s: its `cordis.yml` tree must also load providers for those services. Scope is the harness tier (`packages/`); the vendored cordis plugins a config tree may also load (`hmr`, the console logger, …) are pinned upstream source ([vendoring policy](../vendor/README.md)) and not catalogued here.
 
+<a id="deepseek-aidsh-access-control-sqlite"></a>
+
+## `@deepseek-ai/dsh-access-control-sqlite`
+
+Requires: `accountStore`
+
+```ts config-catalog
+/** Plugin config: where the database lives. */
+export interface Config {
+  /** SQLite database path, or `:memory:` for an in-process database. */
+  path: string
+}
+```
+
+Source: [`packages/access/access-control-sqlite/src/index.ts:38`](../packages/access/access-control-sqlite/src/index.ts)
+
+<a id="deepseek-aidsh-account-auth-password"></a>
+
+## `@deepseek-ai/dsh-account-auth-password`
+
+Requires: `accountStore`
+
+```ts config-catalog
+/** Plugin config: the deployment's password policy and derivation cost. */
+export interface Config {
+  /** Shortest secret accepted by {@link PasswordAccountAuth.setSecret}. */
+  minSecretLength: number
+  /** Consecutive failures that trigger a lock. */
+  maxFailedAttempts: number
+  /** How long a lock refuses sign-in, in milliseconds. */
+  lockDurationMs: number
+  /** scrypt CPU/memory cost, a power of two. */
+  cost: number
+  /** scrypt block size. */
+  blockSize: number
+  /** scrypt parallelization. */
+  parallelization: number
+}
+```
+
+Source: [`packages/account/account-auth-password/src/index.ts:20`](../packages/account/account-auth-password/src/index.ts)
+
+<a id="deepseek-aidsh-account-store-sqlite"></a>
+
+## `@deepseek-ai/dsh-account-store-sqlite`
+
+```ts config-catalog
+/** Plugin config: where the database lives. */
+export interface Config {
+  /** SQLite database path, or `:memory:` for an in-process database. */
+  path: string
+}
+```
+
+Source: [`packages/account/account-store-sqlite/src/index.ts:29`](../packages/account/account-store-sqlite/src/index.ts)
+
 <a id="deepseek-aidsh-acp"></a>
 
 ## `@deepseek-ai/dsh-acp`
@@ -357,6 +413,26 @@ export interface Config {
 
 Source: [`packages/attachment/attachment-local/src/index.ts:55`](../packages/attachment/attachment-local/src/index.ts)
 
+<a id="deepseek-aidsh-audit-sqlite"></a>
+
+## `@deepseek-ai/dsh-audit-sqlite`
+
+```ts config-catalog
+/** Plugin config: where the trail lives and how much of it one read may return. */
+export interface Config {
+  /** SQLite database path, or `:memory:` for an in-process database. */
+  path: string
+  /**
+   * The most events one {@link SqliteAudit.query} may return. A reader asking
+   * for more is served this many; a reader asking for fewer is served what it
+   * asked for.
+   */
+  maxQueryRows: number
+}
+```
+
+Source: [`packages/access/audit-sqlite/src/index.ts:31`](../packages/access/audit-sqlite/src/index.ts)
+
 <a id="deepseek-aidsh-bash-local"></a>
 
 ## `@deepseek-ai/dsh-bash-local`
@@ -429,7 +505,7 @@ export interface ConnectionConfig {
 }
 ```
 
-Source: [`packages/client/connection/src/index.ts:70`](../packages/client/connection/src/index.ts)
+Source: [`packages/client/connection/src/index.ts:77`](../packages/client/connection/src/index.ts)
 
 <a id="deepseek-aidsh-client-hmr"></a>
 
@@ -3504,10 +3580,14 @@ Abstract service classes — a deployment loads a concrete implementation packag
 
 Imported as libraries by other packages; a `cordis.yml` cannot load them.
 
+- `@deepseek-ai/dsh-access-control` ([`packages/access/access-control/src/index.ts`](../packages/access/access-control/src/index.ts))
+- `@deepseek-ai/dsh-account-auth` ([`packages/account/account-auth/src/index.ts`](../packages/account/account-auth/src/index.ts))
+- `@deepseek-ai/dsh-account-store` ([`packages/account/account-store/src/index.ts`](../packages/account/account-store/src/index.ts))
 - `@deepseek-ai/dsh-agent-loop-testkit` ([`packages/test-support/agent-loop-testkit/src/index.ts`](../packages/test-support/agent-loop-testkit/src/index.ts))
 - `@deepseek-ai/dsh-anonymous-user-id` ([`packages/identity/anonymous-user-id/src/index.ts`](../packages/identity/anonymous-user-id/src/index.ts))
 - `@deepseek-ai/dsh-app-boot` ([`packages/boot/app-boot/src/index.ts`](../packages/boot/app-boot/src/index.ts))
 - `@deepseek-ai/dsh-atomic-write` ([`packages/util/atomic-write/src/index.ts`](../packages/util/atomic-write/src/index.ts))
+- `@deepseek-ai/dsh-audit` ([`packages/access/audit/src/index.ts`](../packages/access/audit/src/index.ts))
 - `@deepseek-ai/dsh-base` ([`packages/bundle/base/src/index.ts`](../packages/bundle/base/src/index.ts))
 - `@deepseek-ai/dsh-brand` ([`packages/util/brand/src/index.ts`](../packages/util/brand/src/index.ts))
 - `@deepseek-ai/dsh-client-store` ([`packages/client/store/src/index.ts`](../packages/client/store/src/index.ts))
@@ -3537,6 +3617,8 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 - `@deepseek-ai/dsh-session-telemetry` ([`packages/session/session-telemetry/src/index.ts`](../packages/session/session-telemetry/src/index.ts))
 - `@deepseek-ai/dsh-session-title-llm` ([`packages/session/session-title-llm/src/index.ts`](../packages/session/session-title-llm/src/index.ts))
 - `@deepseek-ai/dsh-subagent-in-process-driver` ([`packages/subagent/subagent-in-process-driver/src/index.ts`](../packages/subagent/subagent-in-process-driver/src/index.ts))
+- `@deepseek-ai/dsh-team` ([`packages/bundle/team/src/index.ts`](../packages/bundle/team/src/index.ts))
+- `@deepseek-ai/dsh-team-control-plane` ([`packages/bundle/team-control-plane/src/index.ts`](../packages/bundle/team-control-plane/src/index.ts))
 - `@deepseek-ai/dsh-timeout` ([`packages/util/timeout/src/index.ts`](../packages/util/timeout/src/index.ts))
 - `@deepseek-ai/dsh-typert-generator` ([`packages/typert/generator/src/index.ts`](../packages/typert/generator/src/index.ts))
 - `@deepseek-ai/dsh-typert-protocol` ([`packages/typert/protocol/src/index.ts`](../packages/typert/protocol/src/index.ts))

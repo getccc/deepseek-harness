@@ -26,6 +26,14 @@ English | [中文](README.zh.md)
 ## Use this package
 
 ```ts
+import type { Context } from '@deepseek-ai/cordis'
+import type { OrgId, UserId } from '@deepseek-ai/dsh-account-store'
+import '@deepseek-ai/dsh-access-control'
+
+declare const ctx: Context
+declare const orgId: OrgId
+declare const principalId: UserId
+
 const decision = await ctx.accessControl.authorize({
   orgId, principalId, action: 'model.invoke', resourceType: 'model', resourceId: 'deepseek-v4',
 })

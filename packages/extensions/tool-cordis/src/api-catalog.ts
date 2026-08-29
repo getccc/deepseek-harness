@@ -709,6 +709,26 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'audit',
+    summary: 'The audit trail.',
+    description: 'The audit trail. A provider mounts this service; consumers inject `audit`.\n\nRecords are append-only: there is no method to amend or remove one, and a store is expected to refuse both at the database as well. A reader who cannot rewrite history is what makes the trail worth reading.',
+    methods: [
+      {
+        signature: 'abstract record(record: AuditRecord): Promise<AuditEvent>',
+        description: 'Record one operation. The store assigns the sequence number and the time, so a caller can neither backdate an entry nor choose its order.',
+        parameters: [{ name: 'record', description: 'what happened: the action, its outcome, and who and what it involved.' }],
+        returns: 'the stored event, including what the store assigned.',
+        throws: ['{UnknownAuditActionError} when the action catalog does not register the action.', '{InvalidAuditValueError} when a field holds a value its rule does not admit.', '{UnknownMetadataKeyError} when metadata names an unregistered key.', '{MetadataKeyNotAllowedError} when the action does not declare a registered key.'],
+      },
+      {
+        signature: 'abstract query(query: AuditQuery): Promise<AuditEvent[]>',
+        description: 'Read events back, most recent first.',
+        parameters: [{ name: 'query', description: 'the organization to read, and any narrowing the reader wants.' }],
+        returns: 'the matching events, newest first, bounded by the store\'s configured maximum.',
+      },
+    ],
+  },
+  {
     key: 'authorization',
     summary: '`ctx.authorization`: a registry of credential-obtaining flows, one attempt at a time per key.',
     description: '`ctx.authorization`: a registry of credential-obtaining flows, one attempt at a time per key.',
@@ -3743,6 +3763,34 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type AttachmentId = Branded<\'AttachmentId\'>;',
   },
   {
+    name: 'AuditActionName',
+    declaration: 'export type AuditActionName = keyof typeof AUDIT_ACTIONS;',
+  },
+  {
+    name: 'AuditEvent',
+    declaration: 'export interface AuditEvent extends AuditRecord {\n    readonly seq: bigint;\n    readonly at: number;\n    readonly resourceType: string;\n    readonly metadata: AuditMetadata;\n}',
+  },
+  {
+    name: 'AuditMetadata',
+    declaration: 'export type AuditMetadata = Readonly<Partial<Record<MetadataKey, number | string>>>;',
+  },
+  {
+    name: 'AuditOutcome',
+    declaration: 'export type AuditOutcome = typeof AUDIT_OUTCOMES[number];',
+  },
+  {
+    name: 'AuditQuery',
+    declaration: 'export interface AuditQuery {\n    readonly orgId: OrgId;\n    readonly principalId?: UserId;\n    readonly action?: AuditActionName;\n    readonly resourceType?: string;\n    readonly outcome?: AuditOutcome;\n    readonly since?: number;\n    readonly until?: number;\n    readonly before?: bigint;\n    readonly limit?: number;\n}',
+  },
+  {
+    name: 'AuditReason',
+    declaration: 'export type AuditReason = typeof AUDIT_REASONS[number];',
+  },
+  {
+    name: 'AuditRecord',
+    declaration: 'export interface AuditRecord {\n    readonly orgId: OrgId;\n    readonly action: AuditActionName;\n    readonly outcome: AuditOutcome;\n    readonly principalId?: UserId;\n    readonly resourceId?: string;\n    readonly deviceId?: string;\n    readonly correlationId?: string;\n    readonly reason?: AuditReason;\n    readonly policyRevision?: bigint;\n    readonly metadata?: AuditMetadata;\n}',
+  },
+  {
     name: 'AuthenticationOutcome',
     declaration: 'export type AuthenticationOutcome = {\n    readonly ok: true;\n    readonly userId: UserId;\n    readonly mustChangePassword: boolean;\n} | {\n    readonly ok: false;\n};',
   },
@@ -4681,6 +4729,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'MessageSourceMap',
     declaration: 'export interface MessageSourceMap {\n    user: {\n        kind: \'user\';\n    };\n    plugin: {\n        kind: \'plugin\';\n        plugin: string;\n    } & ContextFormed;\n    model: ModelMessageSource;\n    tool: ToolMessageSource;\n}',
+  },
+  {
+    name: 'MetadataKey',
+    declaration: 'export type MetadataKey = keyof typeof METADATA_KEYS;',
   },
   {
     name: 'ModelCatalog',

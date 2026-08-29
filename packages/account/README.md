@@ -36,6 +36,7 @@ Four packages cover the family; each child README owns the full contract.
 <a id="related-documentation"></a>
 ## Related documentation
 
+- [Account subsystem](../../docs/subsystems/account.md) — the identity model, the credential format, and how a sign-in is answered.
 - [Capability seams](../../docs/capability-seams.md) — the Service Definition / Service Provider / Consumer split this family follows.
 - [`team-control-plane/`](../bundle/team-control-plane/README.md) — the server profile these packages are composed into.
 

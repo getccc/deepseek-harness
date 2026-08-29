@@ -28,6 +28,11 @@ kind: "package-reference"
 注入 `accountStore` 并调用它。每个方法都是返回 promise 的仓储操作，因此每种失败都是 rejection——没有任何方法会同步抛出。
 
 ```ts
+import type { Context } from '@deepseek-ai/cordis'
+import '@deepseek-ai/dsh-account-store'
+
+declare const ctx: Context
+
 const org = await ctx.accountStore.createOrganization('Acme')
 const user = await ctx.accountStore.createUser({
   orgId: org.id,

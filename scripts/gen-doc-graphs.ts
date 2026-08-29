@@ -99,6 +99,42 @@ const GROUP_ORDER = [
 
 const SERVICE_ROLES: ServiceRole[] = [
   {
+    key: 'accountStore',
+    pkg: 'account-store',
+    title: 'Team Edition organizations and member accounts',
+    mode: 'seam',
+    implementations: ['account-store-sqlite'],
+    consumers: ['account-auth-password', 'access-control-sqlite'],
+    note: 'Server-side only: the Control Plane composes it, no Runner mounts it. It also holds the organization policy revision every authorization cache keys on.',
+  },
+  {
+    key: 'accountAuth',
+    pkg: 'account-auth',
+    title: 'Proving a member is who they claim',
+    mode: 'seam',
+    implementations: ['account-auth-password'],
+    consumers: [],
+    note: 'Verification is separate from the store so a second method arrives as a provider. The password provider stores a self-describing hash and rehashes on a successful verify.',
+  },
+  {
+    key: 'accessControl',
+    pkg: 'access-control',
+    title: 'Default-deny authorization over roles and grants',
+    mode: 'seam',
+    implementations: ['access-control-sqlite'],
+    consumers: [],
+    note: 'No explicit deny, no inheritance, no expression language, so a decision is explained by naming the grants that admitted it. Consumers arrive with the company-resource gateways.',
+  },
+  {
+    key: 'audit',
+    pkg: 'audit',
+    title: 'The append-only audit trail',
+    mode: 'seam',
+    implementations: ['audit-sqlite'],
+    consumers: [],
+    note: 'Closed action and metadata catalogs, and a token rule on every caller-supplied string, so a record cannot hold a member\'s work. Consumers arrive with the administrative operations that know a principal.',
+  },
+  {
     key: 'attachments',
     pkg: 'attachment',
     title: 'Durable binary attachment storage',

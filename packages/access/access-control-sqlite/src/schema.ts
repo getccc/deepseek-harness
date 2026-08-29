@@ -155,9 +155,12 @@ function seedPermissions(db: DatabaseSync): void {
   for (const permission of PERMISSION_CATALOG) insert.run(permission.resourceType, permission.action)
 }
 
-/** Read one integer pragma. */
+/**
+ * Read one integer pragma. A PRAGMA read of `application_id` or `user_version`
+ * always answers with exactly one row holding one integer, so the cast states
+ * what SQLite guarantees rather than guarding a path that cannot happen.
+ */
 function readPragma(db: DatabaseSync, name: string): number {
-  const row = db.prepare(`PRAGMA ${name}`).get() as Record<string, unknown> | undefined
-  const value = row === undefined ? undefined : Object.values(row)[0]
-  return typeof value === 'number' ? value : 0
+  const [value] = Object.values(db.prepare(`PRAGMA ${name}`).get() as Record<string, number>)
+  return value as number
 }

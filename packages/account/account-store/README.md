@@ -28,6 +28,11 @@ English | [中文](README.zh.md)
 Inject `accountStore` and call it. Every method is a repository operation returning a promise, so every failure is a rejection — no method throws synchronously.
 
 ```ts
+import type { Context } from '@deepseek-ai/cordis'
+import '@deepseek-ai/dsh-account-store'
+
+declare const ctx: Context
+
 const org = await ctx.accountStore.createOrganization('Acme')
 const user = await ctx.accountStore.createUser({
   orgId: org.id,
