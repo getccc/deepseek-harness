@@ -247,4 +247,62 @@ describe('BrowserAuth', () => {
     await expect(createAuth(new RecordCredentials(), Number.MAX_SAFE_INTEGER))
       .rejects.toThrow(/safe timestamp range/u)
   })
+
+  it('ends the browser session only for a request that carried one', async () => {
+    const store = new RecordCredentials()
+    const auth = await createAuth(store)
+    const login = exchange(auth)
+
+    const locked = response()
+    expect(auth.lock(request('/lock', '127.0.0.1:3080', { cookie: login.cookie }), locked.value)).toBe(true)
+    expect(locked.state).toMatchObject({
+      status: 200,
+      headers: { 'cache-control': 'no-store', 'referrer-policy': 'no-referrer' },
+    })
+    // Same name, Path, HttpOnly, and SameSite as the issued cookie: a browser
+    // replaces a cookie only when those match, so a drift here would leave the
+    // original in place and silently fail to lock.
+    const cleared = locked.state.headers?.['set-cookie']
+    expect(cleared).toMatch(/^dsh-auth-[\w-]+=; Max-Age=0; Path=\/; HttpOnly; SameSite=Strict$/u)
+    expect(cleared?.split('=', 1)[0]).toBe(login.cookie.split('=', 1)[0])
+    // The cookie value the browser still holds is unchanged, but the request
+    // that presented it has been answered with its expiry.
+    expect(auth.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: login.cookie }))).toBe(true)
+  })
+
+  it('leaves the session intact for a request that presented no valid cookie', async () => {
+    const store = new RecordCredentials()
+    const auth = await createAuth(store)
+    exchange(auth)
+
+    // A cross-site navigation is exactly this shape: SameSite=Strict withholds
+    // the cookie, so another site cannot lock a person out by linking here.
+    const anonymous = response()
+    expect(auth.lock(request('/lock'), anonymous.value)).toBe(false)
+    expect(anonymous.state.headers).not.toHaveProperty('set-cookie')
+    expect(anonymous.state.status).toBe(200)
+    expect(anonymous.state.body).toContain('nothing to lock')
+
+    const forged = response()
+    expect(auth.lock(request('/lock', '127.0.0.1:3080', { cookie: 'dsh-auth-nope=v1.aaa.bbb' }), forged.value)).toBe(false)
+    expect(forged.state.headers).not.toHaveProperty('set-cookie')
+  })
+
+  it('refuses to lock when the request carries no Host to bind the cookie to', async () => {
+    const store = new RecordCredentials()
+    const auth = await createAuth(store)
+    const hostless = response()
+    expect(auth.lock({ method: 'GET', url: '/lock', headers: {} }, hostless.value)).toBe(false)
+    expect(hostless.state.headers).not.toHaveProperty('set-cookie')
+  })
+
+  it('answers HEAD without a body while still expiring the session', async () => {
+    const store = new RecordCredentials()
+    const auth = await createAuth(store)
+    const login = exchange(auth)
+    const head = response()
+    expect(auth.lock(request('/lock', '127.0.0.1:3080', { cookie: login.cookie, method: 'HEAD' }), head.value)).toBe(true)
+    expect(head.state.body).toBeUndefined()
+    expect(head.state.headers).toHaveProperty('set-cookie')
+  })
 })

@@ -301,6 +301,47 @@ export class BrowserAuth {
       && payload.expiresAt - payload.issuedAt <= this.maxAgeMilliseconds
   }
 
+  /**
+   * Expire this authority's browser session so the local application asks for
+   * authentication again, and report whether a session was actually ended.
+   *
+   * Only an authenticated request clears anything. That is what keeps the
+   * endpoint from being a cross-site nuisance: the cookie is `SameSite=Strict`,
+   * so a navigation another site initiates arrives without it, reads as
+   * unauthenticated, and leaves the session intact. A same-site navigation —
+   * the person choosing to lock their own application — carries the cookie and
+   * clears it.
+   *
+   * The signing secret is untouched, so sessions this Runner issued to other
+   * browsers stay valid. Ending all of them at once means rotating that secret
+   * and restarting, which is deliberately not something one request can do.
+   * @param req - the incoming lock request.
+   * @param res - the response, owned by this method.
+   * @returns whether an authenticated session was ended.
+   */
+  lock(req: ConnectionIndexRequest, res: ConnectionIndexResponse): boolean {
+    const authority = requestAuthority(req.headers)
+    const ended = authority !== undefined && this.isAuthenticated(req)
+    const headers: Record<string, string> = {
+      'cache-control': 'no-store',
+      'content-type': 'text/plain; charset=utf-8',
+      'referrer-policy': 'no-referrer',
+    }
+    if (ended) {
+      // Same name, path, and attributes as the issued cookie: a browser only
+      // replaces a cookie when all three match, so an attribute drift here
+      // would leave the original in place and silently fail to lock.
+      headers['set-cookie'] = `${cookieName(authority)}=; Max-Age=0; Path=/; HttpOnly; SameSite=Strict`
+    }
+    res.writeHead(200, headers)
+    res.end(req.method === 'HEAD'
+      ? undefined
+      : ended
+        ? 'dsh web locked; reopen the URL printed by dsh web to unlock.\n'
+        : 'dsh web is not unlocked in this browser; nothing to lock.\n')
+    return ended
+  }
+
   private writeUnauthorized(req: ConnectionIndexRequest, res: ConnectionIndexResponse): void {
     res.writeHead(401, {
       'cache-control': 'no-store',

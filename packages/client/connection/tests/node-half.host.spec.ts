@@ -8,7 +8,7 @@ import type { AddressInfo } from 'node:net'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { AttachmentStore } from '@deepseek-ai/dsh-attachment'
 import type { WebServer, WebRoute, WebUpgradeRoute } from '@deepseek-ai/dsh-host-webserver'
-import { API_PATH, RpcId, apply, inject, type ClientRequest, type HostConnectionHandle } from '../src/index.ts'
+import { API_PATH, LOCK_PATH, RpcId, apply, inject, type ClientRequest, type HostConnectionHandle } from '../src/index.ts'
 import { DEFAULT_MAX_REQUEST_BODY_BYTES } from '../src/http-bridge.ts'
 import { provideBrowserCredentials } from './browser-credentials.ts'
 
@@ -145,10 +145,12 @@ describe('connection node half', () => {
     expect(upgrades).toHaveLength(0)
   })
 
-  it('registers only the HTTP route and removes it with the fiber', async () => {
+  it('registers only HTTP routes and removes them with the fiber', async () => {
     const { routes, upgrades, dispose } = await mounted()
-    expect(routes).toHaveLength(1)
-    expect(routes[0]).toMatchObject({ kind: 'prefix', path: API_PATH })
+    expect(routes.map(route => ({ kind: route.kind, path: route.path }))).toEqual([
+      { kind: 'prefix', path: API_PATH },
+      { kind: 'exact', path: LOCK_PATH },
+    ])
     expect(upgrades).toHaveLength(0)
     await dispose()
     expect(routes).toHaveLength(0)
@@ -245,8 +247,7 @@ describe('connection node half', () => {
     ctx.provide('webServer', fakeHttpServer(routes, []) as WebServer)
     const fiber = ctx.plugin({ inject: [...inject], apply })
     await fiber.await()
-    expect(routes).toHaveLength(1)
-    expect(routes[0]).toMatchObject({ kind: 'prefix', path: API_PATH })
+    expect(routes.map(route => route.path)).toEqual([API_PATH, LOCK_PATH])
 
     const connection = ctx.get('connection') as HostConnectionHandle
     const calls: unknown[] = []
@@ -282,7 +283,8 @@ describe('connection node half', () => {
     expect(() => connection.rpc.handle('/rpc', async () => ({ ok: true, value: null })))
       .toThrow(/duplicate route/)
     await remove()
-    expect(routes.map(candidate => candidate.path)).toEqual([API_PATH])
+    // Withdrawing the dedicated channel leaves the package's own two routes.
+    expect(routes.map(candidate => candidate.path)).toEqual([API_PATH, LOCK_PATH])
     await fiber.dispose()
     expect(routes).toHaveLength(0)
   })
@@ -519,6 +521,77 @@ describe('connection node half over a real HTTP server', () => {
       )).toBe(404)
     } finally {
       await close()
+      await dispose()
+    }
+  })
+})
+
+describe('lock route', () => {
+  it('registers one exact route beside the /api prefix', async () => {
+    const { routes, dispose } = await mounted()
+    try {
+      const lock = routes.find(route => route.path === LOCK_PATH)
+      expect(lock?.kind).toBe('exact')
+      // Exact, so it never shadows a client-side route under a shared prefix.
+      expect(routes.find(route => route.path === API_PATH)?.kind).toBe('prefix')
+    } finally {
+      await dispose()
+    }
+  })
+
+  it('expires the session of a browser that presented one', async () => {
+    const { routes, connection, dispose } = await mounted()
+    try {
+      const cookie = browserCookie(connection, '127.0.0.1:3080')
+      const lock = routes.find(route => route.path === LOCK_PATH)!
+      const res = fakeResponse()
+      await lock.handler(fakeRequest({ host: '127.0.0.1:3080', cookie }, LOCK_PATH), res.response)
+      expect(res.state.status).toBe(200)
+      expect(res.state.headers?.['set-cookie']).toContain('Max-Age=0')
+    } finally {
+      await dispose()
+    }
+  })
+
+  it('answers an unauthenticated navigation without expiring anything', async () => {
+    const { routes, dispose } = await mounted()
+    try {
+      const lock = routes.find(route => route.path === LOCK_PATH)!
+      const res = fakeResponse()
+      await lock.handler(fakeRequest({ host: '127.0.0.1:3080' }, LOCK_PATH), res.response)
+      expect(res.state.status).toBe(200)
+      expect(res.state.headers).not.toHaveProperty('set-cookie')
+    } finally {
+      await dispose()
+    }
+  })
+
+  it('serves a HEAD navigation, which carries the headers without a body', async () => {
+    const { routes, connection, dispose } = await mounted()
+    try {
+      const cookie = browserCookie(connection, '127.0.0.1:3080')
+      const lock = routes.find(route => route.path === LOCK_PATH)!
+      const request = fakeRequest({ host: '127.0.0.1:3080', cookie }, LOCK_PATH)
+      Object.assign(request, { method: 'HEAD' })
+      const res = fakeResponse()
+      await lock.handler(request, res.response)
+      expect(res.state.status).toBe(200)
+      expect(res.state.headers?.['set-cookie']).toContain('Max-Age=0')
+      expect(res.state.body).toBeUndefined()
+    } finally {
+      await dispose()
+    }
+  })
+
+  it('refuses a method that is not a navigation', async () => {
+    const { routes, dispose } = await mounted()
+    try {
+      const lock = routes.find(route => route.path === LOCK_PATH)!
+      const res = fakeResponse()
+      await lock.handler(fakePost({ host: '127.0.0.1:3080' }, LOCK_PATH, {}), res.response)
+      expect(res.state.status).toBe(405)
+      expect(res.state.headers).not.toHaveProperty('set-cookie')
+    } finally {
       await dispose()
     }
   })

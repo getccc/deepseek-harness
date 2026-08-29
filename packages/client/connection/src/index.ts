@@ -43,6 +43,13 @@ export { HostConnectionService } from './rpc-host.ts'
 
 export { API_PATH } from './api-path.ts'
 
+/**
+ * Exact route that ends this browser's session with the local application.
+ * A person reaches it by navigating; it is not part of the RPC surface, so it
+ * never appears in a generated client contract.
+ */
+export const LOCK_PATH = '/lock'
+
 /** Stable Cordis plugin name. */
 export const name = 'client-connection'
 
@@ -105,11 +112,8 @@ export async function apply(ctx: Context, config?: ConnectionConfig): Promise<vo
   // silently authorizing its hostname prefix at request time.
   for (const entry of trustedHosts) assertTrustedAuthority(entry)
   assertImageBodyCapacity(ctx, maxRequestBodyBytes)
-  const connection = new HostConnectionService(
-    ctx,
-    trustedHosts,
-    await BrowserAuth.create(ctx.root, ctx.credentials, cookieMaxAgeDays),
-  )
+  const browserAuth = await BrowserAuth.create(ctx.root, ctx.credentials, cookieMaxAgeDays)
+  const connection = new HostConnectionService(ctx, trustedHosts, browserAuth)
   const fetchHandler = connection.createSharedFetchHandler(API_PATH)
   const route: WebRoute = {
     kind: 'prefix',
@@ -125,6 +129,23 @@ export async function apply(ctx: Context, config?: ConnectionConfig): Promise<vo
     },
   }
   ctx.effect(() => ctx.webServer.register(route), 'client-connection: /api route')
+  // Navigation-only, and deliberately outside the /api prefix: it carries no
+  // RPC, reads no request body, and reaches no Host capability, so the browser
+  // trust fence that guards /api has nothing to guard here. What protects it is
+  // the cookie's own SameSite=Strict — see BrowserAuth.lock.
+  const lockRoute: WebRoute = {
+    kind: 'exact',
+    path: LOCK_PATH,
+    handler: (req, res) => {
+      if (req.method !== 'GET' && req.method !== 'HEAD') {
+        res.writeHead(405, { 'cache-control': 'no-store', 'content-type': 'text/plain; charset=utf-8' })
+        res.end('method not allowed\n')
+        return
+      }
+      browserAuth.lock(req, res)
+    },
+  }
+  ctx.effect(() => ctx.webServer.register(lockRoute), 'client-connection: lock route')
   ctx.inject(['attachments'], (attachmentCtx) => {
     assertImageBodyCapacity(attachmentCtx, maxRequestBodyBytes)
   })

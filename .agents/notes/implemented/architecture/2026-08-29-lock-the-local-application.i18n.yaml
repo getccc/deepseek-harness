@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-29-lock-the-local-application.md
+2026-08-29-lock-the-local-application.md: 3d0ed56f7d85cdc36de7b18f8cc146316e1077fb
+2026-08-29-lock-the-local-application.zh.md: f22c567cd3257310ac12b140a1ccbd00ea62025a

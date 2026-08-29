@@ -1183,8 +1183,10 @@ describe('TypertGatewayService', () => {
     const removeLookup = registerAgentLookup(ctx, { id: 'agent-1' })
     const removeStrict = registerStrict(ctx, [createDescriptor()])
     let strictActive = true
-    expect(routes).toHaveLength(1)
-    const server = await serveRoute(routes[0]!)
+    // client-connection registers its /api bridge plus its own lock route.
+    const apiRoute = routes.find(route => route.kind === 'prefix' && route.path === '/api')
+    expect(apiRoute).toBeDefined()
+    const server = await serveRoute(apiRoute!)
     const cookie = browserCookie(ctx.connection, server.origin)
 
     try {

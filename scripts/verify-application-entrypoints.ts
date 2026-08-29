@@ -44,6 +44,7 @@ const EXECUTABLE_SOURCE_ALLOWLIST = new Map<string, string>([
   ['packages/subagent/subagent-dsh-sdk/tests/fixtures/loader/driver.ts', 'test-only subprocess driver'],
   ['packages/test-support/loader-smoke/tests/fixtures/headless-driver.ts', 'test-only subprocess driver'],
   ['packages/test-support/llm-mock-server/src/bin.ts', 'test-only model server'],
+  ['packages/workspace/workspace/tests/fixtures/loader/driver.ts', 'test-only subprocess driver'],
 ])
 
 /** Root demos are application wrappers and therefore must visibly select dsh. */
