@@ -36,6 +36,7 @@ harness 由 `packages/` 下的 npm 包组装而成，按能力系列分组：会
 | [`feedback/`](feedback/README.zh.md) | 人类反馈的采集与命令 |
 | [`account/`](account/README.zh.md) | Team Edition 身份：组织、成员账户与登录状态 |
 | [`access/`](access/README.zh.md) | Team Edition 治理：权限目录、角色、授权、受治理资源与审计 |
+| [`team/`](team/README.zh.md) | Team Edition Handoff：Control Plane 绑定端点、Runner 账户保管，以及浏览器所导航到的本地地址 |
 | [`identity/`](identity/README.zh.md) | 共享匿名身份 |
 | [`llm/`](llm/README.zh.md) | LLM 能力系列：抽象服务 + 提供方适配器 |
 | [`e2b/`](e2b/README.zh.md) | E2B 远程运行时提供方 |

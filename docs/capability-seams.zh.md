@@ -24,6 +24,9 @@ flowchart LR
   pkg_device_authorization["device-authorization"]
   svc_deviceAuthorization["ctx.deviceAuthorization<br/>Binding a browser session to one computer"]
   pkg_device_authorization_sqlite["device-authorization-sqlite"]
+  pkg_team_account_client["team-account-client"]
+  svc_teamAccountClient["ctx.teamAccountClient<br/>The Runner side of the team account"]
+  pkg_team_local_handoff["team-local-handoff"]
   pkg_attachment["attachment"]
   svc_attachments["ctx.attachments<br/>Durable binary attachment storage"]
   pkg_attachment_local["attachment-local"]
@@ -343,6 +346,7 @@ flowchart LR
   pkg_subprocess_e2b --> svc_subprocess
   pkg_subprocess_local --> svc_subprocess
   pkg_system_prompt --> svc_systemPrompt
+  pkg_team_account_client --> svc_teamAccountClient
   pkg_terminal --> svc_terminals
   pkg_terminal_bash --> svc_terminals
   pkg_token_meter --> svc_tokenMeter
@@ -462,6 +466,7 @@ flowchart LR
   svc_systemPrompt --> pkg_tool_terminal
   svc_systemPrompt --> pkg_tool_web
   svc_systemPrompt --> pkg_tools
+  svc_teamAccountClient --> pkg_team_local_handoff
   svc_terminals --> pkg_tool_terminal
   svc_tokenMeter --> pkg_compaction_basic
   svc_toolResultPruner --> pkg_compaction_basic
@@ -497,6 +502,7 @@ flowchart LR
 | `ctx.accessControl` | `seam` | [`access-control`](../packages/access/access-control) | [`access-control-sqlite`](../packages/access/access-control-sqlite) | - | - | 没有显式 Deny、没有继承、没有表达式语言，因此一个决定通过点名准入它的那些授权来解释。消费方随公司资源 Gateway 一起到来。 |
 | `ctx.audit` | `seam` | [`audit`](../packages/access/audit) | [`audit-sqlite`](../packages/access/audit-sqlite) | - | - | 封闭的动作与 Metadata 目录，以及作用于每一个调用方所提供字符串的 Token 规则，因此一条记录装不下成员的工作。消费方随知道主体的那些管理操作一起到来。 |
 | `ctx.deviceAuthorization` | `seam` | [`device-authorization`](../packages/account/device-authorization) | [`device-authorization-sqlite`](../packages/account/device-authorization-sqlite) | - | - | 配对码与公钥摘要让成员确认是哪一台电脑；PKCE Verifier 与设备签名让那台电脑证明它握有钥匙。消费方随 Control Plane 的 HTTP 面一起到来。 |
+| `ctx.teamAccountClient` | `seam` | [`team-account-client`](../packages/team/team-account-client) | - | [`team-local-handoff`](../packages/team/team-local-handoff) | - | 在成员电脑上持有设备密钥与凭据，并通过 HTTPS 调用 Control Plane。公司 Provider 凭据从不到达它。 |
 | `ctx.attachments` | `seam` | [`attachment`](../packages/attachment/attachment) | [`attachment-local`](../packages/attachment/attachment-local) | [`api-session-controller`](../packages/api/session-controller), [`tool-fs`](../packages/fs/tool-fs), [`llm-pi-ai`](../packages/llm/llm-pi-ai), [`llm-deepseek`](../packages/llm/llm-deepseek) | - | 宿主会在会话事件之前提交已接受的图片；提供方适配器将已授权的持久引用解析为提供方原生内容。 |
 | `ctx.llm` | `seam` | [`llm`](../packages/llm/llm) | [`llm-deepseek`](../packages/llm/llm-deepseek), [`llm-pi-ai`](../packages/llm/llm-pi-ai), [`llm-replay`](../packages/test-support/llm-replay) | [`agent-loop`](../packages/core/agent-loop), [`compaction-basic`](../packages/compaction/compaction-basic) | - | 适配器注册提供方实现；agent loop（智能体循环）与压缩功能调用提供方无关的流服务。 |
 | `ctx.deepseekLlmApiExtensions` | `seam` | [`deepseek-llm-api-extensions`](../packages/llm/deepseek-llm-api-extensions) | [`session-log-deepseek`](../packages/session/session-log-deepseek), [`plugin-package-inventory-deepseek`](../packages/llm/plugin-package-inventory-deepseek) | [`llm-deepseek`](../packages/llm/llm-deepseek) | - | 插件准备彼此独立的顶层字段；官方适配器会合并这些字段，并在 HTTP 接受后提交其交付状态。 |

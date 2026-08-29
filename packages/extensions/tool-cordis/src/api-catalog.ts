@@ -2634,6 +2634,44 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'teamAccountClient',
+    summary: 'The team account as this computer holds it.',
+    description: 'The team account as this computer holds it.\n\nBinding is two steps with a person in between: `begin` opens a transaction and returns what the local pairing page shows, and `complete` runs only after the member confirmed on the Control Plane and the browser came back with a code.',
+    methods: [
+      {
+        signature: 'async begin(): Promise<BindingHandle>',
+        description: 'Open a binding transaction and return what the local pairing page shows.\n\nThe PKCE verifier stays in this process: it is written nowhere, so a transaction cannot be completed by anything that reads this computer\'s disk without also being this Runner.',
+        parameters: [],
+        returns: 'the pairing code to display, the Control Plane address to send the member to, and the transaction id.',
+      },
+      {
+        signature: 'async complete(transactionId: TransactionId, code: string): Promise<TeamAccountState>',
+        description: 'Redeem the code the browser carried back, and keep the credential.',
+        parameters: [{ name: 'transactionId', description: 'the transaction the code belongs to.' }, { name: 'code', description: 'the one-time authorization code.' }],
+        returns: 'the state this installation is now in.',
+        throws: ['{NotBoundError} when no transaction is awaiting confirmation in this process.', '{ControlPlaneRefusedError} when the Control Plane refused the redemption.'],
+      },
+      {
+        signature: 'async state(): Promise<TeamAccountState>',
+        description: 'What this installation currently holds.',
+        parameters: [],
+        returns: 'whether it is bound, and to which device and family.',
+      },
+      {
+        signature: 'async accessToken(): Promise<string>',
+        description: 'An access token that will still be valid when it arrives, refreshing first when the stored one is close enough to lapsing to lose the race.',
+        parameters: [],
+        returns: 'the access token to present to a company-resource entry.',
+        throws: ['{NotBoundError} when this computer holds no credential.', '{ControlPlaneRefusedError} when the refresh was refused, including after a replay revoked the family.'],
+      },
+      {
+        signature: 'async signOut(): Promise<void>',
+        description: 'Forget the team credential, keeping the device key, the workspaces, and the sessions. The computer stays the same computer; it just stops holding a team account.',
+        parameters: [],
+      },
+    ],
+  },
+  {
     key: 'terminals',
     summary: 'In-process registry for replaceable PTY backends and exact-Agent sessions.',
     description: 'In-process registry for replaceable PTY backends and exact-Agent sessions.',
@@ -3928,6 +3966,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'BashEnvVariableInfo',
     declaration: 'export interface BashEnvVariableInfo extends BashEnvVariable {\n    contributor: string;\n    key: DshEnvironmentKey;\n}',
+  },
+  {
+    name: 'BindingHandle',
+    declaration: 'export interface BindingHandle {\n    readonly transactionId: TransactionId;\n    readonly pairingCode: string;\n    readonly expiresAt: number;\n    readonly confirmUrl: string;\n}',
   },
   {
     name: 'BorrowedSessionSource',
@@ -5968,6 +6010,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'TableValueOf',
     declaration: 'export type TableValueOf<S extends DomainSpec, N extends keyof S[\'tables\']> = S[\'tables\'][N] extends DomainTableSpec<string, infer V> ? V : never;',
+  },
+  {
+    name: 'TeamAccountState',
+    declaration: 'export interface TeamAccountState {\n    readonly bound: boolean;\n    readonly deviceId?: DeviceId;\n    readonly familyId?: FamilyId;\n}',
   },
   {
     name: 'TeamId',

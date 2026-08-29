@@ -118,6 +118,37 @@ function cookieValue(headerValue: string, name: string): string | undefined {
 }
 
 /** Serialize the fixed browser-session attributes; generated names and values are cookie-safe base64url. */
+/** Escape a destination for both an HTML attribute and a JavaScript string literal. */
+function escapeDestination(destination: string): string {
+  return destination.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+}
+
+/**
+ * The page that carries the browser from a cross-site arrival into the
+ * application under its own, same-site navigation.
+ *
+ * `location.replace` is the path that was verified against a real browser; the
+ * `noscript` refresh and the visible link are there so a member with scripting
+ * disabled still arrives, rather than sitting on a blank page.
+ */
+function bouncePage(destination: string): string {
+  const safe = escapeDestination(destination)
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Opening DSH</title>
+<noscript><meta http-equiv="refresh" content="0; url=${safe}"></noscript>
+</head>
+<body>
+<p>Opening DSH. <a href="${safe}">Continue</a> if this page stays.</p>
+<script>location.replace(${JSON.stringify(destination)})</script>
+</body>
+</html>
+`
+}
+
 function sessionCookie(name: string, value: string, expiresAt: number, maxAgeSeconds: number): string {
   return `${name}=${value}; Max-Age=${String(maxAgeSeconds)}; Path=/; Expires=${new Date(expiresAt).toUTCString()}; HttpOnly; SameSite=Strict`
 }
@@ -279,6 +310,52 @@ export class BrowserAuth {
     if (this.isAuthenticated(req)) return true
     this.writeUnauthorized(req, res)
     return false
+  }
+
+  /**
+   * Issue the browser session and hand the browser back to the application
+   * without a redirect.
+   *
+   * A redirect would be the obvious answer and it does not work. The cookie is
+   * `SameSite=Strict`, and when the navigation that lands here was started by
+   * another site — which is exactly the team handoff, arriving from the company
+   * Control Plane — the browser withholds a Strict cookie from every request in
+   * that same navigation chain, including the one the redirect produces. The
+   * application would load without the cookie and answer 401.
+   *
+   * So this responds 200 with the cookie and a page that navigates itself. The
+   * navigation the page starts is same-site, so the cookie travels with it.
+   * @param req - the navigation request, which must carry a Host header.
+   * @param res - the response, owned by this method when it returns true.
+   * @param destination - same-origin path to hand the browser to, such as `/`.
+   * @returns true when the session was issued; false when the request carried no authority.
+   */
+  issueSession(req: ConnectionIndexRequest, res: ConnectionIndexResponse, destination: string): boolean {
+    const authority = requestAuthority(req.headers)
+    if (authority === undefined) {
+      this.writeUnauthorized(req, res)
+      return false
+    }
+    const issuedAt = Date.now()
+    const expiresAt = issuedAt + this.maxAgeMilliseconds
+    const value = encodeCookie({
+      version: COOKIE_PAYLOAD_VERSION,
+      authority,
+      issuedAt,
+      expiresAt,
+    }, this.secret)
+    res.writeHead(200, {
+      'cache-control': 'no-store',
+      'content-type': 'text/html; charset=utf-8',
+      'referrer-policy': 'no-referrer',
+      'set-cookie': sessionCookie(
+        cookieName(authority), value, expiresAt, Math.floor(this.maxAgeMilliseconds / 1000),
+      ),
+    })
+    // node:http drops the body of a HEAD response on its own, so there is no
+    // arm here for one.
+    res.end(bouncePage(destination))
+    return true
   }
 
   /**

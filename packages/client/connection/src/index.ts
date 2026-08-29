@@ -10,6 +10,11 @@ import { bridge, DEFAULT_MAX_REQUEST_BODY_BYTES } from './http-bridge.ts'
 import { assertTrustedAuthority } from './api-request-trust.ts'
 import { BrowserAuth } from './browser-auth.ts'
 import { HostConnectionService } from './rpc-host.ts'
+import type {
+  ConnectionIndexRequest,
+  ConnectionIndexResponse,
+  ConnectionTrustRequest,
+} from './rpc.ts'
 
 export type {
   ConnectionFetchMethod,
@@ -49,6 +54,40 @@ export { API_PATH } from './api-path.ts'
  * never appears in a generated client contract.
  */
 export const LOCK_PATH = '/lock'
+
+/**
+ * The local browser session, as a navigation endpoint outside this package
+ * needs it.
+ *
+ * Only two operations are published: ask whether this browser already holds the
+ * session, and hand it one. Everything else about the cookie — its name, its
+ * signature, its lifetime — stays here, so a second plugin cannot mint a
+ * session this package would then have to keep compatible with.
+ */
+export interface BrowserSession {
+  /**
+   * Whether the request carries this activation's valid session cookie.
+   * @param request - request headers carrying Host and Cookie.
+   * @returns true only for an unexpired cookie signed by this activation's secret.
+   */
+  isAuthenticated(request: ConnectionTrustRequest): boolean
+  /**
+   * Issue the session and hand the browser to `destination` without a redirect,
+   * which a `SameSite=Strict` cookie would not survive on a cross-site arrival.
+   * @param req - the navigation request, which must carry a Host header.
+   * @param res - the response, owned by this method when it returns true.
+   * @param destination - same-origin path to hand the browser to, such as `/`.
+   * @returns true when the session was issued.
+   */
+  issueSession(req: ConnectionIndexRequest, res: ConnectionIndexResponse, destination: string): boolean
+}
+
+declare module '@deepseek-ai/cordis' {
+  interface Context {
+    /** The local browser session; provided by `client-connection` when it mounts. */
+    browserSession: BrowserSession
+  }
+}
 
 /** Stable Cordis plugin name. */
 export const name = 'client-connection'
@@ -146,6 +185,9 @@ export async function apply(ctx: Context, config?: ConnectionConfig): Promise<vo
     },
   }
   ctx.effect(() => ctx.webServer.register(lockRoute), 'client-connection: lock route')
+  // Published for local navigation endpoints that must hand a browser the same
+  // session this package checks — the team handoff is the current one.
+  ctx.provide('browserSession', browserAuth)
   ctx.inject(['attachments'], (attachmentCtx) => {
     assertImageBodyCapacity(attachmentCtx, maxRequestBodyBytes)
   })

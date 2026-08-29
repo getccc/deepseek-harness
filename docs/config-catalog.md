@@ -505,7 +505,7 @@ export interface ConnectionConfig {
 }
 ```
 
-Source: [`packages/client/connection/src/index.ts:77`](../packages/client/connection/src/index.ts)
+Source: [`packages/client/connection/src/index.ts:116`](../packages/client/connection/src/index.ts)
 
 <a id="deepseek-aidsh-client-hmr"></a>
 
@@ -2667,6 +2667,65 @@ export interface Config {
 ```
 
 Source: [`packages/core/system-prompt/src/index.ts:237`](../packages/core/system-prompt/src/index.ts)
+
+<a id="deepseek-aidsh-team-account-client"></a>
+
+## `@deepseek-ai/dsh-team-account-client`
+
+Requires: `credentials`
+
+```ts config-catalog
+/** Plugin config: which Control Plane, and how this Runner describes itself. */
+export interface Config {
+  /** Origin of the company Control Plane, such as `https://dsh.company.com`. */
+  controlPlaneUrl: string
+  /** The fixed loopback address the Control Plane sends the browser back to. */
+  callbackUri: string
+  /** The version this Runner reports when it binds. */
+  runnerVersion: string
+  /**
+   * Refresh the access token once it is within this many milliseconds of
+   * lapsing, so a request does not race its own expiry.
+   */
+  refreshLeadMs: number
+}
+```
+
+Source: [`packages/team/team-account-client/src/index.ts:62`](../packages/team/team-account-client/src/index.ts)
+
+<a id="deepseek-aidsh-team-control-plane-http"></a>
+
+## `@deepseek-ai/dsh-team-control-plane-http`
+
+Requires: `webServer` · `deviceAuthorization`
+
+```ts config-catalog
+/** Plugin config: where the endpoints live and how much body they will read. */
+export interface Config {
+  /** Path prefix the three endpoints are served under. */
+  pathPrefix: string
+  /** Largest request body accepted, in bytes. */
+  maxRequestBodyBytes: number
+}
+```
+
+Source: [`packages/team/team-control-plane-http/src/index.ts:47`](../packages/team/team-control-plane-http/src/index.ts)
+
+<a id="deepseek-aidsh-team-local-handoff"></a>
+
+## `@deepseek-ai/dsh-team-local-handoff`
+
+Requires: `webServer` · `teamAccountClient` · `browserSession`
+
+```ts config-catalog
+/** Plugin config: where a completed handoff lands. */
+export interface Config {
+  /** Same-origin path the browser is handed to once it holds a session. */
+  applicationPath: string
+}
+```
+
+Source: [`packages/team/team-local-handoff/src/index.ts:33`](../packages/team/team-local-handoff/src/index.ts)
 
 <a id="deepseek-aidsh-terminal-bash"></a>
 

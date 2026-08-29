@@ -144,6 +144,15 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'A pairing code and key digest let a member confirm which computer; a PKCE verifier and a device signature let that computer prove it holds the key. Consumers arrive with the Control Plane HTTP surface.',
   },
   {
+    key: 'teamAccountClient',
+    pkg: 'team-account-client',
+    title: 'The Runner side of the team account',
+    mode: 'seam',
+    implementations: [],
+    consumers: ['team-local-handoff'],
+    note: 'Holds the device key and the credential on the member computer and calls the Control Plane over HTTPS. No company provider credential ever reaches it.',
+  },
+  {
     key: 'attachments',
     pkg: 'attachment',
     title: 'Durable binary attachment storage',

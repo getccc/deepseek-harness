@@ -28,6 +28,7 @@
 | [user-questions.md](user-questions.zh.md) | UI 支持的人工问答 seam：`AskUserQuestionRequest`、answer/options 词汇、提供方 API、错误分类体系 |
 | [access-control.md](access-control.zh.md) | 默认拒绝的授权：封闭权限目录、角色、类型与资源授权、受治理资源，以及策略修订号 |
 | [device-authorization.md](device-authorization.zh.md) | 把浏览器会话绑定到一台电脑：配对码、PKCE 与设备签名兑换、Refresh Token Family，以及撤销 |
+| [team-handoff.md](team-handoff.zh.md) | 从公司站点到这台电脑：三个本地地址、不能是重定向的 Callback，以及本地 state 绑定了什么 |
 | [audit.md](audit.zh.md) | 只追加的审计：封闭的动作与 Metadata 目录、Token 规则，以及把任务内容挡在外面的存储约束 |
 | [account.md](account.zh.md) | 组织、成员账户、登录状态，以及让身份与认证方式保持分离的存储 seam |
 | [approval.md](approval.zh.md) | 一次性用户审批 seam：`ApprovalRequest`、`ApprovalOutcome`、逐会话策略、审计事件和 answerer 约定 |
