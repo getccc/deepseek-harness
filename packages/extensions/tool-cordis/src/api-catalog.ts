@@ -994,6 +994,69 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'deviceAuthorization',
+    summary: 'Device binding, the credentials it produces, and the device registry it fills.',
+    description: 'Device binding, the credentials it produces, and the device registry it fills. A provider mounts this service; consumers inject `deviceAuthorization`.\n\nNothing here authorizes anything: a credential proves which device and which account a request comes from, and access control decides what that principal may do, against the policy revision current at the time of the request.',
+    methods: [
+      {
+        signature: 'abstract start(request: StartRequest): Promise<StartedTransaction>',
+        description: 'Open a binding transaction. The request carries no account: a transaction belongs to nobody until a member confirms it from an authenticated session, so an unauthenticated caller learns nothing by opening one.',
+        parameters: [{ name: 'request', description: 'the device\'s public key, platform, PKCE challenge, and fixed callback.' }],
+        returns: 'the transaction id, the pairing code to display locally, and when it lapses.',
+      },
+      {
+        signature: 'abstract describe(id: TransactionId): Promise<PendingTransaction>',
+        description: 'Read what a confirmation page must show before a person confirms.',
+        parameters: [{ name: 'id', description: 'the transaction the member\'s browser was sent to.' }],
+        returns: 'the device facts and the pairing code to compare against the local page.',
+        throws: ['{TransactionRefusedError} when it is unknown, lapsed, or already confirmed.'],
+      },
+      {
+        signature: 'abstract confirm(id: TransactionId, approval: Approval): Promise<IssuedCode>',
+        description: 'Confirm a transaction, minting the one-time code the browser carries back.',
+        parameters: [{ name: 'id', description: 'the transaction being confirmed.' }, { name: 'approval', description: 'who is confirming, from an authenticated Control Plane session.' }],
+        returns: 'the plaintext code, its lifetime, and the bound callback address.',
+        throws: ['{TransactionRefusedError} when it is unknown, lapsed, or already confirmed.'],
+      },
+      {
+        signature: 'abstract redeem(request: RedeemRequest): Promise<IssuedCredential>',
+        description: 'Turn an authorization code into a device and its first credential. The device row is created here, because until this point no one has proved possession of the private key behind the digest the member compared.',
+        parameters: [{ name: 'request', description: 'the code, the PKCE verifier, the device signature, and the bound callback and version.' }],
+        returns: 'the device, its credential family, and the first refresh and access tokens.',
+        throws: ['{CredentialRefusedError} when any bound fact fails to match.'],
+      },
+      {
+        signature: 'abstract refresh(request: RefreshRequest): Promise<IssuedCredential>',
+        description: 'Exchange a refresh token for the next one and a fresh access token.\n\nPresenting a refresh token that was already spent revokes the whole family: either the token leaked or the Runner lost track of it, and both are answered by making every credential in that family useless.',
+        parameters: [{ name: 'request', description: 'the family, the refresh token, and a device signature over both.' }],
+        returns: 'the next credential pair.',
+        throws: ['{CredentialRefusedError} when the token is unknown, lapsed, reused, or the device is revoked.'],
+      },
+      {
+        signature: 'abstract verifyAccessToken(token: string): Promise<AccessTokenClaims | undefined>',
+        description: 'Resolve an access token to what it stands for.',
+        parameters: [{ name: 'token', description: 'the plaintext access token a Runner presented.' }],
+        returns: 'the claims, or undefined when the token is unknown, lapsed, or its device is revoked.',
+      },
+      {
+        signature: 'abstract listDevices(orgId: OrgId): Promise<Device[]>',
+        description: 'List an organization\'s devices in binding order.',
+        parameters: [{ name: 'orgId', description: 'the organization to list.' }],
+        returns: 'every device the organization holds, revoked ones included.',
+      },
+      {
+        signature: 'abstract revokeDevice(id: DeviceId): Promise<void>',
+        description: 'Revoke a device and every credential family it holds. Revoking one that is already revoked is not an error: the caller\'s intent is that it be gone.',
+        parameters: [{ name: 'id', description: 'the device to revoke.' }],
+      },
+      {
+        signature: 'abstract revokeFamily(id: FamilyId): Promise<void>',
+        description: 'Revoke one credential family, leaving the device able to bind again.',
+        parameters: [{ name: 'id', description: 'the family to revoke.' }],
+      },
+    ],
+  },
+  {
     key: 'directoryPicker',
     summary: 'Abstract directory-picking service.',
     description: 'Abstract directory-picking service. Subclass, implement `capability()`, and load the subclass as a plugin — it registers as `ctx.directoryPicker` (one implementation per context; loading a second throws, cordis\' standard duplicate-service behavior). The capability object must be stable for the service lifetime: consumers may capture it across calls.',
@@ -3619,6 +3682,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface AccessRequest {\n    readonly orgId: OrgId;\n    readonly principalId: UserId;\n    readonly deviceId?: string;\n    readonly action: string;\n    readonly resourceType: string;\n    readonly resourceId: string;\n    readonly context?: {\n        readonly sessionCorrelationId?: string;\n    };\n}',
   },
   {
+    name: 'AccessTokenClaims',
+    declaration: 'export interface AccessTokenClaims {\n    readonly orgId: OrgId;\n    readonly principalId: UserId;\n    readonly deviceId: DeviceId;\n    readonly issuedAt: number;\n    readonly expiresAt: number;\n}',
+  },
+  {
     name: 'AccountUser',
     declaration: 'export interface AccountUser {\n    readonly id: UserId;\n    readonly orgId: OrgId;\n    readonly loginName: string;\n    readonly displayName: string;\n    readonly email: string | undefined;\n    readonly status: AccountUserStatus;\n    readonly mustChangePassword: boolean;\n    readonly failedAttempts: number;\n    readonly lockedUntil: number | undefined;\n    readonly lastLoginAt: number | undefined;\n    readonly createdAt: number;\n    readonly updatedAt: number;\n}',
   },
@@ -3693,6 +3760,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ApiSessionAgentResult',
     declaration: 'export type ApiSessionAgentResult = {\n    readonly agent: Agent;\n} | {\n    readonly error: ApiSessionAgentError;\n};',
+  },
+  {
+    name: 'Approval',
+    declaration: 'export interface Approval {\n    readonly orgId: OrgId;\n    readonly userId: UserId;\n    readonly browserSessionId: string;\n}',
   },
   {
     name: 'ApprovalOutcome',
@@ -4135,6 +4206,22 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type DeepSeekLlmApiJson = null | boolean | number | string | DeepSeekLlmApiJson[] | {\n    [key: string]: DeepSeekLlmApiJson;\n};',
   },
   {
+    name: 'Device',
+    declaration: 'export interface Device {\n    readonly id: DeviceId;\n    readonly orgId: OrgId;\n    readonly ownerId: UserId;\n    readonly platform: DevicePlatform;\n    readonly publicKey: string;\n    readonly publicKeyDigest: string;\n    readonly runnerVersion: string;\n    readonly status: DeviceStatus;\n    readonly createdAt: number;\n    readonly lastSeenAt: number;\n}',
+  },
+  {
+    name: 'DeviceId',
+    declaration: 'export type DeviceId = Branded<\'DeviceId\'>;',
+  },
+  {
+    name: 'DevicePlatform',
+    declaration: 'export type DevicePlatform = typeof DEVICE_PLATFORMS[number];',
+  },
+  {
+    name: 'DeviceStatus',
+    declaration: 'export type DeviceStatus = \'active\' | \'revoked\';',
+  },
+  {
     name: 'DiffCallView',
     declaration: 'export interface DiffCallView {\n    card: \'diff\';\n    title: string;\n    diffs: FileDiff[];\n    locations?: FileLocation[];\n}',
   },
@@ -4249,6 +4336,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'EpochHeader',
     declaration: 'export interface EpochHeader {\n    config: LlmCallConfig;\n    adapterDefaults?: LlmCallConfigAdapterDefaults;\n    system?: string;\n    tools?: ToolSchema[];\n}',
+  },
+  {
+    name: 'FamilyId',
+    declaration: 'export type FamilyId = Branded<\'CredentialFamilyId\'>;',
   },
   {
     name: 'FileDiff',
@@ -4445,6 +4536,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'InvokeRemoteRequest',
     declaration: 'export interface InvokeRemoteRequest {\n    readonly namespace: string;\n    readonly method: string;\n    readonly args: Readonly<Record<string, unknown>>;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
+    name: 'IssuedCode',
+    declaration: 'export interface IssuedCode {\n    readonly code: string;\n    readonly expiresAt: number;\n    readonly callbackUri: string;\n}',
+  },
+  {
+    name: 'IssuedCredential',
+    declaration: 'export interface IssuedCredential {\n    readonly deviceId: DeviceId;\n    readonly familyId: FamilyId;\n    readonly refreshToken: string;\n    readonly refreshExpiresAt: number;\n    readonly accessToken: string;\n    readonly accessExpiresAt: number;\n}',
   },
   {
     name: 'JobDoneListener',
@@ -4787,6 +4886,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type OrgId = Branded<\'OrgId\'>;',
   },
   {
+    name: 'PendingTransaction',
+    declaration: 'export interface PendingTransaction {\n    readonly transactionId: TransactionId;\n    readonly platform: DevicePlatform;\n    readonly runnerVersion: string;\n    readonly publicKeyDigest: string;\n    readonly pairingCode: string;\n    readonly expiresAt: number;\n}',
+  },
+  {
     name: 'PermissionSelect',
     declaration: 'export interface PermissionSelect {\n    options: PresetOption[];\n    currentValue: string;\n}',
   },
@@ -4909,6 +5012,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'RedactedSecret',
     declaration: 'export interface RedactedSecret {\n    path: string[];\n    set: boolean;\n}',
+  },
+  {
+    name: 'RedeemRequest',
+    declaration: 'export interface RedeemRequest {\n    readonly transactionId: TransactionId;\n    readonly code: string;\n    readonly pkceVerifier: string;\n    readonly deviceSignature: string;\n    readonly callbackUri: string;\n    readonly protocolVersion: number;\n}',
+  },
+  {
+    name: 'RefreshRequest',
+    declaration: 'export interface RefreshRequest {\n    readonly familyId: FamilyId;\n    readonly refreshToken: string;\n    readonly deviceSignature: string;\n}',
   },
   {
     name: 'RegisterResource',
@@ -5659,6 +5770,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface SpillSource {\n    toolName: string;\n    callId: ToolCallId;\n    label: string;\n}',
   },
   {
+    name: 'StartedTransaction',
+    declaration: 'export interface StartedTransaction {\n    readonly transactionId: TransactionId;\n    readonly pairingCode: string;\n    readonly expiresAt: number;\n}',
+  },
+  {
+    name: 'StartRequest',
+    declaration: 'export interface StartRequest {\n    readonly publicKey: string;\n    readonly platform: DevicePlatform;\n    readonly runnerVersion: string;\n    readonly pkceChallenge: string;\n    readonly callbackUri: string;\n    readonly protocolVersion: number;\n}',
+  },
+  {
     name: 'StorageBackend',
     declaration: 'export interface StorageBackend {\n    readonly kv?: KvFacet;\n    close(): Promise<void>;\n}',
   },
@@ -6097,6 +6216,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ToolSchema',
     declaration: 'export interface ToolSchema {\n    name: string;\n    description: string;\n    parameters: Record<string, unknown>;\n}',
+  },
+  {
+    name: 'TransactionId',
+    declaration: 'export type TransactionId = Branded<\'DeviceTransactionId\'>;',
   },
   {
     name: 'TurnEndCancelCause',

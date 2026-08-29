@@ -22,7 +22,7 @@ kind: "package-group"
 <a id="packages"></a>
 ## 包
 
-四个包覆盖本能力族；完整契约由各自的子 README 拥有。
+六个包跨三个接缝覆盖本能力族；完整契约由各自的子 README 拥有。
 
 | 包 | 作用 | ctx key |
 |---|---|---|
@@ -30,6 +30,8 @@ kind: "package-group"
 | [`account-store-sqlite/`](account-store-sqlite/README.zh.md) | 把它们保存在一个 SQLite 数据库文件中 | 注册 `ctx.accountStore` |
 | [`account-auth/`](account-auth/README.zh.md) | Service Definition：把登录名与密钥变成一个账户 | `ctx.accountAuth` |
 | [`account-auth-password/`](account-auth-password/README.zh.md) | 对着已存哈希校验，并拥有锁定策略 | 注册 `ctx.accountAuth` |
+| [`device-authorization/`](device-authorization/README.zh.md) | Service Definition：把浏览器会话绑定到一台电脑，以及两侧共同导出的那些值 | `ctx.deviceAuthorization` |
+| [`device-authorization-sqlite/`](device-authorization-sqlite/README.zh.md) | 运行绑定状态机并持有设备注册表 | 注册 `ctx.deviceAuthorization` |
 
 -----
 
@@ -37,6 +39,7 @@ kind: "package-group"
 ## 相关文档
 
 - [账户子系统](../../docs/subsystems/account.zh.md)——身份模型、Credential 格式，以及一次登录如何被回答。
+- [设备授权子系统](../../docs/subsystems/device-authorization.zh.md)——浏览器会话如何变成一台电脑上的凭据。
 - [能力接缝](../../docs/capability-seams.zh.md)——本能力族遵循的 Service Definition / Service Provider / Consumer 拆分。
 - [`team-control-plane/`](../bundle/team-control-plane/README.zh.md)——这些包被组合进的服务端 profile。
 

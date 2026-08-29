@@ -662,6 +662,32 @@ export interface Config {
 
 Source: [`packages/credentials/credentials-local/src/index.ts:64`](../packages/credentials/credentials-local/src/index.ts)
 
+<a id="deepseek-aidsh-device-authorization-sqlite"></a>
+
+## `@deepseek-ai/dsh-device-authorization-sqlite`
+
+```ts config-catalog
+/** Plugin config: where the database lives and how long each secret survives. */
+export interface Config {
+  /** SQLite database path, or `:memory:` for an in-process database. */
+  path: string
+  /** How long a member has to compare the pairing code and confirm, in milliseconds. */
+  transactionTtlMs: number
+  /**
+   * How long the browser has to carry the authorization code back, in
+   * milliseconds. Capped at 60 seconds: the code travels one redirect, and a
+   * longer window buys an attacker time rather than buying a member anything.
+   */
+  codeTtlMs: number
+  /** How long an access token is honoured, in milliseconds. */
+  accessTokenTtlMs: number
+  /** How long a refresh token may sit unused before the Runner must bind again, in milliseconds. */
+  refreshTokenTtlMs: number
+}
+```
+
+Source: [`packages/account/device-authorization-sqlite/src/index.ts:55`](../packages/account/device-authorization-sqlite/src/index.ts)
+
 <a id="deepseek-aidsh-e2b"></a>
 
 ## `@deepseek-ai/dsh-e2b`
@@ -3597,6 +3623,7 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 - `@deepseek-ai/dsh-client-web` ([`packages/client/web/src/index.ts`](../packages/client/web/src/index.ts))
 - `@deepseek-ai/dsh-cmdline` ([`packages/boot/cmdline/src/index.ts`](../packages/boot/cmdline/src/index.ts))
 - `@deepseek-ai/dsh-code-runtime-python` ([`packages/code-runtime/code-runtime-python/src/index.ts`](../packages/code-runtime/code-runtime-python/src/index.ts))
+- `@deepseek-ai/dsh-device-authorization` ([`packages/account/device-authorization/src/index.ts`](../packages/account/device-authorization/src/index.ts))
 - `@deepseek-ai/dsh-experimental-agent-team-profile` ([`packages/experimental/agent-team-profile/src/index.ts`](../packages/experimental/agent-team-profile/src/index.ts))
 - `@deepseek-ai/dsh-experimental-agent-team-web-profile` ([`packages/experimental/agent-team-web-profile/src/index.ts`](../packages/experimental/agent-team-web-profile/src/index.ts))
 - `@deepseek-ai/dsh-experimental-webworker-packer` ([`packages/experimental/webworker-packer/src/index.ts`](../packages/experimental/webworker-packer/src/index.ts))

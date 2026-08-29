@@ -133,6 +133,8 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/access/access-control-sqlite': { kind: 'none', reason: 'Server-side authorization storage: the backend registers no prompt section, tool, or request context.' },
   'packages/access/audit': { kind: 'none', reason: 'Server-side audit trail: the seam registers no prompt section, tool, or request context.' },
   'packages/access/audit-sqlite': { kind: 'none', reason: 'Server-side audit storage: the backend registers no prompt section, tool, or request context.' },
+  'packages/account/device-authorization': { kind: 'none', reason: 'Server-side device binding: the seam registers no prompt section, tool, or request context.' },
+  'packages/account/device-authorization-sqlite': { kind: 'none', reason: 'Server-side device-binding storage: the backend registers no prompt section, tool, or request context.' },
   'packages/bundle/headless': { kind: 'none', reason: 'The one-shot runner submits the task as an ordinary user message; prompts and tools belong to the composed base and headless bundles.' },
   'packages/llm/llm': { kind: 'none', reason: 'The adapter registry forwards already-assembled requests unchanged.' },
   'packages/llm/token-meter': { kind: 'indirect', reason: 'The measurement service leaves model-visible changes to its consumers.' },

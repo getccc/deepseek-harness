@@ -22,7 +22,7 @@ The `account/` group holds the identities Team Edition authorizes: one organizat
 <a id="packages"></a>
 ## Packages
 
-Four packages cover the family; each child README owns the full contract.
+Six packages cover the family across three seams; each child README owns the full contract.
 
 | Package | Role | ctx key |
 |---|---|---|
@@ -30,6 +30,8 @@ Four packages cover the family; each child README owns the full contract.
 | [`account-store-sqlite/`](account-store-sqlite/README.md) | Stores them in one SQLite database file | registers `ctx.accountStore` |
 | [`account-auth/`](account-auth/README.md) | Service Definition: turn a login name and a secret into an account | `ctx.accountAuth` |
 | [`account-auth-password/`](account-auth-password/README.md) | Verifies against a stored hash and owns the lockout policy | registers `ctx.accountAuth` |
+| [`device-authorization/`](device-authorization/README.md) | Service Definition: bind a browser session to one computer, and the values both sides derive | `ctx.deviceAuthorization` |
+| [`device-authorization-sqlite/`](device-authorization-sqlite/README.md) | Runs the binding state machine and holds the device registry | registers `ctx.deviceAuthorization` |
 
 -----
 
@@ -37,6 +39,7 @@ Four packages cover the family; each child README owns the full contract.
 ## Related documentation
 
 - [Account subsystem](../../docs/subsystems/account.md) — the identity model, the credential format, and how a sign-in is answered.
+- [Device-authorization subsystem](../../docs/subsystems/device-authorization.md) — how a browser session becomes a credential on one computer.
 - [Capability seams](../../docs/capability-seams.md) — the Service Definition / Service Provider / Consumer split this family follows.
 - [`team-control-plane/`](../bundle/team-control-plane/README.md) — the server profile these packages are composed into.
 

@@ -135,6 +135,15 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'Closed action and metadata catalogs, and a token rule on every caller-supplied string, so a record cannot hold a member\'s work. Consumers arrive with the administrative operations that know a principal.',
   },
   {
+    key: 'deviceAuthorization',
+    pkg: 'device-authorization',
+    title: 'Binding a browser session to one computer',
+    mode: 'seam',
+    implementations: ['device-authorization-sqlite'],
+    consumers: [],
+    note: 'A pairing code and key digest let a member confirm which computer; a PKCE verifier and a device signature let that computer prove it holds the key. Consumers arrive with the Control Plane HTTP surface.',
+  },
+  {
     key: 'attachments',
     pkg: 'attachment',
     title: 'Durable binary attachment storage',

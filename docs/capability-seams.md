@@ -19,6 +19,9 @@ flowchart LR
   pkg_audit["audit"]
   svc_audit["ctx.audit<br/>The append-only audit trail"]
   pkg_audit_sqlite["audit-sqlite"]
+  pkg_device_authorization["device-authorization"]
+  svc_deviceAuthorization["ctx.deviceAuthorization<br/>Binding a browser session to one computer"]
+  pkg_device_authorization_sqlite["device-authorization-sqlite"]
   pkg_attachment["attachment"]
   svc_attachments["ctx.attachments<br/>Durable binary attachment storage"]
   pkg_attachment_local["attachment-local"]
@@ -266,6 +269,8 @@ flowchart LR
   pkg_credentials --> svc_credentials
   pkg_credentials_local --> svc_credentials
   pkg_deepseek_llm_api_extensions --> svc_deepseekLlmApiExtensions
+  pkg_device_authorization --> svc_deviceAuthorization
+  pkg_device_authorization_sqlite --> svc_deviceAuthorization
   pkg_e2b --> svc_e2b
   pkg_experimental_agent_team --> svc_agentTeams
   pkg_file_reference --> svc_fileReferences
@@ -489,6 +494,7 @@ flowchart LR
 | `ctx.accountAuth` | `seam` | [`account-auth`](../packages/account/account-auth) | [`account-auth-password`](../packages/account/account-auth-password) | - | - | Verification is separate from the store so a second method arrives as a provider. The password provider stores a self-describing hash and rehashes on a successful verify. |
 | `ctx.accessControl` | `seam` | [`access-control`](../packages/access/access-control) | [`access-control-sqlite`](../packages/access/access-control-sqlite) | - | - | No explicit deny, no inheritance, no expression language, so a decision is explained by naming the grants that admitted it. Consumers arrive with the company-resource gateways. |
 | `ctx.audit` | `seam` | [`audit`](../packages/access/audit) | [`audit-sqlite`](../packages/access/audit-sqlite) | - | - | Closed action and metadata catalogs, and a token rule on every caller-supplied string, so a record cannot hold a member's work. Consumers arrive with the administrative operations that know a principal. |
+| `ctx.deviceAuthorization` | `seam` | [`device-authorization`](../packages/account/device-authorization) | [`device-authorization-sqlite`](../packages/account/device-authorization-sqlite) | - | - | A pairing code and key digest let a member confirm which computer; a PKCE verifier and a device signature let that computer prove it holds the key. Consumers arrive with the Control Plane HTTP surface. |
 | `ctx.attachments` | `seam` | [`attachment`](../packages/attachment/attachment) | [`attachment-local`](../packages/attachment/attachment-local) | [`api-session-controller`](../packages/api/session-controller), [`tool-fs`](../packages/fs/tool-fs), [`llm-pi-ai`](../packages/llm/llm-pi-ai), [`llm-deepseek`](../packages/llm/llm-deepseek) | - | The host commits accepted images before session events; provider adapters resolve authorized durable references into provider-native content. |
 | `ctx.llm` | `seam` | [`llm`](../packages/llm/llm) | [`llm-deepseek`](../packages/llm/llm-deepseek), [`llm-pi-ai`](../packages/llm/llm-pi-ai), [`llm-replay`](../packages/test-support/llm-replay) | [`agent-loop`](../packages/core/agent-loop), [`compaction-basic`](../packages/compaction/compaction-basic) | - | Adapters register provider implementations; the loop and compaction call the provider-neutral stream service. |
 | `ctx.deepseekLlmApiExtensions` | `seam` | [`deepseek-llm-api-extensions`](../packages/llm/deepseek-llm-api-extensions) | [`session-log-deepseek`](../packages/session/session-log-deepseek), [`plugin-package-inventory-deepseek`](../packages/llm/plugin-package-inventory-deepseek) | [`llm-deepseek`](../packages/llm/llm-deepseek) | - | Plugins prepare independent top-level fields; the official adapter merges them and commits their delivery state after HTTP acceptance. |
