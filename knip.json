@@ -718,6 +718,20 @@
         "tests/**/*.ts"
       ]
     },
+    "packages/workspace/workspace": {
+      "entry": [
+        "tests/**/*.spec.ts",
+        "tests/fixtures/loader/driver.ts"
+      ],
+      "project": [
+        "src/**/*.ts",
+        "tests/**/*.ts"
+      ],
+      "ignoreDependencies": [
+        "@deepseek-ai/dsh-session-persistence-jsonl",
+        "@deepseek-ai/dsh-storage-json"
+      ]
+    },
     "packages/test-support/loader-smoke": {
       "entry": [
         "tests/**/*.spec.ts",

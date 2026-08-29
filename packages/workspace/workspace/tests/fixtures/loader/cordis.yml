@@ -1,0 +1,26 @@
+# Minimal workspace composition: real app boot path, real JSONL session
+# persistence, real storage domain, real registry bootstrap. Driven by the
+# package's loader.spec.ts. Paths are relative to the smoke's temp cwd.
+- id: session
+  name: '@deepseek-ai/dsh-session'
+
+- id: session-persistence-jsonl
+  name: '@deepseek-ai/dsh-session-persistence-jsonl'
+  config:
+    root: ./sessions
+
+- id: storage
+  name: '@deepseek-ai/dsh-storage'
+
+- id: storage-json
+  name: '@deepseek-ai/dsh-storage-json'
+  config:
+    root: ./storages
+
+- id: storage-domain
+  name: '@deepseek-ai/dsh-storage-domain'
+  config:
+    backend: json
+
+- id: workspace
+  name: '@deepseek-ai/dsh-workspace'
