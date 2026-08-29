@@ -82,6 +82,25 @@ export interface TypeApiEntry {
 /** Every harness `ctx.<key>` service, sorted by key. */
 export const SERVICE_API: readonly ServiceApiEntry[] = [
   {
+    key: 'accountAuth',
+    summary: 'Verifies who a member is.',
+    description: 'Verifies who a member is. A provider mounts this service; consumers inject `accountAuth`.',
+    methods: [
+      {
+        signature: 'abstract authenticate(orgId: OrgId, loginName: string, secret: string): Promise<AuthenticationOutcome>',
+        description: 'Attempt a sign-in and record its effect on the account\'s sign-in state.\n\nImplementations take the same observable time whether or not the login name exists: a caller that could time the difference could enumerate accounts, which is the same leak the reasonless failure closes.',
+        parameters: [{ name: 'orgId', description: 'the organization the login name belongs to.' }, { name: 'loginName', description: 'the name as typed.' }, { name: 'secret', description: 'the secret as typed.' }],
+        returns: 'the account on success, or a reasonless failure.',
+      },
+      {
+        signature: 'abstract setSecret(userId: UserId, secret: string): Promise<void>',
+        description: 'Set an account\'s secret, satisfying whatever the account still owed.',
+        parameters: [{ name: 'userId', description: 'the account whose secret is set.' }, { name: 'secret', description: 'the new secret, in the clear; the provider stores only a derived form.' }],
+        throws: ['{WeakSecretError} when the secret does not satisfy the deployment\'s policy.'],
+      },
+    ],
+  },
+  {
     key: 'accountStore',
     summary: 'Durable organizations and member accounts.',
     description: 'Durable organizations and member accounts. Every method is a repository operation: it stores or returns records and reports conflicts, and it makes no policy decision of its own. A provider mounts this service; consumers inject `accountStore`.',
@@ -3613,6 +3632,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'AttachmentId',
     declaration: 'export type AttachmentId = Branded<\'AttachmentId\'>;',
+  },
+  {
+    name: 'AuthenticationOutcome',
+    declaration: 'export type AuthenticationOutcome = {\n    readonly ok: true;\n    readonly userId: UserId;\n    readonly mustChangePassword: boolean;\n} | {\n    readonly ok: false;\n};',
   },
   {
     name: 'AuthorizationEntry',

@@ -576,6 +576,41 @@ importers:
 
   native/landlock-run/packages/linux-x64: {}
 
+  packages/account/account-auth:
+    dependencies:
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:^
+        version: link:../account-store
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+
+  packages/account/account-auth-password:
+    dependencies:
+      '@deepseek-ai/dsh-account-auth':
+        specifier: workspace:^
+        version: link:../account-auth
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:^
+        version: link:../account-store
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:^
+        version: link:../account-store-sqlite
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+
   packages/account/account-store:
     dependencies:
       '@deepseek-ai/dsh-brand':

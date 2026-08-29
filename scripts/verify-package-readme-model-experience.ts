@@ -127,6 +127,8 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/bundle/team-control-plane': { kind: 'none', reason: 'The Control Plane mounts no Agent loop and drives no model request; the bundle exists to guarantee that absence.' },
   'packages/account/account-store': { kind: 'none', reason: 'Server-side identity: the seam registers no prompt section, tool, or request context.' },
   'packages/account/account-store-sqlite': { kind: 'none', reason: 'Server-side identity storage: the backend registers no prompt section, tool, or request context.' },
+  'packages/account/account-auth': { kind: 'none', reason: 'Server-side authentication: the seam registers no prompt section, tool, or request context.' },
+  'packages/account/account-auth-password': { kind: 'none', reason: 'Server-side password verification: the provider registers no prompt section, tool, or request context.' },
   'packages/bundle/headless': { kind: 'none', reason: 'The one-shot runner submits the task as an ordinary user message; prompts and tools belong to the composed base and headless bundles.' },
   'packages/llm/llm': { kind: 'none', reason: 'The adapter registry forwards already-assembled requests unchanged.' },
   'packages/llm/token-meter': { kind: 'indirect', reason: 'The measurement service leaves model-visible changes to its consumers.' },

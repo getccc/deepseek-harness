@@ -24,9 +24,17 @@ That split is deliberate. Authentication material is reachable only through `get
 
 `OrgId` and `UserId` are branded strings, so an organization id cannot be passed where an account id belongs.
 
+## Authentication: `ctx.accountAuth`
+
+A second seam turns a login name and a secret into an account. [`dsh-account-auth`](../../packages/account/account-auth) declares it; [`dsh-account-auth-password`](../../packages/account/account-auth-password) verifies against a stored hash and owns the lockout policy the store's counters feed.
+
+Its failure carries no reason. An unknown login name, a wrong secret, a locked account, and a suspended account are one outcome, so no caller can build a probe that tells an attacker which login names exist. The provider also spends comparable work on an absent account as on a real one, because a caller who could time the difference would learn the same thing the reason field would have told them.
+
+The stored hash is self-describing: it records the algorithm and every parameter that produced it, verification dispatches on what the hash says rather than on current configuration, and a successful sign-in against weaker parameters re-derives at the current ones. That is what carries an account onto a stronger cost — or onto a different algorithm — without its holder doing anything.
+
 ## Consumers
 
-The authentication provider reads and writes sign-in state and password material. Access control resolves a principal to an organization and reads `policyRevision`, which every authorization-affecting change increments in the same transaction as the change itself. Neither exists yet; this seam lands first because both need somewhere to put identity.
+Access control resolves a principal to an organization and reads `policyRevision`, which every authorization-affecting change increments in the same transaction as the change itself. It does not exist yet; these seams land first because it needs somewhere to put identity.
 
 <!-- BEGIN GENERATED cordis-surface (gen-cordis-catalog.ts) — do not edit between markers -->
 
@@ -35,6 +43,37 @@ The authentication provider reads and writes sign-in state and password material
 ## Cordis API
 
 Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnpm run verify-cordis-catalog` in doc-sync; regenerate with `pnpm run gen-cordis-catalog`) — the language sides differ only in locale-specific paired document paths. Signature blocks use a `ts cordis-catalog` fence and keep the original source JSDoc; dispatch modes are defined in the [primer](../cordis-primer.md#dispatch-modes), and the framework-inherited `ctx` API lives in [cordis-api/inherited.md](../cordis-api/inherited.md).
+
+<a id="ctxaccountauth--accountauth-abstract-seam"></a>
+
+### `ctx.accountAuth` — `AccountAuth` (abstract seam)
+
+Verifies who a member is. A provider mounts this service; consumers inject `accountAuth`.
+
+```ts cordis-catalog
+/**
+ * Attempt a sign-in and record its effect on the account's sign-in state.
+ *
+ * Implementations take the same observable time whether or not the login
+ * name exists: a caller that could time the difference could enumerate
+ * accounts, which is the same leak the reasonless failure closes.
+ * @param orgId - the organization the login name belongs to.
+ * @param loginName - the name as typed.
+ * @param secret - the secret as typed.
+ * @returns the account on success, or a reasonless failure.
+ */
+abstract authenticate(orgId: OrgId, loginName: string, secret: string): Promise<AuthenticationOutcome>
+
+/**
+ * Set an account's secret, satisfying whatever the account still owed.
+ * @param userId - the account whose secret is set.
+ * @param secret - the new secret, in the clear; the provider stores only a derived form.
+ * @throws {WeakSecretError} when the secret does not satisfy the deployment's policy.
+ */
+abstract setSecret(userId: UserId, secret: string): Promise<void>
+```
+
+Source: [`packages/account/account-auth/src/index.ts`](../../packages/account/account-auth/src/index.ts)
 
 <a id="ctxaccountstore--accountstore-abstract-seam"></a>
 

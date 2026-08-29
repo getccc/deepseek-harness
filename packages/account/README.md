@@ -22,12 +22,14 @@ The `account/` group holds the identities Team Edition authorizes: one organizat
 <a id="packages"></a>
 ## Packages
 
-Two packages cover the capability; each child README owns the full contract.
+Four packages cover the family; each child README owns the full contract.
 
 | Package | Role | ctx key |
 |---|---|---|
 | [`account-store/`](account-store/README.md) | Service Definition: organizations, member accounts, and sign-in state | `ctx.accountStore` |
 | [`account-store-sqlite/`](account-store-sqlite/README.md) | Stores them in one SQLite database file | registers `ctx.accountStore` |
+| [`account-auth/`](account-auth/README.md) | Service Definition: turn a login name and a secret into an account | `ctx.accountAuth` |
+| [`account-auth-password/`](account-auth-password/README.md) | Verifies against a stored hash and owns the lockout policy | registers `ctx.accountAuth` |
 
 -----
 

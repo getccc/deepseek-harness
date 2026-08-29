@@ -24,9 +24,17 @@
 
 `OrgId` 与 `UserId` 是品牌化字符串，因此组织 id 无法被传到需要账户 id 的位置。
 
+## 认证：`ctx.accountAuth`
+
+第二个接缝把登录名与密钥变成一个账户。[`dsh-account-auth`](../../packages/account/account-auth) 声明它；[`dsh-account-auth-password`](../../packages/account/account-auth-password) 对着已存哈希校验，并拥有由存储的计数器驱动的锁定策略。
+
+它的失败不携带原因。登录名不存在、密钥错误、账户被锁、账户被停用，在这里是同一个结果，因此没有任何调用方能构造出「哪些登录名存在」的探针。该提供方还会在账户不存在时消耗与真实账户相当的算力——能测出这一差异的调用方，得到的正是那个原因字段本会告诉他的东西。
+
+已存哈希是自描述的：它记录了产生自己的算法与全部参数，校验依据哈希自身的记载而非当前配置，而一次针对较弱参数的成功登录会按当前参数重新派生。这正是让一个账户在其持有者什么都不做的情况下，迁移到更强成本——或迁移到另一种算法——的机制。
+
 ## 消费方
 
-认证提供方读写登录状态与密码材料。访问控制把主体解析到组织并读取 `policyRevision`——每一次影响授权的变更都在变更自身所在的事务中递增它。两者目前都还不存在；本接缝先落地，是因为它们都需要一个安放身份的地方。
+访问控制把主体解析到组织并读取 `policyRevision`——每一次影响授权的变更都在变更自身所在的事务中递增它。它目前还不存在；这些接缝先落地，是因为它需要一个安放身份的地方。
 
 <!-- BEGIN GENERATED cordis-surface (gen-cordis-catalog.ts) — do not edit between markers -->
 
@@ -35,6 +43,37 @@
 ## Cordis API
 
 Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnpm run verify-cordis-catalog` in doc-sync; regenerate with `pnpm run gen-cordis-catalog`) — the language sides differ only in locale-specific paired document paths. Signature blocks use a `ts cordis-catalog` fence and keep the original source JSDoc; dispatch modes are defined in the [primer](../cordis-primer.zh.md#dispatch-modes), and the framework-inherited `ctx` API lives in [cordis-api/inherited.md](../cordis-api/inherited.md).
+
+<a id="ctxaccountauth--accountauth-abstract-seam"></a>
+
+### `ctx.accountAuth` — `AccountAuth` (abstract seam)
+
+Verifies who a member is. A provider mounts this service; consumers inject `accountAuth`.
+
+```ts cordis-catalog
+/**
+ * Attempt a sign-in and record its effect on the account's sign-in state.
+ *
+ * Implementations take the same observable time whether or not the login
+ * name exists: a caller that could time the difference could enumerate
+ * accounts, which is the same leak the reasonless failure closes.
+ * @param orgId - the organization the login name belongs to.
+ * @param loginName - the name as typed.
+ * @param secret - the secret as typed.
+ * @returns the account on success, or a reasonless failure.
+ */
+abstract authenticate(orgId: OrgId, loginName: string, secret: string): Promise<AuthenticationOutcome>
+
+/**
+ * Set an account's secret, satisfying whatever the account still owed.
+ * @param userId - the account whose secret is set.
+ * @param secret - the new secret, in the clear; the provider stores only a derived form.
+ * @throws {WeakSecretError} when the secret does not satisfy the deployment's policy.
+ */
+abstract setSecret(userId: UserId, secret: string): Promise<void>
+```
+
+Source: [`packages/account/account-auth/src/index.ts`](../../packages/account/account-auth/src/index.ts)
 
 <a id="ctxaccountstore--accountstore-abstract-seam"></a>
 

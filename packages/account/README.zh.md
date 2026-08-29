@@ -22,12 +22,14 @@ kind: "package-group"
 <a id="packages"></a>
 ## 包
 
-两个包覆盖该能力；完整契约由各自的子 README 拥有。
+四个包覆盖本能力族；完整契约由各自的子 README 拥有。
 
 | 包 | 作用 | ctx key |
 |---|---|---|
 | [`account-store/`](account-store/README.zh.md) | Service Definition：组织、成员账户与登录状态 | `ctx.accountStore` |
 | [`account-store-sqlite/`](account-store-sqlite/README.zh.md) | 把它们保存在一个 SQLite 数据库文件中 | 注册 `ctx.accountStore` |
+| [`account-auth/`](account-auth/README.zh.md) | Service Definition：把登录名与密钥变成一个账户 | `ctx.accountAuth` |
+| [`account-auth-password/`](account-auth-password/README.zh.md) | 对着已存哈希校验，并拥有锁定策略 | 注册 `ctx.accountAuth` |
 
 -----
 
