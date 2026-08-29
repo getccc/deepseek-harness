@@ -9,7 +9,7 @@ import type { PatchOptions } from '@deepseek-ai/cordis-plugin-include'
 const REPOSITORY_ROOT = fileURLToPath(new URL('../../../', import.meta.url))
 
 /** Load one shipped bundle patch through the same parser as profile boot. */
-function bundle(name: 'acp-app' | 'base' | 'headless' | 'sdk-app' | 'sdk-minimal' | 'web-app'): PatchOptions[] {
+function bundle(name: 'acp-app' | 'base' | 'headless' | 'sdk-app' | 'sdk-minimal' | 'team' | 'team-control-plane' | 'web-app'): PatchOptions[] {
   return loadOverlayPatches('profile-hmr test', join(REPOSITORY_ROOT, 'packages', 'bundle', name, 'cordis.patch.yml'))
 }
 
@@ -42,5 +42,21 @@ describe('profile module-HMR policy', () => {
 
   it('keeps the standalone sdk-minimal tree free of module HMR', () => {
     expect(composeEntries([bundle('sdk-minimal')]).find(entry => entry.id === 'hmr')).toBeUndefined()
+  })
+
+  it('keeps the standalone Control Plane tree free of module HMR', () => {
+    expect(composeEntries([bundle('team-control-plane')]).find(entry => entry.id === 'hmr')).toBeUndefined()
+  })
+
+  it('leaves the base row untouched through the team layer', () => {
+    // Team stacks base then web-app then its own layer, so it inherits the
+    // disabled row rather than restating it; an override here would enable
+    // source-module reload for a long-lived background service.
+    const teamPatches = bundle('team')
+    expect(teamPatches.some(patch => patch.id === 'hmr')).toBe(false)
+    expect(hmr([bundle('base'), bundle('web-app'), teamPatches])).toMatchObject({
+      disabled: true,
+      config: { root: ['.'] },
+    })
   })
 })
