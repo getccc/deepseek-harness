@@ -35,6 +35,7 @@ Every package lives in exactly one group; new packages join existing groups, and
 | [`schedule/`](schedule/README.md) | Session-local scheduled follow-ups |
 | [`feedback/`](feedback/README.md) | Human feedback capture and command |
 | [`account/`](account/README.md) | Team Edition identity: organizations, member accounts, and sign-in state |
+| [`access/`](access/README.md) | Team Edition authorization: the permission catalog, roles, grants, and governed resources |
 | [`identity/`](identity/README.md) | Shared anonymous identity |
 | [`llm/`](llm/README.md) | LLM capability family: abstract service + provider adapters |
 | [`e2b/`](e2b/README.md) | E2B remote-runtime providers |

@@ -267,6 +267,8 @@
     { "path": "./packages/bundle/headless" },
     { "path": "./packages/bundle/sdk-app" },
     { "path": "./packages/bundle/sdk-minimal" },
+    { "path": "./packages/access/access-control" },
+    { "path": "./packages/access/access-control-sqlite" },
     { "path": "./packages/account/account-auth" },
     { "path": "./packages/account/account-auth-password" },
     { "path": "./packages/account/account-store" },

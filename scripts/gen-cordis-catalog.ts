@@ -54,6 +54,7 @@ export { REGION_BEGIN, REGION_END }
  * errors, so the partition can never silently drift from the service API.
  */
 export const SERVICE_PAGE: Record<string, string> = {
+  accessControl: 'access-control.md',
   accountAuth: 'account.md',
   accountStore: 'account.md',
   agentLoop: 'core.md',
@@ -240,6 +241,17 @@ export const EVENT_WALK_EXEMPTIONS: Record<string, string> = {
  */
 export const LINK_MAP: Readonly<Record<string, string>> = {
   AccountUser: 'account.md',
+  AccessDecision: 'access-control.md',
+  AccessRequest: 'access-control.md',
+  CreateRole: 'access-control.md',
+  GrantId: 'access-control.md',
+  GroupId: 'access-control.md',
+  ManagedResource: 'access-control.md',
+  RegisterResource: 'access-control.md',
+  ResourceId: 'access-control.md',
+  Role: 'access-control.md',
+  RoleId: 'access-control.md',
+  UserGroup: 'access-control.md',
   AuthenticationOutcome: 'account.md',
   AccountUserStatus: 'account.md',
   CreateAccountUser: 'account.md',

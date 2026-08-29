@@ -82,6 +82,103 @@ export interface TypeApiEntry {
 /** Every harness `ctx.<key>` service, sorted by key. */
 export const SERVICE_API: readonly ServiceApiEntry[] = [
   {
+    key: 'accessControl',
+    summary: 'Authorization and the records it reads.',
+    description: 'Authorization and the records it reads. A provider mounts this service; consumers inject `accessControl`.\n\nEvery mutation that can change an outcome advances the organization\'s policy revision, which is the value authorization caches key on, so a stale cache is detectable rather than merely old.',
+    methods: [
+      {
+        signature: 'abstract authorize(request: AccessRequest): Promise<AccessDecision>',
+        description: 'Decide one request.',
+        parameters: [{ name: 'request', description: 'who is asking, for what action, on which resource.' }],
+        returns: 'the outcome, the revision it was computed against, and the grants that admitted it.',
+      },
+      {
+        signature: 'abstract createRole(input: CreateRole): Promise<Role>',
+        description: 'Create a role.',
+        parameters: [{ name: 'input', description: 'the role\'s organization, name, and optional description and kind.' }],
+        returns: 'the stored role.',
+        throws: ['{DuplicateRoleNameError} when the name is taken in that organization.'],
+      },
+      {
+        signature: 'abstract listRoles(orgId: OrgId): Promise<Role[]>',
+        description: 'List an organization\'s roles in creation order.',
+        parameters: [{ name: 'orgId', description: 'the organization to list.' }],
+        returns: 'every role the organization holds.',
+      },
+      {
+        signature: 'abstract registerResource(input: RegisterResource): Promise<ManagedResource>',
+        description: 'Put a resource under governance, or update the display name of one already governed. Idempotent on `(orgId, type, externalRef)`, because the owning subsystem re-registers its catalog on every start.',
+        parameters: [{ name: 'input', description: 'the resource\'s organization, type, external ref, and display name.' }],
+        returns: 'the stored resource.',
+        throws: ['{UnknownPermissionError} when no permission governs that resource type.'],
+      },
+      {
+        signature: 'abstract setResourceEnabled(id: ResourceId, enabled: boolean): Promise<void>',
+        description: 'Enable or disable a governed resource. A disabled resource is refused for every action, whatever any grant says.',
+        parameters: [{ name: 'id', description: 'the resource to change.' }, { name: 'enabled', description: 'whether the resource may be used at all.' }],
+      },
+      {
+        signature: 'abstract listResources(orgId: OrgId, type: string): Promise<ManagedResource[]>',
+        description: 'List an organization\'s governed resources of one type, in creation order.',
+        parameters: [{ name: 'orgId', description: 'the organization to list.' }, { name: 'type', description: 'the resource type to list.' }],
+        returns: 'the governed resources of that type.',
+      },
+      {
+        signature: 'abstract grantType(roleId: RoleId, resourceType: string, action: string): Promise<GrantId>',
+        description: 'Let a role perform one action on every enabled resource of a type.',
+        parameters: [{ name: 'roleId', description: 'the role that gains the grant.' }, { name: 'resourceType', description: 'the governed resource type.' }, { name: 'action', description: 'the fully-qualified action.' }],
+        returns: 'the grant\'s id, so a decision can name it.',
+        throws: ['{UnknownPermissionError} when the catalog does not govern that pair.', '{UnknownRoleError} when the store holds no such role.'],
+      },
+      {
+        signature: 'abstract grantResource(roleId: RoleId, resourceId: ResourceId, action: string): Promise<GrantId>',
+        description: 'Let a role perform one action on one named resource.',
+        parameters: [{ name: 'roleId', description: 'the role that gains the grant.' }, { name: 'resourceId', description: 'the governed resource.' }, { name: 'action', description: 'the fully-qualified action.' }],
+        returns: 'the grant\'s id, so a decision can name it.',
+        throws: ['{UnknownPermissionError} when the catalog does not govern the resource\'s type with that action.', '{UnknownRoleError} when the store holds no such role.'],
+      },
+      {
+        signature: 'abstract revokeGrant(grantId: GrantId): Promise<void>',
+        description: 'Withdraw a grant. Withdrawing one that is already absent is not an error: the caller\'s intent is that it not be there.',
+        parameters: [{ name: 'grantId', description: 'the grant to withdraw.' }],
+      },
+      {
+        signature: 'abstract bindUserRole(userId: UserId, roleId: RoleId): Promise<void>',
+        description: 'Bind a role to one account. Binding an existing pair again changes nothing.',
+        parameters: [{ name: 'userId', description: 'the account that gains the role.' }, { name: 'roleId', description: 'the role to bind.' }],
+        throws: ['{UnknownRoleError} when the store holds no such role.'],
+      },
+      {
+        signature: 'abstract unbindUserRole(userId: UserId, roleId: RoleId): Promise<void>',
+        description: 'Unbind a role from one account. Unbinding an absent pair is not an error.',
+        parameters: [{ name: 'userId', description: 'the account that loses the role.' }, { name: 'roleId', description: 'the role to unbind.' }],
+      },
+      {
+        signature: 'abstract createGroup(orgId: OrgId, name: string): Promise<UserGroup>',
+        description: 'Create a group, which binds roles to several accounts at once and changes no part of how a request is evaluated.',
+        parameters: [{ name: 'orgId', description: 'the organization the group belongs to.' }, { name: 'name', description: 'the group\'s name.' }],
+        returns: 'the stored group.',
+      },
+      {
+        signature: 'abstract addGroupMember(groupId: GroupId, userId: UserId): Promise<void>',
+        description: 'Put an account in a group. Adding an existing member again changes nothing.',
+        parameters: [{ name: 'groupId', description: 'the group to add to.' }, { name: 'userId', description: 'the account to add.' }],
+      },
+      {
+        signature: 'abstract bindGroupRole(groupId: GroupId, roleId: RoleId): Promise<void>',
+        description: 'Bind a role to every member of a group, present and future.',
+        parameters: [{ name: 'groupId', description: 'the group that gains the role.' }, { name: 'roleId', description: 'the role to bind.' }],
+        throws: ['{UnknownRoleError} when the store holds no such role.'],
+      },
+      {
+        signature: 'abstract rolesOf(userId: UserId): Promise<RoleId[]>',
+        description: 'Every role an account holds, directly or through a group, without repeats.',
+        parameters: [{ name: 'userId', description: 'the account to resolve.' }],
+        returns: 'the role ids, in a stable order.',
+      },
+    ],
+  },
+  {
     key: 'accountAuth',
     summary: 'Verifies who a member is.',
     description: 'Verifies who a member is. A provider mounts this service; consumers inject `accountAuth`.',
@@ -3490,6 +3587,18 @@ export const EVENT_API: readonly EventApiEntry[] = [
 /** Shapes of every exported type the Service and Event signatures reference (transitively), sorted by name. */
 export const TYPE_API: readonly TypeApiEntry[] = [
   {
+    name: 'AccessDecision',
+    declaration: 'export interface AccessDecision {\n    readonly allowed: boolean;\n    readonly policyRevision: bigint;\n    readonly matchedGrantIds: readonly GrantId[];\n    readonly scopes: readonly string[];\n    readonly reason: AccessReason;\n}',
+  },
+  {
+    name: 'AccessReason',
+    declaration: 'export type AccessReason = \'allowed\' | \'default-deny\' | \'resource-disabled\' | \'no-grant\';',
+  },
+  {
+    name: 'AccessRequest',
+    declaration: 'export interface AccessRequest {\n    readonly orgId: OrgId;\n    readonly principalId: UserId;\n    readonly deviceId?: string;\n    readonly action: string;\n    readonly resourceType: string;\n    readonly resourceId: string;\n    readonly context?: {\n        readonly sessionCorrelationId?: string;\n    };\n}',
+  },
+  {
     name: 'AccountUser',
     declaration: 'export interface AccountUser {\n    readonly id: UserId;\n    readonly orgId: OrgId;\n    readonly loginName: string;\n    readonly displayName: string;\n    readonly email: string | undefined;\n    readonly status: AccountUserStatus;\n    readonly mustChangePassword: boolean;\n    readonly failedAttempts: number;\n    readonly lockedUntil: number | undefined;\n    readonly lastLoginAt: number | undefined;\n    readonly createdAt: number;\n    readonly updatedAt: number;\n}',
   },
@@ -3926,6 +4035,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface CreateGoalResult {\n    readonly ref: GoalRef;\n}',
   },
   {
+    name: 'CreateRole',
+    declaration: 'export interface CreateRole {\n    readonly orgId: OrgId;\n    readonly name: string;\n    readonly description?: string;\n    readonly kind?: RoleKind;\n}',
+  },
+  {
     name: 'CreateSessionOptions',
     declaration: 'export interface CreateSessionOptions {\n    readonly seed?: readonly SessionEvent[];\n    readonly meta?: {\n        readonly cwd?: string;\n        readonly parentSession?: SessionId;\n        readonly createdAt?: number;\n        readonly seedLength?: number;\n        readonly origin?: \'subagent\';\n        readonly delegationDepth?: number;\n        readonly agentPreset?: string;\n    };\n}',
   },
@@ -4202,8 +4315,16 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface GoalView extends GoalSnapshot {\n    readonly roundsStarted: number;\n    readonly createdAt: number;\n    readonly updatedAt: number;\n    readonly activation: GoalActivation;\n}',
   },
   {
+    name: 'GrantId',
+    declaration: 'export type GrantId = Branded<\'GrantId\'>;',
+  },
+  {
     name: 'GrantRecord',
     declaration: 'export interface GrantRecord {\n    readonly kind: \'grant\';\n    readonly payload: unknown;\n}',
+  },
+  {
+    name: 'GroupId',
+    declaration: 'export type GroupId = Branded<\'GroupId\'>;',
   },
   {
     name: 'ImageAttachmentLimits',
@@ -4460,6 +4581,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'LspRange',
     declaration: 'export interface LspRange {\n    readonly start: LspPosition;\n    readonly end: LspPosition;\n}',
+  },
+  {
+    name: 'ManagedResource',
+    declaration: 'export interface ManagedResource {\n    readonly id: ResourceId;\n    readonly orgId: OrgId;\n    readonly type: string;\n    readonly externalRef: string;\n    readonly displayName: string;\n    readonly enabled: boolean;\n}',
   },
   {
     name: 'ManualCompactAgentContext',
@@ -4734,6 +4859,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface RedactedSecret {\n    path: string[];\n    set: boolean;\n}',
   },
   {
+    name: 'RegisterResource',
+    declaration: 'export interface RegisterResource {\n    readonly orgId: OrgId;\n    readonly type: string;\n    readonly externalRef: string;\n    readonly displayName: string;\n}',
+  },
+  {
     name: 'RemoteEventHostInfo',
     declaration: 'export interface RemoteEventHostInfo {\n    readonly home: string;\n}',
   },
@@ -4786,12 +4915,28 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ResolvedSubagentStartRequest extends SubagentStartRequest {\n    readonly descriptor: SubagentDescriptorData;\n}',
   },
   {
+    name: 'ResourceId',
+    declaration: 'export type ResourceId = Branded<\'ResourceId\'>;',
+  },
+  {
     name: 'RestoredSessionOptions',
     declaration: 'export interface RestoredSessionOptions {\n    readonly seed: SessionEvent[];\n    readonly meta: SessionHeader;\n    readonly seedSource: \'persistence\';\n}',
   },
   {
     name: 'ResumeAgentOptions',
     declaration: 'export interface ResumeAgentOptions {\n    readonly resumeSessionId: SessionId;\n    readonly agentOptions?: AgentOptions;\n    readonly signal?: AbortSignal;\n    readonly setup?: AgentSetup;\n}',
+  },
+  {
+    name: 'Role',
+    declaration: 'export interface Role {\n    readonly id: RoleId;\n    readonly orgId: OrgId;\n    readonly name: string;\n    readonly description: string;\n    readonly kind: RoleKind;\n}',
+  },
+  {
+    name: 'RoleId',
+    declaration: 'export type RoleId = Branded<\'RoleId\'>;',
+  },
+  {
+    name: 'RoleKind',
+    declaration: 'export type RoleKind = \'system\' | \'custom\';',
   },
   {
     name: 'RunnerFailureRule',
@@ -6012,6 +6157,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'UpdateTeamTaskRequest',
     declaration: 'export interface UpdateTeamTaskRequest {\n    readonly taskId: TeamTaskId;\n    readonly expectedRevision: number;\n    readonly action: TeamTaskAction;\n    readonly subject?: string;\n    readonly description?: string;\n    readonly blockedBy?: readonly TeamTaskId[];\n    readonly writeScopes?: readonly string[];\n    readonly owner?: string;\n}',
+  },
+  {
+    name: 'UserGroup',
+    declaration: 'export interface UserGroup {\n    readonly id: GroupId;\n    readonly orgId: OrgId;\n    readonly name: string;\n}',
   },
   {
     name: 'UserId',
