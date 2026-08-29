@@ -82,6 +82,94 @@ export interface TypeApiEntry {
 /** Every harness `ctx.<key>` service, sorted by key. */
 export const SERVICE_API: readonly ServiceApiEntry[] = [
   {
+    key: 'accountStore',
+    summary: 'Durable organizations and member accounts.',
+    description: 'Durable organizations and member accounts. Every method is a repository operation: it stores or returns records and reports conflicts, and it makes no policy decision of its own. A provider mounts this service; consumers inject `accountStore`.',
+    methods: [
+      {
+        signature: 'abstract createOrganization(name: string): Promise<Organization>',
+        description: 'Create the organization every other record hangs from.',
+        parameters: [{ name: 'name', description: 'human-readable organization name.' }],
+        returns: 'the stored organization, at policy revision zero.',
+      },
+      {
+        signature: 'abstract getOrganization(id: OrgId): Promise<Organization | undefined>',
+        description: 'Read one organization.',
+        parameters: [{ name: 'id', description: 'the organization to read.' }],
+        returns: 'the organization, or undefined when the store holds none.',
+      },
+      {
+        signature: 'abstract bumpPolicyRevision(id: OrgId): Promise<bigint>',
+        description: 'Advance an organization\'s policy revision, the value authorization caches are keyed by. Callers increment it in the same transaction as the change that invalidated them.',
+        parameters: [{ name: 'id', description: 'the organization whose revision advances.' }],
+        returns: 'the revision after the increment.',
+        throws: ['{UnknownOrganizationError} when the store holds no such organization.'],
+      },
+      {
+        signature: 'abstract createUser(input: CreateAccountUser): Promise<AccountUser>',
+        description: 'Issue an account. The account starts active, with no password material and `mustChangePassword` set, so an administrator cannot create a usable account without the member choosing their own secret.',
+        parameters: [{ name: 'input', description: 'the identity fields an administrator supplies.' }],
+        returns: 'the stored account.',
+        throws: ['{DuplicateLoginNameError} when the login name is taken in that organization.'],
+      },
+      {
+        signature: 'abstract getUser(id: UserId): Promise<AccountUser | undefined>',
+        description: 'Read one account by id.',
+        parameters: [{ name: 'id', description: 'the account to read.' }],
+        returns: 'the account, or undefined when the store holds none.',
+      },
+      {
+        signature: 'abstract findUserByLogin(orgId: OrgId, loginName: string): Promise<AccountUser | undefined>',
+        description: 'Resolve a sign-in attempt\'s login name to an account.',
+        parameters: [{ name: 'orgId', description: 'the organization the login name belongs to.' }, { name: 'loginName', description: 'the name as typed, compared exactly.' }],
+        returns: 'the account, or undefined when no account carries that name.',
+      },
+      {
+        signature: 'abstract listUsers(orgId: OrgId): Promise<AccountUser[]>',
+        description: 'List an organization\'s accounts in creation order, oldest first.',
+        parameters: [{ name: 'orgId', description: 'the organization to list.' }],
+        returns: 'every account the organization holds.',
+      },
+      {
+        signature: 'abstract setUserStatus(id: UserId, status: AccountUserStatus): Promise<void>',
+        description: 'Set whether an account may authenticate.',
+        parameters: [{ name: 'id', description: 'the account to change.' }, { name: 'status', description: 'the status to store.' }],
+        throws: ['{UnknownAccountUserError} when the store holds no such account.'],
+      },
+      {
+        signature: 'abstract getPasswordHash(id: UserId): Promise<string | undefined>',
+        description: 'Read the authentication material an account carries, if any.\n\nOnly the authentication provider calls this. The store treats the value as opaque bytes: it never parses, compares, or derives anything from it, which is what lets a different authentication provider replace the format without touching stored identity.',
+        parameters: [{ name: 'id', description: 'the account whose material is read.' }],
+        returns: 'the stored encoded hash, or undefined when the account has none.',
+      },
+      {
+        signature: 'abstract setPasswordHash(id: UserId, encodedHash: string): Promise<void>',
+        description: 'Store the authentication material for an account and clear `mustChangePassword`, because choosing a secret is what satisfies it.',
+        parameters: [{ name: 'id', description: 'the account to change.' }, { name: 'encodedHash', description: 'the provider\'s own encoded hash, stored verbatim.' }],
+        throws: ['{UnknownAccountUserError} when the store holds no such account.'],
+      },
+      {
+        signature: 'abstract recordFailedLogin(id: UserId): Promise<number>',
+        description: 'Record one failed sign-in and return the resulting consecutive count. The store counts; the authentication provider decides what a count means.',
+        parameters: [{ name: 'id', description: 'the account that failed to sign in.' }],
+        returns: 'consecutive failures including this one.',
+        throws: ['{UnknownAccountUserError} when the store holds no such account.'],
+      },
+      {
+        signature: 'abstract lockUser(id: UserId, until: number): Promise<void>',
+        description: 'Refuse sign-in until a moment in time, and reset the failure count so the next lockout needs a fresh run of failures.',
+        parameters: [{ name: 'id', description: 'the account to lock.' }, { name: 'until', description: 'epoch milliseconds after which sign-in may be attempted again.' }],
+        throws: ['{UnknownAccountUserError} when the store holds no such account.'],
+      },
+      {
+        signature: 'abstract recordSuccessfulLogin(id: UserId, at: number): Promise<void>',
+        description: 'Record a successful sign-in: clear the failure count and any lock, and stamp the moment.',
+        parameters: [{ name: 'id', description: 'the account that signed in.' }, { name: 'at', description: 'epoch milliseconds of the sign-in.' }],
+        throws: ['{UnknownAccountUserError} when the store holds no such account.'],
+      },
+    ],
+  },
+  {
     key: 'agentDefaultModel',
     summary: 'Owns the default model selection independently of any Host or transport.',
     description: 'Owns the default model selection independently of any Host or transport. The composition entry remains usable without a settings provider; when one is mounted, its user layer is read live.',
@@ -3383,6 +3471,14 @@ export const EVENT_API: readonly EventApiEntry[] = [
 /** Shapes of every exported type the Service and Event signatures reference (transitively), sorted by name. */
 export const TYPE_API: readonly TypeApiEntry[] = [
   {
+    name: 'AccountUser',
+    declaration: 'export interface AccountUser {\n    readonly id: UserId;\n    readonly orgId: OrgId;\n    readonly loginName: string;\n    readonly displayName: string;\n    readonly email: string | undefined;\n    readonly status: AccountUserStatus;\n    readonly mustChangePassword: boolean;\n    readonly failedAttempts: number;\n    readonly lockedUntil: number | undefined;\n    readonly lastLoginAt: number | undefined;\n    readonly createdAt: number;\n    readonly updatedAt: number;\n}',
+  },
+  {
+    name: 'AccountUserStatus',
+    declaration: 'export type AccountUserStatus = \'active\' | \'suspended\';',
+  },
+  {
     name: 'AdapterRegistrationHandle',
     declaration: 'export interface AdapterRegistrationHandle {\n    (): void;\n    replace(providers: string[]): void;\n}',
   },
@@ -3789,6 +3885,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'CordisRuntimeTreeReader',
     declaration: 'export interface CordisRuntimeTreeReader {\n    getTree(): Promise<CordisRuntimeTree>;\n}',
+  },
+  {
+    name: 'CreateAccountUser',
+    declaration: 'export interface CreateAccountUser {\n    readonly orgId: OrgId;\n    readonly loginName: string;\n    readonly displayName: string;\n    readonly email?: string;\n}',
   },
   {
     name: 'CreateAgentOptions',
@@ -4477,6 +4577,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'OneShotSubagentDescriptorData',
     declaration: 'export interface OneShotSubagentDescriptorData extends SubagentDescriptorBase {\n    readonly mode: \'one-shot\';\n    readonly label?: string;\n}',
+  },
+  {
+    name: 'Organization',
+    declaration: 'export interface Organization {\n    readonly id: OrgId;\n    readonly name: string;\n    readonly policyRevision: bigint;\n    readonly createdAt: number;\n}',
+  },
+  {
+    name: 'OrgId',
+    declaration: 'export type OrgId = Branded<\'OrgId\'>;',
   },
   {
     name: 'PermissionSelect',
@@ -5881,6 +5989,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'UpdateTeamTaskRequest',
     declaration: 'export interface UpdateTeamTaskRequest {\n    readonly taskId: TeamTaskId;\n    readonly expectedRevision: number;\n    readonly action: TeamTaskAction;\n    readonly subject?: string;\n    readonly description?: string;\n    readonly blockedBy?: readonly TeamTaskId[];\n    readonly writeScopes?: readonly string[];\n    readonly owner?: string;\n}',
+  },
+  {
+    name: 'UserId',
+    declaration: 'export type UserId = Branded<\'UserId\'>;',
   },
   {
     name: 'UserMessage',

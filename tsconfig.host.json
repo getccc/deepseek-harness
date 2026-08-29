@@ -267,6 +267,8 @@
     { "path": "./packages/bundle/headless" },
     { "path": "./packages/bundle/sdk-app" },
     { "path": "./packages/bundle/sdk-minimal" },
+    { "path": "./packages/account/account-store" },
+    { "path": "./packages/account/account-store-sqlite" },
     { "path": "./packages/bundle/team" },
     { "path": "./packages/bundle/team-control-plane" },
     { "path": "./packages/bundle/web-app" },
