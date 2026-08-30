@@ -10,7 +10,7 @@
 
 import { connect } from 'node:net'
 import { once } from 'node:events'
-import { request as httpRequest } from 'node:http'
+import { createServer, request as httpRequest, type Server } from 'node:http'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -92,11 +92,14 @@ function head(landing: Landing, name: string): string | undefined {
 }
 
 let roots: string[] = []
+let servers: Server[] = []
 let contexts: Context[] = []
 
 afterEach(async () => {
   for (const context of contexts.reverse()) await context.fiber.dispose()
   contexts = []
+  for (const server of servers) server.close()
+  servers = []
   for (const root of roots) await rm(root, { recursive: true, force: true })
   roots = []
 })
@@ -397,6 +400,26 @@ describe('when things do not work', () => {
     const shown = await send(`http://127.0.0.1:${String(runner.webServer.port)}/team/start`, NAVIGATE)
     expect(shown.status).toBe(502)
     expect(shown.body).toContain('Cannot continue')
+  })
+
+  it('tells a member their own application is what is too old', { timeout: 60_000 }, async () => {
+    // A Control Plane that has stopped answering this Runner's protocol
+    // version. The refusal is the one a member can act on themselves, so the
+    // page has to say so instead of reducing it to a reason word.
+    const refusing = createServer((_req, res) => {
+      res.writeHead(426, { 'content-type': 'application/json' })
+      res.end(JSON.stringify({
+        error: 'refused', reason: 'protocol-unsupported', minimum: 2, current: 2,
+      }))
+    })
+    refusing.listen(0, '127.0.0.1')
+    await once(refusing, 'listening')
+    servers.push(refusing)
+
+    const runner = await bootRunner(`http://127.0.0.1:${String((refusing.address() as { port: number }).port)}`)
+    const shown = await send(`http://127.0.0.1:${String(runner.webServer.port)}/team/start`, NAVIGATE)
+    expect(shown.status).toBe(502)
+    expect(shown.body).toContain('too old for the company server')
   })
 
   it('treats a request from a browser that reports nothing as a navigation', { timeout: 60_000 }, async () => {
