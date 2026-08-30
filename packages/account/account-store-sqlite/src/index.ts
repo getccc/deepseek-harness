@@ -18,10 +18,11 @@ import {
   UserId,
   type AccountUser,
   type AccountUserStatus,
+  type BrowserSessionRecord,
   type CreateAccountUser,
   type Organization,
 } from '@deepseek-ai/dsh-account-store'
-import { applySchema, type AccountUserRow, type OrganizationRow } from './schema.ts'
+import { applySchema, type AccountUserRow, type BrowserSessionRow, type OrganizationRow } from './schema.ts'
 
 export { ACCOUNT_STORE_SQLITE_APPLICATION_ID, SCHEMA_VERSION } from './schema.ts'
 
@@ -221,6 +222,37 @@ export class SqliteAccountStore extends AccountStore {
       [at, Date.now(), id],
     )
   }
+
+  createBrowserSession(userId: UserId, tokenHash: string, expiresAt: number): Promise<void> {
+    this.db.prepare(
+      'INSERT INTO browser_session (token_hash, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)',
+    ).run(tokenHash, userId, expiresAt, Date.now())
+    return Promise.resolve()
+  }
+
+  resolveBrowserSession(tokenHash: string): Promise<BrowserSessionRecord | undefined> {
+    const row = this.db.prepare(
+      `SELECT s.*, u.org_id AS org_id, u.status AS status FROM browser_session s
+         JOIN account_user u ON u.id = s.user_id
+        WHERE s.token_hash = ?`,
+    ).get(tokenHash) as (BrowserSessionRow & { org_id: string; status: string }) | undefined
+    if (row === undefined || Date.now() >= row.expires_at) return Promise.resolve(undefined)
+    // A suspended account holds no session, so suspending one takes effect on
+    // the next request rather than when its sessions happen to lapse.
+    if (row.status !== 'active') return Promise.resolve(undefined)
+    return Promise.resolve({
+      userId: UserId(row.user_id),
+      orgId: OrgId(row.org_id),
+      expiresAt: row.expires_at,
+      createdAt: row.created_at,
+    })
+  }
+
+  revokeBrowserSession(tokenHash: string): Promise<void> {
+    this.db.prepare('DELETE FROM browser_session WHERE token_hash = ?').run(tokenHash)
+    return Promise.resolve()
+  }
+
 
   /**
    * Run one account update. "Changed nothing" means the account is not there,

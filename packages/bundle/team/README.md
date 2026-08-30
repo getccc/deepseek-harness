@@ -9,7 +9,9 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-team` is the layer that turns the local web surface into a Team Runner. It stacks on top of [`dsh-base`](../base/README.md) and [`dsh-web-app`](../web-app/README.md) rather than replacing either, so the browser application, session store, and every local capability stay exactly where they already live. What this layer owns today is one deployment fact: the Team Runner listens on `3090`, leaving `3080` to `dsh web`, so a developer can run both at once. Company identity, the model and knowledge gateways, and the local login handoff arrive here as their packages land — this bundle is where those rows will go.
+`dsh-team` is the layer that turns the local web surface into a Team Runner. It stacks on top of [`dsh-base`](../base/README.md) and [`dsh-web-app`](../web-app/README.md) rather than replacing either, so the browser application, session store, and every local capability stay exactly where they already live. What this layer owns is the loopback port — the Team Runner listens on `3090`, leaving `3080` to `dsh web`, so a developer can run both at once — the team account this computer holds, and the three local addresses a browser navigates to. The model and knowledge gateways arrive here as their packages land.
+
+It does not bind unconfigured: the account-client row names no Control Plane and no Runner version, so a Runner nobody told which company it belongs to fails to load rather than sending a public key to a stranger.
 
 ## Table of Contents
 

@@ -99,6 +99,46 @@ describe('dsh-team-control-plane bundle', () => {
     }
   })
 
+  it('mounts every company service the Control Plane is, each declared as a dependency', () => {
+    const mounted = new Map(rows().map(row => [row.id as string, row.name as string]))
+    const manifest = JSON.parse(
+      readFileSync(resolve(root, 'package.json'), 'utf8'),
+    ) as { dependencies?: Record<string, string> }
+    for (const [id, name] of [
+      ['account-store', '@deepseek-ai/dsh-account-store-sqlite'],
+      ['account-auth', '@deepseek-ai/dsh-account-auth-password'],
+      ['access-control', '@deepseek-ai/dsh-access-control-sqlite'],
+      ['audit', '@deepseek-ai/dsh-audit-sqlite'],
+      ['device-authorization', '@deepseek-ai/dsh-device-authorization-sqlite'],
+      ['team-control-plane-http', '@deepseek-ai/dsh-team-control-plane-http'],
+      ['team-shell', '@deepseek-ai/dsh-team-shell'],
+    ] as const) {
+      expect(mounted.get(id), id).toBe(name)
+      expect(manifest.dependencies ?? {}, id).toHaveProperty(name)
+    }
+  })
+
+  it('writes every store under the DSH home, not the working directory', () => {
+    // A background service is started from wherever the service manager
+    // happens to be; a relative path would scatter one deployment's data
+    // across whatever directories it was launched from.
+    //
+    const stores = rows().filter(row => row.config?.['path'] !== undefined)
+    expect(stores).toHaveLength(4)
+    for (const row of stores) {
+      const expression = (row.config?.['path'] as { __jsExpr: string }).__jsExpr
+      expect(expression, row.id).toMatch(/^dshHomePath\('control-plane', '[a-z]+\.sqlite'\)$/u)
+    }
+  })
+
+  it('leaves the organization unnamed, so a Control Plane nobody configured does not start', () => {
+    // The Team Shell requires it and refuses to load without it. Supplying a
+    // default here would mean authenticating members against an organization
+    // no one chose.
+    const shell = rows().find(row => row.id === 'team-shell')
+    expect(shell?.config).not.toHaveProperty('organizationId')
+  })
+
   it('binds loopback by default, leaving network exposure to a deployment patch', () => {
     const webserver = rows().find(row => row.id === 'webserver')
     expect(webserver?.config).toMatchObject({ host: '127.0.0.1' })

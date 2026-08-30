@@ -11,9 +11,13 @@
 # assert their absence, and the profile template names no bundle that would
 # reintroduce them.
 #
-# Company services (Account, RBAC, Quota, Audit, Model Gateway, Knowledge MCP
-# Gateway, Private Catalog, Admin Web) insert into this list as their packages
-# land. Each addition must keep the absence assertions passing.
+# The company services below are the Control Plane. The remaining ones (Quota,
+# Model Gateway, Knowledge MCP Gateway, Private Catalog) insert into this list
+# as their packages land. Each addition must keep the absence assertions
+# passing.
+#
+# Every store writes under the DSH home rather than the working directory, so
+# a service started from anywhere finds the same data.
 
 - insert:
     # The HTTP transport, and currently the whole application. It registers no
@@ -31,3 +35,63 @@
         compression: gzip
         compressionLevel: 1
         compressionThresholdBytes: 1024
+
+    # ── who a member is ──────────────────────────────────────────────────
+    - id: account-store
+      name: '@deepseek-ai/dsh-account-store-sqlite'
+      config:
+        path: !!js dshHomePath('control-plane', 'accounts.sqlite')
+    - id: account-auth
+      name: '@deepseek-ai/dsh-account-auth-password'
+      config:
+        minSecretLength: 12
+        maxFailedAttempts: 5
+        lockDurationMs: 900000
+        cost: 16384
+        blockSize: 8
+        parallelization: 1
+
+    # ── what a member may do, and what they did ──────────────────────────
+    - id: access-control
+      name: '@deepseek-ai/dsh-access-control-sqlite'
+      config:
+        path: !!js dshHomePath('control-plane', 'access.sqlite')
+    - id: audit
+      name: '@deepseek-ai/dsh-audit-sqlite'
+      config:
+        path: !!js dshHomePath('control-plane', 'audit.sqlite')
+        maxQueryRows: 500
+
+    # ── which computer a member is at ────────────────────────────────────
+    - id: device-authorization
+      name: '@deepseek-ai/dsh-device-authorization-sqlite'
+      config:
+        path: !!js dshHomePath('control-plane', 'devices.sqlite')
+        transactionTtlMs: 300000
+        codeTtlMs: 60000
+        accessTokenTtlMs: 900000
+        refreshTokenTtlMs: 2592000000
+
+    # ── the two HTTP surfaces ────────────────────────────────────────────
+    # Runner-facing: authorized by PKCE, a device signature, and a one-time
+    # code, never by a browser session.
+    - id: team-control-plane-http
+      name: '@deepseek-ai/dsh-team-control-plane-http'
+      config:
+        pathPrefix: /team/device
+        maxRequestBodyBytes: 16384
+    # Member-facing: signing in, confirming a computer, and administering.
+    # `secureCookie` stays true because a deployment terminates TLS in front
+    # of this listener; a plain-HTTP deployment must say so in its own patch,
+    # and a browser would drop the cookie if it did not.
+    - id: team-shell
+      name: '@deepseek-ai/dsh-team-shell'
+      config:
+        # `organizationId` is deliberately absent. It has no sensible default,
+        # and a Control Plane that guessed which organization it serves would
+        # authenticate members against the wrong one. The row therefore fails
+        # to load until a deployment's own patch supplies it, which is the
+        # loudest place this can be noticed.
+        sessionMaxAgeSeconds: 43200
+        secureCookie: true
+        maxRequestBodyBytes: 16384

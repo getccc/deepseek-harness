@@ -13,6 +13,7 @@ import type { OrgId, UserId } from './brand.ts'
 export { OrgId, UserId } from './brand.ts'
 export type {
   AccountUser,
+  BrowserSessionRecord,
   AccountUserStatus,
   CreateAccountUser,
   Organization,
@@ -20,6 +21,7 @@ export type {
 
 import type {
   AccountUser,
+  BrowserSessionRecord,
   AccountUserStatus,
   CreateAccountUser,
   Organization,
@@ -177,4 +179,32 @@ export abstract class AccountStore extends Service {
    * @throws {UnknownAccountUserError} when the store holds no such account.
    */
   abstract recordSuccessfulLogin(id: UserId, at: number): Promise<void>
+
+  /**
+   * Open a Control Plane browser session for one account.
+   *
+   * The caller hashes the token and keeps the plaintext; the store holds only
+   * the hash, so reading the database yields nothing a browser could present.
+   * @param userId - the account signing in.
+   * @param tokenHash - the hash of the token the browser will carry.
+   * @param expiresAt - when the session stops being honoured, in epoch milliseconds.
+   */
+  abstract createBrowserSession(userId: UserId, tokenHash: string, expiresAt: number): Promise<void>
+
+  /**
+   * Resolve a session token hash to the account it stands for.
+   *
+   * A suspended account holds no session. That is what makes suspending a
+   * member the whole act: nothing has to remember to end their sessions too.
+   * @param tokenHash - the hash of the token a browser presented.
+   * @returns the session, or undefined when it is unknown, lapsed, or its account is suspended.
+   */
+  abstract resolveBrowserSession(tokenHash: string): Promise<BrowserSessionRecord | undefined>
+
+  /**
+   * End one session. Ending an absent session is not an error.
+   * @param tokenHash - the hash of the token to forget.
+   */
+  abstract revokeBrowserSession(tokenHash: string): Promise<void>
+
 }

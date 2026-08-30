@@ -101,6 +101,7 @@ These are current constraints of the contract, not a task backlog.
 
 - **One organization per store, in practice** — the service can hold several, but nothing yet resolves which organization a request belongs to, so a deployment uses one.
 - **No account deletion** — an account is suspended, never removed, because roles, devices, and audit rows reference it. A deletion path needs those references decided first.
+- **Nothing prunes lapsed sessions** — a session row stays after it stops being honoured, so a retention pass needs its own design rather than a `DELETE` on read.
 - **Login names compare exactly** — two names differing only by case or Unicode normalization are distinct accounts. A deployment that wants them equal must normalize before calling.
 
 <a id="dev-note"></a>

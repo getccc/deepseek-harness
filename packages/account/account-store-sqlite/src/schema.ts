@@ -10,7 +10,7 @@ import type { DatabaseSync } from 'node:sqlite'
  * refused rather than migrated down, because a downgrade cannot know what a
  * column it has never seen means.
  */
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 /** Application id reserved for DeepSeek Harness SQLite account databases. */
 export const ACCOUNT_STORE_SQLITE_APPLICATION_ID = 0x44534841
@@ -20,6 +20,14 @@ export interface OrganizationRow {
   readonly id: string
   readonly name: string
   readonly policy_revision: number
+  readonly created_at: number
+}
+
+/** One browser-session row, as SQLite returns it. */
+export interface BrowserSessionRow {
+  readonly token_hash: string
+  readonly user_id: string
+  readonly expires_at: number
   readonly created_at: number
 }
 
@@ -41,6 +49,17 @@ export interface AccountUserRow {
 }
 
 const DDL = `
+-- Sessions are keyed by the hash of the token a browser carries, so the store
+-- never holds a value anyone could present. The organization is read through
+-- the account rather than copied here: moving an account between organizations
+-- must not leave a session naming the old one.
+CREATE TABLE IF NOT EXISTS browser_session (
+  token_hash TEXT    PRIMARY KEY,
+  user_id    TEXT    NOT NULL REFERENCES account_user(id),
+  expires_at INTEGER NOT NULL,
+  created_at INTEGER NOT NULL
+) STRICT;
+CREATE INDEX IF NOT EXISTS browser_session_user ON browser_session (user_id);
 CREATE TABLE IF NOT EXISTS organization (
   id              TEXT    PRIMARY KEY,
   name            TEXT    NOT NULL,

@@ -104,7 +104,7 @@ const SERVICE_ROLES: ServiceRole[] = [
     title: 'Team Edition organizations and member accounts',
     mode: 'seam',
     implementations: ['account-store-sqlite'],
-    consumers: ['account-auth-password', 'access-control-sqlite'],
+    consumers: ['account-auth-password', 'access-control-sqlite', 'team-shell'],
     note: 'Server-side only: the Control Plane composes it, no Runner mounts it. It also holds the organization policy revision every authorization cache keys on.',
   },
   {
@@ -113,7 +113,7 @@ const SERVICE_ROLES: ServiceRole[] = [
     title: 'Proving a member is who they claim',
     mode: 'seam',
     implementations: ['account-auth-password'],
-    consumers: [],
+    consumers: ['team-shell'],
     note: 'Verification is separate from the store so a second method arrives as a provider. The password provider stores a self-describing hash and rehashes on a successful verify.',
   },
   {
@@ -122,8 +122,8 @@ const SERVICE_ROLES: ServiceRole[] = [
     title: 'Default-deny authorization over roles and grants',
     mode: 'seam',
     implementations: ['access-control-sqlite'],
-    consumers: [],
-    note: 'No explicit deny, no inheritance, no expression language, so a decision is explained by naming the grants that admitted it. Consumers arrive with the company-resource gateways.',
+    consumers: ['team-shell'],
+    note: 'No explicit deny, no inheritance, no expression language, so a decision is explained by naming the grants that admitted it. Consumers arrive with the company-resource gateways; the Team Shell asks it before every administrative act.',
   },
   {
     key: 'audit',
@@ -131,8 +131,8 @@ const SERVICE_ROLES: ServiceRole[] = [
     title: 'The append-only audit trail',
     mode: 'seam',
     implementations: ['audit-sqlite'],
-    consumers: [],
-    note: 'Closed action and metadata catalogs, and a token rule on every caller-supplied string, so a record cannot hold a member\'s work. Consumers arrive with the administrative operations that know a principal.',
+    consumers: ['team-shell'],
+    note: 'Closed action and metadata catalogs, and a token rule on every caller-supplied string, so a record cannot hold a member\'s work. The Team Shell writes the records, because it is what knows which principal acted.',
   },
   {
     key: 'deviceAuthorization',
@@ -140,8 +140,8 @@ const SERVICE_ROLES: ServiceRole[] = [
     title: 'Binding a browser session to one computer',
     mode: 'seam',
     implementations: ['device-authorization-sqlite'],
-    consumers: [],
-    note: 'A pairing code and key digest let a member confirm which computer; a PKCE verifier and a device signature let that computer prove it holds the key. Consumers arrive with the Control Plane HTTP surface.',
+    consumers: ['team-control-plane-http', 'team-shell'],
+    note: 'A pairing code and key digest let a member confirm which computer; a PKCE verifier and a device signature let that computer prove it holds the key. The Runner-facing endpoints and the Team Shell confirmation page are the two halves that drive it.',
   },
   {
     key: 'teamAccountClient',

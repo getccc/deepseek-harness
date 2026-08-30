@@ -44,6 +44,22 @@ A browser that already holds the session gets a redirect to the application with
 
 Signing out forgets the credential and keeps the device key, the workspaces, and the sessions: the computer is still the same computer, it just stops holding a team account.
 
+## The Control Plane's own pages
+
+The Team Shell is the other half. A member signs in there, and the session is a random opaque token in a cookie with only its hash in the [account store](account.md) — `SameSite=Lax` rather than `Strict`, because the member reaches the confirmation page by following a link from the pairing page their own Runner served, which is a cross-site top-level navigation.
+
+The confirmation page shows the pairing code, the platform, the Runner version, and the key fingerprint, and confirming redirects the browser to the Runner's own callback carrying the code and the state the Runner minted.
+
+### Every write needs all three
+
+A session says who is asking. An `Origin` naming this same authority says the request came from these pages. A CSRF token derived from the session — a different value from the cookie — says the form was one this session rendered. A write missing any of them is refused, because a cookie by itself travels with a request the member never made.
+
+### Authentication is not authorization
+
+Signing in succeeds for any member. Every administrative page and every administrative action then asks [access control](access-control.md) separately, so a member with no grants signs in and can still do nothing. Suspending a member is by itself the end of their sessions: a session resolves through its account, so nothing has to remember to end them.
+
+Every administrative act leaves an [audit](audit.md) record naming the principal that made it. A failed sign-in records no account: recording one would turn the trail into a list of which login names exist.
+
 ## The Runner-facing endpoints take no session
 
 `POST /team/device/start`, `/redeem`, and `/refresh` are authorized by what the Runner can prove, not by who is logged in: a PKCE verifier, a device signature, and a one-time code. Opening a transaction proves nothing and learns nothing, which is why it needs nothing.

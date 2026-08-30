@@ -283,6 +283,22 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [{ name: 'id', description: 'the account that signed in.' }, { name: 'at', description: 'epoch milliseconds of the sign-in.' }],
         throws: ['{UnknownAccountUserError} when the store holds no such account.'],
       },
+      {
+        signature: 'abstract createBrowserSession(userId: UserId, tokenHash: string, expiresAt: number): Promise<void>',
+        description: 'Open a Control Plane browser session for one account.\n\nThe caller hashes the token and keeps the plaintext; the store holds only the hash, so reading the database yields nothing a browser could present.',
+        parameters: [{ name: 'userId', description: 'the account signing in.' }, { name: 'tokenHash', description: 'the hash of the token the browser will carry.' }, { name: 'expiresAt', description: 'when the session stops being honoured, in epoch milliseconds.' }],
+      },
+      {
+        signature: 'abstract resolveBrowserSession(tokenHash: string): Promise<BrowserSessionRecord | undefined>',
+        description: 'Resolve a session token hash to the account it stands for.\n\nA suspended account holds no session. That is what makes suspending a member the whole act: nothing has to remember to end their sessions too.',
+        parameters: [{ name: 'tokenHash', description: 'the hash of the token a browser presented.' }],
+        returns: 'the session, or undefined when it is unknown, lapsed, or its account is suspended.',
+      },
+      {
+        signature: 'abstract revokeBrowserSession(tokenHash: string): Promise<void>',
+        description: 'End one session. Ending an absent session is not an error.',
+        parameters: [{ name: 'tokenHash', description: 'the hash of the token to forget.' }],
+      },
     ],
   },
   {
@@ -3978,6 +3994,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'Branded',
     declaration: 'export type Branded<B extends string> = string & {\n    readonly [BRAND]: B;\n};',
+  },
+  {
+    name: 'BrowserSessionRecord',
+    declaration: 'export interface BrowserSessionRecord {\n    readonly userId: UserId;\n    readonly orgId: OrgId;\n    readonly expiresAt: number;\n    readonly createdAt: number;\n}',
   },
   {
     name: 'ChunkRowEvent',

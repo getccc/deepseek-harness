@@ -7,8 +7,8 @@
 # restates every key it owns. `inject` and `name` stay with the row the
 # earlier layer inserted.
 #
-# This layer currently owns one deployment fact: the loopback port. Team
-# identity, company resource transports, and the local handoff endpoints
+# This layer owns the loopback port, the team account this computer holds, and
+# the three local addresses a browser navigates to. Company resource transports
 # arrive in later rows as their packages land.
 
 # ── the Team Runner's loopback address ─────────────────────────────────────
@@ -29,3 +29,29 @@
     compression: gzip
     compressionLevel: 1
     compressionThresholdBytes: 1024
+
+# ── the team account this computer holds ───────────────────────────────────
+
+# `controlPlaneUrl` and `runnerVersion` are deliberately absent, and the row
+# fails to load without them. A Runner that guessed which company it belongs to
+# would send a public key to a stranger, and one that reported a version it
+# invented would put a wrong fact in front of the administrator reading the
+# device list. An installer knows both and writes them into its own patch.
+#
+# `callbackUri` restates the loopback port above. It has to be a literal the
+# Control Plane can be told in advance, because it is bound into every
+# authorization code and compared on redemption.
+- insert:
+    - id: team-account-client
+      name: '@deepseek-ai/dsh-team-account-client'
+      config:
+        callbackUri: !!js "'http://127.0.0.1:' + (ctx.webStartup.port ?? 3090) + '/team/callback'"
+        refreshLeadMs: 60000
+
+    # The three fixed addresses. Their paths are not configurable: a Control
+    # Plane registers its redirect target against them, so a renamed one would
+    # break every already-bound computer.
+    - id: team-local-handoff
+      name: '@deepseek-ai/dsh-team-local-handoff'
+      config:
+        applicationPath: /

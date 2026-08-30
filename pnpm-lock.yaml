@@ -1590,6 +1590,13 @@ importers:
         version: link:../../runtime-diagnostics/invariants
 
   packages/bundle/team:
+    dependencies:
+      '@deepseek-ai/dsh-team-account-client':
+        specifier: workspace:^
+        version: link:../../team/team-account-client
+      '@deepseek-ai/dsh-team-local-handoff':
+        specifier: workspace:^
+        version: link:../../team/team-local-handoff
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:^
@@ -1606,9 +1613,30 @@ importers:
 
   packages/bundle/team-control-plane:
     dependencies:
+      '@deepseek-ai/dsh-access-control-sqlite':
+        specifier: workspace:^
+        version: link:../../access/access-control-sqlite
+      '@deepseek-ai/dsh-account-auth-password':
+        specifier: workspace:^
+        version: link:../../account/account-auth-password
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:^
+        version: link:../../account/account-store-sqlite
+      '@deepseek-ai/dsh-audit-sqlite':
+        specifier: workspace:^
+        version: link:../../access/audit-sqlite
+      '@deepseek-ai/dsh-device-authorization-sqlite':
+        specifier: workspace:^
+        version: link:../../account/device-authorization-sqlite
       '@deepseek-ai/dsh-host-webserver':
         specifier: workspace:^
         version: link:../../host/webserver
+      '@deepseek-ai/dsh-team-control-plane-http':
+        specifier: workspace:^
+        version: link:../../team/team-control-plane-http
+      '@deepseek-ai/dsh-team-shell':
+        specifier: workspace:^
+        version: link:../../team/team-shell
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:^
@@ -9196,6 +9224,37 @@ importers:
       '@deepseek-ai/dsh-team-account-client':
         specifier: workspace:^
         version: link:../team-account-client
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:^
+        version: link:../../host/webserver
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+
+  packages/team/team-shell:
+    dependencies:
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:^
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-account-auth':
+        specifier: workspace:^
+        version: link:../../account/account-auth
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:^
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-audit':
+        specifier: workspace:^
+        version: link:../../access/audit
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:^
+        version: link:../../account/device-authorization
       '@deepseek-ai/schemastery':
         specifier: link:../../../vendor/schemastery
         version: link:../../../vendor/schemastery

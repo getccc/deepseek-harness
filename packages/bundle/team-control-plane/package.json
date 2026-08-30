@@ -39,7 +39,14 @@
     }
   },
   "dependencies": {
-    "@deepseek-ai/dsh-host-webserver": "workspace:^"
+    "@deepseek-ai/dsh-access-control-sqlite": "workspace:^",
+    "@deepseek-ai/dsh-account-auth-password": "workspace:^",
+    "@deepseek-ai/dsh-account-store-sqlite": "workspace:^",
+    "@deepseek-ai/dsh-audit-sqlite": "workspace:^",
+    "@deepseek-ai/dsh-device-authorization-sqlite": "workspace:^",
+    "@deepseek-ai/dsh-host-webserver": "workspace:^",
+    "@deepseek-ai/dsh-team-control-plane-http": "workspace:^",
+    "@deepseek-ai/dsh-team-shell": "workspace:^"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:^",

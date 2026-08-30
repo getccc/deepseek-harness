@@ -732,16 +732,6 @@
         "@deepseek-ai/dsh-storage-json"
       ]
     },
-    "packages/test-support/loader-smoke": {
-      "entry": [
-        "tests/**/*.spec.ts",
-        "tests/fixtures/*.ts"
-      ],
-      "project": [
-        "src/**/*.ts",
-        "tests/**/*.ts"
-      ]
-    },
     "packages/experimental/agent-team-profile": {
       "ignoreDependencies": [
         "@deepseek-ai/dsh-experimental-agent-team",
@@ -775,7 +765,12 @@
     },
     "packages/bundle/team-control-plane": {
       "ignoreDependencies": [
-        "@deepseek-ai/dsh-host-webserver"
+        "@deepseek-ai/.+"
+      ]
+    },
+    "packages/bundle/team": {
+      "ignoreDependencies": [
+        "@deepseek-ai/.+"
       ]
     },
     "packages/experimental/agent-team": {

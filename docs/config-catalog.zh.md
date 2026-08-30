@@ -65,7 +65,7 @@ export interface Config {
 }
 ```
 
-来源：[`packages/account/account-store-sqlite/src/index.ts:29`](../packages/account/account-store-sqlite/src/index.ts)
+来源：[`packages/account/account-store-sqlite/src/index.ts:30`](../packages/account/account-store-sqlite/src/index.ts)
 
 <a id="deepseek-aidsh-acp"></a>
 
@@ -2728,6 +2728,37 @@ export interface Config {
 ```
 
 来源：[`packages/team/team-local-handoff/src/index.ts:33`](../packages/team/team-local-handoff/src/index.ts)
+
+<a id="deepseek-aidsh-team-shell"></a>
+
+## `@deepseek-ai/dsh-team-shell`
+
+需要：`webServer` · `accountStore` · `accountAuth` · `accessControl` · `audit` · `deviceAuthorization`
+
+```ts config-catalog
+/** Plugin config: how long a session lasts, and whether the cookie is Secure. */
+export interface Config {
+  /**
+   * The organization this Control Plane serves. The first version is
+   * single-organization, and naming it here is what keeps that a stated fact
+   * rather than something the shell infers from whatever the store happens to
+   * hold.
+   */
+  organizationId: string
+  /** How long a Control Plane session is honoured, in seconds. */
+  sessionMaxAgeSeconds: number
+  /**
+   * Whether to mark the session cookie `Secure`. A deployment served over
+   * HTTPS sets this; a local one cannot, because a browser drops a Secure
+   * cookie on a plain-HTTP origin and the member would never stay signed in.
+   */
+  secureCookie: boolean
+  /** Largest form body accepted, in bytes. */
+  maxRequestBodyBytes: number
+}
+```
+
+来源：[`packages/team/team-shell/src/index.ts:49`](../packages/team/team-shell/src/index.ts)
 
 <a id="deepseek-aidsh-terminal-bash"></a>
 

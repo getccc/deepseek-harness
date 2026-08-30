@@ -88,7 +88,7 @@ Nothing here joins a model request, so the package has no request prefix and no 
 These are current constraints of this backend, not a task backlog.
 
 - **One process at a time** — SQLite serializes writers within a file, so this backend suits the single Control Plane instance the deployment targets. Running two instances against one file is not supported; that is what a client/server database would be for.
-- **No migration path yet** — `SCHEMA_VERSION` is 1 and opening refuses a newer file, but nothing upgrades an older one. The first schema change must add that.
+- **Only additive schema changes carry themselves** — every statement is `CREATE ... IF NOT EXISTS`, so an older file gains what a newer build added and is stamped with the new version. A change that alters or drops an existing column has no path yet and must bring one.
 - **Policy revisions are read through `Number`** — the column is a 64-bit SQLite integer surfaced as `bigint`, but the read converts via a JavaScript number, so the value is exact only below 2^53. A revision counter will not reach it.
 
 <a id="dev-note"></a>

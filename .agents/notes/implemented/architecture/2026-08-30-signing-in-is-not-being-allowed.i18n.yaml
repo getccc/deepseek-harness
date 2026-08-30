@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-30-signing-in-is-not-being-allowed.md
+2026-08-30-signing-in-is-not-being-allowed.md: 8f7361730f79b2d94e541b331e5465f2e489e484
+2026-08-30-signing-in-is-not-being-allowed.zh.md: 3da9c5efc858ceb1e5053c494edc61fcf267e68b

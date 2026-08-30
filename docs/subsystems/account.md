@@ -18,6 +18,12 @@ That split is deliberate. Authentication material is reachable only through `get
 
 `recordFailedLogin` returns the consecutive failure count; `lockUser` refuses sign-in until a moment the caller passes and resets the count, so the next lockout needs a fresh run of failures; `recordSuccessfulLogin` clears both and stamps the moment. Every one of these records a decision the authentication provider already made.
 
+## Browser sessions
+
+A Control Plane session is a random opaque token in the member's browser and the hash of that token here. Nothing about who they are travels in the cookie, so a stolen one cannot be read, and a session that ends stops working at once rather than when a signed value happens to lapse.
+
+`resolveBrowserSession` answers nothing for a suspended account. That is what makes suspending a member the whole act: no caller has to remember to end their sessions as well, and one that forgot would leave a suspended member still signed in.
+
 ## Ordering and identity
 
 `listUsers` returns accounts in insertion order taken from the backend's own row identity, not from `createdAt`: two accounts issued in the same millisecond share a timestamp, and a backward clock step would order them wrongly.
@@ -193,6 +199,33 @@ abstract lockUser(id: UserId, until: number): Promise<void>
  * @throws {UnknownAccountUserError} when the store holds no such account.
  */
 abstract recordSuccessfulLogin(id: UserId, at: number): Promise<void>
+
+/**
+ * Open a Control Plane browser session for one account.
+ *
+ * The caller hashes the token and keeps the plaintext; the store holds only
+ * the hash, so reading the database yields nothing a browser could present.
+ * @param userId - the account signing in.
+ * @param tokenHash - the hash of the token the browser will carry.
+ * @param expiresAt - when the session stops being honoured, in epoch milliseconds.
+ */
+abstract createBrowserSession(userId: UserId, tokenHash: string, expiresAt: number): Promise<void>
+
+/**
+ * Resolve a session token hash to the account it stands for.
+ *
+ * A suspended account holds no session. That is what makes suspending a
+ * member the whole act: nothing has to remember to end their sessions too.
+ * @param tokenHash - the hash of the token a browser presented.
+ * @returns the session, or undefined when it is unknown, lapsed, or its account is suspended.
+ */
+abstract resolveBrowserSession(tokenHash: string): Promise<BrowserSessionRecord | undefined>
+
+/**
+ * End one session. Ending an absent session is not an error.
+ * @param tokenHash - the hash of the token to forget.
+ */
+abstract revokeBrowserSession(tokenHash: string): Promise<void>
 ```
 
 Source: [`packages/account/account-store/src/index.ts`](../../packages/account/account-store/src/index.ts)

@@ -281,6 +281,7 @@ export const LINK_MAP: Readonly<Record<string, string>> = {
   TeamAccountState: 'team-handoff.md',
   AuthenticationOutcome: 'account.md',
   AccountUserStatus: 'account.md',
+  BrowserSessionRecord: 'account.md',
   CreateAccountUser: 'account.md',
   Organization: 'account.md',
   OrgId: 'account.md',

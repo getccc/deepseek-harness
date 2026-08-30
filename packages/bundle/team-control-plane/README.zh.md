@@ -9,7 +9,9 @@ kind: "package-bundle"
 
 ## 概述
 
-`dsh-team-control-plane` 是 Team Edition 的服务端一半。它持有公司凭据并应答每位成员 Runner 的请求，正因如此，它不具备在自己所运行的机器上执行代码、读取文件或驱动 Agent 的任何能力。与其他每个 Team bundle 不同，它不叠加在 [`dsh-base`](../base/README.zh.md) 之上：base 挂载 Agent loop、文件系统、subprocess、shell 和 sandbox 提供者，叠加它等于一次性把这些全都交给 Control Plane。目前这棵树只有一个 HTTP 传输，别无他物；公司服务——账户、RBAC、配额、审计、模型与知识库网关、私有目录和管理界面——会随各自的包落地插入此处。
+`dsh-team-control-plane` 是 Team Edition 的服务端一半。它持有公司凭据并应答每位成员 Runner 的请求，正因如此，它不具备在自己所运行的机器上执行代码、读取文件或驱动 Agent 的任何能力。与其他每个 Team bundle 不同，它不叠加在 [`dsh-base`](../base/README.zh.md) 之上：base 挂载 Agent loop、文件系统、subprocess、shell 和 sandbox 提供者，叠加它等于一次性把这些全都交给 Control Plane。如今这棵树包含 HTTP 传输、账户存储及其密码认证、访问控制、审计、设备授权，以及两个 HTTP 面——面向 Runner 的绑定端点和 Team Shell。配额、模型与知识库网关，以及私有目录会随各自的包落地插入此处。
+
+它不会在未配置的情况下启动：Team Shell 行不指名任何组织，因此一个没人告诉它服务于哪家公司的 Control Plane 会加载失败，而不是拿一个猜测去认证成员。
 
 ## 目录
 

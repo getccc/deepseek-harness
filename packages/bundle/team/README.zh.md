@@ -9,7 +9,9 @@ kind: "package-bundle"
 
 ## 概述
 
-`dsh-team` 是把本机 Web 表层变成 Team Runner 的那一层。它叠加在 [`dsh-base`](../base/README.zh.md) 和 [`dsh-web-app`](../web-app/README.zh.md) 之上而不是替换它们，因此浏览器应用、会话存储和全部本机能力都留在原处。这一层目前只拥有一个部署事实：Team Runner 监听 `3090`，把 `3080` 留给 `dsh web`，于是开发者可以同时运行两者。团队身份、模型与知识库网关，以及本地登录 handoff 会随各自的包落地到这里——本 bundle 就是那些配置行的归属。
+`dsh-team` 是把本机 Web 表层变成 Team Runner 的那一层。它叠加在 [`dsh-base`](../base/README.zh.md) 和 [`dsh-web-app`](../web-app/README.zh.md) 之上而不是替换它们，因此浏览器应用、会话存储和全部本机能力都留在原处。这一层拥有的是 loopback 端口——Team Runner 监听 `3090`，把 `3080` 留给 `dsh web`，于是开发者可以同时运行两者——这台电脑所持有的团队账户，以及浏览器所导航到的三个本地地址。模型与知识库网关会随各自的包落地到这里。
+
+它不会在未配置的情况下绑定：Account Client 行不指名任何 Control Plane，也不指名 Runner 版本，因此一个没人告诉它属于哪家公司的 Runner 会加载失败，而不是把公钥发给一个陌生人。
 
 ## 目录
 

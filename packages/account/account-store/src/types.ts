@@ -52,3 +52,18 @@ export interface CreateAccountUser {
   readonly displayName: string
   readonly email?: string
 }
+
+/**
+ * One Control Plane browser session, as the store holds it.
+ *
+ * The token itself is never stored: a caller presents a token, hashes it, and
+ * asks the store what that hash stands for. Reading the database therefore
+ * yields no usable session.
+ */
+export interface BrowserSessionRecord {
+  readonly userId: UserId
+  readonly orgId: OrgId
+  /** When the session stops being honoured, in epoch milliseconds. */
+  readonly expiresAt: number
+  readonly createdAt: number
+}

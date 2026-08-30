@@ -88,7 +88,7 @@ kind: "package-reference"
 以下是本后端当前的约束，不是待办清单。
 
 - **同一时刻只服务一个进程**——SQLite 在文件内对写者串行化，因此本后端适配部署所面向的单 Control Plane 实例。不支持两个实例对同一文件运行；那正是客户端/服务器数据库的用武之地。
-- **尚无迁移路径**——`SCHEMA_VERSION` 为 1，打开时会拒绝更新的文件，但没有任何东西会升级更旧的文件。第一次 schema 变更必须补上它。
+- **只有增量式 schema 变更能自我完成**——每条语句都是 `CREATE ... IF NOT EXISTS`，因此更旧的文件会获得新版本所添加的内容，并被打上新的版本号。修改或删除既有列的变更尚无路径，必须自带一条。
 - **policy revision 经由 `Number` 读取**——该列是 64 位 SQLite 整数并以 `bigint` 暴露，但读取过程经过 JavaScript number，因此只在 2^53 以下精确。一个 revision 计数器不会触及该上限。
 
 <a id="dev-note"></a>

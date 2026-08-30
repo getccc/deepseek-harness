@@ -276,6 +276,7 @@
     { "path": "./packages/team/team-control-plane-http" },
     { "path": "./packages/team/team-account-client" },
     { "path": "./packages/team/team-local-handoff" },
+    { "path": "./packages/team/team-shell" },
     { "path": "./packages/account/account-auth" },
     { "path": "./packages/account/account-auth-password" },
     { "path": "./packages/account/account-store" },

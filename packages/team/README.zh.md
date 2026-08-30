@@ -22,13 +22,14 @@ kind: "package-group"
 <a id="packages"></a>
 ## 包
 
-三个包，按它们运行在网络的哪一侧划分；完整契约由各自的子 README 拥有。
+四个包，按它们运行在网络的哪一侧划分；完整契约由各自的子 README 拥有。
 
 | 包 | 所在侧 | 作用 | ctx key |
 |---|---|---|---|
 | [`team-control-plane-http/`](team-control-plane-http/README.zh.md) | Control Plane | 面向 Runner 的绑定端点：start、redeem、refresh | — |
 | [`team-account-client/`](team-account-client/README.zh.md) | Runner | 设备密钥、凭据，以及对 Control Plane 的调用 | `ctx.teamAccountClient` |
 | [`team-local-handoff/`](team-local-handoff/README.zh.md) | Runner | 浏览器所导航到的三个本地地址 | — |
+| [`team-shell/`](team-shell/README.zh.md) | Control Plane | 登录、确认一台电脑，以及管理页面 | — |
 
 -----
 

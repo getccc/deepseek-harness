@@ -9,7 +9,9 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-team-control-plane` is the server half of Team Edition. It holds company credentials and answers requests from every member's Runner, which is exactly why it carries no ability to execute code, read files, or drive an Agent on the machine it runs on. Unlike every other Team bundle, it does not layer over [`dsh-base`](../base/README.md): base mounts the Agent loop, filesystem, subprocess, shell, and sandbox providers, so stacking it would grant the Control Plane all of them at once. Today the tree is one HTTP transport and nothing else; the company services — accounts, RBAC, quota, audit, the model and knowledge gateways, the private catalog, and the admin surface — insert here as their packages land.
+`dsh-team-control-plane` is the server half of Team Edition. It holds company credentials and answers requests from every member's Runner, which is exactly why it carries no ability to execute code, read files, or drive an Agent on the machine it runs on. Unlike every other Team bundle, it does not layer over [`dsh-base`](../base/README.md): base mounts the Agent loop, filesystem, subprocess, shell, and sandbox providers, so stacking it would grant the Control Plane all of them at once. The tree today is the HTTP transport, the account store and its password authentication, access control, the audit trail, device authorization, and the two HTTP surfaces — the Runner-facing binding endpoints and the Team Shell. Quota, the model and knowledge gateways, and the private catalog insert here as their packages land.
+
+It does not start unconfigured: the Team Shell row names no organization, so a Control Plane nobody told which company it serves fails to load rather than authenticating members against a guess.
 
 ## Table of Contents
 

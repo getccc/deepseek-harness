@@ -138,6 +138,7 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/team/team-control-plane-http': { kind: 'none', reason: 'Server-side HTTP endpoints: the plugin registers no prompt section, tool, or request context.' },
   'packages/team/team-account-client': { kind: 'none', reason: 'Runner-side account custody: the service registers no prompt section, tool, or request context.' },
   'packages/team/team-local-handoff': { kind: 'none', reason: 'Runner-side navigation endpoints: the plugin registers no prompt section, tool, or request context.' },
+  'packages/team/team-shell': { kind: 'none', reason: 'Server-side Control Plane pages: the plugin registers no prompt section, tool, or request context.' },
   'packages/bundle/headless': { kind: 'none', reason: 'The one-shot runner submits the task as an ordinary user message; prompts and tools belong to the composed base and headless bundles.' },
   'packages/llm/llm': { kind: 'none', reason: 'The adapter registry forwards already-assembled requests unchanged.' },
   'packages/llm/token-meter': { kind: 'indirect', reason: 'The measurement service leaves model-visible changes to its consumers.' },
