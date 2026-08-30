@@ -1,17 +1,11 @@
 /**
- * The addresses the Team Shell serves.
+ * The addresses this package serves.
  *
  * `/team/confirm/<id>` is fixed because a Runner builds that link from a
- * transaction id it just received; the rest are ordinary pages a person
- * reaches from a bookmark or a link.
+ * transaction id it just received. The console it sends an unsigned browser to
+ * is named here too, so the redirect and the application agree on one address.
  * @module @deepseek-ai/dsh-team-shell/paths
  */
-
-/** Sign in to the Control Plane. */
-export const LOGIN_PATH = '/team/login'
-
-/** End the current Control Plane session. */
-export const LOGOUT_PATH = '/team/logout'
 
 /**
  * The device confirmation page; the transaction id follows as a path segment.
@@ -19,5 +13,5 @@ export const LOGOUT_PATH = '/team/logout'
  */
 export const CONFIRM_PREFIX = '/team/confirm'
 
-/** The administrative pages, one prefix. */
-export const ADMIN_PREFIX = '/team/admin'
+/** Where a browser with no session signs in: the administration console. */
+export const CONSOLE_PATH = '/team/admin/'

@@ -21,19 +21,10 @@
       "path": "../../account/account-store"
     },
     {
-      "path": "../../account/account-auth"
-    },
-    {
       "path": "../../account/device-authorization"
     },
     {
-      "path": "../../access/access-control"
-    },
-    {
       "path": "../../access/audit"
-    },
-    {
-      "path": "../../llm/model-gateway"
     },
     {
       "path": "../team-browser-session"

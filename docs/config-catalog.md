@@ -2764,6 +2764,36 @@ export interface Config {
 
 Source: [`packages/team/team-account-client/src/index.ts:76`](../packages/team/team-account-client/src/index.ts)
 
+<a id="deepseek-aidsh-team-admin-api"></a>
+
+## `@deepseek-ai/dsh-team-admin-api`
+
+Requires: `webServer` · `accountStore` · `accountAuth` · `accessControl` · `audit` · `deviceAuthorization` · `modelGateway`
+
+```ts config-catalog
+/** Plugin config: which organization, and how a browser session behaves. */
+export interface Config {
+  /**
+   * The organization this Control Plane serves. The first version is
+   * single-organization, and naming it here keeps that a stated fact rather
+   * than something the API infers from whatever the store happens to hold.
+   */
+  organizationId: string
+  /** How long a Control Plane session is honoured, in seconds. */
+  sessionMaxAgeSeconds: number
+  /**
+   * Whether to mark the session cookie `Secure`. A deployment served over
+   * HTTPS sets this; a local one cannot, because a browser drops a Secure
+   * cookie on a plain-HTTP origin and the member would never stay signed in.
+   */
+  secureCookie: boolean
+  /** Largest request body accepted, in bytes. */
+  maxRequestBodyBytes: number
+}
+```
+
+Source: [`packages/team/team-admin-api/src/index.ts:97`](../packages/team/team-admin-api/src/index.ts)
+
 <a id="deepseek-aidsh-team-control-plane-http"></a>
 
 ## `@deepseek-ai/dsh-team-control-plane-http`
@@ -2802,32 +2832,17 @@ Source: [`packages/team/team-local-handoff/src/index.ts:33`](../packages/team/te
 
 ## `@deepseek-ai/dsh-team-shell`
 
-Requires: `webServer` · `accountStore` · `accountAuth` · `accessControl` · `audit` · `deviceAuthorization` · `modelGateway`
+Requires: `webServer` · `accountStore` · `audit` · `deviceAuthorization`
 
 ```ts config-catalog
-/** Plugin config: how long a session lasts, and whether the cookie is Secure. */
+/** Plugin config: how much of a form this page will read. */
 export interface Config {
-  /**
-   * The organization this Control Plane serves. The first version is
-   * single-organization, and naming it here is what keeps that a stated fact
-   * rather than something the shell infers from whatever the store happens to
-   * hold.
-   */
-  organizationId: string
-  /** How long a Control Plane session is honoured, in seconds. */
-  sessionMaxAgeSeconds: number
-  /**
-   * Whether to mark the session cookie `Secure`. A deployment served over
-   * HTTPS sets this; a local one cannot, because a browser drops a Secure
-   * cookie on a plain-HTTP origin and the member would never stay signed in.
-   */
-  secureCookie: boolean
   /** Largest form body accepted, in bytes. */
   maxRequestBodyBytes: number
 }
 ```
 
-Source: [`packages/team/team-shell/src/index.ts:60`](../packages/team/team-shell/src/index.ts)
+Source: [`packages/team/team-shell/src/index.ts:39`](../packages/team/team-shell/src/index.ts)
 
 <a id="deepseek-aidsh-terminal-bash"></a>
 
@@ -3733,6 +3748,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 - `@deepseek-ai/dsh-storage` ([`packages/storage/storage/src/index.ts`](../packages/storage/storage/src/index.ts))
 - `@deepseek-ai/dsh-subagent` ([`packages/subagent/subagent/src/index.ts`](../packages/subagent/subagent/src/index.ts))
 - `@deepseek-ai/dsh-subprocess-local` ([`packages/subprocess/subprocess-local/src/index.ts`](../packages/subprocess/subprocess-local/src/index.ts))
+- `@deepseek-ai/dsh-team-admin-app` — requires `webServer` ([`packages/team/team-admin-app/src/index.ts`](../packages/team/team-admin-app/src/index.ts))
 - `@deepseek-ai/dsh-terminal` ([`packages/terminal/terminal/src/index.ts`](../packages/terminal/terminal/src/index.ts))
 - `@deepseek-ai/dsh-tool-ask-user` — requires `tools` · `userQuestions` ([`packages/interaction/tool-ask-user/src/index.ts`](../packages/interaction/tool-ask-user/src/index.ts))
 - `@deepseek-ai/dsh-tool-call-timeout-policy` — requires `tools` ([`packages/guard/timeout-policy/src/index.ts`](../packages/guard/timeout-policy/src/index.ts))
@@ -3809,6 +3825,7 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 - `@deepseek-ai/dsh-session-title-llm` ([`packages/session/session-title-llm/src/index.ts`](../packages/session/session-title-llm/src/index.ts))
 - `@deepseek-ai/dsh-subagent-in-process-driver` ([`packages/subagent/subagent-in-process-driver/src/index.ts`](../packages/subagent/subagent-in-process-driver/src/index.ts))
 - `@deepseek-ai/dsh-team` ([`packages/bundle/team/src/index.ts`](../packages/bundle/team/src/index.ts))
+- `@deepseek-ai/dsh-team-browser-session` ([`packages/team/team-browser-session/src/index.ts`](../packages/team/team-browser-session/src/index.ts))
 - `@deepseek-ai/dsh-team-control-plane` ([`packages/bundle/team-control-plane/src/index.ts`](../packages/bundle/team-control-plane/src/index.ts))
 - `@deepseek-ai/dsh-team-update` ([`packages/team/team-update/src/index.ts`](../packages/team/team-update/src/index.ts))
 - `@deepseek-ai/dsh-timeout` ([`packages/util/timeout/src/index.ts`](../packages/util/timeout/src/index.ts))

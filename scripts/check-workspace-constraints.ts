@@ -61,6 +61,9 @@ const appPackageFiles: Readonly<Record<string, readonly string[]>> = {
   // (dist/preview.html and dist/preview/) backs private experimental
   // packages and is not published.
   '@deepseek-ai/dsh-web-frontend': ['dist', '!dist/**/*.map', '!dist/preview.html', '!dist/preview'],
+  // The administration console: the built page and its chunks, sourcemaps
+  // excluded by the same payload policy.
+  '@deepseek-ai/dsh-team-admin-frontend': ['dist', '!dist/**/*.map'],
 }
 
 /** The subset of package.json fields this constraint check cares about. */

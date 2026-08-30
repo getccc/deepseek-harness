@@ -48,6 +48,8 @@
     "@deepseek-ai/dsh-model-gateway-http": "workspace:^",
     "@deepseek-ai/dsh-model-gateway-sqlite": "workspace:^",
     "@deepseek-ai/dsh-quota-sqlite": "workspace:^",
+    "@deepseek-ai/dsh-team-admin-api": "workspace:^",
+    "@deepseek-ai/dsh-team-admin-app": "workspace:^",
     "@deepseek-ai/dsh-team-control-plane-http": "workspace:^",
     "@deepseek-ai/dsh-team-shell": "workspace:^"
   },

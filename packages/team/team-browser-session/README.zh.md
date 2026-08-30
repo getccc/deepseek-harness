@@ -7,7 +7,7 @@ kind: "package-reference"
 
 [English](README.md) | 中文
 
-## 摘要
+## 概述
 
 `dsh-team-browser-session` 持有每一个面向成员的 Control Plane 界面都必须取得一致的四件事：会话 cookie 叫什么、它的令牌如何哈希进账户存储、那个令牌派生出什么 CSRF 值，以及一次写入何时可以被当作来自本站。它们放在一个包里，是因为回答这些问题的界面不止一个——浏览器 API 与设备确认页——而一条会话规则的两份副本，就是两次对“谁已登录”产生分歧的机会。
 
@@ -18,7 +18,7 @@ kind: "package-reference"
 - [延伸阅读](#further-exploration)
 - [模型体验](#model-experience)
 - [已知限制与推迟事项](#known-limitations-and-deferred-work)
-- [开发者备注](#dev-note)
+- [开发备注](#dev-note)
 
 -----
 
@@ -102,7 +102,7 @@ cookie 携带随机字节，存储持有它们的 SHA-256。被窃取的 cookie 
 - **成员看不到自己的会话清单** —— 存储一次解析一个会话；要列出一个账户持有的会话以便成员结束其中之一，需要本包没有的查询。
 
 <a id="dev-note"></a>
-### 开发者备注
+### 开发备注
 
 <details>
 <summary>维护者的工作上下文——点击展开</summary>

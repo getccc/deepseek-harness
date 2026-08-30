@@ -18,7 +18,10 @@ export const SESSION_COOKIE = 'dsh_cp_session'
 /** Bytes of entropy behind a session token. */
 const TOKEN_BYTES = 32
 
-/** Mint one session token. */
+/**
+ * Mint one session token.
+ * @returns the plaintext token a browser will carry.
+ */
 export function newSessionToken(): string {
   return randomBytes(TOKEN_BYTES).toString('base64url')
 }
@@ -135,7 +138,13 @@ export function sameOrigin(req: IncomingMessage): boolean {
   }
 }
 
-/** Set or clear the session cookie on a response. */
+/**
+ * Set or clear the session cookie on a response.
+ * @param res - the response to write the header on.
+ * @param token - the plaintext token, or the empty string to clear the cookie.
+ * @param maxAgeSeconds - the cookie lifetime; zero clears it.
+ * @param secure - whether to mark the cookie Secure, which a deployment over HTTPS does.
+ */
 export function writeSessionCookie(
   res: ServerResponse,
   token: string,

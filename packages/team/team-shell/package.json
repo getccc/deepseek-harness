@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-team-shell",
-  "description": "The Control Plane's own pages: signing in, confirming a computer, and the administrative pages for members, roles, and devices",
+  "description": "The Control Plane's device-confirmation page: what a member compares before a computer is bound to their account",
   "version": "0.1.2-alpha.1",
   "publishConfig": {
     "access": "public"
@@ -31,24 +31,20 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@deepseek-ai/dsh-access-control": "workspace:^",
-    "@deepseek-ai/dsh-account-auth": "workspace:^",
     "@deepseek-ai/dsh-account-store": "workspace:^",
     "@deepseek-ai/dsh-audit": "workspace:^",
     "@deepseek-ai/dsh-device-authorization": "workspace:^",
-    "@deepseek-ai/dsh-model-gateway": "workspace:^",
     "@deepseek-ai/dsh-team-browser-session": "workspace:^",
     "@deepseek-ai/schemastery": "workspace:^"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:^",
+    "@deepseek-ai/dsh-host-webserver": "workspace:^",
     "@deepseek-ai/dsh-invariants": "workspace:^"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-invariants": "workspace:^",
     "@deepseek-ai/dsh-host-webserver": "workspace:^",
-    "@deepseek-ai/dsh-model-gateway-sqlite": "workspace:^",
-    "@deepseek-ai/dsh-quota-sqlite": "workspace:^"
+    "@deepseek-ai/dsh-invariants": "workspace:^"
   }
 }

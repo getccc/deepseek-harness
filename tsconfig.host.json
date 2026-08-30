@@ -284,6 +284,7 @@
     { "path": "./packages/team/team-account-client" },
     { "path": "./packages/team/team-local-handoff" },
     { "path": "./packages/team/team-admin-api" },
+    { "path": "./packages/team/team-admin-app" },
     { "path": "./packages/team/team-browser-session" },
     { "path": "./packages/team/team-shell" },
     { "path": "./packages/team/team-update" },

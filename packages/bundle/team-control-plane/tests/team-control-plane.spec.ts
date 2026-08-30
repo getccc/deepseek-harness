@@ -114,6 +114,8 @@ describe('dsh-team-control-plane bundle', () => {
       ['model-gateway', '@deepseek-ai/dsh-model-gateway-sqlite'],
       ['team-control-plane-http', '@deepseek-ai/dsh-team-control-plane-http'],
       ['model-gateway-http', '@deepseek-ai/dsh-model-gateway-http'],
+      ['team-admin-api', '@deepseek-ai/dsh-team-admin-api'],
+      ['team-admin-app', '@deepseek-ai/dsh-team-admin-app'],
       ['team-shell', '@deepseek-ai/dsh-team-shell'],
     ] as const) {
       expect(mounted.get(id), id).toBe(name)
@@ -135,11 +137,13 @@ describe('dsh-team-control-plane bundle', () => {
   })
 
   it('leaves the organization unnamed, so a Control Plane nobody configured does not start', () => {
-    // The Team Shell requires it and refuses to load without it. Supplying a
-    // default here would mean authenticating members against an organization
-    // no one chose.
-    const shell = rows().find(row => row.id === 'team-shell')
-    expect(shell?.config).not.toHaveProperty('organizationId')
+    // The administration API requires it and refuses to load without it.
+    // Supplying a default here would mean authenticating members against an
+    // organization no one chose.
+    const api = rows().find(row => row.id === 'team-admin-api')
+    expect(api?.config).not.toHaveProperty('organizationId')
+    // No other row names one either, so there is one place to supply it.
+    expect(rows().filter(row => row.config?.['organizationId'] !== undefined)).toEqual([])
   })
 
   it('binds loopback by default, leaving network exposure to a deployment patch', () => {

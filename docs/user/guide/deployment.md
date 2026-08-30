@@ -89,14 +89,14 @@ Then complete the first-use path:
 
 ## Start Team management
 
-Team management is a separate Control Plane, not a route inside the Web UI on port `3080`. The `team-control-plane` profile listens on `127.0.0.1:3095`; its sign-in page is `/team/login` and uses a member name and password. Successful authentication creates an HTTP-only session cookie, while CSRF checks, role grants, and audit records protect administrative actions.
+Team management is a separate Control Plane, not a route inside the Web UI on port `3080`. The `team-control-plane` profile listens on `127.0.0.1:3095` and serves the administration console at `/team/admin`, a browser application that signs a member in and then manages the organization, users, roles and grants, devices, and company models. Successful authentication creates an HTTP-only session cookie, while CSRF checks, role grants, and audit records protect every administrative action.
 
-The profile fails closed until the deployment provisions an organization, an administrator password, and role grants through the account, authentication, and access-control services, then supplies that organization ID to the `team-shell` row. The current Team Shell has no organization bootstrap, enrollment-link, first-password, or grant-editing page. For local plain HTTP, set `secureCookie: false`; a TLS deployment keeps it `true`.
+The profile fails closed until the deployment provisions an organization, an administrator password, and role grants through the account, authentication, and access-control services, then supplies that organization ID to the `team-admin-api` row. There is still no enrollment-link or first-password page: an administrator adds a member in the console, and giving that member their first password needs a separate path. For local plain HTTP, set `secureCookie: false`; a TLS deployment keeps it `true`.
 
 The current full Control Plane composition also needs a credentials provider for its model-gateway HTTP row. An administrator-only local preview may disable that row in `$DSH_HOME/profiles/team-control-plane/cordis.patch.yml`; this leaves company model routing unavailable:
 
 ```yaml
-- id: team-shell
+- id: team-admin-api
   config:
     organizationId: 019400a1-0000-7000-8000-000000000000
     secureCookie: false
@@ -110,7 +110,7 @@ After provisioning and patching the profile, start it from the repository root:
 pnpm dsh --profile team-control-plane
 ```
 
-Open `http://127.0.0.1:3095/team/login`. Keep this listener on loopback for local development. The [Control Plane bundle](../../../packages/bundle/team-control-plane/README.md) owns its composition, and the [Team Shell](../../../packages/team/team-shell/README.md) owns the browser-session and administrative behavior.
+Open `http://127.0.0.1:3095/team/admin`. The console is a built artifact, so a source checkout must have run `pnpm run build` before this address serves anything. Keep this listener on loopback for local development. The [Control Plane bundle](../../../packages/bundle/team-control-plane/README.md) owns its composition; the [administration API](../../../packages/team/team-admin-api/README.md) owns the authorization and audit behind every console action.
 
 <a id="reach-a-remote-development-host"></a>
 
@@ -153,7 +153,7 @@ To upgrade a source deployment, stop the process, update the checkout, rerun the
 - **Startup reports `EADDRINUSE`** — another process owns the port. Stop it or pass an unused `--port` value.
 - **Startup asks for a build** — run `pnpm run build` from the repository root, then retry the same launch command.
 - **The clean URL returns `401`** — use the complete tokenized URL from this process's startup line. A clean URL works only after that browser receives its cookie.
-- **Team management does not appear on port `3080`** — start the separate `team-control-plane` profile and open port `3095` at `/team/login`.
+- **Team management does not appear on port `3080`** — start the separate `team-control-plane` profile and open port `3095` at `/team/admin`.
 - **The Control Plane waits for `credentials`** — the model-gateway HTTP row is active without its required provider. Complete that provider composition, or disable only that row for the administrator-only local preview described above.
 - **The browser does not open over SSH** — this is expected. Keep the tunnel active and open the printed URL on the operator workstation.
 - **The composer is disabled** — select both a configured model and a workspace.

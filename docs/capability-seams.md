@@ -12,6 +12,7 @@ flowchart LR
   pkg_account_store_sqlite["account-store-sqlite"]
   pkg_account_auth_password["account-auth-password"]
   pkg_access_control_sqlite["access-control-sqlite"]
+  pkg_team_admin_api["team-admin-api"]
   pkg_team_shell["team-shell"]
   pkg_account_auth["account-auth"]
   svc_accountAuth["ctx.accountAuth<br/>Proving a member is who they claim"]
@@ -381,10 +382,11 @@ flowchart LR
   pkg_workflow_worker_thread --> svc_workflowEngine
   pkg_workspace --> svc_workspaceRegistry
   svc_accessControl --> pkg_model_gateway_sqlite
-  svc_accessControl --> pkg_team_shell
-  svc_accountAuth --> pkg_team_shell
+  svc_accessControl --> pkg_team_admin_api
+  svc_accountAuth --> pkg_team_admin_api
   svc_accountStore --> pkg_access_control_sqlite
   svc_accountStore --> pkg_account_auth_password
+  svc_accountStore --> pkg_team_admin_api
   svc_accountStore --> pkg_team_shell
   svc_agentDefaultModel --> pkg_api_session_controller
   svc_agentDefaultModel --> pkg_headless
@@ -401,6 +403,7 @@ flowchart LR
   svc_attachments --> pkg_llm_deepseek
   svc_attachments --> pkg_llm_pi_ai
   svc_attachments --> pkg_tool_fs
+  svc_audit --> pkg_team_admin_api
   svc_audit --> pkg_team_shell
   svc_authorization --> pkg_llm_pi_ai
   svc_clientModules --> pkg_client_hmr
@@ -411,6 +414,7 @@ flowchart LR
   svc_credentials --> pkg_llm_deepseek
   svc_credentials --> pkg_llm_pi_ai
   svc_deepseekLlmApiExtensions --> pkg_llm_deepseek
+  svc_deviceAuthorization --> pkg_team_admin_api
   svc_deviceAuthorization --> pkg_team_control_plane_http
   svc_deviceAuthorization --> pkg_team_shell
   svc_directoryPicker --> pkg_api_workspace_controller
@@ -522,14 +526,14 @@ flowchart LR
 
 | ctx key | Role | Owner | Implementations | Direct consumers | Companion plugins | Note |
 | --- | --- | --- | --- | --- | --- | --- |
-| `ctx.accountStore` | `seam` | [`account-store`](../packages/account/account-store) | [`account-store-sqlite`](../packages/account/account-store-sqlite) | [`account-auth-password`](../packages/account/account-auth-password), [`access-control-sqlite`](../packages/access/access-control-sqlite), [`team-shell`](../packages/team/team-shell) | - | Server-side only: the Control Plane composes it, no Runner mounts it. It also holds the organization policy revision every authorization cache keys on. |
-| `ctx.accountAuth` | `seam` | [`account-auth`](../packages/account/account-auth) | [`account-auth-password`](../packages/account/account-auth-password) | [`team-shell`](../packages/team/team-shell) | - | Verification is separate from the store so a second method arrives as a provider. The password provider stores a self-describing hash and rehashes on a successful verify. |
-| `ctx.accessControl` | `seam` | [`access-control`](../packages/access/access-control) | [`access-control-sqlite`](../packages/access/access-control-sqlite) | [`team-shell`](../packages/team/team-shell), [`model-gateway-sqlite`](../packages/llm/model-gateway-sqlite) | - | No explicit deny, no inheritance, no expression language, so a decision is explained by naming the grants that admitted it. The Team Shell asks it before every administrative act, and the model gateway before every invocation. |
-| `ctx.audit` | `seam` | [`audit`](../packages/access/audit) | [`audit-sqlite`](../packages/access/audit-sqlite) | [`team-shell`](../packages/team/team-shell) | - | Closed action and metadata catalogs, and a token rule on every caller-supplied string, so a record cannot hold a member's work. The Team Shell writes the records, because it is what knows which principal acted. |
+| `ctx.accountStore` | `seam` | [`account-store`](../packages/account/account-store) | [`account-store-sqlite`](../packages/account/account-store-sqlite) | [`account-auth-password`](../packages/account/account-auth-password), [`access-control-sqlite`](../packages/access/access-control-sqlite), [`team-admin-api`](../packages/team/team-admin-api), [`team-shell`](../packages/team/team-shell) | - | Server-side only: the Control Plane composes it, no Runner mounts it. It also holds the organization policy revision every authorization cache keys on. |
+| `ctx.accountAuth` | `seam` | [`account-auth`](../packages/account/account-auth) | [`account-auth-password`](../packages/account/account-auth-password) | [`team-admin-api`](../packages/team/team-admin-api) | - | Verification is separate from the store so a second method arrives as a provider. The password provider stores a self-describing hash and rehashes on a successful verify. |
+| `ctx.accessControl` | `seam` | [`access-control`](../packages/access/access-control) | [`access-control-sqlite`](../packages/access/access-control-sqlite) | [`team-admin-api`](../packages/team/team-admin-api), [`model-gateway-sqlite`](../packages/llm/model-gateway-sqlite) | - | No explicit deny, no inheritance, no expression language, so a decision is explained by naming the grants that admitted it. The administration API asks it before every administrative act, and the model gateway before every invocation. |
+| `ctx.audit` | `seam` | [`audit`](../packages/access/audit) | [`audit-sqlite`](../packages/access/audit-sqlite) | [`team-admin-api`](../packages/team/team-admin-api), [`team-shell`](../packages/team/team-shell) | - | Closed action and metadata catalogs, and a token rule on every caller-supplied string, so a record cannot hold a member's work. The surfaces a member acts through write the records, because they are what know which principal acted. |
 | `ctx.quota` | `seam` | [`quota`](../packages/access/quota) | [`quota-sqlite`](../packages/access/quota-sqlite) | [`model-gateway-sqlite`](../packages/llm/model-gateway-sqlite) | - | A reservation is the ceiling on what a request can cost and a settlement happens once, so a crash cannot spend without recording and a retry cannot charge twice. The model gateway is the consumer it is built for. |
 | `ctx.modelGateway` | `seam` | [`model-gateway`](../packages/llm/model-gateway) | [`model-gateway-sqlite`](../packages/llm/model-gateway-sqlite) | [`model-gateway-http`](../packages/llm/model-gateway-http) | - | A Runner names a model and gets back a call it could not have constructed: the endpoint, the upstream name, and the credential all come from the catalog. |
 | `ctx.llmHttpTransport` | `seam` | [`llm-http-transport`](../packages/llm/llm-http-transport) | [`llm-http-transport-team`](../packages/llm/llm-http-transport-team) | - | - | A request names an operation from a closed list and a model, never a URL, so no caller decides where a credential goes. LLM adapters are the consumers as each moves behind it. |
-| `ctx.deviceAuthorization` | `seam` | [`device-authorization`](../packages/account/device-authorization) | [`device-authorization-sqlite`](../packages/account/device-authorization-sqlite) | [`team-control-plane-http`](../packages/team/team-control-plane-http), [`team-shell`](../packages/team/team-shell) | - | A pairing code and key digest let a member confirm which computer; a PKCE verifier and a device signature let that computer prove it holds the key. The Runner-facing endpoints and the Team Shell confirmation page are the two halves that drive it. |
+| `ctx.deviceAuthorization` | `seam` | [`device-authorization`](../packages/account/device-authorization) | [`device-authorization-sqlite`](../packages/account/device-authorization-sqlite) | [`team-admin-api`](../packages/team/team-admin-api), [`team-control-plane-http`](../packages/team/team-control-plane-http), [`team-shell`](../packages/team/team-shell) | - | A pairing code and key digest let a member confirm which computer; a PKCE verifier and a device signature let that computer prove it holds the key. The Runner-facing endpoints and the Team Shell confirmation page are the two halves that drive it. |
 | `ctx.teamAccountClient` | `seam` | [`team-account-client`](../packages/team/team-account-client) | - | [`team-local-handoff`](../packages/team/team-local-handoff) | - | Holds the device key and the credential on the member computer and calls the Control Plane over HTTPS. No company provider credential ever reaches it. |
 | `ctx.attachments` | `seam` | [`attachment`](../packages/attachment/attachment) | [`attachment-local`](../packages/attachment/attachment-local) | [`api-session-controller`](../packages/api/session-controller), [`tool-fs`](../packages/fs/tool-fs), [`llm-pi-ai`](../packages/llm/llm-pi-ai), [`llm-deepseek`](../packages/llm/llm-deepseek) | - | The host commits accepted images before session events; provider adapters resolve authorized durable references into provider-native content. |
 | `ctx.llm` | `seam` | [`llm`](../packages/llm/llm) | [`llm-deepseek`](../packages/llm/llm-deepseek), [`llm-pi-ai`](../packages/llm/llm-pi-ai), [`llm-replay`](../packages/test-support/llm-replay) | [`agent-loop`](../packages/core/agent-loop), [`compaction-basic`](../packages/compaction/compaction-basic) | - | Adapters register provider implementations; the loop and compaction call the provider-neutral stream service. |

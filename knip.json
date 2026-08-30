@@ -788,6 +788,11 @@
       "ignoreDependencies": [
         "@deepseek-ai/.+"
       ]
+    },
+    "packages/team/team-admin-app": {
+      "ignoreDependencies": [
+        "@deepseek-ai/dsh-team-admin-frontend"
+      ]
     }
   }
 }

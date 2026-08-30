@@ -22,14 +22,17 @@ kind: "package-group"
 <a id="packages"></a>
 ## 包
 
-五个包，按它们运行在网络的哪一侧划分；完整契约由各自的子 README 拥有。
+八个包，按它们运行在网络的哪一侧划分；完整契约由各自的子 README 拥有。
 
 | 包 | 所在侧 | 作用 | ctx key |
 |---|---|---|---|
 | [`team-control-plane-http/`](team-control-plane-http/README.zh.md) | Control Plane | 面向 Runner 的绑定端点：start、redeem、refresh | — |
 | [`team-account-client/`](team-account-client/README.zh.md) | Runner | 设备密钥、凭据，以及对 Control Plane 的调用 | `ctx.teamAccountClient` |
 | [`team-local-handoff/`](team-local-handoff/README.zh.md) | Runner | 浏览器所导航到的三个本地地址 | — |
-| [`team-shell/`](team-shell/README.zh.md) | Control Plane | 登录、确认一台电脑，以及管理页面 | — |
+| [`team-admin-api/`](team-admin-api/README.zh.md) | Control Plane | 管理控制台的 JSON API：会话、授权、审计 | — |
+| [`team-admin-app/`](team-admin-app/README.zh.md) | Control Plane | 提供构建好的管理控制台 | — |
+| [`team-browser-session/`](team-browser-session/README.zh.md) | Control Plane | 会话 cookie、它的 CSRF 值与同源判定 | — |
+| [`team-shell/`](team-shell/README.zh.md) | Control Plane | 确认请求连接的这台电脑属于这位成员 | — |
 | [`team-update/`](team-update/README.zh.md) | Runner | 一个被提供的发行版是否可以安装，以及安装程序所写入的服务定义 | — |
 
 -----

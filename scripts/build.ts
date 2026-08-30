@@ -43,6 +43,9 @@ function main(): void {
   rmSync(resolve(root, CLIENT_BUILD_RECORD_PATH), { force: true })
   runScript('build:lib', buildEnvironment)
   runScript('build:web', buildEnvironment)
+  // The administration console is a second browser application, built
+  // from the same lib products and served by the Control Plane.
+  runScript('build:team-admin', buildEnvironment)
   const record = writeClientBuildRecord(root, clientEnvironment)
   console.log(
     `build: recorded ${String(record.artifacts.fileCount)} client artifact(s) with ${String(Object.keys(record.environment).length)} public value(s)`,

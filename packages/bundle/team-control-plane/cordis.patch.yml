@@ -105,12 +105,14 @@
         # here is charged its ceiling, because a provider that stopped
         # answering may still have generated tokens.
         upstreamTimeoutMs: 600000
-    # Member-facing: signing in, confirming a computer, and administering.
+    # Member-facing: the administration console's API, the console itself,
+    # and the one page still rendered here.
+    #
     # `secureCookie` stays true because a deployment terminates TLS in front
     # of this listener; a plain-HTTP deployment must say so in its own patch,
     # and a browser would drop the cookie if it did not.
-    - id: team-shell
-      name: '@deepseek-ai/dsh-team-shell'
+    - id: team-admin-api
+      name: '@deepseek-ai/dsh-team-admin-api'
       config:
         # `organizationId` is deliberately absent. It has no sensible default,
         # and a Control Plane that guessed which organization it serves would
@@ -119,4 +121,16 @@
         # loudest place this can be noticed.
         sessionMaxAgeSeconds: 43200
         secureCookie: true
+        maxRequestBodyBytes: 16384
+    # The built browser application, served from this process. It carries no
+    # configuration: the address it lives at is compiled into it, because the
+    # application addresses the API above by an absolute path.
+    - id: team-admin-app
+      name: '@deepseek-ai/dsh-team-admin-app'
+    # Confirming a computer stays a server-rendered page. A member arrives from
+    # a link their own Runner served, to compare a code and press one button;
+    # there is nothing here for an application to load first.
+    - id: team-shell
+      name: '@deepseek-ai/dsh-team-shell'
+      config:
         maxRequestBodyBytes: 16384

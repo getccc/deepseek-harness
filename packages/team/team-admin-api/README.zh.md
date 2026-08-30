@@ -7,7 +7,7 @@ kind: "package-reference"
 
 [English](README.md) | 中文
 
-## 摘要
+## 概述
 
 `dsh-team-admin-api` 是管理控制台唯一对话的对象。它在 Control Plane 的浏览器会话之上返回 JSON，每一条路由在询问持有记录的那个服务之前，都会先问与表单提交同样的三个问题——有没有会话、这次请求是否来自本站、访问控制是否准许。控制台决定给成员看什么；它不决定成员可以做什么。
 
@@ -18,7 +18,7 @@ kind: "package-reference"
 - [延伸阅读](#further-exploration)
 - [模型体验](#model-experience)
 - [已知限制与推迟事项](#known-limitations-and-deferred-work)
-- [开发者备注](#dev-note)
+- [开发备注](#dev-note)
 
 -----
 
@@ -98,7 +98,7 @@ kind: "package-reference"
 - **没有审计查询** —— `organization.audit.read` 在目录里，但还没有路由服务它。
 
 <a id="dev-note"></a>
-### 开发者备注
+### 开发备注
 
 <details>
 <summary>维护者的工作上下文——点击展开</summary>

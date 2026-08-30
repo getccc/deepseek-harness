@@ -1,37 +1,25 @@
 /**
- * The Control Plane's pages, driven the way a browser drives them: form posts
- * with an Origin, a session cookie, and the CSRF token the page rendered.
+ * The confirmation page, driven the way a browser drives it: a form post with
+ * an Origin, a session cookie, and the CSRF token the page rendered.
  *
- * The three refusals are what these tests are really for. A write must carry a
- * session, come from this site, and echo this session's own token, and dropping
- * any one of them must be a refusal rather than an action nobody asked for.
+ * The three refusals are what these tests are really for. Confirming a
+ * computer must carry a session, come from this site, and echo this session's
+ * own token, and dropping any one of them must be a refusal rather than a
+ * binding nobody asked for.
  */
 
-import { generateKeyPairSync, sign } from 'node:crypto'
 import { request as httpRequest } from 'node:http'
 import { Context } from '@deepseek-ai/cordis'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import HttpServer from '@deepseek-ai/dsh-host-webserver'
 import SqliteAccountStore from '@deepseek-ai/dsh-account-store-sqlite'
-import PasswordAccountAuth from '@deepseek-ai/dsh-account-auth-password'
-import SqliteAccessControl from '@deepseek-ai/dsh-access-control-sqlite'
 import SqliteAudit from '@deepseek-ai/dsh-audit-sqlite'
 import SqliteDeviceAuthorization from '@deepseek-ai/dsh-device-authorization-sqlite'
-import SqliteModelGateway from '@deepseek-ai/dsh-model-gateway-sqlite'
-import SqliteQuota from '@deepseek-ai/dsh-quota-sqlite'
-import type { AccountStore, Organization, OrgId, UserId } from '@deepseek-ai/dsh-account-store'
-import { PERMISSION_CATALOG, type AccessControl, type RoleId } from '@deepseek-ai/dsh-access-control'
+import type { AccountStore, OrgId, UserId } from '@deepseek-ai/dsh-account-store'
 import type { Audit } from '@deepseek-ai/dsh-audit'
-import {
-  newSecret,
-  pkceChallenge,
-  redeemSigningInput,
-  type DeviceAuthorization,
-  type DeviceId,
-} from '@deepseek-ai/dsh-device-authorization'
+import type { DeviceAuthorization } from '@deepseek-ai/dsh-device-authorization'
+import { csrfToken, hashToken, newSessionToken } from '@deepseek-ai/dsh-team-browser-session'
 import * as shell from '../src/index.ts'
-import { membersPage, rolesPage } from '../src/pages.ts'
-import { SESSION_COOKIE, csrfToken } from '@deepseek-ai/dsh-team-browser-session'
 
 /** One response, read the way a browser would see it. */
 interface Landing {
@@ -43,14 +31,12 @@ interface Landing {
 let ctx: Context
 let origin: string
 let store: AccountStore
-let access: AccessControl
 let audit: Audit
 let devices: DeviceAuthorization
 let orgId: OrgId
 let alice: UserId
-let adminRole: RoleId
-
-const PASSWORD = 'correct-horse-battery-staple'
+let cookie: string
+let csrf: string
 
 /** Make one request with exactly these headers. */
 function send(
@@ -82,17 +68,6 @@ function head(landing: Landing, name: string): string | undefined {
   return Array.isArray(value) ? value[0] : value
 }
 
-/** Sign in and return the cookie a browser would keep. */
-async function signIn(loginName = 'alice', secret = PASSWORD): Promise<string> {
-  const landed = await send('/team/login', {
-    method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded', origin },
-    body: new URLSearchParams({ loginName, secret }).toString(),
-  })
-  expect(landed.status, 'sign-in should redirect').toBe(303)
-  return (head(landed, 'set-cookie') as string).split(';')[0] as string
-}
-
 /** Pull the CSRF token out of a rendered page. */
 function readCsrf(body: string): string {
   const match = /name="csrf" value="([^"]+)"/u.exec(body)
@@ -101,7 +76,7 @@ function readCsrf(body: string): string {
 }
 
 /** Submit a form the way the rendered page would. */
-function submit(path: string, cookie: string, fields: Record<string, string>): Promise<Landing> {
+function submit(path: string, fields: Record<string, string>): Promise<Landing> {
   return send(path, {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded', cookie, origin },
@@ -109,69 +84,23 @@ function submit(path: string, cookie: string, fields: Record<string, string>): P
   })
 }
 
-/** A model registration the catalog accepts, for tests that break one field. */
-const USABLE_MODEL = {
-  modelRef: 'deepseek-chat',
-  displayName: 'DeepSeek Chat',
-  providerRef: 'deepseek',
-  upstreamModel: 'deepseek-chat',
-  endpoint: 'https://api.deepseek.com/',
-  credentialRef: 'COMPANY_DEEPSEEK_KEY',
-  maxOutputTokens: '8192',
-}
-
-/** One overview card, rendered exactly as the page renders it. */
-function metricCard(label: string, value: number, note: string): string {
-  return `<div class="metric-label">${label}</div>`
-    + `<div class="metric-value">${String(value)}</div>`
-    + `<div class="metric-note">${note}</div>`
-}
-
-/**
- * Bind one computer the whole way, signature and all.
- *
- * A device row exists only after a Runner proved possession of its key, so a
- * test that needs one runs the flow rather than writing the row.
- */
-async function bindDevice(cookie: string): Promise<DeviceId> {
-  const { publicKey, privateKey } = generateKeyPairSync('ed25519')
-  const spki = publicKey.export({ format: 'der', type: 'spki' }).toString('base64url')
-  const verifier = newSecret()
+/** Open a transaction the way a Runner does. */
+async function pending(): Promise<{ id: string; pairingCode: string }> {
   const started = await devices.start({
-    publicKey: spki, platform: 'linux', runnerVersion: '1.0.0',
-    pkceChallenge: pkceChallenge(verifier),
-    callbackUri: 'http://127.0.0.1:3080/team/callback', protocolVersion: 1,
-  })
-  const shown = await send(`/team/confirm/${started.transactionId}?state=s`, { headers: { cookie } })
-  const confirmed = await submit(`/team/confirm/${started.transactionId}`, cookie, {
-    csrf: readCsrf(shown.body), state: 's',
-  })
-  const code = new URL(head(confirmed, 'location') as string).searchParams.get('code') as string
-  await devices.redeem({
-    transactionId: started.transactionId,
-    code,
-    pkceVerifier: verifier,
-    deviceSignature: sign(null, Buffer.from(redeemSigningInput(started.transactionId, code)), privateKey)
-      .toString('base64url'),
+    publicKey: 'a-public-key',
+    platform: 'darwin',
+    runnerVersion: '2.4.1',
+    pkceChallenge: 'a-challenge',
     callbackUri: 'http://127.0.0.1:3080/team/callback',
     protocolVersion: 1,
   })
-  return (await devices.listDevices(orgId)).find(device => device.publicKey === spki)?.id as DeviceId
+  return { id: started.transactionId, pairingCode: started.pairingCode }
 }
 
 beforeEach(async () => {
   ctx = new Context()
   await ctx.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
   await ctx.plugin(SqliteAccountStore, { path: ':memory:' }).await()
-  await ctx.plugin(PasswordAccountAuth, {
-    minSecretLength: 8,
-    maxFailedAttempts: 5,
-    lockDurationMs: 60_000,
-    cost: 2,
-    blockSize: 8,
-    parallelization: 1,
-  }).await()
-  await ctx.plugin(SqliteAccessControl, { path: ':memory:' }).await()
   await ctx.plugin(SqliteAudit, { path: ':memory:', maxQueryRows: 100 }).await()
   await ctx.plugin(SqliteDeviceAuthorization, {
     path: ':memory:',
@@ -180,39 +109,21 @@ beforeEach(async () => {
     accessTokenTtlMs: 900_000,
     refreshTokenTtlMs: 2_592_000_000,
   }).await()
-  await ctx.plugin(SqliteQuota, { path: ':memory:', reservationTtlMs: 900_000 }).await()
-  await ctx.plugin(SqliteModelGateway, { path: ':memory:' }).await()
 
   store = ctx.get('accountStore') as AccountStore
-  access = ctx.get('accessControl') as AccessControl
   audit = ctx.get('audit') as Audit
   devices = ctx.get('deviceAuthorization') as DeviceAuthorization
   orgId = (await store.createOrganization('Acme')).id
   alice = (await store.createUser({ orgId, loginName: 'alice', displayName: 'Alice' })).id
-  await ctx.accountAuth.setSecret(alice, PASSWORD)
 
-  // Alice administers: every administrative page asks access control first.
-  adminRole = (await access.createRole({ orgId, name: 'admin' })).id
-  for (const [type, ref, displayName] of [
-    ['organization', orgId, 'Organization'], ['member', orgId, 'Members'],
-    ['role', orgId, 'Roles'], ['device', orgId, 'Devices'],
-    ['model', shell.MODEL_CATALOG_RESOURCE, 'Model catalog'],
-  ] as const) {
-    await access.registerResource({ orgId, type, externalRef: ref, displayName })
-  }
-  for (const [type, action] of [
-    ['organization', 'organization.read'], ['organization', 'organization.settings.manage'],
-    ['member', 'member.read'], ['member', 'member.create'], ['member', 'member.disable'],
-    ['member', 'member.enable'], ['member', 'member.role.bind'],
-    ['role', 'role.read'], ['role', 'role.create'], ['role', 'role.grant.manage'],
-    ['device', 'device.inventory.read'], ['device', 'device.revoke'],
-    ['model', 'model.catalog.read'], ['model', 'model.catalog.manage'],
-  ] as const) {
-    await access.grantType(adminRole, type, action)
-  }
-  await access.bindUserRole(alice, adminRole)
+  // Signing in belongs to the administration API; this page only resolves the
+  // session a browser already carries, so the test opens one directly.
+  const token = newSessionToken()
+  await store.createBrowserSession(alice, hashToken(token), Date.now() + 3_600_000)
+  cookie = `${shell.SESSION_COOKIE}=${token}`
+  csrf = csrfToken(token)
 
-  await ctx.plugin(shell, shell.Config({ organizationId: orgId, secureCookie: false } as never)).await()
+  await ctx.plugin(shell, shell.Config({} as never)).await()
   origin = `http://127.0.0.1:${String(ctx.webServer.port)}`
 })
 
@@ -220,493 +131,8 @@ afterEach(async () => {
   await ctx.fiber.dispose()
 })
 
-describe('signing in', () => {
-  it('sets a session cookie and records the login', async () => {
-    const cookie = await signIn()
-    expect(cookie).toContain(SESSION_COOKIE)
-    const [event] = await audit.query({ orgId, action: 'member.login' })
-    expect(event).toMatchObject({ outcome: 'allowed', principalId: alice, metadata: { authMethod: 'password' } })
-  })
-
-  it('answers every failure the same way, and records it without naming an account', async () => {
-    const wrongPassword = await send('/team/login', {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded', origin },
-      body: new URLSearchParams({ loginName: 'alice', secret: 'not-the-password' }).toString(),
-    })
-    const noSuchMember = await send('/team/login', {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded', origin },
-      body: new URLSearchParams({ loginName: 'nobody', secret: PASSWORD }).toString(),
-    })
-    expect(wrongPassword.status).toBe(401)
-    expect(noSuchMember.status).toBe(401)
-    expect(wrongPassword.body).toBe(noSuchMember.body)
-    expect(head(wrongPassword, 'set-cookie')).toBeUndefined()
-    const denied = await audit.query({ orgId, action: 'member.login', outcome: 'denied' })
-    expect(denied).toHaveLength(2)
-    // A failed sign-in names no account: recording one would turn the trail
-    // into a list of which login names exist.
-    expect(denied.every(event => event.principalId === undefined)).toBe(true)
-  })
-
-  it('comes back to the page the member was going to', async () => {
-    const landed = await send('/team/login', {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded', origin },
-      body: new URLSearchParams({ loginName: 'alice', secret: PASSWORD, next: '/team/admin/devices' }).toString(),
-    })
-    expect(head(landed, 'location')).toBe('/team/admin/devices')
-  })
-
-  it('refuses a sign-in submitted from another site', async () => {
-    const refused = await send('/team/login', {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded', origin: 'https://evil.example' },
-      body: new URLSearchParams({ loginName: 'alice', secret: PASSWORD }).toString(),
-    })
-    // Otherwise a form on another site could sign a member into an account
-    // that site controls, and every page they then reached would be its.
-    expect(refused.status).toBe(403)
-    expect(head(refused, 'set-cookie')).toBeUndefined()
-  })
-
-  it('sends an unsigned browser to the sign-in page, and back where it was going', async () => {
-    const sent = await send('/team/admin/devices')
-    expect(sent.status).toBe(303)
-    expect(head(sent, 'location')).toBe('/team/login?next=%2Fteam%2Fadmin%2Fdevices')
-  })
-
-  it('refuses a next that names another site', async () => {
-    const shown = await send('/team/login?next=https://evil.example/steal')
-    expect(shown.body).toContain('value="/team/admin/members"')
-    expect(shown.body).not.toContain('evil.example')
-  })
-
-  it('ends the session on sign-out', async () => {
-    const cookie = await signIn()
-    const page = await send('/team/admin/members', { headers: { cookie } })
-    const out = await submit('/team/logout', cookie, { csrf: readCsrf(page.body) })
-    expect(out.status).toBe(303)
-    expect((await send('/team/admin/members', { headers: { cookie } })).status).toBe(303)
-  })
-})
-
-describe('a write needs all three', () => {
-  it('refuses one that carries no session', async () => {
-    const refused = await submit('/team/admin/members/create', '', { loginName: 'bob', displayName: 'Bob' })
-    expect(refused.status).toBe(403)
-    expect(await store.listUsers(orgId)).toHaveLength(1)
-  })
-
-  it('refuses one from another site', async () => {
-    const cookie = await signIn()
-    const page = await send('/team/admin/members', { headers: { cookie } })
-    const refused = await send('/team/admin/members/create', {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded', cookie, origin: 'https://evil.example' },
-      body: new URLSearchParams({ csrf: readCsrf(page.body), loginName: 'bob', displayName: 'Bob' }).toString(),
-    })
-    expect(refused.status).toBe(403)
-    expect(await store.listUsers(orgId)).toHaveLength(1)
-  })
-
-  it('refuses one with no Origin at all', async () => {
-    const cookie = await signIn()
-    const page = await send('/team/admin/members', { headers: { cookie } })
-    const refused = await send('/team/admin/members/create', {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded', cookie },
-      body: new URLSearchParams({ csrf: readCsrf(page.body), loginName: 'bob', displayName: 'Bob' }).toString(),
-    })
-    expect(refused.status).toBe(403)
-  })
-
-  it('refuses one whose CSRF token belongs to another session', async () => {
-    const first = await signIn()
-    const firstPage = await send('/team/admin/members', { headers: { cookie: first } })
-    const second = await signIn()
-    const refused = await submit('/team/admin/members/create', second, {
-      csrf: readCsrf(firstPage.body),
-      loginName: 'bob',
-      displayName: 'Bob',
-    })
-    expect(refused.status).toBe(403)
-    expect(await store.listUsers(orgId)).toHaveLength(1)
-  })
-
-  it('refuses a GET to an action address', async () => {
-    const cookie = await signIn()
-    expect((await send('/team/admin/members/create', { headers: { cookie } })).status).toBe(404)
-    expect((await send('/team/logout', { headers: { cookie } })).status).toBe(405)
-  })
-})
-
-describe('what a role does not carry', () => {
-  it('refuses every write a member is not granted, not only the pages', async () => {
-    const bob = (await store.createUser({ orgId, loginName: 'bob', displayName: 'Bob' })).id
-    await ctx.accountAuth.setSecret(bob, PASSWORD)
-    const cookie = await signIn('bob')
-    // Bob's own token, derived the way the page that rendered a form would
-    // derive it, so what refuses these writes is access control and not CSRF.
-    const csrf = csrfToken(cookie.slice(cookie.indexOf('=') + 1))
-    for (const [path, fields] of [
-      ['/team/admin/organization/update', { name: 'Bob Industries' }],
-      ['/team/admin/members/create', { loginName: 'carol', displayName: 'Carol' }],
-      ['/team/admin/members/suspend', { userId: alice }],
-      ['/team/admin/members/status', { userId: alice, status: 'suspended' }],
-      ['/team/admin/members/bind', { userId: alice, roleId: adminRole }],
-      ['/team/admin/members/unbind', { userId: alice, roleId: adminRole }],
-      ['/team/admin/roles/create', { name: 'sneaky' }],
-      ['/team/admin/roles/grants/add', { roleId: adminRole, permission: 'model|model.invoke' }],
-      ['/team/admin/roles/grants/revoke', { grantId: 'anything' }],
-      ['/team/admin/devices/revoke', { deviceId: 'anything' }],
-      ['/team/admin/models/register', {
-        modelRef: 'sneaky', displayName: 'Sneaky', providerRef: 'deepseek',
-        upstreamModel: 'deepseek-chat', endpoint: 'https://evil.example/',
-        credentialRef: 'COMPANY_DEEPSEEK_KEY', maxOutputTokens: '8192',
-      }],
-      ['/team/admin/models/status', { modelRef: 'anything', status: 'retired' }],
-    ] as const) {
-      const refused = await submit(path, cookie, { ...fields, csrf })
-      expect(refused.status, path).toBe(403)
-      expect(refused.body, path).toContain('Your roles do not include this')
-    }
-    expect(await store.listUsers(orgId)).toHaveLength(2)
-    expect(await access.listRoles(orgId)).toHaveLength(1)
-    expect((await store.getOrganization(orgId))?.name).toBe('Acme')
-    expect(await access.rolesOf(alice)).toEqual([adminRole])
-    expect(await ctx.modelGateway.list(orgId)).toHaveLength(0)
-  })
-
-  it('refuses a member whose roles do not include the action', async () => {
-    const bob = (await store.createUser({ orgId, loginName: 'bob', displayName: 'Bob' })).id
-    await ctx.accountAuth.setSecret(bob, PASSWORD)
-    const cookie = await signIn('bob')
-    // Bob signed in successfully and still cannot read any of these:
-    // authentication says who, and authorization says whether.
-    for (const path of [
-      '/team/admin', '/team/admin/organization', '/team/admin/devices',
-      '/team/admin/members', '/team/admin/roles', '/team/admin/models',
-    ]) {
-      expect((await send(path, { headers: { cookie } })).status, path).toBe(403)
-    }
-  })
-})
-
-describe('administering', () => {
-  it('adds a member and records who added them', async () => {
-    const cookie = await signIn()
-    const page = await send('/team/admin/members', { headers: { cookie } })
-    const added = await submit('/team/admin/members/create', cookie, {
-      csrf: readCsrf(page.body), loginName: 'bob', displayName: 'Bob',
-    })
-    expect(added.status).toBe(303)
-    expect((await store.listUsers(orgId)).map(user => user.loginName)).toEqual(['alice', 'bob'])
-    expect((await audit.query({ orgId, action: 'member.create' }))[0]).toMatchObject({
-      principalId: alice, outcome: 'allowed',
-    })
-  })
-
-  it('suspends a member, which is by itself the end of their sessions', async () => {
-    const bob = (await store.createUser({ orgId, loginName: 'bob', displayName: 'Bob' })).id
-    await ctx.accountAuth.setSecret(bob, PASSWORD)
-    const bobCookie = await signIn('bob')
-    const adminCookie = await signIn()
-    const page = await send('/team/admin/members', { headers: { cookie: adminCookie } })
-    await submit('/team/admin/members/suspend', adminCookie, { csrf: readCsrf(page.body), userId: bob })
-
-    // Bob's browser still holds the cookie; it stops working immediately.
-    expect((await send('/team/admin/members', { headers: { cookie: bobCookie } })).status).toBe(303)
-    expect((await audit.query({ orgId, action: 'member.disable' }))[0]).toMatchObject({ resourceId: bob })
-  })
-
-  it('creates a role and binds it', async () => {
-    const cookie = await signIn()
-    const rolesPage = await send('/team/admin/roles', { headers: { cookie } })
-    await submit('/team/admin/roles/create', cookie, {
-      csrf: readCsrf(rolesPage.body), name: 'engineering', description: 'Builds things',
-    })
-    expect((await access.listRoles(orgId)).map(role => role.name)).toContain('engineering')
-    const membersPage = await send('/team/admin/members', { headers: { cookie } })
-    const engineering = (await access.listRoles(orgId)).find(role => role.name === 'engineering')
-    await submit('/team/admin/members/bind', cookie, {
-      csrf: readCsrf(membersPage.body), userId: alice, roleId: engineering?.id as string,
-    })
-    expect(await access.rolesOf(alice)).toContain(engineering?.id)
-    expect(await audit.query({ orgId, action: 'binding.add' })).toHaveLength(1)
-  })
-
-  it('adds and revokes a permission through the closed catalog', async () => {
-    const cookie = await signIn()
-    const page = await send('/team/admin/roles', { headers: { cookie } })
-    const grant = await submit('/team/admin/roles/grants/add', cookie, {
-      csrf: readCsrf(page.body), roleId: adminRole, permission: 'model|model.invoke',
-    })
-    expect(grant.status).toBe(303)
-    const [stored] = (await access.listRoleGrants(adminRole)).filter(item => item.action === 'model.invoke')
-    expect(stored).toBeDefined()
-    const refreshed = await send('/team/admin/roles', { headers: { cookie } })
-    await submit('/team/admin/roles/grants/revoke', cookie, {
-      csrf: readCsrf(refreshed.body), grantId: stored?.id as string,
-    })
-    expect((await access.listRoleGrants(adminRole)).some(item => item.action === 'model.invoke')).toBe(false)
-  })
-
-  it('renames the organization and manages the company model catalog', async () => {
-    const cookie = await signIn()
-    const organization = await send('/team/admin/organization', { headers: { cookie } })
-    await submit('/team/admin/organization/update', cookie, {
-      csrf: readCsrf(organization.body), name: 'Acme Labs',
-    })
-    expect((await store.getOrganization(orgId))?.name).toBe('Acme Labs')
-
-    const models = await send('/team/admin/models', { headers: { cookie } })
-    const registered = await submit('/team/admin/models/register', cookie, {
-      csrf: readCsrf(models.body), modelRef: 'deepseek-chat', displayName: 'DeepSeek Chat',
-      providerRef: 'deepseek', upstreamModel: 'deepseek-chat', endpoint: 'https://api.deepseek.com/',
-      credentialRef: 'COMPANY_DEEPSEEK_KEY', maxOutputTokens: '8192',
-    })
-    expect(registered.status).toBe(303)
-    expect((await ctx.modelGateway.list(orgId))[0]).toMatchObject({ modelRef: 'deepseek-chat', status: 'active' })
-    const refreshed = await send('/team/admin/models', { headers: { cookie } })
-    await submit('/team/admin/models/status', cookie, {
-      csrf: readCsrf(refreshed.body), modelRef: 'deepseek-chat', status: 'retired',
-    })
-    expect((await ctx.modelGateway.list(orgId))[0]).toMatchObject({ status: 'retired' })
-    // A retired model stays in the catalog, and the page offers the way back.
-    const retired = await send('/team/admin/models', { headers: { cookie } })
-    expect(retired.body).toContain('Activate')
-    await submit('/team/admin/models/status', cookie, {
-      csrf: readCsrf(retired.body), modelRef: 'deepseek-chat', status: 'active',
-    })
-    expect((await ctx.modelGateway.list(orgId))[0]).toMatchObject({ status: 'active' })
-    // Withdrawing a model and returning it are separate acts in the record.
-    expect((await audit.query({ orgId, action: 'resource.enable' }))[0])
-      .toMatchObject({ resourceId: 'deepseek-chat' })
-    expect(await audit.query({ orgId, action: 'resource.disable' })).toHaveLength(1)
-  })
-
-  it('answers an address that names no page, and an action that names nothing', async () => {
-    const cookie = await signIn()
-    expect((await send('/team/admin/nothing', { headers: { cookie } })).status).toBe(404)
-    const page = await send('/team/admin/members', { headers: { cookie } })
-    const posted = await submit('/team/admin/nothing/at/all', cookie, { csrf: readCsrf(page.body) })
-    expect(posted.status).toBe(404)
-  })
-})
-
-describe('what an action refuses on its own terms', () => {
-  it('will not set an account to a status accounts do not have', async () => {
-    const cookie = await signIn()
-    const page = await send('/team/admin/members', { headers: { cookie } })
-    const refused = await submit('/team/admin/members/status', cookie, {
-      csrf: readCsrf(page.body), userId: alice, status: 'banished',
-    })
-    expect(refused.status).toBe(400)
-    expect(refused.body).toContain('account status is not supported')
-    expect((await store.getUser(alice))?.status).toBe('active')
-  })
-
-  it('will not grant a permission that does not name a type and an action', async () => {
-    const cookie = await signIn()
-    const page = await send('/team/admin/roles', { headers: { cookie } })
-    const csrf = readCsrf(page.body)
-    // The select renders `type|action` pairs. Anything else reached this form
-    // without the page, and the catalog is closed to it.
-    for (const permission of ['model.invoke', '|model.invoke']) {
-      const refused = await submit('/team/admin/roles/grants/add', cookie, {
-        csrf, roleId: adminRole, permission,
-      })
-      expect(refused.status, permission).toBe(400)
-      expect(refused.body, permission).toContain('not registered')
-    }
-    expect((await access.listRoleGrants(adminRole)).some(grant => grant.action === 'model.invoke'))
-      .toBe(false)
-  })
-
-  it('will not register a model no call could reach', async () => {
-    const cookie = await signIn()
-    const page = await send('/team/admin/models', { headers: { cookie } })
-    const csrf = readCsrf(page.body)
-    for (const [what, broken] of [
-      ['an endpoint that is not an address', { endpoint: 'api.deepseek.com' }],
-      ['plain HTTP, which carries the company key in the clear', { endpoint: 'http://api.deepseek.com/' }],
-      ['a ceiling that is not a whole number of tokens', { maxOutputTokens: '2.5' }],
-      ['a ceiling of no tokens at all', { maxOutputTokens: '0' }],
-      // A credential key and a credential reference address different things,
-      // and only the reference resolves when the gateway makes the call.
-      ['a credential key where a reference belongs', { credentialRef: 'company/deepseek' }],
-    ] as const) {
-      const refused = await submit('/team/admin/models/register', cookie, {
-        csrf, ...USABLE_MODEL, ...broken,
-      })
-      expect(refused.status, what).toBe(400)
-    }
-    expect(await ctx.modelGateway.list(orgId)).toHaveLength(0)
-  })
-
-  it('will not set a model to a status the catalog does not have', async () => {
-    const cookie = await signIn()
-    const page = await send('/team/admin/models', { headers: { cookie } })
-    const refused = await submit('/team/admin/models/status', cookie, {
-      csrf: readCsrf(page.body), modelRef: 'deepseek-chat', status: 'paused',
-    })
-    expect(refused.status).toBe(400)
-    expect(refused.body).toContain('model status is not supported')
-  })
-})
-
-describe('taking an act back', () => {
-  it('reactivates a suspended member, which is a permission of its own', async () => {
-    const bob = (await store.createUser({ orgId, loginName: 'bob', displayName: 'Bob' })).id
-    await ctx.accountAuth.setSecret(bob, PASSWORD)
-    const cookie = await signIn()
-    const page = await send('/team/admin/members', { headers: { cookie } })
-    await submit('/team/admin/members/suspend', cookie, { csrf: readCsrf(page.body), userId: bob })
-
-    const suspended = await send('/team/admin/members', { headers: { cookie } })
-    expect(suspended.body).toContain('Reactivate')
-    await submit('/team/admin/members/status', cookie, {
-      csrf: readCsrf(suspended.body), userId: bob, status: 'active',
-    })
-    expect((await store.getUser(bob))?.status).toBe('active')
-    // Enabling is recorded as itself, not as one more disable.
-    expect((await audit.query({ orgId, action: 'member.enable' }))[0]).toMatchObject({ resourceId: bob })
-    await signIn('bob')
-  })
-
-  it('unbinds one role and leaves the rest', async () => {
-    const cookie = await signIn()
-    const shown = await send('/team/admin/roles', { headers: { cookie } })
-    await submit('/team/admin/roles/create', cookie, {
-      csrf: readCsrf(shown.body), name: 'engineering', description: 'Builds things',
-    })
-    const engineering = (await access.listRoles(orgId)).find(role => role.name === 'engineering')?.id
-    const members = await send('/team/admin/members', { headers: { cookie } })
-    await submit('/team/admin/members/bind', cookie, {
-      csrf: readCsrf(members.body), userId: alice, roleId: engineering as string,
-    })
-    const bound = await send('/team/admin/members', { headers: { cookie } })
-    await submit('/team/admin/members/unbind', cookie, {
-      csrf: readCsrf(bound.body), userId: alice, roleId: engineering as string,
-    })
-    expect(await access.rolesOf(alice)).toEqual([adminRole])
-    expect((await audit.query({ orgId, action: 'binding.remove' }))[0])
-      .toMatchObject({ principalId: alice, outcome: 'allowed' })
-  })
-})
-
-describe('what the pages show', () => {
-  it('shows a member with no roles, and one whose address is on file', async () => {
-    const cookie = await signIn()
-    const page = await send('/team/admin/members', { headers: { cookie } })
-    await submit('/team/admin/members/create', cookie, {
-      csrf: readCsrf(page.body), loginName: 'bob', displayName: 'Bob', email: 'bob@acme.example',
-    })
-    const listed = await send('/team/admin/members', { headers: { cookie } })
-    expect(listed.body).toContain('No roles')
-    expect(listed.body).toContain('bob@acme.example')
-    expect((await store.getUser(alice))?.email).toBeUndefined()
-  })
-
-  it('shows only the roles this organization administers', async () => {
-    // Binding is not org-scoped, and this console administers one organization:
-    // a chip it renders is a role this page could also take away.
-    const elsewhere = (await store.createOrganization('Other')).id
-    const outsiders = (await access.createRole({ orgId: elsewhere, name: 'outsiders' })).id
-    await access.bindUserRole(alice, outsiders)
-    const cookie = await signIn()
-    const listed = await send('/team/admin/members', { headers: { cookie } })
-    expect(await access.rolesOf(alice)).toContain(outsiders)
-    expect(listed.body).not.toContain('outsiders')
-    expect(listed.body).not.toContain(outsiders)
-  })
-
-  it('shows a role with nothing granted, and a grant that names one resource', async () => {
-    const cookie = await signIn()
-    const shown = await send('/team/admin/roles', { headers: { cookie } })
-    await submit('/team/admin/roles/create', cookie, { csrf: readCsrf(shown.body), name: 'observers' })
-    const empty = await send('/team/admin/roles', { headers: { cookie } })
-    expect(empty.body).toContain('Default deny applies')
-    expect(empty.body).toContain('No description')
-
-    // Granting one named resource is not something this console does; it is
-    // something the roles page has to render when an operator has done it.
-    const observers = (await access.listRoles(orgId)).find(role => role.name === 'observers')?.id
-    const resource = await access.registerResource({
-      orgId, type: 'model', externalRef: 'deepseek-chat', displayName: 'DeepSeek Chat',
-    })
-    await access.grantResource(observers as RoleId, resource.id, 'model.invoke')
-    const granted = await send('/team/admin/roles', { headers: { cookie } })
-    expect(granted.body).toContain('model · DeepSeek Chat')
-  })
-
-  it('says plainly that no computer is connected', async () => {
-    const cookie = await signIn()
-    expect((await send('/team/admin/devices', { headers: { cookie } })).body)
-      .toContain('No computers are connected')
-  })
-
-  it('counts on the overview only what is still in service', async () => {
-    const cookie = await signIn()
-    const device = await bindDevice(cookie)
-    const models = await send('/team/admin/models', { headers: { cookie } })
-    await submit('/team/admin/models/register', cookie, { csrf: readCsrf(models.body), ...USABLE_MODEL })
-
-    const before = await send('/team/admin', { headers: { cookie } })
-    expect(before.body).toContain(metricCard('Devices', 1, '1 active'))
-    expect(before.body).toContain(metricCard('Models', 1, '1 available'))
-
-    const listed = await send('/team/admin/devices', { headers: { cookie } })
-    await submit('/team/admin/devices/revoke', cookie, { csrf: readCsrf(listed.body), deviceId: device })
-    const registered = await send('/team/admin/models', { headers: { cookie } })
-    await submit('/team/admin/models/status', cookie, {
-      csrf: readCsrf(registered.body), modelRef: USABLE_MODEL.modelRef, status: 'retired',
-    })
-
-    // Both rows are still there to administer; neither is in service.
-    const after = await send('/team/admin', { headers: { cookie } })
-    expect(after.body).toContain(metricCard('Devices', 1, '0 active'))
-    expect(after.body).toContain(metricCard('Models', 1, '0 available'))
-  })
-
-  it('says so rather than rendering a table with no rows', () => {
-    // A console that administers an organization always has an administrator
-    // and the role that made them one, so no request reaches these two.
-    const org: Organization = { id: orgId, name: 'Acme', policyRevision: 1n, createdAt: 0 }
-    expect(membersPage(org, [], [], 'a-token')).toContain('No users yet')
-    expect(rolesPage(org, [], PERMISSION_CATALOG, 'a-token')).toContain('No roles yet')
-  })
-
-  it('says the site cannot answer when the organization it serves has gone away', async () => {
-    const cookie = await signIn()
-    // Nothing in this build removes an organization; an operator reaching the
-    // database can. An administration console with no organization in it is
-    // the site's failure, not a page the member asked for wrongly.
-    store.getOrganization = () => Promise.resolve(undefined)
-    const shown = await send('/team/admin/members', { headers: { cookie } })
-    expect(shown.status).toBe(500)
-    expect(shown.body).toContain('could not answer')
-  })
-})
-
 describe('confirming a computer', () => {
-  /** Open a transaction the way a Runner does. */
-  async function pending(): Promise<{ id: string; pairingCode: string }> {
-    const started = await devices.start({
-      publicKey: 'a-public-key',
-      platform: 'darwin',
-      runnerVersion: '2.4.1',
-      pkceChallenge: 'a-challenge',
-      callbackUri: 'http://127.0.0.1:3080/team/callback',
-      protocolVersion: 1,
-    })
-    return { id: started.transactionId, pairingCode: started.pairingCode }
-  }
-
   it('shows what the member compares, and sends the browser back with the code', async () => {
-    const cookie = await signIn()
     const transaction = await pending()
     const shown = await send(`/team/confirm/${transaction.id}?state=runner-state`, { headers: { cookie } })
     expect(shown.status).toBe(200)
@@ -714,7 +140,7 @@ describe('confirming a computer', () => {
     expect(shown.body).toContain('darwin')
     expect(shown.body).toContain('2.4.1')
 
-    const confirmed = await submit(`/team/confirm/${transaction.id}`, cookie, {
+    const confirmed = await submit(`/team/confirm/${transaction.id}`, {
       csrf: readCsrf(shown.body), state: 'runner-state',
     })
     expect(confirmed.status).toBe(303)
@@ -728,249 +154,197 @@ describe('confirming a computer', () => {
     })
   })
 
-  it('asks an unsigned browser to sign in first, and comes back to the same transaction', async () => {
+  it('sends an unsigned browser to the console, and comes back to the same transaction', async () => {
     const transaction = await pending()
     const sent = await send(`/team/confirm/${transaction.id}?state=s`)
     expect(sent.status).toBe(303)
+    // The console is where signing in happens, and `next` is what brings the
+    // member back to the page they were actually sent.
+    expect(head(sent, 'location')).toContain(shell.CONSOLE_PATH)
     expect(head(sent, 'location')).toContain(encodeURIComponent(`/team/confirm/${transaction.id}`))
   })
 
-  it('refuses a confirmation whose form carries no token of this session', async () => {
-    const cookie = await signIn()
-    const transaction = await pending()
-    const refused = await submit(`/team/confirm/${transaction.id}`, cookie, { state: 's' })
-    expect(refused.status).toBe(403)
-    expect(await devices.listDevices(orgId)).toEqual([])
-  })
-
   it('tells a member plainly when the request is not one this site knows', async () => {
-    const cookie = await signIn()
     const shown = await send('/team/confirm/no-such-transaction', { headers: { cookie } })
     expect(shown.status).toBe(400)
     expect(shown.body).toContain('not one this site knows about')
 
     // The same for a confirmation posted against it: nothing to confirm.
-    const posted = await submit('/team/confirm/no-such-transaction', cookie, {
-      csrf: csrfToken(cookie.slice(cookie.indexOf('=') + 1)), state: 's',
-    })
+    const posted = await submit('/team/confirm/no-such-transaction', { csrf, state: 's' })
     expect(posted.status).toBe(400)
     expect(posted.body).toContain('not one this site knows about')
   })
 
   it('refuses a second confirmation and records the refusal', async () => {
-    const cookie = await signIn()
     const transaction = await pending()
-    const shown = await send(`/team/confirm/${transaction.id}?state=s`, { headers: { cookie } })
-    await submit(`/team/confirm/${transaction.id}`, cookie, { csrf: readCsrf(shown.body), state: 's' })
-    const again = await submit(`/team/confirm/${transaction.id}`, cookie, {
-      csrf: readCsrf(shown.body), state: 's',
-    })
+    await submit(`/team/confirm/${transaction.id}`, { csrf, state: 's' })
+    const again = await submit(`/team/confirm/${transaction.id}`, { csrf, state: 's' })
     expect(again.status).toBe(400)
     expect(again.body).toContain('already confirmed')
     expect(await audit.query({ orgId, action: 'device.bind', outcome: 'denied' })).toHaveLength(1)
   })
 })
 
-describe('bodies, addresses, and pages that render nothing', () => {
-  it('refuses a form larger than the page accepts', async () => {
-    const cookie = await signIn()
-    const page = await send('/team/admin/members', { headers: { cookie } })
-    const huge = await submit('/team/admin/members/create', cookie, {
-      csrf: readCsrf(page.body), loginName: 'x'.repeat(20_000), displayName: 'Bob',
-    })
-    expect(huge.status).toBe(413)
-    expect(await store.listUsers(orgId)).toHaveLength(1)
-  })
-
-  it('refuses a sign-in body larger than the page accepts', async () => {
-    const huge = await send('/team/login', {
+describe('a confirmation needs all three', () => {
+  it('refuses one that carries no session', async () => {
+    const transaction = await pending()
+    const refused = await send(`/team/confirm/${transaction.id}`, {
       method: 'POST',
       headers: { 'content-type': 'application/x-www-form-urlencoded', origin },
-      body: new URLSearchParams({ loginName: 'x'.repeat(20_000), secret: PASSWORD }).toString(),
+      body: new URLSearchParams({ csrf, state: 's' }).toString(),
+    })
+    expect(refused.status).toBe(403)
+    expect(await devices.listDevices(orgId)).toEqual([])
+  })
+
+  it('refuses one from another site, and one with no Origin at all', async () => {
+    const transaction = await pending()
+    for (const headers of [
+      { 'content-type': 'application/x-www-form-urlencoded', cookie, origin: 'https://evil.example' },
+      { 'content-type': 'application/x-www-form-urlencoded', cookie },
+    ]) {
+      const refused = await send(`/team/confirm/${transaction.id}`, {
+        method: 'POST', headers, body: new URLSearchParams({ csrf, state: 's' }).toString(),
+      })
+      expect(refused.status).toBe(403)
+    }
+    expect(await devices.listDevices(orgId)).toEqual([])
+  })
+
+  it('refuses one whose form carries no token of this session', async () => {
+    const transaction = await pending()
+    for (const fields of [{ state: 's' }, { csrf: csrfToken('another session'), state: 's' }]) {
+      expect((await submit(`/team/confirm/${transaction.id}`, fields)).status).toBe(403)
+    }
+    expect(await devices.listDevices(orgId)).toEqual([])
+  })
+
+  it('refuses a method this address does not accept', async () => {
+    const transaction = await pending()
+    const refused = await send(`/team/confirm/${transaction.id}`, {
+      method: 'DELETE', headers: { cookie, origin },
+    })
+    expect(refused.status).toBe(405)
+  })
+
+  it('refuses a form larger than the page accepts', async () => {
+    const transaction = await pending()
+    const huge = await submit(`/team/confirm/${transaction.id}`, {
+      csrf, state: 'x'.repeat(20_000),
     })
     expect(huge.status).toBe(413)
+    expect(await devices.listDevices(orgId)).toEqual([])
   })
+})
 
-  it('refuses an action whose form did not carry what it needs', async () => {
-    const cookie = await signIn()
-    const page = await send('/team/admin/members', { headers: { cookie } })
-    const csrf = readCsrf(page.body)
-    // Each of these would otherwise reach a store that would hold an empty
-    // login name, or bind a role id that names nothing.
-    for (const [path, fields] of [
-      ['/team/admin/organization/update', { csrf }],
-      ['/team/admin/members/create', { csrf }],
-      ['/team/admin/members/create', { csrf, loginName: 'bob' }],
-      ['/team/admin/members/suspend', { csrf }],
-      ['/team/admin/members/status', { csrf, userId: alice }],
-      ['/team/admin/members/bind', { csrf, userId: alice }],
-      ['/team/admin/members/unbind', { csrf, userId: alice }],
-      ['/team/admin/roles/create', { csrf, description: 'no name' }],
-      ['/team/admin/roles/grants/add', { csrf, roleId: adminRole }],
-      ['/team/admin/roles/grants/revoke', { csrf }],
-      ['/team/admin/devices/revoke', { csrf }],
-      ['/team/admin/models/register', { csrf, modelRef: 'half-a-model' }],
-      ['/team/admin/models/status', { csrf, modelRef: 'half-a-model' }],
-    ] as const) {
-      const refused = await submit(path, cookie, fields)
-      expect(refused.status, path).toBe(400)
-    }
-    expect(await store.listUsers(orgId)).toHaveLength(1)
-    expect(await access.listRoles(orgId)).toHaveLength(1)
-  })
-
-  it('refuses a method the sign-in page does not accept', async () => {
-    expect((await send('/team/login', { method: 'DELETE' })).status).toBe(405)
-  })
-
-  it('refuses a next that is protocol-relative', async () => {
-    const shown = await send('/team/login?next=//evil.example/steal')
-    expect(shown.body).toContain('value="/team/admin/members"')
-  })
-
-  it('serves the overview at the bare administrative address', async () => {
-    const cookie = await signIn()
-    for (const path of ['/team/admin', '/team/admin/']) {
-      const shown = await send(path, { headers: { cookie } })
-      expect(shown.status, path).toBe(200)
-      expect(shown.body, path).toContain('RBAC active')
-    }
-  })
-
-  it('lists a revoked device without offering to revoke it again', async () => {
-    const cookie = await signIn()
-    const device = await bindDevice(cookie)
-
-    const listed = await send('/team/admin/devices', { headers: { cookie } })
-    expect(listed.body).toContain('linux')
-    expect(listed.body).toContain('Revoke')
-    await submit('/team/admin/devices/revoke', cookie, {
-      csrf: readCsrf(listed.body), deviceId: device,
-    })
-    const after = await send('/team/admin/devices', { headers: { cookie } })
-    expect(after.body).toContain('revoked')
-    expect(after.body).not.toContain('>Revoke<')
-    expect((await audit.query({ orgId, action: 'device.revoke' }))[0]).toMatchObject({ resourceId: device })
-  })
-
+describe('when the seam runs out of time, or the site cannot answer', () => {
   it('tells a member when a confirmation request has run out of time', async () => {
     const brief = new Context()
     await brief.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
     await brief.plugin(SqliteAccountStore, { path: ':memory:' }).await()
-    await brief.plugin(PasswordAccountAuth, {
-      minSecretLength: 8, maxFailedAttempts: 5, lockDurationMs: 60_000,
-      cost: 2, blockSize: 8, parallelization: 1,
-    }).await()
-    await brief.plugin(SqliteAccessControl, { path: ':memory:' }).await()
     await brief.plugin(SqliteAudit, { path: ':memory:', maxQueryRows: 100 }).await()
     await brief.plugin(SqliteDeviceAuthorization, {
-      path: ':memory:', transactionTtlMs: 0, codeTtlMs: 60_000,
-      accessTokenTtlMs: 900_000, refreshTokenTtlMs: 2_592_000_000,
+      path: ':memory:',
+      // Already expired by the time the page reads it, which is the state a
+      // member reaches by leaving the pairing page open.
+      transactionTtlMs: 1,
+      codeTtlMs: 60_000,
+      accessTokenTtlMs: 900_000,
+      refreshTokenTtlMs: 2_592_000_000,
     }).await()
-    await brief.plugin(SqliteQuota, { path: ':memory:', reservationTtlMs: 900_000 }).await()
-    await brief.plugin(SqliteModelGateway, { path: ':memory:' }).await()
     const briefStore = brief.get('accountStore') as AccountStore
     const briefOrg = (await briefStore.createOrganization('Acme')).id
     const bob = (await briefStore.createUser({ orgId: briefOrg, loginName: 'bob', displayName: 'Bob' })).id
-    await brief.accountAuth.setSecret(bob, PASSWORD)
-    await brief.plugin(shell, shell.Config({ organizationId: briefOrg, secureCookie: false } as never)).await()
+    const token = newSessionToken()
+    await briefStore.createBrowserSession(bob, hashToken(token), Date.now() + 3_600_000)
+    await brief.plugin(shell, shell.Config({} as never)).await()
 
-    const briefOrigin = `http://127.0.0.1:${String(brief.webServer.port)}`
-    const landed = await new Promise<Landing>((resolve, reject) => {
-      const req = httpRequest(`${briefOrigin}/team/login`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/x-www-form-urlencoded', origin: briefOrigin },
-      }, (res) => {
-        const chunks: Buffer[] = []
-        res.on('data', (chunk) => { chunks.push(chunk as Buffer) })
-        res.on('end', () => {
-          resolve({ status: res.statusCode as number, headers: res.headers, body: Buffer.concat(chunks).toString('utf8') })
-        })
-      })
-      req.on('error', reject)
-      req.write(new URLSearchParams({ loginName: 'bob', secret: PASSWORD }).toString())
-      req.end()
-    })
-    const cookie = (head(landed, 'set-cookie') as string).split(';')[0] as string
     const started = await (brief.get('deviceAuthorization') as DeviceAuthorization).start({
-      publicKey: 'k', platform: 'linux', runnerVersion: '1.0.0',
-      pkceChallenge: 'c', callbackUri: 'http://127.0.0.1:3080/team/callback', protocolVersion: 1,
+      publicKey: 'a-public-key', platform: 'linux', runnerVersion: '1.0.0',
+      pkceChallenge: 'a-challenge',
+      callbackUri: 'http://127.0.0.1:3080/team/callback', protocolVersion: 1,
     })
+    const briefOrigin = `http://127.0.0.1:${String(brief.webServer.port)}`
     const shown = await new Promise<Landing>((resolve, reject) => {
-      const req = httpRequest(`${briefOrigin}/team/confirm/${started.transactionId}?state=s`,
-        { headers: { cookie } }, (res) => {
+      const req = httpRequest(
+        `${briefOrigin}/team/confirm/${started.transactionId}?state=s`,
+        { headers: { cookie: `${shell.SESSION_COOKIE}=${token}` } },
+        (res) => {
           const chunks: Buffer[] = []
           res.on('data', (chunk) => { chunks.push(chunk as Buffer) })
           res.on('end', () => {
-            resolve({ status: res.statusCode as number, headers: res.headers, body: Buffer.concat(chunks).toString('utf8') })
+            resolve({
+              status: res.statusCode as number,
+              headers: res.headers,
+              body: Buffer.concat(chunks).toString('utf8'),
+            })
           })
-        })
+        },
+      )
       req.on('error', reject)
       req.end()
     })
     expect(shown.status).toBe(400)
     expect(shown.body).toContain('took too long')
 
-    // Posting the confirmation anyway records the refusal with the seam's own
-    // word rather than with a guess.
-    const posted = await new Promise<Landing>((resolve, reject) => {
-      const req = httpRequest(`${briefOrigin}/team/confirm/${started.transactionId}`, {
+    // A confirmation posted against it records the seam's own word, so the
+    // trail says the request ran out of time rather than only that it failed.
+    const briefOrigin2 = `http://127.0.0.1:${String(brief.webServer.port)}`
+    await new Promise<Landing>((resolve, reject) => {
+      const req = httpRequest(`${briefOrigin2}/team/confirm/${started.transactionId}`, {
         method: 'POST',
-        headers: { 'content-type': 'application/x-www-form-urlencoded', cookie, origin: briefOrigin },
+        headers: {
+          'content-type': 'application/x-www-form-urlencoded',
+          cookie: `${shell.SESSION_COOKIE}=${token}`,
+          origin: briefOrigin2,
+        },
       }, (res) => {
-        const chunks: Buffer[] = []
-        res.on('data', (chunk) => { chunks.push(chunk as Buffer) })
+        res.on('data', () => {})
         res.on('end', () => {
-          resolve({ status: res.statusCode as number, headers: res.headers, body: Buffer.concat(chunks).toString('utf8') })
+          resolve({ status: res.statusCode as number, headers: res.headers, body: '' })
         })
       })
       req.on('error', reject)
-      req.write(new URLSearchParams({
-        csrf: csrfToken(cookie.slice(cookie.indexOf('=') + 1)),
-        state: 's',
-      }).toString())
+      req.write(new URLSearchParams({ csrf: csrfToken(token), state: 's' }).toString())
       req.end()
     })
-    expect(posted.status).toBe(400)
-    const denied = await (brief.get('audit') as Audit).query({ orgId: briefOrg, action: 'device.bind' })
-    expect(denied[0]).toMatchObject({ outcome: 'denied', reason: 'expired' })
+    expect((await (brief.get('audit') as Audit).query({ orgId: briefOrg, outcome: 'denied' }))[0])
+      .toMatchObject({ action: 'device.bind', reason: 'expired' })
     await brief.fiber.dispose()
   })
-})
 
-describe('when the site itself cannot answer', () => {
-  it('says so, rather than telling the member their request was unrecognized', async () => {
+  it('says the site could not answer, rather than that the request was unrecognized', async () => {
     const broken = new Context()
     await broken.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
     await broken.plugin(SqliteAccountStore, { path: ':memory:' }).await()
-    await broken.plugin(PasswordAccountAuth, {
-      minSecretLength: 8, maxFailedAttempts: 5, lockDurationMs: 60_000,
-      cost: 2, blockSize: 8, parallelization: 1,
-    }).await()
-    await broken.plugin(SqliteAccessControl, { path: ':memory:' }).await()
     await broken.plugin(SqliteAudit, { path: ':memory:', maxQueryRows: 100 }).await()
     broken.provide('deviceAuthorization', {
       describe: () => Promise.reject(new Error('the database is on fire')),
       confirm: () => Promise.reject(new Error('the database is on fire')),
     })
-    broken.provide('modelGateway', {})
     const brokenStore = broken.get('accountStore') as AccountStore
     const brokenOrg = (await brokenStore.createOrganization('Acme')).id
     const bob = (await brokenStore.createUser({ orgId: brokenOrg, loginName: 'bob', displayName: 'Bob' })).id
-    await broken.accountAuth.setSecret(bob, PASSWORD)
-    await broken.plugin(shell, shell.Config({ organizationId: brokenOrg, secureCookie: false } as never)).await()
+    const token = newSessionToken()
+    await brokenStore.createBrowserSession(bob, hashToken(token), Date.now() + 3_600_000)
+    await broken.plugin(shell, shell.Config({} as never)).await()
     const brokenOrigin = `http://127.0.0.1:${String(broken.webServer.port)}`
+    const brokenCookie = `${shell.SESSION_COOKIE}=${token}`
 
-    const call = (path: string, init: { method?: string; headers?: Record<string, string>; body?: string } = {}) =>
+    const call = (init: { method?: string; headers?: Record<string, string>; body?: string }) =>
       new Promise<Landing>((resolve, reject) => {
-        const req = httpRequest(`${brokenOrigin}${path}`, {
+        const req = httpRequest(`${brokenOrigin}/team/confirm/anything`, {
           method: init.method ?? 'GET',
           headers: init.headers ?? {},
         }, (res) => {
           const chunks: Buffer[] = []
           res.on('data', (chunk) => { chunks.push(chunk as Buffer) })
           res.on('end', () => {
-            resolve({ status: res.statusCode as number, headers: res.headers, body: Buffer.concat(chunks).toString('utf8') })
+            resolve({
+              status: res.statusCode as number,
+              headers: res.headers,
+              body: Buffer.concat(chunks).toString('utf8'),
+            })
           })
         })
         req.on('error', reject)
@@ -978,40 +352,21 @@ describe('when the site itself cannot answer', () => {
         req.end()
       })
 
-    const landed = await call('/team/login', {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded', origin: brokenOrigin },
-      body: new URLSearchParams({ loginName: 'bob', secret: PASSWORD }).toString(),
-    })
-    const cookie = (head(landed, 'set-cookie') as string).split(';')[0] as string
-
-    const shown = await call('/team/confirm/anything?state=s', { headers: { cookie } })
+    const shown = await call({ headers: { cookie: brokenCookie } })
     expect(shown.status).toBe(500)
     expect(shown.body).toContain('could not answer')
 
-    const posted = await call('/team/confirm/anything', {
+    const posted = await call({
       method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded', cookie, origin: brokenOrigin },
-      body: new URLSearchParams({
-        csrf: csrfToken(cookie.slice(cookie.indexOf('=') + 1)), state: 's',
-      }).toString(),
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded', cookie: brokenCookie, origin: brokenOrigin,
+      },
+      body: new URLSearchParams({ csrf: csrfToken(token), state: 's' }).toString(),
     })
     expect(posted.status).toBe(500)
     // The record says the site failed, not that the member was refused.
     expect((await (broken.get('audit') as Audit).query({ orgId: brokenOrg }))[0])
       .toMatchObject({ action: 'device.bind', outcome: 'error' })
     await broken.fiber.dispose()
-  })
-})
-
-describe('a Control Plane nobody configured', () => {
-  it('refuses to load rather than authenticating against an organization that does not exist', () => {
-    // The shipped Control Plane patch omits the key for this reason: the
-    // failure happens as the plugin applies, naming what is missing, rather
-    // than later as "that member and password do not match" for every member
-    // forever. It throws before touching the context, so this calls it directly.
-    expect(() => {
-      shell.apply(ctx, shell.Config({ organizationId: '   ', secureCookie: false } as never))
-    }).toThrow(/organizationId must name the organization/u)
   })
 })

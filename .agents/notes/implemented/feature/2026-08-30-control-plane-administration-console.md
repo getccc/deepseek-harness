@@ -10,6 +10,8 @@ Team Edition already stores accounts, roles, grants, devices, and company models
 
 ## Decision
 
+The presentation decided here is superseded by [the browser-application note](../architecture/2026-08-30-administration-console-as-a-browser-application.md): administration is now a React and Ant Design application over a JSON API, and `dsh-team-shell` is the device-confirmation page alone. What follows still describes the governed resources, the permission each route asks, and the catalog refusals, all of which the browser application kept.
+
 `dsh-team-shell` owns one server-rendered administration console with persistent navigation for overview, organization, users, roles and access, devices, and models. The console remains script-free and loads no external assets. Forms submit to same-origin server routes, so the existing session, browser-origin, CSRF, access-control, and audit checks remain the only write path; presentation does not introduce a browser API or client-side authorization state.
 
 The shell registers governed control resources for organization, member, role, device, and model-catalog administration. Read and write routes ask distinct code-registered permissions where the action differs. A deployment still bootstraps its first administrator outside the console, then that administrator composes roles from `PERMISSION_CATALOG`, binds and unbinds them on users, and manages organization name, account status, devices, and model catalog entries through audited forms.

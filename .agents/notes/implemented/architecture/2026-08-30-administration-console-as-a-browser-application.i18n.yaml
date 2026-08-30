@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-30-administration-console-as-a-browser-application.md
+2026-08-30-administration-console-as-a-browser-application.md: 8ec7e6c50603130aea5e64f7998ba755cf1d410f
+2026-08-30-administration-console-as-a-browser-application.zh.md: 71a0c6d9f565a430b3881ef983df807380c236e0

@@ -22,14 +22,17 @@ The `team/` group carries a member from the company site into the application ru
 <a id="packages"></a>
 ## Packages
 
-Five packages, split by which side of the network they run on; each child README owns the full contract.
+Eight packages, split by which side of the network they run on; each child README owns the full contract.
 
 | Package | Side | Role | ctx key |
 |---|---|---|---|
 | [`team-control-plane-http/`](team-control-plane-http/README.md) | Control Plane | Runner-facing binding endpoints: start, redeem, refresh | — |
 | [`team-account-client/`](team-account-client/README.md) | Runner | The device key, the credential, and the calls to the Control Plane | `ctx.teamAccountClient` |
 | [`team-local-handoff/`](team-local-handoff/README.md) | Runner | The three local addresses a browser navigates to | — |
-| [`team-shell/`](team-shell/README.md) | Control Plane | Signing in, confirming a computer, and the administrative pages | — |
+| [`team-admin-api/`](team-admin-api/README.md) | Control Plane | The administration console's JSON API: session, authorization, audit | — |
+| [`team-admin-app/`](team-admin-app/README.md) | Control Plane | Serving the built administration console | — |
+| [`team-browser-session/`](team-browser-session/README.md) | Control Plane | The session cookie, its CSRF value, and the same-origin decision | — |
+| [`team-shell/`](team-shell/README.md) | Control Plane | Confirming that the computer asking to connect is this member's | — |
 | [`team-update/`](team-update/README.md) | Runner | Whether an offered release may be installed, and the service definition an installer writes | — |
 
 -----
