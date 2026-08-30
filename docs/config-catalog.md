@@ -2691,7 +2691,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/team/team-account-client/src/index.ts:62`](../packages/team/team-account-client/src/index.ts)
+Source: [`packages/team/team-account-client/src/index.ts:76`](../packages/team/team-account-client/src/index.ts)
 
 <a id="deepseek-aidsh-team-control-plane-http"></a>
 
@@ -2709,7 +2709,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/team/team-control-plane-http/src/index.ts:47`](../packages/team/team-control-plane-http/src/index.ts)
+Source: [`packages/team/team-control-plane-http/src/index.ts:54`](../packages/team/team-control-plane-http/src/index.ts)
 
 <a id="deepseek-aidsh-team-local-handoff"></a>
 
@@ -3736,6 +3736,7 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 - `@deepseek-ai/dsh-subagent-in-process-driver` ([`packages/subagent/subagent-in-process-driver/src/index.ts`](../packages/subagent/subagent-in-process-driver/src/index.ts))
 - `@deepseek-ai/dsh-team` ([`packages/bundle/team/src/index.ts`](../packages/bundle/team/src/index.ts))
 - `@deepseek-ai/dsh-team-control-plane` ([`packages/bundle/team-control-plane/src/index.ts`](../packages/bundle/team-control-plane/src/index.ts))
+- `@deepseek-ai/dsh-team-update` ([`packages/team/team-update/src/index.ts`](../packages/team/team-update/src/index.ts))
 - `@deepseek-ai/dsh-timeout` ([`packages/util/timeout/src/index.ts`](../packages/util/timeout/src/index.ts))
 - `@deepseek-ai/dsh-typert-generator` ([`packages/typert/generator/src/index.ts`](../packages/typert/generator/src/index.ts))
 - `@deepseek-ai/dsh-typert-protocol` ([`packages/typert/protocol/src/index.ts`](../packages/typert/protocol/src/index.ts))

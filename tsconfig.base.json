@@ -512,6 +512,8 @@
       "@deepseek-ai/dsh-team-local-handoff/invariant": ["./packages/team/team-local-handoff/src/invariant.ts"],
       "@deepseek-ai/dsh-team-shell": ["./packages/team/team-shell/src"],
       "@deepseek-ai/dsh-team-shell/invariant": ["./packages/team/team-shell/src/invariant.ts"],
+      "@deepseek-ai/dsh-team-update": ["./packages/team/team-update/src"],
+      "@deepseek-ai/dsh-team-update/invariant": ["./packages/team/team-update/src/invariant.ts"],
       "@deepseek-ai/dsh-terminal": ["./packages/terminal/terminal/src"],
       "@deepseek-ai/dsh-terminal/invariant": ["./packages/terminal/terminal/src/invariant.ts"],
       "@deepseek-ai/dsh-terminal-bash": ["./packages/terminal/terminal-bash/src"],

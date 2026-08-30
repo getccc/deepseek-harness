@@ -11,6 +11,33 @@
 /** The binding protocol version this build speaks. */
 export const PROTOCOL_VERSION = 1
 
+/**
+ * The oldest binding protocol version this Control Plane still answers.
+ *
+ * Raising it is how a deployment stops serving Runners too old to be trusted
+ * with a change — a refusal a Runner can act on, rather than a request that
+ * fails for a reason it cannot distinguish from its own mistake.
+ */
+export const MINIMUM_PROTOCOL_VERSION = 1
+
+/** Whether a Runner's protocol version is one this build can answer. */
+export type ProtocolSupport = 'supported' | 'too-old' | 'too-new'
+
+/**
+ * Decide whether this build speaks a Runner's version.
+ *
+ * `too-new` is not an error on the Runner's part: it means this Control Plane
+ * is the one that needs updating, and saying so keeps an administrator from
+ * chasing a member's installation.
+ * @param version - the version the Runner reported.
+ * @returns which side of the supported range the version falls on.
+ */
+export function protocolSupport(version: number): ProtocolSupport {
+  if (version < MINIMUM_PROTOCOL_VERSION) return 'too-old'
+  if (version > PROTOCOL_VERSION) return 'too-new'
+  return 'supported'
+}
+
 /** Default path prefix the Control Plane serves the Runner-facing endpoints under. */
 export const DEVICE_PATH_PREFIX = '/team/device'
 
@@ -30,4 +57,20 @@ export const REFRESH_PATH = '/refresh'
 export interface WireRefusal {
   readonly error: string
   readonly reason: string
+}
+
+/**
+ * What the Control Plane answers a Runner whose protocol version it cannot
+ * speak, alongside HTTP 426.
+ *
+ * The range travels with the refusal because the Runner is the party that has
+ * to act on it, and it cannot ask for the range through a protocol the other
+ * side has just said it does not speak.
+ */
+export interface ProtocolRefusal extends WireRefusal {
+  readonly reason: 'protocol-unsupported'
+  /** The oldest version this Control Plane answers. */
+  readonly minimum: number
+  /** The newest version this Control Plane speaks. */
+  readonly current: number
 }

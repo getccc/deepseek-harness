@@ -24,17 +24,24 @@ import {
 import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
 import {
   DEVICE_PATH_PREFIX,
-  REDEEM_PATH,
-  REFRESH_PATH,
-  START_PATH,
-} from './protocol.ts'
-
-export {
-  DEVICE_PATH_PREFIX,
+  MINIMUM_PROTOCOL_VERSION,
   PROTOCOL_VERSION,
   REDEEM_PATH,
   REFRESH_PATH,
   START_PATH,
+  protocolSupport,
+} from './protocol.ts'
+
+export {
+  DEVICE_PATH_PREFIX,
+  MINIMUM_PROTOCOL_VERSION,
+  PROTOCOL_VERSION,
+  REDEEM_PATH,
+  REFRESH_PATH,
+  START_PATH,
+  protocolSupport,
+  type ProtocolRefusal,
+  type ProtocolSupport,
   type WireRefusal,
 } from './protocol.ts'
 
@@ -167,6 +174,30 @@ function parseRefresh(body: Record<string, unknown>): RefreshRequest {
 }
 
 /**
+ * Answer a Runner whose protocol version this build does not speak.
+ *
+ * A body carrying no version at all is left to the per-endpoint parsing, which
+ * names the missing field; only a version that is present and outside the range
+ * is answered here.
+ * @param res - the response, owned by this function when it returns false.
+ * @param body - the parsed request body.
+ * @returns true when the request may continue.
+ */
+function answerUnsupportedProtocol(res: ServerResponse, body: Record<string, unknown>): boolean {
+  const version = body['protocolVersion']
+  if (typeof version !== 'number' || protocolSupport(version) === 'supported') return true
+  // 426 rather than 400: the request was understood and refused for what the
+  // Runner is, which is the one refusal an update fixes.
+  json(res, 426, {
+    error: 'refused',
+    reason: 'protocol-unsupported',
+    minimum: MINIMUM_PROTOCOL_VERSION,
+    current: PROTOCOL_VERSION,
+  })
+  return false
+}
+
+/**
  * Register the Runner-facing binding endpoints.
  * @param ctx - Host plugin context carrying the web server and the seam.
  * @param config - resolved plugin config (schema defaults applied).
@@ -188,6 +219,10 @@ export function apply(ctx: Context, config: Config): void {
         json(res, 400, { error: body })
         return
       }
+      // The version is decided before anything else reads the body. A Runner
+      // this build cannot speak to must learn that, and not a downstream
+      // complaint about a field whose meaning changed underneath it.
+      if (!answerUnsupportedProtocol(res, body)) return
       try {
         json(res, 200, await run(body))
       } catch (error) {

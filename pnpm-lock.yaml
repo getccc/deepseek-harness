@@ -9269,6 +9269,19 @@ importers:
         specifier: workspace:^
         version: link:../../runtime-diagnostics/invariants
 
+  packages/team/team-update:
+    dependencies:
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:^
+        version: link:../../account/device-authorization
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+
   packages/terminal/terminal:
     devDependencies:
       '@deepseek-ai/cordis':

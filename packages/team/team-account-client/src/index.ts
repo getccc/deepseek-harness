@@ -50,6 +50,20 @@ export class ControlPlaneRefusedError extends Error {
   }
 }
 
+/**
+ * Raised when the Control Plane does not speak this Runner's protocol version.
+ *
+ * Separate from a refusal because it is the one failure an update fixes, and a
+ * Runner that cannot tell it apart would keep retrying a request that will
+ * never be accepted.
+ */
+export class ProtocolUnsupportedError extends Error {
+  constructor(readonly minimum: number, readonly current: number) {
+    super(`the company Control Plane speaks protocol ${minimum}-${current}, and this Runner speaks ${PROTOCOL_VERSION}`)
+    this.name = 'ProtocolUnsupportedError'
+  }
+}
+
 /** Raised when a call needs a credential this installation does not hold. */
 export class NotBoundError extends Error {
   constructor() {
@@ -227,6 +241,14 @@ export class TeamAccountClient extends Service {
     })
     const answer = await response.json() as Record<string, unknown>
     if (response.ok) return answer as T
+    if (response.status === 426) {
+      // The range travels with the refusal, because this Runner cannot ask for
+      // it through a protocol the other side has just said it does not speak.
+      throw new ProtocolUnsupportedError(
+        typeof answer.minimum === 'number' ? answer.minimum : PROTOCOL_VERSION,
+        typeof answer.current === 'number' ? answer.current : PROTOCOL_VERSION,
+      )
+    }
     // A refusal names the seam's word when the Control Plane sent one; anything
     // else is a body this Runner has no agreement about.
     const reason = [answer.reason, answer.error].find(value => typeof value === 'string')

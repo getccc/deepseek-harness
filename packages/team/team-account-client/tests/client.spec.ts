@@ -19,7 +19,13 @@ import SqliteDeviceAuthorization from '@deepseek-ai/dsh-device-authorization-sql
 import type { AccountStore, OrgId, UserId } from '@deepseek-ai/dsh-account-store'
 import type { DeviceAuthorization } from '@deepseek-ai/dsh-device-authorization'
 import * as endpoints from '@deepseek-ai/dsh-team-control-plane-http'
-import TeamAccountClient, { ControlPlaneRefusedError, NotBoundError, platformWord, type Config } from '../src/index.ts'
+import TeamAccountClient, {
+  ControlPlaneRefusedError,
+  NotBoundError,
+  ProtocolUnsupportedError,
+  platformWord,
+  type Config,
+} from '../src/index.ts'
 import { DEVICE_KEY_RECORD, TEAM_CREDENTIAL_RECORD } from '../src/storage.ts'
 
 let cp: Context
@@ -226,5 +232,46 @@ describe('a refusal this Runner cannot read', () => {
       .rejects.toBeInstanceOf(ControlPlaneRefusedError)
     await lonely.fiber.dispose()
     await bare.fiber.dispose()
+  })
+})
+
+describe('a Control Plane that speaks another protocol', () => {
+  it('reports the range rather than retrying a request that will never be accepted', async () => {
+    const older = new Context()
+    await older.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
+    older.webServer.register({
+      kind: 'prefix',
+      path: '/team/device',
+      handler: (_req, res) => {
+        res.writeHead(426, { 'content-type': 'application/json' })
+        res.end(JSON.stringify({ error: 'refused', reason: 'protocol-unsupported', minimum: 4, current: 7 }))
+      },
+    })
+    const runner = await bootRunner(older)
+    const client = runner.get('teamAccountClient') as TeamAccountClient
+    await expect(client.begin()).rejects.toBeInstanceOf(ProtocolUnsupportedError)
+    await expect(client.begin()).rejects.toMatchObject({ minimum: 4, current: 7 })
+    // Distinct from an ordinary refusal, because it is the one an update fixes.
+    await expect(client.begin()).rejects.not.toBeInstanceOf(ControlPlaneRefusedError)
+    await runner.fiber.dispose()
+    await older.fiber.dispose()
+  })
+
+  it('falls back to its own version when the answer carries no range', async () => {
+    const terse = new Context()
+    await terse.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
+    terse.webServer.register({
+      kind: 'prefix',
+      path: '/team/device',
+      handler: (_req, res) => {
+        res.writeHead(426, { 'content-type': 'application/json' })
+        res.end(JSON.stringify({ error: 'refused' }))
+      },
+    })
+    const runner = await bootRunner(terse)
+    await expect((runner.get('teamAccountClient') as TeamAccountClient).begin())
+      .rejects.toMatchObject({ name: 'ProtocolUnsupportedError' })
+    await runner.fiber.dispose()
+    await terse.fiber.dispose()
   })
 })

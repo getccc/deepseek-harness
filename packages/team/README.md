@@ -22,7 +22,7 @@ The `team/` group carries a member from the company site into the application ru
 <a id="packages"></a>
 ## Packages
 
-Four packages, split by which side of the network they run on; each child README owns the full contract.
+Five packages, split by which side of the network they run on; each child README owns the full contract.
 
 | Package | Side | Role | ctx key |
 |---|---|---|---|
@@ -30,6 +30,7 @@ Four packages, split by which side of the network they run on; each child README
 | [`team-account-client/`](team-account-client/README.md) | Runner | The device key, the credential, and the calls to the Control Plane | `ctx.teamAccountClient` |
 | [`team-local-handoff/`](team-local-handoff/README.md) | Runner | The three local addresses a browser navigates to | — |
 | [`team-shell/`](team-shell/README.md) | Control Plane | Signing in, confirming a computer, and the administrative pages | — |
+| [`team-update/`](team-update/README.md) | Runner | Whether an offered release may be installed, and the service definition an installer writes | — |
 
 -----
 

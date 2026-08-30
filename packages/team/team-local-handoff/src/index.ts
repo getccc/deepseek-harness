@@ -186,7 +186,16 @@ export function apply(ctx: Context, config: Config): void {
   }
 }
 
-/** The part of a failure that is safe to show a member on a local page. */
+/**
+ * The part of a failure that is safe to show a member on a local page.
+ *
+ * A protocol refusal is spelled out rather than reduced to a word: it is the
+ * one failure the member can act on themselves, and "update this application"
+ * is only useful if the page says it.
+ */
 function describe(error: unknown): string {
+  if (error instanceof Error && error.name === 'ProtocolUnsupportedError') {
+    return 'this application is too old for the company server. Update DSH and try again.'
+  }
   return error instanceof Error && 'reason' in error ? String(error.reason) : 'the request did not succeed'
 }

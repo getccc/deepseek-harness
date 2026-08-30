@@ -15,7 +15,15 @@ import SqliteAccountStore from '@deepseek-ai/dsh-account-store-sqlite'
 import SqliteDeviceAuthorization from '@deepseek-ai/dsh-device-authorization-sqlite'
 import { newSecret, pkceChallenge } from '@deepseek-ai/dsh-device-authorization'
 import * as endpoints from '../src/index.ts'
-import { DEVICE_PATH_PREFIX, REDEEM_PATH, REFRESH_PATH, START_PATH } from '../src/protocol.ts'
+import {
+  DEVICE_PATH_PREFIX,
+  MINIMUM_PROTOCOL_VERSION,
+  PROTOCOL_VERSION,
+  REDEEM_PATH,
+  REFRESH_PATH,
+  START_PATH,
+  protocolSupport,
+} from '../src/protocol.ts'
 
 let ctx: Context
 let origin: string
@@ -196,5 +204,49 @@ describe('mounted with no config', () => {
     )
     expect(response.status).toBe(200)
     await bare.fiber.dispose()
+  })
+})
+
+describe('speaking the same protocol', () => {
+  it('places a version on one side of the supported range', () => {
+    expect(protocolSupport(PROTOCOL_VERSION)).toBe('supported')
+    expect(protocolSupport(MINIMUM_PROTOCOL_VERSION)).toBe('supported')
+    expect(protocolSupport(MINIMUM_PROTOCOL_VERSION - 1)).toBe('too-old')
+    // Not the Runner's fault: this Control Plane is the one that needs updating.
+    expect(protocolSupport(PROTOCOL_VERSION + 1)).toBe('too-new')
+  })
+
+  it('refuses an unsupported version with the range the Runner must act on', async () => {
+    for (const version of [MINIMUM_PROTOCOL_VERSION - 1, PROTOCOL_VERSION + 1]) {
+      const { status, answer } = await post(START_PATH, { ...startBody(), protocolVersion: version })
+      // 426 rather than 400: the request was understood and refused for what
+      // the Runner is, which is the one refusal an update fixes.
+      expect(status, String(version)).toBe(426)
+      expect(answer, String(version)).toEqual({
+        error: 'refused',
+        reason: 'protocol-unsupported',
+        minimum: MINIMUM_PROTOCOL_VERSION,
+        current: PROTOCOL_VERSION,
+      })
+    }
+  })
+
+  it('decides the version before reading anything else, on every endpoint', async () => {
+    // A body that is otherwise empty still gets the protocol answer, so a
+    // Runner too old to know a field exists is not told about that field.
+    for (const path of [START_PATH, REDEEM_PATH, REFRESH_PATH]) {
+      const { status, answer } = await post(path, { protocolVersion: PROTOCOL_VERSION + 1 })
+      expect(status, path).toBe(426)
+      expect(answer.reason, path).toBe('protocol-unsupported')
+    }
+  })
+
+  it('leaves a missing version to the endpoint that names the field', async () => {
+    const body = Object.fromEntries(
+      Object.entries(startBody()).filter(([name]) => name !== 'protocolVersion'),
+    )
+    const { status, answer } = await post(START_PATH, body)
+    expect(status).toBe(400)
+    expect(answer.reason).toBe('malformed-body')
   })
 })
