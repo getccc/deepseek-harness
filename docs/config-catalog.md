@@ -2792,7 +2792,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/team/team-admin-api/src/index.ts:97`](../packages/team/team-admin-api/src/index.ts)
+Source: [`packages/team/team-admin-api/src/index.ts:98`](../packages/team/team-admin-api/src/index.ts)
 
 <a id="deepseek-aidsh-team-control-plane-http"></a>
 

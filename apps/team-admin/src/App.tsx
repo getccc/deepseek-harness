@@ -40,6 +40,29 @@ const VIEWS = [
 /** Which view is showing. */
 type ViewKey = typeof VIEWS[number]['key']
 
+/** Width below which the sider is an icon rail, matching Ant Design's `lg`. */
+const RAIL_QUERY = '(max-width: 991px)'
+
+/**
+ * Whether this viewport is too narrow for the full sider.
+ *
+ * One media query drives both the sider's width and what it renders. Ant
+ * Design's own `breakpoint` prop collapses the element without telling the
+ * component, which leaves the expanded brand block wrapped inside a rail.
+ * @returns true while the viewport is at rail width.
+ */
+function useNarrowViewport(): boolean {
+  const [narrow, setNarrow] = useState(() => globalThis.matchMedia(RAIL_QUERY).matches)
+  useEffect(() => {
+    const query = globalThis.matchMedia(RAIL_QUERY)
+    const follow = (event: MediaQueryListEvent): void => { setNarrow(event.matches) }
+    query.addEventListener('change', follow)
+    setNarrow(query.matches)
+    return () => { query.removeEventListener('change', follow) }
+  }, [])
+  return narrow
+}
+
 /**
  * The signed-in console.
  * @param props.session - who is signed in and what they hold.
@@ -53,7 +76,7 @@ function Console({
   const held = useMemo(() => new Set(session.permissions), [session.permissions])
   const reachable = VIEWS.filter(view => held.has(view.needs))
   const [view, setView] = useState<ViewKey>(reachable[0]?.key ?? 'overview')
-  const [narrow, setNarrow] = useState(false)
+  const narrow = useNarrowViewport()
 
   const signOut = async (): Promise<void> => {
     // A session the server has already forgotten is still ended here: the
@@ -64,14 +87,7 @@ function Console({
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Layout.Sider
-        width={244}
-        breakpoint="lg"
-        collapsedWidth={64}
-        collapsed={narrow}
-        onBreakpoint={setNarrow}
-        trigger={null}
-      >
+      <Layout.Sider width={244} collapsedWidth={64} collapsed={narrow} trigger={null}>
         {/* Collapsed, the sider is an icon rail: the organization's name would
             not fit, and a wrapped fragment of it is worse than none. */}
         <div style={{ padding: narrow ? '20px 8px' : '20px 16px', overflow: 'hidden' }}>

@@ -14,6 +14,7 @@ import type {
   WireOverview,
   WirePermission,
   WireRefusal,
+  WireRefusalReason,
   WireRole,
   WireSession,
 } from '@deepseek-ai/dsh-team-admin-api'
@@ -36,7 +37,11 @@ const CSRF_HEADER = 'x-dsh-csrf'
  * is shown only when the console has nothing better to say.
  */
 export class ApiError extends Error {
-  constructor(readonly error: WireRefusal['error'], readonly detail?: string) {
+  constructor(
+    readonly error: WireRefusal['error'],
+    readonly reason?: WireRefusalReason,
+    readonly detail?: string,
+  ) {
     super(detail ?? error)
     this.name = 'ApiError'
   }
@@ -79,12 +84,12 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
     // A network failure is not a refusal, and telling a member their roles are
     // insufficient when the server is unreachable would send them to an
     // administrator for nothing.
-    throw new ApiError('unavailable', undefined)
+    throw new ApiError('unavailable')
   }
   const answer: unknown = await response.json().catch(() => ({ error: 'unavailable' }))
   if (response.ok) return answer as T
   const refusal = answer as WireRefusal
-  throw new ApiError(refusal.error, refusal.detail)
+  throw new ApiError(refusal.error, refusal.reason, refusal.detail)
 }
 
 /** Everything the console asks the Control Plane for. */

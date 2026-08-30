@@ -523,21 +523,52 @@ describe('what an action refuses on its own terms', () => {
     expect((await access.listRoleGrants(adminRole))).toHaveLength(ADMIN_PERMISSIONS.length)
   })
 
-  it('will not register a model no call could reach', async () => {
+  it('will not register a model no call could reach, and names which field', async () => {
     const held = await signIn()
-    for (const [what, broken] of [
-      ['an endpoint that is not an address', { endpoint: 'api.deepseek.com' }],
-      ['plain HTTP, which carries the company key in the clear', { endpoint: 'http://api.deepseek.com/' }],
-      ['a ceiling that is not a whole number of tokens', { maxOutputTokens: 2.5 }],
-      ['a ceiling of no tokens at all', { maxOutputTokens: 0 }],
+    for (const [reason, broken] of [
+      ['endpoint', { endpoint: 'api.deepseek.com' }],
+      // Plain HTTP would carry the company key in the clear.
+      ['endpoint-security', { endpoint: 'http://api.deepseek.com/' }],
+      ['endpoint-security', { maxOutputTokens: 2.5 }],
+      ['endpoint-security', { maxOutputTokens: 0 }],
       // A credential key and a credential reference address different things,
       // and only the reference resolves when the gateway makes the call.
-      ['a credential key where a reference belongs', { credentialRef: 'company/deepseek' }],
+      ['credential', { credentialRef: 'company/deepseek' }],
+      ['fields', { modelRef: '' }],
     ] as const) {
       const refused = await write('POST', '/team/api/models', held, { ...USABLE_MODEL, ...broken })
-      expect(refused.status, what).toBe(400)
+      expect(refused.status, reason).toBe(400)
+      // The console renders its own copy per reason, so the word is what a
+      // member in either language actually reads.
+      expect((payload(refused) as { reason: string }).reason, reason).toBe(reason)
     }
     expect(await ctx.modelGateway.list(orgId)).toHaveLength(0)
+  })
+
+  it('names the reason for every refusal a member can act on', async () => {
+    const held = await signIn()
+    await write('POST', '/team/api/members', held, { loginName: 'bob', displayName: 'Bob' })
+    for (const [reason, method, path, body] of [
+      ['fields', 'PATCH', '/team/api/organization', {}],
+      ['login-taken', 'POST', '/team/api/members', { loginName: 'bob', displayName: 'Bob Two' }],
+      ['member-status', 'PATCH', `/team/api/members/${alice}`, { status: 'banished' }],
+      ['permission', 'POST', `/team/api/roles/${adminRole}/grants`, {
+        resourceType: 'nothing', action: 'nothing.at.all',
+      }],
+      ['model-status', 'PATCH', '/team/api/models/deepseek-chat', { status: 'paused' }],
+    ] as const) {
+      const refused = await write(method, path, held, body)
+      expect((payload(refused) as { reason: string }).reason, path).toBe(reason)
+    }
+
+    const malformed = await send('/team/api/organization', {
+      method: 'PATCH',
+      headers: {
+        'content-type': 'application/json', origin, cookie: held.cookie, 'x-dsh-csrf': held.csrf,
+      },
+      body: '[1,2,3]',
+    })
+    expect((payload(malformed) as { reason: string }).reason).toBe('body')
   })
 
   it('refuses a body larger than the deployment accepts', async () => {

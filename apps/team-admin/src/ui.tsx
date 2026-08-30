@@ -82,12 +82,17 @@ export function useErrorReporter(): ErrorReporter {
       void message.error(t('error.unavailable'))
       return
     }
-    const known: Partial<Record<string, CopyKey>> = {
+    // The reason names the case this console has copy for; the error word
+    // covers the rest. The server's English `detail` is the last resort,
+    // because a sentence it wrote is not this console's to translate.
+    const byError: Partial<Record<string, CopyKey>> = {
       unauthenticated: 'error.unauthenticated',
       forbidden: 'error.forbidden',
       unavailable: 'error.unavailable',
     }
-    const key = known[error.error]
+    const key: CopyKey | undefined = error.reason === undefined
+      ? byError[error.error]
+      : `refuse.${error.reason}`
     void message.error(key === undefined ? error.detail ?? t('error.unavailable') : t(key))
   }, [message, t])
 }

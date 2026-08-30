@@ -68,6 +68,7 @@ export type {
   WireOverview,
   WirePermission,
   WireRefusal,
+  WireRefusalReason,
   WireRole,
   WireRoleRef,
   WireSession,
@@ -297,7 +298,7 @@ export function apply(ctx: Context, config: Config): void {
     { signed: Signed; body: Record<string, unknown> } | undefined
   > => {
     if (!sameOrigin(req)) {
-      refuse(res, 403, 'forbidden', 'This request did not come from this site.')
+      refuse(res, 403, 'forbidden', { detail: 'This request did not come from this site.' })
       return undefined
     }
     const signed = await currentSession(ctx.accountStore, req)
@@ -307,7 +308,7 @@ export function apply(ctx: Context, config: Config): void {
     }
     const supplied = req.headers[CSRF_HEADER]
     if (typeof supplied !== 'string' || !csrfMatches(signed.token, supplied)) {
-      refuse(res, 403, 'forbidden', 'This session token is out of date. Reload and try again.')
+      refuse(res, 403, 'forbidden', { detail: 'This session token is out of date. Reload and try again.' })
       return undefined
     }
     if (!expectBody) return { signed, body: {} }
@@ -317,7 +318,7 @@ export function apply(ctx: Context, config: Config): void {
       return undefined
     }
     if (body === 'malformed') {
-      refuse(res, 400, 'malformed', 'The request body is not a JSON object.')
+      refuse(res, 400, 'malformed', { reason: 'body', detail: 'The request body is not a JSON object.' })
       return undefined
     }
     return { signed, body }
@@ -342,7 +343,7 @@ export function apply(ctx: Context, config: Config): void {
       resourceId,
     })
     if (decision.allowed) return true
-    refuse(res, 403, 'forbidden', 'Your roles do not include this.')
+    refuse(res, 403, 'forbidden', { detail: 'Your roles do not include this.' })
     return false
   }
 
@@ -396,7 +397,7 @@ export function apply(ctx: Context, config: Config): void {
     // site could sign a member into an account that site controls, and every
     // view they then loaded would be that account's.
     if (!sameOrigin(req)) {
-      refuse(res, 403, 'forbidden', 'This request did not come from this site.')
+      refuse(res, 403, 'forbidden', { detail: 'This request did not come from this site.' })
       return
     }
     const body = await readJson(req, config.maxRequestBodyBytes)
@@ -405,7 +406,7 @@ export function apply(ctx: Context, config: Config): void {
       return
     }
     if (body === 'malformed') {
-      refuse(res, 400, 'malformed', 'The request body is not a JSON object.')
+      refuse(res, 400, 'malformed', { reason: 'body', detail: 'The request body is not a JSON object.' })
       return
     }
     const outcome = await ctx.accountAuth.authenticate(
@@ -423,7 +424,7 @@ export function apply(ctx: Context, config: Config): void {
         reason: 'invalid-credentials',
         metadata: { authMethod: 'password' },
       })
-      refuse(res, 401, 'unauthenticated', 'That member and password do not match.')
+      refuse(res, 401, 'unauthenticated', { detail: 'That member and password do not match.' })
       return
     }
     const token = newSessionToken()
@@ -550,7 +551,7 @@ export function apply(ctx: Context, config: Config): void {
       if (!await mayProceed(res, signed, 'organization.settings.manage', 'organization', org)) return
       const name = text(body, 'name')
       if (name === undefined) {
-        refuse(res, 400, 'malformed', 'An organization needs a name.')
+        refuse(res, 400, 'malformed', { reason: 'fields', detail: 'An organization needs a name.' })
         return
       }
       await ctx.accountStore.setOrganizationName(org, name)
@@ -564,7 +565,7 @@ export function apply(ctx: Context, config: Config): void {
       const loginName = text(body, 'loginName')
       const displayName = text(body, 'displayName')
       if (loginName === undefined || displayName === undefined) {
-        refuse(res, 400, 'malformed', 'A member needs a login name and a display name.')
+        refuse(res, 400, 'malformed', { reason: 'fields', detail: 'A member needs a login name and a display name.' })
         return
       }
       const email = text(body, 'email')
@@ -576,7 +577,7 @@ export function apply(ctx: Context, config: Config): void {
         // The store owns login-name uniqueness; a second account with the same
         // name is the administrator's mistake, not the site's failure.
         if (!(error instanceof DuplicateLoginNameError)) throw error
-        refuse(res, 409, 'conflict', 'That login name is already in this organization.')
+        refuse(res, 409, 'conflict', { reason: 'login-taken', detail: 'That login name is already in this organization.' })
         return
       }
       await record('member.create', signed, 'allowed')
@@ -587,7 +588,7 @@ export function apply(ctx: Context, config: Config): void {
     if (segments[0] === 'members' && segments.length === 2 && method === 'PATCH') {
       const status = text(body, 'status')
       if (status !== 'active' && status !== 'suspended') {
-        refuse(res, 400, 'malformed', 'That account status is not supported.')
+        refuse(res, 400, 'malformed', { reason: 'member-status', detail: 'That account status is not supported.' })
         return
       }
       const action = status === 'active' ? 'member.enable' : 'member.disable'
@@ -606,7 +607,7 @@ export function apply(ctx: Context, config: Config): void {
       if (!await mayProceed(res, signed, 'member.role.bind', 'member', org)) return
       const roleId = text(body, 'roleId')
       if (roleId === undefined) {
-        refuse(res, 400, 'malformed', 'A binding needs a role.')
+        refuse(res, 400, 'malformed', { reason: 'fields', detail: 'A binding needs a role.' })
         return
       }
       await ctx.accessControl.bindUserRole(UserId(segments[1] as string), RoleId(roleId))
@@ -630,7 +631,7 @@ export function apply(ctx: Context, config: Config): void {
       if (!await mayProceed(res, signed, 'role.create', 'role', org)) return
       const roleName = text(body, 'name')
       if (roleName === undefined) {
-        refuse(res, 400, 'malformed', 'A role needs a name.')
+        refuse(res, 400, 'malformed', { reason: 'fields', detail: 'A role needs a name.' })
         return
       }
       await ctx.accessControl.createRole({
@@ -648,7 +649,7 @@ export function apply(ctx: Context, config: Config): void {
       const known = PERMISSION_CATALOG.some(permission =>
         permission.resourceType === resourceType && permission.action === action)
       if (!known) {
-        refuse(res, 400, 'malformed', 'That permission is not registered.')
+        refuse(res, 400, 'malformed', { reason: 'permission', detail: 'That permission is not registered.' })
         return
       }
       await ctx.accessControl.grantType(
@@ -690,7 +691,7 @@ export function apply(ctx: Context, config: Config): void {
       if (!await mayProceed(res, signed, 'model.catalog.manage', 'model', MODEL_CATALOG_RESOURCE)) return
       const status = text(body, 'status')
       if (!MODEL_STATUSES.includes(status as ModelStatus)) {
-        refuse(res, 400, 'malformed', 'That model status is not supported.')
+        refuse(res, 400, 'malformed', { reason: 'model-status', detail: 'That model status is not supported.' })
         return
       }
       const modelRef = segments[1] as string
@@ -716,7 +717,7 @@ export function apply(ctx: Context, config: Config): void {
     const fields = ['modelRef', 'displayName', 'providerRef', 'upstreamModel', 'endpoint', 'credentialRef']
       .map(field => text(body, field))
     if (fields.some(value => value === undefined)) {
-      refuse(res, 400, 'malformed', 'A model needs every route field.')
+      refuse(res, 400, 'malformed', { reason: 'fields', detail: 'A model needs every route field.' })
       return false
     }
     const maxOutputTokens = Number(body['maxOutputTokens'])
@@ -724,11 +725,11 @@ export function apply(ctx: Context, config: Config): void {
     try {
       endpoint = new URL(fields[4] as string)
     } catch {
-      refuse(res, 400, 'malformed', 'The provider endpoint must be an absolute URL.')
+      refuse(res, 400, 'malformed', { reason: 'endpoint', detail: 'The provider endpoint must be an absolute URL.' })
       return false
     }
     if (endpoint.protocol !== 'https:' || !Number.isSafeInteger(maxOutputTokens) || maxOutputTokens < 1) {
-      refuse(res, 400, 'malformed', 'Use an HTTPS endpoint and a positive whole-token ceiling.')
+      refuse(res, 400, 'malformed', { reason: 'endpoint-security', detail: 'Use an HTTPS endpoint and a positive whole-token ceiling.' })
       return false
     }
     // A credential key and a credential reference address different things,
@@ -736,7 +737,7 @@ export function apply(ctx: Context, config: Config): void {
     // administrator from registering a model that reads as active and fails
     // every invocation.
     if (!isUsableCredentialRef(fields[5] as string)) {
-      refuse(res, 400, 'malformed', 'The credential reference must be a name like COMPANY_DEEPSEEK_KEY.')
+      refuse(res, 400, 'malformed', { reason: 'credential', detail: 'The credential reference must be a name like COMPANY_DEEPSEEK_KEY.' })
       return false
     }
     await ctx.modelGateway.register({
@@ -767,14 +768,14 @@ export function apply(ctx: Context, config: Config): void {
         if (method === 'GET') await read(req, res, segments)
         else if (method === 'POST' || method === 'PATCH' || method === 'DELETE') {
           await write(req, res, method, segments)
-        } else refuse(res, 405, 'malformed', 'This address does not accept that method.')
+        } else refuse(res, 405, 'malformed', { detail: 'This address does not accept that method.' })
       } catch (error) {
         // Every route answers as its last act, so nothing has been written when
         // this runs. Without it the web server replies with its own bare 400,
         // telling a signed-in administrator their request was malformed when
         // the site is what could not serve it.
         ctx.logger.warn(error)
-        refuse(res, 500, 'unavailable', 'This site could not answer. Try again shortly.')
+        refuse(res, 500, 'unavailable', { detail: 'This site could not answer. Try again shortly.' })
       }
     },
   }

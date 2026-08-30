@@ -2794,7 +2794,7 @@ export interface Config {
 }
 ```
 
-来源：[`packages/team/team-admin-api/src/index.ts:97`](../packages/team/team-admin-api/src/index.ts)
+来源：[`packages/team/team-admin-api/src/index.ts:98`](../packages/team/team-admin-api/src/index.ts)
 
 <a id="deepseek-aidsh-team-control-plane-http"></a>
 

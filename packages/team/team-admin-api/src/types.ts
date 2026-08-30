@@ -129,10 +129,41 @@ export interface WireSession {
 }
 
 /**
+ * What a request was refused for, when the console can say something better
+ * than "that was malformed".
+ *
+ * A closed vocabulary rather than a sentence, because the console renders in
+ * more than one language and the copy a member reads has to be the console's
+ * own. `detail` says the same thing in English for a caller that is not the
+ * console — a script, a log, a person reading a response body.
+ */
+export type WireRefusalReason =
+  /** The request body was not a JSON object. */
+  | 'body'
+  /** A field the route cannot proceed without was absent or empty. */
+  | 'fields'
+  /** Another account in this organization already has that login name. */
+  | 'login-taken'
+  /** Accounts do not have the status that was asked for. */
+  | 'member-status'
+  /** The catalog does not name that `(resourceType, action)` pair. */
+  | 'permission'
+  /** The provider endpoint was not an absolute URL. */
+  | 'endpoint'
+  /** The endpoint was not HTTPS, or the token ceiling was not a positive whole number. */
+  | 'endpoint-security'
+  /** The credential field held something that is not a credential reference. */
+  | 'credential'
+  /** The catalog does not have the model status that was asked for. */
+  | 'model-status'
+
+/**
  * Why a request was not carried out.
  *
- * `error` is the word the console switches on; `detail` is for a person and is
- * never the only thing that distinguishes two outcomes.
+ * `error` is the word the console switches on, `reason` narrows it where the
+ * console has its own copy for the case, and `detail` is the English sentence
+ * for a caller that is not the console. None of the three is ever the only
+ * thing that distinguishes two outcomes.
  */
 export interface WireRefusal {
   readonly error:
@@ -143,5 +174,6 @@ export interface WireRefusal {
     | 'not-found'
     | 'too-large'
     | 'unavailable'
+  readonly reason?: WireRefusalReason
   readonly detail?: string
 }

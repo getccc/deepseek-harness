@@ -147,6 +147,15 @@ export const zh = {
   'error.network': '联系不上 Control Plane。',
   'error.unavailable': '站点无法应答。请稍后再试。',
   'error.signIn': '成员与密码不匹配。',
+  'refuse.body': '这次请求的内容站点没有读懂。',
+  'refuse.fields': '有必填项没有填。',
+  'refuse.login-taken': '这个登录名在本组织已被占用。',
+  'refuse.member-status': '账户没有这种状态。',
+  'refuse.permission': '权限目录里没有这一项。',
+  'refuse.endpoint': '提供方地址必须是一个完整的网址。',
+  'refuse.endpoint-security': '地址要用 HTTPS，token 上限要是正整数。',
+  'refuse.credential': '凭据引用要写成 COMPANY_DEEPSEEK_KEY 这样的名字：字母、数字和下划线。',
+  'refuse.model-status': '模型目录没有这种状态。',
 } as const
 
 /** English dictionary; every key of {@link zh}. */
@@ -294,6 +303,15 @@ export const en: Record<keyof typeof zh, string> = {
   'error.network': 'The Control Plane could not be reached.',
   'error.unavailable': 'This site could not answer. Try again shortly.',
   'error.signIn': 'That member and password do not match.',
+  'refuse.body': 'The site could not read this request.',
+  'refuse.fields': 'A required field is missing.',
+  'refuse.login-taken': 'That login name is already in this organization.',
+  'refuse.member-status': 'Accounts do not have that status.',
+  'refuse.permission': 'The permission catalog does not have that entry.',
+  'refuse.endpoint': 'The provider endpoint must be a complete address.',
+  'refuse.endpoint-security': 'Use an HTTPS address and a positive whole-token ceiling.',
+  'refuse.credential': 'The credential reference must be a name like COMPANY_DEEPSEEK_KEY: letters, digits, and underscores.',
+  'refuse.model-status': 'The model catalog does not have that status.',
 }
 
 /** Every copy key the console can ask for. */

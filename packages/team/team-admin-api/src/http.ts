@@ -4,7 +4,7 @@
  */
 
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import type { WireRefusal } from './types.ts'
+import type { WireRefusal, WireRefusalReason } from './types.ts'
 
 /** Header a write echoes the session's CSRF value in. */
 export const CSRF_HEADER = 'x-dsh-csrf'
@@ -36,15 +36,19 @@ export function json(res: ServerResponse, status: number, body: unknown): void {
  * @param res - the response to write.
  * @param status - the HTTP status.
  * @param error - the word the console switches on.
- * @param detail - what to show a person, when there is more than the word.
+ * @param said - the reason the console has copy for, and the English sentence for everyone else.
  */
 export function refuse(
   res: ServerResponse,
   status: number,
   error: WireRefusal['error'],
-  detail?: string,
+  said: { reason?: WireRefusalReason; detail?: string } = {},
 ): void {
-  json(res, status, detail === undefined ? { error } : { error, detail })
+  json(res, status, {
+    error,
+    ...(said.reason === undefined ? {} : { reason: said.reason }),
+    ...(said.detail === undefined ? {} : { detail: said.detail }),
+  })
 }
 
 /**
