@@ -40,10 +40,10 @@ import {
   sameOrigin,
   writeSessionCookie,
   type Signed,
-} from './session.ts'
+} from '@deepseek-ai/dsh-team-browser-session'
 
 export { ADMIN_PREFIX, CONFIRM_PREFIX, LOGIN_PATH, LOGOUT_PATH } from './paths.ts'
-export { SESSION_COOKIE } from './session.ts'
+export { SESSION_COOKIE } from '@deepseek-ai/dsh-team-browser-session'
 
 /** Cordis plugin name. */
 export const name = 'team-shell'

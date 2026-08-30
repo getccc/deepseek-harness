@@ -9347,6 +9347,56 @@ importers:
         specifier: workspace:^
         version: link:../../runtime-diagnostics/invariants
 
+  packages/team/team-admin-api:
+    dependencies:
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:^
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:^
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-audit':
+        specifier: workspace:^
+        version: link:../../access/audit
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:^
+        version: link:../../account/device-authorization
+      '@deepseek-ai/dsh-model-gateway':
+        specifier: workspace:^
+        version: link:../../llm/model-gateway
+      '@deepseek-ai/dsh-team-browser-session':
+        specifier: workspace:^
+        version: link:../team-browser-session
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-account-auth':
+        specifier: workspace:^
+        version: link:../../account/account-auth
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:^
+        version: link:../../host/webserver
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+
+  packages/team/team-browser-session:
+    dependencies:
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:^
+        version: link:../../account/account-store
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+
   packages/team/team-control-plane-http:
     dependencies:
       '@deepseek-ai/dsh-device-authorization':
@@ -9411,6 +9461,9 @@ importers:
       '@deepseek-ai/dsh-model-gateway':
         specifier: workspace:^
         version: link:../../llm/model-gateway
+      '@deepseek-ai/dsh-team-browser-session':
+        specifier: workspace:^
+        version: link:../team-browser-session
       '@deepseek-ai/schemastery':
         specifier: link:../../../vendor/schemastery
         version: link:../../../vendor/schemastery

@@ -31,7 +31,7 @@ import {
 } from '@deepseek-ai/dsh-device-authorization'
 import * as shell from '../src/index.ts'
 import { membersPage, rolesPage } from '../src/pages.ts'
-import { SESSION_COOKIE, csrfToken } from '../src/session.ts'
+import { SESSION_COOKIE, csrfToken } from '@deepseek-ai/dsh-team-browser-session'
 
 /** One response, read the way a browser would see it. */
 interface Landing {

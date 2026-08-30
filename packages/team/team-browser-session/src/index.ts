@@ -5,7 +5,7 @@
  * Nothing about who the member is travels in the cookie, so a stolen cookie
  * cannot be read and a revoked session stops working at once rather than when
  * a signed value happens to lapse.
- * @module @deepseek-ai/dsh-team-shell/session
+ * @module @deepseek-ai/dsh-team-browser-session
  */
 
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto'

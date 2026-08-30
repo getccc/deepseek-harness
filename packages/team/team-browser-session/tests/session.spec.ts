@@ -15,7 +15,7 @@ import {
   readCookie,
   sameOrigin,
   sessionCookie,
-} from '../src/session.ts'
+} from '../src/index.ts'
 
 /** A request carrying exactly these headers. */
 function request(headers: Record<string, string>): IncomingMessage {

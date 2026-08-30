@@ -15,22 +15,22 @@
       "path": "../../runtime-diagnostics/invariants"
     },
     {
-      "path": "../../host/webserver"
+      "path": "../../access/access-control"
     },
     {
-      "path": "../../account/account-store"
+      "path": "../../access/audit"
     },
     {
       "path": "../../account/account-auth"
     },
     {
+      "path": "../../account/account-store"
+    },
+    {
       "path": "../../account/device-authorization"
     },
     {
-      "path": "../../access/access-control"
-    },
-    {
-      "path": "../../access/audit"
+      "path": "../../host/webserver"
     },
     {
       "path": "../../llm/model-gateway"
