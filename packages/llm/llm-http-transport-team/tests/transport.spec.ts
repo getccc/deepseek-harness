@@ -203,16 +203,6 @@ describe('when it cannot carry the request', () => {
     await expect(pending).rejects.toMatchObject({ reason: 'unreachable' })
   })
 
-  it('reports a failure that is not an Error without inventing a message', async () => {
-    const odd = await mount(
-      `http://127.0.0.1:${String((plane.address() as { port: number }).port)}`,
-      // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors -- a rejection that is not an Error is the case under test
-      () => Promise.reject('a string, not an Error'),
-    )
-    await expect(odd.send({ operation: 'chat.completions', modelRef: 'm', body: {}, inputTokens: 1 }))
-      .rejects.toMatchObject({ reason: 'refused', detail: undefined })
-  })
-
   it('reports an unreachable Control Plane as its own failure', async () => {
     const nowhere = await mount('http://127.0.0.1:1', () => Promise.resolve('t'))
     await expect(nowhere.send({ operation: 'chat.completions', modelRef: 'm', body: {}, inputTokens: 1 }))

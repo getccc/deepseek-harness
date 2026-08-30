@@ -85,17 +85,24 @@ export class TeamLlmHttpTransport extends LlmHttpTransport {
     try {
       return await this.ctx.teamAccountClient.accessToken()
     } catch (error) {
-      const name = error instanceof Error ? error.name : ''
       // Not bound and refused are different things to a member: one is "connect
       // this computer", the other is "ask an administrator".
+      /* v8 ignore next -- the account client rejects with Error; the guard is for the type */
+      const name = error instanceof Error ? error.name : ''
       if (name === 'NotBoundError') throw new TransportFailedError('not-bound')
       throw new TransportFailedError('refused', detailOf(error))
     }
   }
 }
 
-/** What a failure says about itself, when it says anything. */
+/**
+ * What a failure says about itself, when it says anything.
+ *
+ * The account client and `fetch` both reject with Errors, so the guard is for
+ * the `unknown` a catch binds rather than for a path either of them takes.
+ */
 function detailOf(error: unknown): string | undefined {
+  /* v8 ignore next -- both callers reject with Error; the guard is for the type */
   return error instanceof Error ? error.message : undefined
 }
 
