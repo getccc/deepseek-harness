@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-30-signing-in-is-not-being-allowed.md
-2026-08-30-signing-in-is-not-being-allowed.md: 8f7361730f79b2d94e541b331e5465f2e489e484
-2026-08-30-signing-in-is-not-being-allowed.zh.md: 3da9c5efc858ceb1e5053c494edc61fcf267e68b
+2026-08-30-signing-in-is-not-being-allowed.md: 8421b415b7b3b9a6d8c4721cb71aa51c392ba2df
+2026-08-30-signing-in-is-not-being-allowed.zh.md: a6937af2878ad170e0760c538a35b95de0dfa8c9

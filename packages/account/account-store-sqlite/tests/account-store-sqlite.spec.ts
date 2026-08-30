@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   DuplicateLoginNameError,
   UnknownAccountUserError,
+  UnknownOrganizationError,
   UserId,
   type AccountStore,
   type OrgId,
@@ -54,8 +55,19 @@ describe('organizations', () => {
     expect(await store.getOrganization(org.id)).toEqual(org)
   })
 
+  it('renames an organization without changing its authorization revision', async () => {
+    await store.setOrganizationName(orgId, 'Acme Labs')
+    expect(await store.getOrganization(orgId)).toMatchObject({ name: 'Acme Labs', policyRevision: 0n })
+  })
+
   it('returns undefined for an organization it does not hold', async () => {
     expect(await store.getOrganization('missing' as OrgId)).toBeUndefined()
+  })
+
+  it('refuses to rename an organization it does not hold', async () => {
+    // A silent no-op would leave a caller believing the rename landed.
+    await expect(store.setOrganizationName('missing' as OrgId, 'Ghost'))
+      .rejects.toBeInstanceOf(UnknownOrganizationError)
   })
 
   it('advances the policy revision monotonically', async () => {

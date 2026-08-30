@@ -16,7 +16,7 @@ There is a narrower problem underneath. A form post carrying a session cookie is
 
 **Signing in succeeds for any member; every page and every action then asks access control separately.** A member with no grants signs in and can still do nothing, including reading the member list. This is what gives the second question a place to be answered, and it is tested by a member who authenticates successfully and is refused every read and every write.
 
-**Every write needs all three.** A session says who is asking. An `Origin` naming the same authority the request itself names says the request came from these pages. A CSRF token derived from the session — a different value from the cookie — says the form was one this session rendered. Any one missing is a refusal.
+**Every write needs all three.** A session says who is asking. Same-origin browser metadata says the request came from these pages: an ordinary `Origin` must name the same authority as the request, while an opaque context carrying `Origin: null` must carry the browser-controlled `Sec-Fetch-Site: same-origin`. A CSRF token derived from the session — a different value from the cookie — says the form was one this session rendered. Any proof missing is a refusal.
 
 Deriving the CSRF token rather than storing it means there is no second record to keep in step with the session, and it is not the cookie's own value, so carrying the cookie is not by itself enough.
 
@@ -34,7 +34,7 @@ Deriving the CSRF token rather than storing it means there is no second record t
 
 **Storing a CSRF token beside the session.** Rejected: a second record that must stay in step with the first, for a value that is a pure function of the first.
 
-**Refusing a write on the CSRF token alone, without the Origin check.** Rejected: they fail differently. A token check refuses a forged form; an Origin check refuses a request from a page that never rendered a form at all, including one that guessed a token would not be needed.
+**Refusing a write on the CSRF token alone, without browser-origin metadata.** Rejected: they fail differently. A token check refuses a forged form; browser metadata refuses a request from a page that never rendered a form at all, including one that guessed a token would not be needed.
 
 **Letting a store failure answer 400 with the refusal text.** Rejected after the coverage gate exposed it: the fallback branch was reachable only for a failure that carried no refusal word, and it told the member their request was unrecognized. A store problem now answers 500 and records `outcome: 'error'`, because a record saying the member was refused when they were not is worse than no record.
 

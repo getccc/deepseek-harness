@@ -26,6 +26,7 @@ import {
   type ManagedResource,
   type RegisterResource,
   type Role,
+  type RoleGrant,
   type RoleKind,
   type UserGroup,
 } from '@deepseek-ai/dsh-access-control'
@@ -168,6 +169,37 @@ export class SqliteAccessControl extends AccessControl {
     return Promise.resolve(rows.map(toRole))
   }
 
+  listRoleGrants(roleId: RoleId): Promise<RoleGrant[]> {
+    this.role(roleId)
+    const typeRows = this.db.prepare(
+      'SELECT id, resource_type, action FROM role_type_grant WHERE role_id = ? ORDER BY rowid',
+    ).all(roleId) as unknown as { id: string; resource_type: string; action: string }[]
+    const resourceRows = this.db.prepare(
+      `SELECT g.id, g.resource_id, r.type AS resource_type, r.display_name, g.action
+         FROM role_resource_grant g
+         JOIN resource r ON r.id = g.resource_id
+        WHERE g.role_id = ?
+        ORDER BY g.rowid`,
+    ).all(roleId) as unknown as {
+      id: string
+      resource_id: string
+      resource_type: string
+      display_name: string
+      action: string
+    }[]
+    return Promise.resolve([
+      ...typeRows.map((row): RoleGrant => ({
+        id: GrantId(row.id), roleId, kind: 'type',
+        resourceType: row.resource_type, action: row.action,
+      })),
+      ...resourceRows.map((row): RoleGrant => ({
+        id: GrantId(row.id), roleId, kind: 'resource',
+        resourceId: ResourceId(row.resource_id), resourceType: row.resource_type,
+        resourceDisplayName: row.display_name, action: row.action,
+      })),
+    ])
+  }
+
   async registerResource(input: RegisterResource): Promise<ManagedResource> {
     // A type no permission governs can never be authorized, so governing a
     // resource of that type would store a row nothing could ever use.
@@ -176,6 +208,9 @@ export class SqliteAccessControl extends AccessControl {
     }
     // Idempotent on the identity a request names, because the owning subsystem
     // re-registers its catalog on every start; only the display name follows.
+    const before = this.db.prepare(
+      'SELECT * FROM resource WHERE org_id = ? AND type = ? AND external_ref = ?',
+    ).get(input.orgId, input.type, input.externalRef) as ResourceRow | undefined
     this.db.prepare(
       `INSERT INTO resource (id, org_id, type, external_ref, display_name, enabled)
        VALUES (?, ?, ?, ?, ?, 1)
@@ -185,9 +220,12 @@ export class SqliteAccessControl extends AccessControl {
     const row = this.db.prepare(
       'SELECT * FROM resource WHERE org_id = ? AND type = ? AND external_ref = ?',
     ).get(input.orgId, input.type, input.externalRef) as unknown as ResourceRow
-    // A type grant already held by some role now covers one more resource, so
-    // governing a resource is itself an outcome-changing change.
-    await this.bump(input.orgId)
+    // A type grant already held by some role covers a newly governed resource.
+    // Re-registering an unchanged owner row on startup changes no outcome and
+    // must not make every restart look like a policy edit.
+    if (before === undefined || before.display_name !== input.displayName) {
+      await this.bump(input.orgId)
+    }
     return toResource(row)
   }
 

@@ -34,6 +34,7 @@ export const AUDIT_ACTIONS = {
   'member.logout': { resourceType: 'member', metadata: [] },
   'member.create': { resourceType: 'member', metadata: [] },
   'member.disable': { resourceType: 'member', metadata: [] },
+  'member.enable': { resourceType: 'member', metadata: [] },
   'browser_session.revoke': { resourceType: 'browser_session', metadata: [] },
   'device.bind': { resourceType: 'device', metadata: ['platform', 'runnerVersion'] },
   'device.revoke': { resourceType: 'device', metadata: [] },

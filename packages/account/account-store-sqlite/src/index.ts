@@ -106,6 +106,13 @@ export class SqliteAccountStore extends AccountStore {
     return Promise.resolve(row === undefined ? undefined : toOrganization(row))
   }
 
+  setOrganizationName(id: OrgId, name: string): Promise<void> {
+    const result = this.db.prepare('UPDATE organization SET name = ? WHERE id = ?').run(name, id)
+    return result.changes === 0
+      ? Promise.reject(new UnknownOrganizationError(id))
+      : Promise.resolve()
+  }
+
   bumpPolicyRevision(id: OrgId): Promise<bigint> {
     const row = this.db.prepare(
       'UPDATE organization SET policy_revision = policy_revision + 1 WHERE id = ? RETURNING policy_revision',

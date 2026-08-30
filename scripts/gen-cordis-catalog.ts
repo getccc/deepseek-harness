@@ -257,6 +257,7 @@ export const LINK_MAP: Readonly<Record<string, string>> = {
   RegisterResource: 'access-control.md',
   ResourceId: 'access-control.md',
   Role: 'access-control.md',
+  RoleGrant: 'access-control.md',
   RoleId: 'access-control.md',
   UserGroup: 'access-control.md',
   AuditActionName: 'audit.md',

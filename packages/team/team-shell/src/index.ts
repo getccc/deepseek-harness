@@ -1,10 +1,10 @@
 /**
  * The Team Shell: the Control Plane's own pages.
  *
- * Signing in, confirming a computer, and the administrative pages for members,
- * roles, and devices. Every write is authorized twice — the session says who is
- * asking, and access control says whether they may — and every one of them
- * leaves an audit record naming the principal that made it.
+ * Signing in, confirming a computer, and the administrative console for the
+ * organization, members, roles, devices, and company models. Every write is
+ * authorized twice — the session says who is asking, and access control says
+ * whether they may — and every one leaves an audit record.
  * @module @deepseek-ai/dsh-team-shell
  */
 
@@ -13,18 +13,23 @@ import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { OrgId, UserId } from '@deepseek-ai/dsh-account-store'
 import type {} from '@deepseek-ai/dsh-account-auth'
-import { RoleId } from '@deepseek-ai/dsh-access-control'
+import { GrantId, PERMISSION_CATALOG, RoleId } from '@deepseek-ai/dsh-access-control'
 import { DeviceId, TransactionId } from '@deepseek-ai/dsh-device-authorization'
 import type { AuditActionName, AuditOutcome, AuditReason } from '@deepseek-ai/dsh-audit'
 import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
+import { MODEL_STATUSES, isUsableCredentialRef, type ModelStatus } from '@deepseek-ai/dsh-model-gateway'
 import { ADMIN_PREFIX, CONFIRM_PREFIX, LOGIN_PATH, LOGOUT_PATH } from './paths.ts'
 import {
   confirmPage,
+  dashboardPage,
   devicesPage,
   loginPage,
   membersPage,
+  modelsPage,
   noticePage,
+  organizationPage,
   rolesPage,
+  type AdminMetrics,
 } from './pages.ts'
 import {
   csrfMatches,
@@ -43,7 +48,13 @@ export { SESSION_COOKIE } from './session.ts'
 /** Cordis plugin name. */
 export const name = 'team-shell'
 /** Services required before the pages may register. */
-export const inject = ['webServer', 'accountStore', 'accountAuth', 'accessControl', 'audit', 'deviceAuthorization']
+export const inject = [
+  'webServer', 'accountStore', 'accountAuth', 'accessControl', 'audit',
+  'deviceAuthorization', 'modelGateway',
+]
+
+/** Stable governed resources used to authorize administrative catalog pages. */
+export const MODEL_CATALOG_RESOURCE = 'urn:dsh:admin:model-catalog'
 
 /** Plugin config: how long a session lasts, and whether the cookie is Secure. */
 export interface Config {
@@ -78,6 +89,7 @@ export const Config: z<Config> = z.object({
 function html(res: ServerResponse, status: number, body: string): void {
   res.writeHead(status, {
     'cache-control': 'no-store',
+    'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
     'content-type': 'text/html; charset=utf-8',
     'referrer-policy': 'no-referrer',
     'x-content-type-options': 'nosniff',
@@ -162,6 +174,44 @@ export function apply(ctx: Context, config: Config): void {
     throw new Error('team-shell: organizationId must name the organization this Control Plane serves')
   }
   const organizationId = OrgId(config.organizationId)
+  ctx.effect(async () => {
+    for (const [type, externalRef, displayName] of [
+      ['organization', organizationId, 'Organization administration'],
+      ['member', organizationId, 'Member administration'],
+      ['role', organizationId, 'Role administration'],
+      ['device', organizationId, 'Device administration'],
+      ['model', MODEL_CATALOG_RESOURCE, 'Model catalog administration'],
+    ] as const) {
+      await ctx.accessControl.registerResource({ orgId: organizationId, type, externalRef, displayName })
+    }
+    return () => {}
+  }, 'team-shell: govern administrative resources')
+
+  /** Read the configured organization; a signed session cannot outlive it. */
+  const readOrganization = async () => {
+    const org = await ctx.accountStore.getOrganization(organizationId)
+    if (org === undefined) throw new Error(`team-shell: unknown configured organization ${organizationId}`)
+    return org
+  }
+
+  /** Read the inventory counts shown by overview and organization pages. */
+  const readMetrics = async (): Promise<AdminMetrics> => {
+    const [members, roles, devices, models] = await Promise.all([
+      ctx.accountStore.listUsers(organizationId),
+      ctx.accessControl.listRoles(organizationId),
+      ctx.deviceAuthorization.listDevices(organizationId),
+      ctx.modelGateway.list(organizationId),
+    ])
+    return {
+      members: members.length,
+      activeMembers: members.filter(member => member.status === 'active').length,
+      roles: roles.length,
+      devices: devices.length,
+      activeDevices: devices.filter(device => device.status !== 'revoked').length,
+      models: models.length,
+      activeModels: models.filter(model => model.status === 'active').length,
+    }
+  }
   /** Record one administrative act, naming who performed it. */
   const record = (
     action: AuditActionName,
@@ -385,11 +435,17 @@ export function apply(ctx: Context, config: Config): void {
       /* v8 ignore next -- node:http always supplies url on server requests. */
       const url = new URL(req.url ?? '/', 'http://dsh.invalid')
       const page = url.pathname.slice(ADMIN_PREFIX.length)
-      if (req.method === 'GET') {
-        await adminPage(req, res, page)
-        return
+      try {
+        if (req.method === 'GET') await adminPage(req, res, page)
+        else await adminAction(req, res, page)
+      } catch (error) {
+        // Every page and action writes its answer last and returns, so nothing
+        // has been written when this runs. Without it the web server answers
+        // its own bare 400, which tells a signed-in administrator their
+        // request was malformed when the site is what could not answer.
+        ctx.logger.warn(error)
+        html(res, 500, noticePage('Something went wrong', 'This site could not answer. Try again shortly.'))
       }
-      await adminAction(req, res, page)
     },
   }
 
@@ -399,23 +455,52 @@ export function apply(ctx: Context, config: Config): void {
     if (signed === undefined) return
     const org = signed.session.orgId
     const csrf = csrfToken(signed.token)
+    const organization = await readOrganization()
+    if (page === '' || page === '/') {
+      if (!await mayProceed(res, signed, 'organization.read', 'organization', org)) return
+      html(res, 200, dashboardPage(organization, await readMetrics(), csrf))
+      return
+    }
+    if (page === '/organization') {
+      if (!await mayProceed(res, signed, 'organization.read', 'organization', org)) return
+      html(res, 200, organizationPage(organization, await readMetrics(), csrf))
+      return
+    }
     if (page === '/roles') {
-      if (!await mayProceed(res, signed, 'member.role.bind', 'member', org)) return
-      html(res, 200, rolesPage(await ctx.accessControl.listRoles(org), csrf))
+      if (!await mayProceed(res, signed, 'role.read', 'role', org)) return
+      const roles = await ctx.accessControl.listRoles(org)
+      const composition = await Promise.all(roles.map(async role => ({
+        role,
+        grants: await ctx.accessControl.listRoleGrants(role.id),
+      })))
+      html(res, 200, rolesPage(organization, composition, PERMISSION_CATALOG, csrf))
       return
     }
     if (page === '/devices') {
       if (!await mayProceed(res, signed, 'device.inventory.read', 'device', org)) return
-      html(res, 200, devicesPage(await ctx.deviceAuthorization.listDevices(org), csrf))
+      html(res, 200, devicesPage(organization, await ctx.deviceAuthorization.listDevices(org), csrf))
       return
     }
-    if (page === '/members' || page === '' || page === '/') {
-      if (!await mayProceed(res, signed, 'member.create', 'member', org)) return
+    if (page === '/models') {
+      if (!await mayProceed(res, signed, 'model.catalog.read', 'model', MODEL_CATALOG_RESOURCE)) return
+      html(res, 200, modelsPage(organization, await ctx.modelGateway.list(org), csrf))
+      return
+    }
+    if (page === '/members') {
+      if (!await mayProceed(res, signed, 'member.read', 'member', org)) return
       const [members, roles] = await Promise.all([
         ctx.accountStore.listUsers(org),
         ctx.accessControl.listRoles(org),
       ])
-      html(res, 200, membersPage(members, roles, csrf))
+      // Nothing stops a role binding from naming a role in another
+      // organization, and this console administers one: a member's chips are
+      // the roles this page could also unbind, not every binding they carry.
+      const roleById = new Map(roles.map(role => [role.id, role]))
+      const directory = await Promise.all(members.map(async member => ({
+        member,
+        held: (await ctx.accessControl.rolesOf(member.id)).flatMap(id => roleById.get(id) ?? []),
+      })))
+      html(res, 200, membersPage(organization, directory, roles, csrf))
       return
     }
     html(res, 404, noticePage('Not found', 'There is no such page.'))
@@ -427,6 +512,15 @@ export function apply(ctx: Context, config: Config): void {
     if (accepted === undefined) return
     const { signed, form } = accepted
     const org = signed.session.orgId
+    if (page === '/organization/update') {
+      if (!await mayProceed(res, signed, 'organization.settings.manage', 'organization', org)) return
+      const supplied = requireFields(res, form, 'name')
+      if (supplied === undefined) return
+      await ctx.accountStore.setOrganizationName(org, supplied[0] as string)
+      await record('policy.update', signed, 'allowed', { resourceId: org })
+      redirect(res, `${ADMIN_PREFIX}/organization`)
+      return
+    }
     if (page === '/members/create') {
       if (!await mayProceed(res, signed, 'member.create', 'member', org)) return
       const supplied = requireFields(res, form, 'loginName', 'displayName')
@@ -435,21 +529,28 @@ export function apply(ctx: Context, config: Config): void {
         orgId: org,
         loginName: supplied[0] as string,
         displayName: supplied[1] as string,
+        ...(field(form, 'email') === '' ? {} : { email: field(form, 'email') }),
       })
       await record('member.create', signed, 'allowed')
       redirect(res, `${ADMIN_PREFIX}/members`)
       return
     }
-    if (page === '/members/suspend') {
-      if (!await mayProceed(res, signed, 'member.disable', 'member', org)) return
-      const supplied = requireFields(res, form, 'userId')
+    if (page === '/members/status' || page === '/members/suspend') {
+      const supplied = requireFields(res, form, 'userId', ...(page === '/members/status' ? ['status'] : []))
       if (supplied === undefined) return
       const target = UserId(supplied[0] as string)
+      const nextStatus = page === '/members/suspend' ? 'suspended' : supplied[1]
+      if (nextStatus !== 'active' && nextStatus !== 'suspended') {
+        html(res, 400, noticePage('Cannot continue', 'That account status is not supported.'))
+        return
+      }
+      const action = nextStatus === 'active' ? 'member.enable' : 'member.disable'
+      if (!await mayProceed(res, signed, action, 'member', org)) return
       // Suspending is the whole act: a session resolves through its account, so
       // the sessions this member holds stop working with the status change
       // rather than needing a second call someone has to remember.
-      await ctx.accountStore.setUserStatus(target, 'suspended')
-      await record('member.disable', signed, 'allowed', { resourceId: target })
+      await ctx.accountStore.setUserStatus(target, nextStatus)
+      await record(action, signed, 'allowed', { resourceId: target })
       redirect(res, `${ADMIN_PREFIX}/members`)
       return
     }
@@ -462,8 +563,17 @@ export function apply(ctx: Context, config: Config): void {
       redirect(res, `${ADMIN_PREFIX}/members`)
       return
     }
-    if (page === '/roles/create') {
+    if (page === '/members/unbind') {
       if (!await mayProceed(res, signed, 'member.role.bind', 'member', org)) return
+      const supplied = requireFields(res, form, 'userId', 'roleId')
+      if (supplied === undefined) return
+      await ctx.accessControl.unbindUserRole(UserId(supplied[0] as string), RoleId(supplied[1] as string))
+      await record('binding.remove', signed, 'allowed')
+      redirect(res, `${ADMIN_PREFIX}/members`)
+      return
+    }
+    if (page === '/roles/create') {
+      if (!await mayProceed(res, signed, 'role.create', 'role', org)) return
       const supplied = requireFields(res, form, 'name')
       if (supplied === undefined) return
       await ctx.accessControl.createRole({
@@ -475,6 +585,33 @@ export function apply(ctx: Context, config: Config): void {
       redirect(res, `${ADMIN_PREFIX}/roles`)
       return
     }
+    if (page === '/roles/grants/add') {
+      if (!await mayProceed(res, signed, 'role.grant.manage', 'role', org)) return
+      const supplied = requireFields(res, form, 'roleId', 'permission')
+      if (supplied === undefined) return
+      const separator = (supplied[1] as string).indexOf('|')
+      if (separator <= 0) {
+        html(res, 400, noticePage('Cannot continue', 'That permission is not registered.'))
+        return
+      }
+      await ctx.accessControl.grantType(
+        RoleId(supplied[0] as string),
+        (supplied[1] as string).slice(0, separator),
+        (supplied[1] as string).slice(separator + 1),
+      )
+      await record('grant.add', signed, 'allowed')
+      redirect(res, `${ADMIN_PREFIX}/roles`)
+      return
+    }
+    if (page === '/roles/grants/revoke') {
+      if (!await mayProceed(res, signed, 'role.grant.manage', 'role', org)) return
+      const supplied = requireFields(res, form, 'grantId')
+      if (supplied === undefined) return
+      await ctx.accessControl.revokeGrant(GrantId(supplied[0] as string))
+      await record('grant.revoke', signed, 'allowed')
+      redirect(res, `${ADMIN_PREFIX}/roles`)
+      return
+    }
     if (page === '/devices/revoke') {
       if (!await mayProceed(res, signed, 'device.revoke', 'device', org)) return
       const supplied = requireFields(res, form, 'deviceId')
@@ -483,6 +620,68 @@ export function apply(ctx: Context, config: Config): void {
       await ctx.deviceAuthorization.revokeDevice(device)
       await record('device.revoke', signed, 'allowed', { resourceId: device })
       redirect(res, `${ADMIN_PREFIX}/devices`)
+      return
+    }
+    if (page === '/models/register') {
+      if (!await mayProceed(res, signed, 'model.catalog.manage', 'model', MODEL_CATALOG_RESOURCE)) return
+      const supplied = requireFields(
+        res, form, 'modelRef', 'displayName', 'providerRef', 'upstreamModel',
+        'endpoint', 'credentialRef', 'maxOutputTokens',
+      )
+      if (supplied === undefined) return
+      const modelRef = supplied[0] as string
+      const maxOutputTokens = Number(supplied[6])
+      let endpoint: URL
+      try {
+        endpoint = new URL(supplied[4] as string)
+      } catch {
+        html(res, 400, noticePage('Cannot continue', 'The provider endpoint must be an absolute URL.'))
+        return
+      }
+      if (endpoint.protocol !== 'https:' || !Number.isSafeInteger(maxOutputTokens) || maxOutputTokens < 1) {
+        html(res, 400, noticePage('Cannot continue', 'Use an HTTPS endpoint and a positive whole-token ceiling.'))
+        return
+      }
+      // A credential key and a credential reference address different things,
+      // and only the reference resolves at call time. Refusing it here is what
+      // keeps an administrator from registering a model that reads as active
+      // and fails every invocation.
+      if (!isUsableCredentialRef(supplied[5] as string)) {
+        html(res, 400, noticePage(
+          'Cannot continue',
+          'The credential reference must be a name like COMPANY_DEEPSEEK_KEY: letters, digits, and underscores.',
+        ))
+        return
+      }
+      await ctx.modelGateway.register({
+        orgId: org,
+        modelRef,
+        displayName: supplied[1] as string,
+        providerRef: supplied[2] as string,
+        upstreamModel: supplied[3] as string,
+        endpoint: endpoint.href,
+        credentialRef: supplied[5] as string,
+        maxOutputTokens,
+      })
+      await record('resource.register', signed, 'allowed', { resourceId: modelRef })
+      redirect(res, `${ADMIN_PREFIX}/models`)
+      return
+    }
+    if (page === '/models/status') {
+      if (!await mayProceed(res, signed, 'model.catalog.manage', 'model', MODEL_CATALOG_RESOURCE)) return
+      const supplied = requireFields(res, form, 'modelRef', 'status')
+      if (supplied === undefined) return
+      if (!MODEL_STATUSES.includes(supplied[1] as ModelStatus)) {
+        html(res, 400, noticePage('Cannot continue', 'That model status is not supported.'))
+        return
+      }
+      const nextStatus = supplied[1] as ModelStatus
+      const modelRef = supplied[0] as string
+      await ctx.modelGateway.setStatus(org, modelRef, nextStatus)
+      await record(nextStatus === 'active' ? 'resource.enable' : 'resource.disable', signed, 'allowed', {
+        resourceId: modelRef,
+      })
+      redirect(res, `${ADMIN_PREFIX}/models`)
       return
     }
     html(res, 404, noticePage('Not found', 'There is no such action.'))

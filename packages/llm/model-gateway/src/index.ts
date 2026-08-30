@@ -11,6 +11,7 @@
  */
 
 import { Service, type Context } from '@deepseek-ai/cordis'
+import { isCredentialRefName } from '@deepseek-ai/dsh-credentials'
 import type { OrgId } from '@deepseek-ai/dsh-account-store'
 import type { ReservationId } from '@deepseek-ai/dsh-quota'
 import type { Settlement } from '@deepseek-ai/dsh-quota'
@@ -44,6 +45,35 @@ declare module '@deepseek-ai/cordis' {
   }
 }
 
+/**
+ * Raised when a catalog entry names something the gateway could never use.
+ *
+ * Separate from an invocation refusal because it is an administrator's mistake
+ * at the moment they make it, rather than a member's request being turned
+ * down — and catching it here is what stops a model from sitting in the
+ * catalog marked active while every call to it fails.
+ */
+export class MalformedCatalogEntryError extends Error {
+  constructor(readonly field: string) {
+    super(`catalog field ${JSON.stringify(field)} does not name what the gateway needs`)
+    this.name = 'MalformedCatalogEntryError'
+  }
+}
+
+/**
+ * Whether a string can address a provider credential.
+ *
+ * The grammar belongs to the credential provider, so this asks it rather than
+ * restating it: a credential *reference* is a POSIX identifier such as
+ * `COMPANY_DEEPSEEK_KEY`, and a credential *key* — `scope/id` — addresses a
+ * different thing and cannot be resolved as one.
+ * @param value - the candidate credential reference.
+ * @returns true when a gateway could resolve it at call time.
+ */
+export function isUsableCredentialRef(value: string): boolean {
+  return isCredentialRefName(value)
+}
+
 /** Raised when an invocation cannot proceed. */
 export class InvocationRefusedError extends Error {
   constructor(readonly reason: InvocationRefusal) {
@@ -73,6 +103,7 @@ export abstract class ModelGateway extends Service {
    * this row without disturbing any grant that names it.
    * @param input - the model's stable ref and everything the upstream call needs.
    * @returns the stored entry.
+   * @throws {MalformedCatalogEntryError} when a field names something no call could use.
    */
   abstract register(input: RegisterModel): Promise<ModelEntry>
 

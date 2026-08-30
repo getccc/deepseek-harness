@@ -17,6 +17,7 @@ import type {
   AccessRequest,
   ManagedResource,
   Role,
+  RoleGrant,
   RoleKind,
   UserGroup,
 } from './types.ts'
@@ -34,6 +35,7 @@ export type {
   AccessRequest,
   ManagedResource,
   Role,
+  RoleGrant,
   RoleKind,
   UserGroup,
 } from './types.ts'
@@ -119,6 +121,14 @@ export abstract class AccessControl extends Service {
    * @returns every role the organization holds.
    */
   abstract listRoles(orgId: OrgId): Promise<Role[]>
+
+  /**
+   * List the permissions one role holds, with type grants before resource grants.
+   * @param roleId - the role whose grants are read.
+   * @returns every grant held by the role.
+   * @throws {UnknownRoleError} when the store holds no such role.
+   */
+  abstract listRoleGrants(roleId: RoleId): Promise<RoleGrant[]>
 
   /**
    * Put a resource under governance, or update the display name of one already

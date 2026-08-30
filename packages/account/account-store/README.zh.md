@@ -41,6 +41,8 @@ const user = await ctx.accountStore.createUser({
 })
 ```
 
+`setOrganizationName` 会改变已配置组织的可读名称，但不会改变其稳定 id 或授权修订号。
+
 ### 新签发的账户还不能登录
 
 `createUser` 只存储身份。账户不携带任何认证材料，且 `mustChangePassword` 为真，因此管理员无法替成员创建一个可用账户——清除该标志的只能是成员自己选定密钥。`setPasswordHash` 会一并存下该密钥的编码形式并清除标志。

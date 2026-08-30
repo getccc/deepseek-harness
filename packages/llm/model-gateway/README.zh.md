@@ -61,6 +61,10 @@ await ctx.modelGateway.settle(plan.reservationId, { kind: 'reported', inputToken
 
 [`applyPlanToBody`](src/body.ts) 用目录里的上游名覆盖 `model`，并在**请求体已经携带**时对 `max_tokens` 或 `max_completion_tokens` 封顶。添加一个 Adapter 没有发送的上限，会改变它本意要发的请求。调用去往何处根本不在请求体里，因此没有别的可剥除。
 
+### 是引用，不是键
+
+`credentialRef` 是凭据提供者能解析的一个名字，例如 `COMPANY_DEEPSEEK_KEY`——而不是 `scope/id` 形式的凭据键，后者寻址的是另一样东西，解析结果什么也不是。[`register`](src/index.ts) 拒绝不是引用的取值，因此这个错误在管理员犯下之处失败，而不是在每一次调用一个目录读作 active 的模型时失败。
+
 ### 目录的上限说了算
 
 一个索取超过该模型配置产出量的 Runner，得到的是配置的数额，而预留按那个数额取走。更小的索取会被尊重，因此一个短请求不会占住一个长请求的预算。

@@ -1,5 +1,5 @@
 ---
-description: "The Control Plane's own pages: signing in, confirming a computer, and the administrative pages for members, roles, and devices."
+description: "The Control Plane's sign-in, device confirmation, and RBAC-protected administration console for organization, user, role, device, and model management."
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-team-shell` serves the pages a member and an administrator use on the Control Plane: signing in, confirming a computer that is asking to connect, and the administrative pages for members, roles, and devices. Every write is authorized twice — the session says who is asking, and access control says whether they may — and every administrative act leaves an audit record naming the principal that made it. The pages are server-rendered with no script, because a member reaches the first of them before anything else has loaded.
+`dsh-team-shell` serves the pages a member and an administrator use on the Control Plane: sign-in, computer confirmation, and one responsive administration console for the organization, users, roles and grants, devices, and company models. Every write is authorized twice — the session says who is asking, and access control says whether they may — and every administrative act leaves an audit record naming the principal. The pages are server-rendered with no script or external asset, so their security does not depend on client code.
 
 ## Table of Contents
 
@@ -37,6 +37,8 @@ plugins:
 
 `secureCookie` must be false for a deployment served over plain HTTP, because a browser drops a `Secure` cookie on such an origin and the member would never stay signed in.
 
+The shell registers one governed administration resource for each of organization, member, role, device, and model catalog management. A deployment bootstraps an administrator by granting the corresponding read and manage permissions to a role and binding that role to the account. The console can then rename the configured organization, create and suspend users, bind roles, compose type grants from the closed permission catalog, revoke any visible grant, revoke devices, and register or retire company models.
+
 -----
 
 <a id="understand-the-implementation"></a>
@@ -44,7 +46,7 @@ plugins:
 
 ### A write needs all three
 
-A session, an `Origin` naming this same authority, and a CSRF token derived from the session. The token is derived rather than stored, so there is no second record to keep in step, and it is a different value from the cookie so that carrying the cookie is not by itself enough to submit a form.
+A session, same-origin browser metadata, and a CSRF token derived from the session. The usual proof is an `Origin` naming this authority; an opaque browser context that sends `Origin: null` must also send `Sec-Fetch-Site: same-origin`. The token is derived rather than stored, so there is no second record to keep in step, and it is a different value from the cookie so that carrying the cookie is not by itself enough to submit a form.
 
 ### The session cookie is Lax, not Strict
 
@@ -93,9 +95,9 @@ Nothing here joins a model request, so the package has no request prefix and no 
 These are current constraints of the contract, not a task backlog.
 
 - **One organization, named in configuration** — the shell authenticates against the organization it is configured with, and nothing resolves which organization a request belongs to.
-- **No grant editing** — roles can be created and bound, but the grants inside a role are set through the access-control service rather than through a page.
 - **No enrollment link** — an administrator adds a member, and setting that member's first password still needs a separate path.
-- **Pages are unstyled and unpaginated** — a long member or device list renders in full, which is fine for the sizes this version targets and will not stay so.
+- **Type-grant creation only** — the role page displays and can revoke both grant kinds, but creates type grants; adding a grant for one named resource still uses the access-control service.
+- **No pagination** — long user, role, device, and model lists render in full, which targets small single-instance deployments.
 
 <a id="dev-note"></a>
 ### Dev Note

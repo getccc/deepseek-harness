@@ -13,7 +13,7 @@ describe('what reaches the provider', () => {
     modelRef: 'company-v4',
     endpoint: 'https://api.deepseek.com',
     upstreamModel: 'deepseek-chat-20260801',
-    credentialRef: 'company/deepseek',
+    credentialRef: 'COMPANY_DEEPSEEK_KEY',
     reservationId: 'reservation' as never,
     maxOutputTokens: 4_000,
     policyRevision: 1n,

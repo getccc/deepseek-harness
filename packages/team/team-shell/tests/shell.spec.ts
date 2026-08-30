@@ -17,16 +17,20 @@ import PasswordAccountAuth from '@deepseek-ai/dsh-account-auth-password'
 import SqliteAccessControl from '@deepseek-ai/dsh-access-control-sqlite'
 import SqliteAudit from '@deepseek-ai/dsh-audit-sqlite'
 import SqliteDeviceAuthorization from '@deepseek-ai/dsh-device-authorization-sqlite'
-import type { AccountStore, OrgId, UserId } from '@deepseek-ai/dsh-account-store'
-import type { AccessControl, RoleId } from '@deepseek-ai/dsh-access-control'
+import SqliteModelGateway from '@deepseek-ai/dsh-model-gateway-sqlite'
+import SqliteQuota from '@deepseek-ai/dsh-quota-sqlite'
+import type { AccountStore, Organization, OrgId, UserId } from '@deepseek-ai/dsh-account-store'
+import { PERMISSION_CATALOG, type AccessControl, type RoleId } from '@deepseek-ai/dsh-access-control'
 import type { Audit } from '@deepseek-ai/dsh-audit'
 import {
   newSecret,
   pkceChallenge,
   redeemSigningInput,
   type DeviceAuthorization,
+  type DeviceId,
 } from '@deepseek-ai/dsh-device-authorization'
 import * as shell from '../src/index.ts'
+import { membersPage, rolesPage } from '../src/pages.ts'
 import { SESSION_COOKIE, csrfToken } from '../src/session.ts'
 
 /** One response, read the way a browser would see it. */
@@ -105,6 +109,56 @@ function submit(path: string, cookie: string, fields: Record<string, string>): P
   })
 }
 
+/** A model registration the catalog accepts, for tests that break one field. */
+const USABLE_MODEL = {
+  modelRef: 'deepseek-chat',
+  displayName: 'DeepSeek Chat',
+  providerRef: 'deepseek',
+  upstreamModel: 'deepseek-chat',
+  endpoint: 'https://api.deepseek.com/',
+  credentialRef: 'COMPANY_DEEPSEEK_KEY',
+  maxOutputTokens: '8192',
+}
+
+/** One overview card, rendered exactly as the page renders it. */
+function metricCard(label: string, value: number, note: string): string {
+  return `<div class="metric-label">${label}</div>`
+    + `<div class="metric-value">${String(value)}</div>`
+    + `<div class="metric-note">${note}</div>`
+}
+
+/**
+ * Bind one computer the whole way, signature and all.
+ *
+ * A device row exists only after a Runner proved possession of its key, so a
+ * test that needs one runs the flow rather than writing the row.
+ */
+async function bindDevice(cookie: string): Promise<DeviceId> {
+  const { publicKey, privateKey } = generateKeyPairSync('ed25519')
+  const spki = publicKey.export({ format: 'der', type: 'spki' }).toString('base64url')
+  const verifier = newSecret()
+  const started = await devices.start({
+    publicKey: spki, platform: 'linux', runnerVersion: '1.0.0',
+    pkceChallenge: pkceChallenge(verifier),
+    callbackUri: 'http://127.0.0.1:3080/team/callback', protocolVersion: 1,
+  })
+  const shown = await send(`/team/confirm/${started.transactionId}?state=s`, { headers: { cookie } })
+  const confirmed = await submit(`/team/confirm/${started.transactionId}`, cookie, {
+    csrf: readCsrf(shown.body), state: 's',
+  })
+  const code = new URL(head(confirmed, 'location') as string).searchParams.get('code') as string
+  await devices.redeem({
+    transactionId: started.transactionId,
+    code,
+    pkceVerifier: verifier,
+    deviceSignature: sign(null, Buffer.from(redeemSigningInput(started.transactionId, code)), privateKey)
+      .toString('base64url'),
+    callbackUri: 'http://127.0.0.1:3080/team/callback',
+    protocolVersion: 1,
+  })
+  return (await devices.listDevices(orgId)).find(device => device.publicKey === spki)?.id as DeviceId
+}
+
 beforeEach(async () => {
   ctx = new Context()
   await ctx.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
@@ -126,6 +180,8 @@ beforeEach(async () => {
     accessTokenTtlMs: 900_000,
     refreshTokenTtlMs: 2_592_000_000,
   }).await()
+  await ctx.plugin(SqliteQuota, { path: ':memory:', reservationTtlMs: 900_000 }).await()
+  await ctx.plugin(SqliteModelGateway, { path: ':memory:' }).await()
 
   store = ctx.get('accountStore') as AccountStore
   access = ctx.get('accessControl') as AccessControl
@@ -137,11 +193,20 @@ beforeEach(async () => {
 
   // Alice administers: every administrative page asks access control first.
   adminRole = (await access.createRole({ orgId, name: 'admin' })).id
-  await access.registerResource({ orgId, type: 'member', externalRef: orgId, displayName: 'Members' })
-  await access.registerResource({ orgId, type: 'device', externalRef: orgId, displayName: 'Devices' })
+  for (const [type, ref, displayName] of [
+    ['organization', orgId, 'Organization'], ['member', orgId, 'Members'],
+    ['role', orgId, 'Roles'], ['device', orgId, 'Devices'],
+    ['model', shell.MODEL_CATALOG_RESOURCE, 'Model catalog'],
+  ] as const) {
+    await access.registerResource({ orgId, type, externalRef: ref, displayName })
+  }
   for (const [type, action] of [
-    ['member', 'member.create'], ['member', 'member.disable'], ['member', 'member.role.bind'],
+    ['organization', 'organization.read'], ['organization', 'organization.settings.manage'],
+    ['member', 'member.read'], ['member', 'member.create'], ['member', 'member.disable'],
+    ['member', 'member.enable'], ['member', 'member.role.bind'],
+    ['role', 'role.read'], ['role', 'role.create'], ['role', 'role.grant.manage'],
     ['device', 'device.inventory.read'], ['device', 'device.revoke'],
+    ['model', 'model.catalog.read'], ['model', 'model.catalog.manage'],
   ] as const) {
     await access.grantType(adminRole, type, action)
   }
@@ -286,11 +351,22 @@ describe('what a role does not carry', () => {
     // derive it, so what refuses these writes is access control and not CSRF.
     const csrf = csrfToken(cookie.slice(cookie.indexOf('=') + 1))
     for (const [path, fields] of [
+      ['/team/admin/organization/update', { name: 'Bob Industries' }],
       ['/team/admin/members/create', { loginName: 'carol', displayName: 'Carol' }],
       ['/team/admin/members/suspend', { userId: alice }],
+      ['/team/admin/members/status', { userId: alice, status: 'suspended' }],
       ['/team/admin/members/bind', { userId: alice, roleId: adminRole }],
+      ['/team/admin/members/unbind', { userId: alice, roleId: adminRole }],
       ['/team/admin/roles/create', { name: 'sneaky' }],
+      ['/team/admin/roles/grants/add', { roleId: adminRole, permission: 'model|model.invoke' }],
+      ['/team/admin/roles/grants/revoke', { grantId: 'anything' }],
       ['/team/admin/devices/revoke', { deviceId: 'anything' }],
+      ['/team/admin/models/register', {
+        modelRef: 'sneaky', displayName: 'Sneaky', providerRef: 'deepseek',
+        upstreamModel: 'deepseek-chat', endpoint: 'https://evil.example/',
+        credentialRef: 'COMPANY_DEEPSEEK_KEY', maxOutputTokens: '8192',
+      }],
+      ['/team/admin/models/status', { modelRef: 'anything', status: 'retired' }],
     ] as const) {
       const refused = await submit(path, cookie, { ...fields, csrf })
       expect(refused.status, path).toBe(403)
@@ -298,6 +374,9 @@ describe('what a role does not carry', () => {
     }
     expect(await store.listUsers(orgId)).toHaveLength(2)
     expect(await access.listRoles(orgId)).toHaveLength(1)
+    expect((await store.getOrganization(orgId))?.name).toBe('Acme')
+    expect(await access.rolesOf(alice)).toEqual([adminRole])
+    expect(await ctx.modelGateway.list(orgId)).toHaveLength(0)
   })
 
   it('refuses a member whose roles do not include the action', async () => {
@@ -306,7 +385,10 @@ describe('what a role does not carry', () => {
     const cookie = await signIn('bob')
     // Bob signed in successfully and still cannot read any of these:
     // authentication says who, and authorization says whether.
-    for (const path of ['/team/admin/devices', '/team/admin/members', '/team/admin/roles']) {
+    for (const path of [
+      '/team/admin', '/team/admin/organization', '/team/admin/devices',
+      '/team/admin/members', '/team/admin/roles', '/team/admin/models',
+    ]) {
       expect((await send(path, { headers: { cookie } })).status, path).toBe(403)
     }
   })
@@ -355,12 +437,257 @@ describe('administering', () => {
     expect(await audit.query({ orgId, action: 'binding.add' })).toHaveLength(1)
   })
 
+  it('adds and revokes a permission through the closed catalog', async () => {
+    const cookie = await signIn()
+    const page = await send('/team/admin/roles', { headers: { cookie } })
+    const grant = await submit('/team/admin/roles/grants/add', cookie, {
+      csrf: readCsrf(page.body), roleId: adminRole, permission: 'model|model.invoke',
+    })
+    expect(grant.status).toBe(303)
+    const [stored] = (await access.listRoleGrants(adminRole)).filter(item => item.action === 'model.invoke')
+    expect(stored).toBeDefined()
+    const refreshed = await send('/team/admin/roles', { headers: { cookie } })
+    await submit('/team/admin/roles/grants/revoke', cookie, {
+      csrf: readCsrf(refreshed.body), grantId: stored?.id as string,
+    })
+    expect((await access.listRoleGrants(adminRole)).some(item => item.action === 'model.invoke')).toBe(false)
+  })
+
+  it('renames the organization and manages the company model catalog', async () => {
+    const cookie = await signIn()
+    const organization = await send('/team/admin/organization', { headers: { cookie } })
+    await submit('/team/admin/organization/update', cookie, {
+      csrf: readCsrf(organization.body), name: 'Acme Labs',
+    })
+    expect((await store.getOrganization(orgId))?.name).toBe('Acme Labs')
+
+    const models = await send('/team/admin/models', { headers: { cookie } })
+    const registered = await submit('/team/admin/models/register', cookie, {
+      csrf: readCsrf(models.body), modelRef: 'deepseek-chat', displayName: 'DeepSeek Chat',
+      providerRef: 'deepseek', upstreamModel: 'deepseek-chat', endpoint: 'https://api.deepseek.com/',
+      credentialRef: 'COMPANY_DEEPSEEK_KEY', maxOutputTokens: '8192',
+    })
+    expect(registered.status).toBe(303)
+    expect((await ctx.modelGateway.list(orgId))[0]).toMatchObject({ modelRef: 'deepseek-chat', status: 'active' })
+    const refreshed = await send('/team/admin/models', { headers: { cookie } })
+    await submit('/team/admin/models/status', cookie, {
+      csrf: readCsrf(refreshed.body), modelRef: 'deepseek-chat', status: 'retired',
+    })
+    expect((await ctx.modelGateway.list(orgId))[0]).toMatchObject({ status: 'retired' })
+    // A retired model stays in the catalog, and the page offers the way back.
+    const retired = await send('/team/admin/models', { headers: { cookie } })
+    expect(retired.body).toContain('Activate')
+    await submit('/team/admin/models/status', cookie, {
+      csrf: readCsrf(retired.body), modelRef: 'deepseek-chat', status: 'active',
+    })
+    expect((await ctx.modelGateway.list(orgId))[0]).toMatchObject({ status: 'active' })
+    // Withdrawing a model and returning it are separate acts in the record.
+    expect((await audit.query({ orgId, action: 'resource.enable' }))[0])
+      .toMatchObject({ resourceId: 'deepseek-chat' })
+    expect(await audit.query({ orgId, action: 'resource.disable' })).toHaveLength(1)
+  })
+
   it('answers an address that names no page, and an action that names nothing', async () => {
     const cookie = await signIn()
     expect((await send('/team/admin/nothing', { headers: { cookie } })).status).toBe(404)
     const page = await send('/team/admin/members', { headers: { cookie } })
     const posted = await submit('/team/admin/nothing/at/all', cookie, { csrf: readCsrf(page.body) })
     expect(posted.status).toBe(404)
+  })
+})
+
+describe('what an action refuses on its own terms', () => {
+  it('will not set an account to a status accounts do not have', async () => {
+    const cookie = await signIn()
+    const page = await send('/team/admin/members', { headers: { cookie } })
+    const refused = await submit('/team/admin/members/status', cookie, {
+      csrf: readCsrf(page.body), userId: alice, status: 'banished',
+    })
+    expect(refused.status).toBe(400)
+    expect(refused.body).toContain('account status is not supported')
+    expect((await store.getUser(alice))?.status).toBe('active')
+  })
+
+  it('will not grant a permission that does not name a type and an action', async () => {
+    const cookie = await signIn()
+    const page = await send('/team/admin/roles', { headers: { cookie } })
+    const csrf = readCsrf(page.body)
+    // The select renders `type|action` pairs. Anything else reached this form
+    // without the page, and the catalog is closed to it.
+    for (const permission of ['model.invoke', '|model.invoke']) {
+      const refused = await submit('/team/admin/roles/grants/add', cookie, {
+        csrf, roleId: adminRole, permission,
+      })
+      expect(refused.status, permission).toBe(400)
+      expect(refused.body, permission).toContain('not registered')
+    }
+    expect((await access.listRoleGrants(adminRole)).some(grant => grant.action === 'model.invoke'))
+      .toBe(false)
+  })
+
+  it('will not register a model no call could reach', async () => {
+    const cookie = await signIn()
+    const page = await send('/team/admin/models', { headers: { cookie } })
+    const csrf = readCsrf(page.body)
+    for (const [what, broken] of [
+      ['an endpoint that is not an address', { endpoint: 'api.deepseek.com' }],
+      ['plain HTTP, which carries the company key in the clear', { endpoint: 'http://api.deepseek.com/' }],
+      ['a ceiling that is not a whole number of tokens', { maxOutputTokens: '2.5' }],
+      ['a ceiling of no tokens at all', { maxOutputTokens: '0' }],
+      // A credential key and a credential reference address different things,
+      // and only the reference resolves when the gateway makes the call.
+      ['a credential key where a reference belongs', { credentialRef: 'company/deepseek' }],
+    ] as const) {
+      const refused = await submit('/team/admin/models/register', cookie, {
+        csrf, ...USABLE_MODEL, ...broken,
+      })
+      expect(refused.status, what).toBe(400)
+    }
+    expect(await ctx.modelGateway.list(orgId)).toHaveLength(0)
+  })
+
+  it('will not set a model to a status the catalog does not have', async () => {
+    const cookie = await signIn()
+    const page = await send('/team/admin/models', { headers: { cookie } })
+    const refused = await submit('/team/admin/models/status', cookie, {
+      csrf: readCsrf(page.body), modelRef: 'deepseek-chat', status: 'paused',
+    })
+    expect(refused.status).toBe(400)
+    expect(refused.body).toContain('model status is not supported')
+  })
+})
+
+describe('taking an act back', () => {
+  it('reactivates a suspended member, which is a permission of its own', async () => {
+    const bob = (await store.createUser({ orgId, loginName: 'bob', displayName: 'Bob' })).id
+    await ctx.accountAuth.setSecret(bob, PASSWORD)
+    const cookie = await signIn()
+    const page = await send('/team/admin/members', { headers: { cookie } })
+    await submit('/team/admin/members/suspend', cookie, { csrf: readCsrf(page.body), userId: bob })
+
+    const suspended = await send('/team/admin/members', { headers: { cookie } })
+    expect(suspended.body).toContain('Reactivate')
+    await submit('/team/admin/members/status', cookie, {
+      csrf: readCsrf(suspended.body), userId: bob, status: 'active',
+    })
+    expect((await store.getUser(bob))?.status).toBe('active')
+    // Enabling is recorded as itself, not as one more disable.
+    expect((await audit.query({ orgId, action: 'member.enable' }))[0]).toMatchObject({ resourceId: bob })
+    await signIn('bob')
+  })
+
+  it('unbinds one role and leaves the rest', async () => {
+    const cookie = await signIn()
+    const shown = await send('/team/admin/roles', { headers: { cookie } })
+    await submit('/team/admin/roles/create', cookie, {
+      csrf: readCsrf(shown.body), name: 'engineering', description: 'Builds things',
+    })
+    const engineering = (await access.listRoles(orgId)).find(role => role.name === 'engineering')?.id
+    const members = await send('/team/admin/members', { headers: { cookie } })
+    await submit('/team/admin/members/bind', cookie, {
+      csrf: readCsrf(members.body), userId: alice, roleId: engineering as string,
+    })
+    const bound = await send('/team/admin/members', { headers: { cookie } })
+    await submit('/team/admin/members/unbind', cookie, {
+      csrf: readCsrf(bound.body), userId: alice, roleId: engineering as string,
+    })
+    expect(await access.rolesOf(alice)).toEqual([adminRole])
+    expect((await audit.query({ orgId, action: 'binding.remove' }))[0])
+      .toMatchObject({ principalId: alice, outcome: 'allowed' })
+  })
+})
+
+describe('what the pages show', () => {
+  it('shows a member with no roles, and one whose address is on file', async () => {
+    const cookie = await signIn()
+    const page = await send('/team/admin/members', { headers: { cookie } })
+    await submit('/team/admin/members/create', cookie, {
+      csrf: readCsrf(page.body), loginName: 'bob', displayName: 'Bob', email: 'bob@acme.example',
+    })
+    const listed = await send('/team/admin/members', { headers: { cookie } })
+    expect(listed.body).toContain('No roles')
+    expect(listed.body).toContain('bob@acme.example')
+    expect((await store.getUser(alice))?.email).toBeUndefined()
+  })
+
+  it('shows only the roles this organization administers', async () => {
+    // Binding is not org-scoped, and this console administers one organization:
+    // a chip it renders is a role this page could also take away.
+    const elsewhere = (await store.createOrganization('Other')).id
+    const outsiders = (await access.createRole({ orgId: elsewhere, name: 'outsiders' })).id
+    await access.bindUserRole(alice, outsiders)
+    const cookie = await signIn()
+    const listed = await send('/team/admin/members', { headers: { cookie } })
+    expect(await access.rolesOf(alice)).toContain(outsiders)
+    expect(listed.body).not.toContain('outsiders')
+    expect(listed.body).not.toContain(outsiders)
+  })
+
+  it('shows a role with nothing granted, and a grant that names one resource', async () => {
+    const cookie = await signIn()
+    const shown = await send('/team/admin/roles', { headers: { cookie } })
+    await submit('/team/admin/roles/create', cookie, { csrf: readCsrf(shown.body), name: 'observers' })
+    const empty = await send('/team/admin/roles', { headers: { cookie } })
+    expect(empty.body).toContain('Default deny applies')
+    expect(empty.body).toContain('No description')
+
+    // Granting one named resource is not something this console does; it is
+    // something the roles page has to render when an operator has done it.
+    const observers = (await access.listRoles(orgId)).find(role => role.name === 'observers')?.id
+    const resource = await access.registerResource({
+      orgId, type: 'model', externalRef: 'deepseek-chat', displayName: 'DeepSeek Chat',
+    })
+    await access.grantResource(observers as RoleId, resource.id, 'model.invoke')
+    const granted = await send('/team/admin/roles', { headers: { cookie } })
+    expect(granted.body).toContain('model · DeepSeek Chat')
+  })
+
+  it('says plainly that no computer is connected', async () => {
+    const cookie = await signIn()
+    expect((await send('/team/admin/devices', { headers: { cookie } })).body)
+      .toContain('No computers are connected')
+  })
+
+  it('counts on the overview only what is still in service', async () => {
+    const cookie = await signIn()
+    const device = await bindDevice(cookie)
+    const models = await send('/team/admin/models', { headers: { cookie } })
+    await submit('/team/admin/models/register', cookie, { csrf: readCsrf(models.body), ...USABLE_MODEL })
+
+    const before = await send('/team/admin', { headers: { cookie } })
+    expect(before.body).toContain(metricCard('Devices', 1, '1 active'))
+    expect(before.body).toContain(metricCard('Models', 1, '1 available'))
+
+    const listed = await send('/team/admin/devices', { headers: { cookie } })
+    await submit('/team/admin/devices/revoke', cookie, { csrf: readCsrf(listed.body), deviceId: device })
+    const registered = await send('/team/admin/models', { headers: { cookie } })
+    await submit('/team/admin/models/status', cookie, {
+      csrf: readCsrf(registered.body), modelRef: USABLE_MODEL.modelRef, status: 'retired',
+    })
+
+    // Both rows are still there to administer; neither is in service.
+    const after = await send('/team/admin', { headers: { cookie } })
+    expect(after.body).toContain(metricCard('Devices', 1, '0 active'))
+    expect(after.body).toContain(metricCard('Models', 1, '0 available'))
+  })
+
+  it('says so rather than rendering a table with no rows', () => {
+    // A console that administers an organization always has an administrator
+    // and the role that made them one, so no request reaches these two.
+    const org: Organization = { id: orgId, name: 'Acme', policyRevision: 1n, createdAt: 0 }
+    expect(membersPage(org, [], [], 'a-token')).toContain('No users yet')
+    expect(rolesPage(org, [], PERMISSION_CATALOG, 'a-token')).toContain('No roles yet')
+  })
+
+  it('says the site cannot answer when the organization it serves has gone away', async () => {
+    const cookie = await signIn()
+    // Nothing in this build removes an organization; an operator reaching the
+    // database can. An administration console with no organization in it is
+    // the site's failure, not a page the member asked for wrongly.
+    store.getOrganization = () => Promise.resolve(undefined)
+    const shown = await send('/team/admin/members', { headers: { cookie } })
+    expect(shown.status).toBe(500)
+    expect(shown.body).toContain('could not answer')
   })
 })
 
@@ -471,12 +798,19 @@ describe('bodies, addresses, and pages that render nothing', () => {
     // Each of these would otherwise reach a store that would hold an empty
     // login name, or bind a role id that names nothing.
     for (const [path, fields] of [
+      ['/team/admin/organization/update', { csrf }],
       ['/team/admin/members/create', { csrf }],
       ['/team/admin/members/create', { csrf, loginName: 'bob' }],
       ['/team/admin/members/suspend', { csrf }],
+      ['/team/admin/members/status', { csrf, userId: alice }],
       ['/team/admin/members/bind', { csrf, userId: alice }],
+      ['/team/admin/members/unbind', { csrf, userId: alice }],
       ['/team/admin/roles/create', { csrf, description: 'no name' }],
+      ['/team/admin/roles/grants/add', { csrf, roleId: adminRole }],
+      ['/team/admin/roles/grants/revoke', { csrf }],
       ['/team/admin/devices/revoke', { csrf }],
+      ['/team/admin/models/register', { csrf, modelRef: 'half-a-model' }],
+      ['/team/admin/models/status', { csrf, modelRef: 'half-a-model' }],
     ] as const) {
       const refused = await submit(path, cookie, fields)
       expect(refused.status, path).toBe(400)
@@ -494,53 +828,29 @@ describe('bodies, addresses, and pages that render nothing', () => {
     expect(shown.body).toContain('value="/team/admin/members"')
   })
 
-  it('serves the members page at the bare administrative address', async () => {
+  it('serves the overview at the bare administrative address', async () => {
     const cookie = await signIn()
     for (const path of ['/team/admin', '/team/admin/']) {
       const shown = await send(path, { headers: { cookie } })
       expect(shown.status, path).toBe(200)
-      expect(shown.body, path).toContain('Members')
+      expect(shown.body, path).toContain('RBAC active')
     }
   })
 
   it('lists a revoked device without offering to revoke it again', async () => {
     const cookie = await signIn()
-    // A device row exists only after a Runner proved possession of its key, so
-    // the whole flow runs, signature and all.
-    const { publicKey, privateKey } = generateKeyPairSync('ed25519')
-    const spki = publicKey.export({ format: 'der', type: 'spki' }).toString('base64url')
-    const verifier = newSecret()
-    const started = await devices.start({
-      publicKey: spki, platform: 'linux', runnerVersion: '1.0.0',
-      pkceChallenge: pkceChallenge(verifier),
-      callbackUri: 'http://127.0.0.1:3080/team/callback', protocolVersion: 1,
-    })
-    const shown = await send(`/team/confirm/${started.transactionId}?state=s`, { headers: { cookie } })
-    const confirmed = await submit(`/team/confirm/${started.transactionId}`, cookie, {
-      csrf: readCsrf(shown.body), state: 's',
-    })
-    const code = new URL(head(confirmed, 'location') as string).searchParams.get('code') as string
-    await devices.redeem({
-      transactionId: started.transactionId,
-      code,
-      pkceVerifier: verifier,
-      deviceSignature: sign(null, Buffer.from(redeemSigningInput(started.transactionId, code)), privateKey)
-        .toString('base64url'),
-      callbackUri: 'http://127.0.0.1:3080/team/callback',
-      protocolVersion: 1,
-    })
+    const device = await bindDevice(cookie)
 
     const listed = await send('/team/admin/devices', { headers: { cookie } })
     expect(listed.body).toContain('linux')
     expect(listed.body).toContain('Revoke')
-    const [device] = await devices.listDevices(orgId)
     await submit('/team/admin/devices/revoke', cookie, {
-      csrf: readCsrf(listed.body), deviceId: device?.id as string,
+      csrf: readCsrf(listed.body), deviceId: device,
     })
     const after = await send('/team/admin/devices', { headers: { cookie } })
     expect(after.body).toContain('revoked')
     expect(after.body).not.toContain('>Revoke<')
-    expect((await audit.query({ orgId, action: 'device.revoke' }))[0]).toMatchObject({ resourceId: device?.id })
+    expect((await audit.query({ orgId, action: 'device.revoke' }))[0]).toMatchObject({ resourceId: device })
   })
 
   it('tells a member when a confirmation request has run out of time', async () => {
@@ -557,6 +867,8 @@ describe('bodies, addresses, and pages that render nothing', () => {
       path: ':memory:', transactionTtlMs: 0, codeTtlMs: 60_000,
       accessTokenTtlMs: 900_000, refreshTokenTtlMs: 2_592_000_000,
     }).await()
+    await brief.plugin(SqliteQuota, { path: ':memory:', reservationTtlMs: 900_000 }).await()
+    await brief.plugin(SqliteModelGateway, { path: ':memory:' }).await()
     const briefStore = brief.get('accountStore') as AccountStore
     const briefOrg = (await briefStore.createOrganization('Acme')).id
     const bob = (await briefStore.createUser({ orgId: briefOrg, loginName: 'bob', displayName: 'Bob' })).id
@@ -641,6 +953,7 @@ describe('when the site itself cannot answer', () => {
       describe: () => Promise.reject(new Error('the database is on fire')),
       confirm: () => Promise.reject(new Error('the database is on fire')),
     })
+    broken.provide('modelGateway', {})
     const brokenStore = broken.get('accountStore') as AccountStore
     const brokenOrg = (await brokenStore.createOrganization('Acme')).id
     const bob = (await brokenStore.createUser({ orgId: brokenOrg, loginName: 'bob', displayName: 'Bob' })).id

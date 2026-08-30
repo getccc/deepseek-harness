@@ -6733,6 +6733,9 @@ importers:
       '@deepseek-ai/dsh-account-store':
         specifier: workspace:^
         version: link:../../account/account-store
+      '@deepseek-ai/dsh-credentials':
+        specifier: workspace:^
+        version: link:../../credentials/credentials
       '@deepseek-ai/dsh-quota':
         specifier: workspace:^
         version: link:../../access/quota
@@ -9405,6 +9408,9 @@ importers:
       '@deepseek-ai/dsh-device-authorization':
         specifier: workspace:^
         version: link:../../account/device-authorization
+      '@deepseek-ai/dsh-model-gateway':
+        specifier: workspace:^
+        version: link:../../llm/model-gateway
       '@deepseek-ai/schemastery':
         specifier: link:../../../vendor/schemastery
         version: link:../../../vendor/schemastery
@@ -9418,6 +9424,12 @@ importers:
       '@deepseek-ai/dsh-invariants':
         specifier: workspace:^
         version: link:../../runtime-diagnostics/invariants
+      '@deepseek-ai/dsh-model-gateway-sqlite':
+        specifier: workspace:^
+        version: link:../../llm/model-gateway-sqlite
+      '@deepseek-ai/dsh-quota-sqlite':
+        specifier: workspace:^
+        version: link:../../access/quota-sqlite
 
   packages/team/team-update:
     dependencies:

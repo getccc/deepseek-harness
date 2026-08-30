@@ -26,15 +26,22 @@ export interface Permission {
  * row.
  */
 export const PERMISSION_CATALOG: readonly Permission[] = [
+  { resourceType: 'organization', action: 'organization.read' },
   { resourceType: 'organization', action: 'organization.settings.manage' },
   { resourceType: 'organization', action: 'organization.audit.read' },
+  { resourceType: 'member', action: 'member.read' },
   { resourceType: 'member', action: 'member.create' },
   { resourceType: 'member', action: 'member.disable' },
+  { resourceType: 'member', action: 'member.enable' },
   { resourceType: 'member', action: 'member.role.bind' },
+  { resourceType: 'role', action: 'role.read' },
+  { resourceType: 'role', action: 'role.create' },
+  { resourceType: 'role', action: 'role.grant.manage' },
   { resourceType: 'device', action: 'device.inventory.read' },
   { resourceType: 'device', action: 'device.revoke' },
   { resourceType: 'model', action: 'model.discover' },
   { resourceType: 'model', action: 'model.invoke' },
+  { resourceType: 'model', action: 'model.catalog.read' },
   { resourceType: 'model', action: 'model.catalog.manage' },
   { resourceType: 'mcp_server', action: 'mcp.server.discover' },
   { resourceType: 'mcp_server', action: 'mcp.server.connect' },

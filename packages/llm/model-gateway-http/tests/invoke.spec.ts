@@ -365,18 +365,51 @@ describe('what the endpoint refuses', () => {
     expect(response.status).toBe(401)
   })
 
-  it('reports a catalog entry whose credential reference is not one at all', async () => {
-    await gateway.register({
-      orgId, modelRef: 'company-v4', displayName: 'Company V4',
-      providerRef: 'deepseek', upstreamModel: 'deepseek-chat-20260801',
-      // A credential key, not a credential reference: the two address
-      // different things, and a catalog holding the wrong one is a
-      // misconfiguration rather than a member's refusal.
-      endpoint: cpOrigin, credentialRef: 'company/deepseek', maxOutputTokens: 4_000,
+  it('reports a stored entry whose credential reference is not one at all', async () => {
+    // The catalog refuses such an entry now, so the gateway is stubbed to hand
+    // one over the way an older build could have left one behind: the
+    // endpoint's own guard is what keeps that row from becoming a confusing
+    // member-facing failure.
+    const legacy = new Context()
+    await legacy.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
+    await legacy.plugin(LocalCredentials, {
+      path: join(home, 'legacy-credentials.json'), dshHome: home, watch: false,
+    }).await()
+    legacy.provide('deviceAuthorization', {
+      verifyAccessToken: () => Promise.resolve({ orgId, principalId: alice, deviceId: 'd' }),
     })
-    const answered = await invoke(invocation())
-    expect(answered.status).toBe(500)
-    expect(await quota.usage(orgId, PERIOD)).toMatchObject({ settledTokens: 0, reservedTokens: 0 })
+    const settled: unknown[] = []
+    legacy.provide('modelGateway', {
+      authorize: () => Promise.resolve({
+        modelRef: 'company-v4',
+        endpoint: cpOrigin,
+        upstreamModel: 'u',
+        // A credential key, not a credential reference: the two address
+        // different things, and only the reference resolves.
+        credentialRef: 'company/deepseek',
+        reservationId: 'r',
+        maxOutputTokens: 4_000,
+        policyRevision: 1n,
+      }),
+      settle: (_id: unknown, settlement: unknown) => {
+        settled.push(settlement)
+        return Promise.resolve()
+      },
+    })
+    await legacy.plugin(gatewayHttp, gatewayHttp.Config({} as never)).await()
+    const response = await fetch(
+      `http://127.0.0.1:${String(legacy.webServer.port)}${MODEL_INVOKE_PATH}`,
+      {
+        method: 'POST',
+        headers: { authorization: 'Bearer t', 'content-type': 'application/json' },
+        body: JSON.stringify(invocation()),
+      },
+    )
+    expect(response.status).toBe(500)
+    expect(await response.json()).toEqual({ error: 'internal' })
+    // Nothing was spent: the request never reached a provider.
+    expect(settled).toEqual([{ kind: 'released' }])
+    await legacy.fiber.dispose()
   })
 
   it('gives up on a provider that never answers, and charges the call', async () => {

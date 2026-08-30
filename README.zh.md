@@ -44,6 +44,8 @@ pnpm dsh web
 
 `pnpm run build` 会准备仓库产物。`pnpm dsh web` 会直接使用这些已构建产物，不会重新构建。
 
+[启动及部署指南](docs/user/guide/deployment.zh.md)介绍源码前置条件、远程访问、进程托管、升级与故障恢复。
+
 ## 社区与支持
 
 - 通过 [GitHub Discussions](https://github.com/deepseek-ai/deepseek-harness/discussions) 提交反馈或 bug 报告。

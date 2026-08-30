@@ -114,18 +114,19 @@ export async function currentSession(store: AccountStore, req: IncomingMessage):
 /**
  * Whether a write request came from this Control Plane's own pages.
  *
- * The Origin header is checked against the authority the request itself names,
- * so a deployment does not have to configure its own address twice.
+ * A normal Origin header is checked against the authority the request itself
+ * names, so a deployment does not have to configure its own address twice.
+ * An opaque browser context may send `Origin: null`; it is accepted only when
+ * Fetch Metadata independently classifies the navigation as same-origin.
  * @param req - the incoming request.
- * @returns true when Origin is absent or names this same authority.
+ * @returns true only for a matching Origin or an opaque same-origin navigation.
  */
 export function sameOrigin(req: IncomingMessage): boolean {
   const origin = req.headers.origin
-  // A form post from this site always sends Origin; a request without one did
-  // not come from a page, and is refused rather than trusted.
-  if (typeof origin !== 'string') return false
   const host = req.headers.host
   if (host === undefined) return false
+  if (origin === 'null') return req.headers['sec-fetch-site'] === 'same-origin'
+  if (typeof origin !== 'string') return false
   try {
     return new URL(origin).host === host
   } catch {

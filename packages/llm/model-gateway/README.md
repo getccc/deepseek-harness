@@ -61,6 +61,10 @@ A model that does not exist and one this principal may not invoke are both `unkn
 
 [`applyPlanToBody`](src/body.ts) overwrites `model` with the catalog's upstream name, and bounds `max_tokens` or `max_completion_tokens` **when the body already carries one**. Adding a limit the adapter did not send would change a request it meant. Where the call goes is not in the body at all, so there is nothing else to strip.
 
+### A reference, not a key
+
+`credentialRef` is a name the credential provider resolves, such as `COMPANY_DEEPSEEK_KEY` — not a `scope/id` credential key, which addresses a different thing and resolves as nothing. [`register`](src/index.ts) refuses a value that is not a reference, so the mistake fails where an administrator makes it rather than on every call to a model the catalog reads as active.
+
 ### The catalog's ceiling wins
 
 A Runner asking for more output than the model is configured to produce gets the configured amount, and the reservation is taken against that. A smaller ask is honoured, so a short request does not hold a long request's budget.

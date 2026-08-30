@@ -95,6 +95,8 @@ Status: proposed
 
 切片 1–3 已按此形式交付：`dsh-doc` 成为合并后的标准（`dsh-doc-standards` 与 `dsh-doc-site-sync` 已并入其中，站点工作流携带修正后的侧边栏值），`session-persistence-sqlite` README 对是参考示例，`pnpm run test:docs` 强制执行元数据、配对与快速文档检查。切片 4–5 仍待完成。
 
+已发布的[启动及部署指南](../../../../docs/user/guide/deployment.zh.md)与[架构入口图](../../../../docs/architecture.zh.md#system-map)落实了用户任务与架构概览标准。该指南区分进程 token Web 访问与成员密码团队管理，并记录当前 Control Plane 的组合前置条件。其中命令均从当前源码检出运行；通过运维人员自有 SSH 隧道进行网络访问时，则保留一个具名人工验证归属者。
+
 ### 非目标
 
 本提案不缩减穷尽式事实，不合并受众层级，不发布内部决策记录，不恢复 Agent Note 索引，不为了文件数对称而拆分紧密耦合的规则，也不把此次审计当作用户研究。在替代方案通过等价的恢复与渲染检查前，本提案不删除现有配对或链接基础设施。

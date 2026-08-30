@@ -40,6 +40,8 @@ pnpm dsh web
 
 `pnpm run build` prepares the repository artifacts. `pnpm dsh web` uses those built artifacts without rebuilding.
 
+The [startup and deployment guide](docs/user/guide/deployment.md) covers source prerequisites, remote access, process supervision, upgrades, and recovery.
+
 ## Community and support
 
 - Submit feedback or bug reports through [GitHub Discussions](https://github.com/deepseek-ai/deepseek-harness/discussions).

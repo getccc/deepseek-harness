@@ -78,6 +78,14 @@ abstract createRole(input: CreateRole): Promise<Role>
 abstract listRoles(orgId: OrgId): Promise<Role[]>
 
 /**
+ * List the permissions one role holds, with type grants before resource grants.
+ * @param roleId - the role whose grants are read.
+ * @returns every grant held by the role.
+ * @throws {UnknownRoleError} when the store holds no such role.
+ */
+abstract listRoleGrants(roleId: RoleId): Promise<RoleGrant[]>
+
+/**
  * Put a resource under governance, or update the display name of one already
  * governed. Idempotent on `(orgId, type, externalRef)`, because the owning
  * subsystem re-registers its catalog on every start.

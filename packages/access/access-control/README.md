@@ -49,6 +49,8 @@ The principal always comes from an authenticated token. A caller never passes a 
 
 A **type grant** lets a role perform one action on every enabled resource of a type, including resources governed after the grant was written. A **resource grant** names one resource. Both are refused unless the catalog governs the pair.
 
+`listRoleGrants` returns both grant kinds with the target identity an administrative surface needs; it does not make an authorization decision or imply that the reader may edit them.
+
 ### Reading a refusal
 
 `no-grant` covers both "no grant admits this" and "no such resource", so a refusal never confirms that a resource exists to a principal who holds nothing on it. `default-deny` means the principal holds no roles at all. `resource-disabled` is the deliberate exception that does confirm existence: it answers a principal who *does* hold a grant, and telling them the resource is switched off is the difference between a useful message and a confusing one.

@@ -106,6 +106,13 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'every role the organization holds.',
       },
       {
+        signature: 'abstract listRoleGrants(roleId: RoleId): Promise<RoleGrant[]>',
+        description: 'List the permissions one role holds, with type grants before resource grants.',
+        parameters: [{ name: 'roleId', description: 'the role whose grants are read.' }],
+        returns: 'every grant held by the role.',
+        throws: ['{UnknownRoleError} when the store holds no such role.'],
+      },
+      {
         signature: 'abstract registerResource(input: RegisterResource): Promise<ManagedResource>',
         description: 'Put a resource under governance, or update the display name of one already governed. Idempotent on `(orgId, type, externalRef)`, because the owning subsystem re-registers its catalog on every start.',
         parameters: [{ name: 'input', description: 'the resource\'s organization, type, external ref, and display name.' }],
@@ -213,6 +220,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Read one organization.',
         parameters: [{ name: 'id', description: 'the organization to read.' }],
         returns: 'the organization, or undefined when the store holds none.',
+      },
+      {
+        signature: 'abstract setOrganizationName(id: OrgId, name: string): Promise<void>',
+        description: 'Change the organization\'s human-readable name.',
+        parameters: [{ name: 'id', description: 'the organization to change.' }, { name: 'name', description: 'the new non-empty display name.' }],
+        throws: ['{UnknownOrganizationError} when the store holds no such organization.'],
       },
       {
         signature: 'abstract bumpPolicyRevision(id: OrgId): Promise<bigint>',
@@ -1551,6 +1564,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Put a model in the catalog, or update the one already there.\n\nIdempotent on `(orgId, modelRef)`: the stable ref is the identity, so a provider renaming its model upstream, or a credential rotating, changes this row without disturbing any grant that names it.',
         parameters: [{ name: 'input', description: 'the model\'s stable ref and everything the upstream call needs.' }],
         returns: 'the stored entry.',
+        throws: ['{MalformedCatalogEntryError} when a field names something no call could use.'],
       },
       {
         signature: 'abstract setStatus(orgId: OrgId, modelRef: string, status: ModelStatus): Promise<void>',
@@ -5288,6 +5302,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'Role',
     declaration: 'export interface Role {\n    readonly id: RoleId;\n    readonly orgId: OrgId;\n    readonly name: string;\n    readonly description: string;\n    readonly kind: RoleKind;\n}',
+  },
+  {
+    name: 'RoleGrant',
+    declaration: 'export type RoleGrant = {\n    readonly id: GrantId;\n    readonly roleId: RoleId;\n    readonly kind: \'type\';\n    readonly resourceType: string;\n    readonly action: string;\n} | {\n    readonly id: GrantId;\n    readonly roleId: RoleId;\n    readonly kind: \'resource\';\n    readonly resourceId: ResourceId;\n    readonly resourceType: string;\n    readonly resourceDisplayName: string;\n    readonly action: string;\n};',
   },
   {
     name: 'RoleId',

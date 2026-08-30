@@ -86,6 +86,7 @@ Authorization is asked on every invocation rather than cached with a token, so a
  * this row without disturbing any grant that names it.
  * @param input - the model's stable ref and everything the upstream call needs.
  * @returns the stored entry.
+ * @throws {MalformedCatalogEntryError} when a field names something no call could use.
  */
 abstract register(input: RegisterModel): Promise<ModelEntry>
 

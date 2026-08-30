@@ -44,6 +44,25 @@ export interface ManagedResource {
   readonly enabled: boolean
 }
 
+/** One permission a role holds across a resource type or on one resource. */
+export type RoleGrant =
+  | {
+    readonly id: GrantId
+    readonly roleId: RoleId
+    readonly kind: 'type'
+    readonly resourceType: string
+    readonly action: string
+  }
+  | {
+    readonly id: GrantId
+    readonly roleId: RoleId
+    readonly kind: 'resource'
+    readonly resourceId: ResourceId
+    readonly resourceType: string
+    readonly resourceDisplayName: string
+    readonly action: string
+  }
+
 /** What a caller asks the access-control service. */
 export interface AccessRequest {
   readonly orgId: OrgId

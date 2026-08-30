@@ -17,7 +17,9 @@ import {
 } from '@deepseek-ai/dsh-quota'
 import {
   InvocationRefusedError,
+  MalformedCatalogEntryError,
   ModelGateway,
+  isUsableCredentialRef,
   type CallPlan,
   type InvocationRequest,
   type ModelEntry,
@@ -82,6 +84,12 @@ export class SqliteModelGateway extends ModelGateway {
   }
 
   async register(input: RegisterModel): Promise<ModelEntry> {
+    // A reference the credential provider cannot resolve would store a model
+    // that looks active and fails every call, so the catalog refuses it here
+    // rather than at the first invocation.
+    if (!isUsableCredentialRef(input.credentialRef)) {
+      throw new MalformedCatalogEntryError('credentialRef')
+    }
     this.db.prepare(
       `INSERT INTO model
          (org_id, model_ref, display_name, provider_ref, upstream_model, endpoint,

@@ -77,10 +77,20 @@ describe('deciding a write came from this site', () => {
     expect(sameOrigin(request({ origin: 'http://127.0.0.1:3095', host: '127.0.0.1:3095' }))).toBe(true)
   })
 
+  it('accepts an opaque Origin only with same-origin Fetch Metadata', () => {
+    expect(sameOrigin(request({ origin: 'null', host: '127.0.0.1:3095', 'sec-fetch-site': 'same-origin' })))
+      .toBe(true)
+    expect(sameOrigin(request({ origin: 'null', host: '127.0.0.1:3095', 'sec-fetch-site': 'cross-site' })))
+      .toBe(false)
+    expect(sameOrigin(request({ origin: 'null', host: '127.0.0.1:3095' }))).toBe(false)
+  })
+
   it('refuses another site, a missing Origin, a missing Host, and one that is not a URL', () => {
     expect(sameOrigin(request({ origin: 'https://evil.example', host: 'dsh.company.com' }))).toBe(false)
+    expect(sameOrigin(request({ host: 'dsh.company.com', 'sec-fetch-site': 'same-origin' }))).toBe(false)
     expect(sameOrigin(request({ host: 'dsh.company.com' }))).toBe(false)
     expect(sameOrigin(request({ origin: 'https://dsh.company.com' }))).toBe(false)
+    expect(sameOrigin(request({ origin: 'null', 'sec-fetch-site': 'same-origin' }))).toBe(false)
     expect(sameOrigin(request({ origin: 'not a url', host: 'dsh.company.com' }))).toBe(false)
   })
 })

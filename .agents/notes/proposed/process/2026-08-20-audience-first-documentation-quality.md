@@ -95,6 +95,8 @@ This sequence keeps each change independently reviewable. The first three slices
 
 Slices 1–3 have shipped in this form: `dsh-doc` is the consolidated standard (`dsh-doc-standards` and `dsh-doc-site-sync` are folded into it, and the site workflow carries the corrected sidebar values), the `session-persistence-sqlite` README pair is the reference example, and `pnpm run test:docs` enforces the metadata, pairing, and quick documentation checks. Slices 4–5 remain open.
 
+The published [startup and deployment guide](../../../../docs/user/guide/deployment.md) and the [architecture entry map](../../../../docs/architecture.md#system-map) exercise the user-task and architecture-overview criteria. The guide distinguishes process-token Web access from member-password Team administration and records the current Control Plane composition prerequisite. Its commands run from the current source checkout; network access over an operator-owned SSH tunnel retains a named manual verification owner.
+
 ### Non-goals
 
 This proposal does not shorten exhaustive facts, merge audience tiers, publish internal decision records, restore an Agent Note index, split tightly coupled rules for file-count symmetry, or treat the audit as user research. It does not delete current pairing or link infrastructure before its replacement passes equivalent recovery and rendering checks.

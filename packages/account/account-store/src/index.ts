@@ -83,6 +83,14 @@ export abstract class AccountStore extends Service {
   abstract getOrganization(id: OrgId): Promise<Organization | undefined>
 
   /**
+   * Change the organization's human-readable name.
+   * @param id - the organization to change.
+   * @param name - the new non-empty display name.
+   * @throws {UnknownOrganizationError} when the store holds no such organization.
+   */
+  abstract setOrganizationName(id: OrgId, name: string): Promise<void>
+
+  /**
    * Advance an organization's policy revision, the value authorization caches
    * are keyed by. Callers increment it in the same transaction as the change
    * that invalidated them.

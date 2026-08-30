@@ -21,6 +21,7 @@ import type { AccessControl, RoleId } from '@deepseek-ai/dsh-access-control'
 import type { Quota } from '@deepseek-ai/dsh-quota'
 import {
   InvocationRefusedError,
+  isUsableCredentialRef,
   type InvocationRequest,
   type ModelGateway,
   type RegisterModel,
@@ -51,7 +52,7 @@ function model(patch: Partial<RegisterModel> = {}): RegisterModel {
     providerRef: 'deepseek',
     upstreamModel: 'deepseek-chat-20260801',
     endpoint: 'https://api.deepseek.com',
-    credentialRef: 'company/deepseek',
+    credentialRef: 'COMPANY_DEEPSEEK_KEY',
     maxOutputTokens: 4_000,
     ...patch,
   }
@@ -109,12 +110,12 @@ describe('the catalog', () => {
     await gateway.register(model())
     await grantEverything()
     const before = await gateway.authorize(invocation())
-    await gateway.register(model({ upstreamModel: 'deepseek-chat-20260901', credentialRef: 'company/rotated' }))
+    await gateway.register(model({ upstreamModel: 'deepseek-chat-20260901', credentialRef: 'COMPANY_ROTATED_KEY' }))
     const after = await gateway.authorize(invocation())
     expect(await gateway.list(orgId)).toHaveLength(1)
     expect(before.upstreamModel).toBe('deepseek-chat-20260801')
     expect(after.upstreamModel).toBe('deepseek-chat-20260901')
-    expect(after.credentialRef).toBe('company/rotated')
+    expect(after.credentialRef).toBe('COMPANY_ROTATED_KEY')
     // The grant still names the same model, because the ref never moved.
     expect(after.modelRef).toBe('company-v4')
   })
@@ -131,6 +132,20 @@ describe('the catalog', () => {
     })).toMatchObject({ allowed: false, reason: 'resource-disabled' })
     await gateway.setStatus(orgId, 'company-v4', 'active')
     await expect(gateway.authorize(invocation())).resolves.toMatchObject({ modelRef: 'company-v4' })
+  })
+
+  it('refuses an entry whose credential reference could never resolve', async () => {
+    // A credential key addresses a stored record; a credential reference is
+    // what a gateway resolves at call time. Storing the first would leave a
+    // model that reads as active and fails every invocation.
+    for (const credentialRef of ['company/deepseek', 'company-deepseek', 'has space', '']) {
+      await expect(gateway.register(model({ credentialRef })), credentialRef)
+        .rejects.toMatchObject({ name: 'MalformedCatalogEntryError', field: 'credentialRef' })
+    }
+    expect(await gateway.list(orgId)).toEqual([])
+    // And nothing was governed either, so a grant cannot name a model the
+    // catalog refused.
+    expect(await access.listResources(orgId, 'model')).toEqual([])
   })
 
   it('accepts a status change for a model nobody registered', async () => {
@@ -150,7 +165,7 @@ describe('what a member is shown', () => {
     expect(visible).toEqual([{ modelRef: 'company-v4-mini', displayName: 'Company V4 Mini' }])
     // Not the endpoint, not the upstream name, not the credential reference.
     expect(JSON.stringify(visible)).not.toContain('deepseek')
-    expect(JSON.stringify(visible)).not.toContain('company/deepseek')
+    expect(JSON.stringify(visible)).not.toContain('COMPANY_DEEPSEEK_KEY')
   })
 
   it('hides a retired model from a member who could otherwise discover it', async () => {
@@ -177,7 +192,7 @@ describe('deciding an invocation', () => {
       modelRef: 'company-v4',
       endpoint: 'https://api.deepseek.com',
       upstreamModel: 'deepseek-chat-20260801',
-      credentialRef: 'company/deepseek',
+      credentialRef: 'COMPANY_DEEPSEEK_KEY',
       maxOutputTokens: 4_000,
     })
     expect(plan.policyRevision).toBeGreaterThan(0n)
@@ -321,5 +336,17 @@ describe('opening a catalog', () => {
     expect(() => insert.run('a', 100, 'invented')).toThrow(/CHECK/u)
     expect(() => insert.run('b', 0, 'active')).toThrow(/CHECK/u)
     db.close()
+  })
+})
+
+describe('what can address a provider credential', () => {
+  it('accepts a reference and refuses a key', () => {
+    expect(isUsableCredentialRef('COMPANY_DEEPSEEK_KEY')).toBe(true)
+    expect(isUsableCredentialRef('_private')).toBe(true)
+    // `scope/id` is a credential key: it addresses a stored record rather than
+    // a reference a gateway resolves.
+    expect(isUsableCredentialRef('company/deepseek')).toBe(false)
+    expect(isUsableCredentialRef('company-deepseek')).toBe(false)
+    expect(isUsableCredentialRef('')).toBe(false)
   })
 })

@@ -41,6 +41,8 @@ const user = await ctx.accountStore.createUser({
 })
 ```
 
+`setOrganizationName` changes the configured organization's human-readable name without changing its stable id or authorization revision.
+
 ### An issued account cannot yet sign in
 
 `createUser` stores identity only. The account carries no authentication material and `mustChangePassword` is set, so an administrator cannot create a usable account on a member's behalf — the member choosing a secret is what clears it. `setPasswordHash` stores that secret's encoded form and clears the flag together.

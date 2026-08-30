@@ -51,7 +51,7 @@ The permission catalog is seeded into a table on open, and both grant tables car
 
 ### The policy revision is not local
 
-It lives with the organization in the account store, so one counter serves every cache. Every mutation here that can change an outcome advances it — including governing a resource, because a type grant some role already holds now covers one more thing. Creating a group binds no role and therefore does not.
+It lives with the organization in the account store, so one counter serves every cache. Every mutation here that can change an outcome advances it — including governing a new resource, because a type grant some role already holds now covers one more thing. Re-registering an unchanged owner row on startup does not advance it, and creating a group binds no role and therefore does not either.
 
 ### Source map
 

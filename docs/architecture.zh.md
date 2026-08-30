@@ -2,15 +2,57 @@
 
 [English](architecture.md) | 中文
 
+## 摘要
+
+DeepSeek Harness 会把一个具名 profile 启动为一棵可逆的 Cordis 插件树。各应用界面驱动同一套 agent 运行时；运行时把模型可见的工作记录到 Session 事件日志中，并通过 provider 使用可替换能力。本文映射这种组装方式、轮次流程、持久状态所有者，以及维护者用来替代修改循环本身的扩展点。
+
+## 目录
+
+- [系统地图](#system-map)
+- [Cordis](#cordis)
+- [Profile 与组合包](#profiles-and-bundles)
+- [应用启动](#application-launch)
+- [核心包](#core-packages)
+- [事件](#events)
+- [轮次流程](#turn-flow)
+- [Session 日志](#session-log)
+- [能力 seam](#capability-seams)
+- [新行为的归属位置](#where-new-behavior-goes)
+
+-----
+
+<a id="system-map"></a>
+
+## 系统地图
+
+Profile 负责选择应用界面与 provider，但每种界面都会进入同一套由插件所有的运行时。Session 事件日志是持久中心：agent loop 从中推导模型历史，持久化、回放、UI 与遥测则消费它。
+
+```text
+profile + bundle patches -> dsh CLI -> Cordis plugin tree
+                                           |
+                  +------------------------+----------------------+
+                  |                        |                      |
+             app surface              agent runtime        capability seams
+          web/headless/sdk/acp    prompt -> LLM -> tools   fs/shell/... -> providers
+                  |                        |
+                  +----------> Session event log <---------+
+                                           |
+                              persistence / replay / UI / telemetry
+```
+
 改动 `packages/` 下的任何内容之前，请先阅读本文。本文假定你已了解 Cordis；如果尚未了解，请先阅读[入门](cordis-primer.zh.md)或[教程](cordis-tutorial/index.zh.md)。
 
 建议使用 agent（智能体）探索代码库并理解其架构。
+
+<a id="cordis"></a>
 
 ## Cordis
 
 [Cordis](cordis-primer.zh.md) 是 dsh 底层的框架：插件向共享上下文贡献服务、类型化事件和可逆的副作用。产品的每一部分都是插件，包括模型适配器、工具注册表、会话日志，以及 agent loop（智能体循环）本身，因此每个都可以从配置替换。
 
 不存在需要打补丁的特权内核：扩展 dsh 的方式是把插件挂载到其他插件旁边，而各项注册都是副作用，会在其插件卸载时撤销。
+
+<a id="profiles-and-bundles"></a>
 
 ## Profile 与组合包
 
@@ -38,6 +80,8 @@ dsh --profile web --dump-config
 
 组装机制见 [app-boot](../packages/boot/app-boot/README.zh.md#profiles)；配置字段见生成的[配置目录](config-catalog.zh.md)。
 
+<a id="application-launch"></a>
+
 ## 应用启动
 
 所有受支持的 Node 应用都从 `dsh` CLI 与具名 profile 启动。随附应用是 `dsh web`（刻意为 `--profile web` 保留的别名）、`dsh --profile headless`、`dsh --profile sdk`、`dsh --profile sdk-minimal` 与 `dsh --profile acp`。TypeScript SDK 会解析其同版本 `dsh` 依赖并选择 `sdk`；自定义插件组合继续由 profile 与有序 patch 文件表达，而不是另一个可执行文件或内联应用树。`sdk-minimal` 是位于同一 launcher 后的仓库自有独立组合包，而不是由调用方提供的 Cordis 配置树。
@@ -45,6 +89,8 @@ dsh --profile web --dump-config
 Vendored CLI、仅用于构建和测试的可执行文件、进程内直接挂载插件以及私有浏览器 WebWorker 预览都不属于 Harness 应用启动器。[`verify-application-entrypoints`](../scripts/verify-application-entrypoints.ts)将每个包 bin、可执行源码与根 demo 归入显式类别，并拒绝任何绕过 `dsh` 的 Node 应用路径。
 
 Python SDK 遵循相同的应用架构。其运行时 wheel 把普通 `dsh` CLI 打包为 `deepseek-harness-sdk-runtime-<platform>-<arch>`，客户端默认以显式 Harness home 启动 `dsh --profile sdk`。极简示例选择随附的 `sdk-minimal` profile。Python 暴露 profile 选择与有序 patch 文件，而不是完整 Cordis 树；持久外部插件通过 `dsh plugin` 安装。已删除的私有直读配置载体没有兼容 bin 或回退 parser。
+
+<a id="core-packages"></a>
 
 ## 核心包
 
@@ -104,11 +150,15 @@ turn/end
 
 详情见[时序图](agent-lifecycle.zh.md)、[工具流水线](tool-execution-pipeline.zh.md)和[取消与错误恢复](subsystems/core.zh.md#the-agent-handle)。
 
+<a id="session-log"></a>
+
 ## 会话日志
 
 会话日志是模型所见上下文的来源。`deriveMessages()` 从中投影出模型历史，原始 `assistant/chunk` 事件则保证回放和 UI 保真。fork、恢复、transcript（文本记录）、遥测和持久化都派生自该事件流。
 
 **模型可见即已记录。** 抵达模型请求的一切都必须能从日志重建，并由一项运行时不变量断言这一点。因此，新增一项模型可见输入就需要新增一个会话事件：扩展 `SessionEventMap` 并从日志渲染。
+
+<a id="capability-seams"></a>
 
 ## 能力 seam
 
@@ -117,6 +167,8 @@ turn/end
 seam 正是替换一个提供方就能改变整个产品的原因。文件系统与进程提供方共享同一个执行世界，因此把它们指向远程沙箱，也就把 Bash、PTY 和 LSP 一并搬了过去，无需提供方专用 fork。[subagent 提供方](subsystems/subagent.zh.md)在同一个接口之后同样千差万别，从新建一个子 agent，到把一个轮次委派给另一个产品。
 
 [实验性 Agent Teams](subsystems/agent-team.zh.md) 是 `ctx.agentTeams` 上的私有显式启用协作 seam，在可继续 subagent 之上提供持久 roster、任务板和 mailbox。
+
+<a id="where-new-behavior-goes"></a>
 
 ## 新行为的归属位置
 

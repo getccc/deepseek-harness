@@ -23,7 +23,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/access/access-control-sqlite/src/index.ts:38`](../packages/access/access-control-sqlite/src/index.ts)
+Source: [`packages/access/access-control-sqlite/src/index.ts:39`](../packages/access/access-control-sqlite/src/index.ts)
 
 <a id="deepseek-aidsh-account-auth-password"></a>
 
@@ -1675,7 +1675,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/llm/model-gateway-sqlite/src/index.ts:32`](../packages/llm/model-gateway-sqlite/src/index.ts)
+Source: [`packages/llm/model-gateway-sqlite/src/index.ts:34`](../packages/llm/model-gateway-sqlite/src/index.ts)
 
 <a id="deepseek-aidsh-permission-presets"></a>
 
@@ -2802,7 +2802,7 @@ Source: [`packages/team/team-local-handoff/src/index.ts:33`](../packages/team/te
 
 ## `@deepseek-ai/dsh-team-shell`
 
-Requires: `webServer` · `accountStore` · `accountAuth` · `accessControl` · `audit` · `deviceAuthorization`
+Requires: `webServer` · `accountStore` · `accountAuth` · `accessControl` · `audit` · `deviceAuthorization` · `modelGateway`
 
 ```ts config-catalog
 /** Plugin config: how long a session lasts, and whether the cookie is Secure. */
@@ -2827,7 +2827,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/team/team-shell/src/index.ts:49`](../packages/team/team-shell/src/index.ts)
+Source: [`packages/team/team-shell/src/index.ts:60`](../packages/team/team-shell/src/index.ts)
 
 <a id="deepseek-aidsh-terminal-bash"></a>
 

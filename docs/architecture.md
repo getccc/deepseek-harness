@@ -2,15 +2,57 @@
 
 English | [中文](architecture.zh.md)
 
+## Summary
+
+DeepSeek Harness starts a named profile as one reversible Cordis plugin tree. Application surfaces drive the same agent runtime; the runtime records model-visible work in the Session event log and reaches replaceable capabilities through providers. This page maps that composition, the turn flow, the durable state owner, and the extension points a maintainer uses instead of patching the loop.
+
+## Table of Contents
+
+- [System map](#system-map)
+- [Cordis](#cordis)
+- [Profiles and bundles](#profiles-and-bundles)
+- [Application launch](#application-launch)
+- [Core packages](#core-packages)
+- [Events](#events)
+- [Turn flow](#turn-flow)
+- [Session log](#session-log)
+- [Capability seams](#capability-seams)
+- [Where new behavior goes](#where-new-behavior-goes)
+
+-----
+
+<a id="system-map"></a>
+
+## System map
+
+The profile selects the application surface and providers, but each surface enters the same plugin-owned runtime. The Session event log is the durable center: the agent loop derives model history from it, while persistence, replay, UI, and telemetry consume it.
+
+```text
+profile + bundle patches -> dsh CLI -> Cordis plugin tree
+                                           |
+                  +------------------------+----------------------+
+                  |                        |                      |
+             app surface              agent runtime        capability seams
+          web/headless/sdk/acp    prompt -> LLM -> tools   fs/shell/... -> providers
+                  |                        |
+                  +----------> Session event log <---------+
+                                           |
+                              persistence / replay / UI / telemetry
+```
+
 Read this before changing anything under `packages/`. It assumes you know Cordis; if you do not, start with the [primer](cordis-primer.md) or the [tutorial](cordis-tutorial/index.md).
 
 We recommend using an agent to explore the codebase and understand its architecture.
+
+<a id="cordis"></a>
 
 ## Cordis
 
 [Cordis](cordis-primer.md) is the framework under dsh: plugins contribute services, typed events, and reversible effects to a shared context. Every part of the product is a plugin, including the model adapter, the tool registry, the session log, and the agent loop itself, so each is replaceable from configuration.
 
 There is no privileged core to patch: you extend dsh by mounting a plugin beside the others, and registrations are effects that unwind when their plugin unloads.
+
+<a id="profiles-and-bundles"></a>
 
 ## Profiles and bundles
 
@@ -38,6 +80,8 @@ Any row it prints can be replaced by a patch of your own.
 
 Composition mechanics are in [app-boot](../packages/boot/app-boot/README.md#profiles); config fields are in the generated [config catalog](config-catalog.md).
 
+<a id="application-launch"></a>
+
 ## Application launch
 
 Every supported Node application starts at the `dsh` CLI with a named profile. The shipped applications are `dsh web` (the deliberate alias for `--profile web`), `dsh --profile headless`, `dsh --profile sdk`, `dsh --profile sdk-minimal`, and `dsh --profile acp`. The TypeScript SDK resolves its same-version `dsh` dependency and selects `sdk`; custom plugin composition remains a profile plus ordered patch files, not another executable or inline application tree. `sdk-minimal` is a repository-owned standalone bundle behind the same launcher, not a caller-supplied Cordis tree.
@@ -45,6 +89,8 @@ Every supported Node application starts at the `dsh` CLI with a named profile. T
 Vendored CLIs, build-only and test-only executables, direct in-process plugin mounting, and the private browser WebWorker preview are not Harness application launchers. [`verify-application-entrypoints`](../scripts/verify-application-entrypoints.ts) keeps every package bin, executable source, and root demo in an explicit class and rejects a Node application path that bypasses `dsh`.
 
 The Python SDK follows the same application architecture. Its runtime wheel packages the normal `dsh` CLI as `deepseek-harness-sdk-runtime-<platform>-<arch>`, and the client launches `dsh --profile sdk` with an explicit Harness home by default. The minimal example selects the shipped `sdk-minimal` profile. Python exposes profile selection and ordered patch files rather than a complete Cordis tree; persistent external plugins are installed through `dsh plugin`. The removed private direct-config carrier has no compatibility bin or fallback parser.
+
+<a id="core-packages"></a>
 
 ## Core packages
 
@@ -61,6 +107,8 @@ Here are some core packages that contribute to the Cordis tree.
 | [`llm/llm`](subsystems/llm-streaming.md) | Message and stream vocabulary plus the adapter seam | `ctx.llm` |
 | [`webhook/webhook`](subsystems/webhook.md) | Authenticated-delivery dispatch and Workspace Session creation | `ctx.webhookRuntime` |
 
+<a id="events"></a>
+
 ## Events
 
 Events are the extension points, and picking the right domain is the first decision in most changes.
@@ -70,6 +118,8 @@ Events are the extension points, and picking the right domain is the first decis
 - **Capability events** attach policy and adapters to a seam (`fs/*`, `tools/*`, `telemetry/*`) without importing the loop.
 
 The [event map](event-producer-consumer.md) lists every event's producers and consumers.
+
+<a id="turn-flow"></a>
 
 ## Turn flow
 
@@ -100,11 +150,15 @@ Input reaches the driver through one inbox. Some messages wake it immediately; i
 
 Details: the [sequence diagram](agent-lifecycle.md), the [tool pipeline](tool-execution-pipeline.md), and [cancellation and error recovery](subsystems/core.md#the-agent-handle).
 
+<a id="session-log"></a>
+
 ## Session log
 
 The session log is the source of the context the model sees. `deriveMessages()` projects model history from it, and raw `assistant/chunk` events preserve replay and UI fidelity. Fork, resume, transcripts, telemetry, and persistence all derive from this stream.
 
 **Model-visible means logged.** Anything that reaches a model request must be reconstructable from the log, and a runtime invariant asserts it. This is why a new model-visible input requires a new session event: extend `SessionEventMap` and render from the log.
+
+<a id="capability-seams"></a>
 
 ## Capability seams
 
@@ -113,6 +167,8 @@ A **seam** is a swappable capability with three roles: a **Service Definition** 
 Seams are why one provider swap changes the whole product. Filesystem and subprocess providers share one execution world, so pointing them at a remote sandbox moves Bash, PTY, and LSP with them, with no provider forks. [Subagent providers](subsystems/subagent.md) vary just as widely behind one interface, from a fresh child agent to a delegated turn in another product.
 
 [Experimental Agent Teams](subsystems/agent-team.md) is a private opt-in coordination seam on `ctx.agentTeams`, with a durable roster, task board, and mailbox layered over continuable subagents.
+
+<a id="where-new-behavior-goes"></a>
 
 ## Where new behavior goes
 

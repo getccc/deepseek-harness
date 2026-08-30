@@ -124,6 +124,21 @@ describe('grants', () => {
     await expect(access.revokeGrant(grant)).resolves.toBeUndefined()
   })
 
+  it('lists type and resource grants with the resource identity an administrator needs', async () => {
+    const typeGrant = await access.grantType(role, 'model', 'model.discover')
+    const resourceGrant = await access.grantResource(role, modelId, 'model.invoke')
+    expect(await access.listRoleGrants(role)).toEqual([
+      {
+        id: typeGrant, roleId: role, kind: 'type',
+        resourceType: 'model', action: 'model.discover',
+      },
+      {
+        id: resourceGrant, roleId: role, kind: 'resource', resourceId: modelId,
+        resourceType: 'model', resourceDisplayName: 'V4', action: 'model.invoke',
+      },
+    ])
+  })
+
   it('refuses a grant naming a pair the catalog does not govern', async () => {
     await expect(access.grantType(role, 'model', 'model.delete-everything'))
       .rejects.toBeInstanceOf(UnknownPermissionError)
@@ -334,6 +349,13 @@ describe('roles and resources', () => {
     expect(again.id).toBe(first.id)
     expect(again.displayName).toBe('V4 Turbo')
     expect(await access.listResources(orgId, 'model')).toHaveLength(1)
+  })
+
+  it('does not advance policy when an owner re-registers an unchanged resource', async () => {
+    await access.registerResource({ orgId, type: 'model', externalRef: 'v4', displayName: 'V4' })
+    const before = (await store.getOrganization(orgId))!.policyRevision
+    await access.registerResource({ orgId, type: 'model', externalRef: 'v4', displayName: 'V4' })
+    expect((await store.getOrganization(orgId))!.policyRevision).toBe(before)
   })
 
   it('refuses to govern a resource of a type no permission covers', async () => {
