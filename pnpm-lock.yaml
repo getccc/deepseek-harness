@@ -646,6 +646,41 @@ importers:
         specifier: workspace:^
         version: link:../../runtime-diagnostics/invariants
 
+  packages/access/quota:
+    dependencies:
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:^
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-brand':
+        specifier: workspace:^
+        version: link:../../util/brand
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+
+  packages/access/quota-sqlite:
+    dependencies:
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:^
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-quota':
+        specifier: workspace:^
+        version: link:../quota
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+
   packages/account/account-auth:
     dependencies:
       '@deepseek-ai/dsh-account-store':
@@ -1631,6 +1666,12 @@ importers:
       '@deepseek-ai/dsh-host-webserver':
         specifier: workspace:^
         version: link:../../host/webserver
+      '@deepseek-ai/dsh-model-gateway-sqlite':
+        specifier: workspace:^
+        version: link:../../llm/model-gateway-sqlite
+      '@deepseek-ai/dsh-quota-sqlite':
+        specifier: workspace:^
+        version: link:../../access/quota-sqlite
       '@deepseek-ai/dsh-team-control-plane-http':
         specifier: workspace:^
         version: link:../../team/team-control-plane-http
@@ -6649,6 +6690,47 @@ importers:
       '@deepseek-ai/dsh-tools':
         specifier: workspace:^
         version: link:../../core/tools
+
+  packages/llm/model-gateway:
+    dependencies:
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:^
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-quota':
+        specifier: workspace:^
+        version: link:../../access/quota
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+
+  packages/llm/model-gateway-sqlite:
+    dependencies:
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:^
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:^
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-model-gateway':
+        specifier: workspace:^
+        version: link:../model-gateway
+      '@deepseek-ai/dsh-quota':
+        specifier: workspace:^
+        version: link:../../access/quota
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
 
   packages/llm/plugin-package-inventory-deepseek:
     dependencies:

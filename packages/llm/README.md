@@ -31,6 +31,8 @@ The llm group provides the harness's model-call capability: one provider-neutral
 | [`plugin-package-inventory-deepseek/`](plugin-package-inventory-deepseek/README.md) | Contributes the active Loader package inventory to official DeepSeek requests | contributes `dsh_plugin_packages` |
 | [`llm-retry/`](llm-retry/README.md) | Retries failed model requests under each provider's policy at durable agent-step boundaries | listens to `agent/request-error` |
 | [`token-meter/`](token-meter/README.md) | Measures request and context pressure from the durable session log with a fixed heuristic | `ctx.tokenMeter` |
+| [`model-gateway/`](model-gateway/README.md) | Team Edition: the company model catalog and the decision that turns a model name into an approved upstream call | `ctx.modelGateway` |
+| [`model-gateway-sqlite/`](model-gateway-sqlite/README.md) | Keeps the catalog and asks access control and quota in front of it | registers `ctx.modelGateway` |
 
 -----
 

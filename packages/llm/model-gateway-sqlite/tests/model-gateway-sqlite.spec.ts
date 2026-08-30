@@ -1,0 +1,373 @@
+/**
+ * What a Runner may invoke, and what its call becomes.
+ *
+ * The gateway is exercised against real access-control and quota compositions
+ * rather than stubs, because what is worth testing is the order of the three
+ * decisions and what each one refuses — and a stub would only replay whatever
+ * this test told it to.
+ */
+
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
+import { Context } from '@deepseek-ai/cordis'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import SqliteAccountStore from '@deepseek-ai/dsh-account-store-sqlite'
+import SqliteAccessControl from '@deepseek-ai/dsh-access-control-sqlite'
+import SqliteQuota from '@deepseek-ai/dsh-quota-sqlite'
+import type { AccountStore, OrgId, UserId } from '@deepseek-ai/dsh-account-store'
+import type { AccessControl, RoleId } from '@deepseek-ai/dsh-access-control'
+import type { Quota } from '@deepseek-ai/dsh-quota'
+import {
+  InvocationRefusedError,
+  applyPlanToBody,
+  type CallPlan,
+  type InvocationRequest,
+  type ModelGateway,
+  type RegisterModel,
+} from '@deepseek-ai/dsh-model-gateway'
+import SqliteModelGateway, {
+  MODEL_GATEWAY_SQLITE_APPLICATION_ID,
+  SCHEMA_VERSION,
+} from '../src/index.ts'
+import { applySchema } from '../src/schema.ts'
+
+let ctx: Context
+let store: AccountStore
+let gateway: ModelGateway
+let access: AccessControl
+let quota: Quota
+let orgId: OrgId
+let alice: UserId
+let role: RoleId
+
+const PERIOD = '2026-08'
+
+/** A catalog entry, which each test then varies. */
+function model(patch: Partial<RegisterModel> = {}): RegisterModel {
+  return {
+    orgId,
+    modelRef: 'company-v4',
+    displayName: 'Company V4',
+    providerRef: 'deepseek',
+    upstreamModel: 'deepseek-chat-20260801',
+    endpoint: 'https://api.deepseek.com',
+    credentialRef: 'company/deepseek',
+    maxOutputTokens: 4_000,
+    ...patch,
+  }
+}
+
+/** An invocation, which each test then varies. */
+function invocation(patch: Partial<InvocationRequest> = {}): InvocationRequest {
+  return {
+    orgId,
+    principalId: alice,
+    modelRef: 'company-v4',
+    period: PERIOD,
+    inputTokens: 500,
+    ...patch,
+  }
+}
+
+beforeEach(async () => {
+  ctx = new Context()
+  await ctx.plugin(SqliteAccountStore, { path: ':memory:' }).await()
+  await ctx.plugin(SqliteAccessControl, { path: ':memory:' }).await()
+  await ctx.plugin(SqliteQuota, { path: ':memory:', reservationTtlMs: 300_000 }).await()
+  await ctx.plugin(SqliteModelGateway, { path: ':memory:' }).await()
+
+  store = ctx.get('accountStore') as AccountStore
+  access = ctx.get('accessControl') as AccessControl
+  quota = ctx.get('quota') as Quota
+  gateway = ctx.get('modelGateway') as ModelGateway
+  orgId = (await store.createOrganization('Acme')).id
+  alice = (await store.createUser({ orgId, loginName: 'alice', displayName: 'Alice' })).id
+  role = (await access.createRole({ orgId, name: 'engineering' })).id
+  await access.bindUserRole(alice, role)
+})
+
+afterEach(async () => {
+  await ctx.fiber.dispose()
+})
+
+/** Let the bound role invoke and discover every model. */
+async function grantEverything(): Promise<void> {
+  await access.grantType(role, 'model', 'model.invoke')
+  await access.grantType(role, 'model', 'model.discover')
+}
+
+describe('the catalog', () => {
+  it('governs a model in the same act that registers it', async () => {
+    await gateway.register(model())
+    // A catalog entry access control does not know about is a model no grant
+    // can name and nobody can ever invoke.
+    const governed = await access.listResources(orgId, 'model')
+    expect(governed.map(resource => resource.externalRef)).toEqual(['company-v4'])
+  })
+
+  it('keeps the stable ref while the upstream name and credential change under it', async () => {
+    await gateway.register(model())
+    await grantEverything()
+    const before = await gateway.authorize(invocation())
+    await gateway.register(model({ upstreamModel: 'deepseek-chat-20260901', credentialRef: 'company/rotated' }))
+    const after = await gateway.authorize(invocation())
+    expect(await gateway.list(orgId)).toHaveLength(1)
+    expect(before.upstreamModel).toBe('deepseek-chat-20260801')
+    expect(after.upstreamModel).toBe('deepseek-chat-20260901')
+    expect(after.credentialRef).toBe('company/rotated')
+    // The grant still names the same model, because the ref never moved.
+    expect(after.modelRef).toBe('company-v4')
+  })
+
+  it('withdraws a model from service on both sides at once', async () => {
+    await gateway.register(model())
+    await grantEverything()
+    await gateway.setStatus(orgId, 'company-v4', 'retired')
+    await expect(gateway.authorize(invocation())).rejects.toMatchObject({ reason: 'model-retired' })
+    // And access control refuses it too, whichever entry point a request
+    // arrives at.
+    expect(await access.authorize({
+      orgId, principalId: alice, action: 'model.invoke', resourceType: 'model', resourceId: 'company-v4',
+    })).toMatchObject({ allowed: false, reason: 'resource-disabled' })
+    await gateway.setStatus(orgId, 'company-v4', 'active')
+    await expect(gateway.authorize(invocation())).resolves.toMatchObject({ modelRef: 'company-v4' })
+  })
+
+  it('accepts a status change for a model nobody registered', async () => {
+    await expect(gateway.setStatus(orgId, 'never-registered', 'retired')).resolves.toBeUndefined()
+  })
+})
+
+describe('what a member is shown', () => {
+  it('lists only models the principal may discover, and only what a Runner needs', async () => {
+    await gateway.register(model())
+    await gateway.register(model({ modelRef: 'company-v4-mini', displayName: 'Company V4 Mini' }))
+    const resources = await access.listResources(orgId, 'model')
+    const mini = resources.find(resource => resource.externalRef === 'company-v4-mini')
+    await access.grantResource(role, mini?.id as never, 'model.discover')
+
+    const visible = await gateway.discover(orgId, alice)
+    expect(visible).toEqual([{ modelRef: 'company-v4-mini', displayName: 'Company V4 Mini' }])
+    // Not the endpoint, not the upstream name, not the credential reference.
+    expect(JSON.stringify(visible)).not.toContain('deepseek')
+    expect(JSON.stringify(visible)).not.toContain('company/deepseek')
+  })
+
+  it('hides a retired model from a member who could otherwise discover it', async () => {
+    await gateway.register(model())
+    await grantEverything()
+    expect(await gateway.discover(orgId, alice)).toHaveLength(1)
+    await gateway.setStatus(orgId, 'company-v4', 'retired')
+    expect(await gateway.discover(orgId, alice)).toEqual([])
+  })
+
+  it('shows an administrator the whole catalog, retired models included', async () => {
+    await gateway.register(model())
+    await gateway.setStatus(orgId, 'company-v4', 'retired')
+    expect(await gateway.list(orgId)).toMatchObject([{ modelRef: 'company-v4', status: 'retired' }])
+  })
+})
+
+describe('deciding an invocation', () => {
+  it('returns a call the Runner could not have constructed', async () => {
+    await gateway.register(model())
+    await grantEverything()
+    const plan = await gateway.authorize(invocation())
+    expect(plan).toMatchObject({
+      modelRef: 'company-v4',
+      endpoint: 'https://api.deepseek.com',
+      upstreamModel: 'deepseek-chat-20260801',
+      credentialRef: 'company/deepseek',
+      maxOutputTokens: 4_000,
+    })
+    expect(plan.policyRevision).toBeGreaterThan(0n)
+    expect((await quota.usage(orgId, PERIOD)).reservedTokens).toBe(4_500)
+  })
+
+  it('answers an unknown model and an ungranted one the same way', async () => {
+    await gateway.register(model())
+    // Alice holds no grant, so the model she cannot invoke reads as one that
+    // does not exist: a refusal never tells her which models this organization
+    // has.
+    await expect(gateway.authorize(invocation())).rejects.toMatchObject({ reason: 'unknown-model' })
+    await expect(gateway.authorize(invocation({ modelRef: 'no-such-model' })))
+      .rejects.toMatchObject({ reason: 'unknown-model' })
+  })
+
+  it('says not-allowed only when the principal holds roles but not this one', async () => {
+    await gateway.register(model())
+    await gateway.register(model({ modelRef: 'other', displayName: 'Other' }))
+    const resources = await access.listResources(orgId, 'model')
+    const other = resources.find(resource => resource.externalRef === 'other')
+    await access.grantResource(role, other?.id as never, 'model.invoke')
+    // The principal is known to access control and holds a grant on another
+    // model, which is a different fact from holding nothing at all.
+    await expect(gateway.authorize(invocation())).rejects.toMatchObject({ reason: 'unknown-model' })
+    await expect(gateway.authorize(invocation({ modelRef: 'other' }))).resolves.toMatchObject({ modelRef: 'other' })
+  })
+
+  it('refuses when the organization has no budget left', async () => {
+    await gateway.register(model())
+    await grantEverything()
+    await quota.setLimit(orgId, PERIOD, 1_000)
+    await expect(gateway.authorize(invocation())).rejects.toMatchObject({ reason: 'quota-exceeded' })
+  })
+
+  it('refuses a nonsensical token count without holding anything', async () => {
+    await gateway.register(model())
+    await grantEverything()
+    await expect(gateway.authorize(invocation({ inputTokens: -1 })))
+      .rejects.toMatchObject({ reason: 'malformed' })
+    expect((await quota.usage(orgId, PERIOD)).reservedTokens).toBe(0)
+  })
+
+  it('reserves against the catalog ceiling, not the Runner ask', async () => {
+    await gateway.register(model())
+    await grantEverything()
+    const plan = await gateway.authorize(invocation({ maxOutputTokens: 999_999 }))
+    expect(plan.maxOutputTokens).toBe(4_000)
+    expect((await quota.usage(orgId, PERIOD)).reservedTokens).toBe(4_500)
+  })
+
+  it('honours a smaller ask, so a short request does not hold a long request budget', async () => {
+    await gateway.register(model())
+    await grantEverything()
+    const plan = await gateway.authorize(invocation({ maxOutputTokens: 100 }))
+    expect(plan.maxOutputTokens).toBe(100)
+    expect((await quota.usage(orgId, PERIOD)).reservedTokens).toBe(600)
+  })
+
+  it('takes no reservation for a model it refuses', async () => {
+    await gateway.register(model())
+    await expect(gateway.authorize(invocation())).rejects.toBeInstanceOf(InvocationRefusedError)
+    expect((await quota.usage(orgId, PERIOD)).reservedTokens).toBe(0)
+  })
+
+  it('carries the device and the correlation into both decisions', async () => {
+    await gateway.register(model())
+    await grantEverything()
+    const plan = await gateway.authorize(invocation({
+      deviceId: 'device-7',
+      correlationId: 'c-9f2a',
+      maxOutputTokens: 100,
+    }))
+    // Both are optional on the request and reach the ledger, so a later reader
+    // can tell which computer and which session spent the budget.
+    expect(plan.maxOutputTokens).toBe(100)
+    expect((await quota.usage(orgId, PERIOD)).reservedTokens).toBe(600)
+  })
+
+  it('says not-allowed when the principal holds a role that simply lacks this grant', async () => {
+    await gateway.register(model())
+    // Alice holds a role, and the model is governed and enabled; what she does
+    // not hold is model.invoke on it. Access control calls that no-grant, and
+    // this seam reports it as unknown-model — the case that reads as
+    // not-allowed is a decision that refused for any other reason.
+    await access.grantType(role, 'model', 'model.discover')
+    await expect(gateway.authorize(invocation())).rejects.toMatchObject({ reason: 'unknown-model' })
+
+    const other = (await store.createUser({ orgId, loginName: 'bob', displayName: 'Bob' })).id
+    // Bob holds no roles at all, which access control calls default-deny.
+    await expect(gateway.authorize(invocation({ principalId: other })))
+      .rejects.toMatchObject({ reason: 'not-allowed' })
+  })
+
+  it('settles the reservation the plan named', async () => {
+    await gateway.register(model())
+    await grantEverything()
+    const plan = await gateway.authorize(invocation())
+    await gateway.settle(plan.reservationId, { kind: 'reported', inputTokens: 500, outputTokens: 700 })
+    expect(await quota.usage(orgId, PERIOD)).toMatchObject({ settledTokens: 1_200, reservedTokens: 0 })
+  })
+})
+
+describe('what reaches the provider', () => {
+  const plan: CallPlan = {
+    modelRef: 'company-v4',
+    endpoint: 'https://api.deepseek.com',
+    upstreamModel: 'deepseek-chat-20260801',
+    credentialRef: 'company/deepseek',
+    reservationId: 'reservation' as never,
+    maxOutputTokens: 4_000,
+    policyRevision: 1n,
+  }
+
+  it('overwrites the model a Runner wrote in the body', () => {
+    // The Runner names one model to the gateway and writes another in the
+    // body; the call reaches the one it was authorized for.
+    const sent = applyPlanToBody({ model: 'some-other-model', messages: [] }, plan)
+    expect(sent.model).toBe('deepseek-chat-20260801')
+  })
+
+  it('bounds an output limit the body already carries, in either spelling', () => {
+    for (const field of ['max_tokens', 'max_completion_tokens']) {
+      const sent = applyPlanToBody({ model: 'x', [field]: 100_000 }, plan)
+      expect(sent[field], field).toBe(4_000)
+    }
+    // A smaller ask in the body is left alone.
+    expect(applyPlanToBody({ model: 'x', max_tokens: 50 }, plan).max_tokens).toBe(50)
+  })
+
+  it('adds no output limit the body did not carry', () => {
+    // Adding a field the adapter did not send would change a request it meant.
+    const sent = applyPlanToBody({ model: 'x', messages: [] }, plan)
+    expect('max_tokens' in sent).toBe(false)
+    expect('max_completion_tokens' in sent).toBe(false)
+  })
+
+  it('leaves everything else the adapter built', () => {
+    const sent = applyPlanToBody({
+      model: 'x', messages: [{ role: 'user', content: 'hello' }], temperature: 0.2, stream: true,
+    }, plan)
+    expect(sent).toMatchObject({ messages: [{ role: 'user', content: 'hello' }], temperature: 0.2, stream: true })
+  })
+
+  it('bounds a limit that is not a number at all', () => {
+    expect(applyPlanToBody({ model: 'x', max_tokens: 'lots' }, plan).max_tokens).toBe(4_000)
+  })
+})
+
+describe('opening a catalog', () => {
+  let dir: string
+  let path: string
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'dsh-model-'))
+    path = join(dir, 'models.sqlite')
+  })
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('stamps the application id and schema version, and refuses foreign or newer files', () => {
+    const db = new DatabaseSync(path)
+    applySchema(db)
+    expect((db.prepare('PRAGMA application_id').get() as { application_id: number }).application_id)
+      .toBe(MODEL_GATEWAY_SQLITE_APPLICATION_ID)
+    expect((db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version).toBe(SCHEMA_VERSION)
+    db.exec(`PRAGMA user_version = ${SCHEMA_VERSION + 1}`)
+    expect(() => { applySchema(db) }).toThrow(/newer than this build/u)
+    db.close()
+
+    const foreign = new DatabaseSync(join(dir, 'other.sqlite'))
+    foreign.exec('PRAGMA application_id = 12345')
+    expect(() => { applySchema(foreign) }).toThrow(/another application/u)
+    foreign.close()
+  })
+
+  it('refuses a status and an output ceiling the catalog does not hold', () => {
+    const db = new DatabaseSync(path)
+    applySchema(db)
+    const insert = db.prepare(
+      `INSERT INTO model (org_id, model_ref, display_name, provider_ref, upstream_model,
+                          endpoint, credential_ref, max_output_tokens, status)
+       VALUES ('o', ?, 'n', 'p', 'u', 'e', 'c', ?, ?)`,
+    )
+    expect(() => insert.run('a', 100, 'invented')).toThrow(/CHECK/u)
+    expect(() => insert.run('b', 0, 'active')).toThrow(/CHECK/u)
+    db.close()
+  })
+})

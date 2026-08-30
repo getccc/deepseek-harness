@@ -1528,6 +1528,48 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'modelGateway',
+    summary: 'The company model catalog and the decision in front of it.',
+    description: 'The company model catalog and the decision in front of it. A provider mounts this service; consumers inject `modelGateway`.\n\nAuthorization is asked on every invocation rather than cached with a token, so a role change takes effect on the next request instead of when a credential happens to expire.',
+    methods: [
+      {
+        signature: 'abstract register(input: RegisterModel): Promise<ModelEntry>',
+        description: 'Put a model in the catalog, or update the one already there.\n\nIdempotent on `(orgId, modelRef)`: the stable ref is the identity, so a provider renaming its model upstream, or a credential rotating, changes this row without disturbing any grant that names it.',
+        parameters: [{ name: 'input', description: 'the model\'s stable ref and everything the upstream call needs.' }],
+        returns: 'the stored entry.',
+      },
+      {
+        signature: 'abstract setStatus(orgId: OrgId, modelRef: string, status: ModelStatus): Promise<void>',
+        description: 'Withdraw a model from service, or return it.',
+        parameters: [{ name: 'orgId', description: 'the organization the model belongs to.' }, { name: 'modelRef', description: 'the model to change.' }, { name: 'status', description: 'whether it may be invoked.' }],
+      },
+      {
+        signature: 'abstract list(orgId: OrgId): Promise<ModelEntry[]>',
+        description: 'Every model in an organization\'s catalog, in registration order.\n\nThis is the administrator\'s view and is not filtered by any principal\'s grants; a member\'s list is discover.',
+        parameters: [{ name: 'orgId', description: 'the organization to list.' }],
+        returns: 'the catalog, retired models included.',
+      },
+      {
+        signature: 'abstract discover(orgId: OrgId, principalId: string): Promise< { readonly modelRef: string; readonly displayName: string }[] >',
+        description: 'The models one principal may see, with nothing an upstream call needs.\n\nA Runner is told the stable ref and the display name and no more: the endpoint, the upstream name, and the credential reference are the gateway\'s, and a member\'s model list is not the place to publish them.',
+        parameters: [{ name: 'orgId', description: 'the organization to list.' }, { name: 'principalId', description: 'the account asking.' }],
+        returns: 'the active models this principal holds `model.discover` on.',
+      },
+      {
+        signature: 'abstract authorize(request: InvocationRequest): Promise<CallPlan>',
+        description: 'Decide one invocation and hold the budget for it.\n\nThe order is deliberate: a model nobody may discover is refused as unknown, an authorized model with no budget is refused after the authorization it passed, and a reservation is only taken once the request is certain to be attempted.',
+        parameters: [{ name: 'request', description: 'who is asking, for which model, and how much it may cost.' }],
+        returns: 'the approved call, including the reservation to settle afterwards.',
+        throws: ['{InvocationRefusedError} with the word for why it may not proceed.'],
+      },
+      {
+        signature: 'abstract settle(reservationId: ReservationId, settlement: Settlement): Promise<void>',
+        description: 'Settle the reservation an approved call held.\n\nA pass-through to the ledger, so a caller that holds a plan does not also need the quota service, and so every settlement for a gateway call goes through one place.',
+        parameters: [{ name: 'reservationId', description: 'the reservation the plan named.' }, { name: 'settlement', description: 'what the provider reported, what is estimated, or a release.' }],
+      },
+    ],
+  },
+  {
     key: 'permissionPresets',
     summary: 'Owns the deployment\'s permission presets and their write path.',
     description: 'Owns the deployment\'s permission presets and their write path. Requires a confining `ctx.shell` executor and `ctx.approval`; unmatched knob values are reported as CUSTOM_PRESET, not an error.',
@@ -1581,6 +1623,44 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Select whether plan mode should be active. Between turns the method appends the change immediately because no in-turn pre-step will run until another prompt starts a turn. The open-turn fold is the idle signal: agent status stays `running` through post-turn checkpointing, when no further in-turn pre-step runs. During an open turn the selection remains pending until the next accepted in-turn pre-step. Repeated selection of the current or already-pending state is a no-op.',
         parameters: [{ name: 'agent', description: 'The agent to switch.' }, { name: 'active', description: 'Whether plan mode should be active.' }],
         returns: 'what happened: `committed` (logged now), `queued` (awaiting the next accepted in-turn pre-step), `cancelled` (an opposite pending selection was cleared; the logged state already matches), or `noop` (already in that state).',
+      },
+    ],
+  },
+  {
+    key: 'quota',
+    summary: 'The budget ledger.',
+    description: 'The budget ledger. A provider mounts this service; consumers inject `quota`.\n\nNothing here decides who may use a model — access control does. This decides only whether there is budget left, and records what a request spent.',
+    methods: [
+      {
+        signature: 'abstract setLimit(orgId: OrgId, period: PeriodKey, limitTokens: number | undefined): Promise<void>',
+        description: 'Set what an organization may spend in one period. Setting it again replaces the limit and changes nothing already settled or reserved.',
+        parameters: [{ name: 'orgId', description: 'the organization to limit.' }, { name: 'period', description: 'the period the limit applies to.' }, { name: 'limitTokens', description: 'the ceiling, or undefined to remove the limit.' }],
+      },
+      {
+        signature: 'abstract reserve(request: ReservationRequest): Promise<Reservation>',
+        description: 'Hold a claim on the budget before calling an upstream provider.\n\nThe claim is the input tokens plus the most output the request may produce, so a reservation is the ceiling on what this request can ever cost. That is what lets a later estimate be bounded rather than invented.',
+        parameters: [{ name: 'request', description: 'who is asking, for which model, and for how much.' }],
+        returns: 'the held reservation.',
+        throws: ['{ReservationRefusedError} when the budget cannot cover it, or the request is malformed.'],
+      },
+      {
+        signature: 'abstract settle(id: ReservationId, settlement: Settlement): Promise<SettlementRecord>',
+        description: 'Settle a reservation once, for what actually happened.\n\nSettling the same reservation again returns the settlement already recorded and changes no balance. That is what makes a caller safe to retry after a crash, and what makes the reconciler safe to run beside it.',
+        parameters: [{ name: 'id', description: 'the reservation being settled.' }, { name: 'settlement', description: 'what the provider reported, what is estimated, or a release.' }],
+        returns: 'the settlement of record, which may predate this call.',
+        throws: ['{UnknownReservationError} when the ledger holds no such reservation.'],
+      },
+      {
+        signature: 'abstract reconcile(now: number): Promise<SettlementRecord[]>',
+        description: 'Settle every reservation whose lifetime has run out.\n\nThey are settled, not released: a request that ran past its window is far more likely to have spent the budget than to have spent nothing, and a ledger that released them would let a crash loop spend without recording.',
+        parameters: [{ name: 'now', description: 'the moment to reconcile against, in epoch milliseconds.' }],
+        returns: 'the settlements written, in reservation order.',
+      },
+      {
+        signature: 'abstract usage(orgId: OrgId, period: PeriodKey): Promise<QuotaUsage>',
+        description: 'What an organization has spent and holds in one period.',
+        parameters: [{ name: 'orgId', description: 'the organization to report on.' }, { name: 'period', description: 'the period to report on.' }],
+        returns: 'the limit, what is settled, what is reserved, and what remains.',
       },
     ],
   },
@@ -4000,6 +4080,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface BrowserSessionRecord {\n    readonly userId: UserId;\n    readonly orgId: OrgId;\n    readonly expiresAt: number;\n    readonly createdAt: number;\n}',
   },
   {
+    name: 'CallPlan',
+    declaration: 'export interface CallPlan {\n    readonly modelRef: string;\n    readonly endpoint: string;\n    readonly upstreamModel: string;\n    readonly credentialRef: string;\n    readonly reservationId: ReservationId;\n    readonly maxOutputTokens: number;\n    readonly policyRevision: bigint;\n}',
+  },
+  {
     name: 'ChunkRowEvent',
     declaration: 'export type ChunkRowEvent = {\n    [Kind in ChunkRow[\'type\']]: {\n        readonly type: `chunkrow/${Kind}`;\n        readonly seq: number;\n        readonly time: number;\n        readonly data: Extract<ChunkRow, {\n            readonly type: Kind;\n        }>[\'data\'];\n    };\n}[ChunkRow[\'type\']];',
   },
@@ -4592,6 +4676,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface InvocationParameterDescriptor {\n    readonly name: string;\n    readonly wire: string;\n    readonly source: \'json\' | \'lookup\';\n    readonly lookup?: string;\n    readonly codec: TypertCodec;\n    readonly acceptsUndefined?: true;\n}',
   },
   {
+    name: 'InvocationRequest',
+    declaration: 'export interface InvocationRequest {\n    readonly orgId: OrgId;\n    readonly principalId: UserId;\n    readonly deviceId?: string;\n    readonly modelRef: string;\n    readonly period: string;\n    readonly inputTokens: number;\n    readonly maxOutputTokens?: number;\n    readonly correlationId?: string;\n}',
+  },
+  {
     name: 'InvocationSourceLocation',
     declaration: 'export interface InvocationSourceLocation {\n    readonly file: string;\n    readonly line: number;\n    readonly column: number;\n}',
   },
@@ -4908,6 +4996,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ModelCatalogModel {\n    readonly id: string;\n    readonly name: string;\n    readonly description?: string;\n    readonly reasoning?: ModelReasoning;\n}',
   },
   {
+    name: 'ModelEntry',
+    declaration: 'export interface ModelEntry {\n    readonly orgId: OrgId;\n    readonly modelRef: string;\n    readonly displayName: string;\n    readonly providerRef: string;\n    readonly upstreamModel: string;\n    readonly endpoint: string;\n    readonly credentialRef: string;\n    readonly maxOutputTokens: number;\n    readonly status: ModelStatus;\n}',
+  },
+  {
     name: 'ModelMessageSource',
     declaration: 'export interface ModelMessageSource extends AssistantProvenance {\n    kind: \'model\';\n}',
   },
@@ -4932,6 +5024,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ModelReasoningEffort {\n    readonly id: string;\n    readonly name: string;\n    readonly description?: string;\n}',
   },
   {
+    name: 'ModelStatus',
+    declaration: 'export type ModelStatus = typeof MODEL_STATUSES[number];',
+  },
+  {
     name: 'ObjectJsonSchema',
     declaration: 'export type ObjectJsonSchema = JsonSchemaNode & {\n    type: \'object\';\n};',
   },
@@ -4950,6 +5046,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'PendingTransaction',
     declaration: 'export interface PendingTransaction {\n    readonly transactionId: TransactionId;\n    readonly platform: DevicePlatform;\n    readonly runnerVersion: string;\n    readonly publicKeyDigest: string;\n    readonly pairingCode: string;\n    readonly expiresAt: number;\n}',
+  },
+  {
+    name: 'PeriodKey',
+    declaration: 'export type PeriodKey = string;',
   },
   {
     name: 'PermissionSelect',
@@ -5056,6 +5156,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface PtcDispatchLog {\n    readonly exec: ToolExecution;\n    readonly agent?: Agent;\n    readonly subCallId: ToolCallId;\n    readonly name: string;\n    readonly isError: boolean;\n    readonly content: ContentBlock[];\n}',
   },
   {
+    name: 'QuotaUsage',
+    declaration: 'export interface QuotaUsage {\n    readonly orgId: OrgId;\n    readonly period: PeriodKey;\n    readonly limitTokens?: number;\n    readonly settledTokens: number;\n    readonly reservedTokens: number;\n    readonly availableTokens?: number;\n}',
+  },
+  {
     name: 'ReadFileLine',
     declaration: 'export interface ReadFileLine {\n    number: number;\n    text: string;\n}',
   },
@@ -5082,6 +5186,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'RefreshRequest',
     declaration: 'export interface RefreshRequest {\n    readonly familyId: FamilyId;\n    readonly refreshToken: string;\n    readonly deviceSignature: string;\n}',
+  },
+  {
+    name: 'RegisterModel',
+    declaration: 'export interface RegisterModel {\n    readonly orgId: OrgId;\n    readonly modelRef: string;\n    readonly displayName: string;\n    readonly providerRef: string;\n    readonly upstreamModel: string;\n    readonly endpoint: string;\n    readonly credentialRef: string;\n    readonly maxOutputTokens: number;\n}',
   },
   {
     name: 'RegisterResource',
@@ -5114,6 +5222,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'RequestRunOutcome',
     declaration: 'export type RequestRunOutcome = \'approved\' | \'completed\' | \'rejected\' | \'cancelled\' | \'failed\';',
+  },
+  {
+    name: 'Reservation',
+    declaration: 'export interface Reservation {\n    readonly id: ReservationId;\n    readonly orgId: OrgId;\n    readonly period: PeriodKey;\n    readonly principalId: UserId;\n    readonly modelRef: string;\n    readonly reservedTokens: number;\n    readonly createdAt: number;\n    readonly expiresAt: number;\n}',
+  },
+  {
+    name: 'ReservationId',
+    declaration: 'export type ReservationId = Branded<\'ReservationId\'>;',
+  },
+  {
+    name: 'ReservationRequest',
+    declaration: 'export interface ReservationRequest {\n    readonly orgId: OrgId;\n    readonly period: PeriodKey;\n    readonly principalId: UserId;\n    readonly deviceId?: string;\n    readonly modelRef: string;\n    readonly inputTokens: number;\n    readonly maxOutputTokens: number;\n    readonly correlationId?: string;\n}',
   },
   {
     name: 'ResolvedAlwaysRetryPolicy',
@@ -5714,6 +5834,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'SettingsUpdateSource',
     declaration: 'export type SettingsUpdateSource = \'update\' | \'provider\';',
+  },
+  {
+    name: 'Settlement',
+    declaration: 'export type Settlement = {\n    readonly kind: \'reported\';\n    readonly inputTokens: number;\n    readonly outputTokens: number;\n} | {\n    readonly kind: \'estimated\';\n    readonly inputTokens: number;\n    readonly outputTokens: number;\n} | {\n    readonly kind: \'released\';\n};',
+  },
+  {
+    name: 'SettlementKind',
+    declaration: 'export type SettlementKind = typeof SETTLEMENT_KINDS[number];',
+  },
+  {
+    name: 'SettlementRecord',
+    declaration: 'export interface SettlementRecord {\n    readonly reservationId: ReservationId;\n    readonly kind: SettlementKind;\n    readonly inputTokens: number;\n    readonly outputTokens: number;\n    readonly chargedTokens: number;\n    readonly settledAt: number;\n    readonly reconciled: boolean;\n}',
   },
   {
     name: 'ShellExecRequest',

@@ -45,6 +45,8 @@
     "@deepseek-ai/dsh-audit-sqlite": "workspace:^",
     "@deepseek-ai/dsh-device-authorization-sqlite": "workspace:^",
     "@deepseek-ai/dsh-host-webserver": "workspace:^",
+    "@deepseek-ai/dsh-model-gateway-sqlite": "workspace:^",
+    "@deepseek-ai/dsh-quota-sqlite": "workspace:^",
     "@deepseek-ai/dsh-team-control-plane-http": "workspace:^",
     "@deepseek-ai/dsh-team-shell": "workspace:^"
   },

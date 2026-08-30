@@ -22,7 +22,7 @@ kind: "package-group"
 <a id="packages"></a>
 ## 包
 
-两个能力接缝、四个包；完整契约由各自的子 README 拥有。
+三个能力接缝、六个包；完整契约由各自的子 README 拥有。
 
 | 包 | 作用 | ctx key |
 |---|---|---|
@@ -30,6 +30,8 @@ kind: "package-group"
 | [`access-control-sqlite/`](access-control-sqlite/README.zh.md) | 存放角色、授权与受治理资源，并在其上求值 | 注册 `ctx.accessControl` |
 | [`audit/`](audit/README.zh.md) | Service Definition、动作与 Metadata 目录，以及记录检查 | `ctx.audit` |
 | [`audit-sqlite/`](audit-sqlite/README.zh.md) | 存放只追加的审计，并把同一套规则声明给数据库 | 注册 `ctx.audit` |
+| [`quota/`](quota/README.zh.md) | Service Definition：上游调用前预留，事后结算一次 | `ctx.quota` |
+| [`quota-sqlite/`](quota-sqlite/README.zh.md) | 保管账本，并对账无人结算的那些 | 注册 `ctx.quota` |
 
 -----
 
@@ -38,6 +40,7 @@ kind: "package-group"
 
 - [访问控制子系统](../../docs/subsystems/access-control.zh.md)——求值规则及其读取的记录。
 - [审计子系统](../../docs/subsystems/audit.zh.md)——把任务内容挡在外面的封闭词汇表与存储规则。
+- [配额子系统](../../docs/subsystems/quota.zh.md)——作为上限的预留，以及每个请求一次结算。
 - [`account/`](../account/README.zh.md)——被授权的身份，以及其策略修订号被本组递增的那个组织。
 - [能力接缝](../../docs/capability-seams.zh.md)——本能力族遵循的 Service Definition / Service Provider / Consumer 拆分。
 
@@ -47,7 +50,7 @@ kind: "package-group"
 <details>
 <summary>维护者的工作上下文——点击展开</summary>
 
-配额刻意不在此处：授权回答的是主体是否可以使用某个资源，配额回答的是是否还有额度。把两者合并会让一次拒绝变得含混。
+配额与授权并列而不是内嵌其中：授权回答的是主体是否可以使用某个资源，配额回答的是是否还有额度。一次同时覆盖两者的拒绝对读到它的成员是含混的，因此网关依次询问两者。
 
 授权与审计是两个独立接缝，而不是一个既判定又记录的服务，因为对请求求值的那份存储并不知道任何主体的设备、关联标识或意图。记录由持有这些信息的那次操作写入。
 

@@ -11,9 +11,9 @@
 # assert their absence, and the profile template names no bundle that would
 # reintroduce them.
 #
-# The company services below are the Control Plane. The remaining ones (Quota,
-# Model Gateway, Knowledge MCP Gateway, Private Catalog) insert into this list
-# as their packages land. Each addition must keep the absence assertions
+# The company services below are the Control Plane. The remaining ones
+# (Knowledge MCP Gateway, Private Catalog) insert into this list as their
+# packages land. Each addition must keep the absence assertions
 # passing.
 #
 # Every store writes under the DSH home rather than the working directory, so
@@ -71,6 +71,21 @@
         codeTtlMs: 60000
         accessTokenTtlMs: 900000
         refreshTokenTtlMs: 2592000000
+
+    # ── what a company model call costs, and which one it reaches ────────
+    # The ledger, then the catalog in front of it. The gateway injects both
+    # access control and quota, so it mounts after them.
+    - id: quota
+      name: '@deepseek-ai/dsh-quota-sqlite'
+      config:
+        path: !!js dshHomePath('control-plane', 'quota.sqlite')
+        # Above the slowest completion a deployment expects and nowhere near
+        # it: this bounds how long a crashed request holds budget.
+        reservationTtlMs: 900000
+    - id: model-gateway
+      name: '@deepseek-ai/dsh-model-gateway-sqlite'
+      config:
+        path: !!js dshHomePath('control-plane', 'models.sqlite')
 
     # ── the two HTTP surfaces ────────────────────────────────────────────
     # Runner-facing: authorized by PKCE, a device signature, and a one-time

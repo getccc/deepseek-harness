@@ -29,6 +29,8 @@ One page per subsystem of the DeepSeek Harness: what it is, the data structures 
 | [access-control.md](access-control.md) | default-deny authorization: the closed permission catalog, roles, type and resource grants, governed resources, and the policy revision |
 | [device-authorization.md](device-authorization.md) | binding a browser session to one computer: pairing codes, PKCE and device-signature redemption, refresh-token families, and revocation |
 | [team-handoff.md](team-handoff.md) | getting from the company site to this computer: three local addresses, the callback that cannot be a redirect, and what the local state binds |
+| [model-gateway.md](model-gateway.md) | the company model catalog and the decision in front of it: what a Runner may invoke, and what its call becomes |
+| [quota.md](quota.md) | the budget ledger: a reservation as the ceiling, one settlement per request, and the reconciler that closes what nobody settled |
 | [audit.md](audit.md) | the append-only audit trail: the closed action and metadata catalogs, the token rule, and the storage constraints that keep task content out |
 | [account.md](account.md) | organizations, member accounts, sign-in state, and the store seam that keeps identity separate from authentication method |
 | [approval.md](approval.md) | the one-shot user-approval seam: `ApprovalRequest`, `ApprovalOutcome`, per-session policy, audit events, and answerer contracts |

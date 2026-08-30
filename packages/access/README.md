@@ -22,7 +22,7 @@ The `access/` group decides whether a principal may perform an action on a resou
 <a id="packages"></a>
 ## Packages
 
-Two capability seams, four packages; each child README owns the full contract.
+Three capability seams, six packages; each child README owns the full contract.
 
 | Package | Role | ctx key |
 |---|---|---|
@@ -30,6 +30,8 @@ Two capability seams, four packages; each child README owns the full contract.
 | [`access-control-sqlite/`](access-control-sqlite/README.md) | Stores roles, grants, and governed resources, and evaluates over them | registers `ctx.accessControl` |
 | [`audit/`](audit/README.md) | Service Definition, the action and metadata catalogs, and the record check | `ctx.audit` |
 | [`audit-sqlite/`](audit-sqlite/README.md) | Stores the append-only trail and declares the same rules to the database | registers `ctx.audit` |
+| [`quota/`](quota/README.md) | Service Definition: reserve before an upstream call, settle once afterwards | `ctx.quota` |
+| [`quota-sqlite/`](quota-sqlite/README.md) | Keeps the ledger and reconciles what nobody settled | registers `ctx.quota` |
 
 -----
 
@@ -38,6 +40,7 @@ Two capability seams, four packages; each child README owns the full contract.
 
 - [Access-control subsystem](../../docs/subsystems/access-control.md) — the evaluation rules and the records they read.
 - [Audit subsystem](../../docs/subsystems/audit.md) — the closed vocabularies and the storage rules that keep task content out.
+- [Quota subsystem](../../docs/subsystems/quota.md) — a reservation as the ceiling, and one settlement per request.
 - [`account/`](../account/README.md) — the identities this authorizes, and the organization whose policy revision it advances.
 - [Capability seams](../../docs/capability-seams.md) — the Service Definition / Service Provider / Consumer split this family follows.
 
@@ -47,7 +50,7 @@ Two capability seams, four packages; each child README owns the full contract.
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-Quota is deliberately not here: authorization answers whether a principal may use a resource, and quota answers whether there is budget left. Merging them would make a refusal ambiguous.
+Quota lives beside authorization rather than inside it: authorization answers whether a principal may use a resource, and quota answers whether there is budget left. A single refusal covering both would be ambiguous to the member reading it, so a gateway asks each in turn.
 
 Authorization and audit are separate seams rather than one service that decides and records, because the store that evaluates a request knows no principal's device, correlation, or intent. A record is written by the operation that had them.
 

@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-30-a-runner-names-a-model-and-nothing-else.md
+2026-08-30-a-runner-names-a-model-and-nothing-else.md: 0a96f4722eb2aefb3071ded435c753d5bd94c437
+2026-08-30-a-runner-names-a-model-and-nothing-else.zh.md: 82fa6b90093660442397ab53fdb600b0266f6e3f

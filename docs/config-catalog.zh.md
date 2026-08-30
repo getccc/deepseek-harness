@@ -1629,6 +1629,22 @@ export interface Config {
 
 来源：[`packages/feedback/message-feedback/src/index.ts:49`](../packages/feedback/message-feedback/src/index.ts)
 
+<a id="deepseek-aidsh-model-gateway-sqlite"></a>
+
+## `@deepseek-ai/dsh-model-gateway-sqlite`
+
+需要：`accessControl` · `quota`
+
+```ts config-catalog
+/** Plugin config: where the catalog lives. */
+export interface Config {
+  /** SQLite database path, or `:memory:` for an in-process database. */
+  path: string
+}
+```
+
+来源：[`packages/llm/model-gateway-sqlite/src/index.ts:32`](../packages/llm/model-gateway-sqlite/src/index.ts)
+
 <a id="deepseek-aidsh-permission-presets"></a>
 
 ## `@deepseek-ai/dsh-permission-presets`
@@ -1778,6 +1794,27 @@ export type Config = LocalConfig
 依赖：[`LocalConfig`](#deepseek-aidsh-pwsh-local)
 
 来源：[`packages/shell/pwsh-sandbox/src/index.ts:40`](../packages/shell/pwsh-sandbox/src/index.ts)
+
+<a id="deepseek-aidsh-quota-sqlite"></a>
+
+## `@deepseek-ai/dsh-quota-sqlite`
+
+```ts config-catalog
+/** Plugin config: where the ledger lives and how long a claim may be held. */
+export interface Config {
+  /** SQLite database path, or `:memory:` for an in-process database. */
+  path: string
+  /**
+   * How long a reservation may stay open before the reconciler settles it, in
+   * milliseconds. It bounds how long a crashed request can hold budget, so it
+   * belongs above the slowest completion a deployment expects and nowhere near
+   * it.
+   */
+  reservationTtlMs: number
+}
+```
+
+来源：[`packages/access/quota-sqlite/src/index.ts:37`](../packages/access/quota-sqlite/src/index.ts)
 
 <a id="deepseek-aidsh-repeat-tool-reminder"></a>
 
@@ -3724,8 +3761,10 @@ export interface Config {
 - `@deepseek-ai/dsh-launch-environment`（[`packages/util/launch-environment/src/index.ts`](../packages/util/launch-environment/src/index.ts)）
 - `@deepseek-ai/dsh-llm-mock-server`（[`packages/test-support/llm-mock-server/src/index.ts`](../packages/test-support/llm-mock-server/src/index.ts)）
 - `@deepseek-ai/dsh-loader-smoke`（[`packages/test-support/loader-smoke/src/index.ts`](../packages/test-support/loader-smoke/src/index.ts)）
+- `@deepseek-ai/dsh-model-gateway`（[`packages/llm/model-gateway/src/index.ts`](../packages/llm/model-gateway/src/index.ts)）
 - `@deepseek-ai/dsh-native-command`（[`packages/util/native-command/src/index.ts`](../packages/util/native-command/src/index.ts)）
 - `@deepseek-ai/dsh-output-retention`（[`packages/util/output-retention/src/index.ts`](../packages/util/output-retention/src/index.ts)）
+- `@deepseek-ai/dsh-quota`（[`packages/access/quota/src/index.ts`](../packages/access/quota/src/index.ts)）
 - `@deepseek-ai/dsh-sandbox-windows-acl`（[`packages/sandbox/sandbox-windows-acl/src/index.ts`](../packages/sandbox/sandbox-windows-acl/src/index.ts)）
 - `@deepseek-ai/dsh-scope`（[`packages/core/scope/src/index.ts`](../packages/core/scope/src/index.ts)）
 - `@deepseek-ai/dsh-sdk-client`（[`packages/sdk/client/src/index.ts`](../packages/sdk/client/src/index.ts)）
