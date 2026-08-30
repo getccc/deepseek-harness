@@ -1626,6 +1626,9 @@ importers:
 
   packages/bundle/team:
     dependencies:
+      '@deepseek-ai/dsh-llm-http-transport-team':
+        specifier: workspace:^
+        version: link:../../llm/llm-http-transport-team
       '@deepseek-ai/dsh-team-account-client':
         specifier: workspace:^
         version: link:../../team/team-account-client
@@ -1666,6 +1669,9 @@ importers:
       '@deepseek-ai/dsh-host-webserver':
         specifier: workspace:^
         version: link:../../host/webserver
+      '@deepseek-ai/dsh-model-gateway-http':
+        specifier: workspace:^
+        version: link:../../llm/model-gateway-http
       '@deepseek-ai/dsh-model-gateway-sqlite':
         specifier: workspace:^
         version: link:../../llm/model-gateway-sqlite
@@ -6590,6 +6596,37 @@ importers:
         specifier: workspace:^
         version: link:../../util/timeout
 
+  packages/llm/llm-http-transport:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+
+  packages/llm/llm-http-transport-team:
+    dependencies:
+      '@deepseek-ai/dsh-llm-http-transport':
+        specifier: workspace:^
+        version: link:../llm-http-transport
+      '@deepseek-ai/dsh-model-gateway-http':
+        specifier: workspace:^
+        version: link:../model-gateway-http
+      '@deepseek-ai/dsh-team-account-client':
+        specifier: workspace:^
+        version: link:../../team/team-account-client
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+
   packages/llm/llm-pi-ai:
     dependencies:
       '@deepseek-ai/schemastery':
@@ -6703,6 +6740,37 @@ importers:
       '@deepseek-ai/cordis':
         specifier: workspace:^
         version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+
+  packages/llm/model-gateway-http:
+    dependencies:
+      '@deepseek-ai/dsh-credentials':
+        specifier: workspace:^
+        version: link:../../credentials/credentials
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:^
+        version: link:../../account/device-authorization
+      '@deepseek-ai/dsh-llm-http-transport':
+        specifier: workspace:^
+        version: link:../llm-http-transport
+      '@deepseek-ai/dsh-model-gateway':
+        specifier: workspace:^
+        version: link:../model-gateway
+      '@deepseek-ai/dsh-quota':
+        specifier: workspace:^
+        version: link:../../access/quota
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:^
+        version: link:../../host/webserver
       '@deepseek-ai/dsh-invariants':
         specifier: workspace:^
         version: link:../../runtime-diagnostics/invariants

@@ -149,8 +149,17 @@ const SERVICE_ROLES: ServiceRole[] = [
     title: 'The company model catalog and the decision in front of it',
     mode: 'seam',
     implementations: ['model-gateway-sqlite'],
-    consumers: [],
+    consumers: ['model-gateway-http'],
     note: 'A Runner names a model and gets back a call it could not have constructed: the endpoint, the upstream name, and the credential all come from the catalog.',
+  },
+  {
+    key: 'llmHttpTransport',
+    pkg: 'llm-http-transport',
+    title: 'How a model request reaches a provider',
+    mode: 'seam',
+    implementations: ['llm-http-transport-team'],
+    consumers: [],
+    note: 'A request names an operation from a closed list and a model, never a URL, so no caller decides where a credential goes. LLM adapters are the consumers as each moves behind it.',
   },
   {
     key: 'deviceAuthorization',

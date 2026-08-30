@@ -7,9 +7,9 @@
 # restates every key it owns. `inject` and `name` stay with the row the
 # earlier layer inserted.
 #
-# This layer owns the loopback port, the team account this computer holds, and
-# the three local addresses a browser navigates to. Company resource transports
-# arrive in later rows as their packages land.
+# This layer owns the loopback port, the team account this computer holds, the
+# three local addresses a browser navigates to, and how a company model request
+# leaves this computer. The knowledge transport arrives as its package lands.
 
 # ── the Team Runner's loopback address ─────────────────────────────────────
 
@@ -55,3 +55,13 @@
       name: '@deepseek-ai/dsh-team-local-handoff'
       config:
         applicationPath: /
+
+    # How a company model request leaves this computer. It carries an
+    # operation, a model ref, and a body — no address and no credential,
+    # because the request has no place for either.
+    #
+    # `controlPlaneUrl` is absent here for the same reason it is absent above:
+    # a Runner that guessed which company it belongs to would send a request to
+    # a stranger.
+    - id: llm-http-transport
+      name: '@deepseek-ai/dsh-llm-http-transport-team'

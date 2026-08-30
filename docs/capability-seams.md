@@ -26,6 +26,10 @@ flowchart LR
   pkg_quota_sqlite["quota-sqlite"]
   pkg_model_gateway["model-gateway"]
   svc_modelGateway["ctx.modelGateway<br/>The company model catalog and the decision in front of it"]
+  pkg_model_gateway_http["model-gateway-http"]
+  pkg_llm_http_transport["llm-http-transport"]
+  svc_llmHttpTransport["ctx.llmHttpTransport<br/>How a model request reaches a provider"]
+  pkg_llm_http_transport_team["llm-http-transport-team"]
   pkg_device_authorization["device-authorization"]
   svc_deviceAuthorization["ctx.deviceAuthorization<br/>Binding a browser session to one computer"]
   pkg_device_authorization_sqlite["device-authorization-sqlite"]
@@ -301,6 +305,8 @@ flowchart LR
   pkg_jobs_local --> svc_jobs
   pkg_llm --> svc_llm
   pkg_llm_deepseek --> svc_llm
+  pkg_llm_http_transport --> svc_llmHttpTransport
+  pkg_llm_http_transport_team --> svc_llmHttpTransport
   pkg_llm_pi_ai --> svc_llm
   pkg_llm_replay --> svc_llm
   pkg_lsp --> svc_lsp
@@ -424,6 +430,7 @@ flowchart LR
   svc_llm --> pkg_agent_loop
   svc_llm --> pkg_compaction_basic
   svc_lsp --> pkg_tool_lsp
+  svc_modelGateway --> pkg_model_gateway_http
   svc_quota --> pkg_model_gateway_sqlite
   svc_sandbox --> pkg_bash_sandbox
   svc_sandbox --> pkg_terminal_bash
@@ -520,7 +527,8 @@ flowchart LR
 | `ctx.accessControl` | `seam` | [`access-control`](../packages/access/access-control) | [`access-control-sqlite`](../packages/access/access-control-sqlite) | [`team-shell`](../packages/team/team-shell), [`model-gateway-sqlite`](../packages/llm/model-gateway-sqlite) | - | No explicit deny, no inheritance, no expression language, so a decision is explained by naming the grants that admitted it. The Team Shell asks it before every administrative act, and the model gateway before every invocation. |
 | `ctx.audit` | `seam` | [`audit`](../packages/access/audit) | [`audit-sqlite`](../packages/access/audit-sqlite) | [`team-shell`](../packages/team/team-shell) | - | Closed action and metadata catalogs, and a token rule on every caller-supplied string, so a record cannot hold a member's work. The Team Shell writes the records, because it is what knows which principal acted. |
 | `ctx.quota` | `seam` | [`quota`](../packages/access/quota) | [`quota-sqlite`](../packages/access/quota-sqlite) | [`model-gateway-sqlite`](../packages/llm/model-gateway-sqlite) | - | A reservation is the ceiling on what a request can cost and a settlement happens once, so a crash cannot spend without recording and a retry cannot charge twice. The model gateway is the consumer it is built for. |
-| `ctx.modelGateway` | `seam` | [`model-gateway`](../packages/llm/model-gateway) | [`model-gateway-sqlite`](../packages/llm/model-gateway-sqlite) | - | - | A Runner names a model and gets back a call it could not have constructed: the endpoint, the upstream name, and the credential all come from the catalog. |
+| `ctx.modelGateway` | `seam` | [`model-gateway`](../packages/llm/model-gateway) | [`model-gateway-sqlite`](../packages/llm/model-gateway-sqlite) | [`model-gateway-http`](../packages/llm/model-gateway-http) | - | A Runner names a model and gets back a call it could not have constructed: the endpoint, the upstream name, and the credential all come from the catalog. |
+| `ctx.llmHttpTransport` | `seam` | [`llm-http-transport`](../packages/llm/llm-http-transport) | [`llm-http-transport-team`](../packages/llm/llm-http-transport-team) | - | - | A request names an operation from a closed list and a model, never a URL, so no caller decides where a credential goes. LLM adapters are the consumers as each moves behind it. |
 | `ctx.deviceAuthorization` | `seam` | [`device-authorization`](../packages/account/device-authorization) | [`device-authorization-sqlite`](../packages/account/device-authorization-sqlite) | [`team-control-plane-http`](../packages/team/team-control-plane-http), [`team-shell`](../packages/team/team-shell) | - | A pairing code and key digest let a member confirm which computer; a PKCE verifier and a device signature let that computer prove it holds the key. The Runner-facing endpoints and the Team Shell confirmation page are the two halves that drive it. |
 | `ctx.teamAccountClient` | `seam` | [`team-account-client`](../packages/team/team-account-client) | - | [`team-local-handoff`](../packages/team/team-local-handoff) | - | Holds the device key and the credential on the member computer and calls the Control Plane over HTTPS. No company provider credential ever reaches it. |
 | `ctx.attachments` | `seam` | [`attachment`](../packages/attachment/attachment) | [`attachment-local`](../packages/attachment/attachment-local) | [`api-session-controller`](../packages/api/session-controller), [`tool-fs`](../packages/fs/tool-fs), [`llm-pi-ai`](../packages/llm/llm-pi-ai), [`llm-deepseek`](../packages/llm/llm-deepseek) | - | The host commits accepted images before session events; provider adapters resolve authorized durable references into provider-native content. |

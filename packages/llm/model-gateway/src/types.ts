@@ -32,7 +32,11 @@ export interface ModelEntry {
   readonly upstreamModel: string
   /** The provider's base address; a Runner never supplies one. */
   readonly endpoint: string
-  /** Where the provider credential lives, as the credential provider keys it. */
+  /**
+   * Where the provider credential lives, as a credential reference — the same
+   * addressing an LLM adapter uses, so an operator sets a company key the way
+   * they set any other.
+   */
   readonly credentialRef: string
   /** The most output tokens one invocation may reserve against. */
   readonly maxOutputTokens: number

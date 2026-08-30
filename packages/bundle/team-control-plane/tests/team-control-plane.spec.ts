@@ -113,6 +113,7 @@ describe('dsh-team-control-plane bundle', () => {
       ['quota', '@deepseek-ai/dsh-quota-sqlite'],
       ['model-gateway', '@deepseek-ai/dsh-model-gateway-sqlite'],
       ['team-control-plane-http', '@deepseek-ai/dsh-team-control-plane-http'],
+      ['model-gateway-http', '@deepseek-ai/dsh-model-gateway-http'],
       ['team-shell', '@deepseek-ai/dsh-team-shell'],
     ] as const) {
       expect(mounted.get(id), id).toBe(name)

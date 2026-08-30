@@ -33,6 +33,9 @@ The llm group provides the harness's model-call capability: one provider-neutral
 | [`token-meter/`](token-meter/README.md) | Measures request and context pressure from the durable session log with a fixed heuristic | `ctx.tokenMeter` |
 | [`model-gateway/`](model-gateway/README.md) | Team Edition: the company model catalog and the decision that turns a model name into an approved upstream call | `ctx.modelGateway` |
 | [`model-gateway-sqlite/`](model-gateway-sqlite/README.md) | Keeps the catalog and asks access control and quota in front of it | registers `ctx.modelGateway` |
+| [`model-gateway-http/`](model-gateway-http/README.md) | Team Edition: the Control Plane endpoint that attaches the credential and settles the call | — |
+| [`llm-http-transport/`](llm-http-transport/README.md) | How a model request reaches a provider, separated from what it says | `ctx.llmHttpTransport` |
+| [`llm-http-transport-team/`](llm-http-transport-team/README.md) | Sends a company model request out through the Control Plane, with no address of its own | registers `ctx.llmHttpTransport` |
 
 -----
 

@@ -49,6 +49,26 @@ A Runner asking for more output than the model is configured to produce gets the
 
 Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnpm run verify-cordis-catalog` in doc-sync; regenerate with `pnpm run gen-cordis-catalog`) — the language sides differ only in locale-specific paired document paths. Signature blocks use a `ts cordis-catalog` fence and keep the original source JSDoc; dispatch modes are defined in the [primer](../cordis-primer.md#dispatch-modes), and the framework-inherited `ctx` API lives in [cordis-api/inherited.md](../cordis-api/inherited.md).
 
+<a id="ctxllmhttptransport--llmhttptransport-abstract-seam"></a>
+
+### `ctx.llmHttpTransport` — `LlmHttpTransport` (abstract seam)
+
+How a model request reaches a provider. A provider mounts this service; LLM adapters inject `llmHttpTransport`.
+
+A request names an operation the code registers and a model, never a URL. A direct transport resolves both from the member's own configuration; a team transport sends them to the Control Plane, which resolves them from the company catalog. Neither lets a caller decide where bytes go.
+
+```ts cordis-catalog
+/**
+ * Carry one request to a provider and hand back its response.
+ * @param request - the operation, the model, and the body an adapter built.
+ * @returns the provider's status, headers, and body stream.
+ * @throws {TransportFailedError} when the request could not be carried at all.
+ */
+abstract send(request: TransportRequest): Promise<TransportResponse>
+```
+
+Source: [`packages/llm/llm-http-transport/src/index.ts`](../../packages/llm/llm-http-transport/src/index.ts)
+
 <a id="ctxmodelgateway--modelgateway-abstract-seam"></a>
 
 ### `ctx.modelGateway` — `ModelGateway` (abstract seam)

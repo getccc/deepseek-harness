@@ -33,6 +33,9 @@ llm 组提供 harness 的模型调用能力：一个提供方无关的服务，�
 | [`token-meter/`](token-meter/README.zh.md) | 用固定启发式规则从持久会话日志测量请求与上下文压力 | `ctx.tokenMeter` |
 | [`model-gateway/`](model-gateway/README.zh.md) | Team Edition：公司模型目录，以及把模型名变成一次已授权上游调用的判定 | `ctx.modelGateway` |
 | [`model-gateway-sqlite/`](model-gateway-sqlite/README.zh.md) | 保管目录，并在它前面询问访问控制与配额 | 注册 `ctx.modelGateway` |
+| [`model-gateway-http/`](model-gateway-http/README.zh.md) | Team Edition：附上凭据并结算调用的 Control Plane 端点 | — |
+| [`llm-http-transport/`](llm-http-transport/README.zh.md) | 模型请求如何到达 Provider，与它说了什么相分离 | `ctx.llmHttpTransport` |
+| [`llm-http-transport-team/`](llm-http-transport-team/README.zh.md) | 把公司模型请求经由 Control Plane 送出，自身没有地址 | 注册 `ctx.llmHttpTransport` |
 
 -----
 

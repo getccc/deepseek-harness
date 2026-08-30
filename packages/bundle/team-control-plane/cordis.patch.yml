@@ -95,6 +95,16 @@
       config:
         pathPrefix: /team/device
         maxRequestBodyBytes: 16384
+    # Company model traffic: authorized by the device access token, and the
+    # one place a provider credential is attached.
+    - id: model-gateway-http
+      name: '@deepseek-ai/dsh-model-gateway-http'
+      config:
+        maxRequestBodyBytes: 4194304
+        # Above the longest completion a deployment expects: a request cut off
+        # here is charged its ceiling, because a provider that stopped
+        # answering may still have generated tokens.
+        upstreamTimeoutMs: 600000
     # Member-facing: signing in, confirming a computer, and administering.
     # `secureCookie` stays true because a deployment terminates TLS in front
     # of this listener; a plain-HTTP deployment must say so in its own patch,

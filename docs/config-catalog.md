@@ -1140,6 +1140,22 @@ Depends on: [`ModelModality`](../packages/llm/llm/src/index.ts) · [`RetryPolicy
 
 Source: [`packages/llm/llm-deepseek/src/index.ts:124`](../packages/llm/llm-deepseek/src/index.ts)
 
+<a id="deepseek-aidsh-llm-http-transport-team"></a>
+
+## `@deepseek-ai/dsh-llm-http-transport-team`
+
+Requires: `teamAccountClient`
+
+```ts config-catalog
+/** Plugin config: which Control Plane, and which budget period. */
+export interface Config {
+  /** Origin of the company Control Plane, such as `https://dsh.company.com`. */
+  controlPlaneUrl: string
+}
+```
+
+Source: [`packages/llm/llm-http-transport-team/src/index.ts:25`](../packages/llm/llm-http-transport-team/src/index.ts)
+
 <a id="deepseek-aidsh-llm-pi-ai"></a>
 
 ## `@deepseek-ai/dsh-llm-pi-ai`
@@ -1626,6 +1642,24 @@ export interface Config {
 ```
 
 Source: [`packages/feedback/message-feedback/src/index.ts:49`](../packages/feedback/message-feedback/src/index.ts)
+
+<a id="deepseek-aidsh-model-gateway-http"></a>
+
+## `@deepseek-ai/dsh-model-gateway-http`
+
+Requires: `webServer` · `modelGateway` · `deviceAuthorization` · `credentials`
+
+```ts config-catalog
+/** Plugin config: how much the endpoint reads, and how long it waits. */
+export interface Config {
+  /** Largest request body accepted, in bytes. */
+  maxRequestBodyBytes: number
+  /** How long to wait for the upstream provider before giving up, in milliseconds. */
+  upstreamTimeoutMs: number
+}
+```
+
+Source: [`packages/llm/model-gateway-http/src/index.ts:32`](../packages/llm/model-gateway-http/src/index.ts)
 
 <a id="deepseek-aidsh-model-gateway-sqlite"></a>
 
@@ -3758,6 +3792,7 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 - `@deepseek-ai/dsh-home-paths` ([`packages/util/home-paths/src/index.ts`](../packages/util/home-paths/src/index.ts))
 - `@deepseek-ai/dsh-hook-protocol` ([`packages/hooks/hook-protocol/src/index.ts`](../packages/hooks/hook-protocol/src/index.ts))
 - `@deepseek-ai/dsh-launch-environment` ([`packages/util/launch-environment/src/index.ts`](../packages/util/launch-environment/src/index.ts))
+- `@deepseek-ai/dsh-llm-http-transport` ([`packages/llm/llm-http-transport/src/index.ts`](../packages/llm/llm-http-transport/src/index.ts))
 - `@deepseek-ai/dsh-llm-mock-server` ([`packages/test-support/llm-mock-server/src/index.ts`](../packages/test-support/llm-mock-server/src/index.ts))
 - `@deepseek-ai/dsh-loader-smoke` ([`packages/test-support/loader-smoke/src/index.ts`](../packages/test-support/loader-smoke/src/index.ts))
 - `@deepseek-ai/dsh-model-gateway` ([`packages/llm/model-gateway/src/index.ts`](../packages/llm/model-gateway/src/index.ts))

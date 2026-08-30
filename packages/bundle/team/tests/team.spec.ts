@@ -57,7 +57,7 @@ describe('dsh-team bundle', () => {
     }
   })
 
-  it('adds the team account and the local handoff, each declared as a dependency', () => {
+  it('adds the team account, the local handoff, and the company model transport', () => {
     const inserted = new Map(patchRows().flatMap(row => row.insert ?? [])
       .map(row => [row.id as string, row.name as string]))
     const manifest = JSON.parse(
@@ -66,6 +66,7 @@ describe('dsh-team bundle', () => {
     for (const [id, name] of [
       ['team-account-client', '@deepseek-ai/dsh-team-account-client'],
       ['team-local-handoff', '@deepseek-ai/dsh-team-local-handoff'],
+      ['llm-http-transport', '@deepseek-ai/dsh-llm-http-transport-team'],
     ] as const) {
       expect(inserted.get(id), id).toBe(name)
       expect(manifest.dependencies ?? {}, id).toHaveProperty(name)

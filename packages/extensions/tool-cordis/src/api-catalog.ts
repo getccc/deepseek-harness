@@ -1484,6 +1484,20 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'llmHttpTransport',
+    summary: 'How a model request reaches a provider.',
+    description: 'How a model request reaches a provider. A provider mounts this service; LLM adapters inject `llmHttpTransport`.\n\nA request names an operation the code registers and a model, never a URL. A direct transport resolves both from the member\'s own configuration; a team transport sends them to the Control Plane, which resolves them from the company catalog. Neither lets a caller decide where bytes go.',
+    methods: [
+      {
+        signature: 'abstract send(request: TransportRequest): Promise<TransportResponse>',
+        description: 'Carry one request to a provider and hand back its response.',
+        parameters: [{ name: 'request', description: 'the operation, the model, and the body an adapter built.' }],
+        returns: 'the provider\'s status, headers, and body stream.',
+        throws: ['{TransportFailedError} when the request could not be carried at all.'],
+      },
+    ],
+  },
+  {
     key: 'lsp',
     summary: 'The LSP capability seam (`ctx.lsp`).',
     description: 'The LSP capability seam (`ctx.lsp`). Owns provider registration/selection and normalized query execution; exposes exactly the four operations and no protocol escape hatch.',
@@ -6418,6 +6432,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'TransactionId',
     declaration: 'export type TransactionId = Branded<\'DeviceTransactionId\'>;',
+  },
+  {
+    name: 'TransportOperation',
+    declaration: 'export type TransportOperation = typeof TRANSPORT_OPERATIONS[number];',
+  },
+  {
+    name: 'TransportRequest',
+    declaration: 'export interface TransportRequest {\n    readonly operation: TransportOperation;\n    readonly modelRef: string;\n    readonly body: Record<string, unknown>;\n    readonly inputTokens: number;\n    readonly maxOutputTokens?: number;\n    readonly correlationId?: string;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
+    name: 'TransportResponse',
+    declaration: 'export interface TransportResponse {\n    readonly status: number;\n    readonly headers: Readonly<Record<string, string>>;\n    readonly body: Readable;\n}',
   },
   {
     name: 'TurnEndCancelCause',
