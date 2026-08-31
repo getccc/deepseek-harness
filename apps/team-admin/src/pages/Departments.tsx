@@ -1,10 +1,10 @@
 /**
- * The department tree: the organization at the root, and the departments an
+ * The organization tree: the company at the root, and the departments an
  * administrator hangs from it.
  *
- * The organization is a row rather than a page of its own, because it is the
- * company node every department sits under and because renaming it is the one
- * edit it has.
+ * The company is a row rather than a page of its own, because it is the node
+ * every department sits under, and it is edited through the same fields a
+ * department is: the two rows differ in what they hold, not in how they read.
  */
 
 import { useMemo, useState, type ReactNode } from 'react'
@@ -17,7 +17,7 @@ import {
   downloadCsv, toTree, useErrorReporter, useLoaded,
 } from '../ui.tsx'
 
-/** One row of the tree: the organization itself, or one department. */
+/** One row of the tree: the company itself, or one department. */
 interface Row {
   readonly key: string
   readonly name: string
@@ -30,7 +30,7 @@ interface Row {
   readonly memberNames: readonly string[]
   readonly createdAt: number
   readonly status: 'active' | 'suspended' | undefined
-  /** The department this row stands for; absent on the organization's own row. */
+  /** The department this row stands for; absent on the company's own row. */
   readonly department?: WireDepartment
   readonly children?: readonly Row[]
 }
@@ -47,11 +47,23 @@ interface DepartmentForm {
   sortOrder?: number
 }
 
+/**
+ * What the company row's form collects. It carries no parent, category, or
+ * order: the company is the root of one tree, and there is one of it.
+ */
+interface CompanyForm {
+  name: string
+  code?: string
+  leaderId?: string
+  phone?: string
+  email?: string
+}
+
 /** Which dialog is open, and what it is about. */
 type Dialog =
   | { readonly kind: 'add'; readonly parentId?: string }
   | { readonly kind: 'edit'; readonly department: WireDepartment }
-  | { readonly kind: 'rename' }
+  | { readonly kind: 'company' }
   | { readonly kind: 'status'; readonly department: WireDepartment }
   | { readonly kind: 'delete'; readonly department: WireDepartment }
 
@@ -64,15 +76,15 @@ interface Filters {
 const NO_FILTERS: Filters = { term: '', status: undefined }
 
 /**
- * The department tree and everything an administrator does to it.
+ * The organization tree and everything an administrator does to it.
  * @param props.held - the `resourceType|action` pairs this member holds.
- * @returns the departments view.
+ * @returns the organizations view.
  */
 export function Departments({ held }: { readonly held: ReadonlySet<string> }): ReactNode {
   const { t } = useLocale()
   const report = useErrorReporter()
   const mayManage = held.has('department|department.manage')
-  const mayRename = held.has('organization|organization.settings.manage')
+  const mayEditCompany = held.has('organization|organization.settings.manage')
   const mayReadMembers = held.has('member|member.read')
 
   const organization = useLoaded<WireOrganization>(api.organization, report)
@@ -115,11 +127,11 @@ export function Departments({ held }: { readonly held: ReadonlySet<string> }): R
   const rows: Row[] = organization.data === undefined ? [] : [{
     key: organization.data.id,
     name: organization.data.name,
-    code: undefined,
+    code: organization.data.code,
     category: 'company',
-    leaderName: undefined,
-    phone: undefined,
-    email: undefined,
+    leaderName: organization.data.leaderName,
+    phone: organization.data.phone,
+    email: organization.data.email,
     sortOrder: undefined,
     memberNames: unassigned,
     createdAt: organization.data.createdAt,
@@ -215,10 +227,10 @@ export function Departments({ held }: { readonly held: ReadonlySet<string> }): R
         ? (
           <RowActions
             actions={[{
-              key: 'rename',
+              key: 'company',
               label: t('action.edit'),
-              disabled: !mayRename,
-              onClick: () => { setDialog({ kind: 'rename' }) },
+              disabled: !mayEditCompany,
+              onClick: () => { setDialog({ kind: 'company' }) },
             }]}
           />
         )
@@ -286,7 +298,7 @@ export function Departments({ held }: { readonly held: ReadonlySet<string> }): R
             <Button
               onClick={() => {
                 downloadCsv(
-                  'departments',
+                  'organizations',
                   [
                     t('departments.name'), t('departments.code'), t('departments.category'),
                     t('departments.leader'), t('departments.phone'), t('departments.email'),
@@ -324,28 +336,65 @@ export function Departments({ held }: { readonly held: ReadonlySet<string> }): R
         }}
       />
 
-      <FormModal<{ name: string }>
-        title={t('organization.renameTitle')}
-        open={dialog?.kind === 'rename'}
+      <FormModal<CompanyForm>
+        title={t('organization.editTitle')}
+        open={dialog?.kind === 'company'}
         okText={t('action.save')}
-        initialValues={{ name: organization.data?.name ?? '' }}
+        columns={2}
+        initialValues={{
+          name: organization.data?.name ?? '',
+          ...(organization.data?.code === undefined ? {} : { code: organization.data.code }),
+          ...(organization.data?.leaderId === undefined ? {} : { leaderId: organization.data.leaderId }),
+          ...(organization.data?.phone === undefined ? {} : { phone: organization.data.phone }),
+          ...(organization.data?.email === undefined ? {} : { email: organization.data.email }),
+        }}
         onCancel={() => { setDialog(undefined) }}
         onSubmit={async (values) => {
           try {
-            organization.replace(await api.renameOrganization(values.name))
+            // Every field the form holds travels, the empty ones included: an
+            // empty box is how this form says "clear what is stored".
+            organization.replace(await api.updateOrganization({
+              name: values.name,
+              code: values.code ?? '',
+              leaderId: values.leaderId ?? '',
+              phone: values.phone ?? '',
+              email: values.email ?? '',
+            }))
             setDialog(undefined)
           } catch (error) {
             report(error)
           }
         }}
       >
-        <Typography.Paragraph type="secondary">{t('departments.organizationHint')}</Typography.Paragraph>
+        <Typography.Paragraph className="form-grid-wide" type="secondary">
+          {t('departments.organizationHint')}
+        </Typography.Paragraph>
         <Form.Item
           name="name"
-          label={t('organization.displayName')}
+          label={t('departments.name')}
           rules={[{ required: true, message: t('login.required') }]}
         >
           <Input />
+        </Form.Item>
+        <Form.Item name="code" label={t('departments.code')}>
+          <Input placeholder={t('departments.codePlaceholder')} />
+        </Form.Item>
+        <Form.Item name="leaderId" label={t('departments.leader')}>
+          <Select
+            allowClear
+            showSearch={{ optionFilterProp: 'label' }}
+            placeholder={t('departments.noLeader')}
+            options={(members.data ?? []).map(member => ({
+              value: member.id,
+              label: `${member.displayName} (${member.loginName})`,
+            }))}
+          />
+        </Form.Item>
+        <Form.Item name="phone" label={t('departments.phone')}>
+          <Input />
+        </Form.Item>
+        <Form.Item name="email" label={t('departments.email')}>
+          <Input type="email" />
         </Form.Item>
       </FormModal>
 
@@ -353,6 +402,7 @@ export function Departments({ held }: { readonly held: ReadonlySet<string> }): R
         title={t(dialog?.kind === 'edit' ? 'departments.editTitle' : 'departments.addTitle')}
         open={dialog?.kind === 'add' || dialog?.kind === 'edit'}
         okText={t(dialog?.kind === 'edit' ? 'action.save' : 'action.create')}
+        columns={2}
         initialValues={editing === undefined
           ? {
             category: 'department',

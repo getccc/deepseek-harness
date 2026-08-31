@@ -9,6 +9,12 @@ import type { TRANSPORT_OPERATIONS } from './vocabulary.ts'
 /** One provider operation this build knows how to carry. */
 export type TransportOperation = typeof TRANSPORT_OPERATIONS[number]
 
+/** One model a transport-controlled catalog exposes to an adapter. */
+export interface TransportModel {
+  readonly id: string
+  readonly name: string
+}
+
 /**
  * One request on its way to a provider.
  *

@@ -93,7 +93,7 @@ Nothing here joins a model request, so there is no cache effect.
 <a id="known-limitations-and-deferred-work"></a>
 
 - **One active account per Runner process** — signing in again replaces the process credential for every browser using that Runner.
-- **No password-change page** — administrators must provision an initial secret through the authentication service until a dedicated account-recovery surface exists.
+- **No member self-service password page** — an administrator replaces a password in the Control Plane, which revokes every browser session and device credential family for that account.
 - **Two pre-application locales** — the server-rendered form currently supports `en-US` and `zh-CN`.
 
 <a id="dev-note"></a>

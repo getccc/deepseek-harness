@@ -9,7 +9,14 @@ import {
 } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { Dayjs } from 'dayjs'
-import { api, type WireDepartment, type WireMember, type WireOrganization, type WireRole } from '../api.ts'
+import {
+  api,
+  type WireDepartment,
+  type WireDevice,
+  type WireMember,
+  type WireOrganization,
+  type WireRole,
+} from '../api.ts'
 import { useLocale } from '../locale.tsx'
 import {
   ConfirmModal, FormModal, Moment, PageNote, RowActions, StatusSwitch, StatusTag, Toolbar,
@@ -21,6 +28,8 @@ type Dialog =
   | { readonly kind: 'add' }
   | { readonly kind: 'edit'; readonly member: WireMember }
   | { readonly kind: 'bind'; readonly member: WireMember }
+  | { readonly kind: 'password'; readonly member: WireMember }
+  | { readonly kind: 'device'; readonly device: WireDevice }
   | { readonly kind: 'unbind'; readonly member: WireMember; readonly roleId: string; readonly roleName: string }
   | { readonly kind: 'status'; readonly member: WireMember }
   | { readonly kind: 'delete'; readonly member: WireMember }
@@ -29,10 +38,18 @@ type Dialog =
 interface MemberForm {
   loginName: string
   displayName: string
+  secret?: string
+  confirmSecret?: string
   email?: string
   phone?: string
   gender?: 'male' | 'female' | 'unspecified'
   departmentId?: string
+}
+
+/** What a password reset collects. */
+interface PasswordForm {
+  secret: string
+  confirmSecret: string
 }
 
 /** The filters the toolbar holds. */
@@ -69,6 +86,12 @@ export function Members({
     report,
   )
   const organization = useLoaded<WireOrganization>(api.organization, report)
+  const mayReadDevices = held.has('device|device.inventory.read')
+  const devices = useLoaded<WireDevice[]>(
+    useMemo(() => (): Promise<WireDevice[]> =>
+      (mayReadDevices ? api.devices() : Promise.resolve([])), [mayReadDevices]),
+    report,
+  )
 
   const [dialog, setDialog] = useState<Dialog | undefined>(undefined)
   const [filters, setFilters] = useState<Filters>(NO_FILTERS)
@@ -80,6 +103,8 @@ export function Members({
   const mayUpdate = held.has('member|member.update')
   const mayDelete = held.has('member|member.delete')
   const mayBind = held.has('member|member.role.bind')
+  const mayResetPassword = held.has('member|member.password.reset')
+  const mayRevokeDevice = held.has('device|device.revoke')
   const mayDisable = held.has('member|member.disable')
   const mayEnable = held.has('member|member.enable')
 
@@ -201,6 +226,16 @@ export function Members({
       key: 'lastLoginAt',
       render: (_value, member) => <Moment value={member.lastLoginAt} />,
     },
+    ...(mayReadDevices
+      ? [{
+        title: t('devices.device'),
+        key: 'devices',
+        render: (_value: unknown, member: WireMember) =>
+          t('members.deviceCount', {
+            n: (devices.data ?? []).filter(device => device.ownerId === member.id).length,
+          }),
+      }]
+      : []),
     {
       title: t('members.status'),
       key: 'status',
@@ -231,6 +266,12 @@ export function Members({
               label: t('members.bindRole'),
               disabled: !mayBind,
               onClick: () => { setDialog({ kind: 'bind', member }) },
+            },
+            {
+              key: 'password',
+              label: t('members.resetPassword'),
+              disabled: !mayResetPassword,
+              onClick: () => { setDialog({ kind: 'password', member }) },
             },
             {
               key: 'delete',
@@ -372,6 +413,61 @@ export function Members({
                 from: range[0], to: range[1], total,
               }),
             }}
+            expandable={mayReadDevices
+              ? {
+                rowExpandable: member =>
+                  (devices.data ?? []).some(device => device.ownerId === member.id),
+                expandedRowRender: member => (
+                  <Table<WireDevice>
+                    rowKey="id"
+                    size="small"
+                    pagination={false}
+                    dataSource={(devices.data ?? []).filter(device => device.ownerId === member.id)}
+                    loading={devices.loading}
+                    columns={[
+                      {
+                        title: t('devices.device'),
+                        key: 'device',
+                        render: (_value, device) => (
+                          <>
+                            <div>{device.platform}</div>
+                            <Typography.Text type="secondary" code style={{ fontSize: 12 }}>
+                              {device.publicKeyDigest.slice(0, 16)}…
+                            </Typography.Text>
+                          </>
+                        ),
+                      },
+                      {
+                        title: t('devices.runner'),
+                        dataIndex: 'runnerVersion',
+                        render: value => <Tag>{value}</Tag>,
+                      },
+                      {
+                        title: t('members.status'),
+                        dataIndex: 'status',
+                        render: value => <StatusTag value={value} />,
+                      },
+                      {
+                        title: t('devices.lastSeen'),
+                        dataIndex: 'lastSeenAt',
+                        render: value => <Moment value={value} />,
+                      },
+                      {
+                        title: t('action.actions'),
+                        key: 'actions',
+                        render: (_value, device) => (mayRevokeDevice && device.status !== 'revoked'
+                          ? (
+                            <Button danger size="small" onClick={() => { setDialog({ kind: 'device', device }) }}>
+                              {t('devices.revoke')}
+                            </Button>
+                          )
+                          : null),
+                      },
+                    ]}
+                  />
+                ),
+              }
+              : undefined}
           />
         </div>
       </div>
@@ -395,6 +491,7 @@ export function Members({
           ? api.addMember({
             loginName: values.loginName,
             displayName: values.displayName,
+            secret: values.secret ?? '',
             ...(values.email === undefined || values.email === '' ? {} : { email: values.email }),
             ...(values.phone === undefined || values.phone === '' ? {} : { phone: values.phone }),
             ...(values.gender === undefined ? {} : { gender: values.gender }),
@@ -429,6 +526,33 @@ export function Members({
         >
           <Input />
         </Form.Item>
+        {editing === undefined && (
+          <>
+            <Form.Item
+              name="secret"
+              label={t('login.password')}
+              rules={[{ required: true, message: t('login.required') }]}
+            >
+              <Input.Password autoComplete="new-password" />
+            </Form.Item>
+            <Form.Item
+              name="confirmSecret"
+              label={t('members.confirmPassword')}
+              dependencies={['secret']}
+              rules={[
+                { required: true, message: t('login.required') },
+                ({ getFieldValue }) => ({
+                  validator: async (_rule, value: unknown): Promise<void> => {
+                    if (value === getFieldValue('secret')) return
+                    throw new Error(t('members.passwordMismatch'))
+                  },
+                }),
+              ]}
+            >
+              <Input.Password autoComplete="new-password" />
+            </Form.Item>
+          </>
+        )}
         <Form.Item name="email" label={`${t('members.email')} (${t('members.optional')})`}>
           <Input type="email" />
         </Form.Item>
@@ -461,6 +585,71 @@ export function Members({
           <Select options={bindable.map(role => ({ value: role.id, label: role.name }))} />
         </Form.Item>
       </FormModal>
+
+      <FormModal<PasswordForm>
+        title={dialog?.kind === 'password'
+          ? t('members.resetPasswordTitle', { name: dialog.member.displayName })
+          : ''}
+        open={dialog?.kind === 'password'}
+        okText={t('members.resetPassword')}
+        onCancel={() => { setDialog(undefined) }}
+        onSubmit={async (values) => {
+          try {
+            const result = await api.resetMemberPassword(
+              dialog?.kind === 'password' ? dialog.member.id : '',
+              values.secret,
+            )
+            setDialog(undefined)
+            if (result.self) globalThis.location.reload()
+          } catch (error) {
+            report(error)
+          }
+        }}
+      >
+        <Typography.Paragraph type="secondary">
+          {t('members.resetPasswordHint')}
+        </Typography.Paragraph>
+        <Form.Item
+          name="secret"
+          label={t('login.password')}
+          rules={[{ required: true, message: t('login.required') }]}
+        >
+          <Input.Password autoComplete="new-password" />
+        </Form.Item>
+        <Form.Item
+          name="confirmSecret"
+          label={t('members.confirmPassword')}
+          dependencies={['secret']}
+          rules={[
+            { required: true, message: t('login.required') },
+            ({ getFieldValue }) => ({
+              validator: async (_rule, value: unknown): Promise<void> => {
+                if (value === getFieldValue('secret')) return
+                throw new Error(t('members.passwordMismatch'))
+              },
+            }),
+          ]}
+        >
+          <Input.Password autoComplete="new-password" />
+        </Form.Item>
+      </FormModal>
+
+      <ConfirmModal
+        title={dialog?.kind === 'device'
+          ? t('devices.revokeTitle', { platform: dialog.device.platform })
+          : ''}
+        body={t('devices.revokeBody')}
+        open={dialog?.kind === 'device'}
+        onCancel={() => { setDialog(undefined) }}
+        onConfirm={async () => {
+          try {
+            devices.replace(await api.revokeDevice(dialog?.kind === 'device' ? dialog.device.id : ''))
+            setDialog(undefined)
+          } catch (error) {
+            report(error)
+          }
+        }}
+      />
 
       <ConfirmModal
         title={dialog?.kind === 'unbind'

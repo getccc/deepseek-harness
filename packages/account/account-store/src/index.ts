@@ -24,6 +24,7 @@ export type {
   Organization,
   UpdateAccountUser,
   UpdateDepartment,
+  UpdateOrganization,
 } from './types.ts'
 
 import type {
@@ -36,6 +37,7 @@ import type {
   Organization,
   UpdateAccountUser,
   UpdateDepartment,
+  UpdateOrganization,
 } from './types.ts'
 
 declare module '@deepseek-ai/cordis' {
@@ -124,12 +126,13 @@ export abstract class AccountStore extends Service {
   abstract getOrganization(id: OrgId): Promise<Organization | undefined>
 
   /**
-   * Change the organization's human-readable name.
+   * Change the organization's own fields, leaving every field the caller did
+   * not name as stored.
    * @param id - the organization to change.
-   * @param name - the new non-empty display name.
+   * @param changes - the fields to write; `null` clears one, absence leaves it.
    * @throws {UnknownOrganizationError} when the store holds no such organization.
    */
-  abstract setOrganizationName(id: OrgId, name: string): Promise<void>
+  abstract updateOrganization(id: OrgId, changes: UpdateOrganization): Promise<void>
 
   /**
    * Advance an organization's policy revision, the value authorization caches
@@ -143,8 +146,8 @@ export abstract class AccountStore extends Service {
 
   /**
    * Issue an account. The account starts active, with no password material and
-   * `mustChangePassword` set, so an administrator cannot create a usable
-   * account without the member choosing their own secret.
+   * `mustChangePassword` set. A caller that provisions a usable account must
+   * set its secret as a separate operation.
    * @param input - the identity fields an administrator supplies.
    * @returns the stored account.
    * @throws {DuplicateLoginNameError} when the login name is taken in that organization.
@@ -191,8 +194,9 @@ export abstract class AccountStore extends Service {
   abstract updateUser(id: UserId, changes: UpdateAccountUser): Promise<void>
 
   /**
-   * Delete one account, with the browser sessions it holds. A department this
-   * account led is left without a lead rather than deleted with it.
+   * Delete one account, with the browser sessions it holds. The organization or
+   * department this account led is left without a lead rather than deleted with
+   * it.
    *
    * Records another service owns — role bindings, device credentials, audit
    * rows — are not this store's to remove; a caller that must withdraw them
@@ -318,5 +322,12 @@ export abstract class AccountStore extends Service {
    * @param tokenHash - the hash of the token to forget.
    */
   abstract revokeBrowserSession(tokenHash: string): Promise<void>
+
+  /**
+   * End every Control Plane browser session held by one account.
+   * Ending sessions for an account that has none is not an error.
+   * @param userId - the account whose sessions must end.
+   */
+  abstract revokeBrowserSessions(userId: UserId): Promise<void>
 
 }

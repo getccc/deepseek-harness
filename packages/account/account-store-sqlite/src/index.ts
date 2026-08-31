@@ -32,6 +32,7 @@ import {
   type Organization,
   type UpdateAccountUser,
   type UpdateDepartment,
+  type UpdateOrganization,
 } from '@deepseek-ai/dsh-account-store'
 import {
   applySchema,
@@ -105,6 +106,10 @@ function toOrganization(row: OrganizationRow): Organization {
   return {
     id: OrgId(row.id),
     name: row.name,
+    code: row.code ?? undefined,
+    leaderId: row.leader_id === null ? undefined : UserId(row.leader_id),
+    phone: row.phone ?? undefined,
+    email: row.email ?? undefined,
     // Stored as a SQLite INTEGER (64-bit) and surfaced as bigint, the type
     // authorization caches key on; the value only ever increments.
     policyRevision: BigInt(row.policy_revision),
@@ -177,6 +182,10 @@ export class SqliteAccountStore extends AccountStore {
     const row: OrganizationRow = {
       id: randomUUID(),
       name,
+      code: null,
+      leader_id: null,
+      phone: null,
+      email: null,
       policy_revision: 0,
       created_at: Date.now(),
     }
@@ -192,8 +201,18 @@ export class SqliteAccountStore extends AccountStore {
     return Promise.resolve(row === undefined ? undefined : toOrganization(row))
   }
 
-  setOrganizationName(id: OrgId, name: string): Promise<void> {
-    const result = this.db.prepare('UPDATE organization SET name = ? WHERE id = ?').run(name, id)
+  updateOrganization(id: OrgId, changes: UpdateOrganization): Promise<void> {
+    const written = assignments([
+      ['name', changes.name],
+      ['code', changes.code],
+      ['leader_id', changes.leaderId],
+      ['phone', changes.phone],
+      ['email', changes.email],
+    ])
+    if (written.length === 0) return this.requireOrganization(id)
+    const columns = written.map(([column]) => `${column} = ?`).join(', ')
+    const result = this.db.prepare(`UPDATE organization SET ${columns} WHERE id = ?`)
+      .run(...written.map(([, value]) => value), id)
     return result.changes === 0
       ? Promise.reject(new UnknownOrganizationError(id))
       : Promise.resolve()
@@ -301,9 +320,11 @@ export class SqliteAccountStore extends AccountStore {
   }
 
   deleteUser(id: UserId): Promise<void> {
-    // The leadership row and the sessions go first: both name the account by a
-    // foreign key, and leaving either would fail the delete rather than perform
-    // it. Clearing the lead is the department losing its lead, not its rows.
+    // The leadership rows and the sessions go first: each names the account by
+    // a foreign key, and leaving one would fail the delete rather than perform
+    // it. Clearing a lead is the company or department losing its lead, not its
+    // rows.
+    this.db.prepare('UPDATE organization SET leader_id = NULL WHERE leader_id = ?').run(id)
     this.db.prepare('UPDATE department SET leader_id = NULL WHERE leader_id = ?').run(id)
     this.db.prepare('DELETE FROM browser_session WHERE user_id = ?').run(id)
     const result = this.db.prepare('DELETE FROM account_user WHERE id = ?').run(id)
@@ -480,6 +501,11 @@ export class SqliteAccountStore extends AccountStore {
     return Promise.resolve()
   }
 
+  revokeBrowserSessions(userId: UserId): Promise<void> {
+    this.db.prepare('DELETE FROM browser_session WHERE user_id = ?').run(userId)
+    return Promise.resolve()
+  }
+
 
   /**
    * Run one account update. "Changed nothing" means the account is not there,
@@ -491,6 +517,14 @@ export class SqliteAccountStore extends AccountStore {
     const result = this.db.prepare(statement).run(...params)
     return result.changes === 0
       ? Promise.reject(new UnknownAccountUserError(id))
+      : Promise.resolve()
+  }
+
+  /** Answer whether an organization is there, on the terms {@link requireDepartment} states. */
+  private requireOrganization(id: OrgId): Promise<void> {
+    const row = this.db.prepare('SELECT 1 FROM organization WHERE id = ?').get(id)
+    return row === undefined
+      ? Promise.reject(new UnknownOrganizationError(id))
       : Promise.resolve()
   }
 

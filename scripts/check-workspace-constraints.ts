@@ -64,6 +64,7 @@ const appPackageFiles: Readonly<Record<string, readonly string[]>> = {
   // The administration console: the built page and its chunks, sourcemaps
   // excluded by the same payload policy.
   '@deepseek-ai/dsh-team-admin-frontend': ['dist', '!dist/**/*.map'],
+  '@deepseek-ai/dsh-team-runner-desktop': ['dist'],
 }
 
 /** The subset of package.json fields this constraint check cares about. */

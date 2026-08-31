@@ -9,7 +9,12 @@ import { DatabaseSync } from 'node:sqlite'
 import type { Context } from '@deepseek-ai/cordis'
 import { Service } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
-import { OrgId, UserId, type OrgId as OrgIdType } from '@deepseek-ai/dsh-account-store'
+import {
+  OrgId,
+  UserId,
+  type OrgId as OrgIdType,
+  type UserId as UserIdType,
+} from '@deepseek-ai/dsh-account-store'
 import {
   CredentialRefusedError,
   DeviceAuthorization,
@@ -264,6 +269,27 @@ export class SqliteDeviceAuthorization extends DeviceAuthorization {
     this.db.prepare("UPDATE device SET status = 'revoked' WHERE id = ?").run(id)
     this.db.prepare('UPDATE credential_family SET revoked_at = ? WHERE device_id = ? AND revoked_at IS NULL')
       .run(now, id)
+    return Promise.resolve()
+  }
+
+  revokeUserDevices(orgId: OrgIdType, userId: UserIdType): Promise<void> {
+    const now = Date.now()
+    this.db.exec('BEGIN IMMEDIATE')
+    try {
+      this.db.prepare(
+        `UPDATE credential_family
+            SET revoked_at = ?
+          WHERE revoked_at IS NULL
+            AND device_id IN (SELECT id FROM device WHERE org_id = ? AND owner_id = ?)`,
+      ).run(now, orgId, userId)
+      this.db.prepare(
+        "UPDATE device SET status = 'revoked' WHERE org_id = ? AND owner_id = ?",
+      ).run(orgId, userId)
+      this.db.exec('COMMIT')
+    } catch (error) {
+      this.db.exec('ROLLBACK')
+      throw error
+    }
     return Promise.resolve()
   }
 

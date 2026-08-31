@@ -60,17 +60,47 @@ describe('organizations', () => {
   })
 
   it('renames an organization without changing its authorization revision', async () => {
-    await store.setOrganizationName(orgId, 'Acme Labs')
+    await store.updateOrganization(orgId, { name: 'Acme Labs' })
     expect(await store.getOrganization(orgId)).toMatchObject({ name: 'Acme Labs', policyRevision: 0n })
+  })
+
+  it('writes the company fields an update names and leaves the rest', async () => {
+    const lead = await store.createUser({ orgId, loginName: 'chief', displayName: 'Chief' })
+    await store.updateOrganization(orgId, {
+      code: 'acme', leaderId: lead.id, phone: '13800000000', email: 'hq@acme.dev',
+    })
+    await store.updateOrganization(orgId, { name: 'Acme Labs' })
+    expect(await store.getOrganization(orgId)).toMatchObject({
+      name: 'Acme Labs', code: 'acme', leaderId: lead.id, phone: '13800000000', email: 'hq@acme.dev',
+    })
+  })
+
+  it('clears a company field an update names as null', async () => {
+    const lead = await store.createUser({ orgId, loginName: 'chief-2', displayName: 'Chief' })
+    await store.updateOrganization(orgId, {
+      code: 'acme', leaderId: lead.id, phone: '1', email: 'hq@acme.dev',
+    })
+    await store.updateOrganization(orgId, { code: null, leaderId: null, phone: null, email: null })
+    const after = await store.getOrganization(orgId)
+    expect(after?.code).toBeUndefined()
+    expect(after?.leaderId).toBeUndefined()
+    expect(after?.phone).toBeUndefined()
+    expect(after?.email).toBeUndefined()
+  })
+
+  it('accepts an update that names no field for an organization it holds', async () => {
+    await expect(store.updateOrganization(orgId, {})).resolves.toBeUndefined()
   })
 
   it('returns undefined for an organization it does not hold', async () => {
     expect(await store.getOrganization('missing' as OrgId)).toBeUndefined()
   })
 
-  it('refuses to rename an organization it does not hold', async () => {
-    // A silent no-op would leave a caller believing the rename landed.
-    await expect(store.setOrganizationName('missing' as OrgId, 'Ghost'))
+  it('refuses to change an organization it does not hold, with or without a field to write', async () => {
+    // A silent no-op would leave a caller believing the change landed.
+    await expect(store.updateOrganization('missing' as OrgId, { name: 'Ghost' }))
+      .rejects.toBeInstanceOf(UnknownOrganizationError)
+    await expect(store.updateOrganization('missing' as OrgId, {}))
       .rejects.toBeInstanceOf(UnknownOrganizationError)
   })
 
@@ -474,6 +504,15 @@ describe('deleting an account', () => {
     expect(await store.resolveBrowserSession('hash-1')).toBeUndefined()
   })
 
+  it('leaves the organization it led without a lead, rather than refusing the delete', async () => {
+    const lead = await store.createUser({ orgId, loginName: 'chief-3', displayName: 'Chief' })
+    await store.updateOrganization(orgId, { leaderId: lead.id })
+    await store.deleteUser(lead.id)
+    const after = await store.getOrganization(orgId)
+    expect(after?.name).toBe('Acme')
+    expect(after?.leaderId).toBeUndefined()
+  })
+
   it('leaves a department it led without a lead, rather than deleting it', async () => {
     const lead = await store.createUser({ orgId, loginName: 'lead', displayName: 'Lead' })
     const department = await store.createDepartment({
@@ -487,6 +526,23 @@ describe('deleting an account', () => {
 
   it('reports an account it does not hold', async () => {
     await expect(store.deleteUser(UserId('nowhere'))).rejects.toThrow(UnknownAccountUserError)
+  })
+})
+
+describe('ending browser sessions', () => {
+  it('ends every session for one account without touching another account', async () => {
+    const alice = await store.createUser({ orgId, loginName: 'alice-2', displayName: 'Alice' })
+    const bob = await store.createUser({ orgId, loginName: 'bob', displayName: 'Bob' })
+    const expiresAt = Date.now() + 60_000
+    await store.createBrowserSession(alice.id, 'alice-1', expiresAt)
+    await store.createBrowserSession(alice.id, 'alice-2', expiresAt)
+    await store.createBrowserSession(bob.id, 'bob-1', expiresAt)
+
+    await store.revokeBrowserSessions(alice.id)
+
+    expect(await store.resolveBrowserSession('alice-1')).toBeUndefined()
+    expect(await store.resolveBrowserSession('alice-2')).toBeUndefined()
+    expect(await store.resolveBrowserSession('bob-1')).toMatchObject({ userId: bob.id })
   })
 })
 

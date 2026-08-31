@@ -305,6 +305,7 @@ export const LINK_MAP: Readonly<Record<string, string>> = {
   CreateAccountUser: 'account.md',
   Organization: 'account.md',
   OrgId: 'account.md',
+  UpdateOrganization: 'account.md',
   UserId: 'account.md',
   Agent: 'core.md',
   AgentCancelCause: 'core.md',

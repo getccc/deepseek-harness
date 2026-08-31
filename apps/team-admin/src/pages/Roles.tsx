@@ -3,11 +3,18 @@
  * by navigation entry, or by naming a permission from the catalog directly.
  */
 
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Button, Form, Input, Space, Switch, Table, Tag, Tree, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { TreeDataNode } from 'antd'
-import { api, type WireGrant, type WireMenu, type WirePermission, type WireRole } from '../api.ts'
+import {
+  api,
+  type WireGrant,
+  type WireMenu,
+  type WireModel,
+  type WirePermission,
+  type WireRole,
+} from '../api.ts'
 import { useLocale } from '../locale.tsx'
 import {
   ConfirmModal, FormModal, Moment, PageNote, People, RowActions, Toolbar,
@@ -21,6 +28,7 @@ type Dialog =
   | { readonly kind: 'edit'; readonly role: WireRole }
   | { readonly kind: 'menus'; readonly role: WireRole }
   | { readonly kind: 'permissions'; readonly role: WireRole }
+  | { readonly kind: 'models'; readonly role: WireRole }
   | { readonly kind: 'revoke'; readonly grant: WireGrant }
   | { readonly kind: 'delete'; readonly role: WireRole }
 
@@ -62,6 +70,12 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
   const roles = useLoaded<WireRole[]>(api.roles, report)
   const permissions = useLoaded<WirePermission[]>(api.permissions, report)
   const menus = useLoaded<WireMenu[]>(api.menus, report)
+  const mayReadModels = held.has('model|model.catalog.read')
+  const models = useLoaded<WireModel[]>(
+    useMemo(() => (): Promise<WireModel[]> =>
+      (mayReadModels ? api.models() : Promise.resolve([])), [mayReadModels]),
+    report,
+  )
   const [dialog, setDialog] = useState<Dialog | undefined>(undefined)
   const [term, setTerm] = useState('')
   const [draftTerm, setDraftTerm] = useState('')
@@ -146,6 +160,25 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
     setDialog({ kind: 'permissions', role })
   }
 
+  /** Open exact-model access with every model this role can currently discover. */
+  const openModels = (role: WireRole): void => {
+    const allModels = role.grants.some(grant =>
+      grant.scope === 'type'
+      && grant.resourceType === 'model'
+      && grant.action === 'model.discover')
+    const discovered = new Set(role.grants.flatMap(grant =>
+      grant.scope === 'resource'
+      && grant.resourceType === 'model'
+      && grant.action === 'model.discover'
+      && grant.resourceId !== undefined
+        ? [grant.resourceId]
+        : []))
+    setChosen((models.data ?? [])
+      .filter(model => allModels || discovered.has(model.resourceId))
+      .map(model => model.resourceId))
+    setDialog({ kind: 'models', role })
+  }
+
   const columns: ColumnsType<WireRole> = [
     { title: t('roles.name'), key: 'name', render: (_value, role) => role.name },
     {
@@ -211,6 +244,12 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
               onClick: () => { openPermissions(role) },
             },
             {
+              key: 'models',
+              label: t('roles.modelAccess'),
+              disabled: !mayManageGrants || !mayReadModels,
+              onClick: () => { openModels(role) },
+            },
+            {
               key: 'delete',
               label: t('action.delete'),
               danger: true,
@@ -254,6 +293,7 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
   const editing = dialog?.kind === 'edit' ? dialog.role : undefined
   const showingMenus = dialog?.kind === 'menus' ? dialog.role : undefined
   const showingPermissions = dialog?.kind === 'permissions' ? dialog.role : undefined
+  const showingModels = dialog?.kind === 'models' ? dialog.role : undefined
 
   return (
     <>
@@ -418,6 +458,38 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
             setChosen(checked as string[])
           }}
           treeData={permissionNodes()}
+        />
+      </FormModal>
+
+      <FormModal<Record<string, never>>
+        title={t('roles.modelAccessTitle', { name: showingModels?.name ?? '' })}
+        open={dialog?.kind === 'models'}
+        okText={t('action.save')}
+        onCancel={() => { setDialog(undefined) }}
+        onSubmit={() => act(() => api.setRoleModels(
+          dialog?.kind === 'models' ? dialog.role.id : '',
+          chosen,
+        ))}
+      >
+        <Typography.Paragraph type="secondary">{t('roles.modelAccessHint')}</Typography.Paragraph>
+        <Tree
+          checkable
+          selectable={false}
+          defaultExpandAll
+          checkedKeys={[...chosen]}
+          onCheck={(keys) => {
+            const checked = Array.isArray(keys) ? keys : keys.checked
+            setChosen((checked as string[]).filter(key => key !== 'model-resources'))
+          }}
+          treeData={[{
+            key: 'model-resources',
+            title: t('roles.modelResource'),
+            children: (models.data ?? []).map(model => ({
+              key: model.resourceId,
+              title: `${model.displayName} (${model.modelRef})`,
+              disabled: model.status !== 'active',
+            })),
+          }]}
         />
       </FormModal>
 

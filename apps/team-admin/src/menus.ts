@@ -18,7 +18,6 @@ export const CONSOLE_COMPONENTS = [
   'system/UsersPage',
   'system/RolesPage',
   'system/MenusPage',
-  'resources/DevicesPage',
   'resources/ModelsPage',
 ] as const
 

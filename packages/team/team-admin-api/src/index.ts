@@ -17,6 +17,7 @@ import {
   DuplicateRoleNameError,
   GrantId,
   PERMISSION_CATALOG,
+  ResourceId,
   RoleId,
   SystemRoleError,
   type AccessControl,
@@ -39,7 +40,7 @@ import {
   type UpdateAccountUser,
   type UpdateDepartment,
 } from '@deepseek-ai/dsh-account-store'
-import type {} from '@deepseek-ai/dsh-account-auth'
+import { WeakSecretError } from '@deepseek-ai/dsh-account-auth'
 import type { AuditActionName, AuditOutcome } from '@deepseek-ai/dsh-audit'
 import { DeviceId, type Device } from '@deepseek-ai/dsh-device-authorization'
 import {
@@ -163,11 +164,21 @@ export const Config: z<Config> = z.object({
   maxRequestBodyBytes: z.natural().min(1).default(16 * 1024),
 })
 
-/** Project one organization for the browser. */
-function wireOrganization(org: Organization): WireOrganization {
+/**
+ * Project one organization for the browser.
+ * @param org - the stored organization.
+ * @param leaderName - the display name of the account leading it, when one leads it.
+ * @returns the browser's view of the organization.
+ */
+function wireOrganization(org: Organization, leaderName: string | undefined): WireOrganization {
   return {
     id: org.id,
     name: org.name,
+    ...(org.code === undefined ? {} : { code: org.code }),
+    ...(org.leaderId === undefined ? {} : { leaderId: org.leaderId }),
+    ...(leaderName === undefined ? {} : { leaderName }),
+    ...(org.phone === undefined ? {} : { phone: org.phone }),
+    ...(org.email === undefined ? {} : { email: org.email }),
     policyRevision: org.policyRevision.toString(),
     createdAt: org.createdAt,
   }
@@ -260,6 +271,7 @@ function wireGrant(grant: RoleGrant): WireGrant {
       scope: 'resource',
       resourceType: grant.resourceType,
       action: grant.action,
+      resourceId: grant.resourceId,
       resourceDisplayName: grant.resourceDisplayName,
     }
 }
@@ -306,8 +318,9 @@ function wireDevice(device: Device): WireDevice {
 }
 
 /** Project one catalog entry. */
-function wireModel(entry: ModelEntry): WireModel {
+function wireModel(entry: ModelEntry, resourceId: ResourceId): WireModel {
   return {
+    resourceId,
     modelRef: entry.modelRef,
     displayName: entry.displayName,
     providerRef: entry.providerRef,
@@ -423,6 +436,15 @@ export function apply(ctx: Context, config: Config): void {
     const org = await ctx.accountStore.getOrganization(organizationId)
     if (org === undefined) throw new Error(`team-admin-api: unknown configured organization ${organizationId}`)
     return org
+  }
+
+  /** The organization as the console reads it, with the name of the account leading it. */
+  const readWireOrganization = async (): Promise<WireOrganization> => {
+    const org = await readOrganization()
+    if (org.leaderId === undefined) return wireOrganization(org, undefined)
+    const leader = await ctx.accountStore.getUser(org.leaderId)
+    /* v8 ignore next -- deleting an account clears the lead it held, so a stored lead always names an account */
+    return wireOrganization(org, leader?.displayName)
   }
 
   /** Read the account a session stands for; a session cannot outlive it either. */
@@ -608,6 +630,22 @@ export function apply(ctx: Context, config: Config): void {
   const readMenus = async (orgId: OrgId): Promise<WireMenu[]> =>
     (await ctx.consoleMenu.listMenus(orgId)).map(wireMenu)
 
+  /** Every model with the managed-resource id an exact role grant names. */
+  const readModels = async (orgId: OrgId): Promise<WireModel[]> => {
+    const [models, resources] = await Promise.all([
+      ctx.modelGateway.list(orgId),
+      ctx.accessControl.listResources(orgId, 'model'),
+    ])
+    const byRef = new Map(resources.map(resource => [resource.externalRef, resource.id]))
+    return models.map((model) => {
+      const resourceId = byRef.get(model.modelRef)
+      if (resourceId === undefined) {
+        throw new Error(`model ${JSON.stringify(model.modelRef)} has no managed resource`)
+      }
+      return wireModel(model, resourceId)
+    })
+  }
+
   /**
    * Make one role's type grants exactly the catalog pairs it was given.
    *
@@ -757,7 +795,7 @@ export function apply(ctx: Context, config: Config): void {
         loginName: member.loginName,
         displayName: member.displayName,
       },
-      organization: wireOrganization(await readOrganization()),
+      organization: await readWireOrganization(),
       permissions: await heldPermissions(ctx.accessControl, organizationId, outcome.userId),
       csrf: csrfToken(token),
     })
@@ -774,7 +812,7 @@ export function apply(ctx: Context, config: Config): void {
         loginName: member.loginName,
         displayName: member.displayName,
       },
-      organization: wireOrganization(await readOrganization()),
+      organization: await readWireOrganization(),
       permissions: await heldPermissions(
         ctx.accessControl,
         signed.session.orgId,
@@ -808,7 +846,7 @@ export function apply(ctx: Context, config: Config): void {
     }
     if (segments[0] === 'organization' && segments.length === 1) {
       if (!await mayProceed(res, signed, 'organization.read', 'organization', org)) return
-      json(res, 200, wireOrganization(await readOrganization()))
+      json(res, 200, await readWireOrganization())
       return
     }
     if (segments[0] === 'members' && segments.length === 1) {
@@ -840,7 +878,7 @@ export function apply(ctx: Context, config: Config): void {
     }
     if (segments[0] === 'models' && segments.length === 1) {
       if (!await mayProceed(res, signed, 'model.catalog.read', 'model', MODEL_CATALOG_RESOURCE)) return
-      json(res, 200, (await ctx.modelGateway.list(org)).map(wireModel))
+      json(res, 200, await readModels(org))
       return
     }
     refuse(res, 404, 'not-found')
@@ -875,9 +913,19 @@ export function apply(ctx: Context, config: Config): void {
         refuse(res, 400, 'malformed', { reason: 'fields', detail: 'An organization needs a name.' })
         return
       }
-      await ctx.accountStore.setOrganizationName(org, name)
+      const code = patchText(body, 'code')
+      const leaderId = patchText(body, 'leaderId')
+      const phone = patchText(body, 'phone')
+      const email = patchText(body, 'email')
+      await ctx.accountStore.updateOrganization(org, {
+        name,
+        ...(code === undefined ? {} : { code }),
+        ...(leaderId === undefined ? {} : { leaderId: leaderId as UserId | null }),
+        ...(phone === undefined ? {} : { phone }),
+        ...(email === undefined ? {} : { email }),
+      })
       await record('policy.update', signed, 'allowed', { resourceId: org })
-      json(res, 200, wireOrganization(await readOrganization()))
+      json(res, 200, await readWireOrganization())
       return
     }
 
@@ -885,8 +933,12 @@ export function apply(ctx: Context, config: Config): void {
       if (!await mayProceed(res, signed, 'member.create', 'member', org)) return
       const loginName = text(body, 'loginName')
       const displayName = text(body, 'displayName')
-      if (loginName === undefined || displayName === undefined) {
-        refuse(res, 400, 'malformed', { reason: 'fields', detail: 'A member needs a login name and a display name.' })
+      const secret = text(body, 'secret')
+      if (loginName === undefined || displayName === undefined || secret === undefined) {
+        refuse(res, 400, 'malformed', {
+          reason: 'fields',
+          detail: 'A member needs a login name, display name, and initial password.',
+        })
         return
       }
       const email = text(body, 'email')
@@ -898,7 +950,7 @@ export function apply(ctx: Context, config: Config): void {
         return
       }
       try {
-        await ctx.accountStore.createUser({
+        const member = await ctx.accountStore.createUser({
           orgId: org,
           loginName,
           displayName,
@@ -907,15 +959,61 @@ export function apply(ctx: Context, config: Config): void {
           ...(gender === undefined ? {} : { gender: gender as MemberGender }),
           ...(departmentId === undefined ? {} : { departmentId: DeptId(departmentId) }),
         })
+        try {
+          await ctx.accountAuth.setSecret(member.id, secret)
+        } catch (error) {
+          // Provisioning is one administration operation even though identity
+          // and password material have different owners. Do not leave behind
+          // an account that the form reported as failed to create.
+          await ctx.accountStore.deleteUser(member.id)
+          throw error
+        }
       } catch (error) {
         // The store owns login-name uniqueness; a second account with the same
         // name is the administrator's mistake, not the site's failure.
-        if (!(error instanceof DuplicateLoginNameError)) throw error
-        refuse(res, 409, 'conflict', { reason: 'login-taken', detail: 'That login name is already in this organization.' })
-        return
+        if (error instanceof DuplicateLoginNameError) {
+          refuse(res, 409, 'conflict', {
+            reason: 'login-taken', detail: 'That login name is already in this organization.',
+          })
+          return
+        }
+        if (error instanceof WeakSecretError) {
+          refuse(res, 400, 'malformed', { reason: 'weak-secret', detail: error.requirement })
+          return
+        }
+        throw error
       }
       await record('member.create', signed, 'allowed')
       json(res, 200, await readMembers(org))
+      return
+    }
+
+    if (segments[0] === 'members' && segments[2] === 'password' && segments.length === 3 && method === 'PATCH') {
+      if (!await mayProceed(res, signed, 'member.password.reset', 'member', org)) return
+      const target = UserId(segments[1] as string)
+      const member = await ctx.accountStore.getUser(target)
+      if (member === undefined || member.orgId !== org) {
+        refuse(res, 404, 'not-found')
+        return
+      }
+      const secret = text(body, 'secret')
+      if (secret === undefined) {
+        refuse(res, 400, 'malformed', { reason: 'fields', detail: 'A new password is required.' })
+        return
+      }
+      try {
+        await ctx.accountAuth.setSecret(target, secret)
+      } catch (error) {
+        if (!(error instanceof WeakSecretError)) throw error
+        refuse(res, 400, 'malformed', { reason: 'weak-secret', detail: error.requirement })
+        return
+      }
+      await ctx.accountStore.revokeBrowserSessions(target)
+      await ctx.deviceAuthorization.revokeUserDevices(org, target)
+      await record('member.password.reset', signed, 'allowed', { resourceId: target })
+      const self = target === signed.session.userId
+      if (self) writeSessionCookie(res, '', 0, config.secureCookie)
+      json(res, 200, { reset: true, self })
       return
     }
 
@@ -1303,6 +1401,48 @@ export function apply(ctx: Context, config: Config): void {
       return
     }
 
+    if (segments[0] === 'roles' && segments[2] === 'models' && method === 'POST' && segments.length === 3) {
+      if (!await mayProceed(res, signed, 'role.grant.manage', 'role', org)) return
+      const modelIds = body['modelIds']
+      if (!Array.isArray(modelIds) || modelIds.some(id => typeof id !== 'string')) {
+        refuse(res, 400, 'malformed', { reason: 'fields', detail: 'Model access is a list of model resource ids.' })
+        return
+      }
+      const roleId = RoleId(segments[1] as string)
+      const [resources, held] = await Promise.all([
+        ctx.accessControl.listResources(org, 'model'),
+        ctx.accessControl.listRoleGrants(roleId),
+      ])
+      const resourcesById = new Map(resources.map(resource => [resource.id as string, resource]))
+      const wanted = new Set(modelIds as string[])
+      if ([...wanted].some(id => !resourcesById.has(id))) {
+        refuse(res, 400, 'malformed', { reason: 'fields', detail: 'That model is not in this organization.' })
+        return
+      }
+      const actions = new Set(['model.discover', 'model.invoke'])
+      for (const grant of held) {
+        if (grant.resourceType !== 'model' || !actions.has(grant.action)) continue
+        if (grant.kind === 'type' || !wanted.has(grant.resourceId)) {
+          await ctx.accessControl.revokeGrant(grant.id)
+        }
+      }
+      const afterRevoke = await ctx.accessControl.listRoleGrants(roleId)
+      const present = new Set(afterRevoke.flatMap(grant => grant.kind === 'resource'
+        ? [`${grant.resourceId}|${grant.action}`]
+        : []))
+      for (const resourceId of wanted) {
+        for (const action of actions) {
+          if (!present.has(`${resourceId}|${action}`)) {
+            await ctx.accessControl.grantResource(roleId, ResourceId(resourceId), action)
+          }
+        }
+      }
+      await ctx.accessControl.updateRole(roleId, { coversCatalog: false })
+      await record('grant.add', signed, 'allowed', { resourceId: roleId })
+      json(res, 200, await readRoles(org))
+      return
+    }
+
     if (segments[0] === 'roles' && segments[2] === 'menus' && method === 'POST' && segments.length === 3) {
       if (!await mayProceed(res, signed, 'role.grant.manage', 'role', org)) return
       const menuIds = body['menuIds']
@@ -1357,7 +1497,7 @@ export function apply(ctx: Context, config: Config): void {
       if (!await mayProceed(res, signed, 'model.catalog.manage', 'model', MODEL_CATALOG_RESOURCE)) return
       const registered = await registerModel(res, signed, org, body)
       if (!registered) return
-      json(res, 200, (await ctx.modelGateway.list(org)).map(wireModel))
+      json(res, 200, await readModels(org))
       return
     }
 
@@ -1374,7 +1514,7 @@ export function apply(ctx: Context, config: Config): void {
         status === 'active' ? 'resource.enable' : 'resource.disable',
         signed, 'allowed', { resourceId: modelRef },
       )
-      json(res, 200, (await ctx.modelGateway.list(org)).map(wireModel))
+      json(res, 200, await readModels(org))
       return
     }
 

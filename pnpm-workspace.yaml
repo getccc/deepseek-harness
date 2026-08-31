@@ -31,6 +31,8 @@ peerDependencyRules:
 # (git hooks) genuinely need theirs.
 allowBuilds:
   esbuild: true
+  # Electron supplies the reviewed desktop runtime binary for the Team Runner shell.
+  electron: true
   lefthook: true
   # Cross-platform boundary for the persistent PTY backend, including ConPTY on Windows.
   node-pty: true

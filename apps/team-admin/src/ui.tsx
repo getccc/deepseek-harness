@@ -151,6 +151,12 @@ function useSteadyCopy(title: string, open: boolean): string {
   return shown.current
 }
 
+/** How wide a dialog is, by how many fields it puts on a line. */
+const FORM_MODAL_WIDTH: Record<FormColumns, number> = { 1: 520, 2: 760 }
+
+/** How many fields one line of a dialog's form holds. */
+export type FormColumns = 1 | 2
+
 /**
  * A dialog whose body is a form, submitted by its own confirm button.
  *
@@ -161,6 +167,7 @@ function useSteadyCopy(title: string, open: boolean): string {
  * @param props.title - the dialog heading.
  * @param props.open - whether the dialog is showing.
  * @param props.okText - the confirm button's copy.
+ * @param props.columns - fields per line, each label beside its control; one by default, with labels above.
  * @param props.initialValues - what the fields start as.
  * @param props.onCancel - closes the dialog without submitting.
  * @param props.onSubmit - carries out the write; rejecting keeps the dialog open.
@@ -168,11 +175,12 @@ function useSteadyCopy(title: string, open: boolean): string {
  * @returns the dialog element.
  */
 export function FormModal<V extends object>({
-  title, open, okText, initialValues, onCancel, onSubmit, children,
+  title, open, okText, columns = 1, initialValues, onCancel, onSubmit, children,
 }: {
   readonly title: string
   readonly open: boolean
   readonly okText: string
+  readonly columns?: FormColumns
   readonly initialValues?: Partial<V>
   readonly onCancel: () => void
   readonly onSubmit: (values: V) => Promise<void>
@@ -182,6 +190,16 @@ export function FormModal<V extends object>({
   const [form] = Form.useForm<V>()
   const [busy, setBusy] = useState(false)
   const heading = useSteadyCopy(title, open)
+
+  // Ant Design reads `initialValues` when the form mounts, and this form is
+  // mounted before the dialog first opens so the confirm button has something
+  // to submit. Resetting as it opens is what puts the record being edited into
+  // the fields instead of what the previous dialog left in them.
+  useEffect(() => {
+    if (open) form.resetFields()
+    // `initialValues` is rebuilt by the caller on every render and is deliberately
+    // not a dependency: resetting on each of them would discard what is being typed.
+  }, [open, form])
 
   const finish = async (values: V): Promise<void> => {
     setBusy(true)
@@ -196,6 +214,7 @@ export function FormModal<V extends object>({
     <Modal
       title={heading}
       open={open}
+      width={FORM_MODAL_WIDTH[columns]}
       onCancel={onCancel}
       onOk={() => { form.submit() }}
       okText={okText}
@@ -206,7 +225,9 @@ export function FormModal<V extends object>({
     >
       <Form<V>
         form={form}
-        layout="vertical"
+        className={columns === 2 ? 'form-grid' : undefined}
+        layout={columns === 2 ? 'horizontal' : 'vertical'}
+        {...(columns === 2 ? { labelCol: { span: 8 }, wrapperCol: { span: 16 } } : {})}
         requiredMark={false}
         preserve={false}
         {...(initialValues === undefined ? {} : { initialValues })}

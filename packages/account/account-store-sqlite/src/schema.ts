@@ -10,7 +10,7 @@ import type { DatabaseSync } from 'node:sqlite'
  * refused rather than migrated down, because a downgrade cannot know what a
  * column it has never seen means.
  */
-export const SCHEMA_VERSION = 3
+export const SCHEMA_VERSION = 4
 
 /** Application id reserved for DeepSeek Harness SQLite account databases. */
 export const ACCOUNT_STORE_SQLITE_APPLICATION_ID = 0x44534841
@@ -19,6 +19,10 @@ export const ACCOUNT_STORE_SQLITE_APPLICATION_ID = 0x44534841
 export interface OrganizationRow {
   readonly id: string
   readonly name: string
+  readonly code: string | null
+  readonly leader_id: string | null
+  readonly phone: string | null
+  readonly email: string | null
   readonly policy_revision: number
   readonly created_at: number
 }
@@ -79,9 +83,16 @@ CREATE TABLE IF NOT EXISTS browser_session (
   created_at INTEGER NOT NULL
 ) STRICT;
 CREATE INDEX IF NOT EXISTS browser_session_user ON browser_session (user_id);
+-- The company at the root of the department tree, described the way a
+-- department is: the leader is an account rather than a typed-in name, and the
+-- code is the identifier an administrator types to mean this company.
 CREATE TABLE IF NOT EXISTS organization (
   id              TEXT    PRIMARY KEY,
   name            TEXT    NOT NULL,
+  code            TEXT,
+  leader_id       TEXT    REFERENCES account_user(id),
+  phone           TEXT,
+  email           TEXT,
   policy_revision INTEGER NOT NULL DEFAULT 0,
   created_at      INTEGER NOT NULL
 ) STRICT;
@@ -150,6 +161,17 @@ const ADDED_ACCOUNT_USER_COLUMNS: readonly (readonly [string, string])[] = [
 ]
 
 /**
+ * Organization columns a build newer than schema 3 introduced, added on the
+ * same terms as {@link ADDED_ACCOUNT_USER_COLUMNS}.
+ */
+const ADDED_ORGANIZATION_COLUMNS: readonly (readonly [string, string])[] = [
+  ['code', 'TEXT'],
+  ['leader_id', 'TEXT REFERENCES account_user(id)'],
+  ['phone', 'TEXT'],
+  ['email', 'TEXT'],
+]
+
+/**
  * Bring a connection to {@link SCHEMA_VERSION}, refusing a database written by
  * a build that knew more than this one.
  * @param db - an open SQLite connection.
@@ -167,6 +189,7 @@ export function applySchema(db: DatabaseSync): void {
   db.exec('PRAGMA foreign_keys = ON')
   db.exec(DDL)
   addMissingColumns(db, 'account_user', ADDED_ACCOUNT_USER_COLUMNS)
+  addMissingColumns(db, 'organization', ADDED_ORGANIZATION_COLUMNS)
   db.exec(`PRAGMA application_id = ${ACCOUNT_STORE_SQLITE_APPLICATION_ID}`)
   db.exec(`PRAGMA user_version = ${SCHEMA_VERSION}`)
 }

@@ -36,6 +36,7 @@ export const PERMISSION_CATALOG: readonly Permission[] = [
   { resourceType: 'member', action: 'member.delete' },
   { resourceType: 'member', action: 'member.disable' },
   { resourceType: 'member', action: 'member.enable' },
+  { resourceType: 'member', action: 'member.password.reset' },
   { resourceType: 'member', action: 'member.role.bind' },
   { resourceType: 'department', action: 'department.read' },
   { resourceType: 'department', action: 'department.manage' },

@@ -17,10 +17,17 @@ import { applyPlanToBody, type CallPlan } from '@deepseek-ai/dsh-model-gateway'
 import type { Settlement } from '@deepseek-ai/dsh-quota'
 import { TRANSPORT_OPERATIONS } from '@deepseek-ai/dsh-llm-http-transport'
 import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
-import { ACCESS_TOKEN_HEADER, MODEL_INVOKE_PATH } from './protocol.ts'
+import { ACCESS_TOKEN_HEADER, MODEL_CATALOG_PATH, MODEL_INVOKE_PATH } from './protocol.ts'
 import { UsageScanner } from './usage.ts'
 
-export { ACCESS_TOKEN_HEADER, MODEL_INVOKE_PATH, type InvokeBody } from './protocol.ts'
+export {
+  ACCESS_TOKEN_HEADER,
+  MODEL_CATALOG_PATH,
+  MODEL_INVOKE_PATH,
+  type DiscoveredModel,
+  type InvokeBody,
+  type ModelCatalogBody,
+} from './protocol.ts'
 export { UsageScanner, readUsage, type ReportedUsage } from './usage.ts'
 
 /** Cordis plugin name. */
@@ -86,6 +93,31 @@ function bearer(req: IncomingMessage): string | undefined {
  * @param config - resolved plugin config (schema defaults applied).
  */
 export function apply(ctx: Context, config: Config): void {
+  const catalog: WebRoute = {
+    kind: 'exact',
+    path: MODEL_CATALOG_PATH,
+    handler: async (req, res) => {
+      if (req.method !== 'GET') {
+        json(res, 405, { error: 'method not allowed' })
+        return
+      }
+      const token = bearer(req)
+      if (token === undefined) {
+        json(res, 401, { error: 'unauthorized' })
+        return
+      }
+      const claims = await ctx.deviceAuthorization.verifyAccessToken(token)
+      if (claims === undefined) {
+        json(res, 401, { error: 'unauthorized' })
+        return
+      }
+      json(res, 200, {
+        models: await ctx.modelGateway.discover(claims.orgId, claims.principalId),
+      })
+    },
+  }
+  ctx.effect(() => ctx.webServer.register(catalog), 'model-gateway-http: catalog route')
+
   const route: WebRoute = {
     kind: 'exact',
     path: MODEL_INVOKE_PATH,

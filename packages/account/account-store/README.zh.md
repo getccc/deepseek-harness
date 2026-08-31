@@ -41,7 +41,7 @@ const user = await ctx.accountStore.createUser({
 })
 ```
 
-`setOrganizationName` 会改变已配置组织的可读名称，但不会改变其稳定 id 或授权修订号。
+`updateOrganization` 会改变组织自身的字段——名称，以及描述它的编号、负责人、电话与邮箱——但不会改变其稳定 id 或授权修订号。未给出的字段保持原样，置为 `null` 的字段会被清除。
 
 ### 新签发的账户还不能登录
 

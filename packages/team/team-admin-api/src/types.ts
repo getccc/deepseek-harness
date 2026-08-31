@@ -19,10 +19,19 @@ import type { RoleKind } from '@deepseek-ai/dsh-access-control'
 import type { ConsoleMenuKind, ConsoleMenuStatus } from '@deepseek-ai/dsh-team-console-menu'
 import type { ModelStatus } from '@deepseek-ai/dsh-model-gateway'
 
-/** The organization one Control Plane serves. */
+/**
+ * The organization one Control Plane serves, and the company row at the root
+ * of its department tree.
+ */
 export interface WireOrganization {
   readonly id: string
   readonly name: string
+  readonly code?: string
+  readonly leaderId?: string
+  /** That account's display name, so the row needs no second request to show it. */
+  readonly leaderName?: string
+  readonly phone?: string
+  readonly email?: string
   /** Decimal string: the counter is a `bigint`, and JSON has no such number. */
   readonly policyRevision: string
   readonly createdAt: number
@@ -116,6 +125,7 @@ export interface WireGrant {
   readonly scope: 'type' | 'resource'
   readonly resourceType: string
   readonly action: string
+  readonly resourceId?: string
   readonly resourceDisplayName?: string
 }
 
@@ -155,6 +165,8 @@ export interface WireDevice {
 
 /** One company model, as the catalog holds it. */
 export interface WireModel {
+  /** Access-control resource id used when a role is granted this exact model. */
+  readonly resourceId: string
   readonly modelRef: string
   readonly displayName: string
   readonly providerRef: string
@@ -219,6 +231,8 @@ export type WireRefusalReason =
   | 'fields'
   /** Another account in this organization already has that login name. */
   | 'login-taken'
+  /** The password does not satisfy this deployment's password policy. */
+  | 'weak-secret'
   /** Another record in this organization already has that code. */
   | 'code-taken'
   /** Another role in this organization already has that name. */

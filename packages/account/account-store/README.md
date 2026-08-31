@@ -41,7 +41,7 @@ const user = await ctx.accountStore.createUser({
 })
 ```
 
-`setOrganizationName` changes the configured organization's human-readable name without changing its stable id or authorization revision.
+`updateOrganization` changes the organization's own fields — its name, and the code, lead, phone, and email it is described by — without changing its stable id or authorization revision. An absent field is left as stored; a field set to `null` is cleared.
 
 ### An issued account cannot yet sign in
 

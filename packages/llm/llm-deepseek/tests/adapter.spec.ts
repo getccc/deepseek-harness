@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { Readable } from 'node:stream'
 import { Context } from '@deepseek-ai/cordis'
 import { AttachmentId, ImageVariantId } from '@deepseek-ai/dsh-attachment'
 import type { AttachmentStore, ImageAttachmentRef, RequestImageAttachment } from '@deepseek-ai/dsh-attachment'
@@ -19,6 +20,7 @@ import { getOrCreateAnonymousUserId, type AnonymousUserId } from '@deepseek-ai/d
 import { SessionId } from '@deepseek-ai/dsh-session'
 import DeepSeekLlmApiExtensionRegistry from '@deepseek-ai/dsh-deepseek-llm-api-extensions'
 import type { PreparedDeepSeekLlmApiExtensions } from '@deepseek-ai/dsh-deepseek-llm-api-extensions'
+import type { LlmHttpTransport } from '@deepseek-ai/dsh-llm-http-transport'
 import * as LlmDeepSeek from '@deepseek-ai/dsh-llm-deepseek'
 import { DeepSeekAdapter, resolveAdapterOptions } from '@deepseek-ai/dsh-llm-deepseek'
 import { httpErrorCode } from '../src/adapter.ts'
@@ -188,6 +190,41 @@ describe('request image policy', () => {
 })
 
 describe('DeepSeekAdapter against a mock server', () => {
+  it('uses the mounted transport for invocation without resolving a provider key', async () => {
+    const resolveApiKey = vi.fn(() => Promise.reject(new Error('must not resolve')))
+    const send = vi.fn(() => Promise.resolve({
+      status: 200,
+      headers: { 'content-type': 'text/event-stream' },
+      body: Readable.from([Buffer.from(textEvents.map(event => `data: ${event}\n\n`).join(''))]),
+    }))
+    const transport = { send, listModels: () => Promise.resolve([]) } as unknown as LlmHttpTransport
+    const adapter = new DeepSeekAdapter({
+      options: () => resolveAdapterOptions({}),
+      transport: () => transport,
+      resolveApiKey,
+      resolveUserId: () => TEST_USER_ID,
+      prepareExtensions: noExtensions,
+    })
+
+    await drain(adapter.stream({
+      provider: 'deepseek-official',
+      model: 'company-v4',
+      messages: [],
+      maxTokens: 512,
+      sessionId: SessionId('session-1'),
+    }))
+
+    expect(resolveApiKey).not.toHaveBeenCalled()
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({
+      operation: 'chat.completions',
+      modelRef: 'company-v4',
+      inputTokens: 0,
+      maxOutputTokens: 512,
+      correlationId: 'session-1',
+      body: expect.objectContaining({ model: 'company-v4', max_tokens: 512 }),
+    }))
+  })
+
   it('merges prepared extension fields and accepts them once after HTTP 2xx', async () => {
     const server = await mockServer([{ kind: 'sse', events: textEvents }])
     const accept = vi.fn()
@@ -1854,6 +1891,24 @@ describe('plugin registration and config', () => {
       provider: 'deepseek-official',
       id: 'adapter-model',
       name: 'adapter-model',
+      inputModalities: ['text'],
+    }])
+  })
+
+  it('uses a transport-controlled model catalog instead of local defaults', async () => {
+    const connection = resolveAdapterOptions({})
+    const adapter = new DeepSeekAdapter({
+      options: () => connection,
+      listModels: () => Promise.resolve([{ id: 'company-v4', name: 'Company V4' }]),
+      resolveApiKey: () => Promise.resolve('k'),
+      resolveUserId: () => TEST_USER_ID,
+      prepareExtensions: noExtensions,
+    })
+
+    await expect(adapter.listModels('deepseek-official')).resolves.toEqual([{
+      provider: 'deepseek-official',
+      id: 'company-v4',
+      name: 'Company V4',
       inputModalities: ['text'],
     }])
   })

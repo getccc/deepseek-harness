@@ -16,7 +16,7 @@ import type { MenuId } from './brand.ts'
 import type { ConsoleMenu, CreateConsoleMenu, UpdateConsoleMenu } from './types.ts'
 
 export { MenuId } from './brand.ts'
-export { HOME_MENU_KEY, SHIPPED_CONSOLE_MENUS } from './catalog.ts'
+export { HOME_MENU_KEY, RETIRED_SHIPPED_MENU_KEYS, SHIPPED_CONSOLE_MENUS } from './catalog.ts'
 export type {
   ConsoleMenu,
   ConsoleMenuKind,
@@ -96,7 +96,8 @@ export abstract class ConsoleMenuStore extends Service {
    *
    * Idempotent, and never an overwrite: an entry a deployment renamed, hid, or
    * reordered keeps its edit, and one it deleted comes back at its shipped
-   * settings on the next start.
+   * settings on the next start. Entries this build retired are removed; their
+   * children move to the retired entry's parent.
    * @param orgId - the organization to seed.
    * @returns how many entries this call inserted.
    */

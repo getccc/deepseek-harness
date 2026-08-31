@@ -93,7 +93,7 @@ HTML 表单由回环地址上的 Runner 提供。提交后，Runner 开启一个
 <a id="known-limitations-and-deferred-work"></a>
 
 - **每个 Runner 进程只有一个活跃账户**——再次登录会为使用该 Runner 的所有浏览器替换进程凭据。
-- **没有修改密码页面**——在专门的账户恢复表层出现之前，管理员必须通过认证服务配置初始密码。
+- **没有成员自助修改密码页面**——管理员在 Control Plane 中替换密码，这会撤销该账户的每个浏览器会话与设备凭据族。
 - **两种应用前 Locale**——服务端渲染表单目前支持 `en-US` 与 `zh-CN`。
 
 <a id="dev-note"></a>

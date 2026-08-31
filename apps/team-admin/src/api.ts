@@ -26,6 +26,15 @@ export type {
   WireOrganization, WireOverview, WirePermission, WireRole, WireSession,
 } from '@deepseek-ai/dsh-team-admin-api'
 
+/** The fields the company row's form collects; an empty string clears a stored one. */
+export interface OrganizationInput {
+  name: string
+  code?: string
+  leaderId?: string
+  phone?: string
+  email?: string
+}
+
 /** The fields a department form collects; an empty string clears a stored one. */
 export interface DepartmentInput {
   name: string
@@ -142,9 +151,9 @@ export const api = {
   overview: (): Promise<WireOverview> => call('GET', '/overview'),
   /** The organization this deployment serves. */
   organization: (): Promise<WireOrganization> => call('GET', '/organization'),
-  /** Change the organization's display name. */
-  renameOrganization: (name: string): Promise<WireOrganization> =>
-    call('PATCH', '/organization', { name }),
+  /** Change the organization's own fields, the way an edit changes a department. */
+  updateOrganization: (input: OrganizationInput): Promise<WireOrganization> =>
+    call('PATCH', '/organization', input),
 
   /** Every member, with the roles this console could also unbind. */
   members: (): Promise<WireMember[]> => call('GET', '/members'),
@@ -152,6 +161,7 @@ export const api = {
   addMember: (input: {
     loginName: string
     displayName: string
+    secret: string
     email?: string
     phone?: string
     gender?: string
@@ -166,6 +176,9 @@ export const api = {
   /** Suspend or reactivate one account. */
   setMemberStatus: (id: string, status: 'active' | 'suspended'): Promise<WireMember[]> =>
     call('PATCH', `/members/${encodeURIComponent(id)}`, { status }),
+  /** Replace one account's password and end every session and device credential it holds. */
+  resetMemberPassword: (id: string, secret: string): Promise<{ reset: true; self: boolean }> =>
+    call('PATCH', `/members/${encodeURIComponent(id)}/password`, { secret }),
   /** Bind one role to one member. */
   bindRole: (id: string, roleId: string): Promise<WireMember[]> =>
     call('POST', `/members/${encodeURIComponent(id)}/roles`, { roleId }),
@@ -213,6 +226,9 @@ export const api = {
   /** Make one role's type grants exactly these `resourceType|action` pairs. */
   setRolePermissions: (id: string, permissions: readonly string[]): Promise<WireRole[]> =>
     call('POST', `/roles/${encodeURIComponent(id)}/permissions`, { permissions }),
+  /** Make one role's model grants match these exact managed models. */
+  setRoleModels: (id: string, modelIds: readonly string[]): Promise<WireRole[]> =>
+    call('POST', `/roles/${encodeURIComponent(id)}/models`, { modelIds }),
   /** Delete one role, with its grants and the bindings carrying it. */
   removeRole: (id: string): Promise<WireRole[]> =>
     call('DELETE', `/roles/${encodeURIComponent(id)}`),

@@ -28,7 +28,7 @@ import type { AccessControl } from '@deepseek-ai/dsh-access-control'
 import type { Quota } from '@deepseek-ai/dsh-quota'
 import type { ModelGateway } from '@deepseek-ai/dsh-model-gateway'
 import * as gatewayHttp from '../src/index.ts'
-import { MODEL_INVOKE_PATH } from '../src/protocol.ts'
+import { MODEL_CATALOG_PATH, MODEL_INVOKE_PATH } from '../src/protocol.ts'
 
 /** What the fake provider saw. */
 interface Seen {
@@ -178,6 +178,25 @@ afterEach(async () => {
 })
 
 describe('a company model call', () => {
+  it('lists only models this device principal may discover', async () => {
+    const [role] = await access.listRoles(orgId)
+    await access.grantType(role?.id as never, 'model', 'model.discover')
+
+    const response = await fetch(`${cpOrigin}${MODEL_CATALOG_PATH}`, {
+      headers: { authorization: `Bearer ${accessToken}` },
+    })
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      models: [{ modelRef: 'company-v4', displayName: 'Company V4' }],
+    })
+  })
+
+  it('does not publish the model catalog without a live device credential', async () => {
+    const response = await fetch(`${cpOrigin}${MODEL_CATALOG_PATH}`)
+    expect(response.status).toBe(401)
+  })
+
   it('attaches the credential the Runner never held, and the model the catalog names', async () => {
     const answered = await invoke(invocation())
     expect(answered.status).toBe(200)

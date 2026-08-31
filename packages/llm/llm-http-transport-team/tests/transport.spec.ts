@@ -42,7 +42,9 @@ async function startPlane(): Promise<string> {
       seen.push({
         path: req.url,
         authorization: req.headers.authorization,
-        body: JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>,
+        body: chunks.length === 0
+          ? {}
+          : JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>,
       })
       answer(res)
     })
@@ -78,6 +80,35 @@ afterEach(async () => {
 })
 
 describe('what leaves the Runner', () => {
+  it('reads only the model refs and names the Control Plane exposes', async () => {
+    answer = (res) => {
+      res.writeHead(200, { 'content-type': 'application/json' })
+      res.end(JSON.stringify({
+        models: [{ modelRef: 'company-v4', displayName: 'Company V4' }],
+      }))
+    }
+
+    await expect(transport.listModels()).resolves.toEqual([
+      { id: 'company-v4', name: 'Company V4' },
+    ])
+    expect(seen[0]).toMatchObject({
+      path: '/team/model/catalog',
+      authorization: 'Bearer an-access-token',
+      body: {},
+    })
+  })
+
+  it('refuses a malformed model catalog at the HTTP wire', async () => {
+    answer = (res) => {
+      res.writeHead(200, { 'content-type': 'application/json' })
+      res.end(JSON.stringify({ models: [{ modelRef: 7, displayName: 'Company V4' }] }))
+    }
+
+    await expect(transport.listModels()).rejects.toMatchObject({
+      reason: 'refused', detail: 'model catalog response is malformed',
+    })
+  })
+
   it('sends the operation, the model, and the body — and no address', async () => {
     await transport.send({
       operation: 'chat.completions',

@@ -18,7 +18,12 @@ import {
   type TransportRequest,
   type TransportResponse,
 } from '@deepseek-ai/dsh-llm-http-transport'
-import { ACCESS_TOKEN_HEADER, MODEL_INVOKE_PATH } from '@deepseek-ai/dsh-model-gateway-http'
+import {
+  ACCESS_TOKEN_HEADER,
+  MODEL_CATALOG_PATH,
+  MODEL_INVOKE_PATH,
+  type ModelCatalogBody,
+} from '@deepseek-ai/dsh-model-gateway-http'
 import type {} from '@deepseek-ai/dsh-team-account-client'
 
 /** Plugin config: which Control Plane, and which budget period. */
@@ -80,6 +85,26 @@ export class TeamLlmHttpTransport extends LlmHttpTransport {
     }
   }
 
+  override async listModels(): Promise<readonly { id: string; name: string }[]> {
+    const token = await this.accessToken()
+    let response: Response
+    try {
+      response = await fetch(new URL(MODEL_CATALOG_PATH, this.config.controlPlaneUrl), {
+        headers: { [ACCESS_TOKEN_HEADER]: `Bearer ${token}` },
+      })
+    } catch (error) {
+      throw new TransportFailedError('unreachable', detailOf(error))
+    }
+    if (!response.ok) {
+      throw new TransportFailedError('refused', `model catalog answered HTTP ${response.status}`)
+    }
+    const body: unknown = await response.json()
+    if (!isModelCatalogBody(body)) {
+      throw new TransportFailedError('refused', 'model catalog response is malformed')
+    }
+    return body.models.map(model => ({ id: model.modelRef, name: model.displayName }))
+  }
+
   /** The Runner's current access token, or the reason there is none. */
   private async accessToken(): Promise<string> {
     try {
@@ -93,6 +118,15 @@ export class TeamLlmHttpTransport extends LlmHttpTransport {
       throw new TransportFailedError('refused', detailOf(error))
     }
   }
+}
+
+/** Validate the Control Plane response at the HTTP wire. */
+function isModelCatalogBody(value: unknown): value is ModelCatalogBody {
+  if (typeof value !== 'object' || value === null || !('models' in value)
+    || !Array.isArray(value.models)) return false
+  return value.models.every(model => typeof model === 'object' && model !== null
+    && 'modelRef' in model && typeof model.modelRef === 'string'
+    && 'displayName' in model && typeof model.displayName === 'string')
 }
 
 /**

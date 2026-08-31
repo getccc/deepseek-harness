@@ -37,6 +37,7 @@ export const AUDIT_ACTIONS = {
   'member.delete': { resourceType: 'member', metadata: [] },
   'member.disable': { resourceType: 'member', metadata: [] },
   'member.enable': { resourceType: 'member', metadata: [] },
+  'member.password.reset': { resourceType: 'member', metadata: [] },
   'department.create': { resourceType: 'department', metadata: [] },
   'department.update': { resourceType: 'department', metadata: [] },
   'department.delete': { resourceType: 'department', metadata: [] },

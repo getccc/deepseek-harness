@@ -8,6 +8,7 @@
  * @module dsh-llm-deepseek/adapter
  */
 
+import { Readable } from 'node:stream'
 import { attributionHeaders, contentHasImage, CONTEXT_WINDOW_EXCEEDED_CODE, isContextWindowExceededError, isQuotaExceededError, LlmAdapter, LlmError, offloadedImageText, offloadRequestImagesWithPolicy, ProviderRequestId, QUOTA_EXCEEDED_CODE, ReasoningEffortId } from '@deepseek-ai/dsh-llm'
 import type {
   ContentBlock,
@@ -28,6 +29,7 @@ import type {
   RequestImageAttachment,
 } from '@deepseek-ai/dsh-attachment'
 import type { CredentialRef } from '@deepseek-ai/dsh-credentials'
+import type { LlmHttpTransport } from '@deepseek-ai/dsh-llm-http-transport'
 import { deadline, idleWatchdog, timeoutOf } from '@deepseek-ai/dsh-timeout'
 import type { AnonymousUserId } from '@deepseek-ai/dsh-anonymous-user-id'
 import type {
@@ -115,6 +117,8 @@ export interface DeepSeekConnectionOptions {
 export interface DeepSeekAdapterOptions {
   /** Current validated connection facts; called once per operation. */
   options: () => DeepSeekConnectionOptions
+  /** Remote HTTP transport for a deployment that owns discovery and invocation. */
+  transport?: () => LlmHttpTransport | undefined
   /**
    * Resolve the bearer token for the connection facts of one request. The
    * snapshot is passed in — never re-read — so the key can only ever come
@@ -379,7 +383,13 @@ export class DeepSeekAdapter extends LlmAdapter {
   }
 
   override listModels(provider: string): Promise<readonly LlmModelInfo[]> {
-    return Promise.resolve(this.config.options().models.map(model => modelInfo(provider, model)))
+    return this.listConfiguredModels(provider)
+  }
+
+  /** Resolve a transport-owned catalog when present, otherwise use local configuration. */
+  private async listConfiguredModels(provider: string): Promise<readonly LlmModelInfo[]> {
+    const remote = await this.config.transport?.()?.listModels()
+    return (remote ?? this.config.options().models).map(model => modelInfo(provider, model))
   }
 
   override resolveModel(
@@ -451,6 +461,13 @@ export class DeepSeekAdapter extends LlmAdapter {
     // The key resolves *from this snapshot*, so an endpoint and the secret
     // sent to it can never come from different configuration generations.
     const hasImages = options.messages.some(message => contentHasImage(message.content))
+    const transport = this.config.transport?.()
+    if (hasImages && transport !== undefined) {
+      throw new LlmError(
+        'The Team model transport does not carry DeepSeek Files API image references.',
+        'UNSUPPORTED_CONTENT',
+      )
+    }
     let attachments: AttachmentStore | undefined
     if (hasImages) {
       const model = connection.models.find(entry => entry.id === options.model)
@@ -468,7 +485,9 @@ export class DeepSeekAdapter extends LlmAdapter {
         )
       }
     }
-    const apiKey = await this.config.resolveApiKey(connection)
+    const apiKey = transport === undefined
+      ? await this.config.resolveApiKey(connection)
+      : undefined
     const userId = this.config.resolveUserId()
     const consumer = new AbortController()
     const upstream = options.signal === undefined
@@ -480,6 +499,7 @@ export class DeepSeekAdapter extends LlmAdapter {
       watchdog.signal,
       connection,
       apiKey,
+      transport,
       userId,
       attachments,
       () => { watchdog.pulse() },
@@ -523,13 +543,14 @@ export class DeepSeekAdapter extends LlmAdapter {
     options: GenerateOptions,
     signal: AbortSignal,
     connection: DeepSeekConnectionOptions,
-    apiKey: string,
+    apiKey: string | undefined,
+    transport: LlmHttpTransport | undefined,
     userId: AnonymousUserId,
     attachments: AttachmentStore | undefined,
     onActivity: () => void,
   ): AsyncIterable<StreamChunk> {
     const headers = {
-      'authorization': `Bearer ${apiKey}`,
+      ...(apiKey === undefined ? {} : { 'authorization': `Bearer ${apiKey}` }),
       'content-type': 'application/json',
       'accept': 'text/event-stream',
       ...attributionHeaders(),
@@ -542,7 +563,9 @@ export class DeepSeekAdapter extends LlmAdapter {
         : {},
     }
 
-    const fileConnection = { baseURL: connection.baseURL, apiKey }
+    const fileConnection = apiKey === undefined
+      ? undefined
+      : { baseURL: connection.baseURL, apiKey }
     const model = connection.models.find(entry => entry.id === options.model)
     const policy = model === undefined ? undefined : resolveRequestImagePolicy(model)
     const resolveImageAccess = attachments === undefined
@@ -588,6 +611,12 @@ export class DeepSeekAdapter extends LlmAdapter {
                 using filesDeadline = deadline(signal, connection.filesApiTimeoutMs, FILES_API_TIMEOUT_CODE)
                 let resolved: Awaited<ReturnType<DeepSeekFileStore['ensureUploaded']>>
                 try {
+                  if (fileConnection === undefined) {
+                    throw new LlmError(
+                      'The configured model transport cannot upload DeepSeek Files API images.',
+                      'UNSUPPORTED_CONTENT',
+                    )
+                  }
                   resolved = await this.files.ensureUploaded(
                     version,
                     fileConnection,
@@ -636,16 +665,34 @@ export class DeepSeekAdapter extends LlmAdapter {
       // transport boundary, never a serialization failure.
       const payload = JSON.stringify({ ...body, ...extensions.fields })
 
-      // TODO(http): adopt the Cordis HTTP service when shared transport configuration
-      // outweighs its additional runtime dependencies.
       let response: Response
       try {
-        response = await fetch(`${connection.baseURL}/chat/completions`, {
-          method: 'POST',
-          headers,
-          body: payload,
-          signal,
-        })
+        if (transport === undefined) {
+          response = await fetch(`${connection.baseURL}/chat/completions`, {
+            method: 'POST',
+            headers,
+            body: payload,
+            signal,
+          })
+        } else {
+          const carried = await transport.send({
+            operation: 'chat.completions',
+            modelRef: options.model,
+            body: JSON.parse(payload) as Record<string, unknown>,
+            // DeepSeek reports exact input usage in the response. The gateway
+            // settles from that report; zero avoids inventing a tokenizer-side
+            // estimate before the provider has counted the request.
+            inputTokens: 0,
+            ...(options.maxTokens === undefined ? {} : { maxOutputTokens: options.maxTokens }),
+            ...(options.sessionId === undefined ? {} : { correlationId: String(options.sessionId) }),
+            signal,
+          })
+          const noBody = carried.status === 204 || carried.status === 205 || carried.status === 304
+          response = new Response(
+            noBody ? null : Readable.toWeb(carried.body) as ReadableStream<Uint8Array>,
+            { status: carried.status, headers: carried.headers },
+          )
+        }
       } catch (error: unknown) {
         if (signal.aborted) throw error
         throw new LlmError(
@@ -672,7 +719,9 @@ export class DeepSeekAdapter extends LlmAdapter {
         const staleFile = usedFiles.length > 0 && providerRejectedFileId(detail)
         if (staleFile) {
           await Promise.all(staleMappings(usedFiles, detail).map(file => (
-            this.files.invalidate(file.version, file.fileId, fileConnection)
+            fileConnection === undefined
+              ? Promise.resolve()
+              : this.files.invalidate(file.version, file.fileId, fileConnection)
           )))
           if (fileAttempt === 0) {
             fileAttempt += 1

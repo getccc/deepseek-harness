@@ -37,6 +37,7 @@ import { applySchema } from '../src/schema.ts'
 
 const orgId = OrgId('org-1')
 const alice = UserId('user-alice')
+const bob = UserId('user-bob')
 const CALLBACK = 'http://127.0.0.1:3080/team/callback'
 const PROTOCOL = 1
 
@@ -81,10 +82,13 @@ function request(patch: Partial<StartRequest> = {}): StartRequest {
 }
 
 /** Walk the whole flow: start, confirm, redeem. */
-async function bind(service = auth): Promise<{ id: TransactionId; credential: IssuedCredential }> {
+async function bind(
+  service = auth,
+  userId = alice,
+): Promise<{ id: TransactionId; credential: IssuedCredential }> {
   const started = await service.start(request())
   const issued = await service.confirm(started.transactionId, {
-    orgId, userId: alice, authenticationId: 'session:session-1',
+    orgId, userId, authenticationId: 'session:session-1',
   })
   const credential = await service.redeem({
     transactionId: started.transactionId,
@@ -399,6 +403,27 @@ describe('revoking', () => {
     await expect(auth.revokeDevice(credential.deviceId)).resolves.toBeUndefined()
     await expect(auth.revokeDevice(credential.deviceId)).resolves.toBeUndefined()
     await expect(auth.revokeDevice('missing' as typeof credential.deviceId)).resolves.toBeUndefined()
+  })
+
+  it('ends every device for one account without touching another account', async () => {
+    const first = await bind()
+    device = newDeviceKey()
+    verifier = newSecret()
+    const second = await bind()
+    device = newDeviceKey()
+    verifier = newSecret()
+    const bobs = await bind(auth, bob)
+
+    await auth.revokeUserDevices(orgId, alice)
+
+    expect(await auth.verifyAccessToken(first.credential.accessToken)).toBeUndefined()
+    expect(await auth.verifyAccessToken(second.credential.accessToken)).toBeUndefined()
+    expect(await auth.verifyAccessToken(bobs.credential.accessToken)).toMatchObject({ principalId: bob })
+    expect(await auth.listDevices(orgId)).toEqual([
+      expect.objectContaining({ ownerId: alice, status: 'revoked' }),
+      expect.objectContaining({ ownerId: alice, status: 'revoked' }),
+      expect.objectContaining({ ownerId: bob, status: 'active' }),
+    ])
   })
 
   it('leaves no family alive behind a revoked device, including one from an earlier binding', async () => {

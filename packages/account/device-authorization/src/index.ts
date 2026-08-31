@@ -12,7 +12,7 @@
  */
 
 import { Service, type Context } from '@deepseek-ai/cordis'
-import type { OrgId } from '@deepseek-ai/dsh-account-store'
+import type { OrgId, UserId } from '@deepseek-ai/dsh-account-store'
 import type { DeviceId, FamilyId, TransactionId } from './brand.ts'
 import type { CREDENTIAL_REFUSALS } from './vocabulary.ts'
 import type {
@@ -173,6 +173,14 @@ export abstract class DeviceAuthorization extends Service {
    * @param id - the device to revoke.
    */
   abstract revokeDevice(id: DeviceId): Promise<void>
+
+  /**
+   * Revoke every device and credential family owned by one account in an
+   * organization. Accounts without devices need no special handling.
+   * @param orgId - the organization that owns the devices.
+   * @param userId - the account whose devices must be signed out.
+   */
+  abstract revokeUserDevices(orgId: OrgId, userId: UserId): Promise<void>
 
   /**
    * Revoke one credential family, leaving the device able to bind again.

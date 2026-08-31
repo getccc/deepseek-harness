@@ -163,3 +163,15 @@ body {
 .row-actions {
   white-space: nowrap;
 }
+
+/* A dialog that puts two fields on a line lays its form items out as grid
+   cells; a field that needs the whole line asks for it by name. */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 16px;
+}
+
+.form-grid > .form-grid-wide {
+  grid-column: 1 / -1;
+}

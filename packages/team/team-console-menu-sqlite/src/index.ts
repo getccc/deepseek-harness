@@ -14,6 +14,7 @@ import {
   ConsoleMenuNotEmptyError,
   ConsoleMenuStore,
   MenuId,
+  RETIRED_SHIPPED_MENU_KEYS,
   SHIPPED_CONSOLE_MENUS,
   UnknownConsoleMenuError,
   UnknownMenuPermissionError,
@@ -128,6 +129,15 @@ export class SqliteConsoleMenuStore extends ConsoleMenuStore {
 
   seedShipped(orgId: OrgIdType): Promise<number> {
     const find = this.db.prepare('SELECT id FROM console_menu WHERE org_id = ? AND seed_key = ?')
+    for (const key of RETIRED_SHIPPED_MENU_KEYS) {
+      const retired = find.get(orgId, key) as { id: string } | undefined
+      if (retired === undefined) continue
+      const parent = this.db.prepare('SELECT parent_id FROM console_menu WHERE id = ?')
+        .get(retired.id) as { parent_id: string | null }
+      this.db.prepare('UPDATE console_menu SET parent_id = ? WHERE parent_id = ?')
+        .run(parent.parent_id, retired.id)
+      this.db.prepare('DELETE FROM console_menu WHERE id = ?').run(retired.id)
+    }
     const insert = this.db.prepare(INSERT)
     const now = Date.now()
     let inserted = 0

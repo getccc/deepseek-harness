@@ -89,6 +89,39 @@ describe('seeding the navigation this build ships', () => {
     expect(await store.listMenus(OrgId('org-2'))).toHaveLength(SHIPPED_CONSOLE_MENUS.length)
     expect(await store.listMenus(orgId)).toHaveLength(SHIPPED_CONSOLE_MENUS.length)
   })
+
+  it('retires a removed shipped page and keeps its custom children', async () => {
+    const path = join(dir, 'retired.sqlite')
+    const db = new DatabaseSync(path)
+    applySchema(db)
+    const insert = db.prepare(
+      `INSERT INTO console_menu
+        (id, org_id, parent_id, name, label_key, kind, route_path, component_path,
+         permission, icon, sort_order, status, visible, seed_key, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    insert.run(
+      'resources', orgId, null, 'Resources', 'nav.resources', 'catalog', null, null,
+      null, 'appstore', 3, 'active', 1, 'resources', 1,
+    )
+    insert.run(
+      'devices', orgId, 'resources', 'Devices', 'nav.devices', 'menu', '/resources/devices',
+      'resources/DevicesPage', 'device|device.inventory.read', 'laptop', 1, 'active', 1, 'devices', 2,
+    )
+    insert.run(
+      'custom', orgId, 'devices', 'Custom', null, 'menu', '/custom', 'custom/Page',
+      null, null, 1, 'active', 1, null, 3,
+    )
+    db.close()
+    const mounted = await mount(path)
+
+    await mounted.store.seedShipped(orgId)
+
+    const menus = await mounted.store.listMenus(orgId)
+    expect(menus.find(menu => menu.id === 'devices')).toBeUndefined()
+    expect(menus.find(menu => menu.id === 'custom')?.parentId).toBe('resources')
+    await mounted.ctx.fiber.dispose()
+  })
 })
 
 describe('listing the tree', () => {

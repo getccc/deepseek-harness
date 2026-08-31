@@ -101,7 +101,7 @@ These are current constraints of this layer, not a task backlog.
 
 - **One Team Runner per machine at a time** — the loopback port is a machine-wide resource, so a second Runner started by another operating-system user fails to bind rather than relocating. Concurrent multi-user machines are out of scope for this layer.
 - **Overrides replace whole settings blocks** — a later patch that changes one `webserver` key must restate the rest; nothing merges automatically.
-- **Team identity and company resources are not here yet** — this layer currently owns only the loopback address. The account client, company model and knowledge transports, and the local login handoff land as their packages arrive.
+- **Desktop distribution has a fixed deployment** — the [Team Runner desktop shell](../../../apps/team-runner-desktop/README.md) writes one Control Plane origin into the profile patch it launches. Changing deployments requires another enterprise build rather than a member-editable server address.
 
 <a id="dev-note"></a>
 ### Dev Note

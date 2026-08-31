@@ -12,13 +12,39 @@ import type { DeptId, OrgId, UserId } from './brand.ts'
  */
 export type AccountUserStatus = 'active' | 'suspended'
 
-/** One organization: the tenancy every other record hangs from. */
+/**
+ * One organization: the tenancy every other record hangs from, and the company
+ * node at the root of its department tree. It carries the descriptive fields a
+ * department carries, because an administrator reads and edits it as the first
+ * row of that tree rather than as a setting somewhere else.
+ */
 export interface Organization {
   readonly id: OrgId
   readonly name: string
+  /** A stable identifier an administrator chooses, when one is chosen. */
+  readonly code: string | undefined
+  /** The account that leads the company, when one is named. */
+  readonly leaderId: UserId | undefined
+  readonly phone: string | undefined
+  readonly email: string | undefined
   /** Monotonic counter every authorization-affecting change increments. */
   readonly policyRevision: bigint
   readonly createdAt: number
+}
+
+/**
+ * The organization fields an administrator may change.
+ *
+ * An absent field is left as stored; a field set to `null` is cleared. The
+ * policy revision is not among them: it is advanced by the change that
+ * invalidated an authorization cache, never written as an edit.
+ */
+export interface UpdateOrganization {
+  readonly name?: string
+  readonly code?: string | null
+  readonly leaderId?: UserId | null
+  readonly phone?: string | null
+  readonly email?: string | null
 }
 
 /**

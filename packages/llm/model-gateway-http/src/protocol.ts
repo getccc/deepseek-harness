@@ -10,6 +10,9 @@
 /** Path the Control Plane serves company model invocations under. */
 export const MODEL_INVOKE_PATH = '/team/model/invoke'
 
+/** Path the Control Plane serves the current device principal's visible models under. */
+export const MODEL_CATALOG_PATH = '/team/model/catalog'
+
 /** Header carrying the Runner's device access token. */
 export const ACCESS_TOKEN_HEADER = 'authorization'
 
@@ -36,4 +39,15 @@ export interface InvokeBody {
   readonly correlationId?: string
   /** The request body the adapter built, minus where it goes. */
   readonly body: Record<string, unknown>
+}
+
+/** One model the Control Plane permits this device principal to discover. */
+export interface DiscoveredModel {
+  readonly modelRef: string
+  readonly displayName: string
+}
+
+/** Runner-facing model discovery response. */
+export interface ModelCatalogBody {
+  readonly models: readonly DiscoveredModel[]
 }

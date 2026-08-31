@@ -34,7 +34,6 @@ import { api, holdCsrf, type WireMenu, type WireSession } from './api.ts'
 import { LOCALE_IDS, useLocale, type LocaleId } from './locale.tsx'
 import { menuLabel, reachableMenus, type ConsoleComponent, type MenuIcon } from './menus.ts'
 import { Departments } from './pages/Departments.tsx'
-import { Devices } from './pages/Devices.tsx'
 import { Login } from './pages/Login.tsx'
 import { Members } from './pages/Members.tsx'
 import { Menus } from './pages/Menus.tsx'
@@ -63,7 +62,6 @@ const VIEWS: Record<ConsoleComponent, (props: ViewProps) => ReactNode> = {
   'system/UsersPage': ({ held, signedInId }) => <Members held={held} signedInId={signedInId} />,
   'system/RolesPage': ({ held }) => <Roles held={held} />,
   'system/MenusPage': ({ held }) => <Menus held={held} />,
-  'resources/DevicesPage': ({ held }) => <Devices held={held} />,
   'resources/ModelsPage': ({ held }) => <Models held={held} />,
 }
 

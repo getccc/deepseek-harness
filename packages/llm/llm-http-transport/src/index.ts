@@ -11,11 +11,12 @@
  */
 
 import { Service, type Context } from '@deepseek-ai/cordis'
-import type { TransportRequest, TransportResponse } from './types.ts'
+import type { TransportModel, TransportRequest, TransportResponse } from './types.ts'
 
 export { TRANSPORT_OPERATIONS } from './vocabulary.ts'
 export type {
   TransportOperation,
+  TransportModel,
   TransportRequest,
   TransportResponse,
 } from './types.ts'
@@ -64,4 +65,14 @@ export abstract class LlmHttpTransport extends Service {
    * @throws {TransportFailedError} when the request could not be carried at all.
    */
   abstract send(request: TransportRequest): Promise<TransportResponse>
+
+  /**
+   * List models the transport's remote policy currently exposes, when the
+   * transport owns model discovery. Direct transports return `undefined` so
+   * an adapter uses its own catalog.
+   * @returns remote models, or undefined when discovery remains adapter-owned.
+   */
+  listModels(): Promise<readonly TransportModel[] | undefined> {
+    return Promise.resolve(undefined)
+  }
 }

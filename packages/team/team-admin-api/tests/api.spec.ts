@@ -27,13 +27,16 @@ import {
   newSecret,
   pkceChallenge,
   redeemSigningInput,
+  refreshSigningInput,
   type DeviceAuthorization,
   type DeviceId,
+  type IssuedCredential,
 } from '@deepseek-ai/dsh-device-authorization'
 import { csrfToken, hashToken } from '@deepseek-ai/dsh-team-browser-session'
 import * as api from '../src/index.ts'
 import type {
-  WireDepartment, WireDevice, WireMember, WireMenu, WireModel, WireRole, WireSession,
+  WireDepartment, WireDevice, WireMember, WireMenu, WireModel, WireOrganization, WireRole,
+  WireSession,
 } from '../src/types.ts'
 
 /** One response, read the way the console reads it. */
@@ -62,7 +65,7 @@ const ADMIN_PERMISSIONS = [
   ['organization', 'organization.read'], ['organization', 'organization.settings.manage'],
   ['member', 'member.read'], ['member', 'member.create'], ['member', 'member.update'],
   ['member', 'member.delete'], ['member', 'member.disable'], ['member', 'member.enable'],
-  ['member', 'member.role.bind'],
+  ['member', 'member.password.reset'], ['member', 'member.role.bind'],
   ['department', 'department.read'], ['department', 'department.manage'],
   ['role', 'role.read'], ['role', 'role.create'], ['role', 'role.update'],
   ['role', 'role.delete'], ['role', 'role.grant.manage'],
@@ -163,7 +166,17 @@ function write(
  * here is the seam call that page makes.
  */
 async function bindDevice(cookie: string, owner: UserId = alice): Promise<DeviceId> {
+  return (await bindCredential(cookie, owner)).credential.deviceId
+}
+
+/** Bind one computer and retain the credentials needed to prove revocation. */
+async function bindCredential(
+  cookie: string,
+  owner: UserId = alice,
+): Promise<{ credential: IssuedCredential; signInput: (input: string) => string }> {
   const { publicKey, privateKey } = generateKeyPairSync('ed25519')
+  const signInput = (input: string): string =>
+    sign(null, Buffer.from(input), privateKey).toString('base64url')
   const spki = publicKey.export({ format: 'der', type: 'spki' }).toString('base64url')
   const verifier = newSecret()
   const started = await devices.start({
@@ -174,17 +187,15 @@ async function bindDevice(cookie: string, owner: UserId = alice): Promise<Device
   const issued = await devices.confirm(started.transactionId, {
     orgId, userId: owner, authenticationId: `session:${hashToken(cookie.slice(cookie.indexOf('=') + 1))}`,
   })
-  await devices.redeem({
+  const credential = await devices.redeem({
     transactionId: started.transactionId,
     code: issued.code,
     pkceVerifier: verifier,
-    deviceSignature: sign(
-      null, Buffer.from(redeemSigningInput(started.transactionId, issued.code)), privateKey,
-    ).toString('base64url'),
+    deviceSignature: signInput(redeemSigningInput(started.transactionId, issued.code)),
     callbackUri: 'http://127.0.0.1:3080/team/callback',
     protocolVersion: 1,
   })
-  return (await devices.listDevices(orgId)).find(device => device.publicKey === spki)?.id as DeviceId
+  return { credential, signInput }
 }
 
 beforeEach(async () => {
@@ -418,8 +429,9 @@ describe('what a role does not carry', () => {
     const held = await bobsSession()
     for (const [method, path, body] of [
       ['PATCH', '/team/api/organization', { name: 'Bob Industries' }],
-      ['POST', '/team/api/members', { loginName: 'carol', displayName: 'Carol' }],
+      ['POST', '/team/api/members', { loginName: 'carol', displayName: 'Carol', secret: PASSWORD }],
       ['PATCH', `/team/api/members/${alice}`, { status: 'suspended' }],
+      ['PATCH', `/team/api/members/${alice}/password`, { secret: PASSWORD }],
       ['POST', `/team/api/members/${alice}/roles`, { roleId: adminRole }],
       ['DELETE', `/team/api/members/${alice}/roles/${adminRole}`, undefined],
       ['PATCH', `/team/api/members/${alice}`, { displayName: 'Bobby' }],
@@ -436,6 +448,7 @@ describe('what a role does not carry', () => {
       ['POST', `/team/api/roles/${adminRole}/menus`, { menuIds: [] }],
       ['POST', `/team/api/roles/${adminRole}/permissions`, { permissions: [] }],
       ['POST', `/team/api/roles/${adminRole}/grants`, { resourceType: 'model', action: 'model.invoke' }],
+      ['POST', `/team/api/roles/${adminRole}/models`, { modelIds: [] }],
       ['DELETE', '/team/api/grants/anything', undefined],
       ['DELETE', '/team/api/devices/anything', undefined],
       ['POST', '/team/api/models', USABLE_MODEL],
@@ -480,10 +493,31 @@ describe('administering', () => {
     expect(await audit.query({ orgId, action: 'policy.update' })).toHaveLength(1)
   })
 
+  it('edits the company row the way it edits a department, and clears what is sent empty', async () => {
+    const held = await signIn()
+    const edited = await write('PATCH', '/team/api/organization', held, {
+      name: 'Acme', code: 'acme', leaderId: alice, phone: '13800000000', email: 'hq@acme.example',
+    })
+    expect(edited.status).toBe(200)
+    expect(payload(edited)).toMatchObject({
+      code: 'acme', leaderId: alice, leaderName: 'Alice', phone: '13800000000', email: 'hq@acme.example',
+    })
+
+    const cleared = await write('PATCH', '/team/api/organization', held, {
+      name: 'Acme', code: '', leaderId: '', phone: '', email: '',
+    })
+    const after = payload(cleared) as WireOrganization
+    expect(after.code).toBeUndefined()
+    expect(after.leaderId).toBeUndefined()
+    expect(after.leaderName).toBeUndefined()
+    expect(after.phone).toBeUndefined()
+    expect(after.email).toBeUndefined()
+  })
+
   it('adds a member, and refuses a second one with the same login name', async () => {
     const held = await signIn()
     const added = await write('POST', '/team/api/members', held, {
-      loginName: 'bob', displayName: 'Bob', email: 'bob@acme.example',
+      loginName: 'bob', displayName: 'Bob', email: 'bob@acme.example', secret: PASSWORD,
     })
     expect(added.status).toBe(200)
     const members = (payload(added) as WireMember[])
@@ -492,9 +526,73 @@ describe('administering', () => {
     expect(members.find(member => member.loginName === 'alice')?.email).toBeUndefined()
     expect((await audit.query({ orgId, action: 'member.create' }))[0]).toMatchObject({ principalId: alice })
 
-    const again = await write('POST', '/team/api/members', held, { loginName: 'bob', displayName: 'Bob Two' })
+    const again = await write('POST', '/team/api/members', held, {
+      loginName: 'bob', displayName: 'Bob Two', secret: PASSWORD,
+    })
     expect(again.status).toBe(409)
     expect(await store.listUsers(orgId)).toHaveLength(2)
+  })
+
+  it('provisions the initial password with the account', async () => {
+    const held = await signIn()
+    const members = payload(await write('POST', '/team/api/members', held, {
+      loginName: 'bob', displayName: 'Bob', secret: PASSWORD,
+    })) as WireMember[]
+    const bob = members.find(member => member.loginName === 'bob') as WireMember
+    await access.bindUserRole(bob.id as UserId, adminRole)
+
+    await expect(signIn('bob', PASSWORD)).resolves.toHaveProperty('cookie')
+  })
+
+  it('does not leave an account behind when its initial password is too weak', async () => {
+    const held = await signIn()
+    const refused = await write('POST', '/team/api/members', held, {
+      loginName: 'bob', displayName: 'Bob', secret: 'short',
+    })
+
+    expect(refused.status).toBe(400)
+    expect(payload(refused)).toMatchObject({ reason: 'weak-secret' })
+    expect(await store.findUserByLogin(orgId, 'bob')).toBeUndefined()
+    expect(await audit.query({ orgId, action: 'member.create' })).toHaveLength(0)
+  })
+
+  it('changes a password and signs every session and Runner device out', async () => {
+    const held = await signIn()
+    const members = payload(await write('POST', '/team/api/members', held, {
+      loginName: 'bob', displayName: 'Bob', secret: PASSWORD,
+    })) as WireMember[]
+    const bob = members.find(member => member.loginName === 'bob') as WireMember
+    await access.bindUserRole(bob.id as UserId, adminRole)
+    const bobsSession = await signIn('bob', PASSWORD)
+    const credentials = await Promise.all([
+      bindCredential(bobsSession.cookie, bob.id as UserId),
+      bindCredential(bobsSession.cookie, bob.id as UserId),
+    ])
+    const nextPassword = 'another-correct-horse'
+
+    const reset = await write('PATCH', `/team/api/members/${bob.id}/password`, held, {
+      secret: nextPassword,
+    })
+
+    expect(reset.status).toBe(200)
+    expect(payload(reset)).toEqual({ reset: true, self: false })
+    expect((await send('/team/api/session', { headers: { cookie: bobsSession.cookie } })).status).toBe(401)
+    for (const { credential, signInput } of credentials) {
+      expect(await devices.verifyAccessToken(credential.accessToken)).toBeUndefined()
+      await expect(devices.refresh({
+        familyId: credential.familyId,
+        refreshToken: credential.refreshToken,
+        deviceSignature: signInput(refreshSigningInput(credential.familyId, credential.refreshToken)),
+      })).rejects.toMatchObject({ reason: 'revoked' })
+    }
+    const oldPassword = await send('/team/api/session', {
+      method: 'POST', headers: { 'content-type': 'application/json', origin },
+      body: JSON.stringify({ loginName: 'bob', secret: PASSWORD }),
+    })
+    expect(oldPassword.status).toBe(401)
+    await expect(signIn('bob', nextPassword)).resolves.toHaveProperty('cookie')
+    expect((await send('/team/api/session', { headers: { cookie: held.cookie } })).status).toBe(200)
+    expect(await audit.query({ orgId, action: 'member.password.reset' })).toHaveLength(1)
   })
 
   it('suspends a member, which is by itself the end of their sessions, then reactivates them', async () => {
@@ -618,10 +716,14 @@ describe('what an action refuses on its own terms', () => {
 
   it('names the reason for every refusal a member can act on', async () => {
     const held = await signIn()
-    await write('POST', '/team/api/members', held, { loginName: 'bob', displayName: 'Bob' })
+    await write('POST', '/team/api/members', held, {
+      loginName: 'bob', displayName: 'Bob', secret: PASSWORD,
+    })
     for (const [reason, method, path, body] of [
       ['fields', 'PATCH', '/team/api/organization', {}],
-      ['login-taken', 'POST', '/team/api/members', { loginName: 'bob', displayName: 'Bob Two' }],
+      ['login-taken', 'POST', '/team/api/members', {
+        loginName: 'bob', displayName: 'Bob Two', secret: PASSWORD,
+      }],
       ['member-status', 'PATCH', `/team/api/members/${alice}`, { status: 'banished' }],
       ['permission', 'POST', `/team/api/roles/${adminRole}/grants`, {
         resourceType: 'nothing', action: 'nothing.at.all',
@@ -645,7 +747,7 @@ describe('what an action refuses on its own terms', () => {
   it('refuses a body larger than the deployment accepts', async () => {
     const held = await signIn()
     const huge = await write('POST', '/team/api/members', held, {
-      loginName: 'x'.repeat(20_000), displayName: 'Bob',
+      loginName: 'x'.repeat(20_000), displayName: 'Bob', secret: PASSWORD,
     })
     expect(huge.status).toBe(413)
     expect(await store.listUsers(orgId)).toHaveLength(1)
@@ -683,7 +785,7 @@ describe('what an action refuses on its own terms', () => {
     // the store raises is this site failing to carry out the request.
     store.createUser = () => Promise.reject(new Error('the database is on fire'))
     const answered = await write('POST', '/team/api/members', held, {
-      loginName: 'bob', displayName: 'Bob',
+      loginName: 'bob', displayName: 'Bob', secret: PASSWORD,
     })
     expect(answered.status).toBe(500)
     expect((payload(answered) as { error: string }).error).toBe('unavailable')
@@ -871,7 +973,7 @@ describe('the department tree', () => {
       name: 'Technology', code: 'technology',
     })) as WireDepartment[]
     await write('POST', '/team/api/members', held, {
-      loginName: 'dev', displayName: 'Dev', departmentId: department?.id,
+      loginName: 'dev', displayName: 'Dev', departmentId: department?.id, secret: PASSWORD,
     })
     const after = payload(await send('/team/api/departments', { headers: { cookie: held.cookie } })) as
       WireDepartment[]
@@ -921,7 +1023,7 @@ describe('the department tree', () => {
       name: 'Technology', code: 'technology',
     })) as WireDepartment[]
     await write('POST', '/team/api/members', held, {
-      loginName: 'dev', displayName: 'Dev', departmentId: department?.id,
+      loginName: 'dev', displayName: 'Dev', departmentId: department?.id, secret: PASSWORD,
     })
     const refused = await write('DELETE', `/team/api/departments/${department?.id as string}`, held)
     expect(refused.status).toBe(409)
@@ -937,7 +1039,7 @@ describe('an account profile', () => {
     })) as WireDepartment[]
     const members = payload(await write('POST', '/team/api/members', held, {
       loginName: 'dev', displayName: 'Dev', phone: '13800000002', gender: 'female',
-      departmentId: department?.id,
+      departmentId: department?.id, secret: PASSWORD,
     })) as WireMember[]
     expect(members.find(member => member.loginName === 'dev')).toMatchObject({
       phone: '13800000002', gender: 'female', departmentName: 'Technology',
@@ -947,7 +1049,7 @@ describe('an account profile', () => {
   it('edits a profile without touching the login name or the status', async () => {
     const held = await signIn('alice', PASSWORD)
     const before = payload(await write('POST', '/team/api/members', held, {
-      loginName: 'dev', displayName: 'Dev',
+      loginName: 'dev', displayName: 'Dev', secret: PASSWORD,
     })) as WireMember[]
     const dev = before.find(member => member.loginName === 'dev') as WireMember
     const after = payload(await write('PATCH', `/team/api/members/${dev.id}`, held, {
@@ -961,12 +1063,12 @@ describe('an account profile', () => {
   it('refuses a gender this build does not record', async () => {
     const held = await signIn('alice', PASSWORD)
     const refused = await write('POST', '/team/api/members', held, {
-      loginName: 'dev', displayName: 'Dev', gender: 'other',
+      loginName: 'dev', displayName: 'Dev', gender: 'other', secret: PASSWORD,
     })
     expect(payload(refused)).toMatchObject({ reason: 'gender' })
 
     const members = payload(await write('POST', '/team/api/members', held, {
-      loginName: 'dev2', displayName: 'Dev2',
+      loginName: 'dev2', displayName: 'Dev2', secret: PASSWORD,
     })) as WireMember[]
     const dev = members.find(member => member.loginName === 'dev2') as WireMember
     const refusedEdit = await write('PATCH', `/team/api/members/${dev.id}`, held, { gender: 'other' })
@@ -1097,6 +1199,47 @@ describe('roles as the console administers them', () => {
     expect(refused.status).toBe(409)
     expect(payload(refused)).toMatchObject({ reason: 'system-role' })
   })
+
+  it('grants a role the selected model resources for discovery and invocation', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const first = payload(await write('POST', '/team/api/models', held, USABLE_MODEL)) as WireModel[]
+    const models = payload(await write('POST', '/team/api/models', held, {
+      ...USABLE_MODEL,
+      modelRef: 'deepseek-reasoner',
+      displayName: 'DeepSeek Reasoner',
+      upstreamModel: 'deepseek-reasoner',
+    })) as WireModel[]
+    expect(first[0]?.resourceId).toBeTruthy()
+    const chat = models.find(model => model.modelRef === 'deepseek-chat') as WireModel
+    const reasoner = models.find(model => model.modelRef === 'deepseek-reasoner') as WireModel
+    const created = payload(await write('POST', '/team/api/roles', held, { name: 'Model user' })) as WireRole[]
+    const role = created.find(entry => entry.name === 'Model user') as WireRole
+    await access.grantType(role.id as RoleId, 'model', 'model.discover')
+    await access.grantType(role.id as RoleId, 'model', 'model.invoke')
+
+    const narrowed = payload(await write('POST', `/team/api/roles/${role.id}/models`, held, {
+      modelIds: [reasoner.resourceId],
+    })) as WireRole[]
+
+    const grants = (narrowed.find(entry => entry.id === role.id) as WireRole).grants
+      .filter(grant => grant.resourceType === 'model')
+    expect(grants).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        scope: 'resource', resourceId: reasoner.resourceId, action: 'model.discover',
+      }),
+      expect.objectContaining({
+        scope: 'resource', resourceId: reasoner.resourceId, action: 'model.invoke',
+      }),
+    ]))
+    expect(grants).toHaveLength(2)
+    expect(grants.some(grant => grant.resourceId === chat.resourceId)).toBe(false)
+
+    const bob = (await store.createUser({ orgId, loginName: 'bob', displayName: 'Bob' })).id
+    await access.bindUserRole(bob, role.id as RoleId)
+    await expect(ctx.modelGateway.discover(orgId, bob)).resolves.toEqual([
+      { modelRef: 'deepseek-reasoner', displayName: 'DeepSeek Reasoner' },
+    ])
+  })
 })
 
 describe('menu access as a way to compose a role', () => {
@@ -1104,17 +1247,17 @@ describe('menu access as a way to compose a role', () => {
     const held = await signIn('alice', PASSWORD)
     const menus = payload(await send('/team/api/menus', { headers: { cookie: held.cookie } })) as WireMenu[]
     const users = menus.find(menu => menu.permission === 'member|member.read') as WireMenu
-    const devices = menus.find(menu => menu.permission === 'device|device.inventory.read') as WireMenu
+    const models = menus.find(menu => menu.permission === 'model|model.catalog.read') as WireMenu
     const created = payload(await write('POST', '/team/api/roles', held, { name: 'Viewer' })) as WireRole[]
     const viewer = created.find(role => role.name === 'Viewer') as WireRole
 
     const granted = payload(await write('POST', `/team/api/roles/${viewer.id}/menus`, held, {
-      menuIds: [users.id, devices.id],
+      menuIds: [users.id, models.id],
     })) as WireRole[]
     const held2 = (granted.find(role => role.id === viewer.id) as WireRole).grants
       .map(grant => `${grant.resourceType}|${grant.action}`)
     expect(held2).toContain('member|member.read')
-    expect(held2).toContain('device|device.inventory.read')
+    expect(held2).toContain('model|model.catalog.read')
 
     const narrowed = payload(await write('POST', `/team/api/roles/${viewer.id}/menus`, held, {
       menuIds: [users.id],
@@ -1189,7 +1332,7 @@ describe('the fields a partial edit leaves alone', () => {
   it('edits one profile field, and ignores a value that is not text', async () => {
     const held = await signIn('alice', PASSWORD)
     const created = payload(await write('POST', '/team/api/members', held, {
-      loginName: 'dev', displayName: 'Dev',
+      loginName: 'dev', displayName: 'Dev', secret: PASSWORD,
     })) as WireMember[]
     const dev = created.find(member => member.loginName === 'dev') as WireMember
     const edited = payload(await write('PATCH', `/team/api/members/${dev.id}`, held, {
@@ -1289,7 +1432,7 @@ describe('an edit that names every field it may', () => {
       name: 'Technology', code: 'technology',
     })) as WireDepartment[]
     const created = payload(await write('POST', '/team/api/members', held, {
-      loginName: 'dev', displayName: 'Dev', email: 'dev@zenith.dev',
+      loginName: 'dev', displayName: 'Dev', email: 'dev@zenith.dev', secret: PASSWORD,
     })) as WireMember[]
     const dev = created.find(member => member.loginName === 'dev') as WireMember
 
@@ -1337,7 +1480,7 @@ describe('deleting an account', () => {
   it('removes it with the roles bound to it and the devices it holds', async () => {
     const held = await signIn('alice', PASSWORD)
     const created = payload(await write('POST', '/team/api/members', held, {
-      loginName: 'dev', displayName: 'Dev',
+      loginName: 'dev', displayName: 'Dev', secret: PASSWORD,
     })) as WireMember[]
     const dev = created.find(member => member.loginName === 'dev') as WireMember
     await write('POST', `/team/api/members/${dev.id}/roles`, held, { roleId: adminRole })
@@ -1351,7 +1494,7 @@ describe('deleting an account', () => {
   it('stops the computers the account bound from working', async () => {
     const held = await signIn('alice', PASSWORD)
     const created = payload(await write('POST', '/team/api/members', held, {
-      loginName: 'dev', displayName: 'Dev',
+      loginName: 'dev', displayName: 'Dev', secret: PASSWORD,
     })) as WireMember[]
     const dev = created.find(member => member.loginName === 'dev') as WireMember
     const theirs = await bindDevice(held.cookie, dev.id as UserId)
@@ -1365,7 +1508,7 @@ describe('deleting an account', () => {
     const held = await signIn('alice', PASSWORD)
     const alicesDevice = await bindDevice(held.cookie)
     const created = payload(await write('POST', '/team/api/members', held, {
-      loginName: 'dev', displayName: 'Dev',
+      loginName: 'dev', displayName: 'Dev', secret: PASSWORD,
     })) as WireMember[]
     const dev = created.find(member => member.loginName === 'dev') as WireMember
 

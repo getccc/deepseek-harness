@@ -103,12 +103,13 @@ abstract createOrganization(name: string): Promise<Organization>
 abstract getOrganization(id: OrgId): Promise<Organization | undefined>
 
 /**
- * Change the organization's human-readable name.
+ * Change the organization's own fields, leaving every field the caller did
+ * not name as stored.
  * @param id - the organization to change.
- * @param name - the new non-empty display name.
+ * @param changes - the fields to write; `null` clears one, absence leaves it.
  * @throws {UnknownOrganizationError} when the store holds no such organization.
  */
-abstract setOrganizationName(id: OrgId, name: string): Promise<void>
+abstract updateOrganization(id: OrgId, changes: UpdateOrganization): Promise<void>
 
 /**
  * Advance an organization's policy revision, the value authorization caches

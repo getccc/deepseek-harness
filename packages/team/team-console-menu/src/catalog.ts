@@ -18,6 +18,9 @@ import type { ShippedConsoleMenu } from './types.ts'
 /** Stable key of the entry every other shipped entry is ordered after. */
 export const HOME_MENU_KEY = 'home'
 
+/** Shipped entries removed from the product and retired when an organization is seeded. */
+export const RETIRED_SHIPPED_MENU_KEYS: readonly string[] = ['devices']
+
 /** The console's own navigation, in the order it ships. */
 export const SHIPPED_CONSOLE_MENUS: readonly ShippedConsoleMenu[] = [
   {
@@ -96,18 +99,6 @@ export const SHIPPED_CONSOLE_MENUS: readonly ShippedConsoleMenu[] = [
     sortOrder: 3,
   },
   {
-    key: 'devices',
-    parentKey: 'resources',
-    name: 'Devices',
-    labelKey: 'nav.devices',
-    kind: 'menu',
-    routePath: '/resources/devices',
-    componentPath: 'resources/DevicesPage',
-    permission: 'device|device.inventory.read',
-    icon: 'laptop',
-    sortOrder: 1,
-  },
-  {
     key: 'models',
     parentKey: 'resources',
     name: 'Models',
@@ -117,6 +108,6 @@ export const SHIPPED_CONSOLE_MENUS: readonly ShippedConsoleMenu[] = [
     componentPath: 'resources/ModelsPage',
     permission: 'model|model.catalog.read',
     icon: 'api',
-    sortOrder: 2,
+    sortOrder: 1,
   },
 ]

@@ -41,7 +41,7 @@ Reads are `GET`; writes are `POST`, `PATCH`, and `DELETE` under `/team/api`. Eve
 | Collection | Reading it needs | Changing it needs |
 |---|---|---|
 | `/organization`, `/overview` | `organization.read` | `organization.settings.manage` |
-| `/members` | `member.read` | `member.create`, `member.update`, `member.delete`, `member.disable`, `member.enable`, `member.role.bind` |
+| `/members` | `member.read` | `member.create`, `member.update`, `member.password.reset`, `member.delete`, `member.disable`, `member.enable`, `member.role.bind` |
 | `/departments` | `department.read` | `department.manage` |
 | `/roles`, `/grants` | `role.read` | `role.create`, `role.update`, `role.delete`, `role.grant.manage` |
 | `/menus` | a session, and no grant | `menu.manage` |
@@ -51,6 +51,10 @@ Reads are `GET`; writes are `POST`, `PATCH`, and `DELETE` under `/team/api`. Eve
 Navigation is the exception in that table. The console cannot draw itself without it, it names only what this build ships, and every page it leads to asks access control again, so reading it needs a session and nothing more — the same rule `/permissions` follows.
 
 `POST /roles/:id/menus` takes the navigation entries a role is to reach and makes its type grants match: it adds the permission each chosen entry declares, revokes the permissions of entries not chosen, and leaves alone every pair no entry declares. Menu access is a view over grants, not a second authorization system. `POST /roles/:id/permissions` does the same over the catalog itself, so a role's type grants become exactly the pairs it was given; grants over one named resource are outside both lists and are left as they are.
+
+`POST /roles/:id/models` is the resource-specific exception. It resolves catalog model ids to their governed resource ids, replaces that role's exact `model.discover` and `model.invoke` grants, and clears `coversCatalog`. The Runner asks the model gateway for discovery under its current device access token, so only active models allowed by those exact grants appear.
+
+`POST /members` requires the member's initial password in the same write that creates the account. `PATCH /members/:id/password` replaces it, revokes every browser session and device credential family owned by that account, and expires the request's administration cookie when an administrator resets their own password.
 
 A role marked `coversCatalog` holds every permission this build governs, and is brought up to the catalog as the Control Plane starts — which is what keeps an administrator's role current when a build adds a permission. The mark is grant management: `PATCH /roles/:id` asks `role.grant.manage` in addition to `role.update` whenever the request carries that field.
 
@@ -72,6 +76,10 @@ A session, an `Origin` naming this authority, and the CSRF value derived from th
 ### A refusal names a word, not a sentence
 
 `unauthenticated`, `forbidden`, `malformed`, `conflict`, `not-found`, `too-large`, `unavailable`. The console switches on the word; `detail` is for a person to read and never the only thing separating two outcomes. A failed sign-in is one answer for every cause, because which of "no such member", "wrong password", and "locked" it was is exactly what an attacker wants.
+
+### The company is a row of the department tree
+
+`PATCH /organization` takes the same descriptive fields a department takes — a name, a code, a lead, a phone number, and an email address — because the console draws the organization as the root row of that tree and edits it there. The name is required; every other field is cleared by sending it empty. What the organization does not take is a parent, a category, and an order: it is the root, it is the company, and there is one of it.
 
 ### The wire is narrower than the record
 
@@ -110,11 +118,9 @@ Nothing here joins a model request, so the package has no request prefix and no 
 These are current constraints of the contract, not a task backlog.
 
 - **One organization, named in configuration** — the API authenticates against the organization it is configured with, and nothing resolves which organization a request belongs to.
-- **No enrollment or password route** — an administrator adds a member, and setting that member's first password still needs a separate path.
-- **Type grants only** — a grant for one named resource is read and revoked here but created through the access-control service, until the console has a resource picker that cannot confuse a display name with the governed resource id.
 - **Whole collections, no pagination** — a write answers with the list it changed, and a read answers all of it, which targets the deployment sizes this version serves.
 - **No audit query** — `organization.audit.read` is in the catalog and no route serves it yet.
-- **Deleting an account is not deleting its history** — the account, its role bindings, its sessions, and the credentials of the computers it bound all go; the audit rows it left stay, and a department it led is left without a lead.
+- **Deleting an account is not deleting its history** — the account, its role bindings, its sessions, and the credentials of the computers it bound all go; the audit rows it left stay, and the organization or department it led is left without a lead.
 - **Nothing counts the remaining administrators** — the API refuses only the account the request was made from, so an organization can still be left with no administrator.
 - **A parent is chosen once** — neither a department nor a navigation entry can be moved to a different parent; both are created where they belong.
 
