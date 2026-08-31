@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-team-account-client` 是成员电脑上持有的那一份团队账户。它在首次使用时生成设备密钥对并把私钥留在这里；它保存 Control Plane 签发的凭据；它发起绑定与刷新所需的那三个调用。公司 Provider 凭据从不到达这台电脑——它持有的是一份属于自己设备的 Refresh Token 和一个短期 Access Token。
+`dsh-team-account-client` 是成员电脑上持有的那一份团队账户。它在首次使用时生成设备密钥对并把私钥留在这里，通过 Control Plane 认证本地账户表单，并保存 Control Plane 返回的设备凭据与公开成员身份。公司 Provider 凭据从不到达这台电脑——这里只有属于自己设备的 Refresh Token、短期 Access Token，以及成员登录名与显示名。
 
 ## 目录
 
@@ -34,7 +34,7 @@ plugins:
     refreshLeadMs: 60000
 ```
 
-绑定是中间夹着一个人的两步：`begin()` 开启一个 Transaction 并返回本地配对页所显示的内容，`complete()` 只在成员已于 Control Plane 确认、浏览器带着 Code 回来之后才运行。`accessToken()` 提供已存 Token，并在它临近过期到会输掉自身竞态时先行刷新。
+默认 Team 流程调用 `signIn(loginName, secret)`：它开启设备 Transaction，经 Control Plane 认证，用 PKCE 与设备签名兑换一次性 Code，再把结果与返回的成员身份一起存储。`begin()` 与 `complete()` 继续供可选浏览器 Handoff 组合使用。`accessToken()` 提供已存 Token，并在它临近过期到会输掉自身竞态时先行刷新，同时保留成员字段。
 
 -----
 
@@ -47,7 +47,7 @@ plugins:
 
 ### 两份记录都经过 Credential Provider
 
-设备密钥与凭据以 Credential 记录的形式存放，而不是由本包自行写一个文件，因此部署给予 Credential 的任何保护同样覆盖它们，人也只有一处可供查看和清除。两次写入都走 Provider 的读-决定-替换，因此两个 Runner 在首次启动时竞争的结果是一把钥匙，而不是两个身份。
+设备密钥与凭据以 Credential 记录的形式存放，而不是由本包自行写一个文件，因此部署给予 Credential 的任何保护同样覆盖它们，人也只有一处可供查看和清除。凭据记录包含本地登录返回的公开 `loginName` 与 `displayName`；本地账户端点可以展示它们而不暴露 Token 字段。两次写入都走 Provider 的读-决定-替换，因此两个 Runner 在首次启动时竞争的结果是一把钥匙，而不是两个身份。
 
 ### 退出保留这台电脑
 
@@ -68,7 +68,7 @@ plugins:
 ## 延伸阅读
 
 - [团队 Handoff 子系统](../../../docs/subsystems/team-handoff.zh.md)——两侧的完整流程。
-- [`team-local-handoff`](../team-local-handoff/README.zh.md)——驱动这个客户端的那些本地地址。
+- [`team-local-login`](../team-local-login/README.zh.md)——驱动这个客户端的默认本地账户表单。
 - [`device-authorization`](../../account/device-authorization/README.zh.md)——Control Plane 用它收到的东西做什么。
 
 <a id="model-experience"></a>

@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-team-shell` serves one page: a member confirming that the computer asking to connect is theirs. It stays server-rendered because of where a member arrives from — a link on the pairing page their own Runner served — and what they do on arrival, which is compare a code and press one button. Administration is a browser application; this is the page that has to be readable the instant a cross-site navigation lands on it.
+`dsh-team-shell` is the optional Control Plane half of [`team-local-handoff`](../team-local-handoff/README.md). The default Control Plane bundle does not compose it: ordinary members authenticate on port 3090 through `team-local-login`. A deployment that deliberately restores browser handoff uses this server-rendered page to let a member compare a code and confirm one device transaction.
 
 ## Table of Contents
 

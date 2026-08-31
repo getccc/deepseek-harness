@@ -2760,13 +2760,20 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
   {
     key: 'teamAccountClient',
     summary: 'The team account as this computer holds it.',
-    description: 'The team account as this computer holds it.\n\nBinding is two steps with a person in between: `begin` opens a transaction and returns what the local pairing page shows, and `complete` runs only after the member confirmed on the Control Plane and the browser came back with a code.',
+    description: 'The team account as this computer holds it.\n\nThe default `signIn` flow authenticates the Runner-local form through the Control Plane and binds the device without navigating there. `begin` and `complete` retain the two-step mechanism used by an optional browser handoff.',
     methods: [
       {
         signature: 'async begin(): Promise<BindingHandle>',
         description: 'Open a binding transaction and return what the local pairing page shows.\n\nThe PKCE verifier stays in this process: it is written nowhere, so a transaction cannot be completed by anything that reads this computer\'s disk without also being this Runner.',
         parameters: [],
         returns: 'the pairing code to display, the Control Plane address to send the member to, and the transaction id.',
+      },
+      {
+        signature: 'async signIn(loginName: string, secret: string): Promise<TeamAccountState>',
+        description: 'Authenticate a member and bind this Runner without opening the Control Plane in a browser.',
+        parameters: [{ name: 'loginName', description: 'the organization-local account name typed on the Runner.' }, { name: 'secret', description: 'the account password typed on the Runner.' }],
+        returns: 'the state this installation is now in.',
+        throws: ['{ControlPlaneRefusedError} when authentication or binding is refused.'],
       },
       {
         signature: 'async complete(transactionId: TransactionId, code: string): Promise<TeamAccountState>',
@@ -3925,7 +3932,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'Approval',
-    declaration: 'export interface Approval {\n    readonly orgId: OrgId;\n    readonly userId: UserId;\n    readonly browserSessionId: string;\n}',
+    declaration: 'export interface Approval {\n    readonly orgId: OrgId;\n    readonly userId: UserId;\n    readonly authenticationId: string;\n}',
   },
   {
     name: 'ApprovalOutcome',

@@ -1,5 +1,5 @@
 ---
-description: "Control Plane 面向 Runner 的绑定端点：开启 Transaction、兑换 Authorization Code、交换 Refresh Token。"
+description: "Control Plane 面向 Runner 的账户认证与设备凭据端点。"
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-team-control-plane-http` 提供 Runner 调用的三个端点：开启一个绑定 Transaction、兑换一个 Authorization Code、交换一个 Refresh Token。它们都不接受浏览器会话，因为它们都不由会话授权——开启一个 Transaction 既证明不了什么也学不到什么，另外两个由 PKCE Verifier、设备签名和一次性 Code 授权。成员浏览器使用的那些端点属于 Team Shell。
+`dsh-team-control-plane-http` 提供 Team Runner 调用的四个端点：开启设备 Transaction、认证组织账户并批准该 Transaction、兑换一次性 Code，以及刷新设备凭据。成员浏览器始终留在 Runner 源上，不参与任何 Control Plane 浏览器 Session。
 
 ## 目录
 
@@ -28,11 +28,12 @@ kind: "package-reference"
 ```yaml
 plugins:
   '@deepseek-ai/dsh-team-control-plane-http':
+    organizationId: 019400a1-0000-7000-8000-000000000000
     pathPrefix: /team/device
     maxRequestBodyBytes: 16384
 ```
 
-三个路径是 `POST {pathPrefix}/start`、`/redeem` 和 `/refresh`。一次拒绝回答 403 并携带接缝自己的词，因此 Runner 无需解析消息就能把"再试一次"与"重新绑定这台电脑"区分开；一个本端点读不了的请求体回答 400。
+四个路径是 `POST {pathPrefix}/start`、`/login`、`/redeem` 和 `/refresh`。`organizationId` 没有默认值，因为这个单组织端点不能猜测要认证哪个账户命名空间。成功的 `/login` 响应会携带一次性 Code，以及已认证账户的 `loginName` 与 `displayName`；它绝不会携带密码或设备凭据。无效账户凭据得到同一个不带原因的 401；设备接缝拒绝回答 403 并携带接缝自己的词；畸形请求体回答 400。
 
 -----
 
@@ -51,7 +52,7 @@ plugins:
 
 | 路径 | 角色 |
 |---|---|
-| [`src/index.ts`](src/index.ts) | 三条路由、请求体解析与拒绝映射 |
+| [`src/index.ts`](src/index.ts) | 四条路由、账户认证、请求体解析与拒绝映射 |
 | [`src/protocol.ts`](src/protocol.ts) | 两侧共同导入的路径与协议版本 |
 | [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件注册 |
 
@@ -79,7 +80,7 @@ plugins:
 
 这些是当前契约的约束，不是任务清单。
 
-- **没有面向浏览器的端点** —— 读取一个待确认 Transaction 并确认它需要一个 Control Plane 会话，随 Team Shell 一起到来。
+- **没有面向成员浏览器的端点**——Runner 拥有账户表单，并通过配置好的 Control Plane 源调用这些路由。
 - **没有限速** —— 接缝会拒绝错误的 Code 或签名，但这里没有任何东西在两次尝试之间放慢调用方。
 - **协议版本是发送的，不是协商的** —— Runner 声明它说哪个版本，接缝拒绝不匹配。
 

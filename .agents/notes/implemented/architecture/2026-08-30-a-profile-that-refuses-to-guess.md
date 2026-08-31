@@ -12,7 +12,7 @@ The convenient move is a default that lets `dsh --profile team-control-plane` st
 
 ## Decision
 
-**The rows omit those keys, and the plugins refuse to load without them.** `team-shell` throws when `organizationId` is blank; `team-account-client` declares `controlPlaneUrl` and `runnerVersion` required, so schema resolution fails. A deployment supplies them in its own patch, which is where an installer already writes deployment facts.
+**The rows omit those keys, and the plugins refuse to load without them.** `team-control-plane-http` and `team-admin-api` throw when `organizationId` is blank; `team-account-client` declares `controlPlaneUrl` and `runnerVersion` required, so schema resolution fails. A deployment supplies them in its own patch, which is where an installer already writes deployment facts.
 
 This makes the failure loud, immediate, and self-contained — it happens at load, in the process that is misconfigured, naming the key. The alternative fails later, elsewhere, as a symptom.
 

@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-30-a-profile-that-refuses-to-guess.md
-2026-08-30-a-profile-that-refuses-to-guess.md: fd63c552459e4463a9a586b97147bcd5e37f1a34
-2026-08-30-a-profile-that-refuses-to-guess.zh.md: 25e269f7a819da83ee35283082e7255dd9f82a0a
+2026-08-30-a-profile-that-refuses-to-guess.md: 3d3cd3f566d7f809c18323138da8b593958f3305
+2026-08-30-a-profile-that-refuses-to-guess.zh.md: 52c93344241833bd9a629ef2776fc4978832daf1

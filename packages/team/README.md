@@ -22,17 +22,20 @@ The `team/` group carries a member from the company site into the application ru
 <a id="packages"></a>
 ## Packages
 
-Eight packages, split by which side of the network they run on; each child README owns the full contract.
+Nine packages, split by which side of the network they run on; each child README owns the full contract.
 
 | Package | Side | Role | ctx key |
 |---|---|---|---|
-| [`team-control-plane-http/`](team-control-plane-http/README.md) | Control Plane | Runner-facing binding endpoints: start, redeem, refresh | — |
+| [`team-control-plane-http/`](team-control-plane-http/README.md) | Control Plane | Runner-facing account authentication and device-credential endpoints | — |
 | [`team-account-client/`](team-account-client/README.md) | Runner | The device key, the credential, and the calls to the Control Plane | `ctx.teamAccountClient` |
-| [`team-local-handoff/`](team-local-handoff/README.md) | Runner | The three local addresses a browser navigates to | — |
+| [`team-local-login/`](team-local-login/README.md) | Runner | Default local member login, entry, and sign-out | — |
+| [`team-local-handoff/`](team-local-handoff/README.md) | Runner | Optional company-site browser handoff | — |
 | [`team-admin-api/`](team-admin-api/README.md) | Control Plane | The administration console's JSON API: session, authorization, audit | — |
 | [`team-admin-app/`](team-admin-app/README.md) | Control Plane | Serving the built administration console | — |
+| [`team-console-menu/`](team-console-menu/README.md) | Control Plane | The console's navigation tree and the permission each entry names | `ctx.consoleMenu` |
+| [`team-console-menu-sqlite/`](team-console-menu-sqlite/README.md) | Control Plane | SQLite-backed navigation, seeded from the tree this build ships | `ctx.consoleMenu` |
 | [`team-browser-session/`](team-browser-session/README.md) | Control Plane | The session cookie, its CSRF value, and the same-origin decision | — |
-| [`team-shell/`](team-shell/README.md) | Control Plane | Confirming that the computer asking to connect is this member's | — |
+| [`team-shell/`](team-shell/README.md) | Control Plane | Optional browser confirmation for `team-local-handoff` | — |
 | [`team-update/`](team-update/README.md) | Runner | Whether an offered release may be installed, and the service definition an installer writes | — |
 
 -----
@@ -40,7 +43,7 @@ Eight packages, split by which side of the network they run on; each child READM
 <a id="related-documentation"></a>
 ## Related documentation
 
-- [Team-handoff subsystem](../../docs/subsystems/team-handoff.md) — the three addresses, the callback's same-site bounce, and what the local state does.
+- [Team sign-in subsystem](../../docs/subsystems/team-handoff.md) — the 3090 member flow and the administrator-only 3095 boundary.
 - [Device-authorization subsystem](../../docs/subsystems/device-authorization.md) — the seam these endpoints expose and this client drives.
 - [`client/connection`](../client/connection/README.md) — owns the local browser session these endpoints hand out.
 
@@ -50,6 +53,6 @@ Eight packages, split by which side of the network they run on; each child READM
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-The one detail that must not be "simplified": `/team/callback` answers 200 with a self-navigating page rather than a redirect. A `SameSite=Strict` cookie is withheld from every request in a cross-site navigation chain, so a redirect lands the browser on the application without the session it was just given.
+The default Team bundle composes `team-local-login`, not the optional handoff and shell. If a deployment deliberately restores browser handoff, its `/team/callback` must keep the self-navigating 200 response documented by that package.
 
 </details>

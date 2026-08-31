@@ -13,6 +13,24 @@ import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 // Type-only: pulls the settings slot declarations the shell renders into.
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 
+declare module '@deepseek-ai/dsh-client-ui-slots' {
+  interface SlotMap {
+    /**
+     * Optional replacement for the ordinary Settings trigger. Team surfaces
+     * use it for an account launcher whose menu can still open Settings.
+     */
+    'settings.launcher': { kind: 'single'; scope: 'root'; owner: SettingsLauncherOwnerProps }
+  }
+}
+
+/** Actions and sidebar geometry supplied to a custom Settings launcher. */
+export interface SettingsLauncherOwnerProps {
+  /** Whether the sidebar is in its expanded state. */
+  wide: boolean
+  /** Open the Settings panel on its default section. */
+  openSettings: () => void
+}
+
 /** One nav row projected from a settings.section registration's options. */
 export interface SettingsSectionRow {
   id: string
@@ -49,6 +67,7 @@ export type SettingsRootInjected = {
 export type SettingsRootComponentProps =
   PropsRuntime<'sidebar.settings'>
   & PropsRenderSlots<
+    | 'settings.launcher'
     | 'settings.trigger'
     | 'settings.header'
     | 'settings.action'

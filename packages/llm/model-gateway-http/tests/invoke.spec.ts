@@ -156,7 +156,7 @@ async function mintAccessToken(): Promise<string> {
     callbackUri: 'http://127.0.0.1:3080/team/callback', protocolVersion: 1,
   })
   const issued = await auth.confirm(started.transactionId, {
-    orgId, userId: alice, browserSessionId: 'browser-session',
+    orgId, userId: alice, authenticationId: 'session:browser-session',
   })
   const credential = await auth.redeem({
     transactionId: started.transactionId,
@@ -248,6 +248,13 @@ describe('a company model call', () => {
 })
 
 describe('what the endpoint refuses', () => {
+  it('refuses an existing device token as soon as its account is suspended', async () => {
+    await store.setUserStatus(alice, 'suspended')
+
+    expect((await invoke(invocation())).status).toBe(403)
+    expect(providerSeen).toEqual([])
+  })
+
   it('answers an unknown, lapsed, and revoked token the same way', async () => {
     expect((await invoke(invocation(), 'not-a-token')).status).toBe(401)
     const [device] = await (cp.get('deviceAuthorization') as

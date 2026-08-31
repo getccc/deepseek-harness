@@ -27,8 +27,8 @@
 | [tools.md](tools.zh.md) | `ToolDefinition` 完整字段、schema DSL、`ToolExecution`/`ToolResult`、工具展示 UI 类型，以及受保护的执行流水线 |
 | [user-questions.md](user-questions.zh.md) | UI 支持的人工问答 seam：`AskUserQuestionRequest`、answer/options 词汇、提供方 API、错误分类体系 |
 | [access-control.md](access-control.zh.md) | 默认拒绝的授权：封闭权限目录、角色、类型与资源授权、受治理资源，以及策略修订号 |
-| [device-authorization.md](device-authorization.zh.md) | 把浏览器会话绑定到一台电脑：配对码、PKCE 与设备签名兑换、Refresh Token Family，以及撤销 |
-| [team-handoff.md](team-handoff.zh.md) | 从公司站点到这台电脑：三个本地地址、不能是重定向的 Callback，以及本地 state 绑定了什么 |
+| [device-authorization.md](device-authorization.zh.md) | 把成功认证绑定到一台电脑：PKCE 与设备签名兑换、Refresh Token Family，以及撤销 |
+| [team-handoff.md](team-handoff.zh.md) | 3090 本地成员登录、仅管理员可访问的 3095 Control Plane，以及两者之间的设备凭据 |
 | [model-gateway.md](model-gateway.zh.md) | 公司模型目录及其前面的判定：Runner 可以调用什么，以及它的调用会变成什么 |
 | [quota.md](quota.zh.md) | 预算账本：作为上限的预留、每个请求一次结算，以及关闭无人结算者的 Reconciler |
 | [audit.md](audit.zh.md) | 只追加的审计：封闭的动作与 Metadata 目录、Token 规则，以及把任务内容挡在外面的存储约束 |

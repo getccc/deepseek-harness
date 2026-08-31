@@ -80,6 +80,14 @@ export interface BrowserSession {
    * @returns true when the session was issued.
    */
   issueSession(req: ConnectionIndexRequest, res: ConnectionIndexResponse, destination: string): boolean
+  /**
+   * Expire the request's valid session cookie and redirect to a same-origin destination.
+   * @param req - the navigation request carrying the browser session.
+   * @param res - the response, owned by this method.
+   * @param destination - same-origin path opened after the session ends.
+   * @returns whether an authenticated session was ended.
+   */
+  endSession(req: ConnectionIndexRequest, res: ConnectionIndexResponse, destination: string): boolean
 }
 
 declare module '@deepseek-ai/cordis' {

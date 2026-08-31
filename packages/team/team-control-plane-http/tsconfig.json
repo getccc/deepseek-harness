@@ -18,6 +18,15 @@
       "path": "../../host/webserver"
     },
     {
+      "path": "../../account/account-auth"
+    },
+    {
+      "path": "../../account/account-store"
+    },
+    {
+      "path": "../../access/audit"
+    },
+    {
       "path": "../../account/device-authorization"
     }
   ]

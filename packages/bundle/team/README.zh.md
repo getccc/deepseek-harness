@@ -9,7 +9,7 @@ kind: "package-bundle"
 
 ## 概述
 
-`dsh-team` 是把本机 Web 表层变成 Team Runner 的那一层。它叠加在 [`dsh-base`](../base/README.zh.md) 和 [`dsh-web-app`](../web-app/README.zh.md) 之上而不是替换它们，因此浏览器应用、会话存储和全部本机能力都留在原处。这一层拥有的是 loopback 端口——Team Runner 监听 `3090`，把 `3080` 留给 `dsh web`，于是开发者可以同时运行两者——这台电脑所持有的团队账户，以及浏览器所导航到的三个本地地址。模型与知识库网关会随各自的包落地到这里。
+`dsh-team` 是把本机 Web 表层变成 Team Runner 的那一层。它叠加在 [`dsh-base`](../base/README.zh.md) 与 [`dsh-web-app`](../web-app/README.zh.md) 之上，把工作空间与执行留在成员电脑。本层拥有 `3090` 端口、`/team/login` 本地账户登录、这台电脑持有的设备凭据，以及公司模型传输。`3080` 继续留给独立 `dsh web`。
 
 它不会在未配置的情况下绑定：Account Client 行不指名任何 Control Plane，也不指名 Runner 版本，因此一个没人告诉它属于哪家公司的 Runner 会加载失败，而不是把公钥发给一个陌生人。
 
@@ -33,7 +33,7 @@ kind: "package-bundle"
 dsh --profile team
 ```
 
-该 profile 依次组合 `dsh-base`、`dsh-web-app` 和本层，打开的是 `dsh web` 提供的同一个浏览器应用——地址为 `http://127.0.0.1:3090`。
+该 profile 依次组合 `dsh-base`、`dsh-web-app` 与本层，并打开 `http://127.0.0.1:3090/team/open`。未解锁的浏览器会看到本地账户表单，绝不会被送到 Control Plane 管理端源。
 
 ### 与 `dsh web` 并行运行
 
@@ -58,7 +58,7 @@ dsh --profile team --port 8080
 
 本包的实质是 `cordis.patch.yml`，由 `dsh.bundle.patch` 清单字段指明。profile 组合器按 profile 列出的顺序应用每个 bundle 的 patch，因此本层看到的是 `dsh-base` 与 `dsh-web-app` 已经插入的配置行，并按 id 覆盖它们。
 
-patch 会替换目标行的整个 `config`，因此这里的 `webserver` 行重述了它拥有的每一个键——`host`、`port`、`compression`、`compressionLevel` 和 `compressionThresholdBytes`——而 `name` 与 `inject` 仍属于早前那层插入的行。
+patch 会替换目标行的整个 `config`，因此这里的 `webserver` 与 `web-runtime` 覆盖会重述各自拥有的每一个键。Runtime 入口为 `/team/open`，它刻意不接收独立 Web 的进程 Token，因为 Team 解锁由本地账户认证负责。
 
 ### 源码地图
 

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type { SettingsRootComponentProps } from '../src/client/shell-contract.ts'
 import { SettingsRoot } from '../src/client/SettingsRoot.tsx'
@@ -40,7 +40,8 @@ function mount({
   let current = rows
   const listeners = new Set<() => void>()
   const renderSlot = vi.fn(
-    ((key: string, _owner: unknown, opts?: { only?: string }) => {
+    ((key: string, _owner: unknown, opts?: { only?: string; fallback?: ReactNode }) => {
+      if (key === 'settings.launcher') return opts?.fallback
       if (key === 'settings.section') return <div data-testid={`section-${opts?.only ?? 'all'}`} />
       return SEAT_CONTENT[key]
     }) as SettingsRootComponentProps['renderSlot'],
@@ -99,6 +100,16 @@ describe('SettingsRoot trigger', () => {
   it('hands the rail state to the trigger seat', () => {
     const { renderSlot } = mount({ wide: false })
     expect(renderSlot).toHaveBeenCalledWith('settings.trigger', { wide: false })
+  })
+
+  it('lets a custom launcher open the existing Settings panel', () => {
+    const { renderSlot, view } = mount()
+    const launcherCall = renderSlot.mock.calls.find(call => call[0] === 'settings.launcher')
+    const owner = launcherCall?.[1] as { openSettings: () => void; wide: boolean }
+    expect(owner.wide).toBe(true)
+    act(() => { owner.openSettings() })
+    expect(screen.getByRole('dialog')).toBeTruthy()
+    view.unmount()
   })
 })
 

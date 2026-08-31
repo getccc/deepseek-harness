@@ -30,6 +30,16 @@
     compressionLevel: 1
     compressionThresholdBytes: 1024
 
+# Team opens a clean local entry. The local login owns authentication, so this
+# URL must not carry the process-token shortcut used by the standalone Web app.
+- id: web-runtime
+  config:
+    openBrowser: !!js ctx.webStartup.openBrowser
+    printUrl: true
+    entryPath: /team/open
+    surfaceContext: true
+    trustedHosts: !!js ctx.webStartup.trustedHosts
+
 # ── the team account this computer holds ───────────────────────────────────
 
 # `controlPlaneUrl` and `runnerVersion` are deliberately absent, and the row
@@ -48,13 +58,14 @@
         callbackUri: !!js "'http://127.0.0.1:' + (ctx.webStartup.port ?? 3090) + '/team/callback'"
         refreshLeadMs: 60000
 
-    # The three fixed addresses. Their paths are not configurable: a Control
-    # Plane registers its redirect target against them, so a renamed one would
-    # break every already-bound computer.
-    - id: team-local-handoff
-      name: '@deepseek-ai/dsh-team-local-handoff'
+    # Account authentication stays on the Runner origin. Ordinary members do
+    # not navigate to the Control Plane administration origin.
+    - id: team-local-login
+      name: '@deepseek-ai/dsh-team-local-login'
       config:
         applicationPath: /
+        maxRequestBodyBytes: 16384
+        locale: en-US
 
     # How a company model request leaves this computer. It carries an
     # operation, a model ref, and a body — no address and no credential,

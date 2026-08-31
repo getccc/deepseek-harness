@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-team-local-handoff` 提供成员浏览器在自己电脑上所导航到的三个地址：`/team/start` 显示配对码，`/team/open` 是日常入口，`/team/callback` 从 Control Plane 接回浏览器。Callback 回答 200 并附一个自我导航的页面而不是重定向，因为 `SameSite=Strict` Cookie 挺不过跨站导航链中的一次重定向——正是这一个细节让整套 Handoff 能够成立。
+`dsh-team-local-handoff` 是可选的公司站点浏览器 Handoff。默认 Team Bundle 改用 [`team-local-login`](../team-local-login/README.zh.md)，因此普通成员始终留在 3090。刻意组合本包时，它提供 `/team/start`、`/team/open` 与 `/team/callback`；Callback 回答 200 并附自我导航页面，因为 `SameSite=Strict` Cookie 挺不过跨站导航链中的重定向。
 
 ## 目录
 

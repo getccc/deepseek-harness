@@ -6,7 +6,9 @@ Access control answers one question for every company resource and every adminis
 
 ## The evaluation is deliberately small
 
-Default deny. A role's grants admit. Several roles union. A disabled resource is refused whatever any grant says.
+Default deny. The principal must exist in the organization and be active. A role's grants admit. Several roles union. A disabled resource is refused whatever any grant says.
+
+Account status is checked on every decision, not only when a browser session is created. Suspending a member therefore refuses requests made with an access token issued earlier, even while its role bindings remain stored.
 
 There is no explicit deny, no role inheritance, and no expression language. That is what lets a decision be explained by naming the grants that produced it, and what keeps "why was this refused?" answerable without replaying a policy engine.
 

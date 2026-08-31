@@ -14,6 +14,8 @@ The second problem is smaller and much sharper. Once the browser is going to end
 
 ## Decision
 
+This navigation flow remains available through the uncomposed `team-local-handoff` package, but it is no longer the default Team entry. [The Team Runner member-sign-in decision](2026-08-30-team-runner-owns-member-sign-in.md) owns the shipped default in which members stay on port 3090 and the Control Plane is administrator-only. The callback and proxying rationale below remains the authority if a deployment deliberately composes the optional handoff.
+
 **The site is an entry, not a data path.** It authenticates the member, confirms which computer they are at, and hands the browser to a local address. From that point the address bar shows loopback and nothing further crosses the network except company-resource calls the member's work explicitly makes.
 
 The site is also habitual rather than required: opening the local address directly reaches the same application. That is what keeps a member working when the Control Plane is unreachable, and it is why the local entry must never be removed from the documentation.
@@ -26,7 +28,7 @@ The page uses `location.replace`, which is the path verified against a real brow
 
 **The local state binds the callback to the pairing page, and nothing more.** It stops a link someone else assembled from binding this computer to their account. It does not stop a replay — the authorization code is one-time at the Control Plane, which is what refuses a second callback carrying it. The state survives a failed completion deliberately: spending it there would turn a moment of Control Plane trouble into a full restart for the member.
 
-**The Runner-facing endpoints take no browser session,** because none of them is authorized by one. Opening a transaction proves nothing and learns nothing; redeeming and refreshing are authorized by a PKCE verifier, a device signature, and a one-time code. Each body is parsed into the seam's own request before the seam sees it, because the seam's types are a promise its callers keep and a caller that arrived over HTTP has made no such promise.
+**The optional handoff's Runner-facing calls take no browser session,** because none of them is authorized by one. Opening a transaction proves nothing and learns nothing; redeeming and refreshing are authorized by a PKCE verifier, a device signature, and a one-time code. The shared HTTP package now also carries the default Runner password-authentication call. Each body is parsed before the owning service sees it, because same-process types are a promise an HTTP caller has not made.
 
 ## Alternatives considered
 
@@ -44,6 +46,6 @@ The page uses `location.replace`, which is the path verified against a real brow
 
 `client-connection` now publishes `browserSession`, a two-method view of the local session: ask whether this browser holds it, and hand it one. Everything else about the cookie stays inside that package, so a second plugin cannot mint a session the package would then have to stay compatible with.
 
-The Team Shell's browser-facing endpoints — reading a pending transaction and confirming it — are not here. They need a Control Plane session, which is the next change; until then the end-to-end test calls `confirm` on the seam where a member's click will call it.
+The optional Team Shell owns the browser-facing endpoints that read and confirm a pending transaction. The default Control Plane no longer composes that shell, but deployments retaining this handoff still use its Control Plane session, same-origin, CSRF, and audit checks.
 
 The tests use `node:http` rather than `fetch`. `fetch` overrides `Sec-Fetch-Mode` with its own value, so a test using it cannot present what a real navigation presents, and these endpoints answer on exactly that header. This is worth remembering: the same substitution would silently weaken any future test of a navigation-only endpoint.

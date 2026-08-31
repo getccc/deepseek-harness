@@ -110,6 +110,7 @@ export function SettingsRoot(props: SettingsRootComponentProps) {
     setOpen(false)
     setActiveId(undefined)
   }, [])
+  const openSettings = useCallback(() => { setOpen(true) }, [])
   const openSection = useCallback((id: string) => {
     setActiveId(id)
     setOpen(true)
@@ -141,15 +142,19 @@ export function SettingsRoot(props: SettingsRootComponentProps) {
 
   return (
     <>
-      <button
-        type="button"
-        className={clsx(css.trigger, !wide && css.rail)}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        onClick={() => { setOpen(true) }}
-      >
-        {renderSlot('settings.trigger', { wide })}
-      </button>
+      {renderSlot('settings.launcher', { wide, openSettings }, {
+        fallback: (
+          <button
+            type="button"
+            className={clsx(css.trigger, !wide && css.rail)}
+            aria-haspopup="dialog"
+            aria-expanded={open}
+            onClick={openSettings}
+          >
+            {renderSlot('settings.trigger', { wide })}
+          </button>
+        ),
+      })}
       {open && (
         <SettingsPanel
           rows={rows}

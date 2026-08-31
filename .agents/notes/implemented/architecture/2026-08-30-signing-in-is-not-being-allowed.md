@@ -20,7 +20,7 @@ There is a narrower problem underneath. A form post carrying a session cookie is
 
 Deriving the CSRF token rather than storing it means there is no second record to keep in step with the session, and it is not the cookie's own value, so carrying the cookie is not by itself enough.
 
-**The Team Shell writes the audit records,** because it is what knows the principal. This is the consumer the audit seam was built for and deliberately shipped without: a store that creates a role has no principal, no device, and no correlation to record.
+**The HTTP surface that authenticates writes the audit record,** because it is what knows the principal and authentication method. The Runner-facing account endpoint records ordinary member authentication, while the administration API records console authentication. A store that creates a role has no principal, no device, and no correlation to record.
 
 **A failed sign-in records no account.** Which of "no such member", "wrong password", and "locked" it was is what an attacker wants, so the page answers one message for all three, and the record names none. Recording the account would turn the trail into a list of which login names exist.
 

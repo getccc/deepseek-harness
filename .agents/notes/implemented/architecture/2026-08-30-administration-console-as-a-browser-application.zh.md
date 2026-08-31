@@ -20,7 +20,7 @@ Status: implemented
 
 **文案由 locale 拥有，与浏览器客户端一致。** `zh` 是键集的事实源，`en` 与之对齐，因此一个键出现在一本词典而缺席于另一本，是类型错误而不是运行时的空白标签。这个选择属于这个浏览器，存在 `localStorage` 里：一台机器上的显示偏好不是组织替成员做的决定，Control Plane 也没有理由存它。
 
-**确认一台电脑仍是服务端渲染的页面。** 成员是从自己 Runner 提供的链接抵达那里的，为的是比对一个码、按一个按钮。应用得先加载完，才能把他们专程来核对的那样东西显示出来。`dsh-team-shell` 现在就是那一个页面，别无其他；两个界面共享的会话规则移到了 `dsh-team-browser-session`。
+**可选浏览器 Handoff 仍使用服务端渲染确认页。** 组合 `dsh-team-shell` 的部署会让成员从自己 Runner 提供的链接抵达那里，以比对一个 Code 并按下一个按钮。默认 Control Plane 不组合该页面；普通成员改在自己的 Runner 上认证。可选页面与管理应用共享的 Session 规则仍位于 `dsh-team-browser-session`。
 
 ## 备选方案
 

@@ -25,16 +25,19 @@ import {
   type TransactionId,
 } from '@deepseek-ai/dsh-device-authorization'
 import {
+  LOGIN_PATH,
   PROTOCOL_VERSION,
   REDEEM_PATH,
   REFRESH_PATH,
   START_PATH,
+  type LoginSuccess,
+  type TeamMemberIdentity,
 } from '@deepseek-ai/dsh-team-control-plane-http'
 import { TEAM_CREDENTIAL_RECORD, readCredential, readDeviceKey, writeCredential } from './storage.ts'
 import type { BindingHandle, TeamAccountState } from './types.ts'
 
 export { DEVICE_KEY_RECORD, TEAM_CREDENTIAL_RECORD } from './storage.ts'
-export type { BindingHandle, StoredCredential, TeamAccountState } from './types.ts'
+export type { BindingHandle, StoredCredential, TeamAccountState, TeamMemberIdentity } from './types.ts'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
@@ -105,10 +108,9 @@ export function platformWord(platform: string): DevicePlatform {
 /**
  * The team account as this computer holds it.
  *
- * Binding is two steps with a person in between: `begin` opens a transaction
- * and returns what the local pairing page shows, and `complete` runs only after
- * the member confirmed on the Control Plane and the browser came back with a
- * code.
+ * The default `signIn` flow authenticates the Runner-local form through the
+ * Control Plane and binds the device without navigating there. `begin` and
+ * `complete` retain the two-step mechanism used by an optional browser handoff.
  */
 export class TeamAccountClient extends Service {
   static inject = ['credentials']
@@ -159,14 +161,37 @@ export class TeamAccountClient extends Service {
   }
 
   /**
+   * Authenticate a member and bind this Runner without opening the Control Plane in a browser.
+   * @param loginName - the organization-local account name typed on the Runner.
+   * @param secret - the account password typed on the Runner.
+   * @returns the state this installation is now in.
+   * @throws {ControlPlaneRefusedError} when authentication or binding is refused.
+   */
+  async signIn(loginName: string, secret: string): Promise<TeamAccountState> {
+    const pending = await this.begin()
+    const issued = await this.post<LoginSuccess>(LOGIN_PATH, {
+      transactionId: pending.transactionId,
+      loginName,
+      secret,
+      protocolVersion: PROTOCOL_VERSION,
+    })
+    return this.complete(pending.transactionId, issued.code, issued.member)
+  }
+
+  /**
    * Redeem the code the browser carried back, and keep the credential.
    * @param transactionId - the transaction the code belongs to.
    * @param code - the one-time authorization code.
+   * @param member - authenticated member identity returned by a local sign-in.
    * @returns the state this installation is now in.
    * @throws {NotBoundError} when no transaction is awaiting confirmation in this process.
    * @throws {ControlPlaneRefusedError} when the Control Plane refused the redemption.
    */
-  async complete(transactionId: TransactionId, code: string): Promise<TeamAccountState> {
+  async complete(
+    transactionId: TransactionId,
+    code: string,
+    member?: TeamMemberIdentity,
+  ): Promise<TeamAccountState> {
     const verifier = this.pendingVerifier
     // The verifier lives only in the process that opened the transaction, so a
     // Runner restarted mid-binding starts the flow again rather than pretending
@@ -183,8 +208,13 @@ export class TeamAccountClient extends Service {
       protocolVersion: PROTOCOL_VERSION,
     })
     this.pendingVerifier = undefined
-    await writeCredential(this.ctx.credentials, issued)
-    return { bound: true, deviceId: issued.deviceId, familyId: issued.familyId }
+    await writeCredential(this.ctx.credentials, issued, member)
+    return {
+      bound: true,
+      deviceId: issued.deviceId,
+      familyId: issued.familyId,
+      ...(member === undefined ? {} : { member }),
+    }
   }
 
   /**
@@ -195,7 +225,12 @@ export class TeamAccountClient extends Service {
     const stored = await readCredential(this.ctx.credentials)
     return stored === undefined
       ? { bound: false }
-      : { bound: true, deviceId: stored.deviceId, familyId: stored.familyId }
+      : {
+        bound: true,
+        deviceId: stored.deviceId,
+        familyId: stored.familyId,
+        ...(stored.member === undefined ? {} : { member: stored.member }),
+      }
   }
 
   /**
@@ -219,7 +254,7 @@ export class TeamAccountClient extends Service {
         key.privateKey,
       ).toString('base64url'),
     })
-    await writeCredential(this.ctx.credentials, issued)
+    await writeCredential(this.ctx.credentials, issued, stored.member)
     return issued.accessToken
   }
 

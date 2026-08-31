@@ -4,6 +4,9 @@
  */
 
 import type { DeviceId, FamilyId, TransactionId } from '@deepseek-ai/dsh-device-authorization'
+import type { TeamMemberIdentity } from '@deepseek-ai/dsh-team-control-plane-http'
+
+export type { TeamMemberIdentity } from '@deepseek-ai/dsh-team-control-plane-http'
 
 /** What the local pairing page shows while a member confirms on the Control Plane. */
 export interface BindingHandle {
@@ -23,6 +26,8 @@ export interface StoredCredential {
   readonly refreshExpiresAt: number
   readonly accessToken: string
   readonly accessExpiresAt: number
+  /** Member authenticated when this credential was issued. */
+  readonly member?: TeamMemberIdentity
 }
 
 /** Whether this computer is bound, and to what. */
@@ -30,4 +35,6 @@ export interface TeamAccountState {
   readonly bound: boolean
   readonly deviceId?: DeviceId
   readonly familyId?: FamilyId
+  /** Member identity available for Runner-local account chrome. */
+  readonly member?: TeamMemberIdentity
 }

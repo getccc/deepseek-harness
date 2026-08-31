@@ -1,72 +1,53 @@
-# 团队 Handoff
+# 团队登录
 
 [English](team-handoff.md) | 中文
 
-Handoff 是成员从公司站点进入自己电脑上运行的应用的方式。三个包承载它：[`dsh-team-control-plane-http`](../../packages/team/team-control-plane-http) 提供 Control Plane 面向 Runner 的绑定端点，[`dsh-team-account-client`](../../packages/team/team-account-client)（`ctx.teamAccountClient`）在成员电脑上持有设备密钥与凭据，[`dsh-team-local-handoff`](../../packages/team/team-local-handoff) 提供浏览器所导航到的三个本地地址。设计记录：[团队 Handoff Agent Note](../../.agents/notes/implemented/architecture/2026-08-30-the-handoff-is-navigation-not-a-tunnel.zh.md)。
+普通成员在 3090 端口的 Team Runner 登录，管理员使用 3095 端口的 Control Plane。默认流程不会把成员浏览器导航到 Control Plane：[`dsh-team-local-login`](../../packages/team/team-local-login) 拥有本地账户表单，[`dsh-team-account-client`](../../packages/team/team-account-client) 拥有设备密钥与凭据，[`dsh-team-control-plane-http`](../../packages/team/team-control-plane-http) 负责认证账户并签发设备绑定凭据。设计记录：[Team Runner 成员登录 Agent Note](../../.agents/notes/implemented/architecture/2026-08-30-team-runner-owns-member-sign-in.zh.md)。
 
-## 什么会穿过网络，什么不会
+## 两个浏览器表层面向不同人群
 
-成员的工作空间、Session、终端输出和 Diff 从不离开他们的电脑。Control Plane 看到的是一个公钥、一个平台词、一个 Runner 版本，以及它自己签发的凭据。Runner 收到的是一份属于它自己设备的 Refresh Token——绝不是公司 Provider 凭据。
+| 地址 | 用户 | 用途 |
+|---|---|---|
+| `http://127.0.0.1:3090/team/open` | 普通成员 | 本地登录与 Runner 应用 |
+| `https://control-plane.example/team/admin/` | 管理员 | 账户、角色、授权、设备、审计与公司资源 |
 
-站点是习惯性入口，不是检查点。直接打开本地地址的成员得到的是同一个应用，正是这一点让产品在 Control Plane 不可达时依然可用。
+独立 `dsh web` 仍在 3080 端口使用进程 Token 解锁。Team 不复用这条捷径：它的 Web Runtime 打开干净的 `/team/open` 路径，并把未解锁的浏览器重定向到 `/team/login`。
 
-## 三个本地地址
+应用授权不能代替部署隔离。生产部署应只通过管理员网络或反向代理暴露 3095，并在那里终止 TLS。
+
+## 一次本地登录生成一份设备凭据
+
+1. Runner 开启一个设备 Transaction，并把 PKCE Verifier 留在内存中。
+2. 本地表单把账户与密码交给 Runner。Runner 将它们连同 Transaction 转发给配置好的 Control Plane 源。
+3. Control Plane 验证活跃账户，记录认证事件，并用该审计引用批准 Transaction。
+4. Runner 使用 PKCE Verifier 和设备密钥签名兑换一次性 Code。
+5. Runner 通过 Credential Provider 存储 Refresh Token 与 Access Token，随后由本地浏览器会话服务解锁应用。
+
+密码不会存储在 Runner 上，但会经过 Runner 到 Control Plane 的连接，因此除本地开发外必须使用 TLS。公司 Provider 凭据绝不会反向到达 Runner；Runner 收到的只有自己的设备凭据。
+
+同一设备密钥后续登录成功时，会先撤销该设备较早的凭据族，再签发替代凭据。一个 Runner 进程只持有一个活跃团队账户；再次登录会改变使用该进程的所有浏览器所对应的账户。
+
+## 三条固定本地路由
 
 | 路径 | 它做什么 |
 |---|---|
-| `/team/start` | 开启一个绑定 Transaction，并显示供比对的配对码 |
-| `/team/open` | 日常入口：解锁、静默重新签发，或把成员送去绑定 |
-| `/team/callback` | Control Plane 带着 Authorization Code 把浏览器送回来的地方 |
+| `/team/open` | 已通过本地认证的浏览器进入应用，否则重定向到登录 |
+| `/team/login` | 提供并接受账户密码表单 |
+| `/team/logout` | 忘掉团队凭据，再把本地 Cookie 清理由 `/lock` 完成 |
 
-它们只能通过导航到达，别无他途：除非请求是顶层文档导航，否则每一个都回答 405。它们不携带 RPC、不读请求体、也够不到任何 Host 能力，因此守卫 `/api` 的浏览器信任栅栏在这里没有什么可守。
+`/team/open` 不会根据已存团队凭据静默铸造浏览器 Session。新浏览器或已上锁的浏览器必须认证，这可以阻止共享电脑上的第二个浏览器仅通过打开端口就继承进程账户。
 
-这些路径是固定的而非可配置的，因为 Control Plane 把它的重定向目标登记在它们之上——改名的部署会弄坏每一台已绑定的电脑。
+登录表单要求精确同源提交，接受有大小上限的 URL 编码请求体，并让密码错误、账户不存在、锁定和停用得到同一个拒绝。该页面由服务端渲染，因为本地 Session 建立前还无法加载应用资产。
 
-## Callback 回答 200，而不是重定向
+## Control Plane 仅供管理员使用
 
-这一处必须完全正确，而显而易见的那个版本行不通。
+管理 API 在创建浏览器 Session 前会同时验证密码与 `organization.admin.access`。之后每次请求都会重新检查该入口权限，再检查 `member.disable` 或 `model.catalog.manage` 等具体动作授权。因此即使浏览器仍带着 Session Cookie，移除入口授权也会终止控制台访问。
 
-本地会话 Cookie 是 `SameSite=Strict`。到达 `/team/callback` 的那次导航是由公司站点发起的，那是另一个站点。浏览器会对跨站导航链中的每一个请求扣下 Strict Cookie——包括重定向会产生的那个请求。设置 Cookie 再回答 303，会让浏览器**不带**它落在应用上，而应用回答 401。
+默认 Control Plane Bundle 不组合 `team-shell` 或任何成员确认页。部署需要把同一个 `organizationId` 提供给负责成员认证的 `team-control-plane-http` 与负责管理的 `team-admin-api`；两行都不会猜测该值，缺失时直接失败。
 
-因此 Callback 回答 200，同时带上 Cookie 和一个自己导航的页面。那次导航由本地文档发起，因而是同站的，Cookie 随它一同发送。页面使用 `location.replace`，并配有 `noscript` 刷新和一个可见链接，好让禁用脚本的成员照样能到达。
+## 停用状态在访问决策处检查
 
-## 本地 state 把 Callback 绑到配对页
-
-`/team/start` 铸出一个随机 state，把它放在 Control Plane 链接上，并留在本进程中。`/team/callback` 除非 state 匹配否则拒绝。正是这一点阻止了别人拼装的链接把这台电脑绑到他们的账户上。
-
-它**不是**阻止重放的那一环——Control Plane 的 Authorization Code 是一次性的，那才是拒绝第二次携带它的 Callback 的东西。state 刻意在一次失败的完成后存活：在那里消费它，会把 Control Plane 的一时故障变成成员的一次彻底重来。
-
-只活在本进程中是刻意的。在绑定中途重启的 Runner 会拒绝 Callback，而不是接受一个它无法与自己服务过的页面对上的 Callback。
-
-## 再次进入，以及重新上锁
-
-已经持有会话的浏览器会被直接重定向到应用，完全不与 Control Plane 往返。丢了会话但电脑仍处于绑定状态的浏览器，会在没有配对码的情况下重新拿到会话——这台电脑已经是这位成员的了。只有未绑定的电脑才会被送回 `/team/start`。
-
-退出会忘掉凭据，保留设备密钥、工作空间和 Session：这台电脑还是同一台电脑，只是不再持有一个团队账户。
-
-## Control Plane 自己的页面
-
-Team Shell 是另一半。成员在那里登录，会话是 Cookie 中的一个随机不透明 Token，[账户存储](account.zh.md)里只有它的哈希——用 `SameSite=Lax` 而不是 `Strict`，因为成员是顺着自己 Runner 所服务的配对页上的链接到达确认页的，那是一次跨站顶层导航。
-
-确认页显示配对码、平台、Runner 版本和公钥指纹，确认后把浏览器重定向到 Runner 自己的 Callback，并携带 Code 和 Runner 铸出的那个 state。
-
-### 每一次写入都需要三样齐全
-
-会话说明是谁在问。指名同一 authority 的 `Origin` 说明请求来自这些页面。由会话导出的 CSRF Token——一个不同于 Cookie 的值——说明这个表单是本会话渲染出来的。缺少其中任何一样的写入都会被拒绝，因为单凭一个 Cookie，它会随着成员从未发起过的请求一同被送出。
-
-### 认证不是授权
-
-任何成员都能登录成功。此后每一个管理页面和每一次管理操作都会单独询问[访问控制](access-control.zh.md)，因此一个没有任何授权的成员登录之后依然什么也做不了。停用一个成员本身就是其会话的终结：会话经由账户解析，因此没有任何东西需要记着去结束它们。
-
-每一次管理行为都会留下一条指名执行者的[审计](audit.zh.md)记录。一次失败的登录不记录任何账户：记录它会把审计变成一份"哪些登录名存在"的清单。
-
-## 面向 Runner 的端点不接受会话
-
-`POST /team/device/start`、`/redeem` 和 `/refresh` 由 Runner 能够证明的东西授权，而不是由谁登录了授权：一个 PKCE Verifier、一份设备签名、一个一次性 Code。开启一个 Transaction 既证明不了什么也学不到什么，这正是它什么都不需要的原因。
-
-每一个请求体在[接缝](device-authorization.zh.md)看到它之前，都会被解析成接缝自己的请求。接缝的类型是它的调用方所许下的承诺，而一个经 HTTP 到达的调用方并未许下这样的承诺。
-
-面向浏览器的另一半——读取一个待确认 Transaction 并确认它——需要一个 Control Plane 会话，属于 Team Shell。
+访问控制会在评估角色与授权前，要求 Principal 存在于请求所指组织且状态为 `active`。即使较早的设备 Access Token 与角色绑定仍然存在，已停用账户也会得到 `default-deny`。因此网关会立即停止准入公司资源使用，而不是等待 Token 过期。
 
 <!-- BEGIN GENERATED cordis-surface (gen-cordis-catalog.ts) — do not edit between markers -->
 
@@ -82,7 +63,7 @@ Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnp
 
 The team account as this computer holds it.
 
-Binding is two steps with a person in between: `begin` opens a transaction and returns what the local pairing page shows, and `complete` runs only after the member confirmed on the Control Plane and the browser came back with a code.
+The default `signIn` flow authenticates the Runner-local form through the Control Plane and binds the device without navigating there. `begin` and `complete` retain the two-step mechanism used by an optional browser handoff.
 
 ```ts cordis-catalog
 /**
@@ -94,6 +75,15 @@ Binding is two steps with a person in between: `begin` opens a transaction and r
  * @returns the pairing code to display, the Control Plane address to send the member to, and the transaction id.
  */
 async begin(): Promise<BindingHandle>
+
+/**
+ * Authenticate a member and bind this Runner without opening the Control Plane in a browser.
+ * @param loginName - the organization-local account name typed on the Runner.
+ * @param secret - the account password typed on the Runner.
+ * @returns the state this installation is now in.
+ * @throws {ControlPlaneRefusedError} when authentication or binding is refused.
+ */
+async signIn(loginName: string, secret: string): Promise<TeamAccountState>
 
 /**
  * Redeem the code the browser carried back, and keep the credential.

@@ -31,6 +31,9 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "@deepseek-ai/dsh-account-auth": "workspace:^",
+    "@deepseek-ai/dsh-account-store": "workspace:^",
+    "@deepseek-ai/dsh-audit": "workspace:^",
     "@deepseek-ai/dsh-device-authorization": "workspace:^",
     "@deepseek-ai/schemastery": "workspace:^"
   },

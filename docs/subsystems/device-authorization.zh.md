@@ -2,7 +2,7 @@
 
 [English](device-authorization.md) | 中文
 
-设备授权把成员的浏览器会话变成一台电脑上的长期凭据，且仅限那一台。本子系统是一个接缝——[`dsh-device-authorization`](../../packages/account/device-authorization)（`ctx.deviceAuthorization`）配合 [`dsh-device-authorization-sqlite`](../../packages/account/device-authorization-sqlite) 后端——且只存在于服务端：由 Control Plane 组合，任何 Runner 都不挂载它，模型也永远看不到它。设计记录：[设备绑定 Agent Note](../../.agents/notes/implemented/architecture/2026-08-29-device-binding-proves-possession.zh.md)。
+设备授权把一次成功成员认证变成一台电脑上的长期凭据，且仅限那一台。批准可以来自可选的 Control Plane 浏览器 Handoff，也可以来自默认的经审计 Runner 密码流程。本子系统是一个接缝——[`dsh-device-authorization`](../../packages/account/device-authorization)（`ctx.deviceAuthorization`）配合 [`dsh-device-authorization-sqlite`](../../packages/account/device-authorization-sqlite) 后端——且只存在于服务端：由 Control Plane 组合，任何 Runner 都不挂载它，模型也永远看不到它。设计记录：[设备绑定 Agent Note](../../.agents/notes/implemented/architecture/2026-08-29-device-binding-proves-possession.zh.md)。
 
 ## 这套流程确立了什么
 

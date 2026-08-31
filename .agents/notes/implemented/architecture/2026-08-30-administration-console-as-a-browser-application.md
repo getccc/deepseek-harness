@@ -20,7 +20,7 @@ Administration is a React and Ant Design application, built by `apps/team-admin`
 
 **Copy is locale-owned, the way the browser client's is.** `zh` is the key-set source of truth and `en` mirrors it, so a key present in one dictionary and missing from the other is a type error rather than a blank label. The choice is this browser's, kept in `localStorage`: a display preference on one machine is not something an organization decides for a member, and the Control Plane has no reason to store it.
 
-**Confirming a computer stays a server-rendered page.** A member arrives there from a link their own Runner served, to compare a code and press one button. An application would have to load before it could show them the thing they came to check. `dsh-team-shell` is now that page and nothing else; the session rules both surfaces share moved to `dsh-team-browser-session`.
+**The optional browser handoff keeps confirmation server-rendered.** A deployment composing `dsh-team-shell` receives a member from a link their own Runner served, to compare a code and press one button. The default Control Plane does not compose that page; ordinary members authenticate on their Runner instead. The session rules the optional page and administration application share remain in `dsh-team-browser-session`.
 
 ## Alternatives considered
 

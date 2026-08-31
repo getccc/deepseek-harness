@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/subsystems/access-control.md
-access-control.md: 52266638ede3f5498212b03f2a0ce31a17f7ebf2
-access-control.zh.md: b0111f88f6d48f99345a816c8c40c42047065f24
+access-control.md: f00f46bcde1ffbe43c4c82c12ee2f8c3c7f702dc
+access-control.zh.md: 8bda9c47c0ff9674a71c67883e165e89a8a8ac2c

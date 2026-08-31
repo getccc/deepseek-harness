@@ -270,6 +270,27 @@ describe('BrowserAuth', () => {
     expect(auth.isAuthenticated(request('/', '127.0.0.1:3080', { cookie: login.cookie }))).toBe(true)
   })
 
+  it('ends an authenticated session into a same-origin redirect', async () => {
+    const store = new RecordCredentials()
+    const auth = await createAuth(store)
+    const login = exchange(auth)
+    const ended = response()
+
+    expect(auth.endSession(
+      request('/team/logout', '127.0.0.1:3080', { cookie: login.cookie }),
+      ended.value,
+      '/team/login',
+    )).toBe(true)
+    expect(ended.state).toMatchObject({
+      status: 303,
+      headers: { location: '/team/login', 'cache-control': 'no-store', 'referrer-policy': 'no-referrer' },
+    })
+    expect(ended.state.headers?.['set-cookie']).toMatch(
+      /^dsh-auth-[\w-]+=; Max-Age=0; Path=\/; HttpOnly; SameSite=Strict$/u,
+    )
+    expect(ended.state.body).toBeUndefined()
+  })
+
   it('leaves the session intact for a request that presented no valid cookie', async () => {
     const store = new RecordCredentials()
     const auth = await createAuth(store)

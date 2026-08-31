@@ -12,9 +12,11 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Context } from '@deepseek-ai/cordis'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import PasswordAccountAuth from '@deepseek-ai/dsh-account-auth-password'
 import HttpServer from '@deepseek-ai/dsh-host-webserver'
 import LocalCredentials from '@deepseek-ai/dsh-credentials-local'
 import SqliteAccountStore from '@deepseek-ai/dsh-account-store-sqlite'
+import SqliteAudit from '@deepseek-ai/dsh-audit-sqlite'
 import SqliteDeviceAuthorization from '@deepseek-ai/dsh-device-authorization-sqlite'
 import type { AccountStore, OrgId, UserId } from '@deepseek-ai/dsh-account-store'
 import type { DeviceAuthorization } from '@deepseek-ai/dsh-device-authorization'
@@ -37,12 +39,18 @@ let orgId: OrgId
 let alice: UserId
 
 const CALLBACK = 'http://127.0.0.1:3080/team/callback'
+const PASSWORD = 'correct-horse-battery-staple'
 
 /** Boot a Control Plane with the Runner-facing endpoints, on an OS-assigned port. */
 async function bootControlPlane(codeTtlMs = 60_000, accessTokenTtlMs = 900_000): Promise<Context> {
   const context = new Context()
   await context.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
   await context.plugin(SqliteAccountStore, { path: ':memory:' }).await()
+  await context.plugin(PasswordAccountAuth, {
+    minSecretLength: 8, maxFailedAttempts: 5, lockDurationMs: 60_000,
+    cost: 2, blockSize: 8, parallelization: 1,
+  }).await()
+  await context.plugin(SqliteAudit, { path: ':memory:', maxQueryRows: 100 }).await()
   await context.plugin(SqliteDeviceAuthorization, {
     path: ':memory:',
     transactionTtlMs: 300_000,
@@ -50,7 +58,11 @@ async function bootControlPlane(codeTtlMs = 60_000, accessTokenTtlMs = 900_000):
     accessTokenTtlMs,
     refreshTokenTtlMs: 2_592_000_000,
   }).await()
-  await context.plugin(endpoints, endpoints.Config({} as never)).await()
+  const store = context.get('accountStore') as AccountStore
+  orgId = (await store.createOrganization('Acme')).id
+  alice = (await store.createUser({ orgId, loginName: 'alice', displayName: 'Alice' })).id
+  await context.accountAuth.setSecret(alice, PASSWORD)
+  await context.plugin(endpoints, endpoints.Config({ organizationId: orgId } as never)).await()
   return context
 }
 
@@ -77,7 +89,7 @@ async function bind(): Promise<void> {
   const handle = await client.begin()
   const transactionId = new URL(handle.confirmUrl).pathname.split('/').pop() as string
   const issued = await auth.confirm(transactionId as never, {
-    orgId, userId: alice, browserSessionId: 'browser-session',
+    orgId, userId: alice, authenticationId: 'session:browser-session',
   })
   await client.complete(transactionId as never, issued.code)
 }
@@ -88,9 +100,6 @@ beforeEach(async () => {
   runner = await bootRunner(cp)
   client = runner.get('teamAccountClient') as TeamAccountClient
   auth = cp.get('deviceAuthorization') as DeviceAuthorization
-  const store = cp.get('accountStore') as AccountStore
-  orgId = (await store.createOrganization('Acme')).id
-  alice = (await store.createUser({ orgId, loginName: 'alice', displayName: 'Alice' })).id
 })
 
 afterEach(async () => {
@@ -100,6 +109,31 @@ afterEach(async () => {
 })
 
 describe('binding', () => {
+  it('signs in with the member account without navigating to the Control Plane', async () => {
+    expect(await client.signIn('alice', PASSWORD)).toMatchObject({
+      bound: true,
+      member: { loginName: 'alice', displayName: 'Alice' },
+    })
+    expect(await client.state()).toMatchObject({
+      member: { loginName: 'alice', displayName: 'Alice' },
+    })
+    expect((await auth.listDevices(orgId))[0]).toMatchObject({ ownerId: alice })
+  })
+
+  it('revokes the credential replaced by a later sign-in on this device', async () => {
+    await client.signIn('alice', PASSWORD)
+    const first = await client.accessToken()
+    await client.signIn('alice', PASSWORD)
+
+    expect(await auth.verifyAccessToken(first)).toBeUndefined()
+    expect(await auth.verifyAccessToken(await client.accessToken())).toMatchObject({ principalId: alice })
+  })
+
+  it('keeps invalid account credentials reasonless', async () => {
+    await expect(client.signIn('alice', 'wrong-password'))
+      .rejects.toMatchObject({ name: 'ControlPlaneRefusedError', reason: 'unauthorized', status: 401 })
+  })
+
   it('starts unbound, and knows it', async () => {
     expect(await client.state()).toEqual({ bound: false })
     await expect(client.accessToken()).rejects.toBeInstanceOf(NotBoundError)
@@ -146,7 +180,7 @@ describe('binding', () => {
   it('reports the Control Plane refusal word rather than a message', async () => {
     const handle = await client.begin()
     const transactionId = new URL(handle.confirmUrl).pathname.split('/').pop() as string
-    await auth.confirm(transactionId as never, { orgId, userId: alice, browserSessionId: 's' })
+    await auth.confirm(transactionId as never, { orgId, userId: alice, authenticationId: 'session:s' })
     await expect(client.complete(transactionId as never, 'a-code-nobody-issued'))
       .rejects.toMatchObject({ name: 'ControlPlaneRefusedError', reason: 'unknown', status: 403 })
   })
@@ -165,11 +199,14 @@ describe('holding the credential', () => {
     // what a Runner does when it wakes to a token about to lapse.
     runner = await bootRunner(cp, { refreshLeadMs: 3_600_000 })
     client = runner.get('teamAccountClient') as TeamAccountClient
-    await bind()
+    await client.signIn('alice', PASSWORD)
     const first = await client.accessToken()
     const second = await client.accessToken()
     expect(second).not.toBe(first)
     expect(await auth.verifyAccessToken(second)).toMatchObject({ orgId })
+    expect(await client.state()).toMatchObject({
+      member: { loginName: 'alice', displayName: 'Alice' },
+    })
   })
 
   it('reports a revoked device as a refusal, not as a token', async () => {

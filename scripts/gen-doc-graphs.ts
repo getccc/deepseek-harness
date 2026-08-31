@@ -104,7 +104,7 @@ const SERVICE_ROLES: ServiceRole[] = [
     title: 'Team Edition organizations and member accounts',
     mode: 'seam',
     implementations: ['account-store-sqlite'],
-    consumers: ['account-auth-password', 'access-control-sqlite', 'team-admin-api', 'team-shell'],
+    consumers: ['account-auth-password', 'access-control-sqlite', 'team-admin-api', 'team-control-plane-http', 'team-shell'],
     note: 'Server-side only: the Control Plane composes it, no Runner mounts it. It also holds the organization policy revision every authorization cache keys on.',
   },
   {
@@ -113,7 +113,7 @@ const SERVICE_ROLES: ServiceRole[] = [
     title: 'Proving a member is who they claim',
     mode: 'seam',
     implementations: ['account-auth-password'],
-    consumers: ['team-admin-api'],
+    consumers: ['team-admin-api', 'team-control-plane-http'],
     note: 'Verification is separate from the store so a second method arrives as a provider. The password provider stores a self-describing hash and rehashes on a successful verify.',
   },
   {
@@ -131,7 +131,7 @@ const SERVICE_ROLES: ServiceRole[] = [
     title: 'The append-only audit trail',
     mode: 'seam',
     implementations: ['audit-sqlite'],
-    consumers: ['team-admin-api', 'team-shell'],
+    consumers: ['team-admin-api', 'team-control-plane-http', 'team-shell'],
     note: 'Closed action and metadata catalogs, and a token rule on every caller-supplied string, so a record cannot hold a member\'s work. The surfaces a member acts through write the records, because they are what know which principal acted.',
   },
   {
@@ -164,11 +164,11 @@ const SERVICE_ROLES: ServiceRole[] = [
   {
     key: 'deviceAuthorization',
     pkg: 'device-authorization',
-    title: 'Binding a browser session to one computer',
+    title: 'Binding a successful authentication to one computer',
     mode: 'seam',
     implementations: ['device-authorization-sqlite'],
     consumers: ['team-admin-api', 'team-control-plane-http', 'team-shell'],
-    note: 'A pairing code and key digest let a member confirm which computer; a PKCE verifier and a device signature let that computer prove it holds the key. The Runner-facing endpoints and the Team Shell confirmation page are the two halves that drive it.',
+    note: 'The default Runner flow authenticates an account and approves a transaction; PKCE and a device signature prove that the redeeming computer holds the key. An optional browser handoff can supply the approval instead.',
   },
   {
     key: 'teamAccountClient',
@@ -176,7 +176,7 @@ const SERVICE_ROLES: ServiceRole[] = [
     title: 'The Runner side of the team account',
     mode: 'seam',
     implementations: [],
-    consumers: ['team-local-handoff'],
+    consumers: ['team-local-login', 'team-local-handoff'],
     note: 'Holds the device key and the credential on the member computer and calls the Control Plane over HTTPS. No company provider credential ever reaches it.',
   },
   {

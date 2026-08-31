@@ -197,7 +197,7 @@ export function apply(ctx: Context, config: Config): void {
         const issued = await ctx.deviceAuthorization.confirm(id, {
           orgId: accepted.signed.session.orgId,
           userId: accepted.signed.session.userId,
-          browserSessionId: hashToken(accepted.signed.token),
+          authenticationId: `session:${hashToken(accepted.signed.token)}`,
         })
         await record(accepted.signed, 'allowed')
         // Back to the Runner that opened this, carrying the code and the state

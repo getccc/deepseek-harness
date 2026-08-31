@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-team-local-handoff` serves the three addresses a member's browser navigates to on their own computer: `/team/start` shows the pairing code, `/team/open` is the daily entry, and `/team/callback` receives the browser back from the Control Plane. The callback answers 200 with a self-navigating page rather than a redirect, because a `SameSite=Strict` cookie does not survive a redirect inside a cross-site navigation chain — that one detail is what makes the handoff work at all.
+`dsh-team-local-handoff` is the optional company-site browser handoff. The default Team bundle uses [`team-local-login`](../team-local-login/README.md) instead, so ordinary members remain on port 3090. When deliberately composed, this package serves `/team/start`, `/team/open`, and `/team/callback`; the callback answers 200 with a self-navigating page because a `SameSite=Strict` cookie does not survive a redirect inside a cross-site navigation chain.
 
 ## Table of Contents
 

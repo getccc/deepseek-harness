@@ -2,7 +2,7 @@
 
 English | [中文](device-authorization.zh.md)
 
-Device authorization turns a member's browser session into a long-lived credential on one computer, and nowhere else. The subsystem is one seam — [`dsh-device-authorization`](../../packages/account/device-authorization) (`ctx.deviceAuthorization`) with the [`dsh-device-authorization-sqlite`](../../packages/account/device-authorization-sqlite) backend — and it is server-side only: the Control Plane composes it, no Runner mounts it, and models never see it. Design record: [device binding Agent Note](../../.agents/notes/implemented/architecture/2026-08-29-device-binding-proves-possession.md).
+Device authorization turns a successful member authentication into a long-lived credential on one computer, and nowhere else. The approval may come from the optional Control Plane browser handoff or the default audited Runner password flow. The subsystem is one seam — [`dsh-device-authorization`](../../packages/account/device-authorization) (`ctx.deviceAuthorization`) with the [`dsh-device-authorization-sqlite`](../../packages/account/device-authorization-sqlite) backend — and it is server-side only: the Control Plane composes it, no Runner mounts it, and models never see it. Design record: [device binding Agent Note](../../.agents/notes/implemented/architecture/2026-08-29-device-binding-proves-possession.md).
 
 ## What the flow establishes
 

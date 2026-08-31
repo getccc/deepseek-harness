@@ -1,72 +1,53 @@
-# Team handoff
+# Team sign-in
 
 English | [中文](team-handoff.zh.md)
 
-The handoff is how a member gets from the company site into the application running on their own computer. Three packages carry it: [`dsh-team-control-plane-http`](../../packages/team/team-control-plane-http) serves the Control Plane's Runner-facing binding endpoints, [`dsh-team-account-client`](../../packages/team/team-account-client) (`ctx.teamAccountClient`) holds the device key and the credential on the member's computer, and [`dsh-team-local-handoff`](../../packages/team/team-local-handoff) serves the three local addresses a browser navigates to. Design record: [team handoff Agent Note](../../.agents/notes/implemented/architecture/2026-08-30-the-handoff-is-navigation-not-a-tunnel.md).
+Ordinary members sign in on the Team Runner at port 3090. Administrators use the Control Plane at port 3095. The default flow never navigates a member browser to the Control Plane: [`dsh-team-local-login`](../../packages/team/team-local-login) owns the local account form, [`dsh-team-account-client`](../../packages/team/team-account-client) owns the device key and credential, and [`dsh-team-control-plane-http`](../../packages/team/team-control-plane-http) authenticates the account and issues the device-bound credential. Design record: [Team Runner member sign-in Agent Note](../../.agents/notes/implemented/architecture/2026-08-30-team-runner-owns-member-sign-in.md).
 
-## What crosses the network, and what does not
+## The two browser surfaces serve different people
 
-The member's workspace, their sessions, their terminal output, and their diffs never leave their computer. The Control Plane sees a public key, a platform word, a Runner version, and the credentials it issues. What the Runner receives is a refresh token for its own device — never a company provider credential.
+| Address | User | Purpose |
+|---|---|---|
+| `http://127.0.0.1:3090/team/open` | Ordinary member | Local login and the Runner application |
+| `https://control-plane.example/team/admin/` | Administrator | Accounts, roles, grants, devices, audit, and company resources |
 
-The site is the habitual entry, not a checkpoint. A member who opens the local address directly gets the same application, which is what keeps the product usable when the Control Plane is unreachable.
+Standalone `dsh web` remains on port 3080 and uses its process-token unlock. Team does not reuse that shortcut: its Web runtime opens the clean `/team/open` path, and a locked browser is redirected to `/team/login`.
 
-## Three local addresses
+Application authorization is not a substitute for deployment isolation. Production deployments should expose 3095 only through their administrator network or reverse proxy and terminate TLS there.
+
+## One local login becomes one device credential
+
+1. The Runner opens a device transaction and keeps the PKCE verifier in memory.
+2. The local form sends the account and password to the Runner. The Runner forwards them with the transaction to the configured Control Plane origin.
+3. The Control Plane verifies the active account, records the authentication event, and approves the transaction with that audit reference.
+4. The Runner redeems the one-time code using the PKCE verifier and a signature from its device key.
+5. The Runner stores the refresh and access tokens through its credential provider, then the local browser-session service unlocks the application.
+
+The password is not stored on the Runner, but it does cross the Runner-to-Control-Plane connection. TLS is therefore required outside local development. Company provider credentials never travel in the other direction: the Runner receives only its device credential.
+
+A later successful sign-in with the same device key revokes that device's older credential families before issuing the replacement. One Runner process holds one active team account; signing in again changes the account for every browser using that process.
+
+## Three fixed local routes
 
 | Path | What it does |
 |---|---|
-| `/team/start` | Opens a binding transaction and shows the pairing code to compare |
-| `/team/open` | The daily entry: unlock, silently re-issue, or send the member to bind |
-| `/team/callback` | Where the Control Plane sends the browser back with an authorization code |
+| `/team/open` | Opens the application for an authenticated local browser, otherwise redirects to login |
+| `/team/login` | Serves and accepts the account-and-password form |
+| `/team/logout` | Forgets the team credential, then delegates local cookie removal to `/lock` |
 
-They are reached by navigating and nothing else: each answers 405 unless the request is a top-level document navigation. They carry no RPC, read no request body, and reach no Host capability, so the browser-trust fence that guards `/api` has nothing to guard here.
+`/team/open` does not silently mint a browser session from a stored team credential. A new or locked browser must authenticate, which prevents a second browser on a shared computer from inheriting the process account merely by opening the port.
 
-The paths are fixed rather than configurable, because a Control Plane registers its redirect target against them — a deployment that renamed one would break every already-bound computer.
+The login form requires an exact same-origin submission, accepts a bounded URL-encoded body, and gives wrong, unknown, locked, and suspended accounts the same refusal. It is server-rendered because the application assets are unavailable before the local session is established.
 
-## The callback answers 200, not a redirect
+## The Control Plane is administrator-only
 
-This is the part that has to be exactly right, and the obvious version does not work.
+The administration API verifies both the password and `organization.admin.access` before creating a browser session. Every later request rechecks that entry permission and then checks the action-specific grant, such as `member.disable` or `model.catalog.manage`. Removing the entry grant therefore ends console access even if the browser still carries a session cookie.
 
-The local session cookie is `SameSite=Strict`. The navigation that reaches `/team/callback` was started by the company site, which is a different site. A browser withholds a Strict cookie from every request in a cross-site navigation chain — including the request a redirect would produce. Setting the cookie and answering 303 lands the browser on the application **without** it, and the application answers 401.
+The default Control Plane bundle does not compose `team-shell` or any member confirmation page. A deployment supplies the same `organizationId` to `team-control-plane-http` for member authentication and to `team-admin-api` for administration; both rows fail rather than guessing it.
 
-So the callback answers 200 with the cookie and a page that navigates itself. That navigation is started by the local document, which makes it same-site, and the cookie travels with it. The page uses `location.replace`, with a `noscript` refresh and a visible link so a member with scripting disabled still arrives.
+## Suspension is checked where access is decided
 
-## The local state binds the callback to the pairing page
-
-`/team/start` mints a random state, puts it on the Control Plane link, and keeps it in this process. `/team/callback` refuses unless the state matches. That is what stops a link someone else assembled from binding this computer to their account.
-
-It is **not** what stops a replay — the Control Plane's authorization code is one-time, and that is what refuses a second callback carrying it. The state survives a failed completion on purpose: spending it there would turn a moment of Control Plane trouble into a full restart for the member.
-
-Living only in this process is deliberate. A Runner restarted mid-binding refuses the callback rather than accepting one it cannot tie to a page it served.
-
-## Returning, and re-locking
-
-A browser that already holds the session gets a redirect to the application with no Control Plane round trip at all. A browser that lost it, on a computer that is still bound, gets the session re-issued with no pairing code — the computer is already this member's. Only an unbound computer is sent back to `/team/start`.
-
-Signing out forgets the credential and keeps the device key, the workspaces, and the sessions: the computer is still the same computer, it just stops holding a team account.
-
-## The Control Plane's own pages
-
-The Team Shell is the other half. A member signs in there, and the session is a random opaque token in a cookie with only its hash in the [account store](account.md) — `SameSite=Lax` rather than `Strict`, because the member reaches the confirmation page by following a link from the pairing page their own Runner served, which is a cross-site top-level navigation.
-
-The confirmation page shows the pairing code, the platform, the Runner version, and the key fingerprint, and confirming redirects the browser to the Runner's own callback carrying the code and the state the Runner minted.
-
-### Every write needs all three
-
-A session says who is asking. An `Origin` naming this same authority says the request came from these pages. A CSRF token derived from the session — a different value from the cookie — says the form was one this session rendered. A write missing any of them is refused, because a cookie by itself travels with a request the member never made.
-
-### Authentication is not authorization
-
-Signing in succeeds for any member. Every administrative page and every administrative action then asks [access control](access-control.md) separately, so a member with no grants signs in and can still do nothing. Suspending a member is by itself the end of their sessions: a session resolves through its account, so nothing has to remember to end them.
-
-Every administrative act leaves an [audit](audit.md) record naming the principal that made it. A failed sign-in records no account: recording one would turn the trail into a list of which login names exist.
-
-## The Runner-facing endpoints take no session
-
-`POST /team/device/start`, `/redeem`, and `/refresh` are authorized by what the Runner can prove, not by who is logged in: a PKCE verifier, a device signature, and a one-time code. Opening a transaction proves nothing and learns nothing, which is why it needs nothing.
-
-Each body is parsed into the [seam's](device-authorization.md) own request before the seam sees it. The seam's types are a promise its callers keep, and a caller that arrived over HTTP has made no such promise.
-
-The browser-facing half — reading a pending transaction and confirming it — needs a Control Plane session and belongs to the Team Shell.
+Access control requires the principal to exist in the requested organization and have status `active` before roles and grants are evaluated. A suspended account receives `default-deny` even while an older device access token and role bindings still exist. Gateways therefore stop admitting company-resource use immediately instead of waiting for token expiry.
 
 <!-- BEGIN GENERATED cordis-surface (gen-cordis-catalog.ts) — do not edit between markers -->
 
@@ -82,7 +63,7 @@ Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnp
 
 The team account as this computer holds it.
 
-Binding is two steps with a person in between: `begin` opens a transaction and returns what the local pairing page shows, and `complete` runs only after the member confirmed on the Control Plane and the browser came back with a code.
+The default `signIn` flow authenticates the Runner-local form through the Control Plane and binds the device without navigating there. `begin` and `complete` retain the two-step mechanism used by an optional browser handoff.
 
 ```ts cordis-catalog
 /**
@@ -94,6 +75,15 @@ Binding is two steps with a person in between: `begin` opens a transaction and r
  * @returns the pairing code to display, the Control Plane address to send the member to, and the transaction id.
  */
 async begin(): Promise<BindingHandle>
+
+/**
+ * Authenticate a member and bind this Runner without opening the Control Plane in a browser.
+ * @param loginName - the organization-local account name typed on the Runner.
+ * @param secret - the account password typed on the Runner.
+ * @returns the state this installation is now in.
+ * @throws {ControlPlaneRefusedError} when authentication or binding is refused.
+ */
+async signIn(loginName: string, secret: string): Promise<TeamAccountState>
 
 /**
  * Redeem the code the browser carried back, and keep the credential.

@@ -20,7 +20,9 @@ import { Context } from '@deepseek-ai/cordis'
 import Loader from '@deepseek-ai/cordis-plugin-loader'
 import Include from '@deepseek-ai/cordis-plugin-include'
 import HttpServer from '@deepseek-ai/dsh-host-webserver'
+import PasswordAccountAuth from '@deepseek-ai/dsh-account-auth-password'
 import SqliteAccountStore from '@deepseek-ai/dsh-account-store-sqlite'
+import SqliteAudit from '@deepseek-ai/dsh-audit-sqlite'
 import SqliteDeviceAuthorization from '@deepseek-ai/dsh-device-authorization-sqlite'
 import LocalCredentials from '@deepseek-ai/dsh-credentials-local'
 import type { AccountStore } from '@deepseek-ai/dsh-account-store'
@@ -140,6 +142,18 @@ async function bootControlPlane(): Promise<Context> {
     "- name: '@deepseek-ai/dsh-account-store-sqlite'",
     '  config:',
     "    path: ':memory:'",
+    "- name: '@deepseek-ai/dsh-account-auth-password'",
+    '  config:',
+    '    minSecretLength: 8',
+    '    maxFailedAttempts: 5',
+    '    lockDurationMs: 60000',
+    '    cost: 2',
+    '    blockSize: 8',
+    '    parallelization: 1',
+    "- name: '@deepseek-ai/dsh-audit-sqlite'",
+    '  config:',
+    "    path: ':memory:'",
+    '    maxQueryRows: 100',
     "- name: '@deepseek-ai/dsh-device-authorization-sqlite'",
     '  config:',
     "    path: ':memory:'",
@@ -148,9 +162,13 @@ async function bootControlPlane(): Promise<Context> {
     '    accessTokenTtlMs: 900000',
     '    refreshTokenTtlMs: 2592000000',
     "- name: '@deepseek-ai/dsh-team-control-plane-http'",
+    '  config:',
+    '    organizationId: optional-handoff-test',
   ], new Map<string, unknown>([
     ['@deepseek-ai/dsh-host-webserver', HttpServer],
     ['@deepseek-ai/dsh-account-store-sqlite', SqliteAccountStore],
+    ['@deepseek-ai/dsh-account-auth-password', PasswordAccountAuth],
+    ['@deepseek-ai/dsh-audit-sqlite', SqliteAudit],
     ['@deepseek-ai/dsh-device-authorization-sqlite', SqliteDeviceAuthorization],
     ['@deepseek-ai/dsh-team-control-plane-http', controlPlaneHttp],
   ]))
@@ -224,7 +242,7 @@ describe('a member connects this computer', () => {
     // The member confirms. The Team Shell serves this page; here the seam call
     // that the page makes stands in for the click.
     const issued = await auth.confirm(transactionId, {
-      orgId: org.id, userId: alice.id, browserSessionId: 'browser-session',
+      orgId: org.id, userId: alice.id, authenticationId: 'session:browser-session',
     })
 
     // The Control Plane sends the browser back. This arrival is cross-site.
@@ -266,7 +284,7 @@ describe('a member connects this computer', () => {
     const confirm = new URL(confirmUrl)
     const transactionId = (confirm.pathname.split('/').pop() as string) as TransactionId
     const issued = await auth.confirm(transactionId, {
-      orgId: org.id, userId: alice.id, browserSessionId: 'browser-session',
+      orgId: org.id, userId: alice.id, authenticationId: 'session:browser-session',
     })
     const callback = new URL(`${runnerUrl}/team/callback`)
     callback.searchParams.set('state', confirm.searchParams.get('state') as string)
@@ -302,7 +320,7 @@ describe('a member connects this computer', () => {
     const confirm = new URL(confirmUrl)
     const issued = await auth.confirm(
       (confirm.pathname.split('/').pop() as string) as TransactionId,
-      { orgId: org.id, userId: alice.id, browserSessionId: 'browser-session' },
+      { orgId: org.id, userId: alice.id, authenticationId: 'session:browser-session' },
     )
 
     const forged = new URL(`${runnerUrl}/team/callback`)
@@ -337,7 +355,7 @@ describe('a member connects this computer', () => {
 
     const issued = await auth.confirm(
       (confirm.pathname.split('/').pop() as string) as TransactionId,
-      { orgId: org.id, userId: alice.id, browserSessionId: 'browser-session' },
+      { orgId: org.id, userId: alice.id, authenticationId: 'session:browser-session' },
     )
     const good = new URL(`${runnerUrl}/team/callback`)
     good.searchParams.set('state', state)
@@ -366,7 +384,7 @@ describe('a member connects this computer', () => {
     const confirm = new URL(confirmUrl)
     const issued = await auth.confirm(
       (confirm.pathname.split('/').pop() as string) as TransactionId,
-      { orgId: org.id, userId: alice.id, browserSessionId: 'browser-session' },
+      { orgId: org.id, userId: alice.id, authenticationId: 'session:browser-session' },
     )
     const callback = new URL(`${runnerUrl}/team/callback`)
     callback.searchParams.set('state', confirm.searchParams.get('state') as string)
@@ -490,7 +508,7 @@ describe('when things do not work', () => {
     const confirm = new URL(confirmUrl)
     const issued = await auth.confirm(
       (confirm.pathname.split('/').pop() as string) as TransactionId,
-      { orgId: org.id, userId: alice.id, browserSessionId: 'browser-session' },
+      { orgId: org.id, userId: alice.id, authenticationId: 'session:browser-session' },
     )
     const callback = new URL(`${runnerUrl}/team/callback`)
     callback.searchParams.set('state', confirm.searchParams.get('state') as string)

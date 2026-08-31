@@ -43,10 +43,28 @@ export const DEVICE_PATH_PREFIX = '/team/device'
 
 /** Path segment that opens a transaction. */
 export const START_PATH = '/start'
+/** Path segment that authenticates a member and approves one transaction. */
+export const LOGIN_PATH = '/login'
 /** Path segment that turns an authorization code into a credential. */
 export const REDEEM_PATH = '/redeem'
 /** Path segment that exchanges a refresh token for the next one. */
 export const REFRESH_PATH = '/refresh'
+
+/** Member identity returned after a successful Runner-local sign-in. */
+export interface TeamMemberIdentity {
+  /** Organization-local account name. */
+  readonly loginName: string
+  /** Human-readable member name. */
+  readonly displayName: string
+}
+
+/** Successful authentication response before the Runner redeems its code. */
+export interface LoginSuccess {
+  /** One-time authorization code bound to the pending transaction. */
+  readonly code: string
+  /** Identity the Runner persists beside the issued device credential. */
+  readonly member: TeamMemberIdentity
+}
 
 /**
  * What the Control Plane answers when it refuses.

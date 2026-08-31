@@ -44,4 +44,4 @@ Lapsed transactions and spent tokens are never pruned. Both are kept so a replay
 
 Nothing here defends the Runner's own process. A plugin sharing the Runner's Cordis process can read the device private key, and short lifetimes and revocation reduce the window rather than isolating it. The threat model accepts this for the first version, and the compensating controls — private-plugin review, artifact signing, unknown public plugins off by default — live elsewhere.
 
-Under the SQLite deviation this store is its own database. Nothing here writes an audit record, because the operations that will call it — a Control Plane HTTP surface, an admin API — know the device, the correlation, and the browser session that this store only records.
+Under the SQLite deviation this store is its own database. Nothing here writes an audit record, because the operations that call it — a Control Plane HTTP surface or an optional confirmation page — know the device, the correlation, and the successful authentication reference that this store only records.

@@ -23,7 +23,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/access/access-control-sqlite/src/index.ts:42`](../packages/access/access-control-sqlite/src/index.ts)
+Source: [`packages/access/access-control-sqlite/src/index.ts:43`](../packages/access/access-control-sqlite/src/index.ts)
 
 <a id="deepseek-aidsh-account-auth-password"></a>
 
@@ -2762,7 +2762,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/team/team-account-client/src/index.ts:78`](../packages/team/team-account-client/src/index.ts)
+Source: [`packages/team/team-account-client/src/index.ts:79`](../packages/team/team-account-client/src/index.ts)
 
 <a id="deepseek-aidsh-team-admin-api"></a>
 
@@ -2792,7 +2792,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/team/team-admin-api/src/index.ts:138`](../packages/team/team-admin-api/src/index.ts)
+Source: [`packages/team/team-admin-api/src/index.ts:139`](../packages/team/team-admin-api/src/index.ts)
 
 <a id="deepseek-aidsh-team-console-menu-sqlite"></a>
 

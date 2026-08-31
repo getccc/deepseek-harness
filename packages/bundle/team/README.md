@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-team` is the layer that turns the local web surface into a Team Runner. It stacks on top of [`dsh-base`](../base/README.md) and [`dsh-web-app`](../web-app/README.md) rather than replacing either, so the browser application, session store, and every local capability stay exactly where they already live. What this layer owns is the loopback port — the Team Runner listens on `3090`, leaving `3080` to `dsh web`, so a developer can run both at once — the team account this computer holds, and the three local addresses a browser navigates to. The model and knowledge gateways arrive here as their packages land.
+`dsh-team` is the layer that turns the local web surface into a Team Runner. It stacks on top of [`dsh-base`](../base/README.md) and [`dsh-web-app`](../web-app/README.md), keeping workspaces and execution on the member's computer. This layer owns port `3090`, the local account login at `/team/login`, the device credential this computer holds, and the company model transport. Port `3080` remains available to standalone `dsh web`.
 
 It does not bind unconfigured: the account-client row names no Control Plane and no Runner version, so a Runner nobody told which company it belongs to fails to load rather than sending a public key to a stranger.
 
@@ -33,7 +33,7 @@ You do not mount this bundle directly. Select the profile that stacks it:
 dsh --profile team
 ```
 
-The profile composes `dsh-base`, then `dsh-web-app`, then this layer, and opens the same browser application `dsh web` serves — at `http://127.0.0.1:3090`.
+The profile composes `dsh-base`, then `dsh-web-app`, then this layer, and opens `http://127.0.0.1:3090/team/open`. A locked browser sees the local account form; it is never sent to the Control Plane administration origin.
 
 ### Running alongside `dsh web`
 
@@ -58,7 +58,7 @@ A deployment that needs a different fixed port overrides the `webserver` row fro
 
 The package's substance is `cordis.patch.yml`, named by the `dsh.bundle.patch` manifest field. The profile composer applies each bundle's patch in the order the profile lists them, so this layer sees the rows `dsh-base` and `dsh-web-app` already inserted and overrides them by id.
 
-A patch replaces the targeted row's whole `config`, so the `webserver` row here restates every key it owns — `host`, `port`, `compression`, `compressionLevel`, and `compressionThresholdBytes` — while `name` and `inject` stay with the row the earlier layer inserted.
+A patch replaces the targeted row's whole `config`, so the `webserver` and `web-runtime` overrides restate every key they own. The runtime entry is `/team/open`, which deliberately receives no standalone Web process token because local account authentication owns Team unlock.
 
 ### Source map
 

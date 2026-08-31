@@ -133,6 +133,7 @@
       config:
         openBrowser: !!js ctx.webStartup.openBrowser
         printUrl: true
+        entryPath: /
         surfaceContext: true
         trustedHosts: !!js ctx.webStartup.trustedHosts
 

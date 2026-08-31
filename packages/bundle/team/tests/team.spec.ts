@@ -57,7 +57,7 @@ describe('dsh-team bundle', () => {
     }
   })
 
-  it('adds the team account, the local handoff, and the company model transport', () => {
+  it('adds the team account, local login, and company model transport', () => {
     const inserted = new Map(patchRows().flatMap(row => row.insert ?? [])
       .map(row => [row.id as string, row.name as string]))
     const manifest = JSON.parse(
@@ -65,12 +65,17 @@ describe('dsh-team bundle', () => {
     ) as { dependencies?: Record<string, string> }
     for (const [id, name] of [
       ['team-account-client', '@deepseek-ai/dsh-team-account-client'],
-      ['team-local-handoff', '@deepseek-ai/dsh-team-local-handoff'],
+      ['team-local-login', '@deepseek-ai/dsh-team-local-login'],
       ['llm-http-transport', '@deepseek-ai/dsh-llm-http-transport-team'],
     ] as const) {
       expect(inserted.get(id), id).toBe(name)
       expect(manifest.dependencies ?? {}, id).toHaveProperty(name)
     }
+  })
+
+  it('opens a clean local login entry instead of a process-token URL', () => {
+    const runtime = patchRows().find(row => row.id === 'web-runtime')
+    expect(runtime?.config?.['entryPath']).toBe('/team/open')
   })
 
   it('leaves the company and the version unnamed, so a Runner nobody configured does not bind', () => {

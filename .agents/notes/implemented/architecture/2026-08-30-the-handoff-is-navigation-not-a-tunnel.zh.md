@@ -14,6 +14,8 @@ Status: implemented
 
 ## 决策
 
+这套导航流程仍可通过未被组合的 `team-local-handoff` 包使用，但它不再是默认 Team 入口。[Team Runner 成员登录决策](2026-08-30-team-runner-owns-member-sign-in.zh.md)拥有当前交付的默认方案：成员留在 3090，Control Plane 仅供管理员使用。如果部署刻意组合可选 Handoff，下文的 Callback 与代理取舍仍是该流程的依据。
+
 **站点是入口，不是数据通路。** 它认证成员、确认他们正坐在哪台电脑前，然后把浏览器交给一个本地地址。从那时起，地址栏显示 loopback，除了成员的工作明确发起的公司资源调用之外，不再有任何东西穿过网络。
 
 站点同时是习惯性的而非必需的：直接打开本地地址同样到达那个应用。正是这一点让成员在 Control Plane 不可达时仍能工作，也正因如此，本地入口绝不能从文档中移除。
@@ -26,7 +28,7 @@ Status: implemented
 
 **本地 state 把 Callback 绑到配对页，仅此而已。** 它阻止别人拼装的链接把这台电脑绑到他们的账户上。它不阻止重放——Authorization Code 在 Control Plane 一侧是一次性的，那才是拒绝第二次携带它的 Callback 的东西。state 刻意在一次失败的完成后存活：在那里消费它，会把 Control Plane 的一时故障变成成员的一次彻底重来。
 
-**面向 Runner 的端点不接受浏览器会话**，因为它们都不由会话授权。开启一个 Transaction 既证明不了什么也学不到什么；兑换与刷新由 PKCE Verifier、设备签名和一次性 Code 授权。每一个请求体在接缝看到它之前都被解析成接缝自己的请求，因为接缝的类型是它的调用方所许下的承诺，而一个经 HTTP 到达的调用方并未许下这样的承诺。
+**可选 Handoff 面向 Runner 的调用不接受浏览器 Session**，因为它们都不由 Session 授权。开启 Transaction 既证明不了什么也学不到什么；兑换与刷新由 PKCE Verifier、设备签名和一次性 Code 授权。共享 HTTP 包如今还承载默认 Runner 密码认证调用。每个请求体都会在拥有它的服务看到之前完成解析，因为同进程类型是 HTTP 调用方尚未许下的承诺。
 
 ## 曾考虑的替代方案
 
@@ -44,6 +46,6 @@ Status: implemented
 
 `client-connection` 现在发布 `browserSession`，一个只有两个方法的本地会话视图：询问这个浏览器是否持有它，以及给它一个。关于 Cookie 的其余一切都留在该包内部，因此第二个插件无法铸出一个该包此后必须一直保持兼容的会话。
 
-Team Shell 面向浏览器的那一半端点——读取一个待确认 Transaction 并确认它——不在这里。它们需要一个 Control Plane 会话，那是下一次改动；在此之前，端到端测试在成员的点击将要调用 `confirm` 的地方，替它调用接缝的 `confirm`。
+可选 Team Shell 拥有读取并确认待处理 Transaction 的浏览器端点。默认 Control Plane 不再组合该 Shell，但保留这套 Handoff 的部署仍使用它的 Control Plane Session、同源、CSRF 与审计检查。
 
 测试使用 `node:http` 而不是 `fetch`。`fetch` 会用自己的值覆盖 `Sec-Fetch-Mode`，因此用它的测试无法呈现一次真实导航所呈现的东西，而这些端点恰恰就是按那个头来回答的。这一点值得记住：同样的替换会无声地削弱将来对任何"仅导航"端点的测试。

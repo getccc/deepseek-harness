@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-team-shell` 只提供一个页面：成员确认请求连接的这台电脑是自己的。它保持服务端渲染，是因为成员从哪里抵达——他们自己 Runner 提供的配对页上的一条链接——以及抵达后做什么，也就是比对一个码、按一个按钮。管理是一个浏览器应用；而这一页必须在一次跨站导航落地的瞬间即可阅读。
+`dsh-team-shell` 是 [`team-local-handoff`](../team-local-handoff/README.zh.md) 在 Control Plane 一侧的可选组件。默认 Control Plane Bundle 不组合它：普通成员通过 `team-local-login` 在 3090 认证。刻意恢复浏览器 Handoff 的部署，才使用这张服务端渲染页面让成员比对 Code 并确认一个设备 Transaction。
 
 ## 目录
 

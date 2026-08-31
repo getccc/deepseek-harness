@@ -12,7 +12,7 @@ Status: implemented
 
 ## 决策
 
-**这些行省略那些键，而插件在缺少它们时拒绝加载。** `team-shell` 在 `organizationId` 为空时抛错；`team-account-client` 把 `controlPlaneUrl` 和 `runnerVersion` 声明为必填，因此 schema 解析会失败。部署在自己的 patch 中提供它们，而那正是安装程序本就写入部署事实的地方。
+**这些行省略那些键，而插件在缺少它们时拒绝加载。** `team-control-plane-http` 与 `team-admin-api` 在 `organizationId` 为空时抛错；`team-account-client` 把 `controlPlaneUrl` 和 `runnerVersion` 声明为必填，因此 Schema 解析会失败。部署在自己的 Patch 中提供它们，而那正是安装程序本就写入部署事实的地方。
 
 这让失败变得响亮、即时且自足——它发生在加载时、发生在配置错误的那个进程里，并指名那个键。另一种做法则会在更晚、别处，以一个症状的形式失败。
 

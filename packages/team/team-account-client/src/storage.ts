@@ -13,6 +13,7 @@ import { createPrivateKey } from 'node:crypto'
 import { credentialKey, type CredentialProvider } from '@deepseek-ai/dsh-credentials'
 import type { DeviceId, FamilyId } from '@deepseek-ai/dsh-device-authorization'
 import type { StoredCredential } from './types.ts'
+import type { TeamMemberIdentity } from '@deepseek-ai/dsh-team-control-plane-http'
 
 /** Where this computer's device key pair is kept. */
 export const DEVICE_KEY_RECORD = credentialKey('team', 'device-key')
@@ -96,6 +97,7 @@ export async function readCredential(credentials: CredentialProvider): Promise<S
  * racing cannot leave the older token behind the newer one.
  * @param credentials - the provider holding this installation's records.
  * @param issued - the credential the Control Plane just returned.
+ * @param member - member identity retained beside a local sign-in credential.
  */
 export async function writeCredential(credentials: CredentialProvider, issued: {
   deviceId: DeviceId
@@ -104,7 +106,7 @@ export async function writeCredential(credentials: CredentialProvider, issued: {
   refreshExpiresAt: number
   accessToken: string
   accessExpiresAt: number
-}): Promise<void> {
+}, member?: TeamMemberIdentity): Promise<void> {
   const payload: StoredCredential = {
     deviceId: issued.deviceId,
     familyId: issued.familyId,
@@ -112,6 +114,7 @@ export async function writeCredential(credentials: CredentialProvider, issued: {
     refreshExpiresAt: issued.refreshExpiresAt,
     accessToken: issued.accessToken,
     accessExpiresAt: issued.accessExpiresAt,
+    ...(member === undefined ? {} : { member }),
   }
   await credentials.modifyRecord(TEAM_CREDENTIAL_RECORD, () =>
     Promise.resolve({ kind: 'grant', payload }))

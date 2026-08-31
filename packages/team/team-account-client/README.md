@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-team-account-client` is what a member's computer holds of its team account. It generates the device key pair on first use and keeps the private half here; it stores the credential the Control Plane issues; and it makes the three calls that binding and refreshing need. No company provider credential ever arrives on this computer — what it holds is a refresh token for its own device and a short-lived access token.
+`dsh-team-account-client` is what a member's computer holds of its team account. It generates the device key pair on first use and keeps the private half here, authenticates the local account form through the Control Plane, and stores the device credential and public member identity the Control Plane returns. No company provider credential ever arrives on this computer — only a refresh token for its own device, a short-lived access token, and the member's login and display names.
 
 ## Table of Contents
 
@@ -34,7 +34,7 @@ plugins:
     refreshLeadMs: 60000
 ```
 
-Binding is two steps with a person in between: `begin()` opens a transaction and returns what the local pairing page shows, and `complete()` runs only after the member confirmed on the Control Plane and the browser came back with a code. `accessToken()` serves the stored token, refreshing first when it is close enough to lapsing to lose its own race.
+The default Team flow calls `signIn(loginName, secret)`: it opens a device transaction, authenticates it through the Control Plane, redeems the one-time code with PKCE and a device signature, and stores the result with the returned member identity. `begin()` and `complete()` remain available to the optional browser-handoff composition. `accessToken()` serves the stored token, refreshing first when it is close enough to lapsing to lose its own race while preserving the member fields.
 
 -----
 
@@ -47,7 +47,7 @@ It is written nowhere. A transaction therefore cannot be completed by anything t
 
 ### Both records go through the credential provider
 
-The device key and the credential are stored as credential records rather than in a file this package writes, so whatever protection a deployment gives credentials covers them too, and a person has one place to inspect and clear. Both writes use the provider's read-decide-replace, so two Runners racing at first start end with one key rather than two identities.
+The device key and the credential are stored as credential records rather than in a file this package writes, so whatever protection a deployment gives credentials covers them too, and a person has one place to inspect and clear. The credential record includes the public `loginName` and `displayName` returned by local sign-in; the local account endpoint can display them without exposing token fields. Both writes use the provider's read-decide-replace, so two Runners racing at first start end with one key rather than two identities.
 
 ### Signing out keeps the computer
 
@@ -68,7 +68,7 @@ It forgets the credential and keeps the device key, the workspaces, and the sess
 ## Further Exploration
 
 - [Team-handoff subsystem](../../../docs/subsystems/team-handoff.md) — the whole flow, both sides.
-- [`team-local-handoff`](../team-local-handoff/README.md) — the local addresses that drive this client.
+- [`team-local-login`](../team-local-login/README.md) — the default local account form that drives this client.
 - [`device-authorization`](../../account/device-authorization/README.md) — what the Control Plane does with what this sends.
 
 <a id="model-experience"></a>

@@ -1,5 +1,5 @@
 ---
-description: "The Control Plane's Runner-facing binding endpoints: open a transaction, redeem an authorization code, exchange a refresh token."
+description: "The Control Plane's Runner-facing account authentication and device-credential endpoints."
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-team-control-plane-http` serves the three endpoints a Runner calls: open a binding transaction, redeem an authorization code, and exchange a refresh token. None of them takes a browser session, because none of them is authorized by one — opening a transaction proves nothing and learns nothing, and the other two are authorized by a PKCE verifier, a device signature, and a one-time code. The endpoints a member's browser uses belong to the Team Shell.
+`dsh-team-control-plane-http` serves the four endpoints a Team Runner calls: open a device transaction, authenticate an organization account and approve that transaction, redeem its one-time code, and refresh the device credential. The member's browser remains on the Runner origin; no Control Plane browser session participates.
 
 ## Table of Contents
 
@@ -28,11 +28,12 @@ English | [中文](README.zh.md)
 ```yaml
 plugins:
   '@deepseek-ai/dsh-team-control-plane-http':
+    organizationId: 019400a1-0000-7000-8000-000000000000
     pathPrefix: /team/device
     maxRequestBodyBytes: 16384
 ```
 
-The three paths are `POST {pathPrefix}/start`, `/redeem`, and `/refresh`. A refusal answers 403 carrying the seam's own word, so a Runner tells "try again" from "bind this computer again" without parsing a message; a body this endpoint could not read answers 400.
+The four paths are `POST {pathPrefix}/start`, `/login`, `/redeem`, and `/refresh`. `organizationId` has no default because this single-organization endpoint must not guess which account namespace it authenticates. A successful `/login` answer carries the one-time code plus the authenticated account's `loginName` and `displayName`; it never carries a password or device credential. Invalid account credentials answer the same reasonless 401; device-seam refusals answer 403 carrying the seam's word; malformed bodies answer 400.
 
 -----
 
@@ -51,7 +52,7 @@ A refusal carries the seam's word. Anything else answers 500 with `{"error":"int
 
 | Path | Role |
 |---|---|
-| [`src/index.ts`](src/index.ts) | The three routes, the body parsing, and the refusal mapping |
+| [`src/index.ts`](src/index.ts) | The four routes, account authentication, body parsing, and refusal mapping |
 | [`src/protocol.ts`](src/protocol.ts) | The paths and the protocol version both sides import |
 | [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
@@ -79,7 +80,7 @@ Nothing here joins a model request, so the package has no request prefix and no 
 
 These are current constraints of the contract, not a task backlog.
 
-- **No browser-facing endpoints** — reading a pending transaction and confirming it need a Control Plane session, and arrive with the Team Shell.
+- **No browser-facing member endpoint** — the Runner owns the account form and calls these routes over the configured Control Plane origin.
 - **No rate limiting** — the seam refuses a bad code or signature, but nothing here slows a caller down between attempts.
 - **The protocol version is sent, not negotiated** — a Runner states which version it speaks and the seam refuses a mismatch.
 

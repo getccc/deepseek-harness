@@ -25,7 +25,7 @@ export interface Config {
 }
 ```
 
-来源：[`packages/access/access-control-sqlite/src/index.ts:39`](../packages/access/access-control-sqlite/src/index.ts)
+来源：[`packages/access/access-control-sqlite/src/index.ts:43`](../packages/access/access-control-sqlite/src/index.ts)
 
 <a id="deepseek-aidsh-account-auth-password"></a>
 
@@ -2764,7 +2764,7 @@ export interface Config {
 }
 ```
 
-来源：[`packages/team/team-account-client/src/index.ts:77`](../packages/team/team-account-client/src/index.ts)
+来源：[`packages/team/team-account-client/src/index.ts:79`](../packages/team/team-account-client/src/index.ts)
 
 <a id="deepseek-aidsh-team-admin-api"></a>
 
@@ -2794,7 +2794,7 @@ export interface Config {
 }
 ```
 
-来源：[`packages/team/team-admin-api/src/index.ts:98`](../packages/team/team-admin-api/src/index.ts)
+来源：[`packages/team/team-admin-api/src/index.ts:139`](../packages/team/team-admin-api/src/index.ts)
 
 <a id="deepseek-aidsh-team-console-menu-sqlite"></a>
 

@@ -10,13 +10,18 @@
 
 import { Context } from '@deepseek-ai/cordis'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import PasswordAccountAuth from '@deepseek-ai/dsh-account-auth-password'
+import type { AccountStore, OrgId, UserId } from '@deepseek-ai/dsh-account-store'
 import HttpServer from '@deepseek-ai/dsh-host-webserver'
 import SqliteAccountStore from '@deepseek-ai/dsh-account-store-sqlite'
+import type { Audit } from '@deepseek-ai/dsh-audit'
+import SqliteAudit from '@deepseek-ai/dsh-audit-sqlite'
 import SqliteDeviceAuthorization from '@deepseek-ai/dsh-device-authorization-sqlite'
 import { newSecret, pkceChallenge } from '@deepseek-ai/dsh-device-authorization'
 import * as endpoints from '../src/index.ts'
 import {
   DEVICE_PATH_PREFIX,
+  LOGIN_PATH,
   MINIMUM_PROTOCOL_VERSION,
   PROTOCOL_VERSION,
   REDEEM_PATH,
@@ -27,6 +32,12 @@ import {
 
 let ctx: Context
 let origin: string
+let store: AccountStore
+let audit: Audit
+let orgId: OrgId
+let alice: UserId
+
+const PASSWORD = 'correct-horse-battery-staple'
 
 /** A well-formed request to open a transaction. */
 function startBody(): Record<string, unknown> {
@@ -57,6 +68,11 @@ beforeEach(async () => {
   ctx = new Context()
   await ctx.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
   await ctx.plugin(SqliteAccountStore, { path: ':memory:' }).await()
+  await ctx.plugin(PasswordAccountAuth, {
+    minSecretLength: 8, maxFailedAttempts: 5, lockDurationMs: 60_000,
+    cost: 2, blockSize: 8, parallelization: 1,
+  }).await()
+  await ctx.plugin(SqliteAudit, { path: ':memory:', maxQueryRows: 100 }).await()
   await ctx.plugin(SqliteDeviceAuthorization, {
     path: ':memory:',
     transactionTtlMs: 300_000,
@@ -64,7 +80,12 @@ beforeEach(async () => {
     accessTokenTtlMs: 900_000,
     refreshTokenTtlMs: 2_592_000_000,
   }).await()
-  await ctx.plugin(endpoints, endpoints.Config({} as never)).await()
+  store = ctx.get('accountStore') as AccountStore
+  audit = ctx.get('audit') as Audit
+  orgId = (await store.createOrganization('Acme')).id
+  alice = (await store.createUser({ orgId, loginName: 'alice', displayName: 'Alice' })).id
+  await ctx.accountAuth.setSecret(alice, PASSWORD)
+  await ctx.plugin(endpoints, endpoints.Config({ organizationId: orgId } as never)).await()
   origin = `http://127.0.0.1:${String(ctx.webServer.port)}`
 })
 
@@ -111,6 +132,11 @@ describe('opening a transaction', () => {
     const ctxSmall = new Context()
     await ctxSmall.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
     await ctxSmall.plugin(SqliteAccountStore, { path: ':memory:' }).await()
+    await ctxSmall.plugin(PasswordAccountAuth, {
+      minSecretLength: 8, maxFailedAttempts: 5, lockDurationMs: 60_000,
+      cost: 2, blockSize: 8, parallelization: 1,
+    }).await()
+    await ctxSmall.plugin(SqliteAudit, { path: ':memory:', maxQueryRows: 100 }).await()
     await ctxSmall.plugin(SqliteDeviceAuthorization, {
       path: ':memory:',
       transactionTtlMs: 1,
@@ -118,7 +144,9 @@ describe('opening a transaction', () => {
       accessTokenTtlMs: 1,
       refreshTokenTtlMs: 1,
     }).await()
-    await ctxSmall.plugin(endpoints, endpoints.Config({ maxRequestBodyBytes: 16 } as never)).await()
+    await ctxSmall.plugin(endpoints, endpoints.Config({
+      organizationId: 'test', maxRequestBodyBytes: 16,
+    } as never)).await()
     const response = await fetch(
       `http://127.0.0.1:${String(ctxSmall.webServer.port)}${DEVICE_PATH_PREFIX}${START_PATH}`,
       { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(startBody()) },
@@ -131,6 +159,38 @@ describe('opening a transaction', () => {
   it('answers a method other than POST without reading a body', async () => {
     for (const path of [START_PATH, REDEEM_PATH, REFRESH_PATH]) {
       expect((await post(path, undefined, 'GET')).status, path).toBe(405)
+    }
+  })
+})
+
+describe('authenticating a member', () => {
+  it('approves the Runner transaction and records the authenticated account', async () => {
+    const started = await post(START_PATH, startBody())
+    const login = await post(LOGIN_PATH, {
+      transactionId: started.answer.transactionId,
+      loginName: 'alice',
+      secret: PASSWORD,
+      protocolVersion: PROTOCOL_VERSION,
+    })
+
+    expect(login.status).toBe(200)
+    expect(login.answer.code).toEqual(expect.any(String))
+    expect(login.answer.member).toEqual({ loginName: 'alice', displayName: 'Alice' })
+    const [record] = await audit.query({ orgId, action: 'member.login' })
+    expect(record?.outcome).toBe('allowed')
+    expect(record?.principalId).toBe(alice)
+  })
+
+  it('gives wrong and unknown credentials the same reasonless answer', async () => {
+    for (const [loginName, secret] of [['alice', 'wrong-password'], ['nobody', PASSWORD]]) {
+      const started = await post(START_PATH, startBody())
+      const login = await post(LOGIN_PATH, {
+        transactionId: started.answer.transactionId,
+        loginName,
+        secret,
+        protocolVersion: PROTOCOL_VERSION,
+      })
+      expect(login).toEqual({ status: 401, answer: { error: 'unauthorized' } })
     }
   })
 })
@@ -170,10 +230,13 @@ describe('a failure that is not a refusal', () => {
   it('says nothing about itself', async () => {
     const broken = new Context()
     await broken.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
+    broken.provide('accountStore', {})
+    broken.provide('accountAuth', {})
+    broken.provide('audit', {})
     broken.provide('deviceAuthorization', {
       start: () => Promise.reject(new Error('the database is on fire')),
     })
-    await broken.plugin(endpoints, endpoints.Config({} as never)).await()
+    await broken.plugin(endpoints, endpoints.Config({ organizationId: 'test' } as never)).await()
     const response = await fetch(
       `http://127.0.0.1:${String(broken.webServer.port)}${DEVICE_PATH_PREFIX}${START_PATH}`,
       { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(startBody()) },
@@ -185,11 +248,16 @@ describe('a failure that is not a refusal', () => {
   })
 })
 
-describe('mounted with no config', () => {
+describe('mounted with default endpoint config', () => {
   it('serves the default prefix and reads a default-sized body', async () => {
     const bare = new Context()
     await bare.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
     await bare.plugin(SqliteAccountStore, { path: ':memory:' }).await()
+    await bare.plugin(PasswordAccountAuth, {
+      minSecretLength: 8, maxFailedAttempts: 5, lockDurationMs: 60_000,
+      cost: 2, blockSize: 8, parallelization: 1,
+    }).await()
+    await bare.plugin(SqliteAudit, { path: ':memory:', maxQueryRows: 100 }).await()
     await bare.plugin(SqliteDeviceAuthorization, {
       path: ':memory:',
       transactionTtlMs: 300_000,
@@ -197,7 +265,7 @@ describe('mounted with no config', () => {
       accessTokenTtlMs: 900_000,
       refreshTokenTtlMs: 2_592_000_000,
     }).await()
-    await bare.plugin(endpoints).await()
+    await bare.plugin(endpoints, endpoints.Config({ organizationId: 'test' } as never)).await()
     const response = await fetch(
       `http://127.0.0.1:${String(bare.webServer.port)}${DEVICE_PATH_PREFIX}${START_PATH}`,
       { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(startBody()) },

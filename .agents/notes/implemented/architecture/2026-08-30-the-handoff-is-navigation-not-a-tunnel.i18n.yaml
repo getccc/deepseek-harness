@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-30-the-handoff-is-navigation-not-a-tunnel.md
-2026-08-30-the-handoff-is-navigation-not-a-tunnel.md: 24bd839ea8a2fd6d734ca19f7483475850f96c7b
-2026-08-30-the-handoff-is-navigation-not-a-tunnel.zh.md: 988f7376f74d09b49c79106a64437e52689af931
+2026-08-30-the-handoff-is-navigation-not-a-tunnel.md: 62e564f46dcefc26b436281df48941721acab0e3
+2026-08-30-the-handoff-is-navigation-not-a-tunnel.zh.md: b8a4cf9508a941af617fb92293a6637c2b3fa916

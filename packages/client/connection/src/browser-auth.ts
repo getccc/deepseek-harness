@@ -419,6 +419,33 @@ export class BrowserAuth {
     return ended
   }
 
+  /**
+   * Expire this authority's authenticated browser session and redirect locally.
+   * @param req - the incoming same-origin navigation request.
+   * @param res - the redirect response, owned by this method.
+   * @param destination - same-origin path opened after the session ends.
+   * @returns whether an authenticated session was ended.
+   */
+  endSession(
+    req: ConnectionIndexRequest,
+    res: ConnectionIndexResponse,
+    destination: string,
+  ): boolean {
+    const authority = requestAuthority(req.headers)
+    const ended = authority !== undefined && this.isAuthenticated(req)
+    const headers: Record<string, string> = {
+      'cache-control': 'no-store',
+      'location': destination,
+      'referrer-policy': 'no-referrer',
+    }
+    if (ended) {
+      headers['set-cookie'] = `${cookieName(authority)}=; Max-Age=0; Path=/; HttpOnly; SameSite=Strict`
+    }
+    res.writeHead(303, headers)
+    res.end()
+    return ended
+  }
+
   private writeUnauthorized(req: ConnectionIndexRequest, res: ConnectionIndexResponse): void {
     res.writeHead(401, {
       'cache-control': 'no-store',

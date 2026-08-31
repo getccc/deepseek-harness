@@ -1,17 +1,18 @@
 /**
- * The Control Plane's Runner-facing binding endpoints.
+ * The Control Plane's Runner-facing authentication and credential endpoints.
  *
- * These three take no browser session, because nothing here is authorized by
- * one: opening a transaction proves nothing and learns nothing, and redeeming
- * or refreshing is authorized by the authorization code, the PKCE verifier, and
- * a device signature. The endpoints a member's browser uses — reading a pending
- * transaction and confirming it — need a session and belong to the Team Shell.
+ * These endpoints take no browser session. The Runner opens a transaction,
+ * authenticates an organization account, and redeems the approved code with
+ * its PKCE verifier and device signature; refresh uses the same device proof.
  * @module @deepseek-ai/dsh-team-control-plane-http
  */
 
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
+import type {} from '@deepseek-ai/dsh-account-auth'
+import { OrgId } from '@deepseek-ai/dsh-account-store'
+import type {} from '@deepseek-ai/dsh-audit'
 import {
   DEVICE_PLATFORMS,
   FamilyId,
@@ -25,16 +26,19 @@ import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
 import {
   DEVICE_PATH_PREFIX,
   MINIMUM_PROTOCOL_VERSION,
+  LOGIN_PATH,
   PROTOCOL_VERSION,
   REDEEM_PATH,
   REFRESH_PATH,
   START_PATH,
   protocolSupport,
+  type LoginSuccess,
 } from './protocol.ts'
 
 export {
   DEVICE_PATH_PREFIX,
   MINIMUM_PROTOCOL_VERSION,
+  LOGIN_PATH,
   PROTOCOL_VERSION,
   REDEEM_PATH,
   REFRESH_PATH,
@@ -42,17 +46,21 @@ export {
   protocolSupport,
   type ProtocolRefusal,
   type ProtocolSupport,
+  type LoginSuccess,
+  type TeamMemberIdentity,
   type WireRefusal,
 } from './protocol.ts'
 
 /** Cordis plugin name. */
 export const name = 'team-control-plane-http'
 /** Services required before the endpoints may register. */
-export const inject = ['webServer', 'deviceAuthorization']
+export const inject = ['webServer', 'accountStore', 'accountAuth', 'audit', 'deviceAuthorization']
 
-/** Plugin config: where the endpoints live and how much body they will read. */
+/** Plugin config: account namespace, endpoint prefix, and request limit. */
 export interface Config {
-  /** Path prefix the three endpoints are served under. */
+  /** The organization this single-organization Control Plane serves. */
+  organizationId: string
+  /** Path prefix the endpoints are served under. */
   pathPrefix: string
   /** Largest request body accepted, in bytes. */
   maxRequestBodyBytes: number
@@ -60,6 +68,7 @@ export interface Config {
 
 /** Plugin config schema. */
 export const Config: z<Config> = z.object({
+  organizationId: z.string().required(),
   pathPrefix: z.string().default(DEVICE_PATH_PREFIX),
   maxRequestBodyBytes: z.natural().min(1).default(16 * 1024),
 })
@@ -100,6 +109,10 @@ function json(res: ServerResponse, status: number, body: unknown): void {
  * problem, not the Runner's, and says so without describing itself.
  */
 function fail(res: ServerResponse, error: unknown): void {
+  if (error instanceof InvalidCredentialsError) {
+    json(res, 401, { error: 'unauthorized' })
+    return
+  }
   const reason = error instanceof Error && 'reason' in error ? String(error.reason) : undefined
   if (reason === undefined) {
     json(res, 500, { error: 'internal' })
@@ -108,6 +121,14 @@ function fail(res: ServerResponse, error: unknown): void {
   // A body this endpoint could not read is the caller's mistake; every other
   // reason is the seam deciding, which is not a 400.
   json(res, error instanceof MalformedBodyError ? 400 : 403, { error: 'refused', reason })
+}
+
+/** A reasonless password refusal suitable for the Runner-facing wire. */
+class InvalidCredentialsError extends Error {
+  constructor() {
+    super('the account credentials were refused')
+    this.name = 'InvalidCredentialsError'
+  }
 }
 
 /** Raised when a request body does not carry what the endpoint requires. */
@@ -198,11 +219,15 @@ function answerUnsupportedProtocol(res: ServerResponse, body: Record<string, unk
 }
 
 /**
- * Register the Runner-facing binding endpoints.
+ * Register the Runner-facing authentication and credential endpoints.
  * @param ctx - Host plugin context carrying the web server and the seam.
  * @param config - resolved plugin config (schema defaults applied).
  */
 export function apply(ctx: Context, config: Config): void {
+  if (config.organizationId.trim().length === 0) {
+    throw new Error('team-control-plane-http: organizationId must name the organization this Control Plane serves')
+  }
+  const organizationId = OrgId(config.organizationId)
   const prefix = config.pathPrefix
   const limit = config.maxRequestBodyBytes
 
@@ -236,6 +261,45 @@ export function apply(ctx: Context, config: Config): void {
   // and a caller that reached it over HTTP has made no such promise.
   const routes = [
     post(START_PATH, body => ctx.deviceAuthorization.start(parseStart(body))),
+    post(LOGIN_PATH, async (body) => {
+      const transactionId = TransactionId(str(body, 'transactionId'))
+      await ctx.deviceAuthorization.describe(transactionId)
+      const outcome = await ctx.accountAuth.authenticate(
+        organizationId,
+        str(body, 'loginName'),
+        str(body, 'secret'),
+      )
+      if (!outcome.ok) {
+        await ctx.audit.record({
+          orgId: organizationId,
+          action: 'member.login',
+          outcome: 'denied',
+          reason: 'invalid-credentials',
+          metadata: { authMethod: 'password' },
+        })
+        throw new InvalidCredentialsError()
+      }
+      const authenticated = await ctx.audit.record({
+        orgId: organizationId,
+        principalId: outcome.userId,
+        action: 'member.login',
+        outcome: 'allowed',
+        metadata: { authMethod: 'password' },
+      })
+      const member = await ctx.accountStore.getUser(outcome.userId)
+      if (member === undefined) {
+        throw new Error(`team-control-plane-http: authenticated account ${outcome.userId} is missing`)
+      }
+      const confirmed = await ctx.deviceAuthorization.confirm(transactionId, {
+        orgId: organizationId,
+        userId: outcome.userId,
+        authenticationId: `audit:${authenticated.seq.toString()}`,
+      })
+      return {
+        ...confirmed,
+        member: { loginName: member.loginName, displayName: member.displayName },
+      } satisfies LoginSuccess
+    }),
     post(REDEEM_PATH, body => ctx.deviceAuthorization.redeem(parseRedeem(body))),
     post(REFRESH_PATH, body => ctx.deviceAuthorization.refresh(parseRefresh(body))),
   ]

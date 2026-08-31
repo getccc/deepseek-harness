@@ -216,6 +216,25 @@ describe('web-app runtime glue', () => {
     await ctx.fiber.dispose()
   })
 
+  it('opens a configured local entry without minting a process-token URL', async () => {
+    stageDist()
+    const ctx = new Context()
+    ctx.provide('webServer', fakeHttpServer().server)
+    provideConnection(ctx)
+    const openBrowser = vi.fn(async () => {})
+    internals.openBrowser = openBrowser
+    apply(ctx, new Config({
+      openBrowser: true,
+      printUrl: false,
+      entryPath: '/team/open',
+      surfaceContext: false,
+      trustedHosts: [],
+    }))
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(openBrowser).toHaveBeenCalledWith('http://127.0.0.1:4567/team/open')
+    await ctx.fiber.dispose()
+  })
+
   it('does not publish readiness again when Connection reloads', async () => {
     stageDist()
     const ctx = new Context()

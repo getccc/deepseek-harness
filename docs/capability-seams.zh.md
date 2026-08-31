@@ -15,6 +15,7 @@ flowchart LR
   pkg_account_auth_password["account-auth-password"]
   pkg_access_control_sqlite["access-control-sqlite"]
   pkg_team_admin_api["team-admin-api"]
+  pkg_team_control_plane_http["team-control-plane-http"]
   pkg_team_shell["team-shell"]
   pkg_account_auth["account-auth"]
   svc_accountAuth["ctx.accountAuth<br/>Proving a member is who they claim"]
@@ -34,11 +35,11 @@ flowchart LR
   svc_llmHttpTransport["ctx.llmHttpTransport<br/>How a model request reaches a provider"]
   pkg_llm_http_transport_team["llm-http-transport-team"]
   pkg_device_authorization["device-authorization"]
-  svc_deviceAuthorization["ctx.deviceAuthorization<br/>Binding a browser session to one computer"]
+  svc_deviceAuthorization["ctx.deviceAuthorization<br/>Binding a successful authentication to one computer"]
   pkg_device_authorization_sqlite["device-authorization-sqlite"]
-  pkg_team_control_plane_http["team-control-plane-http"]
   pkg_team_account_client["team-account-client"]
   svc_teamAccountClient["ctx.teamAccountClient<br/>The Runner side of the team account"]
+  pkg_team_local_login["team-local-login"]
   pkg_team_local_handoff["team-local-handoff"]
   pkg_attachment["attachment"]
   svc_attachments["ctx.attachments<br/>Durable binary attachment storage"]
@@ -386,9 +387,11 @@ flowchart LR
   svc_accessControl --> pkg_model_gateway_sqlite
   svc_accessControl --> pkg_team_admin_api
   svc_accountAuth --> pkg_team_admin_api
+  svc_accountAuth --> pkg_team_control_plane_http
   svc_accountStore --> pkg_access_control_sqlite
   svc_accountStore --> pkg_account_auth_password
   svc_accountStore --> pkg_team_admin_api
+  svc_accountStore --> pkg_team_control_plane_http
   svc_accountStore --> pkg_team_shell
   svc_agentDefaultModel --> pkg_api_session_controller
   svc_agentDefaultModel --> pkg_headless
@@ -406,6 +409,7 @@ flowchart LR
   svc_attachments --> pkg_llm_pi_ai
   svc_attachments --> pkg_tool_fs
   svc_audit --> pkg_team_admin_api
+  svc_audit --> pkg_team_control_plane_http
   svc_audit --> pkg_team_shell
   svc_authorization --> pkg_llm_pi_ai
   svc_clientModules --> pkg_client_hmr
@@ -498,6 +502,7 @@ flowchart LR
   svc_systemPrompt --> pkg_tool_web
   svc_systemPrompt --> pkg_tools
   svc_teamAccountClient --> pkg_team_local_handoff
+  svc_teamAccountClient --> pkg_team_local_login
   svc_terminals --> pkg_tool_terminal
   svc_tokenMeter --> pkg_compaction_basic
   svc_toolResultPruner --> pkg_compaction_basic
@@ -528,15 +533,15 @@ flowchart LR
 
 | ctx 键 | 角色 | 所属包 | 实现 | 直接消费方 | 配套插件 | 说明 |
 | --- | --- | --- | --- | --- | --- | --- |
-| `ctx.accountStore` | `seam` | [`account-store`](../packages/account/account-store) | [`account-store-sqlite`](../packages/account/account-store-sqlite) | [`account-auth-password`](../packages/account/account-auth-password), [`access-control-sqlite`](../packages/access/access-control-sqlite), [`team-admin-api`](../packages/team/team-admin-api), [`team-shell`](../packages/team/team-shell) | - | 只存在于服务端：由 Control Plane 组合，任何 Runner 都不挂载它。它同时持有每一份授权缓存据以作 Key 的组织策略修订号。 |
-| `ctx.accountAuth` | `seam` | [`account-auth`](../packages/account/account-auth) | [`account-auth-password`](../packages/account/account-auth-password) | [`team-admin-api`](../packages/team/team-admin-api) | - | 验证与存储分离，于是第二种方式以 Provider 的形式到来。密码 Provider 存放自描述的哈希，并在一次成功验证时重新哈希。 |
+| `ctx.accountStore` | `seam` | [`account-store`](../packages/account/account-store) | [`account-store-sqlite`](../packages/account/account-store-sqlite) | [`account-auth-password`](../packages/account/account-auth-password), [`access-control-sqlite`](../packages/access/access-control-sqlite), [`team-admin-api`](../packages/team/team-admin-api), [`team-control-plane-http`](../packages/team/team-control-plane-http), [`team-shell`](../packages/team/team-shell) | - | 只存在于服务端：由 Control Plane 组合，任何 Runner 都不挂载它。它同时持有每一份授权缓存据以作 Key 的组织策略修订号。 |
+| `ctx.accountAuth` | `seam` | [`account-auth`](../packages/account/account-auth) | [`account-auth-password`](../packages/account/account-auth-password) | [`team-admin-api`](../packages/team/team-admin-api), [`team-control-plane-http`](../packages/team/team-control-plane-http) | - | 验证与存储分离，于是第二种方式以 Provider 的形式到来。密码 Provider 存放自描述的哈希，并在一次成功验证时重新哈希。 |
 | `ctx.accessControl` | `seam` | [`access-control`](../packages/access/access-control) | [`access-control-sqlite`](../packages/access/access-control-sqlite) | [`team-admin-api`](../packages/team/team-admin-api), [`model-gateway-sqlite`](../packages/llm/model-gateway-sqlite) | - | 没有显式拒绝、没有继承、没有表达式语言，因此一个决定通过指名准许它的那些授权来解释。管理 API 在每一次管理动作之前询问它，模型网关在每一次调用之前询问它。 |
-| `ctx.audit` | `seam` | [`audit`](../packages/access/audit) | [`audit-sqlite`](../packages/access/audit-sqlite) | [`team-admin-api`](../packages/team/team-admin-api), [`team-shell`](../packages/team/team-shell) | - | 封闭的动作与元数据目录，加上对每个调用方提供的字符串的 token 规则，因此一条记录装不下成员的工作内容。成员经由其行动的那些界面写入记录，因为它们才知道是哪个主体在行动。 |
+| `ctx.audit` | `seam` | [`audit`](../packages/access/audit) | [`audit-sqlite`](../packages/access/audit-sqlite) | [`team-admin-api`](../packages/team/team-admin-api), [`team-control-plane-http`](../packages/team/team-control-plane-http), [`team-shell`](../packages/team/team-shell) | - | 封闭的动作与元数据目录，加上对每个调用方提供的字符串的 token 规则，因此一条记录装不下成员的工作内容。成员经由其行动的那些界面写入记录，因为它们才知道是哪个主体在行动。 |
 | `ctx.quota` | `seam` | [`quota`](../packages/access/quota) | [`quota-sqlite`](../packages/access/quota-sqlite) | [`model-gateway-sqlite`](../packages/llm/model-gateway-sqlite) | - | 预留是一个请求所能花费的上限，而结算只发生一次，因此崩溃不会在不留记录的情况下花费，重试也不会计费两次。模型网关正是它为之而建的消费方。 |
 | `ctx.modelGateway` | `seam` | [`model-gateway`](../packages/llm/model-gateway) | [`model-gateway-sqlite`](../packages/llm/model-gateway-sqlite) | [`model-gateway-http`](../packages/llm/model-gateway-http) | - | Runner 指名一个模型，拿回一个它自己构造不出来的调用：Endpoint、上游名和凭据全都来自目录。 |
 | `ctx.llmHttpTransport` | `seam` | [`llm-http-transport`](../packages/llm/llm-http-transport) | [`llm-http-transport-team`](../packages/llm/llm-http-transport-team) | - | - | 请求指名的是封闭列表中的一个操作和一个模型，绝不是一个 URL，因此没有任何调用方决定凭据去往何处。LLM Adapter 会随各自迁到它之后而成为消费方。 |
-| `ctx.deviceAuthorization` | `seam` | [`device-authorization`](../packages/account/device-authorization) | [`device-authorization-sqlite`](../packages/account/device-authorization-sqlite) | [`team-admin-api`](../packages/team/team-admin-api), [`team-control-plane-http`](../packages/team/team-control-plane-http), [`team-shell`](../packages/team/team-shell) | - | 配对码与公钥摘要让成员确认是哪一台电脑；PKCE Verifier 与设备签名让那台电脑证明它握有钥匙。面向 Runner 的端点与 Team Shell 确认页是驱动它的两半。 |
-| `ctx.teamAccountClient` | `seam` | [`team-account-client`](../packages/team/team-account-client) | - | [`team-local-handoff`](../packages/team/team-local-handoff) | - | 在成员电脑上持有设备密钥与凭据，并通过 HTTPS 调用 Control Plane。公司 Provider 凭据从不到达它。 |
+| `ctx.deviceAuthorization` | `seam` | [`device-authorization`](../packages/account/device-authorization) | [`device-authorization-sqlite`](../packages/account/device-authorization-sqlite) | [`team-admin-api`](../packages/team/team-admin-api), [`team-control-plane-http`](../packages/team/team-control-plane-http), [`team-shell`](../packages/team/team-shell) | - | 默认 Runner 流程认证账户并批准 Transaction；PKCE 与设备签名证明完成兑换的电脑持有密钥。可选的浏览器交接也可以提供批准。 |
+| `ctx.teamAccountClient` | `seam` | [`team-account-client`](../packages/team/team-account-client) | - | [`team-local-login`](../packages/team/team-local-login), [`team-local-handoff`](../packages/team/team-local-handoff) | - | 在成员电脑上持有设备密钥与凭据，并通过 HTTPS 调用 Control Plane。公司 Provider 凭据从不到达它。 |
 | `ctx.attachments` | `seam` | [`attachment`](../packages/attachment/attachment) | [`attachment-local`](../packages/attachment/attachment-local) | [`api-session-controller`](../packages/api/session-controller), [`tool-fs`](../packages/fs/tool-fs), [`llm-pi-ai`](../packages/llm/llm-pi-ai), [`llm-deepseek`](../packages/llm/llm-deepseek) | - | 宿主会在会话事件之前提交已接受的图片；提供方适配器将已授权的持久引用解析为提供方原生内容。 |
 | `ctx.llm` | `seam` | [`llm`](../packages/llm/llm) | [`llm-deepseek`](../packages/llm/llm-deepseek), [`llm-pi-ai`](../packages/llm/llm-pi-ai), [`llm-replay`](../packages/test-support/llm-replay) | [`agent-loop`](../packages/core/agent-loop), [`compaction-basic`](../packages/compaction/compaction-basic) | - | 适配器注册提供方实现；agent loop（智能体循环）与压缩功能调用提供方无关的流服务。 |
 | `ctx.deepseekLlmApiExtensions` | `seam` | [`deepseek-llm-api-extensions`](../packages/llm/deepseek-llm-api-extensions) | [`session-log-deepseek`](../packages/session/session-log-deepseek), [`plugin-package-inventory-deepseek`](../packages/llm/plugin-package-inventory-deepseek) | [`llm-deepseek`](../packages/llm/llm-deepseek) | - | 插件准备彼此独立的顶层字段；官方适配器会合并这些字段，并在 HTTP 接受后提交其交付状态。 |
