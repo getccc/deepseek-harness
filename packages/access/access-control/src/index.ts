@@ -70,13 +70,49 @@ export class DuplicateRoleNameError extends Error {
   }
 }
 
+/** Raised when a role code is already taken inside its organization. */
+export class DuplicateRoleCodeError extends Error {
+  constructor(readonly orgId: OrgId, readonly code: string) {
+    super(`role code ${JSON.stringify(code)} already exists in organization ${orgId}`)
+    this.name = 'DuplicateRoleCodeError'
+  }
+}
+
+/**
+ * Raised when an operation would delete a role the product ships.
+ *
+ * A system role is what the deployment's own composition binds to; deleting it
+ * would leave that composition naming nothing, and no administrator action can
+ * put it back.
+ */
+export class SystemRoleError extends Error {
+  constructor(readonly roleId: RoleId) {
+    super(`role ${roleId} ships with the product and cannot be deleted`)
+    this.name = 'SystemRoleError'
+  }
+}
+
 /** The fields an administrator supplies when creating a role. */
 export interface CreateRole {
   readonly orgId: OrgId
   readonly name: string
+  /** Unique within the organization; defaults to the role's generated id. */
+  readonly code?: string
   readonly description?: string
   /** Defaults to `custom`; only the product seeds `system` roles. */
   readonly kind?: RoleKind
+}
+
+/**
+ * The role fields an administrator may change.
+ *
+ * The kind is not among them: whether a role ships with the product is a fact
+ * about the build, not a setting. An absent field is left as stored.
+ */
+export interface UpdateRole {
+  readonly name?: string
+  readonly code?: string
+  readonly description?: string
 }
 
 /** The fields the owning subsystem supplies when it governs a resource. */
@@ -114,6 +150,26 @@ export abstract class AccessControl extends Service {
    * @throws {DuplicateRoleNameError} when the name is taken in that organization.
    */
   abstract createRole(input: CreateRole): Promise<Role>
+
+  /**
+   * Change a role's readable fields, leaving every field the caller did not
+   * name as stored.
+   * @param roleId - the role to change.
+   * @param changes - the fields to write.
+   * @throws {UnknownRoleError} when the store holds no such role.
+   * @throws {DuplicateRoleNameError} when the new name is taken in that organization.
+   * @throws {DuplicateRoleCodeError} when the new code is taken in that organization.
+   */
+  abstract updateRole(roleId: RoleId, changes: UpdateRole): Promise<void>
+
+  /**
+   * Delete one role, with the grants that compose it and the bindings that
+   * carry it. Members holding it lose what it admitted at once.
+   * @param roleId - the role to delete.
+   * @throws {UnknownRoleError} when the store holds no such role.
+   * @throws {SystemRoleError} when the role ships with the product.
+   */
+  abstract deleteRole(roleId: RoleId): Promise<void>
 
   /**
    * List an organization's roles in creation order.

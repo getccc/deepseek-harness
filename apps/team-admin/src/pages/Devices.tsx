@@ -5,7 +5,7 @@ import { Button, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { api, type WireDevice } from '../api.ts'
 import { useLocale } from '../locale.tsx'
-import { ConfirmModal, Moment, StatusTag, useErrorReporter, useLoaded } from '../ui.tsx'
+import { ConfirmModal, Moment, PageNote, StatusTag, useErrorReporter, useLoaded } from '../ui.tsx'
 
 /**
  * The computers this organization has bound.
@@ -74,8 +74,7 @@ export function Devices({ held }: { readonly held: ReadonlySet<string> }): React
 
   return (
     <>
-      <Typography.Title level={3}>{t('devices.heading')}</Typography.Title>
-      <Typography.Paragraph type="secondary">{t('devices.description')}</Typography.Paragraph>
+      <PageNote text={t('devices.description')} />
       <Table<WireDevice>
         rowKey="id"
         columns={columns}

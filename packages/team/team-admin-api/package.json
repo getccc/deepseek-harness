@@ -37,6 +37,7 @@
     "@deepseek-ai/dsh-device-authorization": "workspace:^",
     "@deepseek-ai/dsh-model-gateway": "workspace:^",
     "@deepseek-ai/dsh-team-browser-session": "workspace:^",
+    "@deepseek-ai/dsh-team-console-menu": "workspace:^",
     "@deepseek-ai/schemastery": "workspace:^"
   },
   "peerDependencies": {
@@ -49,6 +50,7 @@
     "@deepseek-ai/cordis": "workspace:^",
     "@deepseek-ai/dsh-account-auth": "workspace:^",
     "@deepseek-ai/dsh-host-webserver": "workspace:^",
-    "@deepseek-ai/dsh-invariants": "workspace:^"
+    "@deepseek-ai/dsh-invariants": "workspace:^",
+    "@deepseek-ai/dsh-team-console-menu-sqlite": "workspace:^"
   }
 }

@@ -11,12 +11,14 @@ import { Service } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import {
   AccessControl,
+  DuplicateRoleCodeError,
   DuplicateRoleNameError,
   GOVERNED_RESOURCE_TYPES,
   GrantId,
   GroupId,
   ResourceId,
   RoleId,
+  SystemRoleError,
   UnknownPermissionError,
   UnknownRoleError,
   isRegisteredPermission,
@@ -28,6 +30,7 @@ import {
   type Role,
   type RoleGrant,
   type RoleKind,
+  type UpdateRole,
   type UserGroup,
 } from '@deepseek-ai/dsh-access-control'
 import { OrgId, type OrgId as OrgIdType, type UserId } from '@deepseek-ai/dsh-account-store'
@@ -43,6 +46,8 @@ export interface Config {
 
 const DUPLICATE_ROLE = /UNIQUE constraint failed: role\.org_id, role\.name/u
 
+const DUPLICATE_ROLE_CODE = /UNIQUE constraint failed: role\.org_id, role\.code/u
+
 /** A refusal that names no grant and carries no scope. */
 function refuse(policyRevision: bigint, reason: AccessDecision['reason']): AccessDecision {
   return { allowed: false, policyRevision, matchedGrantIds: [], scopes: [], reason }
@@ -53,8 +58,10 @@ function toRole(row: RoleRow): Role {
     id: RoleId(row.id),
     orgId: OrgId(row.org_id),
     name: row.name,
+    code: row.code,
     description: row.description,
     kind: row.kind as RoleKind,
+    createdAt: row.created_at ?? undefined,
   }
 }
 
@@ -106,6 +113,11 @@ export class SqliteAccessControl extends AccessControl {
     if (org === undefined) return refuse(0n, 'default-deny')
     const revision = org.policyRevision
 
+    const principal = await this.ctx.accountStore.getUser(request.principalId)
+    if (principal === undefined || principal.orgId !== request.orgId || principal.status !== 'active') {
+      return refuse(revision, 'default-deny')
+    }
+
     const resource = this.db.prepare(
       'SELECT * FROM resource WHERE org_id = ? AND type = ? AND external_ref = ?',
     ).get(request.orgId, request.resourceType, request.resourceId) as ResourceRow | undefined
@@ -143,24 +155,70 @@ export class SqliteAccessControl extends AccessControl {
   }
 
   async createRole(input: CreateRole): Promise<Role> {
+    const id = randomUUID()
     const row: RoleRow = {
-      id: randomUUID(),
+      id,
       org_id: input.orgId,
       name: input.name,
+      // A role that names no code still has to be unique against the code
+      // index, and its own id is the one value nothing else can hold.
+      code: input.code ?? id,
       description: input.description ?? '',
       kind: input.kind ?? 'custom',
+      created_at: Date.now(),
     }
     try {
-      this.db.prepare('INSERT INTO role (id, org_id, name, description, kind) VALUES (?, ?, ?, ?, ?)')
-        .run(row.id, row.org_id, row.name, row.description, row.kind)
+      this.db.prepare(
+        'INSERT INTO role (id, org_id, name, code, description, kind, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      ).run(row.id, row.org_id, row.name, row.code, row.description, row.kind, row.created_at)
     } catch (error) {
       /* v8 ignore next -- node:sqlite rejects with Error; the guard is for the type, not a reachable path */
       if (!(error instanceof Error)) throw new Error(String(error))
       if (DUPLICATE_ROLE.test(error.message)) throw new DuplicateRoleNameError(input.orgId, input.name)
+      if (DUPLICATE_ROLE_CODE.test(error.message)) throw new DuplicateRoleCodeError(input.orgId, row.code)
       throw error
     }
     await this.bump(input.orgId)
     return toRole(row)
+  }
+
+  async updateRole(roleId: RoleId, changes: UpdateRole): Promise<void> {
+    const role = this.role(roleId)
+    const written = ([
+      ['name', changes.name],
+      ['code', changes.code],
+      ['description', changes.description],
+    ] as const).flatMap(([column, value]) => value === undefined ? [] : [[column, value] as const])
+    // Nothing to write is not a failure: the role the caller named is there,
+    // and it already reads the way they asked for.
+    if (written.length === 0) return
+    try {
+      this.db.prepare(`UPDATE role SET ${written.map(([column]) => `${column} = ?`).join(', ')} WHERE id = ?`)
+        .run(...written.map(([, value]) => value), roleId)
+    } catch (error) {
+      /* v8 ignore next -- node:sqlite rejects with Error; the guard is for the type, not a reachable path */
+      if (!(error instanceof Error)) throw new Error(String(error))
+      const org = OrgId(role.org_id)
+      if (DUPLICATE_ROLE.test(error.message)) throw new DuplicateRoleNameError(org, changes.name as string)
+      if (DUPLICATE_ROLE_CODE.test(error.message)) throw new DuplicateRoleCodeError(org, changes.code as string)
+      throw error
+    }
+    // A role's readable fields admit nothing, but a grant's display name is read
+    // from the role it hangs from, so the revision advances with the rename.
+    await this.bump(OrgId(role.org_id))
+  }
+
+  async deleteRole(roleId: RoleId): Promise<void> {
+    const role = this.role(roleId)
+    if (role.kind === 'system') throw new SystemRoleError(roleId)
+    // The grants and bindings go first: both reference the role, and leaving
+    // either would fail the foreign key rather than delete the role.
+    this.db.prepare('DELETE FROM role_type_grant WHERE role_id = ?').run(roleId)
+    this.db.prepare('DELETE FROM role_resource_grant WHERE role_id = ?').run(roleId)
+    this.db.prepare('DELETE FROM user_role_binding WHERE role_id = ?').run(roleId)
+    this.db.prepare('DELETE FROM group_role_binding WHERE role_id = ?').run(roleId)
+    this.db.prepare('DELETE FROM role WHERE id = ?').run(roleId)
+    await this.bump(OrgId(role.org_id))
   }
 
   listRoles(orgId: OrgIdType): Promise<Role[]> {

@@ -11,18 +11,35 @@ import { Service } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import {
   AccountStore,
+  DeptId,
+  DepartmentNotEmptyError,
+  DuplicateDepartmentCodeError,
   DuplicateLoginNameError,
   OrgId,
   UnknownAccountUserError,
+  UnknownDepartmentError,
   UnknownOrganizationError,
   UserId,
   type AccountUser,
   type AccountUserStatus,
   type BrowserSessionRecord,
   type CreateAccountUser,
+  type CreateDepartment,
+  type Department,
+  type DepartmentCategory,
+  type DepartmentStatus,
+  type MemberGender,
   type Organization,
+  type UpdateAccountUser,
+  type UpdateDepartment,
 } from '@deepseek-ai/dsh-account-store'
-import { applySchema, type AccountUserRow, type BrowserSessionRow, type OrganizationRow } from './schema.ts'
+import {
+  applySchema,
+  type AccountUserRow,
+  type BrowserSessionRow,
+  type DepartmentRow,
+  type OrganizationRow,
+} from './schema.ts'
 
 export { ACCOUNT_STORE_SQLITE_APPLICATION_ID, SCHEMA_VERSION } from './schema.ts'
 
@@ -35,6 +52,55 @@ export interface Config {
 /** SQLite's uniqueness failure for the `(org_id, login_name)` index. */
 const UNIQUE_VIOLATION = /UNIQUE constraint failed: account_user\.org_id, account_user\.login_name/u
 
+/** SQLite's uniqueness failure for the `(org_id, code)` department index. */
+const DEPARTMENT_CODE_VIOLATION = /UNIQUE constraint failed: department\.org_id, department\.code/u
+
+/** One column a partial update writes, paired with the value to write. */
+type Assignment = readonly [column: string, value: string | number | null]
+
+/**
+ * Keep the fields a caller named and drop the ones it left out.
+ *
+ * An absent field and a cleared field are different requests — leave it alone
+ * against write NULL — and only `undefined` means the first, which is why the
+ * update inputs spell clearing as `null`.
+ * @param pairs - every column this update could write, with the caller's value.
+ * @returns one assignment per named field, in the given order.
+ */
+function assignments(
+  pairs: readonly (readonly [string, string | number | null | undefined])[],
+): Assignment[] {
+  return pairs.flatMap(([column, value]) => value === undefined ? [] : [[column, value] as Assignment])
+}
+
+/**
+ * Depth-first order: every node immediately followed by its own subtree.
+ *
+ * A row whose parent is not among these rows is treated as a root, so a
+ * department is always returned even when the row it names is not this
+ * organization's. The walk cannot loop: a parent is chosen when the row is
+ * created and never changed, so no node can come to sit under its own subtree.
+ * @param rows - one organization's departments, siblings already in order.
+ * @returns the same rows, parents before their children.
+ */
+function orderTree(rows: readonly DepartmentRow[]): DepartmentRow[] {
+  const known = new Set(rows.map(row => row.id))
+  const children = new Map<string | null, DepartmentRow[]>()
+  for (const row of rows) {
+    const parent = row.parent_id !== null && known.has(row.parent_id) ? row.parent_id : null
+    children.set(parent, [...children.get(parent) ?? [], row])
+  }
+  const ordered: DepartmentRow[] = []
+  const visit = (parent: string | null): void => {
+    for (const row of children.get(parent) ?? []) {
+      ordered.push(row)
+      visit(row.id)
+    }
+  }
+  visit(null)
+  return ordered
+}
+
 function toOrganization(row: OrganizationRow): Organization {
   return {
     id: OrgId(row.id),
@@ -46,6 +112,23 @@ function toOrganization(row: OrganizationRow): Organization {
   }
 }
 
+function toDepartment(row: DepartmentRow): Department {
+  return {
+    id: DeptId(row.id),
+    orgId: OrgId(row.org_id),
+    parentId: row.parent_id === null ? undefined : DeptId(row.parent_id),
+    name: row.name,
+    code: row.code,
+    category: row.category as DepartmentCategory,
+    leaderId: row.leader_id === null ? undefined : UserId(row.leader_id),
+    phone: row.phone ?? undefined,
+    email: row.email ?? undefined,
+    sortOrder: row.sort_order,
+    status: row.status as DepartmentStatus,
+    createdAt: row.created_at,
+  }
+}
+
 function toAccountUser(row: AccountUserRow): AccountUser {
   return {
     id: UserId(row.id),
@@ -53,6 +136,9 @@ function toAccountUser(row: AccountUserRow): AccountUser {
     loginName: row.login_name,
     displayName: row.display_name,
     email: row.email ?? undefined,
+    phone: row.phone ?? undefined,
+    gender: (row.gender ?? undefined) as MemberGender | undefined,
+    departmentId: row.department_id === null ? undefined : DeptId(row.department_id),
     status: row.status as AccountUserStatus,
     mustChangePassword: row.must_change_password !== 0,
     failedAttempts: row.failed_attempts,
@@ -130,6 +216,9 @@ export class SqliteAccountStore extends AccountStore {
       login_name: input.loginName,
       display_name: input.displayName,
       email: input.email ?? null,
+      phone: input.phone ?? null,
+      gender: input.gender ?? null,
+      department_id: input.departmentId ?? null,
       status: 'active',
       password_hash: null,
       // An administrator issues identity, never a usable secret: the account
@@ -143,10 +232,12 @@ export class SqliteAccountStore extends AccountStore {
     }
     try {
       this.db.prepare(`INSERT INTO account_user
-        (id, org_id, login_name, display_name, email, status, password_hash,
-         must_change_password, failed_attempts, locked_until, last_login_at, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
-        row.id, row.org_id, row.login_name, row.display_name, row.email, row.status,
+        (id, org_id, login_name, display_name, email, phone, gender, department_id, status,
+         password_hash, must_change_password, failed_attempts, locked_until, last_login_at,
+         created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+        row.id, row.org_id, row.login_name, row.display_name, row.email, row.phone,
+        row.gender, row.department_id, row.status,
         row.password_hash, row.must_change_password, row.failed_attempts,
         row.locked_until, row.last_login_at, row.created_at, row.updated_at,
       )
@@ -189,6 +280,123 @@ export class SqliteAccountStore extends AccountStore {
 
   setUserStatus(id: UserId, status: AccountUserStatus): Promise<void> {
     return this.mutate(id, 'UPDATE account_user SET status = ?, updated_at = ? WHERE id = ?', [status, Date.now(), id])
+  }
+
+  updateUser(id: UserId, changes: UpdateAccountUser): Promise<void> {
+    const written = assignments([
+      ['display_name', changes.displayName],
+      ['email', changes.email],
+      ['phone', changes.phone],
+      ['gender', changes.gender],
+      ['department_id', changes.departmentId],
+    ])
+    // `updated_at` is always written, so an update that names no field is still
+    // one statement whose row count answers whether the account exists.
+    const columns = [...written.map(([column]) => `${column} = ?`), 'updated_at = ?'].join(', ')
+    return this.mutate(
+      id,
+      `UPDATE account_user SET ${columns} WHERE id = ?`,
+      [...written.map(([, value]) => value), Date.now(), id],
+    )
+  }
+
+  listDepartments(orgId: OrgId): Promise<Department[]> {
+    const rows = this.db.prepare(
+      // Insertion order breaks a tie between two siblings that carry the same
+      // `sort_order`, for the same reason accounts are listed by rowid.
+      'SELECT * FROM department WHERE org_id = ? ORDER BY sort_order, rowid',
+    ).all(orgId) as unknown as DepartmentRow[]
+    return Promise.resolve(orderTree(rows).map(toDepartment))
+  }
+
+  getDepartment(id: DeptId): Promise<Department | undefined> {
+    const row = this.db.prepare('SELECT * FROM department WHERE id = ?').get(id) as
+      DepartmentRow | undefined
+    return Promise.resolve(row === undefined ? undefined : toDepartment(row))
+  }
+
+  createDepartment(input: CreateDepartment): Promise<Department> {
+    const row: DepartmentRow = {
+      id: randomUUID(),
+      org_id: input.orgId,
+      parent_id: input.parentId ?? null,
+      name: input.name,
+      code: input.code,
+      category: input.category ?? 'department',
+      leader_id: input.leaderId ?? null,
+      phone: input.phone ?? null,
+      email: input.email ?? null,
+      sort_order: input.sortOrder ?? 0,
+      status: 'active',
+      created_at: Date.now(),
+    }
+    try {
+      this.db.prepare(`INSERT INTO department
+        (id, org_id, parent_id, name, code, category, leader_id, phone, email,
+         sort_order, status, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+        row.id, row.org_id, row.parent_id, row.name, row.code, row.category,
+        row.leader_id, row.phone, row.email, row.sort_order, row.status, row.created_at,
+      )
+    } catch (error) {
+      /* v8 ignore next -- node:sqlite rejects with Error; the guard is for the type, not a reachable path */
+      if (!(error instanceof Error)) return Promise.reject(new Error(String(error)))
+      // Only the code index becomes a seam error. A parent or leader that is
+      // not there fails its foreign key, and that failure travels unchanged.
+      return Promise.reject(DEPARTMENT_CODE_VIOLATION.test(error.message)
+        ? new DuplicateDepartmentCodeError(input.orgId, input.code)
+        : error)
+    }
+    return Promise.resolve(toDepartment(row))
+  }
+
+  updateDepartment(id: DeptId, changes: UpdateDepartment): Promise<void> {
+    const written = assignments([
+      ['name', changes.name],
+      ['code', changes.code],
+      ['category', changes.category],
+      ['leader_id', changes.leaderId],
+      ['phone', changes.phone],
+      ['email', changes.email],
+      ['sort_order', changes.sortOrder],
+      ['status', changes.status],
+    ])
+    if (written.length === 0) return this.requireDepartment(id)
+    const columns = written.map(([column]) => `${column} = ?`).join(', ')
+    let result: { changes: number | bigint }
+    try {
+      result = this.db.prepare(`UPDATE department SET ${columns} WHERE id = ?`)
+        .run(...written.map(([, value]) => value), id)
+    } catch (error) {
+      /* v8 ignore next -- node:sqlite rejects with Error; the guard is for the type, not a reachable path */
+      if (!(error instanceof Error)) return Promise.reject(new Error(String(error)))
+      if (!DEPARTMENT_CODE_VIOLATION.test(error.message)) return Promise.reject(error)
+      // The organization is not in `changes`, so the conflict is read back from
+      // the row rather than assumed from the caller's argument.
+      const row = this.db.prepare('SELECT org_id FROM department WHERE id = ?').get(id) as
+        Pick<DepartmentRow, 'org_id'>
+      return Promise.reject(new DuplicateDepartmentCodeError(OrgId(row.org_id), changes.code as string))
+    }
+    return Number(result.changes) === 0
+      ? Promise.reject(new UnknownDepartmentError(id))
+      : Promise.resolve()
+  }
+
+  deleteDepartment(id: DeptId): Promise<void> {
+    const counts = this.db.prepare(
+      `SELECT (SELECT count(*) FROM department WHERE parent_id = ?1) AS children,
+              (SELECT count(*) FROM account_user WHERE department_id = ?1) AS members`,
+    ).get(id) as { children: number; members: number }
+    // Refused before the delete rather than left to the foreign key, so the
+    // caller is told what still hangs from the department instead of reading a
+    // constraint name.
+    if (counts.children !== 0 || counts.members !== 0) {
+      return Promise.reject(new DepartmentNotEmptyError(id, counts.children, counts.members))
+    }
+    const result = this.db.prepare('DELETE FROM department WHERE id = ?').run(id)
+    return Number(result.changes) === 0
+      ? Promise.reject(new UnknownDepartmentError(id))
+      : Promise.resolve()
   }
 
   getPasswordHash(id: UserId): Promise<string | undefined> {
@@ -267,10 +475,22 @@ export class SqliteAccountStore extends AccountStore {
    * because every store method's contract is a promise, and a caller's
    * `.catch` cannot see a synchronous throw.
    */
-  private mutate(id: UserId, statement: string, params: (string | number)[]): Promise<void> {
+  private mutate(id: UserId, statement: string, params: (string | number | null)[]): Promise<void> {
     const result = this.db.prepare(statement).run(...params)
     return result.changes === 0
       ? Promise.reject(new UnknownAccountUserError(id))
+      : Promise.resolve()
+  }
+
+  /**
+   * Answer whether a department is there, for an update that writes no column.
+   * The unknown-department failure is the whole contract of such a call, and a
+   * statement with an empty `SET` is not valid SQL to get it from.
+   */
+  private requireDepartment(id: DeptId): Promise<void> {
+    const row = this.db.prepare('SELECT 1 FROM department WHERE id = ?').get(id)
+    return row === undefined
+      ? Promise.reject(new UnknownDepartmentError(id))
       : Promise.resolve()
   }
 }

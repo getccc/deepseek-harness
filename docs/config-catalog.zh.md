@@ -2764,7 +2764,7 @@ export interface Config {
 }
 ```
 
-来源：[`packages/team/team-account-client/src/index.ts:76`](../packages/team/team-account-client/src/index.ts)
+来源：[`packages/team/team-account-client/src/index.ts:77`](../packages/team/team-account-client/src/index.ts)
 
 <a id="deepseek-aidsh-team-admin-api"></a>
 
@@ -2796,23 +2796,39 @@ export interface Config {
 
 来源：[`packages/team/team-admin-api/src/index.ts:98`](../packages/team/team-admin-api/src/index.ts)
 
+<a id="deepseek-aidsh-team-console-menu-sqlite"></a>
+
+## `@deepseek-ai/dsh-team-console-menu-sqlite`
+
+```ts config-catalog
+/** Plugin config: where the database lives. */
+export interface Config {
+  /** SQLite database path, or `:memory:` for an in-process database. */
+  path: string
+}
+```
+
+Source: [`packages/team/team-console-menu-sqlite/src/index.ts:32`](../packages/team/team-console-menu-sqlite/src/index.ts)
+
 <a id="deepseek-aidsh-team-control-plane-http"></a>
 
 ## `@deepseek-ai/dsh-team-control-plane-http`
 
-需要：`webServer` · `deviceAuthorization`
+需要：`webServer` · `accountAuth` · `audit` · `deviceAuthorization`
 
 ```ts config-catalog
-/** Plugin config: where the endpoints live and how much body they will read. */
+/** Plugin config: account namespace, endpoint prefix, and request limit. */
 export interface Config {
-  /** Path prefix the three endpoints are served under. */
+  /** The organization this single-organization Control Plane serves. */
+  organizationId: string
+  /** Path prefix the endpoints are served under. */
   pathPrefix: string
   /** Largest request body accepted, in bytes. */
   maxRequestBodyBytes: number
 }
 ```
 
-来源：[`packages/team/team-control-plane-http/src/index.ts:54`](../packages/team/team-control-plane-http/src/index.ts)
+来源：[`packages/team/team-control-plane-http/src/index.ts:57`](../packages/team/team-control-plane-http/src/index.ts)
 
 <a id="deepseek-aidsh-team-local-handoff"></a>
 
@@ -2829,6 +2845,29 @@ export interface Config {
 ```
 
 来源：[`packages/team/team-local-handoff/src/index.ts:33`](../packages/team/team-local-handoff/src/index.ts)
+
+<a id="deepseek-aidsh-team-local-login"></a>
+
+## `@deepseek-ai/dsh-team-local-login`
+
+需要：`webServer` · `teamAccountClient` · `browserSession`
+
+```ts config-catalog
+/** Plugin config: where a completed sign-in lands and how much form data is accepted. */
+export interface Config {
+  /** Same-origin application path opened after sign-in. */
+  applicationPath: string
+  /** Largest form body accepted, in bytes. */
+  maxRequestBodyBytes: number
+  /** Locale used before the client application loads. */
+  locale?: LoginLocale
+}
+
+/** A locale available to the Runner-local login pages. */
+export type LoginLocale = typeof LOGIN_LOCALES[number]
+```
+
+来源：[`packages/team/team-local-login/src/index.ts:28`](../packages/team/team-local-login/src/index.ts)
 
 <a id="deepseek-aidsh-team-shell"></a>
 
@@ -3513,6 +3552,8 @@ export interface Config {
   openBrowser: boolean
   /** Print the URL line on activation; a non-interactive layer can turn it off. */
   printUrl: boolean
+  /** Browser entry path; non-root entries own authentication and receive no launch token. */
+  entryPath?: string
   /**
    * Register the model-visible surface context (the `app:web-surface` prompt
    * section and the `DSH_WEB_URL` bash variable). A one-shot non-interactive
@@ -3827,6 +3868,7 @@ export interface Config {
 - `@deepseek-ai/dsh-subagent-in-process-driver`（[`packages/subagent/subagent-in-process-driver/src/index.ts`](../packages/subagent/subagent-in-process-driver/src/index.ts)）
 - `@deepseek-ai/dsh-team`（[`packages/bundle/team/src/index.ts`](../packages/bundle/team/src/index.ts)）
 - `@deepseek-ai/dsh-team-browser-session`（[`packages/team/team-browser-session/src/index.ts`](../packages/team/team-browser-session/src/index.ts)）
+- `@deepseek-ai/dsh-team-console-menu`（[`packages/team/team-console-menu/src/index.ts`](../packages/team/team-console-menu/src/index.ts)）
 - `@deepseek-ai/dsh-team-control-plane`（[`packages/bundle/team-control-plane/src/index.ts`](../packages/bundle/team-control-plane/src/index.ts)）
 - `@deepseek-ai/dsh-team-update`（[`packages/team/team-update/src/index.ts`](../packages/team/team-update/src/index.ts)）
 - `@deepseek-ai/dsh-timeout`（[`packages/util/timeout/src/index.ts`](../packages/util/timeout/src/index.ts)）

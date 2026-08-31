@@ -8,15 +8,22 @@
  */
 
 import { Service, type Context } from '@deepseek-ai/cordis'
-import type { OrgId, UserId } from './brand.ts'
+import type { DeptId, OrgId, UserId } from './brand.ts'
 
-export { OrgId, UserId } from './brand.ts'
+export { DeptId, OrgId, UserId } from './brand.ts'
 export type {
   AccountUser,
   BrowserSessionRecord,
   AccountUserStatus,
   CreateAccountUser,
+  CreateDepartment,
+  Department,
+  DepartmentCategory,
+  DepartmentStatus,
+  MemberGender,
   Organization,
+  UpdateAccountUser,
+  UpdateDepartment,
 } from './types.ts'
 
 import type {
@@ -24,7 +31,11 @@ import type {
   BrowserSessionRecord,
   AccountUserStatus,
   CreateAccountUser,
+  CreateDepartment,
+  Department,
   Organization,
+  UpdateAccountUser,
+  UpdateDepartment,
 } from './types.ts'
 
 declare module '@deepseek-ai/cordis' {
@@ -54,6 +65,36 @@ export class UnknownAccountUserError extends Error {
   constructor(readonly userId: UserId) {
     super(`unknown account user ${userId}`)
     this.name = 'UnknownAccountUserError'
+  }
+}
+
+/** Raised when an operation names a department the store does not hold. */
+export class UnknownDepartmentError extends Error {
+  constructor(readonly deptId: DeptId) {
+    super(`unknown department ${deptId}`)
+    this.name = 'UnknownDepartmentError'
+  }
+}
+
+/** Raised when a department code is already taken inside its organization. */
+export class DuplicateDepartmentCodeError extends Error {
+  constructor(readonly orgId: OrgId, readonly code: string) {
+    super(`department code ${JSON.stringify(code)} already exists in organization ${orgId}`)
+    this.name = 'DuplicateDepartmentCodeError'
+  }
+}
+
+/**
+ * Raised when deleting a department that something still hangs from.
+ *
+ * Deleting it anyway would leave a child naming a parent that is gone or an
+ * account naming a department that is gone, and neither is a state the tree can
+ * be read back from.
+ */
+export class DepartmentNotEmptyError extends Error {
+  constructor(readonly deptId: DeptId, readonly children: number, readonly members: number) {
+    super(`department ${deptId} still holds ${children} departments and ${members} accounts`)
+    this.name = 'DepartmentNotEmptyError'
   }
 }
 
@@ -139,6 +180,56 @@ export abstract class AccountStore extends Service {
    * @throws {UnknownAccountUserError} when the store holds no such account.
    */
   abstract setUserStatus(id: UserId, status: AccountUserStatus): Promise<void>
+
+  /**
+   * Change an account's profile fields, leaving every field the caller did not
+   * name as stored.
+   * @param id - the account to change.
+   * @param changes - the fields to write; `null` clears one, absence leaves it.
+   * @throws {UnknownAccountUserError} when the store holds no such account.
+   */
+  abstract updateUser(id: UserId, changes: UpdateAccountUser): Promise<void>
+
+  /**
+   * List an organization's departments, parents before the children that name
+   * them, and siblings in `sortOrder` then creation order.
+   * @param orgId - the organization to list.
+   * @returns every department the organization holds.
+   */
+  abstract listDepartments(orgId: OrgId): Promise<Department[]>
+
+  /**
+   * Read one department by id.
+   * @param id - the department to read.
+   * @returns the department, or undefined when the store holds none.
+   */
+  abstract getDepartment(id: DeptId): Promise<Department | undefined>
+
+  /**
+   * Create one department.
+   * @param input - the department's organization, name, code, and optional placement fields.
+   * @returns the stored department.
+   * @throws {DuplicateDepartmentCodeError} when the code is taken in that organization.
+   */
+  abstract createDepartment(input: CreateDepartment): Promise<Department>
+
+  /**
+   * Change a department's fields, leaving every field the caller did not name
+   * as stored.
+   * @param id - the department to change.
+   * @param changes - the fields to write; `null` clears one, absence leaves it.
+   * @throws {UnknownDepartmentError} when the store holds no such department.
+   * @throws {DuplicateDepartmentCodeError} when the new code is taken in that organization.
+   */
+  abstract updateDepartment(id: DeptId, changes: UpdateDepartment): Promise<void>
+
+  /**
+   * Delete one department.
+   * @param id - the department to delete.
+   * @throws {UnknownDepartmentError} when the store holds no such department.
+   * @throws {DepartmentNotEmptyError} when a department or an account still names it.
+   */
+  abstract deleteDepartment(id: DeptId): Promise<void>
 
   /**
    * Read the authentication material an account carries, if any.

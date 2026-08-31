@@ -50,8 +50,8 @@
     "@deepseek-ai/dsh-quota-sqlite": "workspace:^",
     "@deepseek-ai/dsh-team-admin-api": "workspace:^",
     "@deepseek-ai/dsh-team-admin-app": "workspace:^",
-    "@deepseek-ai/dsh-team-control-plane-http": "workspace:^",
-    "@deepseek-ai/dsh-team-shell": "workspace:^"
+    "@deepseek-ai/dsh-team-console-menu-sqlite": "workspace:^",
+    "@deepseek-ai/dsh-team-control-plane-http": "workspace:^"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:^",

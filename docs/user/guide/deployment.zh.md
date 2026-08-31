@@ -89,13 +89,18 @@ Web launcher 会刻意拒绝 `--host 0.0.0.0`。随附服务器不终止 TLS，�
 
 ## 启动团队管理端
 
-团队管理端是独立的 Control Plane，不是 `3080` 端口 Web UI 中的一条路由。`team-control-plane` profile 监听 `127.0.0.1:3095`，并在 `/team/admin` 提供管理控制台——一个浏览器应用，成员登录后在其中管理组织、用户、角色与授权、设备和公司模型。认证成功后会创建 HTTP-only session cookie，每一次管理操作还受 CSRF 检查、角色授权和审计记录保护。
+团队管理端是独立且仅供管理员使用的 Control Plane，不是 `3080` 端口 Web UI 或 `3090` 成员 Runner 中的一条路由。`team-control-plane` Profile 监听 `127.0.0.1:3095`，并在 `/team/admin/` 供管理员管理部门树、用户、角色与授权、控制台自身的导航、设备和公司模型。只有持有 `organization.admin.access` 的账户才能在密码认证后创建 HTTP-only Session；之后每项操作还受 CSRF 检查、入口权限、动作授权与审计记录保护。
 
-部署必须先通过账户、认证与访问控制服务创建组织、管理员密码和角色授权，再把该组织 ID 提供给 `team-admin-api` 行，否则 profile 会拒绝启动。仍然没有邀请链接或初始密码页面：管理员在控制台里添加成员，而给这位成员设置第一个密码需要另一条路径。本地明文 HTTP 要设置 `secureCookie: false`；TLS 部署则保持 `true`。
+部署必须先通过账户、认证与访问控制服务创建组织、管理员密码、`organization.admin.access` 与所需动作授权，再把该组织 ID 同时提供给 `team-control-plane-http` 和 `team-admin-api`，否则 Profile 会拒绝启动。控制台的侧边栏由 Control Plane 在首次启动时播种的导航绘制，每条菜单都指明一项权限：只持有 `organization.admin.access` 的管理员登录后会看到一个空控制台，直到 `department.read`、`member.read`、`role.read`、`menu.manage`、`device.inventory.read` 与 `model.catalog.read` 的授权就位。仍然没有邀请链接或初始密码页面：管理员在控制台里添加成员，而给这位成员设置第一个密码需要另一条路径。本地明文 HTTP 要设置 `secureCookie: false`；TLS 部署则保持 `true`。
 
 当前完整 Control Plane 组合中的模型网关 HTTP 行还需要凭据提供方。仅用于本地预览管理界面时，可以在 `$DSH_HOME/profiles/team-control-plane/cordis.patch.yml` 中禁用该行；此时公司模型路由不可用：
 
 ```yaml
+- id: team-control-plane-http
+  config:
+    organizationId: 019400a1-0000-7000-8000-000000000000
+    pathPrefix: /team/device
+    maxRequestBodyBytes: 16384
 - id: team-admin-api
   config:
     organizationId: 019400a1-0000-7000-8000-000000000000
@@ -111,6 +116,8 @@ pnpm dsh --profile team-control-plane
 ```
 
 打开 `http://127.0.0.1:3095/team/admin`。控制台是一份构建产物，因此源码检出必须先运行 `pnpm run build`，这个地址才有东西可提供。本地开发时让该 listener 保持绑定回环地址。[Control Plane bundle](../../../packages/bundle/team-control-plane/README.zh.md)拥有组合说明；[管理 API](../../../packages/team/team-admin-api/README.zh.md)拥有控制台每一次动作背后的授权与审计行为。
+
+普通成员通过 `pnpm dsh --profile team` 启动单独配置的 Team Runner。它会打开 `http://127.0.0.1:3090/team/open`，成员在本地输入账户与密码；其浏览器不会访问 `3095`。Runner 的 `controlPlaneUrl` 必须使用它访问 Control Plane 时所经过的 TLS 源。
 
 <a id="reach-a-remote-development-host"></a>
 
@@ -153,7 +160,7 @@ ssh -N -L 3080:127.0.0.1:3080 user@server
 - **启动报告 `EADDRINUSE`**：端口已被其他进程占用。停止该进程，或通过 `--port` 传入未占用端口。
 - **启动提示需要构建**：在仓库根目录运行 `pnpm run build`，然后重试相同启动命令。
 - **干净 URL 返回 `401`**：使用本进程启动日志中的完整 token URL。浏览器收到 cookie 后，干净 URL 才可用。
-- **`3080` 端口没有团队管理端**：启动独立的 `team-control-plane` profile，再打开 `3095` 端口的 `/team/admin`。
+- **成员使用 3090，管理员使用 3095**：为成员登录启动 `team` Profile，为 `/team/admin/` 启动独立的 `team-control-plane` Profile。
 - **Control Plane 等待 `credentials`**：模型网关 HTTP 行处于启用状态，但缺少它要求的提供方。请补齐该提供方组合，或仅为上文的本地管理界面预览而禁用这一行。
 - **通过 SSH 时浏览器未打开**：这是预期行为。保持隧道有效，并在运维工作站打开打印出的 URL。
 - **输入框不可用**：同时选择一个已配置模型和一个工作区。

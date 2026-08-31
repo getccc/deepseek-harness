@@ -19,6 +19,7 @@ import SqliteAudit from '@deepseek-ai/dsh-audit-sqlite'
 import SqliteDeviceAuthorization from '@deepseek-ai/dsh-device-authorization-sqlite'
 import SqliteModelGateway from '@deepseek-ai/dsh-model-gateway-sqlite'
 import SqliteQuota from '@deepseek-ai/dsh-quota-sqlite'
+import SqliteConsoleMenuStore from '@deepseek-ai/dsh-team-console-menu-sqlite'
 import type { AccountStore, OrgId, UserId } from '@deepseek-ai/dsh-account-store'
 import type { AccessControl, RoleId } from '@deepseek-ai/dsh-access-control'
 import type { Audit } from '@deepseek-ai/dsh-audit'
@@ -31,7 +32,9 @@ import {
 } from '@deepseek-ai/dsh-device-authorization'
 import { csrfToken, hashToken } from '@deepseek-ai/dsh-team-browser-session'
 import * as api from '../src/index.ts'
-import type { WireDevice, WireMember, WireModel, WireRole, WireSession } from '../src/types.ts'
+import type {
+  WireDepartment, WireDevice, WireMember, WireMenu, WireModel, WireRole, WireSession,
+} from '../src/types.ts'
 
 /** One response, read the way the console reads it. */
 interface Answer {
@@ -54,10 +57,14 @@ const PASSWORD = 'correct-horse-battery-staple'
 
 /** Every permission the console's own routes ask for. */
 const ADMIN_PERMISSIONS = [
+  ['organization', 'organization.admin.access'],
   ['organization', 'organization.read'], ['organization', 'organization.settings.manage'],
-  ['member', 'member.read'], ['member', 'member.create'], ['member', 'member.disable'],
-  ['member', 'member.enable'], ['member', 'member.role.bind'],
-  ['role', 'role.read'], ['role', 'role.create'], ['role', 'role.grant.manage'],
+  ['member', 'member.read'], ['member', 'member.create'], ['member', 'member.update'],
+  ['member', 'member.disable'], ['member', 'member.enable'], ['member', 'member.role.bind'],
+  ['department', 'department.read'], ['department', 'department.manage'],
+  ['role', 'role.read'], ['role', 'role.create'], ['role', 'role.update'],
+  ['role', 'role.delete'], ['role', 'role.grant.manage'],
+  ['menu', 'menu.manage'],
   ['device', 'device.inventory.read'], ['device', 'device.revoke'],
   ['model', 'model.catalog.read'], ['model', 'model.catalog.manage'],
 ] as const
@@ -152,7 +159,7 @@ async function bindDevice(cookie: string): Promise<DeviceId> {
     callbackUri: 'http://127.0.0.1:3080/team/callback', protocolVersion: 1,
   })
   const issued = await devices.confirm(started.transactionId, {
-    orgId, userId: alice, browserSessionId: hashToken(cookie.slice(cookie.indexOf('=') + 1)),
+    orgId, userId: alice, authenticationId: `session:${hashToken(cookie.slice(cookie.indexOf('=') + 1))}`,
   })
   await devices.redeem({
     transactionId: started.transactionId,
@@ -183,6 +190,7 @@ beforeEach(async () => {
   }).await()
   await ctx.plugin(SqliteQuota, { path: ':memory:', reservationTtlMs: 900_000 }).await()
   await ctx.plugin(SqliteModelGateway, { path: ':memory:' }).await()
+  await ctx.plugin(SqliteConsoleMenuStore, { path: ':memory:' }).await()
 
   store = ctx.get('accountStore') as AccountStore
   access = ctx.get('accessControl') as AccessControl
@@ -208,6 +216,22 @@ afterEach(async () => {
 })
 
 describe('signing in', () => {
+  it('refuses an active member who has no administration-console grant', async () => {
+    const bob = (await store.createUser({ orgId, loginName: 'bob', displayName: 'Bob' })).id
+    await ctx.accountAuth.setSecret(bob, PASSWORD)
+
+    const landed = await send('/team/api/session', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', origin },
+      body: JSON.stringify({ loginName: 'bob', secret: PASSWORD }),
+    })
+
+    expect(landed.status).toBe(403)
+    expect(head(landed, 'set-cookie')).toBeUndefined()
+    expect((await audit.query({ orgId, action: 'member.login' }))[0])
+      .toMatchObject({ principalId: bob, outcome: 'denied', reason: 'no-grant' })
+  })
+
   it('answers with the session the console needs, and records the login', async () => {
     const landed = await send('/team/api/session', {
       method: 'POST',
@@ -338,13 +362,29 @@ describe('a write needs all three', () => {
     }
     expect((await store.getOrganization(orgId))?.name).toBe('Acme')
   })
+
+  it('refuses reads and writes as soon as the console-entry grant is revoked', async () => {
+    const held = await signIn()
+    const entry = (await access.listRoleGrants(adminRole))
+      .find(grant => grant.action === 'organization.admin.access')
+    if (entry === undefined) throw new Error('test setup did not grant console entry')
+    await access.revokeGrant(entry.id)
+
+    expect((await send('/team/api/session', { headers: { cookie: held.cookie } })).status).toBe(403)
+    const refused = await write('PATCH', '/team/api/organization', held, { name: 'Nope' })
+    expect(refused.status).toBe(403)
+    expect((await store.getOrganization(orgId))?.name).toBe('Acme')
+  })
 })
 
 describe('what a role does not carry', () => {
-  /** Bob signs in successfully and holds nothing. */
+  /** Bob may enter the console but holds none of its administrative actions. */
   async function bobsSession(): Promise<{ cookie: string; csrf: string }> {
     const bob = (await store.createUser({ orgId, loginName: 'bob', displayName: 'Bob' })).id
     await ctx.accountAuth.setSecret(bob, PASSWORD)
+    const entry = await access.createRole({ orgId, name: 'console-entry' })
+    await access.grantType(entry.id, 'organization', 'organization.admin.access')
+    await access.bindUserRole(bob, entry.id)
     return signIn('bob')
   }
 
@@ -352,7 +392,7 @@ describe('what a role does not carry', () => {
     const held = await bobsSession()
     for (const path of [
       '/team/api/overview', '/team/api/organization', '/team/api/members',
-      '/team/api/roles', '/team/api/devices', '/team/api/models',
+      '/team/api/departments', '/team/api/roles', '/team/api/devices', '/team/api/models',
     ]) {
       const refused = await send(path, { headers: { cookie: held.cookie } })
       expect(refused.status, path).toBe(403)
@@ -368,7 +408,17 @@ describe('what a role does not carry', () => {
       ['PATCH', `/team/api/members/${alice}`, { status: 'suspended' }],
       ['POST', `/team/api/members/${alice}/roles`, { roleId: adminRole }],
       ['DELETE', `/team/api/members/${alice}/roles/${adminRole}`, undefined],
+      ['PATCH', `/team/api/members/${alice}`, { displayName: 'Bobby' }],
+      ['POST', '/team/api/departments', { name: 'Sneaky', code: 'sneaky' }],
+      ['PATCH', '/team/api/departments/anything', { name: 'Sneaky' }],
+      ['DELETE', '/team/api/departments/anything', undefined],
+      ['POST', '/team/api/menus', { name: 'Sneaky', kind: 'menu' }],
+      ['PATCH', '/team/api/menus/anything', { name: 'Sneaky' }],
+      ['DELETE', '/team/api/menus/anything', undefined],
       ['POST', '/team/api/roles', { name: 'sneaky' }],
+      ['PATCH', `/team/api/roles/${adminRole}`, { name: 'sneaky' }],
+      ['DELETE', `/team/api/roles/${adminRole}`, undefined],
+      ['POST', `/team/api/roles/${adminRole}/menus`, { menuIds: [] }],
       ['POST', `/team/api/roles/${adminRole}/grants`, { resourceType: 'model', action: 'model.invoke' }],
       ['DELETE', '/team/api/grants/anything', undefined],
       ['DELETE', '/team/api/devices/anything', undefined],
@@ -379,13 +429,13 @@ describe('what a role does not carry', () => {
       expect(refused.status, path).toBe(403)
     }
     expect(await store.listUsers(orgId)).toHaveLength(2)
-    expect(await access.listRoles(orgId)).toHaveLength(1)
+    expect(await access.listRoles(orgId)).toHaveLength(2)
     expect((await store.getOrganization(orgId))?.name).toBe('Acme')
     expect(await access.rolesOf(alice)).toEqual([adminRole])
     expect(await ctx.modelGateway.list(orgId)).toHaveLength(0)
   })
 
-  it('answers the permission catalog to any signed-in member, holding nothing', async () => {
+  it('answers the permission catalog to a console member with no administrative actions', async () => {
     const held = await bobsSession()
     const listed = await send('/team/api/permissions', { headers: { cookie: held.cookie } })
     expect(listed.status).toBe(200)
@@ -394,11 +444,13 @@ describe('what a role does not carry', () => {
     expect((payload(listed) as { action: string }[]).some(row => row.action === 'member.read')).toBe(true)
   })
 
-  it('answers who a member is even when their roles carry nothing', async () => {
+  it('answers who a member is with only the console-entry permission', async () => {
     const held = await bobsSession()
     const asked = await send('/team/api/session', { headers: { cookie: held.cookie } })
     expect(asked.status).toBe(200)
-    expect((payload(asked) as WireSession).permissions).toEqual([])
+    expect((payload(asked) as WireSession).permissions).toEqual([
+      'organization|organization.admin.access',
+    ])
   })
 })
 
@@ -432,6 +484,9 @@ describe('administering', () => {
   it('suspends a member, which is by itself the end of their sessions, then reactivates them', async () => {
     const bob = (await store.createUser({ orgId, loginName: 'bob', displayName: 'Bob' })).id
     await ctx.accountAuth.setSecret(bob, PASSWORD)
+    const entry = await access.createRole({ orgId, name: 'console-entry' })
+    await access.grantType(entry.id, 'organization', 'organization.admin.access')
+    await access.bindUserRole(bob, entry.id)
     const bobs = await signIn('bob')
     const held = await signIn()
 
@@ -764,5 +819,500 @@ describe('a Control Plane nobody configured', () => {
     expect(() => {
       api.apply(ctx, api.Config({ organizationId: '   ', secureCookie: false } as never))
     }).toThrow(/organizationId must name the organization/u)
+  })
+})
+
+describe('the department tree', () => {
+  it('reads, creates, edits, and deletes departments', async () => {
+    const held = await signIn('alice', PASSWORD)
+
+    expect(payload(await send('/team/api/departments', { headers: { cookie: held.cookie } }))).toEqual([])
+
+    const created = await write('POST', '/team/api/departments', held, {
+      name: 'Technology', code: 'technology', phone: '13800000001', email: 'tech@zenith.dev',
+      leaderId: alice, sortOrder: 2,
+    })
+    expect(created.status).toBe(200)
+    const [department] = payload(created) as WireDepartment[]
+    expect(department).toMatchObject({
+      name: 'Technology', code: 'technology', category: 'department',
+      leaderName: 'Alice', memberCount: 0, status: 'active',
+    })
+
+    const renamed = await write('PATCH', `/team/api/departments/${department?.id as string}`, held, {
+      name: 'Platform', status: 'suspended',
+    })
+    expect((payload(renamed) as WireDepartment[])[0])
+      .toMatchObject({ name: 'Platform', status: 'suspended' })
+
+    const removed = await write('DELETE', `/team/api/departments/${department?.id as string}`, held)
+    expect(payload(removed)).toEqual([])
+  })
+
+  it('counts the accounts in a department, by name', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const [department] = payload(await write('POST', '/team/api/departments', held, {
+      name: 'Technology', code: 'technology',
+    })) as WireDepartment[]
+    await write('POST', '/team/api/members', held, {
+      loginName: 'dev', displayName: 'Dev', departmentId: department?.id,
+    })
+    const after = payload(await send('/team/api/departments', { headers: { cookie: held.cookie } })) as
+      WireDepartment[]
+    expect(after[0]).toMatchObject({ memberCount: 1, memberNames: ['Dev'] })
+  })
+
+  it('refuses a department without a name and a code', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const refused = await write('POST', '/team/api/departments', held, { name: 'Technology' })
+    expect(refused.status).toBe(400)
+    expect(payload(refused)).toMatchObject({ reason: 'fields' })
+  })
+
+  it('refuses a code another department already has', async () => {
+    const held = await signIn('alice', PASSWORD)
+    await write('POST', '/team/api/departments', held, { name: 'Technology', code: 'technology' })
+    const refused = await write('POST', '/team/api/departments', held, {
+      name: 'Tech again', code: 'technology',
+    })
+    expect(refused.status).toBe(409)
+    expect(payload(refused)).toMatchObject({ reason: 'code-taken' })
+  })
+
+  it('refuses a category and a status this build does not have', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const badCategory = await write('POST', '/team/api/departments', held, {
+      name: 'Technology', code: 'technology', category: 'division',
+    })
+    expect(payload(badCategory)).toMatchObject({ reason: 'fields' })
+
+    const [department] = payload(await write('POST', '/team/api/departments', held, {
+      name: 'Technology', code: 'technology',
+    })) as WireDepartment[]
+    const badStatus = await write('PATCH', `/team/api/departments/${department?.id as string}`, held, {
+      status: 'archived',
+    })
+    expect(payload(badStatus)).toMatchObject({ reason: 'department-status' })
+    const badEditCategory = await write('PATCH', `/team/api/departments/${department?.id as string}`, held, {
+      category: 'division',
+    })
+    expect(payload(badEditCategory)).toMatchObject({ reason: 'fields' })
+  })
+
+  it('refuses to delete a department that still holds an account', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const [department] = payload(await write('POST', '/team/api/departments', held, {
+      name: 'Technology', code: 'technology',
+    })) as WireDepartment[]
+    await write('POST', '/team/api/members', held, {
+      loginName: 'dev', displayName: 'Dev', departmentId: department?.id,
+    })
+    const refused = await write('DELETE', `/team/api/departments/${department?.id as string}`, held)
+    expect(refused.status).toBe(409)
+    expect(payload(refused)).toMatchObject({ reason: 'department-not-empty' })
+  })
+})
+
+describe('an account profile', () => {
+  it('stores the profile fields a new account was given', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const [department] = payload(await write('POST', '/team/api/departments', held, {
+      name: 'Technology', code: 'technology',
+    })) as WireDepartment[]
+    const members = payload(await write('POST', '/team/api/members', held, {
+      loginName: 'dev', displayName: 'Dev', phone: '13800000002', gender: 'female',
+      departmentId: department?.id,
+    })) as WireMember[]
+    expect(members.find(member => member.loginName === 'dev')).toMatchObject({
+      phone: '13800000002', gender: 'female', departmentName: 'Technology',
+    })
+  })
+
+  it('edits a profile without touching the login name or the status', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const before = payload(await write('POST', '/team/api/members', held, {
+      loginName: 'dev', displayName: 'Dev',
+    })) as WireMember[]
+    const dev = before.find(member => member.loginName === 'dev') as WireMember
+    const after = payload(await write('PATCH', `/team/api/members/${dev.id}`, held, {
+      displayName: 'Developer', phone: '13800000003',
+    })) as WireMember[]
+    expect(after.find(member => member.id === dev.id)).toMatchObject({
+      loginName: 'dev', displayName: 'Developer', phone: '13800000003', status: 'active',
+    })
+  })
+
+  it('refuses a gender this build does not record', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const refused = await write('POST', '/team/api/members', held, {
+      loginName: 'dev', displayName: 'Dev', gender: 'other',
+    })
+    expect(payload(refused)).toMatchObject({ reason: 'gender' })
+
+    const members = payload(await write('POST', '/team/api/members', held, {
+      loginName: 'dev2', displayName: 'Dev2',
+    })) as WireMember[]
+    const dev = members.find(member => member.loginName === 'dev2') as WireMember
+    const refusedEdit = await write('PATCH', `/team/api/members/${dev.id}`, held, { gender: 'other' })
+    expect(payload(refusedEdit)).toMatchObject({ reason: 'gender' })
+  })
+})
+
+describe('the console navigation', () => {
+  it('serves the shipped tree to any session, without a grant', async () => {
+    const bob = (await store.createUser({ orgId, loginName: 'bob', displayName: 'Bob' })).id
+    await ctx.accountAuth.setSecret(bob, PASSWORD)
+    // Bob may enter the console and nothing else.
+    const entry = (await access.createRole({ orgId, name: 'entry' })).id
+    await access.grantType(entry, 'organization', 'organization.admin.access')
+    await access.bindUserRole(bob, entry)
+
+    const held = await signIn('bob', PASSWORD)
+    const menus = payload(await send('/team/api/menus', { headers: { cookie: held.cookie } })) as WireMenu[]
+    expect(menus.length).toBeGreaterThan(0)
+    expect(menus.every(menu => menu.shipped)).toBe(true)
+  })
+
+  it('creates, edits, and deletes an entry', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const created = payload(await write('POST', '/team/api/menus', held, {
+      name: 'Reports', kind: 'menu', routePath: '/reports',
+      componentPath: 'system/UsersPage', permission: 'member|member.read', icon: 'team',
+      sortOrder: 9, visible: false,
+    })) as WireMenu[]
+    const made = created.find(menu => menu.name === 'Reports') as WireMenu
+    expect(made).toMatchObject({
+      kind: 'menu', routePath: '/reports', permission: 'member|member.read',
+      visible: false, shipped: false,
+    })
+
+    const edited = payload(await write('PATCH', `/team/api/menus/${made.id}`, held, {
+      name: 'Usage', status: 'suspended', visible: true,
+    })) as WireMenu[]
+    expect(edited.find(menu => menu.id === made.id))
+      .toMatchObject({ name: 'Usage', status: 'suspended', visible: true })
+
+    const removed = payload(await write('DELETE', `/team/api/menus/${made.id}`, held)) as WireMenu[]
+    expect(removed.find(menu => menu.id === made.id)).toBeUndefined()
+  })
+
+  it('refuses an entry naming a permission the catalog does not govern', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const refused = await write('POST', '/team/api/menus', held, {
+      name: 'Reports', kind: 'menu', permission: 'member|member.invent',
+    })
+    expect(payload(refused)).toMatchObject({ reason: 'permission' })
+
+    const menus = payload(await send('/team/api/menus', { headers: { cookie: held.cookie } })) as WireMenu[]
+    const first = menus[0] as WireMenu
+    const refusedEdit = await write('PATCH', `/team/api/menus/${first.id}`, held, {
+      permission: 'member|member.invent',
+    })
+    expect(payload(refusedEdit)).toMatchObject({ reason: 'permission' })
+  })
+
+  it('refuses a kind and a status this build does not have', async () => {
+    const held = await signIn('alice', PASSWORD)
+    expect(payload(await write('POST', '/team/api/menus', held, { name: 'Reports', kind: 'widget' })))
+      .toMatchObject({ reason: 'menu-kind' })
+    expect(payload(await write('POST', '/team/api/menus', held, { name: 'Reports' })))
+      .toMatchObject({ reason: 'fields' })
+
+    const menus = payload(await send('/team/api/menus', { headers: { cookie: held.cookie } })) as WireMenu[]
+    const first = menus[0] as WireMenu
+    expect(payload(await write('PATCH', `/team/api/menus/${first.id}`, held, { status: 'archived' })))
+      .toMatchObject({ reason: 'menu-status' })
+    expect(payload(await write('PATCH', `/team/api/menus/${first.id}`, held, { kind: 'widget' })))
+      .toMatchObject({ reason: 'menu-kind' })
+  })
+
+  it('refuses to delete an entry other entries sit under', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const menus = payload(await send('/team/api/menus', { headers: { cookie: held.cookie } })) as WireMenu[]
+    const group = menus.find(menu => menu.kind === 'catalog') as WireMenu
+    const refused = await write('DELETE', `/team/api/menus/${group.id}`, held)
+    expect(refused.status).toBe(409)
+    expect(payload(refused)).toMatchObject({ reason: 'menu-not-empty' })
+  })
+})
+
+describe('roles as the console administers them', () => {
+  it('carries a code, a creation moment, and who holds it', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const roles = payload(await write('POST', '/team/api/roles', held, {
+      name: 'Editor', code: 'cms_editor', description: 'Edits',
+    })) as WireRole[]
+    const editor = roles.find(role => role.name === 'Editor') as WireRole
+    expect(editor).toMatchObject({ code: 'cms_editor', description: 'Edits', memberCount: 0 })
+    expect(editor.createdAt).toBeGreaterThan(0)
+
+    const admin = roles.find(role => role.name === 'admin') as WireRole
+    expect(admin).toMatchObject({ memberCount: 1, memberNames: ['Alice'] })
+  })
+
+  it('edits and deletes a role', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const created = payload(await write('POST', '/team/api/roles', held, { name: 'Editor' })) as WireRole[]
+    const editor = created.find(role => role.name === 'Editor') as WireRole
+
+    const edited = payload(await write('PATCH', `/team/api/roles/${editor.id}`, held, {
+      name: 'Reviewer', code: 'reviewer', description: '',
+    })) as WireRole[]
+    expect(edited.find(role => role.id === editor.id))
+      .toMatchObject({ name: 'Reviewer', code: 'reviewer', description: '' })
+
+    const removed = payload(await write('DELETE', `/team/api/roles/${editor.id}`, held)) as WireRole[]
+    expect(removed.find(role => role.id === editor.id)).toBeUndefined()
+  })
+
+  it('refuses a name or a code another role already has', async () => {
+    const held = await signIn('alice', PASSWORD)
+    await write('POST', '/team/api/roles', held, { name: 'Editor', code: 'editor' })
+    expect(payload(await write('POST', '/team/api/roles', held, { name: 'Editor' })))
+      .toMatchObject({ reason: 'name-taken' })
+    expect(payload(await write('POST', '/team/api/roles', held, { name: 'Other', code: 'editor' })))
+      .toMatchObject({ reason: 'code-taken' })
+  })
+
+  it('refuses to delete a role the product ships', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const shipped = (await access.createRole({ orgId, name: 'Owner', kind: 'system' })).id
+    const refused = await write('DELETE', `/team/api/roles/${shipped}`, held)
+    expect(refused.status).toBe(409)
+    expect(payload(refused)).toMatchObject({ reason: 'system-role' })
+  })
+})
+
+describe('menu access as a way to compose a role', () => {
+  it('grants what the chosen entries declare and revokes the rest', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const menus = payload(await send('/team/api/menus', { headers: { cookie: held.cookie } })) as WireMenu[]
+    const users = menus.find(menu => menu.permission === 'member|member.read') as WireMenu
+    const devices = menus.find(menu => menu.permission === 'device|device.inventory.read') as WireMenu
+    const created = payload(await write('POST', '/team/api/roles', held, { name: 'Viewer' })) as WireRole[]
+    const viewer = created.find(role => role.name === 'Viewer') as WireRole
+
+    const granted = payload(await write('POST', `/team/api/roles/${viewer.id}/menus`, held, {
+      menuIds: [users.id, devices.id],
+    })) as WireRole[]
+    const held2 = (granted.find(role => role.id === viewer.id) as WireRole).grants
+      .map(grant => `${grant.resourceType}|${grant.action}`)
+    expect(held2).toContain('member|member.read')
+    expect(held2).toContain('device|device.inventory.read')
+
+    const narrowed = payload(await write('POST', `/team/api/roles/${viewer.id}/menus`, held, {
+      menuIds: [users.id],
+    })) as WireRole[]
+    const after = (narrowed.find(role => role.id === viewer.id) as WireRole).grants
+      .map(grant => `${grant.resourceType}|${grant.action}`)
+    expect(after).toEqual(['member|member.read'])
+  })
+
+  it('leaves a grant no navigation entry declares exactly as it was', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const created = payload(await write('POST', '/team/api/roles', held, { name: 'Caller' })) as WireRole[]
+    const caller = created.find(role => role.name === 'Caller') as WireRole
+    await write('POST', `/team/api/roles/${caller.id}/grants`, held, {
+      resourceType: 'model', action: 'model.invoke',
+    })
+
+    const after = payload(await write('POST', `/team/api/roles/${caller.id}/menus`, held, {
+      menuIds: [],
+    })) as WireRole[]
+    expect((after.find(role => role.id === caller.id) as WireRole).grants
+      .map(grant => grant.action)).toEqual(['model.invoke'])
+  })
+
+  it('refuses menu access that is not a list of entry ids', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const created = payload(await write('POST', '/team/api/roles', held, { name: 'Viewer' })) as WireRole[]
+    const viewer = created.find(role => role.name === 'Viewer') as WireRole
+    const refused = await write('POST', `/team/api/roles/${viewer.id}/menus`, held, { menuIds: 'all' })
+    expect(refused.status).toBe(400)
+    expect(payload(refused)).toMatchObject({ reason: 'fields' })
+  })
+})
+
+describe('the fields a partial edit leaves alone', () => {
+  it('places a department under another, and edits one field of it', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const [parent] = payload(await write('POST', '/team/api/departments', held, {
+      name: 'Technology', code: 'technology',
+    })) as WireDepartment[]
+    const withChild = payload(await write('POST', '/team/api/departments', held, {
+      name: 'Platform', code: 'platform', parentId: parent?.id, category: 'company',
+    })) as WireDepartment[]
+    const child = withChild.find(department => department.code === 'platform') as WireDepartment
+    expect(child).toMatchObject({ parentId: parent?.id, category: 'company' })
+
+    const edited = payload(await write('PATCH', `/team/api/departments/${child.id}`, held, {
+      sortOrder: 4,
+    })) as WireDepartment[]
+    expect(edited.find(department => department.id === child.id))
+      .toMatchObject({ name: 'Platform', code: 'platform', sortOrder: 4 })
+  })
+
+  it('adds an entry under another, with no icon and no permission', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const menus = payload(await send('/team/api/menus', { headers: { cookie: held.cookie } })) as WireMenu[]
+    const group = menus.find(menu => menu.kind === 'catalog') as WireMenu
+    const after = payload(await write('POST', '/team/api/menus', held, {
+      name: 'Plain', kind: 'menu', parentId: group.id,
+    })) as WireMenu[]
+    const plain = after.find(menu => menu.name === 'Plain') as WireMenu
+    expect(plain.parentId).toBe(group.id)
+    expect(plain.icon).toBeUndefined()
+    expect(plain.permission).toBeUndefined()
+
+    const edited = payload(await write('PATCH', `/team/api/menus/${plain.id}`, held, {
+      kind: 'action',
+    })) as WireMenu[]
+    expect(edited.find(menu => menu.id === plain.id)).toMatchObject({ name: 'Plain', kind: 'action' })
+  })
+
+  it('edits one profile field, and ignores a value that is not text', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const created = payload(await write('POST', '/team/api/members', held, {
+      loginName: 'dev', displayName: 'Dev',
+    })) as WireMember[]
+    const dev = created.find(member => member.loginName === 'dev') as WireMember
+    const edited = payload(await write('PATCH', `/team/api/members/${dev.id}`, held, {
+      phone: 13_800_000_004,
+      email: 'dev@zenith.dev',
+    })) as WireMember[]
+    const after = edited.find(member => member.id === dev.id) as WireMember
+    expect(after).toMatchObject({ displayName: 'Dev', email: 'dev@zenith.dev' })
+    expect(after.phone).toBeUndefined()
+  })
+
+  it('edits one role field', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const created = payload(await write('POST', '/team/api/roles', held, { name: 'Editor' })) as WireRole[]
+    const editor = created.find(role => role.name === 'Editor') as WireRole
+    const edited = payload(await write('PATCH', `/team/api/roles/${editor.id}`, held, {
+      description: 'Edits pages',
+    })) as WireRole[]
+    expect(edited.find(role => role.id === editor.id))
+      .toMatchObject({ name: 'Editor', description: 'Edits pages' })
+  })
+
+  it('leaves a grant on one named resource out of menu access', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const resource = await access.registerResource({
+      orgId, type: 'model', externalRef: 'v4', displayName: 'V4',
+    })
+    const created = payload(await write('POST', '/team/api/roles', held, { name: 'Caller' })) as WireRole[]
+    const caller = created.find(role => role.name === 'Caller') as WireRole
+    await access.grantResource(caller.id as never, resource.id, 'model.invoke')
+
+    const after = payload(await write('POST', `/team/api/roles/${caller.id}/menus`, held, {
+      menuIds: [],
+    })) as WireRole[]
+    expect((after.find(role => role.id === caller.id) as WireRole).grants)
+      .toMatchObject([{ scope: 'resource', action: 'model.invoke' }])
+  })
+})
+
+describe('a failure the console has no words for', () => {
+  it('answers that the site could not serve the request, and says nothing else', async () => {
+    const held = await signIn('alice', PASSWORD)
+    for (const [method, path, body] of [
+      // A parent that is not there fails a foreign key, which is neither a
+      // duplicate code nor a permission this build does not govern.
+      ['POST', '/team/api/departments', { name: 'Orphan', code: 'orphan', parentId: 'nowhere' }],
+      ['PATCH', '/team/api/departments/nowhere', { name: 'Nowhere' }],
+      ['DELETE', '/team/api/departments/nowhere', undefined],
+      ['POST', '/team/api/menus', { name: 'Orphan', kind: 'menu', parentId: 'nowhere' }],
+      ['PATCH', '/team/api/menus/nowhere', { name: 'Nowhere' }],
+      ['DELETE', '/team/api/menus/nowhere', undefined],
+      ['PATCH', '/team/api/roles/nowhere', { name: 'Nowhere' }],
+      ['DELETE', '/team/api/roles/nowhere', undefined],
+    ] as const) {
+      const failed = await write(method, path, held, body)
+      expect(failed.status, path).toBe(500)
+      expect(payload(failed), path).toMatchObject({ error: 'unavailable' })
+    }
+  })
+})
+
+describe('an edit that names every field it may', () => {
+  it('writes every department field', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const [department] = payload(await write('POST', '/team/api/departments', held, {
+      name: 'Technology', code: 'technology',
+    })) as WireDepartment[]
+    const edited = payload(await write('PATCH', `/team/api/departments/${department?.id as string}`, held, {
+      name: 'Platform', code: 'platform', category: 'company', leaderId: alice,
+      phone: '13800000005', email: 'platform@zenith.dev', sortOrder: 3, status: 'active',
+    })) as WireDepartment[]
+    expect(edited[0]).toMatchObject({
+      name: 'Platform', code: 'platform', category: 'company', leaderName: 'Alice',
+      phone: '13800000005', email: 'platform@zenith.dev', sortOrder: 3,
+    })
+  })
+
+  it('writes every navigation-entry field', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const created = payload(await write('POST', '/team/api/menus', held, {
+      name: 'Plain', kind: 'menu',
+    })) as WireMenu[]
+    const plain = created.find(menu => menu.name === 'Plain') as WireMenu
+    const edited = payload(await write('PATCH', `/team/api/menus/${plain.id}`, held, {
+      routePath: '/reports', componentPath: 'system/UsersPage',
+      permission: 'member|member.read', icon: 'team', sortOrder: 6,
+    })) as WireMenu[]
+    expect(edited.find(menu => menu.id === plain.id)).toMatchObject({
+      routePath: '/reports', componentPath: 'system/UsersPage',
+      permission: 'member|member.read', icon: 'team', sortOrder: 6,
+    })
+  })
+
+  it('writes every account profile field, and clears one sent as null', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const [department] = payload(await write('POST', '/team/api/departments', held, {
+      name: 'Technology', code: 'technology',
+    })) as WireDepartment[]
+    const created = payload(await write('POST', '/team/api/members', held, {
+      loginName: 'dev', displayName: 'Dev', email: 'dev@zenith.dev',
+    })) as WireMember[]
+    const dev = created.find(member => member.loginName === 'dev') as WireMember
+
+    const edited = payload(await write('PATCH', `/team/api/members/${dev.id}`, held, {
+      gender: 'male', departmentId: department?.id, phone: '13800000006',
+    })) as WireMember[]
+    expect(edited.find(member => member.id === dev.id)).toMatchObject({
+      gender: 'male', departmentName: 'Technology', phone: '13800000006',
+    })
+
+    const cleared = payload(await write('PATCH', `/team/api/members/${dev.id}`, held, {
+      email: null,
+    })) as WireMember[]
+    expect((cleared.find(member => member.id === dev.id) as WireMember).email).toBeUndefined()
+  })
+
+  it('refuses an edit to a role name another role already has', async () => {
+    const held = await signIn('alice', PASSWORD)
+    await write('POST', '/team/api/roles', held, { name: 'Editor', code: 'editor' })
+    const both = payload(await write('POST', '/team/api/roles', held, {
+      name: 'Reviewer', code: 'reviewer',
+    })) as WireRole[]
+    const reviewer = both.find(role => role.name === 'Reviewer') as WireRole
+    const refused = await write('PATCH', `/team/api/roles/${reviewer.id}`, held, { name: 'Editor' })
+    expect(refused.status).toBe(409)
+    expect(payload(refused)).toMatchObject({ reason: 'name-taken' })
+  })
+
+  it('refuses an edit to a department code another department already has', async () => {
+    const held = await signIn('alice', PASSWORD)
+    await write('POST', '/team/api/departments', held, { name: 'Technology', code: 'technology' })
+    const both = payload(await write('POST', '/team/api/departments', held, {
+      name: 'Sales', code: 'sales',
+    })) as WireDepartment[]
+    const sales = both.find(department => department.code === 'sales') as WireDepartment
+    const refused = await write('PATCH', `/team/api/departments/${sales.id}`, held, {
+      code: 'technology',
+    })
+    expect(refused.status).toBe(409)
+    expect(payload(refused)).toMatchObject({ reason: 'code-taken' })
   })
 })

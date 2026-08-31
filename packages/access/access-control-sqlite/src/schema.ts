@@ -10,7 +10,7 @@ import { PERMISSION_CATALOG } from '@deepseek-ai/dsh-access-control'
  * Current physical schema. Monotonic: a database written by a newer build is
  * refused rather than migrated down.
  */
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 /** Application id reserved for DeepSeek Harness SQLite access-control databases. */
 export const ACCESS_CONTROL_SQLITE_APPLICATION_ID = 0x44534841 + 1
@@ -20,8 +20,10 @@ export interface RoleRow {
   readonly id: string
   readonly org_id: string
   readonly name: string
+  readonly code: string
   readonly description: string
   readonly kind: string
+  readonly created_at: number | null
 }
 
 /** One governed-resource row, as SQLite returns it. */
@@ -52,8 +54,10 @@ CREATE TABLE IF NOT EXISTS role (
   id          TEXT PRIMARY KEY,
   org_id      TEXT NOT NULL,
   name        TEXT NOT NULL,
+  code        TEXT,
   description TEXT NOT NULL,
-  kind        TEXT NOT NULL
+  kind        TEXT NOT NULL,
+  created_at  INTEGER
 ) STRICT;
 CREATE UNIQUE INDEX IF NOT EXISTS role_name ON role (org_id, name);
 
@@ -119,6 +123,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS role_resource_grant_unique
 `
 
 /**
+ * Statements that need a column this build added to a table an earlier one
+ * wrote, so they run after {@link backfillRoleCodes} rather than inside the DDL.
+ */
+const LATE_DDL = `
+CREATE UNIQUE INDEX IF NOT EXISTS role_code ON role (org_id, code);
+`
+
+/**
  * Bring a connection to {@link SCHEMA_VERSION} and seed the permission catalog
  * from code, refusing a database written by a build that knew more than this one.
  * @param db - an open SQLite connection.
@@ -135,9 +147,30 @@ export function applySchema(db: DatabaseSync): void {
   }
   db.exec('PRAGMA foreign_keys = ON')
   db.exec(DDL)
+  backfillRoleCodes(db)
+  db.exec(LATE_DDL)
   seedPermissions(db)
   db.exec(`PRAGMA application_id = ${ACCESS_CONTROL_SQLITE_APPLICATION_ID}`)
   db.exec(`PRAGMA user_version = ${SCHEMA_VERSION}`)
+}
+
+/**
+ * Give every role a code.
+ *
+ * Schema 1 had no `code` column, and `CREATE TABLE IF NOT EXISTS` leaves an
+ * existing table as it was, so the column is added here and the roles already
+ * stored take their own id as a starting code. An id is unique by construction,
+ * which is what the code index needs; an administrator renames it afterwards.
+ */
+function backfillRoleCodes(db: DatabaseSync): void {
+  const columns = db.prepare('PRAGMA table_info(role)').all() as unknown as { name: string }[]
+  const present = new Set(columns.map(column => column.name))
+  if (!present.has('code')) db.exec('ALTER TABLE role ADD COLUMN code TEXT')
+  // Schema 1 recorded no creation moment either. It stays NULL for the roles
+  // already stored: a made-up timestamp reads exactly like a real one, and a
+  // reader has no way to tell it was invented.
+  if (!present.has('created_at')) db.exec('ALTER TABLE role ADD COLUMN created_at INTEGER')
+  db.exec('UPDATE role SET code = id WHERE code IS NULL')
 }
 
 /**

@@ -99,3 +99,44 @@ export function text(body: Record<string, unknown>, name: string): string | unde
   const trimmed = value.trim()
   return trimmed === '' ? undefined : trimmed
 }
+
+/**
+ * Read one optional string field of a partial update.
+ *
+ * Three answers, because a partial update has three cases: the field was not
+ * sent, it was sent with a value, or it was sent empty to clear what is stored.
+ * A value that is not a string is treated as absent, which is what the routes
+ * do with every field they cannot use.
+ * @param body - the parsed request body.
+ * @param name - the field to read.
+ * @returns the trimmed value, null to clear it, or undefined when it was not sent.
+ */
+export function patchText(body: Record<string, unknown>, name: string): string | null | undefined {
+  const value = body[name]
+  if (value === null) return null
+  if (typeof value !== 'string') return undefined
+  const trimmed = value.trim()
+  return trimmed === '' ? null : trimmed
+}
+
+/**
+ * Read one optional whole-number field of a partial update.
+ * @param body - the parsed request body.
+ * @param name - the field to read.
+ * @returns the value, or undefined when it was not sent or is not a safe integer.
+ */
+export function patchInteger(body: Record<string, unknown>, name: string): number | undefined {
+  const value = body[name]
+  return typeof value === 'number' && Number.isSafeInteger(value) ? value : undefined
+}
+
+/**
+ * Read one optional boolean field of a partial update.
+ * @param body - the parsed request body.
+ * @param name - the field to read.
+ * @returns the value, or undefined when it was not sent or is not a boolean.
+ */
+export function patchBoolean(body: Record<string, unknown>, name: string): boolean | undefined {
+  const value = body[name]
+  return typeof value === 'boolean' ? value : undefined
+}

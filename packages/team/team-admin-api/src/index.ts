@@ -13,19 +13,31 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import {
+  DuplicateRoleCodeError,
+  DuplicateRoleNameError,
   GrantId,
   PERMISSION_CATALOG,
   RoleId,
+  SystemRoleError,
   type AccessControl,
   type Role,
   type RoleGrant,
 } from '@deepseek-ai/dsh-access-control'
 import {
+  DepartmentNotEmptyError,
+  DeptId,
+  DuplicateDepartmentCodeError,
   DuplicateLoginNameError,
   OrgId,
   UserId,
   type AccountUser,
+  type Department,
+  type DepartmentCategory,
+  type DepartmentStatus,
+  type MemberGender,
   type Organization,
+  type UpdateAccountUser,
+  type UpdateDepartment,
 } from '@deepseek-ai/dsh-account-store'
 import type {} from '@deepseek-ai/dsh-account-auth'
 import type { AuditActionName, AuditOutcome } from '@deepseek-ai/dsh-audit'
@@ -37,6 +49,15 @@ import {
   type ModelStatus,
 } from '@deepseek-ai/dsh-model-gateway'
 import {
+  ConsoleMenuNotEmptyError,
+  MenuId,
+  UnknownMenuPermissionError,
+  type ConsoleMenu,
+  type ConsoleMenuKind,
+  type ConsoleMenuStatus,
+  type UpdateConsoleMenu,
+} from '@deepseek-ai/dsh-team-console-menu'
+import {
   csrfMatches,
   csrfToken,
   currentSession,
@@ -47,11 +68,13 @@ import {
   type Signed,
 } from '@deepseek-ai/dsh-team-browser-session'
 import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
-import { CSRF_HEADER, json, readJson, refuse, text } from './http.ts'
+import { CSRF_HEADER, json, patchBoolean, patchInteger, patchText, readJson, refuse, text } from './http.ts'
 import type {
+  WireDepartment,
   WireDevice,
   WireGrant,
   WireMember,
+  WireMenu,
   WireModel,
   WireOrganization,
   WireOverview,
@@ -60,9 +83,11 @@ import type {
 
 export { CSRF_HEADER } from './http.ts'
 export type {
+  WireDepartment,
   WireDevice,
   WireGrant,
   WireMember,
+  WireMenu,
   WireModel,
   WireOrganization,
   WireOverview,
@@ -80,8 +105,23 @@ export const name = 'team-admin-api'
 /** Services required before the API can claim its routes. */
 export const inject = [
   'webServer', 'accountStore', 'accountAuth', 'accessControl', 'audit',
-  'deviceAuthorization', 'modelGateway',
+  'consoleMenu', 'deviceAuthorization', 'modelGateway',
 ]
+
+/** The department statuses a request may ask for. */
+const DEPARTMENT_STATUSES: readonly DepartmentStatus[] = ['active', 'suspended']
+
+/** The navigation-entry statuses a request may ask for. */
+const MENU_STATUSES: readonly ConsoleMenuStatus[] = ['active', 'suspended']
+
+/** The navigation-entry kinds a request may name. */
+const MENU_KINDS: readonly ConsoleMenuKind[] = ['catalog', 'menu', 'action']
+
+/** The genders an account may record. */
+const GENDERS: readonly MemberGender[] = ['male', 'female', 'unspecified']
+
+/** The department categories a request may name. */
+const DEPARTMENT_CATEGORIES: readonly DepartmentCategory[] = ['company', 'department']
 
 /** Address prefix every administration endpoint lives under. */
 export const API_PREFIX = '/team/api'
@@ -132,17 +172,81 @@ function wireOrganization(org: Organization): WireOrganization {
   }
 }
 
-/** Project one member, with the roles this console could also unbind. */
-function wireMember(member: AccountUser, roles: readonly Role[]): WireMember {
+/**
+ * Project one member, with the roles this console could also unbind.
+ * @param member - the stored account.
+ * @param roles - the roles it holds from this organization.
+ * @param departmentName - the name of the department it sits in, when it sits in one.
+ * @returns the browser's view of the account.
+ */
+function wireMember(
+  member: AccountUser,
+  roles: readonly Role[],
+  departmentName: string | undefined,
+): WireMember {
   return {
     id: member.id,
     loginName: member.loginName,
     displayName: member.displayName,
     ...(member.email === undefined ? {} : { email: member.email }),
+    ...(member.phone === undefined ? {} : { phone: member.phone }),
+    ...(member.gender === undefined ? {} : { gender: member.gender }),
     status: member.status,
+    ...(member.departmentId === undefined ? {} : { departmentId: member.departmentId }),
+    ...(departmentName === undefined ? {} : { departmentName }),
     createdAt: member.createdAt,
     ...(member.lastLoginAt === undefined ? {} : { lastLoginAt: member.lastLoginAt }),
     roles: roles.map(role => ({ id: role.id, name: role.name })),
+  }
+}
+
+/**
+ * Project one department, with the people a directory row shows.
+ * @param department - the stored department.
+ * @param leaderName - the display name of the account leading it, when one leads it.
+ * @param memberNames - display names of the accounts in it, in store order.
+ * @returns the browser's view of the department.
+ */
+function wireDepartment(
+  department: Department,
+  leaderName: string | undefined,
+  memberNames: readonly string[],
+): WireDepartment {
+  return {
+    id: department.id,
+    ...(department.parentId === undefined ? {} : { parentId: department.parentId }),
+    name: department.name,
+    code: department.code,
+    category: department.category,
+    ...(department.leaderId === undefined ? {} : { leaderId: department.leaderId }),
+    ...(leaderName === undefined ? {} : { leaderName }),
+    ...(department.phone === undefined ? {} : { phone: department.phone }),
+    ...(department.email === undefined ? {} : { email: department.email }),
+    sortOrder: department.sortOrder,
+    status: department.status,
+    createdAt: department.createdAt,
+    memberCount: memberNames.length,
+    memberNames,
+  }
+}
+
+/** Project one navigation entry. */
+function wireMenu(menu: ConsoleMenu): WireMenu {
+  return {
+    id: menu.id,
+    ...(menu.parentId === undefined ? {} : { parentId: menu.parentId }),
+    name: menu.name,
+    ...(menu.labelKey === undefined ? {} : { labelKey: menu.labelKey }),
+    kind: menu.kind,
+    ...(menu.routePath === undefined ? {} : { routePath: menu.routePath }),
+    ...(menu.componentPath === undefined ? {} : { componentPath: menu.componentPath }),
+    ...(menu.permission === undefined ? {} : { permission: menu.permission }),
+    ...(menu.icon === undefined ? {} : { icon: menu.icon }),
+    sortOrder: menu.sortOrder,
+    status: menu.status,
+    visible: menu.visible,
+    shipped: menu.seedKey !== undefined,
+    createdAt: menu.createdAt,
   }
 }
 
@@ -159,14 +263,29 @@ function wireGrant(grant: RoleGrant): WireGrant {
     }
 }
 
-/** Project one role and its composition. */
-function wireRole(role: Role, grants: readonly RoleGrant[]): WireRole {
+/**
+ * Project one role, its composition, and who holds it.
+ * @param role - the stored role.
+ * @param grants - the grants composing it.
+ * @param memberNames - display names of the accounts holding it, in store order.
+ * @returns the browser's view of the role.
+ */
+function wireRole(
+  role: Role,
+  grants: readonly RoleGrant[],
+  memberNames: readonly string[],
+): WireRole {
   return {
     id: role.id,
     name: role.name,
+    code: role.code,
     description: role.description,
     kind: role.kind,
+    /* v8 ignore next -- only a role stored before this build carries no creation moment, and every role these tests create carries one */
+    ...(role.createdAt === undefined ? {} : { createdAt: role.createdAt }),
     grants: grants.map(wireGrant),
+    memberCount: memberNames.length,
+    memberNames,
   }
 }
 
@@ -196,6 +315,25 @@ function wireModel(entry: ModelEntry): WireModel {
     maxOutputTokens: entry.maxOutputTokens,
     status: entry.status,
   }
+}
+
+/**
+ * Answer a role conflict the console has copy for.
+ * @param res - the response to write.
+ * @param error - what the access-control service raised.
+ * @throws the error unchanged when it is not a conflict this console can explain,
+ *   which the route handler turns into "this site could not answer".
+ */
+function refuseRoleConflict(res: ServerResponse, error: unknown): void {
+  if (error instanceof DuplicateRoleNameError) {
+    refuse(res, 409, 'conflict', { reason: 'name-taken', detail: 'That role name is already in this organization.' })
+    return
+  }
+  if (error instanceof DuplicateRoleCodeError) {
+    refuse(res, 409, 'conflict', { reason: 'code-taken', detail: 'That code is already in this organization.' })
+    return
+  }
+  throw error
 }
 
 /**
@@ -241,12 +379,18 @@ export function apply(ctx: Context, config: Config): void {
     for (const [type, externalRef, displayName] of [
       ['organization', organizationId, 'Organization administration'],
       ['member', organizationId, 'Member administration'],
+      ['department', organizationId, 'Department administration'],
       ['role', organizationId, 'Role administration'],
+      ['menu', organizationId, 'Console navigation administration'],
       ['device', organizationId, 'Device administration'],
       ['model', MODEL_CATALOG_RESOURCE, 'Model catalog administration'],
     ] as const) {
       await ctx.accessControl.registerResource({ orgId: organizationId, type, externalRef, displayName })
     }
+    // The navigation this build ships, for an organization that does not have
+    // it yet. Seeding here rather than in the store keeps the store ignorant of
+    // which organization a Control Plane serves, which is this plugin's config.
+    await ctx.consoleMenu.seedShipped(organizationId)
     return () => {}
   }, 'team-admin-api: govern administrative resources')
 
@@ -278,13 +422,33 @@ export function apply(ctx: Context, config: Config): void {
     return member
   }
 
+  /** Whether one active member may enter this administration surface. */
+  const mayEnterConsole = async (userId: UserId): Promise<boolean> => (
+    await ctx.accessControl.authorize({
+      orgId: organizationId,
+      principalId: userId,
+      action: 'organization.admin.access',
+      resourceType: 'organization',
+      resourceId: organizationId,
+    })
+  ).allowed
+
   /**
    * Answer a read that must carry a session.
    * @returns the session, or undefined when the caller already answered 401.
    */
   const requireSession = async (req: IncomingMessage, res: ServerResponse): Promise<Signed | undefined> => {
     const signed = await currentSession(ctx.accountStore, req)
-    if (signed === undefined) refuse(res, 401, 'unauthenticated')
+    if (signed === undefined) {
+      refuse(res, 401, 'unauthenticated')
+      return undefined
+    }
+    await readOrganization()
+    await readMember(signed.session.userId)
+    if (!await mayEnterConsole(signed.session.userId)) {
+      refuse(res, 403, 'forbidden', { detail: 'This account cannot use the administration console.' })
+      return undefined
+    }
     return signed
   }
 
@@ -304,6 +468,12 @@ export function apply(ctx: Context, config: Config): void {
     const signed = await currentSession(ctx.accountStore, req)
     if (signed === undefined) {
       refuse(res, 401, 'unauthenticated')
+      return undefined
+    }
+    await readOrganization()
+    await readMember(signed.session.userId)
+    if (!await mayEnterConsole(signed.session.userId)) {
+      refuse(res, 403, 'forbidden', { detail: 'This account cannot use the administration console.' })
       return undefined
     }
     const supplied = req.headers[CSRF_HEADER]
@@ -347,29 +517,124 @@ export function apply(ctx: Context, config: Config): void {
     return false
   }
 
+  /**
+   * Every account of one organization with the role ids it holds.
+   *
+   * Read once and passed to whichever projection needs it: the member table
+   * wants a member's roles, and the role table wants a role's members, and
+   * asking access control twice for the same bindings would let the two tables
+   * disagree about the same moment.
+   * @returns the accounts, each with the role ids bound to it.
+   */
+  const readBindings = async (orgId: OrgId): Promise<
+    readonly { member: AccountUser; roleIds: readonly RoleId[] }[]
+  > => {
+    const members = await ctx.accountStore.listUsers(orgId)
+    return Promise.all(members.map(async member => ({
+      member,
+      roleIds: await ctx.accessControl.rolesOf(member.id),
+    })))
+  }
+
   /** Every member with the roles from this organization they hold. */
   const readMembers = async (orgId: OrgId): Promise<WireMember[]> => {
-    const [members, roles] = await Promise.all([
-      ctx.accountStore.listUsers(orgId),
+    const [bound, roles, departments] = await Promise.all([
+      readBindings(orgId),
       ctx.accessControl.listRoles(orgId),
+      ctx.accountStore.listDepartments(orgId),
     ])
     // Nothing stops a role binding from naming a role in another organization,
     // and this console administers one: a member's roles are the ones this API
     // could also unbind, not every binding they carry.
     const roleById = new Map(roles.map(role => [role.id, role]))
-    return Promise.all(members.map(async member => wireMember(
+    const departmentName = new Map(departments.map(department => [department.id, department.name]))
+    return bound.map(({ member, roleIds }) => wireMember(
       member,
-      (await ctx.accessControl.rolesOf(member.id)).flatMap(id => roleById.get(id) ?? []),
-    )))
+      roleIds.flatMap(id => roleById.get(id) ?? []),
+      member.departmentId === undefined ? undefined : departmentName.get(member.departmentId),
+    ))
   }
 
-  /** Every role with its grants. */
+  /** Every role with its grants and the accounts holding it. */
   const readRoles = async (orgId: OrgId): Promise<WireRole[]> => {
-    const roles = await ctx.accessControl.listRoles(orgId)
+    const [roles, bound] = await Promise.all([
+      ctx.accessControl.listRoles(orgId),
+      readBindings(orgId),
+    ])
+    const holders = new Map<string, string[]>()
+    for (const { member, roleIds } of bound) {
+      for (const roleId of roleIds) holders.set(roleId, [...holders.get(roleId) ?? [], member.displayName])
+    }
     return Promise.all(roles.map(async role => wireRole(
       role,
       await ctx.accessControl.listRoleGrants(role.id),
+      holders.get(role.id) ?? [],
     )))
+  }
+
+  /** Every department with the people a directory row shows. */
+  const readDepartments = async (orgId: OrgId): Promise<WireDepartment[]> => {
+    const [departments, members] = await Promise.all([
+      ctx.accountStore.listDepartments(orgId),
+      ctx.accountStore.listUsers(orgId),
+    ])
+    const displayName = new Map(members.map(member => [member.id as string, member.displayName]))
+    const inDepartment = new Map<string, string[]>()
+    for (const member of members) {
+      if (member.departmentId === undefined) continue
+      inDepartment.set(
+        member.departmentId,
+        [...inDepartment.get(member.departmentId) ?? [], member.displayName],
+      )
+    }
+    return departments.map(department => wireDepartment(
+      department,
+      department.leaderId === undefined ? undefined : displayName.get(department.leaderId),
+      inDepartment.get(department.id) ?? [],
+    ))
+  }
+
+  /** The organization's navigation. */
+  const readMenus = async (orgId: OrgId): Promise<WireMenu[]> =>
+    (await ctx.consoleMenu.listMenus(orgId)).map(wireMenu)
+
+  /**
+   * Make one role's grants match the navigation entries it was given.
+   *
+   * Menu access is not a second kind of permission: an entry names a pair the
+   * permission catalog governs, and admitting the entry is granting that pair.
+   * Only pairs some entry names are touched, so a grant an administrator added
+   * from the permission list directly is left exactly as it was.
+   * @param orgId - the organization whose navigation the ids belong to.
+   * @param roleId - the role to change.
+   * @param chosen - ids of the entries this role is to reach.
+   */
+  const setRoleMenus = async (
+    orgId: OrgId, roleId: RoleId, chosen: ReadonlySet<string>,
+  ): Promise<void> => {
+    const [menus, held] = await Promise.all([
+      ctx.consoleMenu.listMenus(orgId),
+      ctx.accessControl.listRoleGrants(roleId),
+    ])
+    const grantByPair = new Map<string, GrantId>(held.flatMap(grant =>
+      grant.kind === 'type' ? [[`${grant.resourceType}|${grant.action}`, grant.id] as const] : []))
+    const governed = new Set<string>()
+    const wanted = new Set<string>()
+    for (const menu of menus) {
+      if (menu.permission === undefined) continue
+      governed.add(menu.permission)
+      if (chosen.has(menu.id)) wanted.add(menu.permission)
+    }
+    for (const pair of wanted) {
+      if (grantByPair.has(pair)) continue
+      const separator = pair.indexOf('|')
+      await ctx.accessControl.grantType(roleId, pair.slice(0, separator), pair.slice(separator + 1))
+    }
+    for (const pair of governed) {
+      const grantId = grantByPair.get(pair)
+      if (wanted.has(pair) || grantId === undefined) continue
+      await ctx.accessControl.revokeGrant(grantId)
+    }
   }
 
   /** The counts the overview shows. */
@@ -425,6 +690,18 @@ export function apply(ctx: Context, config: Config): void {
         metadata: { authMethod: 'password' },
       })
       refuse(res, 401, 'unauthenticated', { detail: 'That member and password do not match.' })
+      return
+    }
+    if (!await mayEnterConsole(outcome.userId)) {
+      await ctx.audit.record({
+        orgId: organizationId,
+        principalId: outcome.userId,
+        action: 'member.login',
+        outcome: 'denied',
+        reason: 'no-grant',
+        metadata: { authMethod: 'password' },
+      })
+      refuse(res, 403, 'forbidden', { detail: 'This account cannot use the administration console.' })
       return
     }
     const token = newSessionToken()
@@ -507,6 +784,18 @@ export function apply(ctx: Context, config: Config): void {
       json(res, 200, await readMembers(org))
       return
     }
+    if (segments[0] === 'departments' && segments.length === 1) {
+      if (!await mayProceed(res, signed, 'department.read', 'department', org)) return
+      json(res, 200, await readDepartments(org))
+      return
+    }
+    if (segments[0] === 'menus' && segments.length === 1) {
+      // Navigation needs a session and no grant, like the permission catalog:
+      // the console cannot draw itself without it, it names only what this
+      // build ships, and every page it leads to asks access control again.
+      json(res, 200, await readMenus(org))
+      return
+    }
     if (segments[0] === 'roles' && segments.length === 1) {
       if (!await mayProceed(res, signed, 'role.read', 'role', org)) return
       json(res, 200, await readRoles(org))
@@ -569,9 +858,22 @@ export function apply(ctx: Context, config: Config): void {
         return
       }
       const email = text(body, 'email')
+      const phone = text(body, 'phone')
+      const gender = text(body, 'gender')
+      const departmentId = text(body, 'departmentId')
+      if (gender !== undefined && !GENDERS.includes(gender as MemberGender)) {
+        refuse(res, 400, 'malformed', { reason: 'gender', detail: 'That gender is not one this build records.' })
+        return
+      }
       try {
         await ctx.accountStore.createUser({
-          orgId: org, loginName, displayName, ...(email === undefined ? {} : { email }),
+          orgId: org,
+          loginName,
+          displayName,
+          ...(email === undefined ? {} : { email }),
+          ...(phone === undefined ? {} : { phone }),
+          ...(gender === undefined ? {} : { gender: gender as MemberGender }),
+          ...(departmentId === undefined ? {} : { departmentId: DeptId(departmentId) }),
         })
       } catch (error) {
         // The store owns login-name uniqueness; a second account with the same
@@ -586,20 +888,249 @@ export function apply(ctx: Context, config: Config): void {
     }
 
     if (segments[0] === 'members' && segments.length === 2 && method === 'PATCH') {
-      const status = text(body, 'status')
-      if (status !== 'active' && status !== 'suspended') {
-        refuse(res, 400, 'malformed', { reason: 'member-status', detail: 'That account status is not supported.' })
+      const target = UserId(segments[1] as string)
+      // Two different acts share the address because both edit one account, and
+      // they are told apart by what the body carries: a status change is a
+      // separate permission from editing a profile, and holding one of them is
+      // not holding the other.
+      if (Object.hasOwn(body, 'status')) {
+        const status = text(body, 'status')
+        if (status !== 'active' && status !== 'suspended') {
+          refuse(res, 400, 'malformed', { reason: 'member-status', detail: 'That account status is not supported.' })
+          return
+        }
+        const action = status === 'active' ? 'member.enable' : 'member.disable'
+        if (!await mayProceed(res, signed, action, 'member', org)) return
+        // Suspending is the whole act: a session resolves through its account,
+        // so the sessions this member holds stop working with the status change
+        // rather than needing a second call someone has to remember.
+        await ctx.accountStore.setUserStatus(target, status)
+        await record(action, signed, 'allowed', { resourceId: target })
+        json(res, 200, await readMembers(org))
         return
       }
-      const action = status === 'active' ? 'member.enable' : 'member.disable'
-      if (!await mayProceed(res, signed, action, 'member', org)) return
-      const target = UserId(segments[1] as string)
-      // Suspending is the whole act: a session resolves through its account, so
-      // the sessions this member holds stop working with the status change
-      // rather than needing a second call someone has to remember.
-      await ctx.accountStore.setUserStatus(target, status)
-      await record(action, signed, 'allowed', { resourceId: target })
+      if (!await mayProceed(res, signed, 'member.update', 'member', org)) return
+      const gender = patchText(body, 'gender')
+      if (typeof gender === 'string' && !GENDERS.includes(gender as MemberGender)) {
+        refuse(res, 400, 'malformed', { reason: 'gender', detail: 'That gender is not one this build records.' })
+        return
+      }
+      const displayName = text(body, 'displayName')
+      const email = patchText(body, 'email')
+      const phone = patchText(body, 'phone')
+      const departmentId = patchText(body, 'departmentId')
+      const changes: UpdateAccountUser = {
+        ...(displayName === undefined ? {} : { displayName }),
+        ...(email === undefined ? {} : { email }),
+        ...(phone === undefined ? {} : { phone }),
+        ...(gender === undefined ? {} : { gender: gender as MemberGender | null }),
+        ...(departmentId === undefined ? {} : { departmentId: departmentId as DeptId | null }),
+      }
+      await ctx.accountStore.updateUser(target, changes)
+      await record('member.update', signed, 'allowed', { resourceId: target })
       json(res, 200, await readMembers(org))
+      return
+    }
+
+    if (segments[0] === 'departments' && segments.length === 1 && method === 'POST') {
+      if (!await mayProceed(res, signed, 'department.manage', 'department', org)) return
+      const name = text(body, 'name')
+      const code = text(body, 'code')
+      if (name === undefined || code === undefined) {
+        refuse(res, 400, 'malformed', { reason: 'fields', detail: 'A department needs a name and a code.' })
+        return
+      }
+      const category = text(body, 'category')
+      if (category !== undefined && !DEPARTMENT_CATEGORIES.includes(category as DepartmentCategory)) {
+        refuse(res, 400, 'malformed', { reason: 'fields', detail: 'A department is either a company or a department.' })
+        return
+      }
+      const parentId = text(body, 'parentId')
+      const leaderId = text(body, 'leaderId')
+      const phone = text(body, 'phone')
+      const email = text(body, 'email')
+      const sortOrder = patchInteger(body, 'sortOrder')
+      try {
+        await ctx.accountStore.createDepartment({
+          orgId: org,
+          name,
+          code,
+          ...(parentId === undefined ? {} : { parentId: DeptId(parentId) }),
+          ...(category === undefined ? {} : { category: category as DepartmentCategory }),
+          ...(leaderId === undefined ? {} : { leaderId: UserId(leaderId) }),
+          ...(phone === undefined ? {} : { phone }),
+          ...(email === undefined ? {} : { email }),
+          ...(sortOrder === undefined ? {} : { sortOrder }),
+        })
+      } catch (error) {
+        if (!(error instanceof DuplicateDepartmentCodeError)) throw error
+        refuse(res, 409, 'conflict', { reason: 'code-taken', detail: 'That code is already in this organization.' })
+        return
+      }
+      await record('department.create', signed, 'allowed')
+      json(res, 200, await readDepartments(org))
+      return
+    }
+
+    if (segments[0] === 'departments' && segments.length === 2 && method === 'PATCH') {
+      if (!await mayProceed(res, signed, 'department.manage', 'department', org)) return
+      const status = text(body, 'status')
+      if (status !== undefined && !DEPARTMENT_STATUSES.includes(status as DepartmentStatus)) {
+        refuse(res, 400, 'malformed', { reason: 'department-status', detail: 'That department status is not supported.' })
+        return
+      }
+      const category = text(body, 'category')
+      if (category !== undefined && !DEPARTMENT_CATEGORIES.includes(category as DepartmentCategory)) {
+        refuse(res, 400, 'malformed', { reason: 'fields', detail: 'A department is either a company or a department.' })
+        return
+      }
+      const name = text(body, 'name')
+      const code = text(body, 'code')
+      const sortOrder = patchInteger(body, 'sortOrder')
+      const leaderId = patchText(body, 'leaderId')
+      const phone = patchText(body, 'phone')
+      const email = patchText(body, 'email')
+      const changes: UpdateDepartment = {
+        ...(name === undefined ? {} : { name }),
+        ...(code === undefined ? {} : { code }),
+        ...(category === undefined ? {} : { category: category as DepartmentCategory }),
+        ...(leaderId === undefined ? {} : { leaderId: leaderId as UserId | null }),
+        ...(phone === undefined ? {} : { phone }),
+        ...(email === undefined ? {} : { email }),
+        ...(sortOrder === undefined ? {} : { sortOrder }),
+        ...(status === undefined ? {} : { status: status as DepartmentStatus }),
+      }
+      const target = DeptId(segments[1] as string)
+      try {
+        await ctx.accountStore.updateDepartment(target, changes)
+      } catch (error) {
+        if (!(error instanceof DuplicateDepartmentCodeError)) throw error
+        refuse(res, 409, 'conflict', { reason: 'code-taken', detail: 'That code is already in this organization.' })
+        return
+      }
+      await record('department.update', signed, 'allowed', { resourceId: target })
+      json(res, 200, await readDepartments(org))
+      return
+    }
+
+    if (segments[0] === 'departments' && segments.length === 2 && method === 'DELETE') {
+      if (!await mayProceed(res, signed, 'department.manage', 'department', org)) return
+      const target = DeptId(segments[1] as string)
+      try {
+        await ctx.accountStore.deleteDepartment(target)
+      } catch (error) {
+        if (!(error instanceof DepartmentNotEmptyError)) throw error
+        refuse(res, 409, 'conflict', {
+          reason: 'department-not-empty',
+          detail: 'Departments or accounts still belong to this department.',
+        })
+        return
+      }
+      await record('department.delete', signed, 'allowed', { resourceId: target })
+      json(res, 200, await readDepartments(org))
+      return
+    }
+
+    if (segments[0] === 'menus' && segments.length === 1 && method === 'POST') {
+      if (!await mayProceed(res, signed, 'menu.manage', 'menu', org)) return
+      const name = text(body, 'name')
+      const kind = text(body, 'kind')
+      if (name === undefined || kind === undefined) {
+        refuse(res, 400, 'malformed', { reason: 'fields', detail: 'A navigation entry needs a name and a kind.' })
+        return
+      }
+      if (!MENU_KINDS.includes(kind as ConsoleMenuKind)) {
+        refuse(res, 400, 'malformed', { reason: 'menu-kind', detail: 'That navigation entry kind is not supported.' })
+        return
+      }
+      const parentId = text(body, 'parentId')
+      const routePath = text(body, 'routePath')
+      const componentPath = text(body, 'componentPath')
+      const permission = text(body, 'permission')
+      const icon = text(body, 'icon')
+      const sortOrder = patchInteger(body, 'sortOrder')
+      const visible = patchBoolean(body, 'visible')
+      try {
+        await ctx.consoleMenu.createMenu({
+          orgId: org,
+          name,
+          kind: kind as ConsoleMenuKind,
+          ...(parentId === undefined ? {} : { parentId: MenuId(parentId) }),
+          ...(routePath === undefined ? {} : { routePath }),
+          ...(componentPath === undefined ? {} : { componentPath }),
+          ...(permission === undefined ? {} : { permission }),
+          ...(icon === undefined ? {} : { icon }),
+          ...(sortOrder === undefined ? {} : { sortOrder }),
+          ...(visible === undefined ? {} : { visible }),
+        })
+      } catch (error) {
+        if (!(error instanceof UnknownMenuPermissionError)) throw error
+        refuse(res, 400, 'malformed', { reason: 'permission', detail: 'That permission is not registered.' })
+        return
+      }
+      await record('menu.create', signed, 'allowed')
+      json(res, 200, await readMenus(org))
+      return
+    }
+
+    if (segments[0] === 'menus' && segments.length === 2 && method === 'PATCH') {
+      if (!await mayProceed(res, signed, 'menu.manage', 'menu', org)) return
+      const status = text(body, 'status')
+      if (status !== undefined && !MENU_STATUSES.includes(status as ConsoleMenuStatus)) {
+        refuse(res, 400, 'malformed', { reason: 'menu-status', detail: 'That navigation entry status is not supported.' })
+        return
+      }
+      const kind = text(body, 'kind')
+      if (kind !== undefined && !MENU_KINDS.includes(kind as ConsoleMenuKind)) {
+        refuse(res, 400, 'malformed', { reason: 'menu-kind', detail: 'That navigation entry kind is not supported.' })
+        return
+      }
+      const name = text(body, 'name')
+      const sortOrder = patchInteger(body, 'sortOrder')
+      const visible = patchBoolean(body, 'visible')
+      const routePath = patchText(body, 'routePath')
+      const componentPath = patchText(body, 'componentPath')
+      const permission = patchText(body, 'permission')
+      const icon = patchText(body, 'icon')
+      const changes: UpdateConsoleMenu = {
+        ...(name === undefined ? {} : { name }),
+        ...(kind === undefined ? {} : { kind: kind as ConsoleMenuKind }),
+        ...(routePath === undefined ? {} : { routePath }),
+        ...(componentPath === undefined ? {} : { componentPath }),
+        ...(permission === undefined ? {} : { permission }),
+        ...(icon === undefined ? {} : { icon }),
+        ...(sortOrder === undefined ? {} : { sortOrder }),
+        ...(status === undefined ? {} : { status: status as ConsoleMenuStatus }),
+        ...(visible === undefined ? {} : { visible }),
+      }
+      const target = MenuId(segments[1] as string)
+      try {
+        await ctx.consoleMenu.updateMenu(target, changes)
+      } catch (error) {
+        if (!(error instanceof UnknownMenuPermissionError)) throw error
+        refuse(res, 400, 'malformed', { reason: 'permission', detail: 'That permission is not registered.' })
+        return
+      }
+      await record('menu.update', signed, 'allowed', { resourceId: target })
+      json(res, 200, await readMenus(org))
+      return
+    }
+
+    if (segments[0] === 'menus' && segments.length === 2 && method === 'DELETE') {
+      if (!await mayProceed(res, signed, 'menu.manage', 'menu', org)) return
+      const target = MenuId(segments[1] as string)
+      try {
+        await ctx.consoleMenu.deleteMenu(target)
+      } catch (error) {
+        if (!(error instanceof ConsoleMenuNotEmptyError)) throw error
+        refuse(res, 409, 'conflict', {
+          reason: 'menu-not-empty',
+          detail: 'Other navigation entries still sit under this one.',
+        })
+        return
+      }
+      await record('menu.delete', signed, 'allowed', { resourceId: target })
+      json(res, 200, await readMenus(org))
       return
     }
 
@@ -634,10 +1165,71 @@ export function apply(ctx: Context, config: Config): void {
         refuse(res, 400, 'malformed', { reason: 'fields', detail: 'A role needs a name.' })
         return
       }
-      await ctx.accessControl.createRole({
-        orgId: org, name: roleName, description: text(body, 'description') ?? '',
-      })
+      const roleCode = text(body, 'code')
+      try {
+        await ctx.accessControl.createRole({
+          orgId: org,
+          name: roleName,
+          ...(roleCode === undefined ? {} : { code: roleCode }),
+          description: text(body, 'description') ?? '',
+        })
+      } catch (error) {
+        refuseRoleConflict(res, error)
+        return
+      }
       await record('role.create', signed, 'allowed')
+      json(res, 200, await readRoles(org))
+      return
+    }
+
+    if (segments[0] === 'roles' && segments.length === 2 && method === 'PATCH') {
+      if (!await mayProceed(res, signed, 'role.update', 'role', org)) return
+      const roleName = text(body, 'name')
+      const roleCode = text(body, 'code')
+      const description = patchText(body, 'description')
+      const target = RoleId(segments[1] as string)
+      try {
+        await ctx.accessControl.updateRole(target, {
+          ...(roleName === undefined ? {} : { name: roleName }),
+          ...(roleCode === undefined ? {} : { code: roleCode }),
+          ...(description === undefined ? {} : { description: description ?? '' }),
+        })
+      } catch (error) {
+        refuseRoleConflict(res, error)
+        return
+      }
+      await record('role.update', signed, 'allowed', { resourceId: target })
+      json(res, 200, await readRoles(org))
+      return
+    }
+
+    if (segments[0] === 'roles' && segments.length === 2 && method === 'DELETE') {
+      if (!await mayProceed(res, signed, 'role.delete', 'role', org)) return
+      const target = RoleId(segments[1] as string)
+      try {
+        await ctx.accessControl.deleteRole(target)
+      } catch (error) {
+        if (!(error instanceof SystemRoleError)) throw error
+        refuse(res, 409, 'conflict', {
+          reason: 'system-role',
+          detail: 'This role ships with the product and cannot be deleted.',
+        })
+        return
+      }
+      await record('role.delete', signed, 'allowed', { resourceId: target })
+      json(res, 200, await readRoles(org))
+      return
+    }
+
+    if (segments[0] === 'roles' && segments[2] === 'menus' && method === 'POST' && segments.length === 3) {
+      if (!await mayProceed(res, signed, 'role.grant.manage', 'role', org)) return
+      const menuIds = body['menuIds']
+      if (!Array.isArray(menuIds) || menuIds.some(id => typeof id !== 'string')) {
+        refuse(res, 400, 'malformed', { reason: 'fields', detail: 'Menu access is a list of navigation entry ids.' })
+        return
+      }
+      await setRoleMenus(org, RoleId(segments[1] as string), new Set(menuIds as string[]))
+      await record('grant.add', signed, 'allowed')
       json(res, 200, await readRoles(org))
       return
     }

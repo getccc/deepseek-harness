@@ -116,7 +116,6 @@ describe('dsh-team-control-plane bundle', () => {
       ['model-gateway-http', '@deepseek-ai/dsh-model-gateway-http'],
       ['team-admin-api', '@deepseek-ai/dsh-team-admin-api'],
       ['team-admin-app', '@deepseek-ai/dsh-team-admin-app'],
-      ['team-shell', '@deepseek-ai/dsh-team-shell'],
     ] as const) {
       expect(mounted.get(id), id).toBe(name)
       expect(manifest.dependencies ?? {}, id).toHaveProperty(name)
@@ -129,7 +128,7 @@ describe('dsh-team-control-plane bundle', () => {
     // across whatever directories it was launched from.
     //
     const stores = rows().filter(row => row.config?.['path'] !== undefined)
-    expect(stores).toHaveLength(6)
+    expect(stores).toHaveLength(7)
     for (const row of stores) {
       const expression = (row.config?.['path'] as { __jsExpr: string }).__jsExpr
       expect(expression, row.id).toMatch(/^dshHomePath\('control-plane', '[a-z]+\.sqlite'\)$/u)
@@ -137,12 +136,12 @@ describe('dsh-team-control-plane bundle', () => {
   })
 
   it('leaves the organization unnamed, so a Control Plane nobody configured does not start', () => {
-    // The administration API requires it and refuses to load without it.
+    // Both account-facing HTTP surfaces require it and refuse to load without it.
     // Supplying a default here would mean authenticating members against an
     // organization no one chose.
-    const api = rows().find(row => row.id === 'team-admin-api')
-    expect(api?.config).not.toHaveProperty('organizationId')
-    // No other row names one either, so there is one place to supply it.
+    for (const id of ['team-admin-api', 'team-control-plane-http']) {
+      expect(rows().find(row => row.id === id)?.config).not.toHaveProperty('organizationId')
+    }
     expect(rows().filter(row => row.config?.['organizationId'] !== undefined)).toEqual([])
   })
 

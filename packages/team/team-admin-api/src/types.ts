@@ -9,8 +9,14 @@
  * @module @deepseek-ai/dsh-team-admin-api/types
  */
 
-import type { AccountUserStatus } from '@deepseek-ai/dsh-account-store'
+import type {
+  AccountUserStatus,
+  DepartmentCategory,
+  DepartmentStatus,
+  MemberGender,
+} from '@deepseek-ai/dsh-account-store'
 import type { RoleKind } from '@deepseek-ai/dsh-access-control'
+import type { ConsoleMenuKind, ConsoleMenuStatus } from '@deepseek-ai/dsh-team-console-menu'
 import type { ModelStatus } from '@deepseek-ai/dsh-model-gateway'
 
 /** The organization one Control Plane serves. */
@@ -34,11 +40,68 @@ export interface WireMember {
   readonly loginName: string
   readonly displayName: string
   readonly email?: string
+  readonly phone?: string
+  readonly gender?: MemberGender
   readonly status: AccountUserStatus
+  /** The department this account sits in, absent while it sits in none. */
+  readonly departmentId?: string
+  /** That department's name, so a table row needs no second request to show it. */
+  readonly departmentName?: string
   readonly createdAt: number
   readonly lastLoginAt?: number
   /** Roles from this organization only; a binding to another organization's role is not shown. */
   readonly roles: readonly WireRoleRef[]
+}
+
+/**
+ * One department, with the two facts about its people a directory row shows.
+ *
+ * `leaderName` and `memberNames` are resolved here rather than left to the
+ * console, because a member who may read the organization chart does not
+ * necessarily hold `member.read`, and a column of raw account ids is not a
+ * column anyone can read.
+ */
+export interface WireDepartment {
+  readonly id: string
+  readonly parentId?: string
+  readonly name: string
+  readonly code: string
+  readonly category: DepartmentCategory
+  readonly leaderId?: string
+  readonly leaderName?: string
+  readonly phone?: string
+  readonly email?: string
+  readonly sortOrder: number
+  readonly status: DepartmentStatus
+  readonly createdAt: number
+  readonly memberCount: number
+  /** Display names of the accounts in it, in the order the store lists them. */
+  readonly memberNames: readonly string[]
+}
+
+/**
+ * One navigation entry.
+ *
+ * `labelKey` is the console's own copy key for an entry this build ships;
+ * `shipped` says whether the product put the entry there, which is what the
+ * console uses to explain that deleting it only lasts until the next start.
+ */
+export interface WireMenu {
+  readonly id: string
+  readonly parentId?: string
+  readonly name: string
+  readonly labelKey?: string
+  readonly kind: ConsoleMenuKind
+  readonly routePath?: string
+  readonly componentPath?: string
+  /** The permission it needs, as `resourceType|action`, when it needs one. */
+  readonly permission?: string
+  readonly icon?: string
+  readonly sortOrder: number
+  readonly status: ConsoleMenuStatus
+  readonly visible: boolean
+  readonly shipped: boolean
+  readonly createdAt: number
 }
 
 /**
@@ -60,9 +123,16 @@ export interface WireGrant {
 export interface WireRole {
   readonly id: string
   readonly name: string
+  /** The stable identifier a deployment's own configuration names it by. */
+  readonly code: string
   readonly description: string
   readonly kind: RoleKind
+  /** Absent for a role stored by a build that did not record the moment. */
+  readonly createdAt?: number
   readonly grants: readonly WireGrant[]
+  readonly memberCount: number
+  /** Display names of the accounts holding it, in the order the store lists them. */
+  readonly memberNames: readonly string[]
 }
 
 /** One computer bound to a member's account. */
@@ -144,6 +214,24 @@ export type WireRefusalReason =
   | 'fields'
   /** Another account in this organization already has that login name. */
   | 'login-taken'
+  /** Another record in this organization already has that code. */
+  | 'code-taken'
+  /** Another role in this organization already has that name. */
+  | 'name-taken'
+  /** Departments or accounts still hang from the department that was to be deleted. */
+  | 'department-not-empty'
+  /** Entries still sit under the navigation entry that was to be deleted. */
+  | 'menu-not-empty'
+  /** The role ships with the product and cannot be deleted. */
+  | 'system-role'
+  /** Departments do not have the status that was asked for. */
+  | 'department-status'
+  /** Navigation entries do not have the status that was asked for. */
+  | 'menu-status'
+  /** The request named a navigation entry kind this build does not have. */
+  | 'menu-kind'
+  /** The request named a gender this build does not record. */
+  | 'gender'
   /** Accounts do not have the status that was asked for. */
   | 'member-status'
   /** The catalog does not name that `(resourceType, action)` pair. */

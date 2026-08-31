@@ -1,6 +1,12 @@
 /**
- * The console shell: who is signed in, which view is showing, and the two
- * languages it renders in.
+ * The console shell: who is signed in, which pages they can open, and the tabs
+ * they have open right now.
+ *
+ * Navigation is not a list in this file. It is the organization's own stored
+ * tree, read once at start: an administrator reorders, renames, hides, and adds
+ * to it in the menus page, and this shell draws whatever it says. What this
+ * file fixes is the two vocabularies that tree points into — the page
+ * components this build ships and the icons it can draw.
  *
  * The session is read once at start. A browser with none sees the sign-in card
  * and nothing else, because every other view would only be refused.
@@ -9,36 +15,68 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
   ApiOutlined,
-  ApartmentOutlined,
+  AppstoreOutlined,
   BankOutlined,
   DashboardOutlined,
   LaptopOutlined,
+  MenuFoldOutlined,
+  MenuOutlined,
+  MenuUnfoldOutlined,
+  SafetyCertificateOutlined,
+  SettingOutlined,
   TeamOutlined,
 } from '@ant-design/icons'
-import { App as AntApp, Button, ConfigProvider, Layout, Menu, Select, Space, Spin, Typography, theme } from 'antd'
-import { api, holdCsrf, type WireSession } from './api.ts'
+import {
+  App as AntApp, Button, ConfigProvider, Empty, Layout, Menu as AntMenu, Select, Space, Spin,
+  Tabs, Typography, theme,
+} from 'antd'
+import { api, holdCsrf, type WireMenu, type WireSession } from './api.ts'
 import { LOCALE_IDS, useLocale, type LocaleId } from './locale.tsx'
+import { menuLabel, reachableMenus, type ConsoleComponent, type MenuIcon } from './menus.ts'
+import { Departments } from './pages/Departments.tsx'
 import { Devices } from './pages/Devices.tsx'
 import { Login } from './pages/Login.tsx'
 import { Members } from './pages/Members.tsx'
+import { Menus } from './pages/Menus.tsx'
 import { Models } from './pages/Models.tsx'
-import { Organization } from './pages/Organization.tsx'
 import { Overview } from './pages/Overview.tsx'
 import { Roles } from './pages/Roles.tsx'
-import type { CopyKey } from './locales.ts'
+import { useErrorReporter, useLoaded } from './ui.tsx'
 
-/** One entry in the sidebar, and the permission that makes it reachable. */
-const VIEWS = [
-  { key: 'overview', label: 'nav.overview', icon: <DashboardOutlined />, needs: 'organization|organization.read' },
-  { key: 'organization', label: 'nav.organization', icon: <BankOutlined />, needs: 'organization|organization.read' },
-  { key: 'members', label: 'nav.members', icon: <TeamOutlined />, needs: 'member|member.read' },
-  { key: 'roles', label: 'nav.roles', icon: <ApartmentOutlined />, needs: 'role|role.read' },
-  { key: 'devices', label: 'nav.devices', icon: <LaptopOutlined />, needs: 'device|device.inventory.read' },
-  { key: 'models', label: 'nav.models', icon: <ApiOutlined />, needs: 'model|model.catalog.read' },
-] as const satisfies readonly { key: string; label: CopyKey; icon: ReactNode; needs: string }[]
+/** What every page component this build ships is given. */
+interface ViewProps {
+  readonly held: ReadonlySet<string>
+}
 
-/** Which view is showing. */
-type ViewKey = typeof VIEWS[number]['key']
+/**
+ * The page components this build ships, by the path a stored entry names.
+ *
+ * The keys are the whole of what a `componentPath` may be. An entry naming
+ * anything else is navigation to a page this build does not have, and the shell
+ * says so where the page would go.
+ */
+const VIEWS: Record<ConsoleComponent, (props: ViewProps) => ReactNode> = {
+  'dashboard/OverviewPage': () => <Overview />,
+  'system/DepartmentsPage': ({ held }) => <Departments held={held} />,
+  'system/UsersPage': ({ held }) => <Members held={held} />,
+  'system/RolesPage': ({ held }) => <Roles held={held} />,
+  'system/MenusPage': ({ held }) => <Menus held={held} />,
+  'resources/DevicesPage': ({ held }) => <Devices held={held} />,
+  'resources/ModelsPage': ({ held }) => <Models held={held} />,
+}
+
+/** The icons this build draws, by the name a stored entry gives. */
+const ICONS: Record<MenuIcon, ReactNode> = {
+  dashboard: <DashboardOutlined />,
+  setting: <SettingOutlined />,
+  bank: <BankOutlined />,
+  team: <TeamOutlined />,
+  safety: <SafetyCertificateOutlined />,
+  menu: <MenuOutlined />,
+  appstore: <AppstoreOutlined />,
+  laptop: <LaptopOutlined />,
+  api: <ApiOutlined />,
+}
 
 /** Width below which the sider is an icon rail, matching Ant Design's `lg`. */
 const RAIL_QUERY = '(max-width: 991px)'
@@ -64,6 +102,34 @@ function useNarrowViewport(): boolean {
 }
 
 /**
+ * The page one open tab shows.
+ * @param props.menu - the navigation entry the tab stands for.
+ * @param props.held - the `resourceType|action` pairs this member holds.
+ * @returns the page, or what to say in place of a page this build does not have.
+ */
+function View({ menu, held }: { readonly menu: WireMenu; readonly held: ReadonlySet<string> }): ReactNode {
+  const { t } = useLocale()
+  const render = menu.componentPath === undefined
+    ? undefined
+    : VIEWS[menu.componentPath as ConsoleComponent]
+  if (render === undefined) {
+    return (
+      <Empty
+        description={(
+          <>
+            <div>{t('shell.unknownView')}</div>
+            <Typography.Text type="secondary">
+              {t('shell.unknownViewBody', { path: menu.componentPath ?? t('menus.none') })}
+            </Typography.Text>
+          </>
+        )}
+      />
+    )
+  }
+  return render({ held })
+}
+
+/**
  * The signed-in console.
  * @param props.session - who is signed in and what they hold.
  * @param props.onSignedOut - called once this session has ended.
@@ -73,10 +139,46 @@ function Console({
   session, onSignedOut,
 }: { readonly session: WireSession; readonly onSignedOut: () => void }): ReactNode {
   const { t, locale, setLocale } = useLocale()
+  const report = useErrorReporter()
   const held = useMemo(() => new Set(session.permissions), [session.permissions])
-  const reachable = VIEWS.filter(view => held.has(view.needs))
-  const [view, setView] = useState<ViewKey>(reachable[0]?.key ?? 'overview')
+  const menus = useLoaded<WireMenu[]>(api.menus, report)
   const narrow = useNarrowViewport()
+  const [folded, setFolded] = useState(false)
+  const [openIds, setOpenIds] = useState<readonly string[]>([])
+  const [active, setActive] = useState<string | undefined>(undefined)
+  const [openGroups, setOpenGroups] = useState<readonly string[]>([])
+
+  const reachable = useMemo(
+    () => reachableMenus(menus.data ?? [], held),
+    [menus.data, held],
+  )
+  const pages = useMemo(() => reachable.filter(menu => menu.kind === 'menu'), [reachable])
+  const byId = useMemo(() => new Map(pages.map(menu => [menu.id, menu])), [pages])
+
+  // The first page this member can open is the one they land on, and every
+  // group starts expanded. Both happen once the tree has arrived rather than at
+  // mount, when there is nothing to open. Later loads leave the tabs alone: a
+  // reload of the tree must not close what is open.
+  useEffect(() => {
+    const first = pages[0]
+    if (active !== undefined || first === undefined) return
+    setOpenIds([first.id])
+    setActive(first.id)
+    setOpenGroups(reachable.filter(menu => menu.kind === 'catalog').map(menu => menu.id))
+  }, [pages, active, reachable])
+
+  const open = (id: string): void => {
+    setOpenIds(current => (current.includes(id) ? current : [...current, id]))
+    setActive(id)
+  }
+
+  const close = (id: string): void => {
+    const remaining = openIds.filter(open2 => open2 !== id)
+    setOpenIds(remaining)
+    // Closing the tab in front moves to the one before it, which is where the
+    // reader was; closing any other leaves the front tab where it is.
+    if (active === id) setActive(remaining.at(-1))
+  }
 
   const signOut = async (): Promise<void> => {
     // A session the server has already forgotten is still ended here: the
@@ -85,36 +187,62 @@ function Console({
     onSignedOut()
   }
 
+  /** The sidebar, as the stored tree describes it. */
+  const items = reachable
+    .filter(menu => menu.parentId === undefined)
+    .map((menu) => {
+      const children = reachable.filter(child => child.parentId === menu.id)
+      const icon = menu.icon === undefined ? undefined : ICONS[menu.icon as MenuIcon]
+      return {
+        key: menu.id,
+        label: menuLabel(menu, t),
+        ...(icon === undefined ? {} : { icon }),
+        ...(children.length === 0
+          ? {}
+          : {
+            children: children.map(child => ({
+              key: child.id,
+              label: menuLabel(child, t),
+            })),
+          }),
+      }
+    })
+
+  const railed = narrow || folded
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Layout.Sider width={244} collapsedWidth={64} collapsed={narrow} trigger={null}>
+      <Layout.Sider width={228} collapsedWidth={64} collapsed={railed} trigger={null}>
         {/* Collapsed, the sider is an icon rail: the organization's name would
             not fit, and a wrapped fragment of it is worse than none. */}
-        <div style={{ padding: narrow ? '20px 8px' : '20px 16px', overflow: 'hidden' }}>
+        <div className="brand" style={{ padding: railed ? '20px 8px' : '20px 16px' }}>
           <Typography.Title level={5} style={{ color: '#fff', margin: 0, whiteSpace: 'nowrap' }}>
-            {narrow ? 'DS' : t('app.title')}
+            {railed ? 'DS' : t('app.title')}
           </Typography.Title>
-          {!narrow && (
+          {!railed && (
             <Typography.Text style={{ color: '#98a2b3', fontSize: 12 }}>
               {session.organization.name}
             </Typography.Text>
           )}
         </div>
-        <Menu
+        <AntMenu
           theme="dark"
           mode="inline"
-          selectedKeys={[view]}
-          onSelect={({ key }) => { setView(key as ViewKey) }}
-          items={reachable.map(entry => ({ key: entry.key, icon: entry.icon, label: t(entry.label) }))}
+          selectedKeys={active === undefined ? [] : [active]}
+          openKeys={[...openGroups]}
+          onOpenChange={(keys) => { setOpenGroups(keys) }}
+          items={items}
+          onSelect={({ key }) => { if (byId.has(key)) open(key) }}
         />
       </Layout.Sider>
       <Layout>
-        <Layout.Header
-          style={{
-            background: '#fff', borderBottom: '1px solid #f0f0f0',
-            display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12,
-          }}
-        >
+        <Layout.Header className="console-header">
+          <Button
+            type="text"
+            aria-label={t('members.orgTree')}
+            icon={railed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            onClick={() => { setFolded(!folded) }}
+          />
           <Space>
             <Select<LocaleId>
               value={locale}
@@ -127,15 +255,29 @@ function Console({
             <Button onClick={() => void signOut()}>{t('nav.signOut')}</Button>
           </Space>
         </Layout.Header>
-        <Layout.Content style={{ padding: 24, maxWidth: 1440, width: '100%', margin: '0 auto' }}>
-          {view === 'overview' && <Overview />}
-          {view === 'organization' && (
-            <Organization mayManage={held.has('organization|organization.settings.manage')} />
-          )}
-          {view === 'members' && <Members held={held} />}
-          {view === 'roles' && <Roles held={held} />}
-          {view === 'devices' && <Devices held={held} />}
-          {view === 'models' && <Models held={held} />}
+        {openIds.length > 0 && (
+          <Tabs
+            className="console-tabs"
+            type="editable-card"
+            hideAdd
+            {...(active === undefined ? {} : { activeKey: active })}
+            onChange={setActive}
+            onEdit={(key, action) => { if (action === 'remove') close(key as string) }}
+            items={openIds.map(id => ({
+              key: id,
+              label: menuLabel(byId.get(id) as WireMenu, t),
+              // The first tab is where a closed tab sends the reader back to,
+              // so it stays open.
+              closable: openIds.length > 1,
+            }))}
+          />
+        )}
+        <Layout.Content className="console-content">
+          {menus.loading
+            ? <Spin />
+            : active === undefined
+              ? <Empty description={t('shell.noNavigation')} />
+              : <View menu={byId.get(active) as WireMenu} held={held} />}
         </Layout.Content>
       </Layout>
     </Layout>

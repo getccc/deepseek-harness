@@ -10,8 +10,12 @@ import { DatabaseSync } from 'node:sqlite'
 import { Context } from '@deepseek-ai/cordis'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
+  DepartmentNotEmptyError,
+  DeptId,
+  DuplicateDepartmentCodeError,
   DuplicateLoginNameError,
   UnknownAccountUserError,
+  UnknownDepartmentError,
   UnknownOrganizationError,
   UserId,
   type AccountStore,
@@ -254,5 +258,234 @@ describe('durability and schema ownership', () => {
     } finally {
       db.close()
     }
+  })
+})
+
+describe('the department tree', () => {
+  it('stores every field, and defaults the rest', async () => {
+    const lead = await store.createUser({ orgId, loginName: 'lead', displayName: 'Lead' })
+    const made = await store.createDepartment({
+      orgId,
+      name: 'Technology',
+      code: 'technology',
+      category: 'department',
+      leaderId: lead.id,
+      phone: '13800000001',
+      email: 'tech@zenith.dev',
+      sortOrder: 2,
+    })
+    expect(made).toMatchObject({
+      name: 'Technology',
+      code: 'technology',
+      category: 'department',
+      leaderId: lead.id,
+      phone: '13800000001',
+      email: 'tech@zenith.dev',
+      sortOrder: 2,
+      status: 'active',
+    })
+    expect(made.parentId).toBeUndefined()
+
+    const plain = await store.createDepartment({ orgId, name: 'Sales', code: 'sales' })
+    expect(plain).toMatchObject({ category: 'department', sortOrder: 0, status: 'active' })
+    expect(plain.leaderId).toBeUndefined()
+  })
+
+  it('refuses a code another department in the organization already has', async () => {
+    await store.createDepartment({ orgId, name: 'Technology', code: 'technology' })
+    await expect(store.createDepartment({ orgId, name: 'Tech again', code: 'technology' }))
+      .rejects.toThrow(DuplicateDepartmentCodeError)
+  })
+
+  it('lets two organizations each hold the same code', async () => {
+    const other = await store.createOrganization('Other')
+    await store.createDepartment({ orgId, name: 'Technology', code: 'technology' })
+    await expect(store.createDepartment({ orgId: other.id, name: 'Technology', code: 'technology' }))
+      .resolves.toMatchObject({ code: 'technology' })
+  })
+
+  it('returns a parent immediately before its own subtree', async () => {
+    const parent = await store.createDepartment({ orgId, name: 'Technology', code: 't', sortOrder: 1 })
+    const second = await store.createDepartment({ orgId, name: 'Sales', code: 's', sortOrder: 2 })
+    const child = await store.createDepartment({
+      orgId, name: 'Platform', code: 'p', parentId: parent.id,
+    })
+    expect((await store.listDepartments(orgId)).map(department => department.id))
+      .toEqual([parent.id, child.id, second.id])
+  })
+
+  it('orders siblings by sort order, then by when they were created', async () => {
+    const later = await store.createDepartment({ orgId, name: 'B', code: 'b', sortOrder: 1 })
+    const first = await store.createDepartment({ orgId, name: 'A', code: 'a', sortOrder: 0 })
+    const tie = await store.createDepartment({ orgId, name: 'C', code: 'c', sortOrder: 1 })
+    expect((await store.listDepartments(orgId)).map(department => department.id))
+      .toEqual([first.id, later.id, tie.id])
+  })
+
+  it('shows a department whose parent is another organization at the top level', async () => {
+    const other = await store.createOrganization('Other')
+    const elsewhere = await store.createDepartment({ orgId: other.id, name: 'Far', code: 'f' })
+    const orphan = await store.createDepartment({
+      orgId, name: 'Orphan', code: 'o', parentId: elsewhere.id,
+    })
+    expect((await store.listDepartments(orgId)).map(department => department.id)).toEqual([orphan.id])
+  })
+
+  it('reads one department by id, and answers for one it does not hold', async () => {
+    const made = await store.createDepartment({ orgId, name: 'Technology', code: 'technology' })
+    expect((await store.getDepartment(made.id))?.name).toBe('Technology')
+    expect(await store.getDepartment(DeptId('nowhere'))).toBeUndefined()
+  })
+
+  it('writes the fields an update names and leaves the rest', async () => {
+    const made = await store.createDepartment({
+      orgId, name: 'Technology', code: 'technology', phone: '13800000001',
+    })
+    await store.updateDepartment(made.id, { name: 'Platform', status: 'suspended', sortOrder: 5 })
+    expect(await store.getDepartment(made.id)).toMatchObject({
+      name: 'Platform', code: 'technology', phone: '13800000001', status: 'suspended', sortOrder: 5,
+    })
+  })
+
+  it('clears a field an update names as null', async () => {
+    const lead = await store.createUser({ orgId, loginName: 'lead', displayName: 'Lead' })
+    const made = await store.createDepartment({
+      orgId, name: 'Technology', code: 'technology', leaderId: lead.id, phone: '1', email: 'a@b.dev',
+    })
+    await store.updateDepartment(made.id, { leaderId: null, phone: null, email: null })
+    const after = await store.getDepartment(made.id)
+    expect(after?.leaderId).toBeUndefined()
+    expect(after?.phone).toBeUndefined()
+    expect(after?.email).toBeUndefined()
+  })
+
+  it('refuses an update to a code another department already has', async () => {
+    await store.createDepartment({ orgId, name: 'Technology', code: 'technology' })
+    const sales = await store.createDepartment({ orgId, name: 'Sales', code: 'sales' })
+    await expect(store.updateDepartment(sales.id, { code: 'technology' }))
+      .rejects.toThrow(DuplicateDepartmentCodeError)
+  })
+
+  it('reports a department it does not hold, with or without a field to write', async () => {
+    await expect(store.updateDepartment(DeptId('nowhere'), { name: 'x' }))
+      .rejects.toThrow(UnknownDepartmentError)
+    await expect(store.updateDepartment(DeptId('nowhere'), {}))
+      .rejects.toThrow(UnknownDepartmentError)
+  })
+
+  it('lets a backend failure that is not a code conflict travel unchanged', async () => {
+    const made = await store.createDepartment({ orgId, name: 'Technology', code: 'technology' })
+    // A leader who is not an account fails the foreign key, which is the
+    // backend's own refusal rather than the code conflict this seam names.
+    await expect(store.updateDepartment(made.id, { leaderId: UserId('nowhere') }))
+      .rejects.toThrow(/FOREIGN KEY/u)
+  })
+
+  it('accepts an update that names no field for a department it holds', async () => {
+    const made = await store.createDepartment({ orgId, name: 'Technology', code: 'technology' })
+    await expect(store.updateDepartment(made.id, {})).resolves.toBeUndefined()
+  })
+
+  it('deletes one nothing hangs from', async () => {
+    const made = await store.createDepartment({ orgId, name: 'Technology', code: 'technology' })
+    await store.deleteDepartment(made.id)
+    expect(await store.listDepartments(orgId)).toHaveLength(0)
+  })
+
+  it('refuses to delete one that still holds a department', async () => {
+    const parent = await store.createDepartment({ orgId, name: 'Technology', code: 't' })
+    await store.createDepartment({ orgId, name: 'Platform', code: 'p', parentId: parent.id })
+    await expect(store.deleteDepartment(parent.id)).rejects.toThrow(DepartmentNotEmptyError)
+  })
+
+  it('refuses to delete one that still holds an account', async () => {
+    const made = await store.createDepartment({ orgId, name: 'Technology', code: 'technology' })
+    await store.createUser({
+      orgId, loginName: 'dev', displayName: 'Dev', departmentId: made.id,
+    })
+    await expect(store.deleteDepartment(made.id)).rejects.toThrow(DepartmentNotEmptyError)
+  })
+
+  it('reports a department it does not hold', async () => {
+    await expect(store.deleteDepartment(DeptId('nowhere'))).rejects.toThrow(UnknownDepartmentError)
+  })
+})
+
+describe('an account profile', () => {
+  it('stores the profile fields an administrator supplied', async () => {
+    const department = await store.createDepartment({ orgId, name: 'Technology', code: 't' })
+    const made = await store.createUser({
+      orgId,
+      loginName: 'dev',
+      displayName: 'Dev',
+      email: 'dev@zenith.dev',
+      phone: '13800000002',
+      gender: 'female',
+      departmentId: department.id,
+    })
+    expect(made).toMatchObject({
+      phone: '13800000002', gender: 'female', departmentId: department.id,
+    })
+  })
+
+  it('leaves the profile fields an administrator did not supply', async () => {
+    const made = await store.createUser({ orgId, loginName: 'dev', displayName: 'Dev' })
+    expect(made.phone).toBeUndefined()
+    expect(made.gender).toBeUndefined()
+    expect(made.departmentId).toBeUndefined()
+  })
+
+  it('writes the fields an update names and leaves the rest', async () => {
+    const made = await store.createUser({
+      orgId, loginName: 'dev', displayName: 'Dev', email: 'dev@zenith.dev',
+    })
+    await store.updateUser(made.id, { displayName: 'Developer', phone: '13800000003' })
+    expect(await store.getUser(made.id)).toMatchObject({
+      loginName: 'dev', displayName: 'Developer', email: 'dev@zenith.dev', phone: '13800000003',
+    })
+  })
+
+  it('clears a field an update names as null', async () => {
+    const made = await store.createUser({
+      orgId, loginName: 'dev', displayName: 'Dev', email: 'dev@zenith.dev', phone: '1',
+    })
+    await store.updateUser(made.id, { email: null, phone: null, gender: null, departmentId: null })
+    const after = await store.getUser(made.id)
+    expect(after?.email).toBeUndefined()
+    expect(after?.phone).toBeUndefined()
+    expect(after?.gender).toBeUndefined()
+    expect(after?.departmentId).toBeUndefined()
+  })
+
+  it('reports an account it does not hold, with or without a field to write', async () => {
+    await expect(store.updateUser(UserId('nowhere'), { displayName: 'x' }))
+      .rejects.toThrow(UnknownAccountUserError)
+    await expect(store.updateUser(UserId('nowhere'), {}))
+      .rejects.toThrow(UnknownAccountUserError)
+  })
+})
+
+describe('a database an earlier schema wrote', () => {
+  it('gains the account columns this build added', () => {
+    const path = join(dir, 'schema-2.sqlite')
+    const old = new DatabaseSync(path)
+    old.exec(`PRAGMA application_id = ${ACCOUNT_STORE_SQLITE_APPLICATION_ID}`)
+    old.exec('PRAGMA user_version = 2')
+    old.exec(`CREATE TABLE account_user (
+      id TEXT PRIMARY KEY, org_id TEXT NOT NULL, login_name TEXT NOT NULL,
+      display_name TEXT NOT NULL, email TEXT, status TEXT NOT NULL, password_hash TEXT,
+      must_change_password INTEGER NOT NULL, failed_attempts INTEGER NOT NULL DEFAULT 0,
+      locked_until INTEGER, last_login_at INTEGER, created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL) STRICT`)
+    old.close()
+
+    const db = new DatabaseSync(path)
+    applySchema(db)
+    const columns = (db.prepare('PRAGMA table_info(account_user)').all() as unknown as { name: string }[])
+      .map(column => column.name)
+    expect(columns).toContain('phone')
+    expect(columns).toContain('gender')
+    expect(columns).toContain('department_id')
+    db.close()
   })
 })

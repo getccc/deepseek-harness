@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
-import { App, Form, Modal, Tag } from 'antd'
+import { App, Avatar, Button, Form, Modal, Switch, Tag } from 'antd'
 import { ApiError } from './api.ts'
 import { useLocale } from './locale.tsx'
 import type { CopyKey } from './locales.ts'
@@ -128,8 +128,10 @@ export function StatusTag({ value }: { readonly value: string }): ReactNode {
  */
 export function Moment({ value }: { readonly value: number | undefined }): ReactNode {
   const { t } = useLocale()
-  if (value === undefined) return <span>{t('action.never')}</span>
-  return <span>{new Date(value).toISOString().replace('T', ' ').slice(0, 16)} UTC</span>
+  if (value === undefined) return <span className="moment">{t('action.never')}</span>
+  return (
+    <span className="moment">{new Date(value).toISOString().replace('T', ' ').slice(0, 16)} UTC</span>
+  )
 }
 
 /**
@@ -241,4 +243,177 @@ export function ConfirmModal({
       {body}
     </Modal>
   )
+}
+
+/**
+ * The muted sentence that says what a page administers.
+ * @param props.text - the already-translated sentence.
+ * @returns the paragraph element.
+ */
+export function PageNote({ text }: { readonly text: string }): ReactNode {
+  return <p className="page-note">{text}</p>
+}
+
+/**
+ * The row of filters and actions above a table.
+ *
+ * Filters sit at the start and actions at the end, which is the order every
+ * view here reads in: what narrows the table, then what changes it.
+ * @param props.filters - the search controls.
+ * @param props.actions - the buttons that act on the collection.
+ * @returns the toolbar element.
+ */
+export function Toolbar({
+  filters, actions,
+}: { readonly filters?: ReactNode; readonly actions?: ReactNode }): ReactNode {
+  return (
+    <div className="toolbar">
+      <div className="toolbar-filters">{filters}</div>
+      <div className="toolbar-actions">{actions}</div>
+    </div>
+  )
+}
+
+/**
+ * A row's in-service switch, which asks before it changes anything.
+ *
+ * The switch shows the stored state and does not move on click: the state
+ * changes when the Control Plane answers, so a refused change never leaves the
+ * control claiming something the server does not hold.
+ * @param props.active - whether the record is in service.
+ * @param props.disabled - whether this member may change it.
+ * @param props.onToggle - opens the confirmation for the change.
+ * @returns the switch element.
+ */
+export function StatusSwitch({
+  active, disabled, onToggle,
+}: {
+  readonly active: boolean
+  readonly disabled: boolean
+  readonly onToggle: () => void
+}): ReactNode {
+  return (
+    <Switch
+      size="small"
+      checked={active}
+      disabled={disabled}
+      onChange={() => { onToggle() }}
+    />
+  )
+}
+
+/** How many people a row shows before it shows only the count. */
+const FACES = 4
+
+/**
+ * The people on a row: a few initials, then how many there are.
+ * @param props.names - display names, in the order the server listed them.
+ * @param props.empty - what to show when there is nobody.
+ * @returns the group element.
+ */
+export function People({
+  names, empty,
+}: { readonly names: readonly string[]; readonly empty: string }): ReactNode {
+  if (names.length === 0) return <Tag>{empty}</Tag>
+  return (
+    <span className="people">
+      {names.slice(0, FACES).map(name => (
+        <Avatar key={name} size={22} className="people-face">{Array.from(name)[0]}</Avatar>
+      ))}
+      <Tag className="people-count">{names.length}</Tag>
+    </span>
+  )
+}
+
+/** One control on a table row. */
+export interface RowAction {
+  readonly key: string
+  readonly label: string
+  /** Drawn as a destructive control. */
+  readonly danger?: boolean
+  readonly disabled?: boolean
+  readonly onClick: () => void
+}
+
+/**
+ * The link-styled controls at the end of a table row.
+ * @param props.actions - the controls, in the order they are read.
+ * @returns the controls element.
+ */
+export function RowActions({ actions }: { readonly actions: readonly RowAction[] }): ReactNode {
+  return (
+    <span className="row-actions">
+      {actions.map(action => (
+        <Button
+          key={action.key}
+          type="link"
+          size="small"
+          danger={action.danger === true}
+          disabled={action.disabled === true}
+          onClick={action.onClick}
+        >
+          {action.label}
+        </Button>
+      ))}
+    </span>
+  )
+}
+
+/**
+ * Build the nested rows an Ant Design table draws from a flat list.
+ *
+ * A record whose parent is not in the list becomes a root, so filtering the
+ * list never hides a record behind a parent that was filtered out.
+ * @param records - the flat list, parents already before their children.
+ * @param idOf - reads a record's own id.
+ * @param parentOf - reads the id of the record it sits under, if any.
+ * @returns the roots, each carrying its own subtree.
+ */
+export function toTree<T>(
+  records: readonly T[],
+  idOf: (record: T) => string,
+  parentOf: (record: T) => string | undefined,
+): T[] {
+  const known = new Set(records.map(idOf))
+  const children = new Map<string, T[]>()
+  const roots: T[] = []
+  for (const record of records) {
+    const parent = parentOf(record)
+    if (parent === undefined || !known.has(parent)) roots.push(record)
+    else children.set(parent, [...children.get(parent) ?? [], record])
+  }
+  const attach = (record: T): T => {
+    const own = children.get(idOf(record))
+    return own === undefined ? record : { ...record, children: own.map(attach) }
+  }
+  return roots.map(attach)
+}
+
+/**
+ * Hand the browser a comma-separated file of what a table is showing.
+ *
+ * Built here rather than asked of the Control Plane: the rows are already on
+ * screen, and a second request would export a different moment than the one an
+ * administrator is looking at.
+ * @param name - the file name, without an extension.
+ * @param header - the column titles, already translated.
+ * @param rows - one array of cell values per row.
+ */
+export function downloadCsv(
+  name: string,
+  header: readonly string[],
+  rows: readonly (readonly string[])[],
+): void {
+  // A cell is quoted always and its own quotes doubled, which is the whole of
+  // the escaping a comma-separated file needs.
+  const cell = (value: string): string => `"${value.replaceAll('"', '""')}"`
+  const text = [header, ...rows].map(row => row.map(cell).join(',')).join('\r\n')
+  // The byte-order mark is what makes a spreadsheet read this as UTF-8.
+  const blob = new Blob([`﻿${text}`], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${name}.csv`
+  link.click()
+  URL.revokeObjectURL(url)
 }

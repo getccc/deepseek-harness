@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-team-admin-api` 是管理控制台唯一对话的对象。它在 Control Plane 的浏览器会话之上返回 JSON，每一条路由在询问持有记录的那个服务之前，都会先问与表单提交同样的三个问题——有没有会话、这次请求是否来自本站、访问控制是否准许。控制台决定给成员看什么；它不决定成员可以做什么。
+`dsh-team-admin-api` 是管理控制台唯一对话的对象。只有当账户还持有 `organization.admin.access` 时，密码认证才会创建浏览器 Session。随后每条路由都会在询问持有记录的服务前，重新检查控制台入口权限、请求 Session 与 Origin，以及具体动作授权。控制台决定给管理员看什么；它不决定管理员可以做什么。
 
 ## 目录
 
@@ -37,6 +37,22 @@ kind: "package-reference"
 `organizationId` 没有默认值：一个猜测自己服务于哪个组织的 Control Plane 会拿错误的组织去认证成员，因此在部署提供它之前这一行加载失败。对于以明文 HTTP 提供服务的部署，`secureCookie` 必须为 false，因为浏览器会在这样的源上丢弃 `Secure` cookie，成员将永远无法保持登录。
 
 读取用 `GET`，写入用 `POST`、`PATCH` 与 `DELETE`，都在 `/team/api` 之下。每一次写入都在 `x-dsh-csrf` 头里携带该会话的 CSRF 值，这个值由 `GET /team/api/session` 发放。
+
+| 集合 | 读取需要 | 修改需要 |
+|---|---|---|
+| `/organization`、`/overview` | `organization.read` | `organization.settings.manage` |
+| `/members` | `member.read` | `member.create`、`member.update`、`member.disable`、`member.enable`、`member.role.bind` |
+| `/departments` | `department.read` | `department.manage` |
+| `/roles`、`/grants` | `role.read` | `role.create`、`role.update`、`role.delete`、`role.grant.manage` |
+| `/menus` | 一个会话，不需要授权 | `menu.manage` |
+| `/devices` | `device.inventory.read` | `device.revoke` |
+| `/models` | `model.catalog.read` | `model.catalog.manage` |
+
+导航是这张表里的例外。没有它控制台就画不出自己，它只命名本构建随附的内容，而它通向的每个页面都会再次询问访问控制，因此读取它只需要一个会话，别无其他——这与 `/permissions` 遵循的规则相同。
+
+`POST /roles/:id/menus` 接收角色应当可达的导航菜单，并让它的类型授权与之一致：加上每条被选中菜单所声明的权限，撤销未被选中菜单的权限，并且不动任何没有菜单声明过的配对。菜单权限是授权之上的一个视图，不是第二套鉴权系统。
+
+首位管理员必须在控制台之外获得 `organization.admin.access` 以及其所需动作权限。普通成员账户改由面向 Runner 的端点认证，不会获得管理 Session。
 
 -----
 
@@ -96,6 +112,8 @@ kind: "package-reference"
 - **只创建类型授权** —— 针对单个具名资源的授权在这里可读可撤销，但仍通过访问控制服务创建，直到控制台有一个不会把显示名与受治理资源 id 混淆的资源选择器。
 - **整集合返回，无分页** —— 一次写入以它改动的那份列表作答，一次读取返回全部，这针对的是本版本服务的部署规模。
 - **没有审计查询** —— `organization.audit.read` 在目录里，但还没有路由服务它。
+- **不能删除账户** —— 账户是审计记录与设备凭据的锚点，因此该 API 只做停用与恢复，不做删除。
+- **上级只在创建时选定** —— 部门与导航菜单都不能被移动到另一个上级之下；两者都在它们该在的位置被创建。
 
 <a id="dev-note"></a>
 ### 开发备注

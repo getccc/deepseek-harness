@@ -5,7 +5,7 @@ import { Button, Form, Input, InputNumber, Typography, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { api, type WireModel } from '../api.ts'
 import { useLocale } from '../locale.tsx'
-import { ConfirmModal, FormModal, StatusTag, useErrorReporter, useLoaded } from '../ui.tsx'
+import { ConfirmModal, FormModal, PageNote, StatusTag, useErrorReporter, useLoaded } from '../ui.tsx'
 
 /** What the registration form collects. */
 interface NewModel {
@@ -103,8 +103,7 @@ export function Models({ held }: { readonly held: ReadonlySet<string> }): ReactN
 
   return (
     <>
-      <Typography.Title level={3}>{t('models.heading')}</Typography.Title>
-      <Typography.Paragraph type="secondary">{t('models.description')}</Typography.Paragraph>
+      <PageNote text={t('models.description')} />
       {mayManage && (
         <Button type="primary" style={{ marginBottom: 16 }} onClick={() => { setAdding(true) }}>
           {t('models.add')}

@@ -9,9 +9,9 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-team-control-plane` is the server half of Team Edition. It holds company credentials and answers requests from every member's Runner, which is exactly why it carries no ability to execute code, read files, or drive an Agent on the machine it runs on. Unlike every other Team bundle, it does not layer over [`dsh-base`](../base/README.md): base mounts the Agent loop, filesystem, subprocess, shell, and sandbox providers, so stacking it would grant the Control Plane all of them at once. The tree today is the HTTP transport, the account store and its password authentication, access control, the audit trail, device authorization, and the two HTTP surfaces — the Runner-facing binding endpoints and the Team Shell. Quota, the model and knowledge gateways, and the private catalog insert here as their packages land.
+`dsh-team-control-plane` is the administrator and company-resource server for Team Edition. It holds company credentials and answers every member Runner, which is why it carries no Agent, filesystem, shell, subprocess, or sandbox capability. The complete standalone tree includes account authentication, access control, audit, the administration console's own navigation, device authorization, quota, the model gateway, Runner-facing authentication endpoints, and the administration API and application. It does not compose a member browser login or confirmation page.
 
-It does not start unconfigured: the Team Shell row names no organization, so a Control Plane nobody told which company it serves fails to load rather than authenticating members against a guess.
+It does not start unconfigured: both Runner authentication and the administration API require the deployment's organization ID. They fail rather than guessing which account namespace they serve.
 
 ## Table of Contents
 
@@ -33,7 +33,7 @@ You do not mount this bundle directly. Select the profile that names it:
 dsh --profile team-control-plane
 ```
 
-The profile composes this bundle alone. It listens on `127.0.0.1:3095` and, at this stage, registers no routes — the company services claim theirs as they arrive.
+The profile composes this bundle alone and listens on `127.0.0.1:3095`. Ordinary members do not browse this port; administrators reach `/team/admin/`, while Runners call the device and model endpoints.
 
 ### Production binding
 
@@ -91,7 +91,7 @@ The bundle drives no model request at all, so it has no request prefix and no ca
 
 These are current constraints of this bundle, not a task backlog.
 
-- **The tree is a transport and nothing more** — no route is registered yet, so the server answers 404 for every request. Accounts, RBAC, quota, audit, the gateways, the catalog, and the admin surface land as their packages arrive.
+- **Organization bootstrap remains external** — a deployment must create the organization, initial administrator secret, admin-entry grant, and action grants before the console can administer itself.
 - **Capability absence is enforced at composition, not at runtime** — a deployment that adds a local-execution row to its own profile patch defeats it. The tests bind what this repository ships, not what an operator later composes.
 - **Loopback by default** — reaching the server from another host requires a reverse proxy in front, or a deployment patch that restates the whole `webserver` row.
 

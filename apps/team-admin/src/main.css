@@ -41,3 +41,125 @@ body {
   letter-spacing: 0.09em;
   text-transform: uppercase;
 }
+
+.brand {
+  overflow: hidden;
+}
+
+.console-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  padding-inline: 12px 24px;
+}
+
+/* The tab strip sits between the header and the page, and is the only thing
+   that says which page is in front, so it carries the page's own ground. */
+.console-tabs {
+  background: #fff;
+  padding: 6px 16px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.console-tabs .ant-tabs-nav {
+  margin: 0;
+}
+
+.console-content {
+  padding: 16px 24px 24px;
+  width: 100%;
+  margin: 0 auto;
+  max-width: 1680px;
+}
+
+.page-note {
+  margin: 0 0 12px;
+  color: rgb(0 0 0 / 45%);
+  font-size: 13px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.toolbar-filters,
+.toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* The directory's department tree and its table sit side by side, and the tree
+   keeps its width while the table takes what is left. */
+.split {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.split-aside {
+  flex: 0 0 220px;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.split-aside-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 4px 8px;
+  font-weight: 600;
+}
+
+.split-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+@media (width <= 991px) {
+  .split {
+    flex-direction: column;
+  }
+
+  .split-aside {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+}
+
+.people {
+  display: inline-flex;
+  align-items: center;
+}
+
+.people-face {
+  margin-inline-end: -6px;
+  border: 1px solid #fff;
+}
+
+.people-count {
+  margin-inline-start: 10px;
+}
+
+/* Row controls read as links rather than buttons, so a row of four of them
+   does not become a row of four boxes. */
+.row-actions .ant-btn {
+  padding-inline: 4px;
+}
+
+/* A timestamp is one value; wrapping it in a narrow column reads as two. */
+.moment,
+.row-actions {
+  white-space: nowrap;
+}

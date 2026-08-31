@@ -15,9 +15,20 @@ export interface Role {
   readonly orgId: OrgId
   /** Unique within the organization. */
   readonly name: string
+  /**
+   * A stable identifier an administrator chooses, unique within the
+   * organization. It is what a deployment's own configuration names a role by,
+   * so renaming the role for a reader does not break what refers to it.
+   */
+  readonly code: string
   readonly description: string
   /** A system role ships with the product and cannot be deleted. */
   readonly kind: RoleKind
+  /**
+   * When the role was created, in epoch milliseconds, or undefined for a role
+   * a build before this one stored without recording the moment.
+   */
+  readonly createdAt: number | undefined
 }
 
 /** One user group: a way to bind roles in bulk, with no effect on evaluation. */

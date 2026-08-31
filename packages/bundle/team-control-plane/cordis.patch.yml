@@ -62,6 +62,15 @@
         path: !!js dshHomePath('control-plane', 'audit.sqlite')
         maxQueryRows: 500
 
+    # ── what an administrator can reach in the console ───────────────────
+    # Navigation is data an organization owns: the entries this build ships are
+    # seeded on first start by the administration API, which is the row that
+    # knows which organization this Control Plane serves.
+    - id: team-console-menu
+      name: '@deepseek-ai/dsh-team-console-menu-sqlite'
+      config:
+        path: !!js dshHomePath('control-plane', 'menus.sqlite')
+
     # ── which computer a member is at ────────────────────────────────────
     - id: device-authorization
       name: '@deepseek-ai/dsh-device-authorization-sqlite'
@@ -88,11 +97,13 @@
         path: !!js dshHomePath('control-plane', 'models.sqlite')
 
     # ── the two HTTP surfaces ────────────────────────────────────────────
-    # Runner-facing: authorized by PKCE, a device signature, and a one-time
-    # code, never by a browser session.
+    # Runner-facing: account authentication approves a transaction, then PKCE,
+    # a device signature, and a one-time code bind the credential to the Runner.
     - id: team-control-plane-http
       name: '@deepseek-ai/dsh-team-control-plane-http'
       config:
+        # `organizationId` is deliberately absent. This single-organization
+        # service must not guess which account namespace it authenticates.
         pathPrefix: /team/device
         maxRequestBodyBytes: 16384
     # Company model traffic: authorized by the device access token, and the
@@ -105,8 +116,7 @@
         # here is charged its ceiling, because a provider that stopped
         # answering may still have generated tokens.
         upstreamTimeoutMs: 600000
-    # Member-facing: the administration console's API, the console itself,
-    # and the one page still rendered here.
+    # Administrator-facing: the administration console's API and application.
     #
     # `secureCookie` stays true because a deployment terminates TLS in front
     # of this listener; a plain-HTTP deployment must say so in its own patch,
@@ -127,10 +137,3 @@
     # application addresses the API above by an absolute path.
     - id: team-admin-app
       name: '@deepseek-ai/dsh-team-admin-app'
-    # Confirming a computer stays a server-rendered page. A member arrives from
-    # a link their own Runner served, to compare a code and press one button;
-    # there is nothing here for an application to load first.
-    - id: team-shell
-      name: '@deepseek-ai/dsh-team-shell'
-      config:
-        maxRequestBodyBytes: 16384

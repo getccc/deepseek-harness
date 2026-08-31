@@ -23,7 +23,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/access/access-control-sqlite/src/index.ts:39`](../packages/access/access-control-sqlite/src/index.ts)
+Source: [`packages/access/access-control-sqlite/src/index.ts:42`](../packages/access/access-control-sqlite/src/index.ts)
 
 <a id="deepseek-aidsh-account-auth-password"></a>
 
@@ -63,7 +63,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/account/account-store-sqlite/src/index.ts:30`](../packages/account/account-store-sqlite/src/index.ts)
+Source: [`packages/account/account-store-sqlite/src/index.ts:47`](../packages/account/account-store-sqlite/src/index.ts)
 
 <a id="deepseek-aidsh-acp"></a>
 
@@ -505,7 +505,7 @@ export interface ConnectionConfig {
 }
 ```
 
-Source: [`packages/client/connection/src/index.ts:116`](../packages/client/connection/src/index.ts)
+Source: [`packages/client/connection/src/index.ts:124`](../packages/client/connection/src/index.ts)
 
 <a id="deepseek-aidsh-client-hmr"></a>
 
@@ -2762,13 +2762,13 @@ export interface Config {
 }
 ```
 
-Source: [`packages/team/team-account-client/src/index.ts:76`](../packages/team/team-account-client/src/index.ts)
+Source: [`packages/team/team-account-client/src/index.ts:78`](../packages/team/team-account-client/src/index.ts)
 
 <a id="deepseek-aidsh-team-admin-api"></a>
 
 ## `@deepseek-ai/dsh-team-admin-api`
 
-Requires: `webServer` · `accountStore` · `accountAuth` · `accessControl` · `audit` · `deviceAuthorization` · `modelGateway`
+Requires: `webServer` · `accountStore` · `accountAuth` · `accessControl` · `audit` · `consoleMenu` · `deviceAuthorization` · `modelGateway`
 
 ```ts config-catalog
 /** Plugin config: which organization, and how a browser session behaves. */
@@ -2792,25 +2792,41 @@ export interface Config {
 }
 ```
 
-Source: [`packages/team/team-admin-api/src/index.ts:98`](../packages/team/team-admin-api/src/index.ts)
+Source: [`packages/team/team-admin-api/src/index.ts:138`](../packages/team/team-admin-api/src/index.ts)
+
+<a id="deepseek-aidsh-team-console-menu-sqlite"></a>
+
+## `@deepseek-ai/dsh-team-console-menu-sqlite`
+
+```ts config-catalog
+/** Plugin config: where the database lives. */
+export interface Config {
+  /** SQLite database path, or `:memory:` for an in-process database. */
+  path: string
+}
+```
+
+Source: [`packages/team/team-console-menu-sqlite/src/index.ts:32`](../packages/team/team-console-menu-sqlite/src/index.ts)
 
 <a id="deepseek-aidsh-team-control-plane-http"></a>
 
 ## `@deepseek-ai/dsh-team-control-plane-http`
 
-Requires: `webServer` · `deviceAuthorization`
+Requires: `webServer` · `accountStore` · `accountAuth` · `audit` · `deviceAuthorization`
 
 ```ts config-catalog
-/** Plugin config: where the endpoints live and how much body they will read. */
+/** Plugin config: account namespace, endpoint prefix, and request limit. */
 export interface Config {
-  /** Path prefix the three endpoints are served under. */
+  /** The organization this single-organization Control Plane serves. */
+  organizationId: string
+  /** Path prefix the endpoints are served under. */
   pathPrefix: string
   /** Largest request body accepted, in bytes. */
   maxRequestBodyBytes: number
 }
 ```
 
-Source: [`packages/team/team-control-plane-http/src/index.ts:54`](../packages/team/team-control-plane-http/src/index.ts)
+Source: [`packages/team/team-control-plane-http/src/index.ts:60`](../packages/team/team-control-plane-http/src/index.ts)
 
 <a id="deepseek-aidsh-team-local-handoff"></a>
 
@@ -2827,6 +2843,29 @@ export interface Config {
 ```
 
 Source: [`packages/team/team-local-handoff/src/index.ts:33`](../packages/team/team-local-handoff/src/index.ts)
+
+<a id="deepseek-aidsh-team-local-login"></a>
+
+## `@deepseek-ai/dsh-team-local-login`
+
+Requires: `webServer` · `teamAccountClient` · `browserSession`
+
+```ts config-catalog
+/** Plugin config: where a completed sign-in lands and how much form data is accepted. */
+export interface Config {
+  /** Same-origin application path opened after sign-in. */
+  applicationPath: string
+  /** Largest form body accepted, in bytes. */
+  maxRequestBodyBytes: number
+  /** Locale used before the client application loads. */
+  locale?: LoginLocale
+}
+
+/** A locale available to the Runner-local login pages. */
+export type LoginLocale = typeof LOGIN_LOCALES[number]
+```
+
+Source: [`packages/team/team-local-login/src/index.ts:28`](../packages/team/team-local-login/src/index.ts)
 
 <a id="deepseek-aidsh-team-shell"></a>
 
@@ -3511,6 +3550,8 @@ export interface Config {
   openBrowser: boolean
   /** Print the URL line on activation; a non-interactive layer can turn it off. */
   printUrl: boolean
+  /** Browser entry path; non-root entries own authentication and receive no launch token. */
+  entryPath?: string
   /**
    * Register the model-visible surface context (the `app:web-surface` prompt
    * section and the `DSH_WEB_URL` bash variable). A one-shot non-interactive
@@ -3826,6 +3867,7 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 - `@deepseek-ai/dsh-subagent-in-process-driver` ([`packages/subagent/subagent-in-process-driver/src/index.ts`](../packages/subagent/subagent-in-process-driver/src/index.ts))
 - `@deepseek-ai/dsh-team` ([`packages/bundle/team/src/index.ts`](../packages/bundle/team/src/index.ts))
 - `@deepseek-ai/dsh-team-browser-session` ([`packages/team/team-browser-session/src/index.ts`](../packages/team/team-browser-session/src/index.ts))
+- `@deepseek-ai/dsh-team-console-menu` ([`packages/team/team-console-menu/src/index.ts`](../packages/team/team-console-menu/src/index.ts))
 - `@deepseek-ai/dsh-team-control-plane` ([`packages/bundle/team-control-plane/src/index.ts`](../packages/bundle/team-control-plane/src/index.ts))
 - `@deepseek-ai/dsh-team-update` ([`packages/team/team-update/src/index.ts`](../packages/team/team-update/src/index.ts))
 - `@deepseek-ai/dsh-timeout` ([`packages/util/timeout/src/index.ts`](../packages/util/timeout/src/index.ts))

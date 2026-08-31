@@ -7,8 +7,10 @@
  */
 
 import type {
+  WireDepartment,
   WireDevice,
   WireMember,
+  WireMenu,
   WireModel,
   WireOrganization,
   WireOverview,
@@ -20,9 +22,43 @@ import type {
 } from '@deepseek-ai/dsh-team-admin-api'
 
 export type {
-  WireDevice, WireGrant, WireMember, WireModel, WireOrganization,
-  WireOverview, WirePermission, WireRole, WireSession,
+  WireDepartment, WireDevice, WireGrant, WireMember, WireMenu, WireModel,
+  WireOrganization, WireOverview, WirePermission, WireRole, WireSession,
 } from '@deepseek-ai/dsh-team-admin-api'
+
+/** The fields a department form collects; an empty string clears a stored one. */
+export interface DepartmentInput {
+  name: string
+  code: string
+  parentId?: string
+  category?: 'company' | 'department'
+  leaderId?: string
+  phone?: string
+  email?: string
+  sortOrder?: number
+}
+
+/** The fields a navigation-entry form collects. */
+export interface MenuInput {
+  name: string
+  kind: 'catalog' | 'menu' | 'action'
+  parentId?: string
+  routePath?: string
+  componentPath?: string
+  permission?: string
+  icon?: string
+  sortOrder?: number
+  visible?: boolean
+}
+
+/** The account fields an administrator may edit after issuing the account. */
+export interface MemberProfileInput {
+  displayName?: string
+  email?: string
+  phone?: string
+  gender?: 'male' | 'female' | 'unspecified' | ''
+  departmentId?: string
+}
 
 /** Address prefix the Control Plane serves the administration API under. */
 const API_PREFIX = '/team/api'
@@ -113,8 +149,17 @@ export const api = {
   /** Every member, with the roles this console could also unbind. */
   members: (): Promise<WireMember[]> => call('GET', '/members'),
   /** Issue one account. */
-  addMember: (input: { loginName: string; displayName: string; email?: string }): Promise<WireMember[]> =>
-    call('POST', '/members', input),
+  addMember: (input: {
+    loginName: string
+    displayName: string
+    email?: string
+    phone?: string
+    gender?: string
+    departmentId?: string
+  }): Promise<WireMember[]> => call('POST', '/members', input),
+  /** Change one account's profile fields. */
+  updateMember: (id: string, input: MemberProfileInput): Promise<WireMember[]> =>
+    call('PATCH', `/members/${encodeURIComponent(id)}`, input),
   /** Suspend or reactivate one account. */
   setMemberStatus: (id: string, status: 'active' | 'suspended'): Promise<WireMember[]> =>
     call('PATCH', `/members/${encodeURIComponent(id)}`, { status }),
@@ -125,11 +170,49 @@ export const api = {
   unbindRole: (id: string, roleId: string): Promise<WireMember[]> =>
     call('DELETE', `/members/${encodeURIComponent(id)}/roles/${encodeURIComponent(roleId)}`),
 
+  /** Every department of this organization, parents before their children. */
+  departments: (): Promise<WireDepartment[]> => call('GET', '/departments'),
+  /** Create one department. */
+  addDepartment: (input: DepartmentInput): Promise<WireDepartment[]> =>
+    call('POST', '/departments', input),
+  /** Change one department. */
+  updateDepartment: (
+    id: string,
+    input: Partial<DepartmentInput> & { status?: 'active' | 'suspended' },
+  ): Promise<WireDepartment[]> => call('PATCH', `/departments/${encodeURIComponent(id)}`, input),
+  /** Delete one department. */
+  removeDepartment: (id: string): Promise<WireDepartment[]> =>
+    call('DELETE', `/departments/${encodeURIComponent(id)}`),
+
+  /** The console's navigation, which needs a session and no grant. */
+  menus: (): Promise<WireMenu[]> => call('GET', '/menus'),
+  /** Create one navigation entry. */
+  addMenu: (input: MenuInput): Promise<WireMenu[]> => call('POST', '/menus', input),
+  /** Change one navigation entry. */
+  updateMenu: (
+    id: string,
+    input: Partial<MenuInput> & { status?: 'active' | 'suspended' },
+  ): Promise<WireMenu[]> => call('PATCH', `/menus/${encodeURIComponent(id)}`, input),
+  /** Delete one navigation entry. */
+  removeMenu: (id: string): Promise<WireMenu[]> =>
+    call('DELETE', `/menus/${encodeURIComponent(id)}`),
+
   /** Every role with its grants. */
   roles: (): Promise<WireRole[]> => call('GET', '/roles'),
   /** Create one role. */
-  addRole: (input: { name: string; description?: string }): Promise<WireRole[]> =>
+  addRole: (input: { name: string; code?: string; description?: string }): Promise<WireRole[]> =>
     call('POST', '/roles', input),
+  /** Change one role's name, code, or description. */
+  updateRole: (
+    id: string,
+    input: { name?: string; code?: string; description?: string },
+  ): Promise<WireRole[]> => call('PATCH', `/roles/${encodeURIComponent(id)}`, input),
+  /** Delete one role, with its grants and the bindings carrying it. */
+  removeRole: (id: string): Promise<WireRole[]> =>
+    call('DELETE', `/roles/${encodeURIComponent(id)}`),
+  /** Make one role's grants match the navigation entries it is given. */
+  setRoleMenus: (id: string, menuIds: readonly string[]): Promise<WireRole[]> =>
+    call('POST', `/roles/${encodeURIComponent(id)}/menus`, { menuIds }),
   /** Add one catalog permission to one role. */
   addGrant: (roleId: string, resourceType: string, action: string): Promise<WireRole[]> =>
     call('POST', `/roles/${encodeURIComponent(roleId)}/grants`, { resourceType, action }),

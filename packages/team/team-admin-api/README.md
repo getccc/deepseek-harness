@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-team-admin-api` is the only thing the administration console talks to. It answers JSON over the Control Plane's browser session, and every route asks the same three questions a form post asked — is there a session, did this come from this site, does access control admit it — before it asks the service that owns the record. The console decides what to show a member; it decides nothing about what they may do.
+`dsh-team-admin-api` is the only thing the administration console talks to. A password creates a browser session only when the account also holds `organization.admin.access`. Every later route rechecks that console-entry permission, the request's session and origin, and the action-specific grant before it asks the service that owns the record. The console decides what to show an administrator; it decides nothing about what they may do.
 
 ## Table of Contents
 
@@ -37,6 +37,22 @@ English | [中文](README.zh.md)
 `organizationId` has no default: a Control Plane that guessed which organization it serves would authenticate members against the wrong one, so the row fails to load until a deployment supplies it. `secureCookie` must be false for a deployment served over plain HTTP, because a browser drops a `Secure` cookie on such an origin and the member would never stay signed in.
 
 Reads are `GET`; writes are `POST`, `PATCH`, and `DELETE` under `/team/api`. Every write carries the session's CSRF value in the `x-dsh-csrf` header, which `GET /team/api/session` hands out.
+
+| Collection | Reading it needs | Changing it needs |
+|---|---|---|
+| `/organization`, `/overview` | `organization.read` | `organization.settings.manage` |
+| `/members` | `member.read` | `member.create`, `member.update`, `member.disable`, `member.enable`, `member.role.bind` |
+| `/departments` | `department.read` | `department.manage` |
+| `/roles`, `/grants` | `role.read` | `role.create`, `role.update`, `role.delete`, `role.grant.manage` |
+| `/menus` | a session, and no grant | `menu.manage` |
+| `/devices` | `device.inventory.read` | `device.revoke` |
+| `/models` | `model.catalog.read` | `model.catalog.manage` |
+
+Navigation is the exception in that table. The console cannot draw itself without it, it names only what this build ships, and every page it leads to asks access control again, so reading it needs a session and nothing more — the same rule `/permissions` follows.
+
+`POST /roles/:id/menus` takes the navigation entries a role is to reach and makes its type grants match: it adds the permission each chosen entry declares, revokes the permissions of entries not chosen, and leaves alone every pair no entry declares. Menu access is a view over grants, not a second authorization system.
+
+The initial administrator bootstrap must grant `organization.admin.access` outside the console together with the action permissions that administrator needs. Ordinary member accounts authenticate through the Runner-facing endpoint instead and receive no administration session.
 
 -----
 
@@ -96,6 +112,8 @@ These are current constraints of the contract, not a task backlog.
 - **Type grants only** — a grant for one named resource is read and revoked here but created through the access-control service, until the console has a resource picker that cannot confuse a display name with the governed resource id.
 - **Whole collections, no pagination** — a write answers with the list it changed, and a read answers all of it, which targets the deployment sizes this version serves.
 - **No audit query** — `organization.audit.read` is in the catalog and no route serves it yet.
+- **No account deletion** — an account anchors audit records and device credentials, so the API suspends and reactivates rather than deleting.
+- **A parent is chosen once** — neither a department nor a navigation entry can be moved to a different parent; both are created where they belong.
 
 <a id="dev-note"></a>
 ### Dev Note

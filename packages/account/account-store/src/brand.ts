@@ -30,3 +30,15 @@ export function OrgId(id: string): OrgId {
 export function UserId(id: string): UserId {
   return id as UserId
 }
+
+/** Identifies one department inside an organization. */
+export type DeptId = Branded<'DeptId'>
+
+/**
+ * Brand a string as a {@link DeptId}.
+ * @param id - the raw department id.
+ * @returns the same string, branded (a compile-time cast — no runtime cost).
+ */
+export function DeptId(id: string): DeptId {
+  return id as DeptId
+}

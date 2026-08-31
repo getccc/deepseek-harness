@@ -9,9 +9,9 @@ kind: "package-bundle"
 
 ## 概述
 
-`dsh-team-control-plane` 是 Team Edition 的服务端一半。它持有公司凭据并应答每位成员 Runner 的请求，正因如此，它不具备在自己所运行的机器上执行代码、读取文件或驱动 Agent 的任何能力。与其他每个 Team bundle 不同，它不叠加在 [`dsh-base`](../base/README.zh.md) 之上：base 挂载 Agent loop、文件系统、subprocess、shell 和 sandbox 提供者，叠加它等于一次性把这些全都交给 Control Plane。如今这棵树包含 HTTP 传输、账户存储及其密码认证、访问控制、审计、设备授权，以及两个 HTTP 面——面向 Runner 的绑定端点和 Team Shell。配额、模型与知识库网关，以及私有目录会随各自的包落地插入此处。
+`dsh-team-control-plane` 是 Team Edition 的管理员与公司资源服务器。它持有公司凭据并应答每位成员 Runner，正因如此，它不具备 Agent、文件系统、Shell、Subprocess 或 Sandbox 能力。这棵完整独立配置树包含账户认证、访问控制、审计、管理控制台自身的导航、设备授权、配额、模型网关、面向 Runner 的认证端点，以及管理 API 与应用。它不组合成员浏览器登录或确认页面。
 
-它不会在未配置的情况下启动：Team Shell 行不指名任何组织，因此一个没人告诉它服务于哪家公司的 Control Plane 会加载失败，而不是拿一个猜测去认证成员。
+它不会在未配置的情况下启动：Runner 认证与管理 API 都需要部署提供组织 ID。它们会直接失败，而不是猜测自己服务于哪个账户命名空间。
 
 ## 目录
 
@@ -33,7 +33,7 @@ kind: "package-bundle"
 dsh --profile team-control-plane
 ```
 
-该 profile 只组合本 bundle。它监听 `127.0.0.1:3095`，且在当前阶段不注册任何路由——公司服务到来时各自认领。
+该 profile 只组合本 bundle，并监听 `127.0.0.1:3095`。普通成员不会浏览此端口；管理员访问 `/team/admin/`，Runner 则调用设备与模型端点。
 
 ### 生产环境绑定
 
@@ -91,7 +91,7 @@ dsh --profile team-control-plane
 
 以下是本 bundle 当前的约束，不是待办清单。
 
-- **这棵树只有传输，别无他物**——尚未注册任何路由，因此服务器对每个请求都返回 404。账户、RBAC、配额、审计、网关、目录和管理界面会随各自的包陆续到来。
+- **组织初始化仍在控制台之外**——部署必须先创建组织、初始管理员密码、管理入口授权与动作授权，控制台才能继续管理自身。
 - **能力缺席在组合层强制，不在运行时**——若部署方在自己的 profile patch 里添加本地执行配置行，即可绕过。测试约束的是本仓库交付的内容，不是运维方后续组合出的内容。
 - **默认绑定回环地址**——从其他主机访问需要在前面加反向代理，或用重述整个 `webserver` 行的部署 patch。
 

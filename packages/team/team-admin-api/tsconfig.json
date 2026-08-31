@@ -37,6 +37,9 @@
     },
     {
       "path": "../team-browser-session"
+    },
+    {
+      "path": "../team-console-menu"
     }
   ]
 }

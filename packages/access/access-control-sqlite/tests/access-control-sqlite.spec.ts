@@ -10,13 +10,15 @@ import { DatabaseSync } from 'node:sqlite'
 import { Context } from '@deepseek-ai/cordis'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
+  DuplicateRoleCodeError,
   DuplicateRoleNameError,
+  RoleId,
+  SystemRoleError,
   UnknownPermissionError,
   UnknownRoleError,
   type AccessControl,
   type GroupId,
   type ResourceId,
-  type RoleId,
 } from '@deepseek-ai/dsh-access-control'
 import SqliteAccountStore from '@deepseek-ai/dsh-account-store-sqlite'
 import { UserId, type AccountStore, type OrgId } from '@deepseek-ai/dsh-account-store'
@@ -77,6 +79,18 @@ describe('default deny', () => {
       orgId: 'missing' as OrgId, principalId: alice,
       action: 'model.invoke', resourceType: 'model', resourceId: 'v4',
     })).toMatchObject({ allowed: false, reason: 'default-deny', policyRevision: 0n })
+  })
+
+  it('refuses a suspended principal even while its role binding remains', async () => {
+    await access.registerResource({ orgId, type: 'model', externalRef: 'v4', displayName: 'V4' })
+    const role = await access.createRole({ orgId, name: 'invoker' })
+    await access.grantType(role.id, 'model', 'model.invoke')
+    await access.bindUserRole(alice, role.id)
+    expect(await access.authorize(ask('model.invoke', 'model', 'v4'))).toMatchObject({ allowed: true })
+
+    await store.setUserStatus(alice, 'suspended')
+    expect(await access.authorize(ask('model.invoke', 'model', 'v4')))
+      .toMatchObject({ allowed: false, reason: 'default-deny', matchedGrantIds: [] })
   })
 })
 
@@ -436,5 +450,152 @@ describe('opening a database', () => {
     db.close()
     await expect(control.createRole({ orgId: org, name: 'reader' })).rejects.toThrow(/no such table/u)
     await fiber.fiber.dispose()
+  })
+})
+
+describe("a role's code and creation moment", () => {
+  it('keeps the code an administrator chose', async () => {
+    const role = await access.createRole({ orgId, name: 'Editor', code: 'cms_editor' })
+    expect(role.code).toBe('cms_editor')
+    expect((await access.listRoles(orgId))[0]?.code).toBe('cms_editor')
+  })
+
+  it('falls back to the role id when no code was chosen', async () => {
+    const role = await access.createRole({ orgId, name: 'Editor' })
+    expect(role.code).toBe(role.id)
+  })
+
+  it('refuses a code another role in the organization already has', async () => {
+    await access.createRole({ orgId, name: 'Editor', code: 'cms_editor' })
+    await expect(access.createRole({ orgId, name: 'Reviewer', code: 'cms_editor' }))
+      .rejects.toThrow(DuplicateRoleCodeError)
+  })
+
+  it('records when the role was created', async () => {
+    const before = Date.now()
+    const role = await access.createRole({ orgId, name: 'Editor' })
+    expect(role.createdAt).toBeGreaterThanOrEqual(before)
+  })
+})
+
+describe('changing a role', () => {
+  it('writes the fields it was given and leaves the rest', async () => {
+    const role = await access.createRole({ orgId, name: 'Editor', description: 'Edits' })
+    await access.updateRole(role.id, { name: 'Reviewer' })
+    expect((await access.listRoles(orgId))[0]).toMatchObject({
+      name: 'Reviewer', description: 'Edits',
+    })
+  })
+
+  it('advances the policy revision, because a grant is read by the role it hangs from', async () => {
+    const role = await access.createRole({ orgId, name: 'Editor' })
+    const before = (await store.getOrganization(orgId))?.policyRevision as bigint
+    await access.updateRole(role.id, { description: 'Edits' })
+    expect((await store.getOrganization(orgId))?.policyRevision).toBeGreaterThan(before)
+  })
+
+  it('accepts a change that names no field', async () => {
+    const role = await access.createRole({ orgId, name: 'Editor' })
+    await expect(access.updateRole(role.id, {})).resolves.toBeUndefined()
+  })
+
+  it('refuses a name or a code another role already has', async () => {
+    await access.createRole({ orgId, name: 'Editor', code: 'editor' })
+    const other = await access.createRole({ orgId, name: 'Reviewer', code: 'reviewer' })
+    await expect(access.updateRole(other.id, { name: 'Editor' })).rejects.toThrow(DuplicateRoleNameError)
+    await expect(access.updateRole(other.id, { code: 'editor' })).rejects.toThrow(DuplicateRoleCodeError)
+  })
+
+  it('reports a role it does not hold', async () => {
+    await expect(access.updateRole(RoleId('nowhere'), { name: 'x' })).rejects.toThrow(UnknownRoleError)
+  })
+
+  it('lets a backend failure that is neither conflict travel unchanged', async () => {
+    const role = await access.createRole({ orgId, name: 'Editor' })
+    // Bytes in a TEXT column of a STRICT table are the backend's own refusal,
+    // not one of the two conflicts this seam names.
+    await expect(access.updateRole(role.id, { name: new Uint8Array([1]) as unknown as string }))
+      .rejects.toThrow(/cannot store/u)
+  })
+})
+
+describe('deleting a role', () => {
+  it('takes its grants and its bindings with it', async () => {
+    await access.registerResource({ orgId, type: 'model', externalRef: 'v4', displayName: 'V4' })
+    const role = await access.createRole({ orgId, name: 'Caller' })
+    await access.grantType(role.id, 'model', 'model.invoke')
+    await access.bindUserRole(alice, role.id)
+    expect(await access.authorize(ask('model.invoke', 'model', 'v4'))).toMatchObject({ allowed: true })
+
+    await access.deleteRole(role.id)
+    expect(await access.listRoles(orgId)).toHaveLength(0)
+    expect(await access.rolesOf(alice)).toHaveLength(0)
+    expect(await access.authorize(ask('model.invoke', 'model', 'v4'))).toMatchObject({ allowed: false })
+  })
+
+  it('takes a group binding with it too', async () => {
+    const role = await access.createRole({ orgId, name: 'Caller' })
+    const group = await access.createGroup(orgId, 'engineering')
+    await access.addGroupMember(group.id, alice)
+    await access.bindGroupRole(group.id, role.id)
+    await access.deleteRole(role.id)
+    expect(await access.rolesOf(alice)).toHaveLength(0)
+  })
+
+  it('refuses to delete a role the product ships', async () => {
+    const role = await access.createRole({ orgId, name: 'Owner', kind: 'system' })
+    await expect(access.deleteRole(role.id)).rejects.toThrow(SystemRoleError)
+  })
+
+  it('reports a role it does not hold', async () => {
+    await expect(access.deleteRole(RoleId('nowhere'))).rejects.toThrow(UnknownRoleError)
+  })
+})
+
+describe('a database an earlier schema wrote', () => {
+  let root: string
+
+  beforeEach(() => { root = mkdtempSync(join(tmpdir(), 'dsh-access-old-')) })
+  afterEach(() => { rmSync(root, { recursive: true, force: true }) })
+
+  it('gives every stored role a code and keeps its rows', () => {
+    const path = join(root, 'schema-1.sqlite')
+    const old = new DatabaseSync(path)
+    old.exec(`PRAGMA application_id = ${ACCESS_CONTROL_SQLITE_APPLICATION_ID}`)
+    old.exec('PRAGMA user_version = 1')
+    old.exec(`CREATE TABLE role (
+      id TEXT PRIMARY KEY, org_id TEXT NOT NULL, name TEXT NOT NULL,
+      description TEXT NOT NULL, kind TEXT NOT NULL) STRICT`)
+    old.exec("INSERT INTO role (id, org_id, name, description, kind) VALUES ('r1', 'o1', 'Editor', '', 'custom')")
+    old.close()
+
+    const db = new DatabaseSync(path)
+    applySchema(db)
+    const row = db.prepare('SELECT code, created_at FROM role WHERE id = ?').get('r1') as
+      { code: string; created_at: number | null }
+    expect(row.code).toBe('r1')
+    expect(row.created_at).toBeNull()
+    db.close()
+  })
+
+  it('reads a role it stored without a creation moment', async () => {
+    const path = join(root, 'schema-1-read.sqlite')
+    const old = new DatabaseSync(path)
+    old.exec(`PRAGMA application_id = ${ACCESS_CONTROL_SQLITE_APPLICATION_ID}`)
+    old.exec('PRAGMA user_version = 1')
+    old.exec(`CREATE TABLE role (
+      id TEXT PRIMARY KEY, org_id TEXT NOT NULL, name TEXT NOT NULL,
+      description TEXT NOT NULL, kind TEXT NOT NULL) STRICT`)
+    old.exec("INSERT INTO role (id, org_id, name, description, kind) VALUES ('r1', 'o1', 'Editor', '', 'custom')")
+    old.close()
+
+    const mounted = new Context()
+    await mounted.plugin(SqliteAccountStore, { path: ':memory:' }).await()
+    await mounted.plugin(SqliteAccessControl, { path }).await()
+    const reader = mounted.get('accessControl') as AccessControl
+    const [role] = await reader.listRoles('o1' as OrgId)
+    expect(role?.createdAt).toBeUndefined()
+    expect(role?.code).toBe('r1')
+    await mounted.fiber.dispose()
   })
 })
