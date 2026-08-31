@@ -10,7 +10,7 @@ import { PERMISSION_CATALOG } from '@deepseek-ai/dsh-access-control'
  * Current physical schema. Monotonic: a database written by a newer build is
  * refused rather than migrated down.
  */
-export const SCHEMA_VERSION = 2
+export const SCHEMA_VERSION = 3
 
 /** Application id reserved for DeepSeek Harness SQLite access-control databases. */
 export const ACCESS_CONTROL_SQLITE_APPLICATION_ID = 0x44534841 + 1
@@ -24,6 +24,7 @@ export interface RoleRow {
   readonly description: string
   readonly kind: string
   readonly created_at: number | null
+  readonly covers_catalog: number
 }
 
 /** One governed-resource row, as SQLite returns it. */
@@ -57,7 +58,8 @@ CREATE TABLE IF NOT EXISTS role (
   code        TEXT,
   description TEXT NOT NULL,
   kind        TEXT NOT NULL,
-  created_at  INTEGER
+  created_at  INTEGER,
+  covers_catalog INTEGER NOT NULL DEFAULT 0
 ) STRICT;
 CREATE UNIQUE INDEX IF NOT EXISTS role_name ON role (org_id, name);
 
@@ -170,6 +172,16 @@ function backfillRoleCodes(db: DatabaseSync): void {
   // already stored: a made-up timestamp reads exactly like a real one, and a
   // reader has no way to tell it was invented.
   if (!present.has('created_at')) db.exec('ALTER TABLE role ADD COLUMN created_at INTEGER')
+  if (!present.has('covers_catalog')) {
+    db.exec('ALTER TABLE role ADD COLUMN covers_catalog INTEGER NOT NULL DEFAULT 0')
+    // A system role is the one a deployment's bootstrap creates as its
+    // administrator, and before this column existed that bootstrap granted it
+    // the whole catalog by hand. Marking it here keeps that intent working
+    // across an upgrade instead of leaving the administrator without the
+    // permissions a newer build added. A role created from now on is marked
+    // only when someone asks for it.
+    db.exec("UPDATE role SET covers_catalog = 1 WHERE kind = 'system'")
+  }
   db.exec('UPDATE role SET code = id WHERE code IS NULL')
 }
 

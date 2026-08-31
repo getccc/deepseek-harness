@@ -33,6 +33,7 @@ export const PERMISSION_CATALOG: readonly Permission[] = [
   { resourceType: 'member', action: 'member.read' },
   { resourceType: 'member', action: 'member.create' },
   { resourceType: 'member', action: 'member.update' },
+  { resourceType: 'member', action: 'member.delete' },
   { resourceType: 'member', action: 'member.disable' },
   { resourceType: 'member', action: 'member.enable' },
   { resourceType: 'member', action: 'member.role.bind' },

@@ -13,7 +13,7 @@ import { DEVICE_PLATFORMS } from '@deepseek-ai/dsh-device-authorization'
  * Current physical schema. Monotonic: a database written by a newer build is
  * refused rather than migrated down.
  */
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 /** Application id reserved for DeepSeek Harness SQLite device-authorization databases. */
 export const DEVICE_AUTHORIZATION_SQLITE_APPLICATION_ID = 0x44534841 + 3
@@ -48,7 +48,7 @@ export interface TransactionRow {
   readonly state: string
   readonly org_id: string | null
   readonly owner_id: string | null
-  readonly browser_session_id: string | null
+  readonly authentication_id: string | null
   readonly code_hash: string | null
   readonly code_expires_at: number | null
   readonly code_consumed_at: number | null
@@ -124,7 +124,7 @@ CREATE TABLE IF NOT EXISTS device_transaction (
   state              TEXT    NOT NULL CHECK (state IN ('pending', 'confirmed', 'redeemed')),
   org_id             TEXT,
   owner_id           TEXT,
-  browser_session_id TEXT,
+  authentication_id  TEXT,
   code_hash          TEXT,
   code_expires_at    INTEGER,
   code_consumed_at   INTEGER,
@@ -176,8 +176,8 @@ export function applySchema(db: DatabaseSync): void {
   if (appId !== 0 && appId !== DEVICE_AUTHORIZATION_SQLITE_APPLICATION_ID) {
     throw new Error(`device-authorization-sqlite: database belongs to another application (application_id ${appId})`)
   }
-  if (version > SCHEMA_VERSION) {
-    throw new Error(`device-authorization-sqlite: database schema ${version} is newer than this build's ${SCHEMA_VERSION}`)
+  if (version !== 0 && version !== SCHEMA_VERSION) {
+    throw new Error(`device-authorization-sqlite: database schema ${version} is not supported by this build's ${SCHEMA_VERSION}`)
   }
   db.exec('PRAGMA foreign_keys = ON')
   db.exec(DDL)

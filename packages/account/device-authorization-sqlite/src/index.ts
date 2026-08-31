@@ -162,10 +162,10 @@ export class SqliteDeviceAuthorization extends DeviceAuthorization {
     const expiresAt = Date.now() + this.config.codeTtlMs
     this.db.prepare(
       `UPDATE device_transaction
-          SET state = 'confirmed', org_id = ?, owner_id = ?, browser_session_id = ?,
+          SET state = 'confirmed', org_id = ?, owner_id = ?, authentication_id = ?,
               code_hash = ?, code_expires_at = ?
         WHERE id = ?`,
-    ).run(approval.orgId, approval.userId, approval.browserSessionId, hashSecret(code), expiresAt, id)
+    ).run(approval.orgId, approval.userId, approval.authenticationId, hashSecret(code), expiresAt, id)
     return Promise.resolve({ code, expiresAt, callbackUri: row.callback_uri })
   }
 
@@ -288,6 +288,16 @@ export class SqliteDeviceAuthorization extends DeviceAuthorization {
    * row would leave an administrator revoking one of two identities.
    */
   private upsertDevice(row: TransactionRow, now: number): Device {
+    // A fresh binding supersedes every credential family previously issued to
+    // this physical key. Otherwise signing in as another member would change
+    // the principal seen through an older access token that still points at
+    // the same mutable device row.
+    this.db.prepare(
+      `UPDATE credential_family
+          SET revoked_at = ?
+        WHERE revoked_at IS NULL
+          AND device_id IN (SELECT id FROM device WHERE org_id = ? AND public_key = ?)`,
+    ).run(now, row.org_id, row.public_key)
     this.db.prepare(
       `INSERT INTO device (id, org_id, owner_id, platform, public_key, public_key_digest,
                            runner_version, status, created_at, last_seen_at)

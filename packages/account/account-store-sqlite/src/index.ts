@@ -300,6 +300,18 @@ export class SqliteAccountStore extends AccountStore {
     )
   }
 
+  deleteUser(id: UserId): Promise<void> {
+    // The leadership row and the sessions go first: both name the account by a
+    // foreign key, and leaving either would fail the delete rather than perform
+    // it. Clearing the lead is the department losing its lead, not its rows.
+    this.db.prepare('UPDATE department SET leader_id = NULL WHERE leader_id = ?').run(id)
+    this.db.prepare('DELETE FROM browser_session WHERE user_id = ?').run(id)
+    const result = this.db.prepare('DELETE FROM account_user WHERE id = ?').run(id)
+    return Number(result.changes) === 0
+      ? Promise.reject(new UnknownAccountUserError(id))
+      : Promise.resolve()
+  }
+
   listDepartments(orgId: OrgId): Promise<Department[]> {
     const rows = this.db.prepare(
       // Insertion order breaks a tie between two siblings that carry the same

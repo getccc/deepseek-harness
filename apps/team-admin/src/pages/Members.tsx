@@ -23,6 +23,7 @@ type Dialog =
   | { readonly kind: 'bind'; readonly member: WireMember }
   | { readonly kind: 'unbind'; readonly member: WireMember; readonly roleId: string; readonly roleName: string }
   | { readonly kind: 'status'; readonly member: WireMember }
+  | { readonly kind: 'delete'; readonly member: WireMember }
 
 /** What the create and edit forms collect. */
 interface MemberForm {
@@ -51,9 +52,12 @@ const ALL_DEPARTMENTS = ''
 /**
  * The member directory and everything an administrator does to it.
  * @param props.held - the `resourceType|action` pairs this member holds.
+ * @param props.signedInId - the account this session belongs to, which it cannot delete.
  * @returns the users view.
  */
-export function Members({ held }: { readonly held: ReadonlySet<string> }): ReactNode {
+export function Members({
+  held, signedInId,
+}: { readonly held: ReadonlySet<string>; readonly signedInId: string }): ReactNode {
   const { t } = useLocale()
   const report = useErrorReporter()
   const members = useLoaded<WireMember[]>(api.members, report)
@@ -74,6 +78,7 @@ export function Members({ held }: { readonly held: ReadonlySet<string> }): React
 
   const mayCreate = held.has('member|member.create')
   const mayUpdate = held.has('member|member.update')
+  const mayDelete = held.has('member|member.delete')
   const mayBind = held.has('member|member.role.bind')
   const mayDisable = held.has('member|member.disable')
   const mayEnable = held.has('member|member.enable')
@@ -226,6 +231,16 @@ export function Members({ held }: { readonly held: ReadonlySet<string> }): React
               label: t('members.bindRole'),
               disabled: !mayBind,
               onClick: () => { setDialog({ kind: 'bind', member }) },
+            },
+            {
+              key: 'delete',
+              label: t('action.delete'),
+              danger: true,
+              // Deleting the account this session belongs to would end the
+              // session carrying out the request, so the control says so here
+              // rather than letting the Control Plane refuse it.
+              disabled: !mayDelete || member.id === signedInId,
+              onClick: () => { setDialog({ kind: 'delete', member }) },
             },
           ]}
         />
@@ -458,6 +473,16 @@ export function Members({ held }: { readonly held: ReadonlySet<string> }): React
           dialog?.kind === 'unbind' ? dialog.member.id : '',
           dialog?.kind === 'unbind' ? dialog.roleId : '',
         ))}
+      />
+
+      <ConfirmModal
+        title={dialog?.kind === 'delete'
+          ? t('members.deleteTitle', { name: dialog.member.displayName })
+          : ''}
+        body={t('members.deleteBody')}
+        open={dialog?.kind === 'delete'}
+        onCancel={() => { setDialog(undefined) }}
+        onConfirm={() => act(() => api.removeMember(dialog?.kind === 'delete' ? dialog.member.id : ''))}
       />
 
       <ConfirmModal

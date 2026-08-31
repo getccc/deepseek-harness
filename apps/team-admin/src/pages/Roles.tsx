@@ -4,8 +4,9 @@
  */
 
 import { useState, type ReactNode } from 'react'
-import { Button, Form, Input, Select, Space, Table, Tag, Tree, Typography } from 'antd'
+import { Button, Form, Input, Space, Switch, Table, Tag, Tree, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
+import type { TreeDataNode } from 'antd'
 import { api, type WireGrant, type WireMenu, type WirePermission, type WireRole } from '../api.ts'
 import { useLocale } from '../locale.tsx'
 import {
@@ -19,7 +20,7 @@ type Dialog =
   | { readonly kind: 'add' }
   | { readonly kind: 'edit'; readonly role: WireRole }
   | { readonly kind: 'menus'; readonly role: WireRole }
-  | { readonly kind: 'grant'; readonly role: WireRole }
+  | { readonly kind: 'permissions'; readonly role: WireRole }
   | { readonly kind: 'revoke'; readonly grant: WireGrant }
   | { readonly kind: 'delete'; readonly role: WireRole }
 
@@ -28,6 +29,7 @@ interface RoleForm {
   name: string
   code?: string
   description?: string
+  coversCatalog: boolean
 }
 
 /**
@@ -39,7 +41,10 @@ interface RoleForm {
  * @param role - the role to describe.
  * @returns the copy key for its reach.
  */
-function reachOf(role: WireRole): 'roles.dataScopeNone' | 'roles.dataScopeAll' | 'roles.dataScopeSelected' {
+function reachOf(
+  role: WireRole,
+): 'roles.dataScopeCatalog' | 'roles.dataScopeNone' | 'roles.dataScopeAll' | 'roles.dataScopeSelected' {
+  if (role.coversCatalog) return 'roles.dataScopeCatalog'
   if (role.grants.length === 0) return 'roles.dataScopeNone'
   return role.grants.some(grant => grant.scope === 'type')
     ? 'roles.dataScopeAll'
@@ -61,6 +66,7 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
   const [term, setTerm] = useState('')
   const [draftTerm, setDraftTerm] = useState('')
   const [chosen, setChosen] = useState<readonly string[]>([])
+  const [opened, setOpened] = useState<readonly string[]>([])
 
   const mayCreate = held.has('role|role.create')
   const mayUpdate = held.has('role|role.update')
@@ -87,15 +93,57 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
   /** Entries that declare a permission, which are the ones access can be given by. */
   const grantable = (menus.data ?? []).filter(menu => menu.permission !== undefined)
 
+  /** The `resourceType|action` pairs one role holds across a whole type. */
+  const typeGrantsOf = (role: WireRole): Set<string> => new Set(role.grants
+    .filter(grant => grant.scope === 'type')
+    .map(grant => `${grant.resourceType}|${grant.action}`))
+
+  /**
+   * The navigation as a tree, with the permission each entry declares beside
+   * it. A group declares none and is shown but not checkable: it is where the
+   * pages sit, not something a role can be given.
+   */
+  const menuNodes = (parentId: string | undefined): TreeDataNode[] =>
+    (menus.data ?? [])
+      .filter(menu => menu.parentId === parentId)
+      .map(menu => ({
+        key: menu.id,
+        title: menu.permission === undefined
+          ? menuLabel(menu, t)
+          : `${menuLabel(menu, t)} — ${menu.permission}`,
+        checkable: menu.permission !== undefined,
+        children: menuNodes(menu.id),
+      }))
+
+  /** The permission catalog as a tree, one branch per resource type. */
+  const permissionNodes = (): TreeDataNode[] => {
+    const types = [...new Set((permissions.data ?? []).map(permission => permission.resourceType))]
+    return types.map(type => ({
+      key: `type:${type}`,
+      title: type,
+      children: (permissions.data ?? [])
+        .filter(permission => permission.resourceType === type)
+        .map(permission => ({ key: `${type}|${permission.action}`, title: permission.action })),
+    }))
+  }
+
   /** Open the menu-access dialog with the entries this role already reaches. */
   const openMenus = (role: WireRole): void => {
-    const holds = new Set(role.grants
-      .filter(grant => grant.scope === 'type')
-      .map(grant => `${grant.resourceType}|${grant.action}`))
+    const holds = typeGrantsOf(role)
     setChosen(grantable
       .filter(menu => holds.has(menu.permission as string))
       .map(menu => menu.id))
+    // The groups start open, which the tree cannot do on its own: it is built
+    // when the dialog opens, and its own `defaultExpandAll` ran at mount with
+    // nothing to expand.
+    setOpened((menus.data ?? []).filter(menu => menu.kind === 'catalog').map(menu => menu.id))
     setDialog({ kind: 'menus', role })
+  }
+
+  /** Open the permission dialog with the pairs this role already holds. */
+  const openPermissions = (role: WireRole): void => {
+    setChosen([...typeGrantsOf(role)])
+    setDialog({ kind: 'permissions', role })
   }
 
   const columns: ColumnsType<WireRole> = [
@@ -157,10 +205,10 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
               onClick: () => { openMenus(role) },
             },
             {
-              key: 'grant',
-              label: t('roles.addGrant'),
+              key: 'permissions',
+              label: t('roles.permissions'),
               disabled: !mayManageGrants,
-              onClick: () => { setDialog({ kind: 'grant', role }) },
+              onClick: () => { openPermissions(role) },
             },
             {
               key: 'delete',
@@ -204,6 +252,8 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
     ))
 
   const editing = dialog?.kind === 'edit' ? dialog.role : undefined
+  const showingMenus = dialog?.kind === 'menus' ? dialog.role : undefined
+  const showingPermissions = dialog?.kind === 'permissions' ? dialog.role : undefined
 
   return (
     <>
@@ -266,8 +316,13 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
         open={dialog?.kind === 'add' || dialog?.kind === 'edit'}
         okText={t(editing === undefined ? 'action.create' : 'action.save')}
         initialValues={editing === undefined
-          ? {}
-          : { name: editing.name, code: editing.code, description: editing.description }}
+          ? { coversCatalog: false }
+          : {
+            name: editing.name,
+            code: editing.code,
+            description: editing.description,
+            coversCatalog: editing.coversCatalog,
+          }}
         onCancel={() => { setDialog(undefined) }}
         onSubmit={values => act(() => (editing === undefined
           ? api.addRole({
@@ -279,6 +334,12 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
             name: values.name,
             ...(values.code === undefined || values.code === '' ? {} : { code: values.code }),
             description: values.description ?? '',
+            // Only sent when it changed: the field is grant management rather
+            // than editing how the role reads, and the route asks for that
+            // permission whenever the request carries it.
+            ...(values.coversCatalog === editing.coversCatalog
+              ? {}
+              : { coversCatalog: values.coversCatalog }),
           })))}
       >
         <Form.Item
@@ -294,10 +355,20 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
         <Form.Item name="description" label={t('roles.roleDescription')}>
           <Input />
         </Form.Item>
+        <Form.Item
+          name="coversCatalog"
+          label={t('roles.coversCatalog')}
+          valuePropName="checked"
+          extra={t('roles.coversCatalogHint')}
+        >
+          {/* Creating a role does not carry this: a new role is composed after
+              it exists, and widening one is grant management. */}
+          <Switch disabled={editing === undefined || !mayManageGrants} />
+        </Form.Item>
       </FormModal>
 
       <FormModal<Record<string, never>>
-        title={t('roles.menuAccessTitle', { name: dialog?.kind === 'menus' ? dialog.role.name : '' })}
+        title={t('roles.menuAccessTitle', { name: showingMenus?.name ?? '' })}
         open={dialog?.kind === 'menus'}
         okText={t('action.save')}
         onCancel={() => { setDialog(undefined) }}
@@ -310,7 +381,8 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
         <Tree
           checkable
           selectable={false}
-          defaultExpandAll
+          expandedKeys={[...opened]}
+          onExpand={(keys) => { setOpened(keys as string[]) }}
           checkedKeys={[...chosen]}
           // Each entry is checked on its own: a group and the pages under it
           // declare different permissions, and checking a group must not
@@ -320,43 +392,33 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
             const checked = Array.isArray(keys) ? keys : keys.checked
             setChosen(checked as string[])
           }}
-          treeData={grantable.map(menu => ({
-            key: menu.id,
-            title: `${menuLabel(menu, t)} — ${menu.permission as string}`,
-          }))}
+          treeData={menuNodes(undefined)}
         />
       </FormModal>
 
-      <FormModal<{ permission: string }>
-        title={t('roles.addGrantTitle', { name: dialog?.kind === 'grant' ? dialog.role.name : '' })}
-        open={dialog?.kind === 'grant'}
+      <FormModal<Record<string, never>>
+        title={t('roles.permissionsTitle', { name: showingPermissions?.name ?? '' })}
+        open={dialog?.kind === 'permissions'}
         okText={t('action.save')}
         onCancel={() => { setDialog(undefined) }}
-        onSubmit={(values) => {
-          // The select carries the pair the catalog names; splitting it here
-          // keeps the console from inventing either half.
-          const separator = values.permission.indexOf('|')
-          return act(() => api.addGrant(
-            dialog?.kind === 'grant' ? dialog.role.id : '',
-            values.permission.slice(0, separator),
-            values.permission.slice(separator + 1),
-          ))
-        }}
+        onSubmit={() => act(() => api.setRolePermissions(
+          dialog?.kind === 'permissions' ? dialog.role.id : '',
+          // A resource type is a branch, not a permission: checking one checks
+          // the actions under it, and only those are pairs the catalog names.
+          chosen.filter(key => key.includes('|')),
+        ))}
       >
-        <Typography.Paragraph type="secondary">{t('roles.catalogHint')}</Typography.Paragraph>
-        <Form.Item
-          name="permission"
-          label={t('roles.permission')}
-          rules={[{ required: true, message: t('login.required') }]}
-        >
-          <Select
-            showSearch
-            options={(permissions.data ?? []).map(permission => ({
-              value: `${permission.resourceType}|${permission.action}`,
-              label: `${permission.resourceType} · ${permission.action}`,
-            }))}
-          />
-        </Form.Item>
+        <Typography.Paragraph type="secondary">{t('roles.permissionsHint')}</Typography.Paragraph>
+        <Tree
+          checkable
+          selectable={false}
+          checkedKeys={[...chosen]}
+          onCheck={(keys) => {
+            const checked = Array.isArray(keys) ? keys : keys.checked
+            setChosen(checked as string[])
+          }}
+          treeData={permissionNodes()}
+        />
       </FormModal>
 
       <ConfirmModal

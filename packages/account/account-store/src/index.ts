@@ -191,6 +191,19 @@ export abstract class AccountStore extends Service {
   abstract updateUser(id: UserId, changes: UpdateAccountUser): Promise<void>
 
   /**
+   * Delete one account, with the browser sessions it holds. A department this
+   * account led is left without a lead rather than deleted with it.
+   *
+   * Records another service owns — role bindings, device credentials, audit
+   * rows — are not this store's to remove; a caller that must withdraw them
+   * does so before calling this. Audit rows deliberately stay: they are the
+   * history of what the account did, and history does not leave with it.
+   * @param id - the account to delete.
+   * @throws {UnknownAccountUserError} when the store holds no such account.
+   */
+  abstract deleteUser(id: UserId): Promise<void>
+
+  /**
    * List an organization's departments, parents before the children that name
    * them, and siblings in `sortOrder` then creation order.
    * @param orgId - the organization to list.

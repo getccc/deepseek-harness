@@ -36,7 +36,7 @@ An administrator cannot change what the console offers. Reordering a page, hidin
 
 **Give a role a status toggle, as the reference does.** Rejected because a suspended role is not a concept this build has, and a control that changes a column nobody reads is worse than an absent control. Unbinding the role, or deleting it, is the act that exists.
 
-**Offer deleting an account.** Rejected because an account anchors audit records and device credentials. Suspension already ends every session the member holds and is reversible; deletion would leave a trail naming a principal that is gone.
+**Offer deleting an account.** Rejected here because an account anchors audit records and device credentials, and suspension already ends every session the member holds and is reversible. [A later note](../architecture/2026-08-31-a-role-that-covers-the-permission-catalog.md) takes that further: the audit rows do stay, and the account row goes.
 
 **Put departments in a new package beside menus.** Rejected because an organization and the accounts in it are the account store's own subject, and a department in another database would make an account's department an unenforced reference.
 

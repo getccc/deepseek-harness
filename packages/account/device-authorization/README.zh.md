@@ -45,7 +45,7 @@ const started = await ctx.deviceAuthorization.start({
 
 // On the Control Plane, after the member compared started.pairingCode.
 const issued = await ctx.deviceAuthorization.confirm(started.transactionId, {
-  orgId, userId, browserSessionId: 'browser-session',
+  orgId, userId, authenticationId: 'session:browser-session',
 })
 
 // Back on the Runner, proving it holds the key behind the digest.

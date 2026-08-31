@@ -127,6 +127,11 @@ export interface WireRole {
   readonly code: string
   readonly description: string
   readonly kind: RoleKind
+  /**
+   * Whether the role holds every permission this build governs, and is brought
+   * up to the catalog as the Control Plane starts.
+   */
+  readonly coversCatalog: boolean
   /** Absent for a role stored by a build that did not record the moment. */
   readonly createdAt?: number
   readonly grants: readonly WireGrant[]
@@ -224,6 +229,8 @@ export type WireRefusalReason =
   | 'menu-not-empty'
   /** The role ships with the product and cannot be deleted. */
   | 'system-role'
+  /** The request would delete the account it was made from. */
+  | 'self-delete'
   /** Departments do not have the status that was asked for. */
   | 'department-status'
   /** Navigation entries do not have the status that was asked for. */

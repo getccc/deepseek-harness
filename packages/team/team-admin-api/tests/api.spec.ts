@@ -21,7 +21,7 @@ import SqliteModelGateway from '@deepseek-ai/dsh-model-gateway-sqlite'
 import SqliteQuota from '@deepseek-ai/dsh-quota-sqlite'
 import SqliteConsoleMenuStore from '@deepseek-ai/dsh-team-console-menu-sqlite'
 import type { AccountStore, OrgId, UserId } from '@deepseek-ai/dsh-account-store'
-import type { AccessControl, RoleId } from '@deepseek-ai/dsh-access-control'
+import type { AccessControl, GrantId, RoleId } from '@deepseek-ai/dsh-access-control'
 import type { Audit } from '@deepseek-ai/dsh-audit'
 import {
   newSecret,
@@ -52,6 +52,7 @@ let devices: DeviceAuthorization
 let orgId: OrgId
 let alice: UserId
 let adminRole: RoleId
+let apiFiber: ReturnType<Context['plugin']>
 
 const PASSWORD = 'correct-horse-battery-staple'
 
@@ -60,7 +61,8 @@ const ADMIN_PERMISSIONS = [
   ['organization', 'organization.admin.access'],
   ['organization', 'organization.read'], ['organization', 'organization.settings.manage'],
   ['member', 'member.read'], ['member', 'member.create'], ['member', 'member.update'],
-  ['member', 'member.disable'], ['member', 'member.enable'], ['member', 'member.role.bind'],
+  ['member', 'member.delete'], ['member', 'member.disable'], ['member', 'member.enable'],
+  ['member', 'member.role.bind'],
   ['department', 'department.read'], ['department', 'department.manage'],
   ['role', 'role.read'], ['role', 'role.create'], ['role', 'role.update'],
   ['role', 'role.delete'], ['role', 'role.grant.manage'],
@@ -110,6 +112,17 @@ function head(answer: Answer, name: string): string | undefined {
   return Array.isArray(value) ? value[0] : value
 }
 
+/**
+ * Wait for the startup effects a freshly mounted plugin runs.
+ *
+ * `fiber.await()` resolves once the plugin has applied; the work its effect
+ * does is asynchronous, so a test that reads what the effect wrote yields the
+ * microtask queue first.
+ */
+async function settled(): Promise<void> {
+  await new Promise((resolve) => { setImmediate(resolve) })
+}
+
 /** The JSON one answer carried. */
 function payload(answer: Answer): unknown {
   return JSON.parse(answer.body)
@@ -149,7 +162,7 @@ function write(
  * page a member confirms on belongs to another package, so the confirmation
  * here is the seam call that page makes.
  */
-async function bindDevice(cookie: string): Promise<DeviceId> {
+async function bindDevice(cookie: string, owner: UserId = alice): Promise<DeviceId> {
   const { publicKey, privateKey } = generateKeyPairSync('ed25519')
   const spki = publicKey.export({ format: 'der', type: 'spki' }).toString('base64url')
   const verifier = newSecret()
@@ -159,7 +172,7 @@ async function bindDevice(cookie: string): Promise<DeviceId> {
     callbackUri: 'http://127.0.0.1:3080/team/callback', protocolVersion: 1,
   })
   const issued = await devices.confirm(started.transactionId, {
-    orgId, userId: alice, authenticationId: `session:${hashToken(cookie.slice(cookie.indexOf('=') + 1))}`,
+    orgId, userId: owner, authenticationId: `session:${hashToken(cookie.slice(cookie.indexOf('=') + 1))}`,
   })
   await devices.redeem({
     transactionId: started.transactionId,
@@ -200,7 +213,8 @@ beforeEach(async () => {
   alice = (await store.createUser({ orgId, loginName: 'alice', displayName: 'Alice' })).id
   await ctx.accountAuth.setSecret(alice, PASSWORD)
 
-  await ctx.plugin(api, api.Config({ organizationId: orgId, secureCookie: false } as never)).await()
+  apiFiber = ctx.plugin(api, api.Config({ organizationId: orgId, secureCookie: false } as never))
+  await apiFiber.await()
 
   // Alice administers: the API governs its own control resources as it mounts,
   // so the grants come after it.
@@ -409,6 +423,7 @@ describe('what a role does not carry', () => {
       ['POST', `/team/api/members/${alice}/roles`, { roleId: adminRole }],
       ['DELETE', `/team/api/members/${alice}/roles/${adminRole}`, undefined],
       ['PATCH', `/team/api/members/${alice}`, { displayName: 'Bobby' }],
+      ['DELETE', `/team/api/members/${alice}`, undefined],
       ['POST', '/team/api/departments', { name: 'Sneaky', code: 'sneaky' }],
       ['PATCH', '/team/api/departments/anything', { name: 'Sneaky' }],
       ['DELETE', '/team/api/departments/anything', undefined],
@@ -419,6 +434,7 @@ describe('what a role does not carry', () => {
       ['PATCH', `/team/api/roles/${adminRole}`, { name: 'sneaky' }],
       ['DELETE', `/team/api/roles/${adminRole}`, undefined],
       ['POST', `/team/api/roles/${adminRole}/menus`, { menuIds: [] }],
+      ['POST', `/team/api/roles/${adminRole}/permissions`, { permissions: [] }],
       ['POST', `/team/api/roles/${adminRole}/grants`, { resourceType: 'model', action: 'model.invoke' }],
       ['DELETE', '/team/api/grants/anything', undefined],
       ['DELETE', '/team/api/devices/anything', undefined],
@@ -1314,5 +1330,176 @@ describe('an edit that names every field it may', () => {
     })
     expect(refused.status).toBe(409)
     expect(payload(refused)).toMatchObject({ reason: 'code-taken' })
+  })
+})
+
+describe('deleting an account', () => {
+  it('removes it with the roles bound to it and the devices it holds', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const created = payload(await write('POST', '/team/api/members', held, {
+      loginName: 'dev', displayName: 'Dev',
+    })) as WireMember[]
+    const dev = created.find(member => member.loginName === 'dev') as WireMember
+    await write('POST', `/team/api/members/${dev.id}/roles`, held, { roleId: adminRole })
+
+    const after = payload(await write('DELETE', `/team/api/members/${dev.id}`, held)) as WireMember[]
+    expect(after.find(member => member.id === dev.id)).toBeUndefined()
+    expect(await access.rolesOf(dev.id as UserId)).toHaveLength(0)
+    expect(await store.getUser(dev.id as UserId)).toBeUndefined()
+  })
+
+  it('stops the computers the account bound from working', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const created = payload(await write('POST', '/team/api/members', held, {
+      loginName: 'dev', displayName: 'Dev',
+    })) as WireMember[]
+    const dev = created.find(member => member.loginName === 'dev') as WireMember
+    const theirs = await bindDevice(held.cookie, dev.id as UserId)
+
+    await write('DELETE', `/team/api/members/${dev.id}`, held)
+    expect((await devices.listDevices(orgId)).find(device => device.id === theirs)?.status)
+      .toBe('revoked')
+  })
+
+  it('leaves a computer another member bound where it is', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const alicesDevice = await bindDevice(held.cookie)
+    const created = payload(await write('POST', '/team/api/members', held, {
+      loginName: 'dev', displayName: 'Dev',
+    })) as WireMember[]
+    const dev = created.find(member => member.loginName === 'dev') as WireMember
+
+    await write('DELETE', `/team/api/members/${dev.id}`, held)
+    const remaining = await devices.listDevices(orgId)
+    expect(remaining.find(device => device.id === alicesDevice)?.status).not.toBe('revoked')
+  })
+
+  it('refuses to delete the account the request was made from', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const refused = await write('DELETE', `/team/api/members/${alice}`, held)
+    expect(refused.status).toBe(409)
+    expect(payload(refused)).toMatchObject({ reason: 'self-delete' })
+    expect(await store.getUser(alice)).toBeDefined()
+  })
+})
+
+describe('setting a role’s permissions', () => {
+  it('grants what was checked and revokes what was not', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const created = payload(await write('POST', '/team/api/roles', held, { name: 'Viewer' })) as WireRole[]
+    const viewer = created.find(role => role.name === 'Viewer') as WireRole
+
+    const granted = payload(await write('POST', `/team/api/roles/${viewer.id}/permissions`, held, {
+      permissions: ['member|member.read', 'role|role.read'],
+    })) as WireRole[]
+    expect((granted.find(role => role.id === viewer.id) as WireRole).grants
+      .map(grant => grant.action).sort()).toEqual(['member.read', 'role.read'])
+
+    const narrowed = payload(await write('POST', `/team/api/roles/${viewer.id}/permissions`, held, {
+      permissions: ['role|role.read'],
+    })) as WireRole[]
+    expect((narrowed.find(role => role.id === viewer.id) as WireRole).grants
+      .map(grant => grant.action)).toEqual(['role.read'])
+  })
+
+  it('leaves a grant on one named resource alone', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const resource = await access.registerResource({
+      orgId, type: 'model', externalRef: 'v4', displayName: 'V4',
+    })
+    const created = payload(await write('POST', '/team/api/roles', held, { name: 'Caller' })) as WireRole[]
+    const caller = created.find(role => role.name === 'Caller') as WireRole
+    await access.grantResource(caller.id as never, resource.id, 'model.invoke')
+
+    const after = payload(await write('POST', `/team/api/roles/${caller.id}/permissions`, held, {
+      permissions: [],
+    })) as WireRole[]
+    expect((after.find(role => role.id === caller.id) as WireRole).grants)
+      .toMatchObject([{ scope: 'resource', action: 'model.invoke' }])
+  })
+
+  it('refuses a list that is not permission pairs the catalog names', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const created = payload(await write('POST', '/team/api/roles', held, { name: 'Viewer' })) as WireRole[]
+    const viewer = created.find(role => role.name === 'Viewer') as WireRole
+    expect(payload(await write('POST', `/team/api/roles/${viewer.id}/permissions`, held, {
+      permissions: 'everything',
+    }))).toMatchObject({ reason: 'fields' })
+    expect(payload(await write('POST', `/team/api/roles/${viewer.id}/permissions`, held, {
+      permissions: ['member|member.invent'],
+    }))).toMatchObject({ reason: 'permission' })
+  })
+})
+
+describe('a role that covers the permission catalog', () => {
+  it('is brought up to the catalog the moment it is marked', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const created = payload(await write('POST', '/team/api/roles', held, { name: 'Owner' })) as WireRole[]
+    const owner = created.find(role => role.name === 'Owner') as WireRole
+    expect(owner.coversCatalog).toBe(false)
+
+    const marked = payload(await write('PATCH', `/team/api/roles/${owner.id}`, held, {
+      coversCatalog: true,
+    })) as WireRole[]
+    const after = marked.find(role => role.id === owner.id) as WireRole
+    expect(after.coversCatalog).toBe(true)
+    expect(after.grants.length).toBeGreaterThan(30)
+    expect(after.grants.map(grant => grant.action)).toContain('member.delete')
+  })
+
+  it('needs grant management, not only the permission to edit a role', async () => {
+    const bob = (await store.createUser({ orgId, loginName: 'bob', displayName: 'Bob' })).id
+    await ctx.accountAuth.setSecret(bob, PASSWORD)
+    const editor = await access.createRole({ orgId, name: 'role-editor' })
+    for (const [type, action] of [
+      ['organization', 'organization.admin.access'],
+      ['role', 'role.read'], ['role', 'role.update'],
+    ] as const) await access.grantType(editor.id, type, action)
+    await access.bindUserRole(bob, editor.id)
+
+    const held = await signIn('bob', PASSWORD)
+    const renamed = await write('PATCH', `/team/api/roles/${adminRole}`, held, { name: 'renamed' })
+    expect(renamed.status).toBe(200)
+    const widened = await write('PATCH', `/team/api/roles/${adminRole}`, held, { coversCatalog: true })
+    expect(widened.status).toBe(403)
+  })
+})
+
+describe('starting with a role that covers the catalog', () => {
+  it('brings it back up to the catalog, so a new permission is not missing', async () => {
+    const owner = await access.createRole({ orgId, name: 'Owner', coversCatalog: true })
+    await access.syncCatalogRole(owner.id)
+    const [dropped] = (await access.listRoleGrants(owner.id))
+      .filter(grant => grant.kind === 'type' && grant.action === 'member.delete')
+    await access.revokeGrant(dropped?.id as GrantId)
+    expect((await access.listRoleGrants(owner.id)).map(grant => grant.action))
+      .not.toContain('member.delete')
+
+    // A restart is what a build carrying a new permission looks like from here.
+    await apiFiber.dispose()
+    apiFiber = ctx.plugin(api, api.Config({ organizationId: orgId, secureCookie: false } as never))
+    await apiFiber.await()
+    await settled()
+
+    expect((await access.listRoleGrants(owner.id)).map(grant => grant.action))
+      .toContain('member.delete')
+    const recorded = (await audit.query({ orgId, action: 'grant.add' })).length
+    expect(recorded).toBeGreaterThan(0)
+
+    // A start that finds the role already complete records nothing: nothing
+    // about what it admits changed.
+    await apiFiber.dispose()
+    apiFiber = ctx.plugin(api, api.Config({ organizationId: orgId, secureCookie: false } as never))
+    await apiFiber.await()
+    await settled()
+    expect((await audit.query({ orgId, action: 'grant.add' })).length).toBe(recorded)
+  })
+
+  it('leaves a role nobody marked exactly as it is', async () => {
+    const reader = await access.createRole({ orgId, name: 'Reader' })
+    await apiFiber.dispose()
+    apiFiber = ctx.plugin(api, api.Config({ organizationId: orgId, secureCookie: false } as never))
+    await apiFiber.await()
+    expect(await access.listRoleGrants(reader.id)).toHaveLength(0)
   })
 })

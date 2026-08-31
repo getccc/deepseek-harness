@@ -101,6 +101,8 @@ export interface CreateRole {
   readonly description?: string
   /** Defaults to `custom`; only the product seeds `system` roles. */
   readonly kind?: RoleKind
+  /** Defaults to false; a role that covers the catalog is synced at every start. */
+  readonly coversCatalog?: boolean
 }
 
 /**
@@ -113,6 +115,12 @@ export interface UpdateRole {
   readonly name?: string
   readonly code?: string
   readonly description?: string
+  /**
+   * Whether the role holds every permission this build governs. Setting it does
+   * not grant anything on its own; {@link AccessControl.syncCatalogRole} is what
+   * writes the grants.
+   */
+  readonly coversCatalog?: boolean
 }
 
 /** The fields the owning subsystem supplies when it governs a resource. */
@@ -170,6 +178,27 @@ export abstract class AccessControl extends Service {
    * @throws {SystemRoleError} when the role ships with the product.
    */
   abstract deleteRole(roleId: RoleId): Promise<void>
+
+  /**
+   * Give one role every permission the catalog governs that it does not
+   * already hold.
+   *
+   * Idempotent, and additive only: a pair the catalog no longer names stays
+   * where it is, because the grant may still be the reason something works.
+   * Callers run this for a role that covers the catalog as the process starts,
+   * which is what keeps such a role current as this build's catalog grows.
+   * @param roleId - the role to bring up to the catalog.
+   * @returns the pairs this call granted, as `resourceType|action`.
+   * @throws {UnknownRoleError} when the store holds no such role.
+   */
+  abstract syncCatalogRole(roleId: RoleId): Promise<string[]>
+
+  /**
+   * Every role of one organization that covers the catalog.
+   * @param orgId - the organization to list.
+   * @returns those roles, in creation order.
+   */
+  abstract listCatalogRoles(orgId: OrgId): Promise<Role[]>
 
   /**
    * List an organization's roles in creation order.

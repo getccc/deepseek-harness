@@ -11,6 +11,7 @@ import { Service } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import {
   AccessControl,
+  PERMISSION_CATALOG,
   DuplicateRoleCodeError,
   DuplicateRoleNameError,
   GOVERNED_RESOURCE_TYPES,
@@ -62,6 +63,7 @@ function toRole(row: RoleRow): Role {
     description: row.description,
     kind: row.kind as RoleKind,
     createdAt: row.created_at ?? undefined,
+    coversCatalog: row.covers_catalog !== 0,
   }
 }
 
@@ -166,11 +168,16 @@ export class SqliteAccessControl extends AccessControl {
       description: input.description ?? '',
       kind: input.kind ?? 'custom',
       created_at: Date.now(),
+      covers_catalog: input.coversCatalog === true ? 1 : 0,
     }
     try {
       this.db.prepare(
-        'INSERT INTO role (id, org_id, name, code, description, kind, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      ).run(row.id, row.org_id, row.name, row.code, row.description, row.kind, row.created_at)
+        `INSERT INTO role (id, org_id, name, code, description, kind, created_at, covers_catalog)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(
+        row.id, row.org_id, row.name, row.code, row.description, row.kind,
+        row.created_at, row.covers_catalog,
+      )
     } catch (error) {
       /* v8 ignore next -- node:sqlite rejects with Error; the guard is for the type, not a reachable path */
       if (!(error instanceof Error)) throw new Error(String(error))
@@ -188,6 +195,7 @@ export class SqliteAccessControl extends AccessControl {
       ['name', changes.name],
       ['code', changes.code],
       ['description', changes.description],
+      ['covers_catalog', changes.coversCatalog === undefined ? undefined : changes.coversCatalog ? 1 : 0],
     ] as const).flatMap(([column, value]) => value === undefined ? [] : [[column, value] as const])
     // Nothing to write is not a failure: the role the caller named is there,
     // and it already reads the way they asked for.
@@ -408,6 +416,33 @@ export class SqliteAccessControl extends AccessControl {
        ORDER BY role_id`,
     ).all(userId, userId) as unknown as { role_id: string }[]
     return Promise.resolve(rows.map(row => RoleId(row.role_id)))
+  }
+
+  async syncCatalogRole(roleId: RoleId): Promise<string[]> {
+    const role = this.role(roleId)
+    const held = new Set((this.db.prepare(
+      'SELECT resource_type, action FROM role_type_grant WHERE role_id = ?',
+    ).all(roleId) as unknown as { resource_type: string; action: string }[])
+      .map(row => `${row.resource_type}|${row.action}`))
+    const missing = PERMISSION_CATALOG
+      .filter(permission => !held.has(`${permission.resourceType}|${permission.action}`))
+    for (const permission of missing) {
+      this.db.prepare(
+        `INSERT INTO role_type_grant (id, role_id, resource_type, action) VALUES (?, ?, ?, ?)
+         ON CONFLICT (role_id, resource_type, action) DO NOTHING`,
+      ).run(randomUUID(), roleId, permission.resourceType, permission.action)
+    }
+    // Nothing was added means nothing an authorization cache holds went stale,
+    // so a start that changes no policy does not read as a policy edit.
+    if (missing.length > 0) await this.bump(OrgId(role.org_id))
+    return missing.map(permission => `${permission.resourceType}|${permission.action}`)
+  }
+
+  listCatalogRoles(orgId: OrgIdType): Promise<Role[]> {
+    const rows = this.db.prepare(
+      'SELECT * FROM role WHERE org_id = ? AND covers_catalog != 0 ORDER BY rowid',
+    ).all(orgId) as unknown as RoleRow[]
+    return Promise.resolve(rows.map(toRole))
   }
 
   /** Read a role or refuse: a grant or binding naming no role would be unreachable. */

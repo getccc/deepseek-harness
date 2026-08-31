@@ -84,7 +84,7 @@ function request(patch: Partial<StartRequest> = {}): StartRequest {
 async function bind(service = auth): Promise<{ id: TransactionId; credential: IssuedCredential }> {
   const started = await service.start(request())
   const issued = await service.confirm(started.transactionId, {
-    orgId, userId: alice, browserSessionId: 'session-1',
+    orgId, userId: alice, authenticationId: 'session:session-1',
   })
   const credential = await service.redeem({
     transactionId: started.transactionId,
@@ -149,8 +149,8 @@ describe('confirming', () => {
 
   it('refuses to confirm the same transaction twice', async () => {
     const started = await auth.start(request())
-    await auth.confirm(started.transactionId, { orgId, userId: alice, browserSessionId: 's' })
-    await expect(auth.confirm(started.transactionId, { orgId, userId: alice, browserSessionId: 's' }))
+    await auth.confirm(started.transactionId, { orgId, userId: alice, authenticationId: 'session:s' })
+    await expect(auth.confirm(started.transactionId, { orgId, userId: alice, authenticationId: 'session:s' }))
       .rejects.toMatchObject({ reason: 'already-confirmed' })
     await expect(auth.describe(started.transactionId)).rejects.toBeInstanceOf(TransactionRefusedError)
   })
@@ -159,7 +159,7 @@ describe('confirming', () => {
     const brief = await mount({ transactionTtlMs: 0 })
     const started = await brief.start(request())
     await expect(brief.describe(started.transactionId)).rejects.toMatchObject({ reason: 'expired' })
-    await expect(brief.confirm(started.transactionId, { orgId, userId: alice, browserSessionId: 's' }))
+    await expect(brief.confirm(started.transactionId, { orgId, userId: alice, authenticationId: 'session:s' }))
       .rejects.toMatchObject({ reason: 'expired' })
   })
 })
@@ -181,7 +181,7 @@ describe('redeeming', () => {
 
   it('refuses a code that was already spent', async () => {
     const started = await auth.start(request())
-    const issued = await auth.confirm(started.transactionId, { orgId, userId: alice, browserSessionId: 's' })
+    const issued = await auth.confirm(started.transactionId, { orgId, userId: alice, authenticationId: 'session:s' })
     const redeem = {
       transactionId: started.transactionId,
       code: issued.code,
@@ -197,7 +197,7 @@ describe('redeeming', () => {
 
   it('refuses a code presented without the verifier that opened the transaction', async () => {
     const started = await auth.start(request())
-    const issued = await auth.confirm(started.transactionId, { orgId, userId: alice, browserSessionId: 's' })
+    const issued = await auth.confirm(started.transactionId, { orgId, userId: alice, authenticationId: 'session:s' })
     await expect(auth.redeem({
       transactionId: started.transactionId,
       code: issued.code,
@@ -211,7 +211,7 @@ describe('redeeming', () => {
 
   it('refuses a code signed by a different key than the one the member compared', async () => {
     const started = await auth.start(request())
-    const issued = await auth.confirm(started.transactionId, { orgId, userId: alice, browserSessionId: 's' })
+    const issued = await auth.confirm(started.transactionId, { orgId, userId: alice, authenticationId: 'session:s' })
     const impostor = newDeviceKey()
     await expect(auth.redeem({
       transactionId: started.transactionId,
@@ -226,7 +226,7 @@ describe('redeeming', () => {
   it('refuses a signature made over a different transaction', async () => {
     const first = await auth.start(request())
     const second = await auth.start(request())
-    const issued = await auth.confirm(second.transactionId, { orgId, userId: alice, browserSessionId: 's' })
+    const issued = await auth.confirm(second.transactionId, { orgId, userId: alice, authenticationId: 'session:s' })
     await expect(auth.redeem({
       transactionId: second.transactionId,
       code: issued.code,
@@ -240,7 +240,7 @@ describe('redeeming', () => {
   it('refuses a callback address or protocol version other than the bound one', async () => {
     for (const patch of [{ callbackUri: 'http://127.0.0.1:9999/team/callback' }, { protocolVersion: 2 }]) {
       const started = await auth.start(request())
-      const issued = await auth.confirm(started.transactionId, { orgId, userId: alice, browserSessionId: 's' })
+      const issued = await auth.confirm(started.transactionId, { orgId, userId: alice, authenticationId: 'session:s' })
       await expect(auth.redeem({
         transactionId: started.transactionId,
         code: issued.code,
@@ -256,7 +256,7 @@ describe('redeeming', () => {
   it('refuses a code that outlived its window', async () => {
     const brief = await mount({ codeTtlMs: 0 })
     const started = await brief.start(request())
-    const issued = await brief.confirm(started.transactionId, { orgId, userId: alice, browserSessionId: 's' })
+    const issued = await brief.confirm(started.transactionId, { orgId, userId: alice, authenticationId: 'session:s' })
     await expect(brief.redeem({
       transactionId: started.transactionId,
       code: issued.code,
@@ -270,7 +270,7 @@ describe('redeeming', () => {
   it('refuses a code paired with a transaction it does not belong to', async () => {
     const other = await auth.start(request())
     const started = await auth.start(request())
-    const issued = await auth.confirm(started.transactionId, { orgId, userId: alice, browserSessionId: 's' })
+    const issued = await auth.confirm(started.transactionId, { orgId, userId: alice, authenticationId: 'session:s' })
     await expect(auth.redeem({
       transactionId: other.transactionId,
       code: issued.code,
@@ -463,11 +463,11 @@ describe('opening a database', () => {
     db.close()
   })
 
-  it('refuses a database a newer build wrote', () => {
+  it('refuses a database written with any other released schema', () => {
     const db = new DatabaseSync(path)
     db.exec(`PRAGMA application_id = ${DEVICE_AUTHORIZATION_SQLITE_APPLICATION_ID}`)
-    db.exec(`PRAGMA user_version = ${SCHEMA_VERSION + 1}`)
-    expect(() => { applySchema(db) }).toThrow(/newer than this build/u)
+    db.exec('PRAGMA user_version = 1')
+    expect(() => { applySchema(db) }).toThrow(/not supported by this build/u)
     db.close()
   })
 

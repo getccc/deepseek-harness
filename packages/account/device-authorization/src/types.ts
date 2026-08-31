@@ -66,12 +66,12 @@ export interface PendingTransaction {
   readonly expiresAt: number
 }
 
-/** Who is confirming, recovered from an authenticated Control Plane session. */
+/** Who approved a transaction, with the authentication event that established it. */
 export interface Approval {
   readonly orgId: OrgId
   readonly userId: UserId
-  /** The Control Plane browser session the confirmation came from. */
-  readonly browserSessionId: string
+  /** Opaque reference to the successful authentication event. */
+  readonly authenticationId: string
 }
 
 /** The one-time code the Control Plane hands the browser to carry back. */

@@ -52,6 +52,7 @@ import {
   ConsoleMenuNotEmptyError,
   MenuId,
   UnknownMenuPermissionError,
+  isMenuPermission,
   type ConsoleMenu,
   type ConsoleMenuKind,
   type ConsoleMenuStatus,
@@ -281,6 +282,7 @@ function wireRole(
     code: role.code,
     description: role.description,
     kind: role.kind,
+    coversCatalog: role.coversCatalog,
     /* v8 ignore next -- only a role stored before this build carries no creation moment, and every role these tests create carries one */
     ...(role.createdAt === undefined ? {} : { createdAt: role.createdAt }),
     grants: grants.map(wireGrant),
@@ -391,6 +393,14 @@ export function apply(ctx: Context, config: Config): void {
     // it yet. Seeding here rather than in the store keeps the store ignorant of
     // which organization a Control Plane serves, which is this plugin's config.
     await ctx.consoleMenu.seedShipped(organizationId)
+    // A role that covers the catalog is brought up to it here, so a build that
+    // adds a permission does not leave the administrator holding a console
+    // whose new controls are all refused.
+    for (const role of await ctx.accessControl.listCatalogRoles(organizationId)) {
+      const added = await ctx.accessControl.syncCatalogRole(role.id)
+      if (added.length === 0) continue
+      await ctx.audit.record({ orgId: organizationId, action: 'grant.add', outcome: 'allowed', resourceId: role.id })
+    }
     return () => {}
   }, 'team-admin-api: govern administrative resources')
 
@@ -597,6 +607,28 @@ export function apply(ctx: Context, config: Config): void {
   /** The organization's navigation. */
   const readMenus = async (orgId: OrgId): Promise<WireMenu[]> =>
     (await ctx.consoleMenu.listMenus(orgId)).map(wireMenu)
+
+  /**
+   * Make one role's type grants exactly the catalog pairs it was given.
+   *
+   * Grants over one named resource are left alone: they say something this list
+   * cannot, and a catalog editor must not silently drop what it does not show.
+   * @param roleId - the role to change.
+   * @param wanted - the `resourceType|action` pairs the role is to hold.
+   */
+  const setRolePermissions = async (roleId: RoleId, wanted: ReadonlySet<string>): Promise<void> => {
+    const held = await ctx.accessControl.listRoleGrants(roleId)
+    const byPair = new Map<string, GrantId>(held.flatMap(grant =>
+      grant.kind === 'type' ? [[`${grant.resourceType}|${grant.action}`, grant.id] as const] : []))
+    for (const pair of wanted) {
+      if (byPair.has(pair)) continue
+      const separator = pair.indexOf('|')
+      await ctx.accessControl.grantType(roleId, pair.slice(0, separator), pair.slice(separator + 1))
+    }
+    for (const [pair, grantId] of byPair) {
+      if (!wanted.has(pair)) await ctx.accessControl.revokeGrant(grantId)
+    }
+  }
 
   /**
    * Make one role's grants match the navigation entries it was given.
@@ -932,6 +964,30 @@ export function apply(ctx: Context, config: Config): void {
       return
     }
 
+    if (segments[0] === 'members' && segments.length === 2 && method === 'DELETE') {
+      if (!await mayProceed(res, signed, 'member.delete', 'member', org)) return
+      const target = UserId(segments[1] as string)
+      // An administrator deleting their own account would end the session
+      // carrying out the request and leave nobody able to undo it.
+      if (target === signed.session.userId) {
+        refuse(res, 409, 'conflict', { reason: 'self-delete', detail: 'You cannot delete the account you are signed in as.' })
+        return
+      }
+      // The records other services own go first: what this store deletes is
+      // the account, and a binding or a credential naming an account that is
+      // gone would admit work nobody can account for.
+      for (const roleId of await ctx.accessControl.rolesOf(target)) {
+        await ctx.accessControl.unbindUserRole(target, roleId)
+      }
+      for (const device of await ctx.deviceAuthorization.listDevices(org)) {
+        if (device.ownerId === target) await ctx.deviceAuthorization.revokeDevice(device.id)
+      }
+      await ctx.accountStore.deleteUser(target)
+      await record('member.delete', signed, 'allowed', { resourceId: target })
+      json(res, 200, await readMembers(org))
+      return
+    }
+
     if (segments[0] === 'departments' && segments.length === 1 && method === 'POST') {
       if (!await mayProceed(res, signed, 'department.manage', 'department', org)) return
       const name = text(body, 'name')
@@ -1187,13 +1243,21 @@ export function apply(ctx: Context, config: Config): void {
       const roleName = text(body, 'name')
       const roleCode = text(body, 'code')
       const description = patchText(body, 'description')
+      const covers = patchBoolean(body, 'coversCatalog')
+      // Marking a role as covering the catalog widens what it admits, which is
+      // grant management rather than editing how the role reads.
+      if (covers !== undefined && !await mayProceed(res, signed, 'role.grant.manage', 'role', org)) return
       const target = RoleId(segments[1] as string)
       try {
         await ctx.accessControl.updateRole(target, {
           ...(roleName === undefined ? {} : { name: roleName }),
           ...(roleCode === undefined ? {} : { code: roleCode }),
           ...(description === undefined ? {} : { description: description ?? '' }),
+          ...(covers === undefined ? {} : { coversCatalog: covers }),
         })
+        // The mark alone grants nothing; bringing the role up to the catalog is
+        // what makes it true, and it happens here rather than at the next start.
+        if (covers === true) await ctx.accessControl.syncCatalogRole(target)
       } catch (error) {
         refuseRoleConflict(res, error)
         return
@@ -1217,6 +1281,24 @@ export function apply(ctx: Context, config: Config): void {
         return
       }
       await record('role.delete', signed, 'allowed', { resourceId: target })
+      json(res, 200, await readRoles(org))
+      return
+    }
+
+    if (segments[0] === 'roles' && segments[2] === 'permissions' && method === 'POST' && segments.length === 3) {
+      if (!await mayProceed(res, signed, 'role.grant.manage', 'role', org)) return
+      const wanted = body['permissions']
+      if (!Array.isArray(wanted) || wanted.some(pair => typeof pair !== 'string')) {
+        refuse(res, 400, 'malformed', { reason: 'fields', detail: 'Permissions are a list of resourceType|action pairs.' })
+        return
+      }
+      const unknown = (wanted as string[]).filter(pair => !isMenuPermission(pair))
+      if (unknown.length > 0) {
+        refuse(res, 400, 'malformed', { reason: 'permission', detail: 'That permission is not registered.' })
+        return
+      }
+      await setRolePermissions(RoleId(segments[1] as string), new Set(wanted as string[]))
+      await record('grant.add', signed, 'allowed', { resourceId: segments[1] as string })
       json(res, 200, await readRoles(org))
       return
     }

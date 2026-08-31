@@ -160,6 +160,9 @@ export const api = {
   /** Change one account's profile fields. */
   updateMember: (id: string, input: MemberProfileInput): Promise<WireMember[]> =>
     call('PATCH', `/members/${encodeURIComponent(id)}`, input),
+  /** Delete one account, with its role bindings, devices, and sessions. */
+  removeMember: (id: string): Promise<WireMember[]> =>
+    call('DELETE', `/members/${encodeURIComponent(id)}`),
   /** Suspend or reactivate one account. */
   setMemberStatus: (id: string, status: 'active' | 'suspended'): Promise<WireMember[]> =>
     call('PATCH', `/members/${encodeURIComponent(id)}`, { status }),
@@ -202,11 +205,14 @@ export const api = {
   /** Create one role. */
   addRole: (input: { name: string; code?: string; description?: string }): Promise<WireRole[]> =>
     call('POST', '/roles', input),
-  /** Change one role's name, code, or description. */
+  /** Change one role's name, code, description, or catalog coverage. */
   updateRole: (
     id: string,
-    input: { name?: string; code?: string; description?: string },
+    input: { name?: string; code?: string; description?: string; coversCatalog?: boolean },
   ): Promise<WireRole[]> => call('PATCH', `/roles/${encodeURIComponent(id)}`, input),
+  /** Make one role's type grants exactly these `resourceType|action` pairs. */
+  setRolePermissions: (id: string, permissions: readonly string[]): Promise<WireRole[]> =>
+    call('POST', `/roles/${encodeURIComponent(id)}/permissions`, { permissions }),
   /** Delete one role, with its grants and the bindings carrying it. */
   removeRole: (id: string): Promise<WireRole[]> =>
     call('DELETE', `/roles/${encodeURIComponent(id)}`),

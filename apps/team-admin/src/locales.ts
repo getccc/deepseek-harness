@@ -141,7 +141,9 @@ export const zh = {
   'members.unbindTitle': '从 {name} 解绑 {role}？',
   'members.unbindBody': '这个角色带来的权限将立即失效。',
   'members.noRoles': '暂无角色',
-  'members.deleteUnavailable': '本构建不支持删除账户：账户是审计记录的锚点，停用是可逆的做法。',
+  'members.deleteTitle': '删除 {name}？',
+  'members.deleteBody': '这个账户、它持有的角色绑定与设备凭据都会被移除。它留下的审计记录不会被删除。',
+  'members.deleteSelf': '不能删除你自己正在使用的账户。',
 
   'roles.heading': '角色管理',
   'roles.description': '用已注册的权限目录组合角色。有授权即允许，没有授权即拒绝。',
@@ -174,6 +176,12 @@ export const zh = {
   'roles.allOfType': '全部 {type} 资源',
   'roles.catalog': '权限目录',
   'roles.catalogHint': '这个构建在一次授权中只接受这些动作。',
+  'roles.coversCatalog': '拥有全部权限',
+  'roles.coversCatalogHint': '勾选后，这个角色持有本构建治理的每一项权限；以后版本新增的权限也会在启动时自动补齐。',
+  'roles.dataScopeCatalog': '全部权限',
+  'roles.permissions': '权限设置',
+  'roles.permissionsTitle': '{name} 的权限',
+  'roles.permissionsHint': '勾选即授予，取消勾选即撤销。针对单个资源的授权不在这里，也不会被改动。',
   'roles.menuAccess': '菜单权限',
   'roles.menuAccessTitle': '{name} 的菜单权限',
   'roles.menuAccessHint': '勾选一条菜单，就是把这条菜单声明的权限授予该角色；取消勾选即撤销。没有对应菜单的权限不受影响。',
@@ -280,6 +288,7 @@ export const zh = {
   'refuse.department-not-empty': '这条部门下面还有部门或成员。',
   'refuse.menu-not-empty': '这条菜单下面还有其他菜单。',
   'refuse.system-role': '系统内置角色不能删除。',
+  'refuse.self-delete': '不能删除你自己正在使用的账户。',
   'refuse.member-status': '账户没有这种状态。',
   'refuse.department-status': '部门没有这种状态。',
   'refuse.menu-status': '菜单没有这种状态。',
@@ -427,8 +436,10 @@ export const en: Record<keyof typeof zh, string> = {
   'members.unbindTitle': 'Unbind {role} from {name}?',
   'members.unbindBody': 'The permissions this role carries stop applying at once.',
   'members.noRoles': 'No roles',
-  'members.deleteUnavailable':
-    'This build does not delete accounts: an account anchors audit records, and suspending it is the reversible act.',
+  'members.deleteTitle': 'Delete {name}?',
+  'members.deleteBody':
+    'The account goes, with the roles bound to it and the device credentials it holds. The audit records it left behind stay.',
+  'members.deleteSelf': 'You cannot delete the account you are signed in as.',
 
   'roles.heading': 'Roles',
   'roles.description':
@@ -462,6 +473,14 @@ export const en: Record<keyof typeof zh, string> = {
   'roles.allOfType': 'All {type} resources',
   'roles.catalog': 'Permission catalog',
   'roles.catalogHint': 'These are the only actions this build accepts in a grant.',
+  'roles.coversCatalog': 'Every permission',
+  'roles.coversCatalogHint':
+    'Checked, this role holds every permission this build governs, and gains the ones a later build adds as the Control Plane starts.',
+  'roles.dataScopeCatalog': 'Every permission',
+  'roles.permissions': 'Permissions',
+  'roles.permissionsTitle': 'Permissions for {name}',
+  'roles.permissionsHint':
+    'Checking grants; clearing revokes. Grants over one named resource are not shown here and are left as they are.',
   'roles.menuAccess': 'Menu access',
   'roles.menuAccessTitle': 'Menu access for {name}',
   'roles.menuAccessHint':
@@ -574,6 +593,7 @@ export const en: Record<keyof typeof zh, string> = {
   'refuse.department-not-empty': 'Departments or accounts still belong to this department.',
   'refuse.menu-not-empty': 'Other entries still sit under this one.',
   'refuse.system-role': 'A role the product ships cannot be deleted.',
+  'refuse.self-delete': 'You cannot delete the account you are signed in as.',
   'refuse.member-status': 'Accounts do not have that status.',
   'refuse.department-status': 'Departments do not have that status.',
   'refuse.menu-status': 'Navigation entries do not have that status.',

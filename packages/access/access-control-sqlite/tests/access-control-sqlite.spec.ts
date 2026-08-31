@@ -10,6 +10,7 @@ import { DatabaseSync } from 'node:sqlite'
 import { Context } from '@deepseek-ai/cordis'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
+  PERMISSION_CATALOG,
   DuplicateRoleCodeError,
   DuplicateRoleNameError,
   RoleId,
@@ -552,6 +553,54 @@ describe('deleting a role', () => {
   })
 })
 
+describe('a role that covers the permission catalog', () => {
+  it('starts holding nothing until it is synced', async () => {
+    const role = await access.createRole({ orgId, name: 'Owner', coversCatalog: true })
+    expect(role.coversCatalog).toBe(true)
+    expect(await access.listRoleGrants(role.id)).toHaveLength(0)
+
+    const added = await access.syncCatalogRole(role.id)
+    expect(added).toHaveLength(PERMISSION_CATALOG.length)
+    expect(await access.listRoleGrants(role.id)).toHaveLength(PERMISSION_CATALOG.length)
+  })
+
+  it('adds only what the role lacks, and adds nothing twice', async () => {
+    const role = await access.createRole({ orgId, name: 'Owner', coversCatalog: true })
+    await access.grantType(role.id, 'model', 'model.invoke')
+    const added = await access.syncCatalogRole(role.id)
+    expect(added).not.toContain('model|model.invoke')
+    expect(added).toHaveLength(PERMISSION_CATALOG.length - 1)
+    expect(await access.syncCatalogRole(role.id)).toHaveLength(0)
+  })
+
+  it('advances the policy revision only when it granted something', async () => {
+    const role = await access.createRole({ orgId, name: 'Owner', coversCatalog: true })
+    await access.syncCatalogRole(role.id)
+    const settled = (await store.getOrganization(orgId))?.policyRevision as bigint
+    await access.syncCatalogRole(role.id)
+    expect((await store.getOrganization(orgId))?.policyRevision).toBe(settled)
+  })
+
+  it('is listed for its organization, and a role without the mark is not', async () => {
+    const covering = await access.createRole({ orgId, name: 'Owner', coversCatalog: true })
+    await access.createRole({ orgId, name: 'Reader' })
+    expect((await access.listCatalogRoles(orgId)).map(role => role.id)).toEqual([covering.id])
+  })
+
+  it('takes the mark on and off through an update', async () => {
+    const role = await access.createRole({ orgId, name: 'Owner' })
+    expect(role.coversCatalog).toBe(false)
+    await access.updateRole(role.id, { coversCatalog: true })
+    expect((await access.listRoles(orgId))[0]?.coversCatalog).toBe(true)
+    await access.updateRole(role.id, { coversCatalog: false })
+    expect(await access.listCatalogRoles(orgId)).toHaveLength(0)
+  })
+
+  it('reports a role it does not hold', async () => {
+    await expect(access.syncCatalogRole(RoleId('nowhere'))).rejects.toThrow(UnknownRoleError)
+  })
+})
+
 describe('a database an earlier schema wrote', () => {
   let root: string
 
@@ -571,10 +620,31 @@ describe('a database an earlier schema wrote', () => {
 
     const db = new DatabaseSync(path)
     applySchema(db)
-    const row = db.prepare('SELECT code, created_at FROM role WHERE id = ?').get('r1') as
-      { code: string; created_at: number | null }
+    const row = db.prepare('SELECT code, created_at, covers_catalog FROM role WHERE id = ?').get('r1') as
+      { code: string; created_at: number | null; covers_catalog: number }
     expect(row.code).toBe('r1')
     expect(row.created_at).toBeNull()
+    // A custom role keeps holding only what it was given.
+    expect(row.covers_catalog).toBe(0)
+    db.close()
+  })
+
+  it('marks the system role a deployment used as its administrator', () => {
+    const path = join(root, 'schema-1-system.sqlite')
+    const old = new DatabaseSync(path)
+    old.exec(`PRAGMA application_id = ${ACCESS_CONTROL_SQLITE_APPLICATION_ID}`)
+    old.exec('PRAGMA user_version = 1')
+    old.exec(`CREATE TABLE role (
+      id TEXT PRIMARY KEY, org_id TEXT NOT NULL, name TEXT NOT NULL,
+      description TEXT NOT NULL, kind TEXT NOT NULL) STRICT`)
+    old.exec("INSERT INTO role (id, org_id, name, description, kind) VALUES ('r1', 'o1', 'admin', '', 'system')")
+    old.close()
+
+    const db = new DatabaseSync(path)
+    applySchema(db)
+    const row = db.prepare('SELECT covers_catalog FROM role WHERE id = ?').get('r1') as
+      { covers_catalog: number }
+    expect(row.covers_catalog).toBe(1)
     db.close()
   })
 

@@ -25,6 +25,15 @@ export interface Role {
   /** A system role ships with the product and cannot be deleted. */
   readonly kind: RoleKind
   /**
+   * Whether this role holds every permission this build governs.
+   *
+   * The grants are real rows, not a wildcard: the role is brought up to the
+   * catalog as the Control Plane starts, so a build that adds a permission adds
+   * it here too and a decision can still be explained by naming the grant that
+   * produced it. A role without this never gains a permission it was not given.
+   */
+  readonly coversCatalog: boolean
+  /**
    * When the role was created, in epoch milliseconds, or undefined for a role
    * a build before this one stored without recording the moment.
    */

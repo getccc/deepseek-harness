@@ -89,8 +89,8 @@ Nothing here joins a model request, so the package has no request prefix and no 
 These are current constraints of the contract, not a task backlog.
 
 - **Nothing prunes lapsed transactions or spent tokens** — both are kept so a replay is detectable, and a retention pass needs its own design rather than a `DELETE` that would erase the evidence.
-- **The browser session is recorded, not verified** — the store keeps which Control Plane session confirmed a transaction; deciding that the session was valid belongs to the caller that holds it.
-- **Rebinding a revoked device reactivates it** — a member who binds the same computer again passes a fresh human confirmation, which is the same evidence the first binding required.
+- **The authentication reference is recorded, not verified** — the store keeps which successful authentication approved a transaction; deciding that event was valid belongs to the caller that holds it.
+- **Rebinding replaces prior credential families** — a successful new authentication for the same device key revokes its older families before reactivating the device.
 
 <a id="dev-note"></a>
 ### Dev Note

@@ -41,7 +41,7 @@ Reads are `GET`; writes are `POST`, `PATCH`, and `DELETE` under `/team/api`. Eve
 | Collection | Reading it needs | Changing it needs |
 |---|---|---|
 | `/organization`, `/overview` | `organization.read` | `organization.settings.manage` |
-| `/members` | `member.read` | `member.create`, `member.update`, `member.disable`, `member.enable`, `member.role.bind` |
+| `/members` | `member.read` | `member.create`, `member.update`, `member.delete`, `member.disable`, `member.enable`, `member.role.bind` |
 | `/departments` | `department.read` | `department.manage` |
 | `/roles`, `/grants` | `role.read` | `role.create`, `role.update`, `role.delete`, `role.grant.manage` |
 | `/menus` | a session, and no grant | `menu.manage` |
@@ -50,7 +50,9 @@ Reads are `GET`; writes are `POST`, `PATCH`, and `DELETE` under `/team/api`. Eve
 
 Navigation is the exception in that table. The console cannot draw itself without it, it names only what this build ships, and every page it leads to asks access control again, so reading it needs a session and nothing more — the same rule `/permissions` follows.
 
-`POST /roles/:id/menus` takes the navigation entries a role is to reach and makes its type grants match: it adds the permission each chosen entry declares, revokes the permissions of entries not chosen, and leaves alone every pair no entry declares. Menu access is a view over grants, not a second authorization system.
+`POST /roles/:id/menus` takes the navigation entries a role is to reach and makes its type grants match: it adds the permission each chosen entry declares, revokes the permissions of entries not chosen, and leaves alone every pair no entry declares. Menu access is a view over grants, not a second authorization system. `POST /roles/:id/permissions` does the same over the catalog itself, so a role's type grants become exactly the pairs it was given; grants over one named resource are outside both lists and are left as they are.
+
+A role marked `coversCatalog` holds every permission this build governs, and is brought up to the catalog as the Control Plane starts — which is what keeps an administrator's role current when a build adds a permission. The mark is grant management: `PATCH /roles/:id` asks `role.grant.manage` in addition to `role.update` whenever the request carries that field.
 
 The initial administrator bootstrap must grant `organization.admin.access` outside the console together with the action permissions that administrator needs. Ordinary member accounts authenticate through the Runner-facing endpoint instead and receive no administration session.
 
@@ -112,7 +114,8 @@ These are current constraints of the contract, not a task backlog.
 - **Type grants only** — a grant for one named resource is read and revoked here but created through the access-control service, until the console has a resource picker that cannot confuse a display name with the governed resource id.
 - **Whole collections, no pagination** — a write answers with the list it changed, and a read answers all of it, which targets the deployment sizes this version serves.
 - **No audit query** — `organization.audit.read` is in the catalog and no route serves it yet.
-- **No account deletion** — an account anchors audit records and device credentials, so the API suspends and reactivates rather than deleting.
+- **Deleting an account is not deleting its history** — the account, its role bindings, its sessions, and the credentials of the computers it bound all go; the audit rows it left stay, and a department it led is left without a lead.
+- **Nothing counts the remaining administrators** — the API refuses only the account the request was made from, so an organization can still be left with no administrator.
 - **A parent is chosen once** — neither a department nor a navigation entry can be moved to a different parent; both are created where they belong.
 
 <a id="dev-note"></a>

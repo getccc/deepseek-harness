@@ -41,7 +41,7 @@ kind: "package-reference"
 | 集合 | 读取需要 | 修改需要 |
 |---|---|---|
 | `/organization`、`/overview` | `organization.read` | `organization.settings.manage` |
-| `/members` | `member.read` | `member.create`、`member.update`、`member.disable`、`member.enable`、`member.role.bind` |
+| `/members` | `member.read` | `member.create`、`member.update`、`member.delete`、`member.disable`、`member.enable`、`member.role.bind` |
 | `/departments` | `department.read` | `department.manage` |
 | `/roles`、`/grants` | `role.read` | `role.create`、`role.update`、`role.delete`、`role.grant.manage` |
 | `/menus` | 一个会话，不需要授权 | `menu.manage` |
@@ -50,7 +50,9 @@ kind: "package-reference"
 
 导航是这张表里的例外。没有它控制台就画不出自己，它只命名本构建随附的内容，而它通向的每个页面都会再次询问访问控制，因此读取它只需要一个会话，别无其他——这与 `/permissions` 遵循的规则相同。
 
-`POST /roles/:id/menus` 接收角色应当可达的导航菜单，并让它的类型授权与之一致：加上每条被选中菜单所声明的权限，撤销未被选中菜单的权限，并且不动任何没有菜单声明过的配对。菜单权限是授权之上的一个视图，不是第二套鉴权系统。
+`POST /roles/:id/menus` 接收角色应当可达的导航菜单，并让它的类型授权与之一致：加上每条被选中菜单所声明的权限，撤销未被选中菜单的权限，并且不动任何没有菜单声明过的配对。菜单权限是授权之上的一个视图，不是第二套鉴权系统。`POST /roles/:id/permissions` 在目录本身之上做同一件事，让角色的类型授权恰好等于传入的那些配对；针对单个具名资源的授权不在这两个列表之内，会被原样保留。
+
+被标记为 `coversCatalog` 的角色持有本构建治理的每一项权限，并在 Control Plane 启动时被补齐到目录——正是这一点让管理员的角色在某次构建新增权限时不会落后。这个标记属于授权管理：只要请求携带该字段，`PATCH /roles/:id` 就会在 `role.update` 之外额外要求 `role.grant.manage`。
 
 首位管理员必须在控制台之外获得 `organization.admin.access` 以及其所需动作权限。普通成员账户改由面向 Runner 的端点认证，不会获得管理 Session。
 
@@ -112,7 +114,8 @@ kind: "package-reference"
 - **只创建类型授权** —— 针对单个具名资源的授权在这里可读可撤销，但仍通过访问控制服务创建，直到控制台有一个不会把显示名与受治理资源 id 混淆的资源选择器。
 - **整集合返回，无分页** —— 一次写入以它改动的那份列表作答，一次读取返回全部，这针对的是本版本服务的部署规模。
 - **没有审计查询** —— `organization.audit.read` 在目录里，但还没有路由服务它。
-- **不能删除账户** —— 账户是审计记录与设备凭据的锚点，因此该 API 只做停用与恢复，不做删除。
+- **删除账户不等于删除它的历史** —— 账户本身、它的角色绑定、它的会话，以及它绑定过的电脑的凭据都会被移除；它留下的审计行保留，而它曾领导的部门会失去负责人。
+- **没有任何东西在清点剩余的管理员** —— 该 API 只拒绝发起请求的那个账户，因此一个组织仍然可能被删到没有管理员。
 - **上级只在创建时选定** —— 部门与导航菜单都不能被移动到另一个上级之下；两者都在它们该在的位置被创建。
 
 <a id="dev-note"></a>

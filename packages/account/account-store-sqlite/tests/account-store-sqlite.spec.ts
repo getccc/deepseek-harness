@@ -465,6 +465,31 @@ describe('an account profile', () => {
   })
 })
 
+describe('deleting an account', () => {
+  it('removes it, and the sessions it held', async () => {
+    const made = await store.createUser({ orgId, loginName: 'dev', displayName: 'Dev' })
+    await store.createBrowserSession(made.id, 'hash-1', Date.now() + 60_000)
+    await store.deleteUser(made.id)
+    expect(await store.getUser(made.id)).toBeUndefined()
+    expect(await store.resolveBrowserSession('hash-1')).toBeUndefined()
+  })
+
+  it('leaves a department it led without a lead, rather than deleting it', async () => {
+    const lead = await store.createUser({ orgId, loginName: 'lead', displayName: 'Lead' })
+    const department = await store.createDepartment({
+      orgId, name: 'Technology', code: 'technology', leaderId: lead.id,
+    })
+    await store.deleteUser(lead.id)
+    const after = await store.getDepartment(department.id)
+    expect(after?.name).toBe('Technology')
+    expect(after?.leaderId).toBeUndefined()
+  })
+
+  it('reports an account it does not hold', async () => {
+    await expect(store.deleteUser(UserId('nowhere'))).rejects.toThrow(UnknownAccountUserError)
+  })
+})
+
 describe('a database an earlier schema wrote', () => {
   it('gains the account columns this build added', () => {
     const path = join(dir, 'schema-2.sqlite')

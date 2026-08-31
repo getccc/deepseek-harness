@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-31-navigation-is-data-and-menu-access-is-a-grant.md
-2026-08-31-navigation-is-data-and-menu-access-is-a-grant.md: a62b6592976fadb5bf05462f3780343faad1e776
-2026-08-31-navigation-is-data-and-menu-access-is-a-grant.zh.md: f1fd1de29538f62201c8cbe9b114e2f5f77d4e5c
+2026-08-31-navigation-is-data-and-menu-access-is-a-grant.md: c5233f585a96874fc8e1a0f4e282140f485c5f74
+2026-08-31-navigation-is-data-and-menu-access-is-a-grant.zh.md: 22753d06fd850319adac4b827ac00cca490e1b86

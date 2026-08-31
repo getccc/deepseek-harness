@@ -3,7 +3,7 @@
  * showing a refusal, and rendering the two things every table renders.
  */
 
-import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { App, Avatar, Button, Form, Modal, Switch, Tag } from 'antd'
 import { ApiError } from './api.ts'
 import { useLocale } from './locale.tsx'
@@ -135,6 +135,23 @@ export function Moment({ value }: { readonly value: number | undefined }): React
 }
 
 /**
+ * Copy a dialog shows, held steady while it closes.
+ *
+ * Every dialog here names what it is about — a role, a member, a department —
+ * and the state carrying that record is cleared the moment the dialog is
+ * dismissed, while the dialog itself is still animating out. Reading the last
+ * heading it was open with keeps the words from emptying in front of the reader.
+ * @param title - the copy for the record the dialog is about.
+ * @param open - whether the dialog is showing.
+ * @returns the copy to render.
+ */
+function useSteadyCopy(title: string, open: boolean): string {
+  const shown = useRef(title)
+  if (open) shown.current = title
+  return shown.current
+}
+
+/**
  * A dialog whose body is a form, submitted by its own confirm button.
  *
  * Every create and edit in this console is one of these, so the wiring between
@@ -164,6 +181,7 @@ export function FormModal<V extends object>({
   const { t } = useLocale()
   const [form] = Form.useForm<V>()
   const [busy, setBusy] = useState(false)
+  const heading = useSteadyCopy(title, open)
 
   const finish = async (values: V): Promise<void> => {
     setBusy(true)
@@ -176,7 +194,7 @@ export function FormModal<V extends object>({
 
   return (
     <Modal
-      title={title}
+      title={heading}
       open={open}
       onCancel={onCancel}
       onOk={() => { form.submit() }}
@@ -226,9 +244,11 @@ export function ConfirmModal({
 }): ReactNode {
   const { t } = useLocale()
   const [busy, setBusy] = useState(false)
+  const heading = useSteadyCopy(title, open)
+  const shownBody = useSteadyCopy(body, open)
   return (
     <Modal
-      title={title}
+      title={heading}
       open={open}
       onCancel={onCancel}
       okText={t('action.confirm')}
@@ -240,7 +260,7 @@ export function ConfirmModal({
         void onConfirm().finally(() => { setBusy(false) })
       }}
     >
-      {body}
+      {shownBody}
     </Modal>
   )
 }

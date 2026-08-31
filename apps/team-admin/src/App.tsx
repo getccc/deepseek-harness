@@ -46,6 +46,8 @@ import { useErrorReporter, useLoaded } from './ui.tsx'
 /** What every page component this build ships is given. */
 interface ViewProps {
   readonly held: ReadonlySet<string>
+  /** The account this session belongs to, which some acts refuse to touch. */
+  readonly signedInId: string
 }
 
 /**
@@ -58,7 +60,7 @@ interface ViewProps {
 const VIEWS: Record<ConsoleComponent, (props: ViewProps) => ReactNode> = {
   'dashboard/OverviewPage': () => <Overview />,
   'system/DepartmentsPage': ({ held }) => <Departments held={held} />,
-  'system/UsersPage': ({ held }) => <Members held={held} />,
+  'system/UsersPage': ({ held, signedInId }) => <Members held={held} signedInId={signedInId} />,
   'system/RolesPage': ({ held }) => <Roles held={held} />,
   'system/MenusPage': ({ held }) => <Menus held={held} />,
   'resources/DevicesPage': ({ held }) => <Devices held={held} />,
@@ -105,9 +107,16 @@ function useNarrowViewport(): boolean {
  * The page one open tab shows.
  * @param props.menu - the navigation entry the tab stands for.
  * @param props.held - the `resourceType|action` pairs this member holds.
+ * @param props.signedInId - the account this session belongs to.
  * @returns the page, or what to say in place of a page this build does not have.
  */
-function View({ menu, held }: { readonly menu: WireMenu; readonly held: ReadonlySet<string> }): ReactNode {
+function View({
+  menu, held, signedInId,
+}: {
+  readonly menu: WireMenu
+  readonly held: ReadonlySet<string>
+  readonly signedInId: string
+}): ReactNode {
   const { t } = useLocale()
   const render = menu.componentPath === undefined
     ? undefined
@@ -126,7 +135,7 @@ function View({ menu, held }: { readonly menu: WireMenu; readonly held: Readonly
       />
     )
   }
-  return render({ held })
+  return render({ held, signedInId })
 }
 
 /**
@@ -277,7 +286,13 @@ function Console({
             ? <Spin />
             : active === undefined
               ? <Empty description={t('shell.noNavigation')} />
-              : <View menu={byId.get(active) as WireMenu} held={held} />}
+              : (
+                <View
+                  menu={byId.get(active) as WireMenu}
+                  held={held}
+                  signedInId={session.member.id}
+                />
+              )}
         </Layout.Content>
       </Layout>
     </Layout>
