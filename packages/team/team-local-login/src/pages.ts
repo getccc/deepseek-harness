@@ -32,7 +32,7 @@ export interface PageCopy {
 const COPY: Record<LoginLocale, PageCopy> = {
   'en-US': {
     lang: 'en',
-    productName: 'DeepSeek Harness',
+    productName: 'AMEC Work',
     teamLabel: 'Team workspace',
     loginTitle: 'Welcome back',
     loginIntroduction: 'Sign in with the account your administrator assigned to continue to your workspace.',
@@ -54,7 +54,7 @@ const COPY: Record<LoginLocale, PageCopy> = {
   },
   'zh-CN': {
     lang: 'zh-CN',
-    productName: 'DeepSeek Harness',
+    productName: 'AMEC Work',
     teamLabel: '团队工作空间',
     loginTitle: '欢迎回来',
     loginIntroduction: '使用管理员分配的账户登录，继续进入你的工作空间。',
@@ -159,16 +159,11 @@ body {
   margin-bottom: 32px;
 }
 .brand-mark {
+  flex: none;
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 12px;
-  color: #fff;
-  background: linear-gradient(145deg, #1f6feb, #3357d9 60%, #5a49cc);
-  box-shadow: 0 8px 18px rgba(37, 99, 235, .24);
 }
-.brand-mark svg { width: 21px; height: 21px; }
+.brand-mark img { display: block; width: 40px; height: auto; }
 .brand-copy { display: flex; flex-direction: column; min-width: 0; }
 .brand-name { font-size: 14px; font-weight: 700; letter-spacing: -.01em; }
 .brand-team { color: var(--muted); font-size: 12px; }
@@ -263,10 +258,17 @@ input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 
 }
 `
 
+/**
+ * The AMEC mark, inlined so this page needs no asset route of its own. The
+ * same artwork also ships as the shell's `AmecLogo` primitive and as
+ * apps/web/public/favicon.svg; replacing the logo means replacing all three.
+ */
+const BRAND_MARK = '<img src="data:image/png;base64,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" alt="" />'
+
 /** Shared brand lockup for pre-application pages. */
 function brand(copy: PageCopy): string {
   return `<div class="brand">
-<span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M7.3 7.2c2.2-2.6 6.8-2.8 9.4-.3 2.2 2.2 2.4 5.9.5 8.4-1.8 2.4-5.3 3.2-8 1.8l-3 1.1.8-3.1a6.8 6.8 0 0 1 .3-7.9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 11.8h6M12 8.8v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+<span class="brand-mark" aria-hidden="true">${BRAND_MARK}</span>
 <span class="brand-copy"><span class="brand-name">${escape(copy.productName)}</span><span class="brand-team">${escape(copy.teamLabel)}</span></span>
 </div>`
 }
@@ -302,7 +304,6 @@ ${problem === undefined ? '' : `<div class="alert" role="alert"><svg width="16" 
 <label class="field"><span class="field-label">${escape(copy.password)}</span><span class="input-wrap">${PASSWORD_ICON}<input name="secret" type="password" autocomplete="current-password" placeholder="${escape(copy.passwordPlaceholder)}" required></span></label>
 <button class="submit" type="submit">${escape(copy.signIn)}</button>
 </form>
-<p class="privacy"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M3 6V4.7a4 4 0 0 1 8 0V6M2.4 6.1h9.2v6.2H2.4z" stroke="currentColor" stroke-linejoin="round"/></svg><span>${escape(copy.privacyNote)}</span></p>
 </section>
 </main></body>
 </html>

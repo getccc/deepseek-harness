@@ -1,0 +1,31 @@
+import type { IconProps } from './icons/props.ts'
+
+/**
+ * The AMEC mark, inlined as a data URI. The client packages bundle to plain
+ * JavaScript with no asset loader, so the artwork travels in source rather
+ * than as a file the host would have to serve.
+ */
+const AMEC_LOGO_SOURCE = 'data:image/png;base64,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'
+
+/** Drawn width and height of {@link AMEC_LOGO_SOURCE}, in px. */
+const AMEC_LOGO_WIDTH = 178
+const AMEC_LOGO_HEIGHT = 123
+
+/**
+ * Render the AMEC mark.
+ * @param props.size - width in px (default 24; height keeps the 178:123 ratio).
+ * @param props.className - extra class for layout placement.
+ * @returns the logo image (aria-hidden; pair with the product name for accessibility).
+ */
+export function AmecLogo({ size = 24, className }: IconProps) {
+  return (
+    <img
+      src={AMEC_LOGO_SOURCE}
+      width={size}
+      height={(size * AMEC_LOGO_HEIGHT) / AMEC_LOGO_WIDTH}
+      className={className}
+      alt=""
+      aria-hidden="true"
+    />
+  )
+}

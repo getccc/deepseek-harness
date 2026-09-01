@@ -54,6 +54,25 @@ describe('ic_ds_ icon set', () => {
   })
 })
 
+describe('AmecLogo', () => {
+  it('renders the inlined mark at the native ratio', () => {
+    const { container } = render(<primitives.AmecLogo />)
+    const img = container.querySelector('img')!
+    expect(img.getAttribute('width')).toBe('24')
+    expect(Number(img.getAttribute('height'))).toBeCloseTo(16.58, 1)
+    expect(img.getAttribute('src')).toMatch(/^data:image\/png;base64,/)
+    expect(img.getAttribute('alt')).toBe('')
+  })
+
+  it('scales to a caller-supplied width and forwards its placement class', () => {
+    const { container } = render(<primitives.AmecLogo size={34} className="hero" />)
+    const img = container.querySelector('img')!
+    expect(img.getAttribute('width')).toBe('34')
+    expect(Number(img.getAttribute('height'))).toBeCloseTo(23.49, 1)
+    expect(img.getAttribute('class')).toBe('hero')
+  })
+})
+
 describe('FishLogo', () => {
   it('renders the fish path in currentColor at the native ratio', () => {
     const { container } = render(<primitives.FishLogo />)
