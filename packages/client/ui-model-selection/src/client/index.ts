@@ -50,11 +50,12 @@ function rowId(providerId: string, modelId: string): string {
 function optionsOf(directory: ModelDirectoryState, t: TranslateNS<'model'>): SelectOption[] {
   const rows: SelectOption[] = []
   for (const group of directory.groups) {
+    const groupName = group.category === 'built-in' ? t('group.builtIn') : group.name
     for (const model of group.models) {
       rows.push({
         id: rowId(group.id, model.id),
         label: model.name,
-        detail: model.description !== undefined ? `${group.name} · ${model.description}` : group.name,
+        detail: model.description !== undefined ? `${groupName} · ${model.description}` : groupName,
         ...(directory.current !== null
           && directory.current.provider === group.id
           && directory.current.model === model.id

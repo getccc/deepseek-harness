@@ -34,6 +34,7 @@ import {
   DEFAULT_MAX_INLINE_REQUEST_IMAGE_BYTES,
   DEFAULT_MAX_TOKENS,
   DEFAULT_STREAM_IDLE_TIMEOUT_MS,
+  BUILT_IN_PROVIDER,
   DeepSeekAdapter,
 } from './adapter.ts'
 import type { DeepSeekCatalogModel, DeepSeekConnectionOptions } from './adapter.ts'
@@ -57,6 +58,7 @@ export {
   DEFAULT_MAX_INLINE_REQUEST_IMAGE_BYTES,
   DEFAULT_MAX_TOKENS,
   DEFAULT_STREAM_IDLE_TIMEOUT_MS,
+  BUILT_IN_PROVIDER,
   DeepSeekAdapter,
 } from './adapter.ts'
 export type { DeepSeekAdapterOptions, DeepSeekCatalogModel, DeepSeekConnectionOptions } from './adapter.ts'
@@ -454,7 +456,9 @@ export function apply(ctx: Context, config: Config): void {
   const resolveUserId = (): AnonymousUserId => userId ??= getOrCreateAnonymousUserId()
   const adapter = new DeepSeekAdapter({
     options,
-    transport: () => ctx.get('llmHttpTransport'),
+    transport: provider => provider === BUILT_IN_PROVIDER
+      ? ctx.get('llmHttpTransport')
+      : undefined,
     resolveApiKey,
     resolveUserId,
     resolveAttachments: () => ctx.get('attachments'),
@@ -474,7 +478,10 @@ export function apply(ctx: Context, config: Config): void {
   ])
   // Route effects bind to this apply fiber via the stable `ctx` reference,
   // even when a swap runs inside the scoped settings callback below.
-  const registration = ctx.llm.registerAdapter([PROVIDER], adapter)
+  const providerRoutes = (): string[] => ctx.get('llmHttpTransport') === undefined
+    ? [PROVIDER]
+    : [PROVIDER, BUILT_IN_PROVIDER]
+  const registration = ctx.llm.registerAdapter(providerRoutes(), adapter)
   let registeredPolicy = options().retryPolicy
   const ensureRegistrationFacts = (): void => {
     const policy = options().retryPolicy
@@ -484,7 +491,7 @@ export function apply(ctx: Context, config: Config): void {
     // synchronous registry section: disposing and re-registering instead would
     // publish an empty route set between the two, and an observer that reacted
     // to it would see this provider disappear and come back.
-    registration.replace([PROVIDER])
+    registration.replace(providerRoutes())
     registeredPolicy = policy
   }
 

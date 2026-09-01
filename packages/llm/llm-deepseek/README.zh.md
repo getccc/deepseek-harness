@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`@deepseek-ai/dsh-llm-deepseek` 是 harness LLM 服务的 DeepSeek chat-completions 适配器：它拥有 `deepseek-official` 提供方路由，并把 DeepSeek 的协议格式翻译为 harness 的流式分片协议。没有 LLM HTTP 传输时，它直接调用已配置的提供方。挂载传输后，模型发现与 chat 调用改用该传输，这正是 Team Runner 把公司端点、凭据与模型授权留在 Control Plane 的方式。它是 DeepSeek 的两个结构不同适配器之一：pi-ai 孪生通过库与更多提供方服务自己的路由名，两者可以并排挂载。
+`@deepseek-ai/dsh-llm-deepseek` 是 harness LLM 服务的 DeepSeek chat-completions 适配器：它拥有成员配置的 `deepseek-official` 提供方路由，并把 DeepSeek 的协议格式翻译为 harness 的流式分片协议。没有 LLM HTTP 传输时，它直接调用已配置的提供方。挂载传输后，它还会拥有一个 `built-in` 路由，该路由的模型发现与 chat 调用使用传输；Team Runner 因此能把公司端点、凭据与模型授权留在 Control Plane，同时不替换成员自己的 DeepSeek 路由。它是 DeepSeek 的两个结构不同适配器之一：pi-ai 孪生通过库与更多提供方服务自己的路由名，两者可以并排挂载。
 
 ## 目录
 
@@ -48,7 +48,7 @@ kind: "package-reference"
 
 请求用 `provider: deepseek-official` 选择路由；模型 id 原样传到协议，因此新增 DeepSeek 模型无需重新注册。省略 `models` 时会公布适合专注任务、快速且经济的 `deepseek-v4-flash`，适合复杂或质量关键任务、能力更强且成本更高的 `deepseek-v4-pro`，以及支持图像的 `deepseek-v4-flash-vision-exp`；每个模型都有 1,000,000 token 上下文窗口。显式列表会替换这些默认值，未列出的模型 id 仍作为纯文本路由原样通过。包括模型发现工具在内的客户端可通过 `ctx.llm.listModels('deepseek-official')` 读取这些建议性条目。支持图片的条目可把 `imagePixelBudget` 设置为正整数或 `low`，也可以设置 `imageMaxBytes`。
 
-存在 `ctx.llmHttpTransport` 时，它的 `listModels()` 会替换本机建议性列表，每份序列化 chat 请求则经由它的 `send()` 方法发送。该模式下适配器不会解析已配置的提供方密钥。Team 传输提供经过角色筛选的目录，并使用 Runner 当前设备访问 token 让调用通过 Control Plane 网关。
+存在 `ctx.llmHttpTransport` 时，它的 `listModels()` 会提供 `built-in` 路由，每份经该路由选择的序列化请求都由其 `send()` 方法发送。`deepseek-official` 路由保留本机建议性列表与已配置 API 密钥。Team 传输提供经过角色筛选的内置目录，并使用 Runner 当前设备访问 token 让这些调用通过 Control Plane 网关。
 
 | 字段 | 默认值 | 含义 |
 |---|---|---|
@@ -86,7 +86,7 @@ Files 模式通过 `maxRequestFilesBytes` 与 `maxImagesPerRequest` 限制保留
 
 ### 动态配置
 
-连接事实通过可选 settings 与凭据 seam 每次操作重新读取一次。用户设置文档中的 `llm-deepseek:` 分节无需重启即可覆盖任何字段；未通过超 schema 上限的快照会保留最后有效事实并记录失败。对于直连请求，API 密钥从提供端点、图片与 Files 策略及空闲预算的同一快照按流调用解析。挂载的传输会改为拥有目录与传输过程，因此不会解析本机提供方密钥。图片请求在请求时解析附件服务，因此加载顺序不会冻结图片可用性。
+连接事实通过可选 settings 与凭据 seam 每次操作重新读取一次。用户设置文档中的 `llm-deepseek:` 分节无需重启即可覆盖任何字段；未通过超 schema 上限的快照会保留最后有效事实并记录失败。对于 `deepseek-official` 请求，API 密钥从提供端点、图片与 Files 策略及空闲预算的同一快照按流调用解析。`built-in` 请求改用已挂载传输，因此不会解析本机提供方密钥；如果该传输不可用，此路由会失败，不会回退到成员端点。图片请求在请求时解析附件服务，因此加载顺序不会冻结图片可用性。
 
 ### 提供方专用请求字段
 

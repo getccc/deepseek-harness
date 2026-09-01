@@ -44,7 +44,12 @@ export async function buildModelCatalog(
       }))
       return {
         kind: 'group' as const,
-        group: { id: provider.id, name: provider.name, models: entries },
+        group: {
+          id: provider.id,
+          name: provider.name,
+          ...provider.category === undefined ? {} : { category: provider.category },
+          models: entries,
+        },
       }
     } catch (error) {
       return {

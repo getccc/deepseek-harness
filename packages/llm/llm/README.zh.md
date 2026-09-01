@@ -54,7 +54,7 @@ for await (const chunk of ctx.llm.stream({
 }
 ```
 
-挂载成功后，`ctx.llm.listProviders()` 会按注册顺序报告已注册路由。
+挂载成功后，`ctx.llm.listProviders()` 会按注册顺序报告已注册路由。适配器可以把路由标为 `category: 'built-in'`；目录客户端会本地化这项产品自有分组标题，路由仍使用 provider id。
 
 ### 你可以做什么
 

@@ -33,7 +33,7 @@ plugins:
 
 It injects `teamAccountClient`, so this computer must be bound before a company model call can leave it. A call made from an unbound computer fails with `not-bound`, which is a different thing to tell a member than `refused`: one is "connect this computer", the other is "ask an administrator".
 
-`listModels()` reads `/team/model/catalog` with the current device access token. The Control Plane evaluates `model.discover` over each active model resource before it returns the stable model ref and display name. `send()` uses the same current token for `/team/model/invoke`, where the gateway independently evaluates `model.invoke`, reserves quota, resolves the upstream endpoint and credential, and streams the provider response back.
+`listModels()` reads `/team/model/catalog` with the current device access token. The Control Plane evaluates `model.discover` over each active model resource before it returns the stable model ref and display name. The DeepSeek adapter exposes those entries on its separate `built-in` provider route, leaving a member's configured `deepseek-official` route direct. `send()` uses the same current token for `/team/model/invoke`, where the gateway independently evaluates `model.invoke`, reserves quota, resolves the upstream endpoint and credential, and streams the provider response back.
 
 -----
 

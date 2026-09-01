@@ -18,6 +18,7 @@ interface PatchRow {
   id?: string
   name?: string
   config?: Record<string, unknown>
+  inject?: string[]
   insert?: PatchRow[]
 }
 
@@ -74,8 +75,14 @@ describe('dsh-team bundle', () => {
   })
 
   it('opens a clean local login entry instead of a process-token URL', () => {
-    const runtime = patchRows().find(row => row.id === 'web-runtime')
+    const patch = patchRows()
+    const runtime = patch.find(row => row.id === 'web-runtime')
     expect(runtime?.config?.['entryPath']).toBe('/team/open')
+    expect(patch.find(row => row.id === 'agent-default-model')?.config).toEqual({
+      provider: 'built-in',
+      model: 'deepseek-v4-flash',
+    })
+    expect(patch.find(row => row.id === 'llm-deepseek')?.inject).toEqual(['llmHttpTransport'])
   })
 
   it('leaves the company and the version unnamed, so a Runner nobody configured does not bind', () => {

@@ -24,7 +24,7 @@ import type {
   LlmHttpTransport, TransportRequest, TransportResponse,
 } from '@deepseek-ai/dsh-llm-http-transport'
 import * as LlmDeepSeek from '@deepseek-ai/dsh-llm-deepseek'
-import { DeepSeekAdapter, resolveAdapterOptions } from '@deepseek-ai/dsh-llm-deepseek'
+import { BUILT_IN_PROVIDER, DeepSeekAdapter, resolveAdapterOptions } from '@deepseek-ai/dsh-llm-deepseek'
 import { httpErrorCode } from '../src/adapter.ts'
 import { resolveRequestImagePolicy } from '../src/request-pricing.ts'
 import { assemble } from './assemble.ts'
@@ -209,7 +209,7 @@ describe('DeepSeekAdapter against a mock server', () => {
     })
 
     await drain(adapter.stream({
-      provider: 'deepseek-official',
+      provider: BUILT_IN_PROVIDER,
       model: 'company-v4',
       messages: [],
       maxTokens: 512,
@@ -1711,6 +1711,33 @@ describe('plugin registration and config', () => {
     expect(ctx.llm.listConfigurableProviders()).toEqual([])
   })
 
+  it('keeps a member DeepSeek catalog beside the transport-owned built-in catalog', async () => {
+    const ctx = new Context()
+    await ctx.plugin(LlmRuntime)
+    ctx.provide('llmHttpTransport', {
+      listModels: () => Promise.resolve([{ id: 'testModel', name: 'testModel' }]),
+    } as unknown as LlmHttpTransport)
+    await ctx.plugin(LlmDeepSeek, { baseURL: 'http://127.0.0.1:1' })
+
+    expect(ctx.llm.listProviders()).toEqual([
+      { id: 'deepseek-official', name: 'DeepSeek' },
+      { id: 'built-in', name: 'Built-in Models', category: 'built-in' },
+    ])
+    await expect(ctx.llm.listModels('deepseek-official')).resolves.toHaveLength(3)
+    await expect(ctx.llm.listModels('built-in')).resolves.toEqual([{
+      provider: 'built-in',
+      id: 'testModel',
+      name: 'testModel',
+      inputModalities: ['text'],
+    }])
+    expect(ctx.llm.listConfigurableProviders()).toEqual([{
+      provider: 'deepseek-official',
+      displayName: 'DeepSeek',
+      settingsNs: 'llm-deepseek',
+      settingsPath: [],
+    }])
+  })
+
   it('registers retryPolicy from the provider config', async () => {
     const ctx = new Context()
     await ctx.plugin(LlmRuntime)
@@ -1897,7 +1924,7 @@ describe('plugin registration and config', () => {
     }])
   })
 
-  it('uses a transport-controlled model catalog instead of local defaults', async () => {
+  it('uses the transport-controlled catalog for the built-in provider route', async () => {
     const connection = resolveAdapterOptions({})
     const adapter = new DeepSeekAdapter({
       options: () => connection,
@@ -1909,12 +1936,31 @@ describe('plugin registration and config', () => {
       prepareExtensions: noExtensions,
     })
 
-    await expect(adapter.listModels('deepseek-official')).resolves.toEqual([{
-      provider: 'deepseek-official',
+    await expect(adapter.listModels(BUILT_IN_PROVIDER)).resolves.toEqual([{
+      provider: BUILT_IN_PROVIDER,
       id: 'company-v4',
       name: 'Company V4',
       inputModalities: ['text'],
     }])
+  })
+
+  it('does not fall the built-in route back to member DeepSeek when its transport is unavailable', async () => {
+    const resolveApiKey = vi.fn(() => Promise.resolve('member-key'))
+    const adapter = new DeepSeekAdapter({
+      options: () => resolveAdapterOptions({}),
+      transport: () => undefined,
+      resolveApiKey,
+      resolveUserId: () => TEST_USER_ID,
+      prepareExtensions: noExtensions,
+    })
+
+    await expect(adapter.listModels(BUILT_IN_PROVIDER)).rejects.toMatchObject({ code: 'TRANSPORT' })
+    await expect(drain(adapter.stream({
+      provider: BUILT_IN_PROVIDER,
+      model: 'company-v4',
+      messages: [],
+    }))).rejects.toMatchObject({ code: 'TRANSPORT' })
+    expect(resolveApiKey).not.toHaveBeenCalled()
   })
 
   it('advertises configured models without restricting arbitrary request ids', async () => {

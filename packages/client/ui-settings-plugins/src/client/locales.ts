@@ -15,6 +15,7 @@ export type PluginsSettingsLocaleKey =
   | 'subagentModelSelectionToggle' | 'subagentModelSelectionChoose' | 'subagentModelSelectionAllowed'
   | 'subagentModelSelectionLoading' | 'subagentModelSelectionLoadFailed' | 'subagentModelSelectionRetry'
   | 'subagentModelSelectionPartial' | 'subagentModelSelectionUnavailable'
+  | 'subagentModelSelectionBuiltInGroup'
   | 'subagentModelSelectionUnavailableGroup' | 'subagentModelSelectionEmpty'
   | 'subagentModelSelectionRequired' | 'subagentModelSelectionConflict' | 'subagentModelSelectionOff'
 
@@ -67,6 +68,7 @@ export const en: Record<PluginsSettingsLocaleKey, string> = {
   subagentModelSelectionRetry: 'Retry',
   subagentModelSelectionPartial: 'Some model providers could not be loaded; saved choices remain removable.',
   subagentModelSelectionUnavailable: 'Currently unavailable',
+  subagentModelSelectionBuiltInGroup: 'Built-in Models',
   subagentModelSelectionUnavailableGroup: 'Saved but currently unavailable',
   subagentModelSelectionEmpty: 'No model provider currently advertises a model.',
   subagentModelSelectionRequired: 'Select at least one model before saving.',
@@ -123,6 +125,7 @@ export const zh: Record<PluginsSettingsLocaleKey, string> = {
   subagentModelSelectionRetry: '重试',
   subagentModelSelectionPartial: '部分模型提供方暂时无法加载；已保存的选择仍可移除。',
   subagentModelSelectionUnavailable: '当前不可用',
+  subagentModelSelectionBuiltInGroup: '内置模型',
   subagentModelSelectionUnavailableGroup: '已保存但当前不可用',
   subagentModelSelectionEmpty: '当前没有模型提供方公布模型。',
   subagentModelSelectionRequired: '保存前请至少选择一个模型。',

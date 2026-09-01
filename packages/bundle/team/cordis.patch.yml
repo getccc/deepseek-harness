@@ -40,6 +40,19 @@
     surfaceContext: true
     trustedHosts: !!js ctx.webStartup.trustedHosts
 
+# Company models use a distinct provider route from a member's own DeepSeek
+# configuration. The model ref remains the deployment default, while the Team
+# transport supplies its catalog and invocation path.
+- id: agent-default-model
+  config:
+    provider: built-in
+    model: deepseek-v4-flash
+
+# The base adapter keeps its direct DeepSeek route and adds the company route
+# only after the Team transport is mounted.
+- id: llm-deepseek
+  inject: [llmHttpTransport]
+
 # ── the team account this computer holds ───────────────────────────────────
 
 # `controlPlaneUrl` and `runnerVersion` are deliberately absent, and the row

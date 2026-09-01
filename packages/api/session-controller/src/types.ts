@@ -125,6 +125,8 @@ export interface ModelCatalogModel {
 export interface ModelProviderGroup {
   readonly id: string
   readonly name: string
+  /** Product-owned provider category; clients localize its heading when present. */
+  readonly category?: 'built-in'
   readonly models: readonly ModelCatalogModel[]
 }
 

@@ -33,7 +33,7 @@ plugins:
 
 它注入 `teamAccountClient`，因此这台电脑必须先完成绑定，公司模型调用才能离开它。从未绑定电脑发起的调用以 `not-bound` 失败，而这与 `refused` 对成员是两件不同的事：一个是"连接这台电脑"，另一个是"去问管理员"。
 
-`listModels()` 使用当前设备访问 token 读取 `/team/model/catalog`。Control Plane 会先在每个活跃模型资源上评估 `model.discover`，再返回稳定模型引用与显示名。`send()` 使用同一份当前 token 调用 `/team/model/invoke`，网关会在那里独立评估 `model.invoke`、预留配额、解析上游端点与凭据，并把提供方响应流式传回。
+`listModels()` 使用当前设备访问 token 读取 `/team/model/catalog`。Control Plane 会先在每个活跃模型资源上评估 `model.discover`，再返回稳定模型引用与显示名。DeepSeek 适配器在独立的 `built-in` 提供方路由上公开这些条目，让成员配置的 `deepseek-official` 路由继续直连。`send()` 使用同一份当前 token 调用 `/team/model/invoke`，网关会在那里独立评估 `model.invoke`、预留配额、解析上游端点与凭据，并把提供方响应流式传回。
 
 -----
 

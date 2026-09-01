@@ -448,6 +448,8 @@ interface LlmProviderInfo {
   id: string
   /** Human-readable provider name for selectors and diagnostics. */
   name: string
+  /** Product-owned provider category; absent routes render their adapter-owned name. */
+  category?: 'built-in'
 }
 ```
 

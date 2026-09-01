@@ -47,6 +47,9 @@ import { parseSse } from './sse.ts'
 import { translate } from './translate.ts'
 import type { WireError, WireRequest } from './types.ts'
 
+/** Provider route reserved for models supplied by a deployment transport. */
+export const BUILT_IN_PROVIDER = 'built-in'
+
 /** One optional model entry advertised by the direct-fetch adapter. */
 export interface DeepSeekCatalogModel {
   /** Wire model id accepted by the configured endpoint. */
@@ -117,8 +120,8 @@ export interface DeepSeekConnectionOptions {
 export interface DeepSeekAdapterOptions {
   /** Current validated connection facts; called once per operation. */
   options: () => DeepSeekConnectionOptions
-  /** Remote HTTP transport for a deployment that owns discovery and invocation. */
-  transport?: () => LlmHttpTransport | undefined
+  /** Resolve the remote HTTP transport for a deployment-owned provider route. */
+  transport?: (provider: string) => LlmHttpTransport | undefined
   /**
    * Resolve the bearer token for the connection facts of one request. The
    * snapshot is passed in — never re-read — so the key can only ever come
@@ -363,7 +366,9 @@ export class DeepSeekAdapter extends LlmAdapter {
   }
 
   override providerInfo(provider: string): LlmProviderInfo {
-    return { id: provider, name: 'DeepSeek' }
+    return provider === BUILT_IN_PROVIDER
+      ? { id: provider, name: 'Built-in Models', category: 'built-in' }
+      : { id: provider, name: 'DeepSeek' }
   }
 
   override providerRetryPolicy(_provider: string): ResolvedRetryPolicy {
@@ -386,9 +391,17 @@ export class DeepSeekAdapter extends LlmAdapter {
     return this.listConfiguredModels(provider)
   }
 
-  /** Resolve a transport-owned catalog when present, otherwise use local configuration. */
+  private transportFor(provider: string): LlmHttpTransport | undefined {
+    const transport = this.config.transport?.(provider)
+    if (provider === BUILT_IN_PROVIDER && transport === undefined) {
+      throw new LlmError('The built-in model transport is unavailable.', 'TRANSPORT')
+    }
+    return transport
+  }
+
+  /** Resolve the provider-owned catalog without crossing provider routes. */
   private async listConfiguredModels(provider: string): Promise<readonly LlmModelInfo[]> {
-    const remote = await this.config.transport?.()?.listModels()
+    const remote = await this.transportFor(provider)?.listModels()
     return (remote ?? this.config.options().models).map(model => modelInfo(provider, model))
   }
 
@@ -461,7 +474,7 @@ export class DeepSeekAdapter extends LlmAdapter {
     // The key resolves *from this snapshot*, so an endpoint and the secret
     // sent to it can never come from different configuration generations.
     const hasImages = options.messages.some(message => contentHasImage(message.content))
-    const transport = this.config.transport?.()
+    const transport = this.transportFor(options.provider)
     if (hasImages && transport !== undefined) {
       throw new LlmError(
         'The Team model transport does not carry DeepSeek Files API image references.',

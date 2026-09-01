@@ -26,6 +26,7 @@ export function SubagentModelSelectionCard(props: SubagentModelSelectionCardProp
   const state = props.useSubagentModelSelectionCard(snapshot => snapshot)
   const availableGroups = new Map<string, {
     providerName: string
+    providerCategory?: SubagentModelCandidate['providerCategory']
     candidates: SubagentModelCandidate[]
   }>()
   const unavailable: SubagentModelCandidate[] = []
@@ -38,12 +39,21 @@ export function SubagentModelSelectionCard(props: SubagentModelSelectionCardProp
     if (group === undefined) {
       availableGroups.set(candidate.provider, {
         providerName: candidate.providerName,
+        ...candidate.providerCategory === undefined
+          ? {}
+          : { providerCategory: candidate.providerCategory },
         candidates: [candidate],
       })
     } else {
       group.candidates.push(candidate)
     }
   }
+  const providerName = (
+    category: SubagentModelCandidate['providerCategory'],
+    name: string,
+  ) => category === 'built-in'
+    ? t('subagentModelSelectionBuiltInGroup')
+    : name
   const renderCandidate = (candidate: SubagentModelCandidate) => (
     <label key={candidate.key} className={css.model}>
       <input
@@ -54,7 +64,9 @@ export function SubagentModelSelectionCard(props: SubagentModelSelectionCardProp
       />
       <span>
         <span className={css.modelName}>{candidate.modelName}</span>
-        <span className={css.route}>{`${candidate.providerName} · ${candidate.provider}/${candidate.model}`}</span>
+        <span className={css.route}>
+          {`${providerName(candidate.providerCategory, candidate.providerName)} · ${candidate.provider}/${candidate.model}`}
+        </span>
       </span>
       {!candidate.available
         ? <span className={css.unavailable}>{t('subagentModelSelectionUnavailable')}</span>
@@ -114,7 +126,9 @@ export function SubagentModelSelectionCard(props: SubagentModelSelectionCardProp
                   <legend>{t('subagentModelSelectionAllowed')}</legend>
                   {[...availableGroups].map(([provider, group]) => (
                     <div key={provider} className={css.modelGroup}>
-                      <div className={css.providerName}>{group.providerName}</div>
+                      <div className={css.providerName}>
+                        {providerName(group.providerCategory, group.providerName)}
+                      </div>
                       {group.candidates.map(renderCandidate)}
                     </div>
                   ))}

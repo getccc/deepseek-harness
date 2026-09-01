@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`@deepseek-ai/dsh-llm-deepseek` is the DeepSeek chat-completions adapter for the harness LLM service: it owns the `deepseek-official` provider route and translates DeepSeek's wire format into the harness stream-chunk protocol. Without an LLM HTTP transport it calls the configured provider directly. With one mounted, model discovery and chat invocation use that transport instead, which is how the Team Runner keeps the company endpoint, credential, and model authorization on the Control Plane. It is one of two structurally different adapters for DeepSeek: the pi-ai twin serves its own route names through a library and additional providers, and both can be mounted side by side.
+`@deepseek-ai/dsh-llm-deepseek` is the DeepSeek chat-completions adapter for the harness LLM service: it owns the member-configured `deepseek-official` provider route and translates DeepSeek's wire format into the harness stream-chunk protocol. Without an LLM HTTP transport it calls the configured provider directly. With one mounted, it also owns a `built-in` route whose model discovery and chat invocation use that transport, which is how the Team Runner keeps the company endpoint, credential, and model authorization on the Control Plane without replacing the member's DeepSeek route. It is one of two structurally different adapters for DeepSeek: the pi-ai twin serves its own route names through a library and additional providers, and both can be mounted side by side.
 
 ## Table of Contents
 
@@ -48,7 +48,7 @@ Choose this adapter when the deployment targets DeepSeek's official API, optiona
 
 A request selects the route with `provider: deepseek-official`; the model id passes through to the wire, so new DeepSeek models need no re-registration. Omitted `models` advertises `deepseek-v4-flash` as the fast, economical choice for focused work, `deepseek-v4-pro` as the stronger, higher-cost choice for complex or quality-critical work, and the image-capable `deepseek-v4-flash-vision-exp`; each has a 1,000,000-token context window. An explicit list replaces those defaults, and unlisted model ids still pass through as text-only routes. Clients, including model discovery tools, can read the advisory entries through `ctx.llm.listModels('deepseek-official')`. Image-capable entries may set `imagePixelBudget` to a positive integer or `low`, and may set `imageMaxBytes`.
 
-When `ctx.llmHttpTransport` is present, its `listModels()` replaces that local advisory list and each serialized chat request goes through its `send()` method. The adapter does not resolve the configured provider key in that mode. A Team transport supplies the role-filtered catalog and routes invocation through the Control Plane gateway under the Runner's current device access token.
+When `ctx.llmHttpTransport` is present, its `listModels()` supplies the `built-in` route and each serialized request selected through that route goes through its `send()` method. The `deepseek-official` route keeps its local advisory list and configured API key. A Team transport supplies the role-filtered built-in catalog and routes those invocations through the Control Plane gateway under the Runner's current device access token.
 
 | Field | Default | Meaning |
 |---|---|---|
@@ -86,7 +86,7 @@ Files mode bounds retained request versions by `maxRequestFilesBytes` and `maxIm
 
 ### Dynamic configuration
 
-Connection facts are re-read once per operation through the optional settings and credentials seams. A `llm-deepseek:` section in the user settings document overrides any field without a restart; a snapshot that fails a beyond-schema bound keeps the last good facts and logs the failure. For a direct request, the API key resolves per stream call from the same snapshot that supplies the endpoint, image and Files policies, and idle budget. A mounted transport owns the catalog and trip instead, so no local provider key is resolved. Image requests resolve the attachment service at request time, so load order does not freeze image availability.
+Connection facts are re-read once per operation through the optional settings and credentials seams. A `llm-deepseek:` section in the user settings document overrides any field without a restart; a snapshot that fails a beyond-schema bound keeps the last good facts and logs the failure. For a `deepseek-official` request, the API key resolves per stream call from the same snapshot that supplies the endpoint, image and Files policies, and idle budget. A `built-in` request uses the mounted transport instead, so it resolves no local provider key; if that transport is unavailable, the route fails instead of falling back to the member endpoint. Image requests resolve the attachment service at request time, so load order does not freeze image availability.
 
 ### Provider-specific request fields
 

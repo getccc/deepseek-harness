@@ -54,7 +54,7 @@ for await (const chunk of ctx.llm.stream({
 }
 ```
 
-After a successful mount, `ctx.llm.listProviders()` reports the registered routes in registration order.
+After a successful mount, `ctx.llm.listProviders()` reports the registered routes in registration order. An adapter may mark a route as `category: 'built-in'`; catalog clients localize that product-owned heading while routing continues to use the provider id.
 
 ### What you can do
 

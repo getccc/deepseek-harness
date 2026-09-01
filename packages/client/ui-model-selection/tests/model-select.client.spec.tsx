@@ -53,6 +53,37 @@ function state(overrides: Partial<ModelDirectoryState> = {}): ModelDirectoryStat
 afterEach(cleanup)
 
 describe('ModelSelect reasoning effort', () => {
+  it('shows transport-owned models under a localized built-in heading without hiding DeepSeek models', () => {
+    const directory = createSnapshotStore<ModelDirectoryState>(state({
+      groups: [
+        {
+          id: 'deepseek-official',
+          name: 'DeepSeek',
+          models: [{ id: 'deepseek-v4-flash', name: 'DeepSeek-V4-Flash', reasoning }],
+        },
+        {
+          id: 'built-in',
+          name: 'Built-in Models',
+          category: 'built-in',
+          models: [{ id: 'testModel', name: 'testModel' }],
+        },
+      ],
+    }))
+    render(<ModelSelect
+      locked={false}
+      available
+      directory={directory}
+      load={vi.fn()}
+      select={vi.fn().mockResolvedValue(true)}
+      t={t}
+    />)
+
+    fireEvent.click(screen.getByRole('button', { name: /选择模型，当前 DeepSeek-V4-Flash/ }))
+    fireEvent.click(screen.getByRole('menuitem', { name: /模型/ }))
+    expect(screen.getByRole('group', { name: 'DeepSeek' }).textContent).toContain('DeepSeek-V4-Flash')
+    expect(screen.getByRole('group', { name: '内置模型' }).textContent).toContain('testModel')
+  })
+
   it('renders effort names without descriptions and submits the effort as part of the session selection', async () => {
     const directory = createSnapshotStore<ModelDirectoryState>(state())
     const select = vi.fn(async (selection: ModelSelection) => {

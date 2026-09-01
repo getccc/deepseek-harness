@@ -22,7 +22,7 @@ import type { CardFieldState, CardShell } from '../src/client/card-form.ts'
 import type { ConfigurablePluginsTabState } from '../src/client/tab-store.ts'
 import type { WebSearchCardState } from '../src/client/web-search-card-controller.ts'
 import type { SubagentModelSelectionCardState } from '../src/client/subagent-model-selection-card-controller.ts'
-import { en } from '../src/client/locales.ts'
+import { en, zh } from '../src/client/locales.ts'
 
 afterEach(cleanup)
 
@@ -86,7 +86,10 @@ function renderBash(state: Partial<BashCardState> = {}) {
   return renderBashCard(state).actions
 }
 
-function renderSubagentModelSelection(state: Partial<SubagentModelSelectionCardState> = {}) {
+function renderSubagentModelSelection(
+  state: Partial<SubagentModelSelectionCardState> = {},
+  locale: typeof en = en,
+) {
   const store = createSnapshotStore<SubagentModelSelectionCardState>({
     ...settled,
     enabled: false,
@@ -105,7 +108,7 @@ function renderSubagentModelSelection(state: Partial<SubagentModelSelectionCardS
   }
   const props = {
     ...actions,
-    t,
+    t: (key: keyof typeof en) => locale[key],
     useSubagentModelSelectionCard: bindSnapshotSelector(store),
   } as unknown as SubagentModelSelectionCardProps
   render(<SubagentModelSelectionCard {...props} />)
@@ -396,6 +399,28 @@ describe('SubagentModelSelectionCard', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /Deep/ }))
     expect(actions.toggleModel).toHaveBeenCalledWith('alpha\0fast')
     expect(actions.toggleModel).toHaveBeenCalledWith('alpha\0deep')
+  })
+
+  it('localizes the built-in provider group and route in Chinese', () => {
+    renderSubagentModelSelection({
+      enabled: true,
+      candidates: [{
+        key: 'built-in\0testModel',
+        provider: 'built-in',
+        model: 'testModel',
+        providerName: 'Built-in Models',
+        providerCategory: 'built-in',
+        modelName: 'testModel',
+        available: true,
+        selected: true,
+      }],
+      catalogStatus: 'ready',
+    }, zh)
+    fireEvent.click(screen.getByText(zh.subagentModelSelectionTitle))
+
+    expect(screen.getByText('内置模型', { exact: true })).toBeTruthy()
+    expect(screen.getByText('内置模型 · built-in/testModel')).toBeTruthy()
+    expect(screen.queryByText('Built-in Models', { exact: true })).toBeNull()
   })
 
   it('renders directory progress, failures, unavailable routes, and validation', () => {

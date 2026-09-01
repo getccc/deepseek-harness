@@ -31,6 +31,8 @@ export interface SubagentModelCandidate extends AllowedSubagentModel {
   key: string
   /** Adapter-owned provider display name. */
   providerName: string
+  /** Product-owned provider category; presentation clients localize it. */
+  providerCategory?: ModelProviderGroup['category']
   /** Adapter-owned model display name. */
   modelName: string
   /** Whether the current adapter catalog advertises this exact route. */
@@ -101,6 +103,7 @@ export function subagentModelCandidates(
       ...route,
       key,
       providerName: group.name,
+      ...group.category === undefined ? {} : { providerCategory: group.category },
       modelName: model.name,
       available: true,
       selected: selected.has(key),
