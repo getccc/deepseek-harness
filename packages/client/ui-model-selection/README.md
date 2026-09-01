@@ -29,7 +29,7 @@ Mount this plugin alongside `ui-conversation` and the commands package; the comp
 
 ### Model and effort
 
-Models stay grouped by provider. A group categorized as `built-in` uses the locale-owned `Built-in Models` heading, while ordinary groups use their adapter-owned names; provider ids still own selection and persistence. The menu shows model and effort names only; catalog descriptions remain available to other consumers. The `/model` popup applies the selected model's default effort; the composer can then choose any advertised effort. An adapter without reasoning metadata leaves the Effort row absent; there is no arbitrary effort input.
+Models stay grouped by provider. The canonical `built-in` provider route uses the locale-owned `Built-in Models` heading even when optional category metadata is absent; other groups categorized as `built-in` use the same copy, while ordinary groups use their adapter-owned names. Provider ids still own selection and persistence. The menu shows model and effort names only; catalog descriptions remain available to other consumers. The `/model` popup applies the selected model's default effort; the composer can then choose any advertised effort. An adapter without reasoning metadata leaves the Effort row absent; there is no arbitrary effort input.
 
 ### Unroutable sessions
 

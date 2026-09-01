@@ -52,6 +52,10 @@ const GROUPS = [{
       },
     },
   ],
+}, {
+  id: 'built-in',
+  name: 'Built-in Models',
+  models: [{ id: 'testModel', name: 'testModel' }],
 }]
 
 /** Boot the plugin over fake faces + a stateful fake host (current moves on selectModel). */
@@ -183,9 +187,11 @@ describe('ui-model-selection dual entry', () => {
     const b = await bench()
     b.mint('s1')
     const options = await b.contribution().ui.options(projection('s1'), new AbortController().signal)
-    expect(options.map((o: SelectOption) => o.label)).toEqual(['DeepSeek-V4-Flash', 'DeepSeek-V4-Pro'])
+    expect(options.map((o: SelectOption) => o.label))
+      .toEqual(['DeepSeek-V4-Flash', 'DeepSeek-V4-Pro', 'testModel'])
     expect(options[0]).toMatchObject({ active: true, detail: 'DeepSeek' })
     expect(options[1]?.active).toBeUndefined()
+    expect(options[2]).toMatchObject({ detail: '内置模型' })
   })
 
   it('a seat selection is the current the popup marks active next — one shared state', async () => {

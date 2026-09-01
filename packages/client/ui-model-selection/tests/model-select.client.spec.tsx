@@ -64,7 +64,6 @@ describe('ModelSelect reasoning effort', () => {
         {
           id: 'built-in',
           name: 'Built-in Models',
-          category: 'built-in',
           models: [{ id: 'testModel', name: 'testModel' }],
         },
       ],

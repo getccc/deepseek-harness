@@ -27,6 +27,7 @@ import { ModelDirectoryResolver } from './service.ts'
 import type { ModelSelectInjected } from './slots.ts'
 import { ModelSelect } from './ModelSelect.tsx'
 import { en, zh, type ModelKey } from './locales.ts'
+import { modelProviderName } from './provider-name.ts'
 
 export { ModelDirectory } from './directory.ts'
 export type { ModelDirectoryState } from './directory.ts'
@@ -50,7 +51,7 @@ function rowId(providerId: string, modelId: string): string {
 function optionsOf(directory: ModelDirectoryState, t: TranslateNS<'model'>): SelectOption[] {
   const rows: SelectOption[] = []
   for (const group of directory.groups) {
-    const groupName = group.category === 'built-in' ? t('group.builtIn') : group.name
+    const groupName = modelProviderName(group, t)
     for (const model of group.models) {
       rows.push({
         id: rowId(group.id, model.id),

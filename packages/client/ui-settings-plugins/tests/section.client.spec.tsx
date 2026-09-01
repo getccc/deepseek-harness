@@ -409,7 +409,6 @@ describe('SubagentModelSelectionCard', () => {
         provider: 'built-in',
         model: 'testModel',
         providerName: 'Built-in Models',
-        providerCategory: 'built-in',
         modelName: 'testModel',
         available: true,
         selected: true,

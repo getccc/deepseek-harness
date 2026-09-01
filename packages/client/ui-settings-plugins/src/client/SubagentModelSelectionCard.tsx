@@ -49,9 +49,10 @@ export function SubagentModelSelectionCard(props: SubagentModelSelectionCardProp
     }
   }
   const providerName = (
+    provider: string,
     category: SubagentModelCandidate['providerCategory'],
     name: string,
-  ) => category === 'built-in'
+  ) => provider === 'built-in' || category === 'built-in'
     ? t('subagentModelSelectionBuiltInGroup')
     : name
   const renderCandidate = (candidate: SubagentModelCandidate) => (
@@ -65,7 +66,7 @@ export function SubagentModelSelectionCard(props: SubagentModelSelectionCardProp
       <span>
         <span className={css.modelName}>{candidate.modelName}</span>
         <span className={css.route}>
-          {`${providerName(candidate.providerCategory, candidate.providerName)} · ${candidate.provider}/${candidate.model}`}
+          {`${providerName(candidate.provider, candidate.providerCategory, candidate.providerName)} · ${candidate.provider}/${candidate.model}`}
         </span>
       </span>
       {!candidate.available
@@ -127,7 +128,7 @@ export function SubagentModelSelectionCard(props: SubagentModelSelectionCardProp
                   {[...availableGroups].map(([provider, group]) => (
                     <div key={provider} className={css.modelGroup}>
                       <div className={css.providerName}>
-                        {providerName(group.providerCategory, group.providerName)}
+                        {providerName(provider, group.providerCategory, group.providerName)}
                       </div>
                       {group.candidates.map(renderCandidate)}
                     </div>
