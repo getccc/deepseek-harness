@@ -22,13 +22,15 @@ The `knowledge/` group gives the harness private company knowledge — an author
 <a id="packages"></a>
 ## Packages
 
-Three packages play the knowledge roles; the subsystem reference owns the exhaustive vocabulary and contracts.
+Five packages play the knowledge roles; the subsystem reference owns the exhaustive vocabulary and contracts.
 
 | Package | Role | ctx key |
 |---|---|---|
 | [`knowledge/`](knowledge/README.md) | Knowledge service: the authorized directory, passage search, the stable reference, and the Session scope | `ctx.knowledge` |
 | [`knowledge-source/`](knowledge-source/README.md) | Upstream source seam: listing a source and searching an already-authorized set of its knowledge bases | `ctx.knowledgeSource` |
 | [`knowledge-weknora/`](knowledge-weknora/README.md) | Speaks WeKnora's two fixed endpoints, holding the credential in the Control Plane | registers on `ctx.knowledgeSource` |
+| [`knowledge-gateway/`](knowledge-gateway/README.md) | Governed gateway seam: the durable catalog, and the authorized directory and search | `ctx.knowledgeGateway` |
+| [`knowledge-gateway-sqlite/`](knowledge-gateway-sqlite/README.md) | Durable catalog over SQLite, with synchronization, per-resource authorization, and audit | registers on `ctx.knowledgeGateway` |
 
 -----
 

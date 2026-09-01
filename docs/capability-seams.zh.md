@@ -223,6 +223,9 @@ flowchart LR
   pkg_tool_jobs["tool-jobs"]
   pkg_knowledge["knowledge"]
   svc_knowledge["ctx.knowledge<br/>Private knowledge seam"]
+  pkg_knowledge_gateway["knowledge-gateway"]
+  svc_knowledgeGateway["ctx.knowledgeGateway<br/>Governed knowledge gateway"]
+  pkg_knowledge_gateway_sqlite["knowledge-gateway-sqlite"]
   pkg_knowledge_source["knowledge-source"]
   svc_knowledgeSource["ctx.knowledgeSource<br/>Upstream knowledge source seam"]
   pkg_knowledge_weknora["knowledge-weknora"]
@@ -316,6 +319,8 @@ flowchart LR
   pkg_jobs --> svc_jobs
   pkg_jobs_local --> svc_jobs
   pkg_knowledge --> svc_knowledge
+  pkg_knowledge_gateway --> svc_knowledgeGateway
+  pkg_knowledge_gateway_sqlite --> svc_knowledgeGateway
   pkg_knowledge_source --> svc_knowledgeSource
   pkg_knowledge_weknora --> svc_knowledgeSource
   pkg_llm --> svc_llm
@@ -618,6 +623,7 @@ flowchart LR
 | `ctx.inspector` | `core` | `inspector` | - | - | - | 负责 Worker 托管的 CDP target，以及独立于传输的 Host 和 Client observation 与 Cordis tree query API。 |
 | `ctx.jobs` | `seam` | [`jobs`](../packages/jobs/jobs) | [`jobs-local`](../packages/jobs/jobs-local) | [`tool-bash`](../packages/shell/tool-bash), [`tool-terminal`](../packages/terminal/tool-terminal), [`tool-subagent`](../packages/subagent/tool-subagent), [`tool-jobs`](../packages/jobs/tool-jobs) | - | 生产方（后台 bash、PTY 发送和 subagent 委派）登记正在运行的工作；tool-jobs 是面向模型的控制器，用于读取、列出和终止这些工作；jobs-local 是进程本地注册表。 |
 | `ctx.knowledge` | `seam` | [`knowledge`](../packages/knowledge/knowledge) | - | - | - | 受治理部署所授权的目录与段落检索操作；其 Team 提供方和面向模型的工具随 Control Plane 知识能力一起到来。 |
+| `ctx.knowledgeGateway` | `seam` | [`knowledge-gateway`](../packages/knowledge/knowledge-gateway) | [`knowledge-gateway-sqlite`](../packages/knowledge/knowledge-gateway-sqlite) | - | - | 站在成员 Runner 与知识源之间：管理员通过它维护持久化目录，每一次面向成员的目录读取与检索都由它逐知识库做授权判定。 |
 | `ctx.knowledgeSource` | `seam` | [`knowledge-source`](../packages/knowledge/knowledge-source) | [`knowledge-weknora`](../packages/knowledge/knowledge-weknora) | - | - | Control Plane 的那一半：提供方说某个知识产品的协议并持有其凭据，而它前面的受治理网关判定谁可以检索什么。 |
 | `ctx.web` | `seam` | [`web`](../packages/web/web) | [`web-search-exa`](../packages/web/web-search-exa), [`web-search-perplexity`](../packages/web/web-search-perplexity), [`web-search-deepseek`](../packages/web/web-search-deepseek), [`web-fetch-http`](../packages/web/web-fetch-http) | [`tool-web`](../packages/web/tool-web) | - | 搜索和抓取提供方注册到同一个 ctx.web seam；tool-web 负责稳定的面向模型名称。 |
 | `ctx.spillStore` | `seam` | [`spill`](../packages/spill/spill) | [`spill-local`](../packages/spill/spill-local) | [`spill-policy`](../packages/spill/spill-policy) | - | 后端保存过大的工具文本，并返回面向模型的定位信息和取回提示；spill-policy 是 tools/post-execute 消费方，负责决定何时 spill。 |

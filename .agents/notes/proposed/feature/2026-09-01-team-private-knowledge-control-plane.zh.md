@@ -101,6 +101,7 @@ WAN、DNS、TLS、代理或远程 Control Plane 不可用时，本地会话和�
 | `packages/knowledge/knowledge` | 浏览器安全的 Service Definition，以及目录、搜索和会话范围使用的 DSH 品牌化引用类型 |
 | `packages/knowledge/knowledge-source` | 仅 Control Plane 的上游接缝：列出数据源、检索其中一个已授权知识库集合，使用上游 id |
 | `packages/knowledge/knowledge-weknora` | Control Plane Service Provider，负责固定的 WeKnora 列表与搜索端点；每次操作解析凭据 |
+| `packages/knowledge/knowledge-gateway` | 受治理网关接缝：管理员维护的持久化目录，以及 Runner 访问的已授权目录与检索 |
 | `packages/knowledge/knowledge-gateway-sqlite` | 持久化目录和受治理操作 Service Provider；同步受治理资源、判定访问并记录审计事件 |
 | `packages/knowledge/knowledge-gateway-http` | 基于 Bearer Token 的面向 Runner HTTP 适配器；拥有知识 `protocolVersion` 并验证每个解码后的请求和响应 |
 | `packages/knowledge/knowledge-team` | Runner 侧 `ctx.knowledge` Service Provider；每次操作读取当前 `teamAccountClient` Token 并调用其配置的 Control Plane |

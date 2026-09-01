@@ -1065,6 +1065,24 @@ export interface Config {
 
 来源：[`packages/jobs/jobs-local/src/index.ts:31`](../packages/jobs/jobs-local/src/index.ts)
 
+<a id="deepseek-aidsh-knowledge-gateway-sqlite"></a>
+
+## `@deepseek-ai/dsh-knowledge-gateway-sqlite`
+
+需要：`accessControl` · `audit` · `knowledgeSource`
+
+```ts config-catalog
+/** Plugin config: where the catalog lives, and what one search may return. */
+export interface Config {
+  /** Path to the catalog database. */
+  path: string
+  /** The most passages one search returns when a caller names no bound. */
+  defaultMaxResults?: number
+}
+```
+
+Source: [`packages/knowledge/knowledge-gateway-sqlite/src/index.ts:49`](../packages/knowledge/knowledge-gateway-sqlite/src/index.ts)
+
 <a id="deepseek-aidsh-knowledge-weknora"></a>
 
 ## `@deepseek-ai/dsh-knowledge-weknora`
@@ -3888,6 +3906,7 @@ export interface Config {
 - `@deepseek-ai/dsh-home-paths`（[`packages/util/home-paths/src/index.ts`](../packages/util/home-paths/src/index.ts)）
 - `@deepseek-ai/dsh-hook-protocol`（[`packages/hooks/hook-protocol/src/index.ts`](../packages/hooks/hook-protocol/src/index.ts)）
 - `@deepseek-ai/dsh-knowledge`（[`packages/knowledge/knowledge/src/index.ts`](../packages/knowledge/knowledge/src/index.ts)）
+- `@deepseek-ai/dsh-knowledge-gateway`（[`packages/knowledge/knowledge-gateway/src/index.ts`](../packages/knowledge/knowledge-gateway/src/index.ts)）
 - `@deepseek-ai/dsh-knowledge-source`（[`packages/knowledge/knowledge-source/src/index.ts`](../packages/knowledge/knowledge-source/src/index.ts)）
 - `@deepseek-ai/dsh-launch-environment`（[`packages/util/launch-environment/src/index.ts`](../packages/util/launch-environment/src/index.ts)）
 - `@deepseek-ai/dsh-llm-http-transport`（[`packages/llm/llm-http-transport/src/index.ts`](../packages/llm/llm-http-transport/src/index.ts)）

@@ -113,6 +113,71 @@ abstract search(request: KnowledgeSearchRequest): Promise<KnowledgeSearchResult>
 
 Source: [`packages/knowledge/knowledge/src/index.ts`](../../packages/knowledge/knowledge/src/index.ts)
 
+<a id="ctxknowledgegateway--knowledgegateway-abstract-seam"></a>
+
+### `ctx.knowledgeGateway` — `KnowledgeGateway` (abstract seam)
+
+The governed catalog and the decision in front of it. A provider mounts this service; consumers inject `knowledgeGateway`.
+
+Administration methods take an organization because an administrator has already been authorized by the route that called them. Member-facing methods take a principal because they authorize it themselves, per knowledge base, on every call.
+
+```ts cordis-catalog
+/**
+ * Reconcile the durable catalog against one successful full listing.
+ *
+ * Serialized: concurrent callers join the operation already in flight rather
+ * than racing two reconciliations over the same rows. A source that does not
+ * answer leaves the last successful snapshot in place and records the
+ * failure, because one failed listing must not disable every knowledge base
+ * an organization governs.
+ * @param orgId - the organization whose catalog is reconciled.
+ * @returns the catalog as it stands after the attempt, successful or not.
+ */
+abstract sync(orgId: OrgId): Promise<KnowledgeCatalogView>
+
+/**
+ * Read the durable catalog without contacting the source.
+ * @param orgId - the organization to read.
+ * @returns every governed entry and the source's health.
+ */
+abstract catalogView(orgId: OrgId): Promise<KnowledgeCatalogView>
+
+/**
+ * Switch one entry on or off for the whole organization.
+ *
+ * Synchronization never overrides this choice: an administrator who disabled
+ * a knowledge base finds it still disabled after the next listing.
+ * @param orgId - the organization the entry belongs to.
+ * @param ref - the entry to change.
+ * @param enabled - whether it may be searched at all.
+ * @throws {KnowledgeError} `not-allowed` when the catalog holds no such entry.
+ */
+abstract setEnabled(orgId: OrgId, ref: KnowledgeRef, enabled: boolean): Promise<void>
+
+/**
+ * The knowledge bases this principal may search right now.
+ * @param principal - who is asking, from a verified token.
+ * @returns the authorized directory, empty when the principal holds nothing.
+ */
+abstract directory(principal: KnowledgePrincipal): Promise<readonly KnowledgeBaseEntry[]>
+
+/**
+ * Authorize one search and perform it.
+ *
+ * Every knowledge base the scope resolves to is evaluated before the source
+ * is called, and one refusal fails the whole request: a partial result is
+ * indistinguishable from a complete one to the model that reads it.
+ * @param request - who is asking, the scope, the query, and the caller's bounds.
+ * @returns the passages, with the knowledge bases actually searched.
+ * @throws {KnowledgeError} with the reason the operation was refused or failed.
+ */
+abstract search(request: GovernedSearchRequest): Promise<KnowledgeSearchResult>
+```
+
+Types: [OrgId](account.zh.md)
+
+Source: [`packages/knowledge/knowledge-gateway/src/index.ts`](../../packages/knowledge/knowledge-gateway/src/index.ts)
+
 <a id="ctxknowledgesource--knowledgesource-abstract-seam"></a>
 
 ### `ctx.knowledgeSource` — `KnowledgeSource` (abstract seam)

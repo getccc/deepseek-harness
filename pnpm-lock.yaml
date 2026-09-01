@@ -6565,6 +6565,64 @@ importers:
         specifier: workspace:^
         version: link:../../core/session
 
+  packages/knowledge/knowledge-gateway:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:^
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:^
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+      '@deepseek-ai/dsh-knowledge':
+        specifier: workspace:^
+        version: link:../knowledge
+
+  packages/knowledge/knowledge-gateway-sqlite:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:^
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-access-control-sqlite':
+        specifier: workspace:^
+        version: link:../../access/access-control-sqlite
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:^
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:^
+        version: link:../../account/account-store-sqlite
+      '@deepseek-ai/dsh-audit':
+        specifier: workspace:^
+        version: link:../../access/audit
+      '@deepseek-ai/dsh-audit-sqlite':
+        specifier: workspace:^
+        version: link:../../access/audit-sqlite
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+      '@deepseek-ai/dsh-knowledge':
+        specifier: workspace:^
+        version: link:../knowledge
+      '@deepseek-ai/dsh-knowledge-gateway':
+        specifier: workspace:^
+        version: link:../knowledge-gateway
+      '@deepseek-ai/dsh-knowledge-source':
+        specifier: workspace:^
+        version: link:../knowledge-source
+
   packages/knowledge/knowledge-source:
     devDependencies:
       '@deepseek-ai/cordis':

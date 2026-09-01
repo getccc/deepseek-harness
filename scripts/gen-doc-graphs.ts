@@ -679,6 +679,15 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'The directory and passage-search operations a governed deployment authorizes; its Team provider and model-facing tool arrive with the Control Plane knowledge capability.',
   },
   {
+    key: 'knowledgeGateway',
+    pkg: 'knowledge-gateway',
+    title: 'Governed knowledge gateway',
+    mode: 'seam',
+    implementations: ['knowledge-gateway-sqlite'],
+    consumers: [],
+    note: 'Stands between a member\'s Runner and a knowledge source: an administrator curates the durable catalog through it, and every member-facing directory and search is authorized per knowledge base by it.',
+  },
+  {
     key: 'knowledgeSource',
     pkg: 'knowledge-source',
     title: 'Upstream knowledge source seam',

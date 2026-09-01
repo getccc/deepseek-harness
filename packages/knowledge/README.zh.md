@@ -22,13 +22,15 @@ kind: "package-group"
 <a id="packages"></a>
 ## 包
 
-三个包扮演知识相关角色；子系统参考拥有穷尽的词汇与契约。
+五个包扮演知识相关角色；子系统参考拥有穷尽的词汇与契约。
 
 | 包 | 角色 | ctx key |
 |---|---|---|
 | [`knowledge/`](knowledge/README.zh.md) | 知识服务：已授权目录、段落检索、稳定引用和会话范围 | `ctx.knowledge` |
 | [`knowledge-source/`](knowledge-source/README.zh.md) | 上游数据源接缝：列出数据源，并检索其中一个已授权的知识库集合 | `ctx.knowledgeSource` |
 | [`knowledge-weknora/`](knowledge-weknora/README.zh.md) | 说 WeKnora 的两个固定端点，把凭据留在 Control Plane | 注册到 `ctx.knowledgeSource` |
+| [`knowledge-gateway/`](knowledge-gateway/README.zh.md) | 受治理网关接缝：持久化目录，以及已授权目录与检索 | `ctx.knowledgeGateway` |
+| [`knowledge-gateway-sqlite/`](knowledge-gateway-sqlite/README.zh.md) | 基于 SQLite 的持久化目录，含同步、逐资源授权判定和审计 | 注册到 `ctx.knowledgeGateway` |
 
 -----
 

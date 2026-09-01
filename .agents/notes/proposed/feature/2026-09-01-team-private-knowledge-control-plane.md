@@ -101,6 +101,7 @@ When the WAN, DNS, TLS, a proxy, or the remote Control Plane is unavailable, loc
 | `packages/knowledge/knowledge` | Browser-safe Service Definition, plus the DSH-branded reference types used by the directory, search, and Session scope |
 | `packages/knowledge/knowledge-source` | Control Plane-only upstream seam: list a source, search an already-authorized set of its knowledge bases, in upstream ids |
 | `packages/knowledge/knowledge-weknora` | Control Plane Service Provider for the fixed WeKnora list and search endpoints; resolves credentials per operation |
+| `packages/knowledge/knowledge-gateway` | Governed gateway seam: the durable catalog an administrator curates, and the authorized directory and search a Runner reaches |
 | `packages/knowledge/knowledge-gateway-sqlite` | Durable catalog and governed-operation Service Provider; syncs governed resources, evaluates access, and records audit events |
 | `packages/knowledge/knowledge-gateway-http` | Bearer-token Runner-facing HTTP adapter; owns the knowledge `protocolVersion` and validates every decoded request and response |
 | `packages/knowledge/knowledge-team` | Runner-side `ctx.knowledge` Service Provider; reads the current `teamAccountClient` token per operation and calls its configured Control Plane |

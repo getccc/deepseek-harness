@@ -1559,6 +1559,44 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'knowledgeGateway',
+    summary: 'The governed catalog and the decision in front of it.',
+    description: 'The governed catalog and the decision in front of it. A provider mounts this service; consumers inject `knowledgeGateway`.\n\nAdministration methods take an organization because an administrator has already been authorized by the route that called them. Member-facing methods take a principal because they authorize it themselves, per knowledge base, on every call.',
+    methods: [
+      {
+        signature: 'abstract sync(orgId: OrgId): Promise<KnowledgeCatalogView>',
+        description: 'Reconcile the durable catalog against one successful full listing.\n\nSerialized: concurrent callers join the operation already in flight rather than racing two reconciliations over the same rows. A source that does not answer leaves the last successful snapshot in place and records the failure, because one failed listing must not disable every knowledge base an organization governs.',
+        parameters: [{ name: 'orgId', description: 'the organization whose catalog is reconciled.' }],
+        returns: 'the catalog as it stands after the attempt, successful or not.',
+      },
+      {
+        signature: 'abstract catalogView(orgId: OrgId): Promise<KnowledgeCatalogView>',
+        description: 'Read the durable catalog without contacting the source.',
+        parameters: [{ name: 'orgId', description: 'the organization to read.' }],
+        returns: 'every governed entry and the source\'s health.',
+      },
+      {
+        signature: 'abstract setEnabled(orgId: OrgId, ref: KnowledgeRef, enabled: boolean): Promise<void>',
+        description: 'Switch one entry on or off for the whole organization.\n\nSynchronization never overrides this choice: an administrator who disabled a knowledge base finds it still disabled after the next listing.',
+        parameters: [{ name: 'orgId', description: 'the organization the entry belongs to.' }, { name: 'ref', description: 'the entry to change.' }, { name: 'enabled', description: 'whether it may be searched at all.' }],
+        throws: ['{KnowledgeError} `not-allowed` when the catalog holds no such entry.'],
+      },
+      {
+        signature: 'abstract directory(principal: KnowledgePrincipal): Promise<readonly KnowledgeBaseEntry[]>',
+        description: 'The knowledge bases this principal may search right now.',
+        parameters: [{ name: 'principal', description: 'who is asking, from a verified token.' }],
+        returns: 'the authorized directory, empty when the principal holds nothing.',
+      },
+      {
+        signature: 'abstract search(request: GovernedSearchRequest): Promise<KnowledgeSearchResult>',
+        description: 'Authorize one search and perform it.\n\nEvery knowledge base the scope resolves to is evaluated before the source is called, and one refusal fails the whole request: a partial result is indistinguishable from a complete one to the model that reads it.',
+        parameters: [{ name: 'request', description: 'who is asking, the scope, the query, and the caller\'s bounds.' }],
+        returns: 'the passages, with the knowledge bases actually searched.',
+        throws: ['{KnowledgeError} with the reason the operation was refused or failed.'],
+      },
+    ],
+  },
+  {
     key: 'knowledgeSource',
     summary: 'One upstream knowledge product.',
     description: 'One upstream knowledge product. A provider mounts this service; the governed gateway injects `knowledgeSource`.\n\nFailures are raised as `KnowledgeError` with `upstream-unavailable` or `upstream-invalid`. A provider never raises an authorization reason: it does not know who is asking, which is the point.',
@@ -4867,6 +4905,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface GoalView extends GoalSnapshot {\n    readonly roundsStarted: number;\n    readonly createdAt: number;\n    readonly updatedAt: number;\n    readonly activation: GoalActivation;\n}',
   },
   {
+    name: 'GovernedSearchRequest',
+    declaration: 'export interface GovernedSearchRequest extends KnowledgePrincipal {\n    readonly scope: KnowledgeScopeSelection;\n    readonly query: string;\n    readonly maxResults?: number;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
     name: 'GrantId',
     declaration: 'export type GrantId = Branded<\'GrantId\'>;',
   },
@@ -5031,12 +5073,24 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface KnowledgeBaseEntry {\n    readonly ref: KnowledgeRef;\n    readonly displayName: string;\n    readonly description: string;\n    readonly kind: KnowledgeKind;\n}',
   },
   {
+    name: 'KnowledgeCatalogEntry',
+    declaration: 'export interface KnowledgeCatalogEntry {\n    readonly ref: KnowledgeRef;\n    readonly resourceId: ResourceId;\n    readonly displayName: string;\n    readonly description: string;\n    readonly kind: KnowledgeKind;\n    readonly documentCount: number;\n    readonly chunkCount: number;\n    readonly processingCount: number;\n    readonly embeddingModelId: string;\n    readonly adminEnabled: boolean;\n    readonly remotePresent: boolean;\n    readonly effectiveEnabled: boolean;\n    readonly lastDiscoveredAt: number;\n    readonly upstreamUpdatedAt: number | undefined;\n}',
+  },
+  {
+    name: 'KnowledgeCatalogView',
+    declaration: 'export interface KnowledgeCatalogView {\n    readonly source: KnowledgeSourceStatus;\n    readonly entries: readonly KnowledgeCatalogEntry[];\n}',
+  },
+  {
     name: 'KnowledgeKind',
     declaration: 'export type KnowledgeKind = \'document\' | \'faq\';',
   },
   {
     name: 'KnowledgePassage',
     declaration: 'export interface KnowledgePassage {\n    readonly ref: KnowledgeRef;\n    readonly title: string;\n    readonly text: string;\n    readonly truncated: boolean;\n    readonly score: number;\n}',
+  },
+  {
+    name: 'KnowledgePrincipal',
+    declaration: 'export interface KnowledgePrincipal {\n    readonly orgId: OrgId;\n    readonly principalId: UserId;\n    readonly deviceId?: string;\n    readonly correlationId?: string;\n}',
   },
   {
     name: 'KnowledgeRef',
@@ -5053,6 +5107,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'KnowledgeSearchResult',
     declaration: 'export interface KnowledgeSearchResult {\n    readonly query: string;\n    readonly searched: readonly KnowledgeBaseEntry[];\n    readonly passages: readonly KnowledgePassage[];\n    readonly truncated: boolean;\n}',
+  },
+  {
+    name: 'KnowledgeSourceHealth',
+    declaration: 'export type KnowledgeSourceHealth = \'never-synced\' | \'healthy\' | \'failing\';',
+  },
+  {
+    name: 'KnowledgeSourceStatus',
+    declaration: 'export interface KnowledgeSourceStatus {\n    readonly sourceCode: string;\n    readonly providerKind: string;\n    readonly health: KnowledgeSourceHealth;\n    readonly lastAttemptAt: number | undefined;\n    readonly lastSuccessAt: number | undefined;\n    readonly lastFailure: string | undefined;\n}',
   },
   {
     name: 'KvFacet',
