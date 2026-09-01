@@ -41,6 +41,8 @@ const response = await ctx.llmHttpTransport.send({
 
 响应体是一个流。模型响应很长，而一个把它缓冲起来的 Transport，会为每个请求在内存里留住一整份 completion。
 
+`listModels()` 可以选择把发现所有权交给 Transport。它默认返回 `undefined`，表示 Adapter 使用本机目录。远程策略 Transport 则返回当前主体的稳定 id 与显示名。
+
 -----
 
 <a id="understand-the-implementation"></a>
@@ -88,7 +90,7 @@ Transport 不改变 Adapter 构造的字节，因此它自身没有请求前缀�
 
 - **只有一个操作** —— `chat.completions`。这个列表的存在，是为了让第二个成为一次带名字的新增，而不是调用方提供的一条路径。
 - **暂无 Direct Provider** —— 成员自己的 BYOK 路线仍走 Adapter 既有路径；把它移到这个接缝之后是它自己的一次改动。
-- **`inputTokens` 是 Adapter 的计数** —— 接缝承载它而不是计算它，因为请求体已经在 Adapter 那里构造好了。
+- **`inputTokens` 是调用前计量** —— 存在 Adapter 计数时由 seam 携带；没有 Provider tokenizer 的 Adapter 发送零，Control Plane 再根据 Provider 报告的用量结算。
 
 <a id="dev-note"></a>
 ### 开发备注

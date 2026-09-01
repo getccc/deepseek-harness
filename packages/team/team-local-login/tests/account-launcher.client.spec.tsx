@@ -77,7 +77,7 @@ describe('Team account launcher', () => {
   it('derives a stable text avatar from Latin, CJK, and blank labels', () => {
     expect(accountInitial(' alice')).toBe('A')
     expect(accountInitial('其 实')).toBe('其')
-    expect(accountInitial('   ')).toBe('T')
+    expect(accountInitial('   ')).toBe('')
   })
 })
 

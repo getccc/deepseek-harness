@@ -36,6 +36,8 @@ Requires: `accountStore`
 export interface Config {
   /** Shortest secret accepted by {@link PasswordAccountAuth.setSecret}. */
   minSecretLength: number
+  /** Character classes a secret must contain at least one of, each. */
+  requiredClasses: SecretCharacterClass[]
   /** Consecutive failures that trigger a lock. */
   maxFailedAttempts: number
   /** How long a lock refuses sign-in, in milliseconds. */
@@ -49,7 +51,9 @@ export interface Config {
 }
 ```
 
-Source: [`packages/account/account-auth-password/src/index.ts:20`](../packages/account/account-auth-password/src/index.ts)
+Depends on: [`SecretCharacterClass`](../packages/account/account-auth/src/index.ts)
+
+Source: [`packages/account/account-auth-password/src/index.ts:23`](../packages/account/account-auth-password/src/index.ts)
 
 <a id="deepseek-aidsh-account-store-sqlite"></a>
 
@@ -63,7 +67,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/account/account-store-sqlite/src/index.ts:47`](../packages/account/account-store-sqlite/src/index.ts)
+Source: [`packages/account/account-store-sqlite/src/index.ts:48`](../packages/account/account-store-sqlite/src/index.ts)
 
 <a id="deepseek-aidsh-acp"></a>
 
@@ -686,7 +690,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/account/device-authorization-sqlite/src/index.ts:55`](../packages/account/device-authorization-sqlite/src/index.ts)
+Source: [`packages/account/device-authorization-sqlite/src/index.ts:60`](../packages/account/device-authorization-sqlite/src/index.ts)
 
 <a id="deepseek-aidsh-e2b"></a>
 
@@ -1138,7 +1142,7 @@ export interface DeepSeekCatalogModel {
 
 Depends on: [`ModelModality`](../packages/llm/llm/src/index.ts) · [`RetryPolicyConfig`](../packages/llm/llm/src/index.ts)
 
-Source: [`packages/llm/llm-deepseek/src/index.ts:124`](../packages/llm/llm-deepseek/src/index.ts)
+Source: [`packages/llm/llm-deepseek/src/index.ts:125`](../packages/llm/llm-deepseek/src/index.ts)
 
 <a id="deepseek-aidsh-llm-http-transport-team"></a>
 
@@ -1154,7 +1158,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/llm/llm-http-transport-team/src/index.ts:25`](../packages/llm/llm-http-transport-team/src/index.ts)
+Source: [`packages/llm/llm-http-transport-team/src/index.ts:30`](../packages/llm/llm-http-transport-team/src/index.ts)
 
 <a id="deepseek-aidsh-llm-pi-ai"></a>
 
@@ -1659,7 +1663,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/llm/model-gateway-http/src/index.ts:32`](../packages/llm/model-gateway-http/src/index.ts)
+Source: [`packages/llm/model-gateway-http/src/index.ts:39`](../packages/llm/model-gateway-http/src/index.ts)
 
 <a id="deepseek-aidsh-model-gateway-sqlite"></a>
 
@@ -2792,7 +2796,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/team/team-admin-api/src/index.ts:139`](../packages/team/team-admin-api/src/index.ts)
+Source: [`packages/team/team-admin-api/src/index.ts:142`](../packages/team/team-admin-api/src/index.ts)
 
 <a id="deepseek-aidsh-team-console-menu-sqlite"></a>
 
@@ -2806,7 +2810,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/team/team-console-menu-sqlite/src/index.ts:32`](../packages/team/team-console-menu-sqlite/src/index.ts)
+Source: [`packages/team/team-console-menu-sqlite/src/index.ts:33`](../packages/team/team-console-menu-sqlite/src/index.ts)
 
 <a id="deepseek-aidsh-team-control-plane-http"></a>
 

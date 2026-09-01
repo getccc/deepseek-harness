@@ -54,6 +54,8 @@ const signature = sign(redeemSigningInput(started.transactionId, issued.code))
 
 `start` 刻意不携带账户：在成员从一个已认证会话确认之前，Transaction 不属于任何人，因此打开一个 Transaction 的未认证调用方，只能学到它自己已经提供的东西。
 
+`revokeUserDevices(orgId, userId)` 在一个提供方事务中撤销关联到该账户的所有凭据族。设备清单行仍可供管理员查看，但它们的刷新 token 与访问 token 此后都无法通过验证。密码替换使用这项账户级操作；撤销一台设备仍是范围更窄的成员支持操作。
+
 ### 导出共享值
 
 Runner 与 Control Plane 在运行时从不共享代码，因此两侧都导入 [`crypto.ts`](src/crypto.ts) 来得到任一侧需要导出的每一个值：`pkceChallenge`、`digestPublicKey`、`redeemSigningInput`、`refreshSigningInput` 和 `hashSecret`。

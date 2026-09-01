@@ -9,6 +9,9 @@
  * @module @deepseek-ai/dsh-team-admin-api/types
  */
 
+import type { SecretCharacterClass } from '@deepseek-ai/dsh-account-auth'
+
+export type { SecretCharacterClass } from '@deepseek-ai/dsh-account-auth'
 import type {
   AccountUserStatus,
   DepartmentCategory,
@@ -211,8 +214,24 @@ export interface WireSession {
   readonly organization: WireOrganization
   /** Held permissions as `resourceType|action`, for hiding controls only. */
   readonly permissions: readonly string[]
+  /** What a password this console sets must satisfy, for checking a form as it is typed. */
+  readonly secretPolicy: WireSecretPolicy
   /** The value every write must echo in the CSRF header. */
   readonly csrf: string
+}
+
+/**
+ * The deployment's password policy, as the console receives it.
+ *
+ * The console checks a new password against this before sending it, so an
+ * administrator reads what is wanted in their own language beside the box
+ * rather than a refusal after the fact. The Control Plane still enforces it.
+ */
+export interface WireSecretPolicy {
+  /** Fewest characters a password may have. */
+  readonly minLength: number
+  /** Character classes the password must contain at least one of, each. */
+  readonly requiredClasses: readonly SecretCharacterClass[]
 }
 
 /**

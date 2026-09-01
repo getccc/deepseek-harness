@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-model-gateway-http` is where the content of a company model call actually passes through the Control Plane, and the one place a provider credential is attached. Everything it does is arranged around two facts: the request must not be able to say where it goes, and the response must not be held in memory. It verifies the device access token, asks the [gateway](../model-gateway/README.md), resolves the credential for the length of one call, streams the provider's answer back, and settles the reservation from what the provider said it cost.
+`dsh-model-gateway-http` serves the Runner-facing model catalog and the company model invocation path. Discovery verifies the device access token and asks the [gateway](../model-gateway/README.md) for the active models that principal may discover. Invocation is where model content passes through the Control Plane and the one place a provider credential is attached: the request cannot say where it goes, the response is not held in memory, and the reservation settles from what the provider reports.
 
 ## Table of Contents
 
@@ -43,6 +43,10 @@ plugins:
 
 An unknown token, a lapsed one, and one whose device was revoked all answer 401. Which it was is exactly what an attacker holding a stale token wants to learn.
 
+### Discovery uses the same device principal
+
+`GET /team/model/catalog` verifies the current device token and returns only the stable ref and display name of each active model allowed by `model.discover`. Endpoint, upstream model, and credential reference remain on the Control Plane. `POST /team/model/invoke` independently asks `model.invoke`, so knowing or retaining a model ref never bypasses the invocation decision.
+
 ### The credential exists for one call
 
 It is resolved here and written nowhere — not into the plan, not into the catalog, not into a log. A catalog entry naming a reference nobody configured, or something that is not a credential reference at all, answers 500 and charges nothing: that is this deployment's problem rather than the member's.
@@ -68,9 +72,9 @@ If settling throws, the response the member already received stands and the [rec
 
 | Path | Role |
 |---|---|
-| [`src/index.ts`](src/index.ts) | The endpoint, the proxy, and the settlement decision |
+| [`src/index.ts`](src/index.ts) | Discovery and invocation endpoints, the proxy, and the settlement decision |
 | [`src/usage.ts`](src/usage.ts) | Reading a provider's usage out of a response nobody buffers |
-| [`src/protocol.ts`](src/protocol.ts) | The path and the body both sides import |
+| [`src/protocol.ts`](src/protocol.ts) | The paths and bodies both sides import |
 | [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----

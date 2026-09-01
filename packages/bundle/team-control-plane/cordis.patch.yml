@@ -44,7 +44,11 @@
     - id: account-auth
       name: '@deepseek-ai/dsh-account-auth-password'
       config:
-        minSecretLength: 12
+        minSecretLength: 8
+        requiredClasses:
+          - uppercase
+          - lowercase
+          - digit
         maxFailedAttempts: 5
         lockDurationMs: 900000
         cost: 16384

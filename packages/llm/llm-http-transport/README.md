@@ -41,6 +41,8 @@ const response = await ctx.llmHttpTransport.send({
 
 The response body is a stream. A model response is long, and a transport that buffered it would hold a whole completion in memory per request.
 
+`listModels()` optionally transfers discovery ownership to the transport. Its default returns `undefined`, which tells an adapter to use its local catalog. A remote-policy transport returns the current principal's stable ids and display names instead.
+
 -----
 
 <a id="understand-the-implementation"></a>
@@ -88,7 +90,7 @@ These are current constraints of the contract, not a task backlog.
 
 - **One operation** — `chat.completions`. The list exists so a second is an addition with a name rather than a path a caller supplies.
 - **No direct provider yet** — a member's own BYOK route still goes through the adapter's existing path; moving it behind this seam is its own change.
-- **`inputTokens` is the adapter's count** — the seam carries it rather than computing it, because the adapter is where the body is already built.
+- **`inputTokens` is preflight accounting** — the seam carries an adapter count when one exists; an adapter without the provider tokenizer sends zero and the Control Plane settles from provider-reported usage.
 
 <a id="dev-note"></a>
 ### Dev Note

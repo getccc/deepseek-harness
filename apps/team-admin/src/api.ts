@@ -22,8 +22,8 @@ import type {
 } from '@deepseek-ai/dsh-team-admin-api'
 
 export type {
-  WireDepartment, WireDevice, WireGrant, WireMember, WireMenu, WireModel,
-  WireOrganization, WireOverview, WirePermission, WireRole, WireSession,
+  SecretCharacterClass, WireDepartment, WireDevice, WireGrant, WireMember, WireMenu, WireModel,
+  WireOrganization, WireOverview, WirePermission, WireRole, WireSecretPolicy, WireSession,
 } from '@deepseek-ai/dsh-team-admin-api'
 
 /** The fields the company row's form collects; an empty string clears a stored one. */

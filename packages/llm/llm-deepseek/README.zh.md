@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`@deepseek-ai/dsh-llm-deepseek` 是 harness LLM 服务的 DeepSeek 直连适配器：它拥有 `deepseek-official` 提供方路由，并把 DeepSeek 的 chat-completions 协议格式翻译为 harness 的流式分片协议。借助它，组合可以流式调用 DeepSeek 模型，支持可配置的 thinking 与推理（reasoning）强度、向视觉模型发送图片，并浏览一份建议性模型目录。连接事实——端点、目录、密钥、thinking 策略——按请求解析，因此编辑用户设置文档即可改变下一个请求，无需重启。它是 DeepSeek 的两个结构不同适配器之一：pi-ai 孪生通过库与更多提供方服务自己的路由名，两者可以并排挂载。
+`@deepseek-ai/dsh-llm-deepseek` 是 harness LLM 服务的 DeepSeek chat-completions 适配器：它拥有 `deepseek-official` 提供方路由，并把 DeepSeek 的协议格式翻译为 harness 的流式分片协议。没有 LLM HTTP 传输时，它直接调用已配置的提供方。挂载传输后，模型发现与 chat 调用改用该传输，这正是 Team Runner 把公司端点、凭据与模型授权留在 Control Plane 的方式。它是 DeepSeek 的两个结构不同适配器之一：pi-ai 孪生通过库与更多提供方服务自己的路由名，两者可以并排挂载。
 
 ## 目录
 
@@ -48,6 +48,8 @@ kind: "package-reference"
 
 请求用 `provider: deepseek-official` 选择路由；模型 id 原样传到协议，因此新增 DeepSeek 模型无需重新注册。省略 `models` 时会公布适合专注任务、快速且经济的 `deepseek-v4-flash`，适合复杂或质量关键任务、能力更强且成本更高的 `deepseek-v4-pro`，以及支持图像的 `deepseek-v4-flash-vision-exp`；每个模型都有 1,000,000 token 上下文窗口。显式列表会替换这些默认值，未列出的模型 id 仍作为纯文本路由原样通过。包括模型发现工具在内的客户端可通过 `ctx.llm.listModels('deepseek-official')` 读取这些建议性条目。支持图片的条目可把 `imagePixelBudget` 设置为正整数或 `low`，也可以设置 `imageMaxBytes`。
 
+存在 `ctx.llmHttpTransport` 时，它的 `listModels()` 会替换本机建议性列表，每份序列化 chat 请求则经由它的 `send()` 方法发送。该模式下适配器不会解析已配置的提供方密钥。Team 传输提供经过角色筛选的目录，并使用 Runner 当前设备访问 token 让调用通过 Control Plane 网关。
+
 | 字段 | 默认值 | 含义 |
 |---|---|---|
 | `apiKeyEnv` | `DEEPSEEK_API_KEY` | 按请求解析的凭据引用：先经凭据 seam，再到环境变量 |
@@ -84,11 +86,11 @@ Files 模式通过 `maxRequestFilesBytes` 与 `maxImagesPerRequest` 限制保留
 
 ### 动态配置
 
-连接事实通过可选 settings 与凭据 seam 每次操作重新读取一次。用户设置文档中的 `llm-deepseek:` 分节无需重启即可覆盖任何字段；未通过超 schema 上限的快照会保留最后有效事实并记录失败。API 密钥从提供端点、图片与 Files 策略及空闲预算的同一快照按流调用解析，因此被拒绝的设置代际不会贡献其中任何事实。图片请求在请求时解析附件服务，因此加载顺序不会冻结图片可用性。
+连接事实通过可选 settings 与凭据 seam 每次操作重新读取一次。用户设置文档中的 `llm-deepseek:` 分节无需重启即可覆盖任何字段；未通过超 schema 上限的快照会保留最后有效事实并记录失败。对于直连请求，API 密钥从提供端点、图片与 Files 策略及空闲预算的同一快照按流调用解析。挂载的传输会改为拥有目录与传输过程，因此不会解析本机提供方密钥。图片请求在请求时解析附件服务，因此加载顺序不会冻结图片可用性。
 
 ### 提供方专用请求字段
 
-存在 `ctx.deepseekLlmApiExtensions` 时，适配器会在 `fetch` 前根据确切序列化基础请求准备已注册顶层字段。准备或字段冲突在 HTTP 前失败；2xx 响应后，适配器会在消费 SSE 前接受每项已捕获贡献。传输与非 2xx 失败不会接受它们。随产品交付的组合用它提供可选增量 `dsh_session_log` 字段和默认启用的活跃 `dsh_plugin_packages` 清单；两者都留在模型输入之外。
+存在 `ctx.deepseekLlmApiExtensions` 时，适配器会在 HTTP 调用前根据确切序列化基础请求准备已注册顶层字段。准备或字段冲突在 HTTP 前失败；2xx 响应后，适配器会在消费 SSE 前接受每项已捕获贡献。传输与非 2xx 失败不会接受它们。随产品交付的组合用它提供可选增量 `dsh_session_log` 字段和默认启用的活跃 `dsh_plugin_packages` 清单；两者都留在模型输入之外。
 
 ### 失败与恢复
 
@@ -116,13 +118,13 @@ Files 模式通过 `maxRequestFilesBytes` 与 `maxImagesPerRequest` 限制保留
 | [`src/adapter.ts`](src/adapter.ts) | `DeepSeekAdapter`：模型解析、图片投影、Files 回退、带空闲超时的流式调用 |
 | [`src/file-store.ts`](src/file-store.ts) + [`src/files-api.ts`](src/files-api.ts) | 限定作用域的上传缓存、到期、陈旧 id 恢复、配额清理与远程文件操作 |
 | [`src/serialize.ts`](src/serialize.ts) | 协议序列化：thinking 默认值、Files 或内联图片块、历史规则 |
-| [`src/sse.ts`](src/sse.ts) | 直接 `fetch` 流的 `eventsource-parser` SSE 分帧 |
+| [`src/sse.ts`](src/sse.ts) | 对直连或经传输的 SSE 响应进行 `eventsource-parser` 分帧 |
 | [`src/translate.ts`](src/translate.ts) | 把 SSE 载荷翻译为 harness `StreamChunk` 值 |
 | [`src/types.ts`](src/types.ts) | 上述模块共享的协议级类型 |
 
 ### 协议流程
 
-一次 `stream()` 调用通常发一条 chat 请求：解析确定性请求图片、优先使用 Files id、准备所有已注册顶层请求扩展、向解析后的 `baseURL` 发起 fetch、在 HTTP 2xx 后接受扩展事务，并把 SSE 流翻译为 harness 协议。文件解析失败会让首条 chat 使用内联模式；提供方的陈旧文件响应允许一次替换尝试，且替换解析失败时也使用内联模式。每条 chat 与 Files 调用都在模型输入之外携带共享归因和稳定匿名用户 id，会话调用还携带 session id。推理历史会按需序列化回请求，缓存计量则把 DeepSeek 的缓存命中指标映射进 harness 用量桶。
+一次 `stream()` 调用会序列化一条 chat 请求、准备所有已注册顶层请求扩展，然后向解析后的 `baseURL` 发起 fetch，或者让挂载的传输承载模型引用与请求体。直连图片请求会解析确定性请求版本并优先使用 Files id；文件解析失败会让首条 chat 使用内联模式，提供方的陈旧文件响应则允许一次替换尝试。适配器在 HTTP 2xx 后接受扩展事务，并把任一种响应的 SSE 流翻译为 harness 协议。推理历史会按需序列化回请求，缓存计量则把 DeepSeek 的缓存命中指标映射进 harness 用量桶。
 
 </details>
 
@@ -185,9 +187,10 @@ loop 保留的响应块会追加到下一个请求，并保留其更早的可复
 
 - **设置中的 `models` 列表会整体替换组合列表**——设置层按字段合并，数组只算一个字段；按条目合并目录需要带键的形状。
 - **不映射 `tool_choice`**——不属于核心词汇（与 pi-ai 孪生共享）。
-- **请求使用原始 `fetch`，而非 `@cordisjs/plugin-http`**——没有共享代理或拦截配置。
+- **直连请求使用原始 `fetch`，而非 `@cordisjs/plugin-http`**——没有共享代理或拦截配置；Team 请求使用挂载的传输。
 - **跳过插件新增的内容块类型**——核心文本与受支持图片块会被序列化，空工具输出以字面量 `(no output)` 过线。
 - **图片是仅输入的持久附件**——不支持直接外部 URL 与 assistant 图片输出；DeepSeek 输入通常使用 Files API，仅在单次请求恢复时使用内联 base64。
+- **挂载传输时只支持文本**——传输请求没有 DeepSeek Files API 上传操作，因此图片请求会在读取凭据或访问网络前被拒绝。
 
 <a id="dev-note"></a>
 ### 开发备注

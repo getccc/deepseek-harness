@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/subsystems/device-authorization.md
-device-authorization.md: d88b6f0f91fca7ec082cded7ac33296aafb7c80b
-device-authorization.zh.md: b9ca7d99c0bc5b9f5e2af07e63f49b581163f698
+device-authorization.md: 52a12747daa3cae7d080b457297f895fe99ad70c
+device-authorization.zh.md: 8bda6749c6ebe3afeac8b4a50ef42e84a768f740

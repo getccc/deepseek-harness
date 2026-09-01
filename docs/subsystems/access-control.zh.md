@@ -73,6 +73,47 @@ abstract authorize(request: AccessRequest): Promise<AccessDecision>
 abstract createRole(input: CreateRole): Promise<Role>
 
 /**
+ * Change a role's readable fields, leaving every field the caller did not
+ * name as stored.
+ * @param roleId - the role to change.
+ * @param changes - the fields to write.
+ * @throws {UnknownRoleError} when the store holds no such role.
+ * @throws {DuplicateRoleNameError} when the new name is taken in that organization.
+ * @throws {DuplicateRoleCodeError} when the new code is taken in that organization.
+ */
+abstract updateRole(roleId: RoleId, changes: UpdateRole): Promise<void>
+
+/**
+ * Delete one role, with the grants that compose it and the bindings that
+ * carry it. Members holding it lose what it admitted at once.
+ * @param roleId - the role to delete.
+ * @throws {UnknownRoleError} when the store holds no such role.
+ * @throws {SystemRoleError} when the role ships with the product.
+ */
+abstract deleteRole(roleId: RoleId): Promise<void>
+
+/**
+ * Give one role every permission the catalog governs that it does not
+ * already hold.
+ *
+ * Idempotent, and additive only: a pair the catalog no longer names stays
+ * where it is, because the grant may still be the reason something works.
+ * Callers run this for a role that covers the catalog as the process starts,
+ * which is what keeps such a role current as this build's catalog grows.
+ * @param roleId - the role to bring up to the catalog.
+ * @returns the pairs this call granted, as `resourceType|action`.
+ * @throws {UnknownRoleError} when the store holds no such role.
+ */
+abstract syncCatalogRole(roleId: RoleId): Promise<string[]>
+
+/**
+ * Every role of one organization that covers the catalog.
+ * @param orgId - the organization to list.
+ * @returns those roles, in creation order.
+ */
+abstract listCatalogRoles(orgId: OrgId): Promise<Role[]>
+
+/**
  * List an organization's roles in creation order.
  * @param orgId - the organization to list.
  * @returns every role the organization holds.
@@ -192,4 +233,71 @@ abstract rolesOf(userId: UserId): Promise<RoleId[]>
 Types: [OrgId](account.zh.md) · [UserId](account.zh.md)
 
 Source: [`packages/access/access-control/src/index.ts`](../../packages/access/access-control/src/index.ts)
+
+<a id="ctxconsolemenu--consolemenustore-abstract-seam"></a>
+
+### `ctx.consoleMenu` — `ConsoleMenuStore` (abstract seam)
+
+The console's navigation, as durable records. A provider mounts this service; consumers inject `consoleMenu`.
+
+```ts cordis-catalog
+/**
+ * Put the entries this build ships into an organization that does not have
+ * them yet, matching on the shipped key.
+ *
+ * Idempotent, and never an overwrite: an entry a deployment renamed, hid, or
+ * reordered keeps its edit, and one it deleted comes back at its shipped
+ * settings on the next start. Entries this build retired are removed; their
+ * children move to the retired entry's parent.
+ * @param orgId - the organization to seed.
+ * @returns how many entries this call inserted.
+ */
+abstract seedShipped(orgId: OrgId): Promise<number>
+
+/**
+ * List one organization's navigation, parents before the children that name
+ * them, and siblings in `sortOrder` then creation order.
+ * @param orgId - the organization to list.
+ * @returns every entry the organization holds.
+ */
+abstract listMenus(orgId: OrgId): Promise<ConsoleMenu[]>
+
+/**
+ * Read one entry by id.
+ * @param id - the entry to read.
+ * @returns the entry, or undefined when the store holds none.
+ */
+abstract getMenu(id: MenuId): Promise<ConsoleMenu | undefined>
+
+/**
+ * Create one entry.
+ * @param input - the entry's organization, name, kind, and optional placement fields.
+ * @returns the stored entry.
+ * @throws {UnknownMenuPermissionError} when it names a permission the catalog does not govern.
+ */
+abstract createMenu(input: CreateConsoleMenu): Promise<ConsoleMenu>
+
+/**
+ * Change an entry's fields, leaving every field the caller did not name as
+ * stored. A rename drops the shipped copy key, because the words become the
+ * organization's own.
+ * @param id - the entry to change.
+ * @param changes - the fields to write; `null` clears one, absence leaves it.
+ * @throws {UnknownConsoleMenuError} when the store holds no such entry.
+ * @throws {UnknownMenuPermissionError} when it names a permission the catalog does not govern.
+ */
+abstract updateMenu(id: MenuId, changes: UpdateConsoleMenu): Promise<void>
+
+/**
+ * Delete one entry.
+ * @param id - the entry to delete.
+ * @throws {UnknownConsoleMenuError} when the store holds no such entry.
+ * @throws {ConsoleMenuNotEmptyError} when another entry still sits under it.
+ */
+abstract deleteMenu(id: MenuId): Promise<void>
+```
+
+Types: [OrgId](account.zh.md)
+
+Source: [`packages/team/team-console-menu/src/index.ts`](../../packages/team/team-console-menu/src/index.ts)
 <!-- END GENERATED cordis-surface -->

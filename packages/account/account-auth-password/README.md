@@ -29,12 +29,13 @@ English | [中文](README.zh.md)
 - id: account-auth
   name: '@deepseek-ai/dsh-account-auth-password'
   config:
-    minSecretLength: 12
+    minSecretLength: 8
+    requiredClasses: [uppercase, lowercase, digit]
     maxFailedAttempts: 5
     lockDurationMs: 900000
 ```
 
-Every field has a default, so an empty config is a working deployment. The derivation cost is configurable too (`cost`, `blockSize`, `parallelization`) and defaults to a deliberately slow setting; lowering it is a decision to make explicitly, not an optimization to reach for.
+Every field has a default, so an empty config is a working deployment. The derivation cost is configurable too (`cost`, `blockSize`, `parallelization`) and defaults to a deliberately slow setting; lowering it is a decision to make explicitly, not an optimization to reach for. `requiredClasses` names the character classes a secret must contain one of each: `uppercase`, `lowercase`, and `digit`, in any combination including none. `secretPolicy` answers both fields, so a caller can state the requirement without repeating it.
 
 ### Raising the cost later
 

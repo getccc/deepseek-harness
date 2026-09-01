@@ -41,13 +41,14 @@ let quitting = false
 /** Show one localized startup failure without exposing deployment secrets. */
 function reportRunnerFailure(error?: unknown): void {
   const language = app.getLocale().toLowerCase().startsWith('zh') ? copy.zh : copy.en
+  const detail = error instanceof Error
+    ? error.message
+    : typeof error === 'string' ? error : undefined
   void dialog.showMessageBox({
     type: 'error',
     title: language.failedTitle,
     message: language.failedBody,
-    ...(error === undefined
-      ? {}
-      : { detail: error instanceof Error ? error.message : String(error) }),
+    ...(detail === undefined ? {} : { detail }),
   })
 }
 
@@ -142,6 +143,7 @@ async function showRunner(): Promise<void> {
 /** Create the hidden-on-close window and the resident tray control. */
 function createDesktop(): void {
   const background = process.argv.includes('--background')
+    || app.getLoginItemSettings().wasOpenedAtLogin
   window = new BrowserWindow({
     width: 1280,
     height: 820,
@@ -153,6 +155,11 @@ function createDesktop(): void {
   window.webContents.setWindowOpenHandler(({ url }) => {
     void shell.openExternal(url)
     return { action: 'deny' }
+  })
+  window.webContents.on('will-navigate', (event, url) => {
+    if (new URL(url).origin === new URL(RUNNER_URL).origin) return
+    event.preventDefault()
+    void shell.openExternal(url)
   })
   window.on('close', (event) => {
     if (quitting) return
@@ -180,6 +187,7 @@ if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
   app.on('second-instance', () => { void showRunner() })
+  app.on('activate', () => { void showRunner() })
   app.on('before-quit', () => {
     quitting = true
     if (restart !== undefined) clearTimeout(restart)
@@ -189,7 +197,9 @@ if (!app.requestSingleInstanceLock()) {
     // The tray and Runner intentionally remain alive after the window closes.
   })
   void app.whenReady().then(() => {
-    app.setLoginItemSettings({ openAtLogin: true, args: ['--background'] })
+    if (app.isPackaged) {
+      app.setLoginItemSettings({ openAtLogin: true, args: ['--background'] })
+    }
     createDesktop()
     launchRunner()
   })

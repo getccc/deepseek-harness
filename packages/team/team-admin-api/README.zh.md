@@ -73,6 +73,8 @@ kind: "package-reference"
 
 `GET /team/api/session` 回答该成员持有的 `resourceType|action` 对，好让控制台不必显示没人能用的按钮。随后每条路由仍会再问一次访问控制。一个显示了不该显示的控件的控制台，得到的依然是拒绝。
 
+同一个答复还带着 `secretPolicy`，即本部署对密码的要求，好让控制台在密码被键入时就检查它，而不是送出一个 Control Plane 必然拒绝的密码。它不强制任何东西：`POST /members` 与 `PATCH /members/:id/password` 会对送达的内容施加该策略。
+
 ### 一次拒绝给的是一个词，不是一句话
 
 `unauthenticated`、`forbidden`、`malformed`、`conflict`、`not-found`、`too-large`、`unavailable`。控制台在这个词上分支；`detail` 是给人读的，永远不是区分两种结果的唯一依据。登录失败对所有成因只有一个答复，因为究竟是“没有这个成员”“密码不对”还是“已锁定”，正是攻击者想要的。

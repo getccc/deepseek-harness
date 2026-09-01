@@ -65,6 +65,14 @@ A request names an operation the code registers and a model, never a URL. A dire
  * @throws {TransportFailedError} when the request could not be carried at all.
  */
 abstract send(request: TransportRequest): Promise<TransportResponse>
+
+/**
+ * List models the transport's remote policy currently exposes, when the
+ * transport owns model discovery. Direct transports return `undefined` so
+ * an adapter uses its own catalog.
+ * @returns remote models, or undefined when discovery remains adapter-owned.
+ */
+listModels(): Promise<readonly TransportModel[] | undefined>
 ```
 
 Source: [`packages/llm/llm-http-transport/src/index.ts`](../../packages/llm/llm-http-transport/src/index.ts)

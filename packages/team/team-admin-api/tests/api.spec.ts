@@ -57,7 +57,7 @@ let alice: UserId
 let adminRole: RoleId
 let apiFiber: ReturnType<Context['plugin']>
 
-const PASSWORD = 'correct-horse-battery-staple'
+const PASSWORD = 'Correct-Horse-Battery-1'
 
 /** Every permission the console's own routes ask for. */
 const ADMIN_PERMISSIONS = [
@@ -203,7 +203,8 @@ beforeEach(async () => {
   await ctx.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
   await ctx.plugin(SqliteAccountStore, { path: ':memory:' }).await()
   await ctx.plugin(PasswordAccountAuth, {
-    minSecretLength: 8, maxFailedAttempts: 5, lockDurationMs: 60_000,
+    minSecretLength: 8, requiredClasses: ['uppercase', 'lowercase', 'digit'],
+    maxFailedAttempts: 5, lockDurationMs: 60_000,
     cost: 2, blockSize: 8, parallelization: 1,
   }).await()
   await ctx.plugin(SqliteAccessControl, { path: ':memory:' }).await()
@@ -270,6 +271,10 @@ describe('signing in', () => {
     expect(session.organization.name).toBe('Acme')
     expect(session.organization.policyRevision).toMatch(/^\d+$/u)
     expect(session.permissions).toContain('member|member.read')
+    // The console checks a new password against this before sending it.
+    expect(session.secretPolicy).toEqual({
+      minLength: 8, requiredClasses: ['uppercase', 'lowercase', 'digit'],
+    })
     expect(session.csrf).not.toBe('')
     expect((await audit.query({ orgId, action: 'member.login' }))[0]).toMatchObject({ outcome: 'allowed' })
   })
@@ -480,6 +485,7 @@ describe('what a role does not carry', () => {
     expect((payload(asked) as WireSession).permissions).toEqual([
       'organization|organization.admin.access',
     ])
+    expect((payload(asked) as WireSession).secretPolicy).toMatchObject({ minLength: 8 })
   })
 })
 
@@ -568,7 +574,7 @@ describe('administering', () => {
       bindCredential(bobsSession.cookie, bob.id as UserId),
       bindCredential(bobsSession.cookie, bob.id as UserId),
     ])
-    const nextPassword = 'another-correct-horse'
+    const nextPassword = 'Another-Correct-Horse-2'
 
     const reset = await write('PATCH', `/team/api/members/${bob.id}/password`, held, {
       secret: nextPassword,
@@ -1239,6 +1245,17 @@ describe('roles as the console administers them', () => {
     await expect(ctx.modelGateway.discover(orgId, bob)).resolves.toEqual([
       { modelRef: 'deepseek-reasoner', displayName: 'DeepSeek Reasoner' },
     ])
+  })
+
+  it('does not attach this organization models to a role from another organization', async () => {
+    const held = await signIn('alice', PASSWORD)
+    const other = await store.createOrganization('Other')
+    const role = await access.createRole({ orgId: other.id, name: 'Other member' })
+
+    const refused = await write('POST', `/team/api/roles/${role.id}/models`, held, { modelIds: [] })
+
+    expect(refused.status).toBe(404)
+    expect(await access.listRoleGrants(role.id)).toEqual([])
   })
 })
 

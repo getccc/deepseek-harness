@@ -45,11 +45,13 @@ const user = await ctx.accountStore.createUser({
 
 ### An issued account cannot yet sign in
 
-`createUser` stores identity only. The account carries no authentication material and `mustChangePassword` is set, so an administrator cannot create a usable account on a member's behalf — the member choosing a secret is what clears it. `setPasswordHash` stores that secret's encoded form and clears the flag together.
+`createUser` stores identity only. The account carries no authentication material and `mustChangePassword` is set. A provisioning caller follows it with the authentication provider's secret write; `setPasswordHash` stores that secret's encoded form and clears the flag together.
 
 ### Sign-in state is counted here, judged elsewhere
 
 `recordFailedLogin` returns the consecutive failure count and `lockUser` refuses sign-in until a moment you pass. The store never decides that a count is too high or how long a lock lasts; the authentication provider owns that policy and calls these to record its decision.
+
+Browser sessions also live with the account records. `revokeBrowserSessions` removes every administration session for one account as a single account-recovery operation; ending an account that has no sessions is successful.
 
 ### Failures you can act on
 

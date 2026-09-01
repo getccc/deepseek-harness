@@ -122,11 +122,15 @@ export class TeamLlmHttpTransport extends LlmHttpTransport {
 
 /** Validate the Control Plane response at the HTTP wire. */
 function isModelCatalogBody(value: unknown): value is ModelCatalogBody {
-  if (typeof value !== 'object' || value === null || !('models' in value)
-    || !Array.isArray(value.models)) return false
-  return value.models.every(model => typeof model === 'object' && model !== null
-    && 'modelRef' in model && typeof model.modelRef === 'string'
-    && 'displayName' in model && typeof model.displayName === 'string')
+  if (!isRecord(value) || !Array.isArray(value['models'])) return false
+  return value['models'].every(model => isRecord(model)
+    && typeof model['modelRef'] === 'string'
+    && typeof model['displayName'] === 'string')
+}
+
+/** Narrow one decoded JSON object to string-keyed fields. */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
 }
 
 /**

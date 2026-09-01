@@ -85,6 +85,7 @@ import type {
 
 export { CSRF_HEADER } from './http.ts'
 export type {
+  SecretCharacterClass,
   WireDepartment,
   WireDevice,
   WireGrant,
@@ -98,6 +99,7 @@ export type {
   WireRefusalReason,
   WireRole,
   WireRoleRef,
+  WireSecretPolicy,
   WireSession,
 } from './types.ts'
 
@@ -797,6 +799,7 @@ export function apply(ctx: Context, config: Config): void {
       },
       organization: await readWireOrganization(),
       permissions: await heldPermissions(ctx.accessControl, organizationId, outcome.userId),
+      secretPolicy: ctx.accountAuth.secretPolicy(),
       csrf: csrfToken(token),
     })
   }
@@ -818,6 +821,7 @@ export function apply(ctx: Context, config: Config): void {
         signed.session.orgId,
         signed.session.userId,
       ),
+      secretPolicy: ctx.accountAuth.secretPolicy(),
       csrf: csrfToken(signed.token),
     })
   }
@@ -1409,10 +1413,15 @@ export function apply(ctx: Context, config: Config): void {
         return
       }
       const roleId = RoleId(segments[1] as string)
-      const [resources, held] = await Promise.all([
+      const [roles, resources] = await Promise.all([
+        ctx.accessControl.listRoles(org),
         ctx.accessControl.listResources(org, 'model'),
-        ctx.accessControl.listRoleGrants(roleId),
       ])
+      if (!roles.some(role => role.id === roleId)) {
+        refuse(res, 404, 'not-found')
+        return
+      }
+      const held = await ctx.accessControl.listRoleGrants(roleId)
       const resourcesById = new Map(resources.map(resource => [resource.id as string, resource]))
       const wanted = new Set(modelIds as string[])
       if ([...wanted].some(id => !resourcesById.has(id))) {

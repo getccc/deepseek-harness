@@ -129,13 +129,21 @@ abstract listDevices(orgId: OrgId): Promise<Device[]>
 abstract revokeDevice(id: DeviceId): Promise<void>
 
 /**
+ * Revoke every device and credential family owned by one account in an
+ * organization. Accounts without devices need no special handling.
+ * @param orgId - the organization that owns the devices.
+ * @param userId - the account whose devices must be signed out.
+ */
+abstract revokeUserDevices(orgId: OrgId, userId: UserId): Promise<void>
+
+/**
  * Revoke one credential family, leaving the device able to bind again.
  * @param id - the family to revoke.
  */
 abstract revokeFamily(id: FamilyId): Promise<void>
 ```
 
-Types: [OrgId](account.zh.md)
+Types: [OrgId](account.zh.md) · [UserId](account.zh.md)
 
 Source: [`packages/account/device-authorization/src/index.ts`](../../packages/account/device-authorization/src/index.ts)
 <!-- END GENERATED cordis-surface -->

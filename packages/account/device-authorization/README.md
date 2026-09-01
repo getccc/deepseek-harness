@@ -54,6 +54,8 @@ const signature = sign(redeemSigningInput(started.transactionId, issued.code))
 
 `start` carries no account on purpose: a transaction belongs to nobody until a member confirms it from an authenticated session, so an unauthenticated caller who opens one learns only what it already supplied.
 
+`revokeUserDevices(orgId, userId)` revokes every credential family attached to that account in one provider transaction. Device inventory rows remain available to administrators, but none of their refresh or access tokens verify afterward. Password replacement uses this account-wide operation; revoking one device remains the narrower member-support action.
+
 ### Deriving the shared values
 
 A Runner and the Control Plane never share code at runtime, so both import [`crypto.ts`](src/crypto.ts) for every value either derives: `pkceChallenge`, `digestPublicKey`, `redeemSigningInput`, `refreshSigningInput`, and `hashSecret`.

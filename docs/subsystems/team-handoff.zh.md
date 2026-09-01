@@ -89,11 +89,12 @@ async signIn(loginName: string, secret: string): Promise<TeamAccountState>
  * Redeem the code the browser carried back, and keep the credential.
  * @param transactionId - the transaction the code belongs to.
  * @param code - the one-time authorization code.
+ * @param member - authenticated member identity returned by a local sign-in.
  * @returns the state this installation is now in.
  * @throws {NotBoundError} when no transaction is awaiting confirmation in this process.
  * @throws {ControlPlaneRefusedError} when the Control Plane refused the redemption.
  */
-async complete(transactionId: TransactionId, code: string): Promise<TeamAccountState>
+async complete( transactionId: TransactionId, code: string, member?: TeamMemberIdentity, ): Promise<TeamAccountState>
 
 /**
  * What this installation currently holds.

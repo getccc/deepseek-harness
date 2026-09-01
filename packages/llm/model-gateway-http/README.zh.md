@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-model-gateway-http` 是公司模型调用的内容真正经过 Control Plane 的地方，也是唯一附上 Provider 凭据的地方。它所做的一切都围绕两个事实展开：请求不能说出自己去往何处，响应不能被留在内存里。它验证设备 Access Token，询问[网关](../model-gateway/README.zh.md)，在一次调用的时长内解析凭据，把 Provider 的答案流式转发回去，并按 Provider 所说的花费结算那笔预留。
+`dsh-model-gateway-http` 提供面向 Runner 的模型目录与公司模型调用路径。发现操作验证设备访问 token，并向[网关](../model-gateway/README.zh.md)询问该主体可以发现的活跃模型。调用操作是模型内容经过 Control Plane 的地方，也是唯一附上提供方凭据的地方：请求不能说出自己去往何处，响应不留在内存中，预留按提供方报告的内容结算。
 
 ## 目录
 
@@ -43,6 +43,10 @@ plugins:
 
 未知的 Token、过期的 Token、设备已被撤销的 Token，一律回答 401。究竟是哪一种，恰恰是持有陈旧 Token 的攻击者想要知道的。
 
+### 发现使用同一个设备主体
+
+`GET /team/model/catalog` 验证当前设备 token，并且只返回 `model.discover` 允许的每个活跃模型的稳定引用与显示名。端点、上游模型与凭据引用留在 Control Plane。`POST /team/model/invoke` 会独立询问 `model.invoke`，因此知道或保留模型引用无法绕过调用决策。
+
 ### 凭据只为一次调用而存在
 
 它在这里被解析，而不被写到任何地方——不写进计划、不写进目录、不写进日志。一条指名了没人配置过的引用、或者根本不是凭据引用的目录记录，回答 500 且不计费：那是这个部署的问题，不是成员的。
@@ -68,9 +72,9 @@ plugins:
 
 | 路径 | 角色 |
 |---|---|
-| [`src/index.ts`](src/index.ts) | 端点、代理与结算判定 |
+| [`src/index.ts`](src/index.ts) | 发现与调用端点、代理及结算判定 |
 | [`src/usage.ts`](src/usage.ts) | 从一个没人缓冲的响应中读出 Provider 的 Usage |
-| [`src/protocol.ts`](src/protocol.ts) | 两侧共同导入的路径与请求体 |
+| [`src/protocol.ts`](src/protocol.ts) | 两侧共同导入的路径与请求体定义 |
 | [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件注册 |
 
 -----

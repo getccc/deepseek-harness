@@ -39,7 +39,7 @@ let orgId: OrgId
 let alice: UserId
 
 const CALLBACK = 'http://127.0.0.1:3080/team/callback'
-const PASSWORD = 'correct-horse-battery-staple'
+const PASSWORD = 'Correct-Horse-Battery-1'
 
 /** Boot a Control Plane with the Runner-facing endpoints, on an OS-assigned port. */
 async function bootControlPlane(codeTtlMs = 60_000, accessTokenTtlMs = 900_000): Promise<Context> {
@@ -47,7 +47,8 @@ async function bootControlPlane(codeTtlMs = 60_000, accessTokenTtlMs = 900_000):
   await context.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
   await context.plugin(SqliteAccountStore, { path: ':memory:' }).await()
   await context.plugin(PasswordAccountAuth, {
-    minSecretLength: 8, maxFailedAttempts: 5, lockDurationMs: 60_000,
+    minSecretLength: 8, requiredClasses: ['uppercase', 'lowercase', 'digit'],
+    maxFailedAttempts: 5, lockDurationMs: 60_000,
     cost: 2, blockSize: 8, parallelization: 1,
   }).await()
   await context.plugin(SqliteAudit, { path: ':memory:', maxQueryRows: 100 }).await()

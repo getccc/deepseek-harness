@@ -33,6 +33,26 @@ export type AuthenticationOutcome =
   }
   | { readonly ok: false }
 
+/** The kinds of character a policy can require a secret to contain. */
+export const SECRET_CHARACTER_CLASSES = ['uppercase', 'lowercase', 'digit'] as const
+
+/** One kind of character a policy can require. */
+export type SecretCharacterClass = typeof SECRET_CHARACTER_CLASSES[number]
+
+/**
+ * What a secret must satisfy for {@link AccountAuth.setSecret} to accept it.
+ *
+ * Published as fields rather than as the sentence {@link WeakSecretError}
+ * carries, so a caller can refuse a secret in its own words before sending it.
+ * The provider still enforces the policy: a caller is not the authority on it.
+ */
+export interface SecretPolicy {
+  /** Fewest characters `setSecret` accepts. */
+  readonly minLength: number
+  /** Classes the secret must contain at least one character of, each. */
+  readonly requiredClasses: readonly SecretCharacterClass[]
+}
+
 /** Raised when a proposed secret does not satisfy the deployment's policy. */
 export class WeakSecretError extends Error {
   constructor(readonly requirement: string) {
@@ -70,4 +90,10 @@ export abstract class AccountAuth extends Service {
    * @throws {WeakSecretError} when the secret does not satisfy the deployment's policy.
    */
   abstract setSecret(userId: UserId, secret: string): Promise<void>
+
+  /**
+   * The policy {@link AccountAuth.setSecret} applies.
+   * @returns what a secret must satisfy for this deployment to accept it.
+   */
+  abstract secretPolicy(): SecretPolicy
 }

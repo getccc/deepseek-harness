@@ -29,12 +29,13 @@ kind: "package-reference"
 - id: account-auth
   name: '@deepseek-ai/dsh-account-auth-password'
   config:
-    minSecretLength: 12
+    minSecretLength: 8
+    requiredClasses: [uppercase, lowercase, digit]
     maxFailedAttempts: 5
     lockDurationMs: 900000
 ```
 
-每个字段都有默认值，因此空配置就是一套可用部署。派生成本同样可配（`cost`、`blockSize`、`parallelization`），默认取的是刻意偏慢的设置；调低它是一个需要明确做出的决定，不是随手可取的优化。
+每个字段都有默认值，因此空配置就是一套可用部署。派生成本同样可配（`cost`、`blockSize`、`parallelization`），默认取的是刻意偏慢的设置；调低它是一个需要明确做出的决定，不是随手可取的优化。`requiredClasses` 指名密钥必须各含一个字符的类别：`uppercase`、`lowercase` 与 `digit`，可任意组合，也可以一个都不要。`secretPolicy` 会回答这两个字段，调用方无需另行写死要求就能说明它。
 
 ### 日后提高成本
 

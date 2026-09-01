@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`@deepseek-ai/dsh-llm-deepseek` is the direct DeepSeek adapter for the harness LLM service: it owns the `deepseek-official` provider route and translates DeepSeek's chat-completions wire format into the harness stream-chunk protocol. With it a composition can stream DeepSeek models with configurable thinking and reasoning effort, send images to vision models, and browse an advisory model catalog. Connection facts — endpoint, catalog, key, thinking policy — resolve per request, so editing the user settings document changes the next request without a restart. It is one of two structurally different adapters for DeepSeek: the pi-ai twin serves its own route names through a library and additional providers, and both can be mounted side by side.
+`@deepseek-ai/dsh-llm-deepseek` is the DeepSeek chat-completions adapter for the harness LLM service: it owns the `deepseek-official` provider route and translates DeepSeek's wire format into the harness stream-chunk protocol. Without an LLM HTTP transport it calls the configured provider directly. With one mounted, model discovery and chat invocation use that transport instead, which is how the Team Runner keeps the company endpoint, credential, and model authorization on the Control Plane. It is one of two structurally different adapters for DeepSeek: the pi-ai twin serves its own route names through a library and additional providers, and both can be mounted side by side.
 
 ## Table of Contents
 
@@ -48,6 +48,8 @@ Choose this adapter when the deployment targets DeepSeek's official API, optiona
 
 A request selects the route with `provider: deepseek-official`; the model id passes through to the wire, so new DeepSeek models need no re-registration. Omitted `models` advertises `deepseek-v4-flash` as the fast, economical choice for focused work, `deepseek-v4-pro` as the stronger, higher-cost choice for complex or quality-critical work, and the image-capable `deepseek-v4-flash-vision-exp`; each has a 1,000,000-token context window. An explicit list replaces those defaults, and unlisted model ids still pass through as text-only routes. Clients, including model discovery tools, can read the advisory entries through `ctx.llm.listModels('deepseek-official')`. Image-capable entries may set `imagePixelBudget` to a positive integer or `low`, and may set `imageMaxBytes`.
 
+When `ctx.llmHttpTransport` is present, its `listModels()` replaces that local advisory list and each serialized chat request goes through its `send()` method. The adapter does not resolve the configured provider key in that mode. A Team transport supplies the role-filtered catalog and routes invocation through the Control Plane gateway under the Runner's current device access token.
+
 | Field | Default | Meaning |
 |---|---|---|
 | `apiKeyEnv` | `DEEPSEEK_API_KEY` | Credential reference resolved per request through the credentials seam, then the environment |
@@ -84,11 +86,11 @@ Files mode bounds retained request versions by `maxRequestFilesBytes` and `maxIm
 
 ### Dynamic configuration
 
-Connection facts are re-read once per operation through the optional settings and credentials seams. A `llm-deepseek:` section in the user settings document overrides any field without a restart; a snapshot that fails a beyond-schema bound keeps the last good facts and logs the failure. The API key resolves per stream call from the same snapshot that supplies the endpoint, image and Files policies, and idle budget, so a rejected settings generation contributes none of them. Image requests resolve the attachment service at request time, so load order does not freeze image availability.
+Connection facts are re-read once per operation through the optional settings and credentials seams. A `llm-deepseek:` section in the user settings document overrides any field without a restart; a snapshot that fails a beyond-schema bound keeps the last good facts and logs the failure. For a direct request, the API key resolves per stream call from the same snapshot that supplies the endpoint, image and Files policies, and idle budget. A mounted transport owns the catalog and trip instead, so no local provider key is resolved. Image requests resolve the attachment service at request time, so load order does not freeze image availability.
 
 ### Provider-specific request fields
 
-When `ctx.deepseekLlmApiExtensions` is present, the adapter prepares its registered top-level fields from the exact serialized base request before `fetch`. Preparation or field collisions fail before HTTP; after a 2xx response, the adapter accepts every captured contribution before consuming SSE. Transport and non-2xx failures do not accept them. Shipped compositions use this for the optional incremental `dsh_session_log` field and the default-on active `dsh_plugin_packages` inventory; both stay outside model input.
+When `ctx.deepseekLlmApiExtensions` is present, the adapter prepares its registered top-level fields from the exact serialized base request before the HTTP call. Preparation or field collisions fail before HTTP; after a 2xx response, the adapter accepts every captured contribution before consuming SSE. Transport and non-2xx failures do not accept them. Shipped compositions use this for the optional incremental `dsh_session_log` field and the default-on active `dsh_plugin_packages` inventory; both stay outside model input.
 
 ### Failures and recovery
 
@@ -116,13 +118,13 @@ The plugin is built on one explicit resolve step and one registration fact. `res
 | [`src/adapter.ts`](src/adapter.ts) | The `DeepSeekAdapter`: model resolution, image projection, Files fallback, streaming with idle timeout |
 | [`src/file-store.ts`](src/file-store.ts) + [`src/files-api.ts`](src/files-api.ts) | Scoped upload caching, expiry, stale-id recovery, quota cleanup, and remote file operations |
 | [`src/serialize.ts`](src/serialize.ts) | Wire serialization: thinking defaults, Files or inline image blocks, history rules |
-| [`src/sse.ts`](src/sse.ts) | `eventsource-parser` SSE framing for the direct `fetch` stream |
+| [`src/sse.ts`](src/sse.ts) | `eventsource-parser` framing for a direct or transported SSE response |
 | [`src/translate.ts`](src/translate.ts) | SSE payload translation into harness `StreamChunk` values |
 | [`src/types.ts`](src/types.ts) | Wire-level types shared by the modules above |
 
 ### Wire flow
 
-One `stream()` call normally makes one chat request: resolve deterministic request images, prefer Files ids, prepare any registered top-level request extensions, fetch from the resolved `baseURL`, accept extension transactions after HTTP 2xx, and translate the SSE stream into the harness protocol. File-resolution failure makes the first chat inline; a provider stale-file response permits one replacement attempt, also inline if replacement resolution fails. Every chat and Files call carries shared attribution plus the stable anonymous user id outside model input, and a session call also carries its session id. Reasoning history is serialized back when required, and cache accounting maps DeepSeek's cache-hit metrics into harness usage.
+One `stream()` call serializes one chat request, prepares any registered top-level request extensions, and either fetches from the resolved `baseURL` or asks the mounted transport to carry the model ref and body. A direct image request resolves deterministic request versions and prefers Files ids; file-resolution failure makes the first chat inline, and a provider stale-file response permits one replacement attempt. The adapter accepts extension transactions after HTTP 2xx and translates either response SSE stream into the harness protocol. Reasoning history is serialized back when required, and cache accounting maps DeepSeek's cache-hit metrics into harness usage.
 
 </details>
 
@@ -185,9 +187,10 @@ These limits define where the adapter stops and future work begins. They are cur
 
 - **A settings `models` list replaces the composition list wholesale** — settings-layer merging is per-field, and arrays are one field; per-entry catalog merging would need a keyed shape.
 - **`tool_choice` is not mapped** — not part of the core vocabulary (shared with the pi-ai twin).
-- **Requests use raw `fetch`, not `@cordisjs/plugin-http`** — no shared proxy or interception configuration.
+- **Direct requests use raw `fetch`, not `@cordisjs/plugin-http`** — no shared proxy or interception configuration; Team requests use the mounted transport.
 - **Plugin-added content block types are skipped** — core text and supported image blocks are serialized, and empty tool output crosses the wire as the literal `(no output)`.
 - **Images are input-only durable attachments** — direct external URLs and assistant image output are not supported; DeepSeek input normally uses the Files API and uses inline base64 only for per-request recovery.
+- **Mounted transports are text-only** — the transport request has no DeepSeek Files API upload operation, so an image request is refused before credential or network access.
 
 <a id="dev-note"></a>
 ### Dev Note

@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-llm-http-transport-team` is how a company model request leaves a member's computer. It sends an operation, a model ref, and the body an adapter built. What it does not send — and could not, because the request has no place for it — is an address or an upstream credential, so the company key stays where a plugin sharing this process cannot reach it.
+`dsh-llm-http-transport-team` is how a company model catalog and model request reach the Control Plane from a member's computer. Discovery returns only the models the current device principal may see. Invocation sends an operation, a model ref, and the body an adapter built. Neither request carries an upstream address or credential, so the company key stays where a plugin sharing the Runner process cannot reach it.
 
 ## Table of Contents
 
@@ -33,6 +33,8 @@ plugins:
 
 It injects `teamAccountClient`, so this computer must be bound before a company model call can leave it. A call made from an unbound computer fails with `not-bound`, which is a different thing to tell a member than `refused`: one is "connect this computer", the other is "ask an administrator".
 
+`listModels()` reads `/team/model/catalog` with the current device access token. The Control Plane evaluates `model.discover` over each active model resource before it returns the stable model ref and display name. `send()` uses the same current token for `/team/model/invoke`, where the gateway independently evaluates `model.invoke`, reserves quota, resolves the upstream endpoint and credential, and streams the provider response back.
+
 -----
 
 <a id="understand-the-implementation"></a>
@@ -54,7 +56,7 @@ An adapter parses a completion as it arrives, and holding one here would undo th
 
 | Path | Role |
 |---|---|
-| [`src/index.ts`](src/index.ts) | The transport, the token read, and the period |
+| [`src/index.ts`](src/index.ts) | Catalog discovery, invocation transport, the token read, and the period |
 | [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----

@@ -20,7 +20,9 @@ import { getOrCreateAnonymousUserId, type AnonymousUserId } from '@deepseek-ai/d
 import { SessionId } from '@deepseek-ai/dsh-session'
 import DeepSeekLlmApiExtensionRegistry from '@deepseek-ai/dsh-deepseek-llm-api-extensions'
 import type { PreparedDeepSeekLlmApiExtensions } from '@deepseek-ai/dsh-deepseek-llm-api-extensions'
-import type { LlmHttpTransport } from '@deepseek-ai/dsh-llm-http-transport'
+import type {
+  LlmHttpTransport, TransportRequest, TransportResponse,
+} from '@deepseek-ai/dsh-llm-http-transport'
 import * as LlmDeepSeek from '@deepseek-ai/dsh-llm-deepseek'
 import { DeepSeekAdapter, resolveAdapterOptions } from '@deepseek-ai/dsh-llm-deepseek'
 import { httpErrorCode } from '../src/adapter.ts'
@@ -192,7 +194,7 @@ describe('request image policy', () => {
 describe('DeepSeekAdapter against a mock server', () => {
   it('uses the mounted transport for invocation without resolving a provider key', async () => {
     const resolveApiKey = vi.fn(() => Promise.reject(new Error('must not resolve')))
-    const send = vi.fn(() => Promise.resolve({
+    const send = vi.fn<(request: TransportRequest) => Promise<TransportResponse>>(() => Promise.resolve({
       status: 200,
       headers: { 'content-type': 'text/event-stream' },
       body: Readable.from([Buffer.from(textEvents.map(event => `data: ${event}\n\n`).join(''))]),
@@ -215,14 +217,14 @@ describe('DeepSeekAdapter against a mock server', () => {
     }))
 
     expect(resolveApiKey).not.toHaveBeenCalled()
-    expect(send).toHaveBeenCalledWith(expect.objectContaining({
+    expect(send.mock.calls[0]?.[0]).toMatchObject({
       operation: 'chat.completions',
       modelRef: 'company-v4',
       inputTokens: 0,
       maxOutputTokens: 512,
       correlationId: 'session-1',
-      body: expect.objectContaining({ model: 'company-v4', max_tokens: 512 }),
-    }))
+      body: { model: 'company-v4', max_tokens: 512 },
+    })
   })
 
   it('merges prepared extension fields and accepts them once after HTTP 2xx', async () => {
@@ -1899,7 +1901,9 @@ describe('plugin registration and config', () => {
     const connection = resolveAdapterOptions({})
     const adapter = new DeepSeekAdapter({
       options: () => connection,
-      listModels: () => Promise.resolve([{ id: 'company-v4', name: 'Company V4' }]),
+      transport: () => ({
+        listModels: () => Promise.resolve([{ id: 'company-v4', name: 'Company V4' }]),
+      }) as unknown as LlmHttpTransport,
       resolveApiKey: () => Promise.resolve('k'),
       resolveUserId: () => TEST_USER_ID,
       prepareExtensions: noExtensions,

@@ -45,11 +45,13 @@ const user = await ctx.accountStore.createUser({
 
 ### 新签发的账户还不能登录
 
-`createUser` 只存储身份。账户不携带任何认证材料，且 `mustChangePassword` 为真，因此管理员无法替成员创建一个可用账户——清除该标志的只能是成员自己选定密钥。`setPasswordHash` 会一并存下该密钥的编码形式并清除标志。
+`createUser` 只存储身份。账户不携带任何认证材料，且 `mustChangePassword` 为真。配置账户的调用方随后通过认证提供方写入秘密；`setPasswordHash` 会一并存下该秘密的编码形式并清除标志。
 
 ### 登录状态在此计数，在别处裁决
 
 `recordFailedLogin` 返回连续失败次数，`lockUser` 会拒绝登录直到你传入的那个时刻。存储从不判断某个次数是否过高、锁多久；这套策略归认证提供方所有，它调用这些方法来记录自己的裁决。
+
+浏览器会话也与账户记录存放在一起。`revokeBrowserSessions` 把移除一个账户的所有管理会话作为一次账户恢复操作；账户没有会话时结束操作也成功。
 
 ### 你可以据以行动的失败
 

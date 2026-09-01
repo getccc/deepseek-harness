@@ -17,8 +17,8 @@
   ],
   "scripts": {
     "build": "tsc -b",
-    "package:mac": "npm run build && electron-builder --mac dmg --arm64",
-    "package:win": "npm run build && electron-builder --win nsis --x64"
+    "package:mac": "npm run build && electron-builder --config electron-builder.config.mjs --mac dmg --arm64",
+    "package:win": "npm run build && electron-builder --config electron-builder.config.mjs --win nsis --x64"
   },
   "license": "MIT",
   "devDependencies": {

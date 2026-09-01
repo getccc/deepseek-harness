@@ -52,6 +52,8 @@ if (outcome.ok) {
 
 `setSecret` 存下提供方派生出的任何东西，并满足一个新签发账户欠其持有者的那件事。若密钥不符合部署的策略，它以 `WeakSecretError` 拒绝，其 `requirement` 指明所要求的内容，供表单展示。
 
+`secretPolicy` 以字段形式公布同一份策略，使调用方能在密钥被键入时用自己的措辞拒绝它，而不必先发出去再翻译一次拒绝。它是供表单读取的副本，不是权威：`setSecret` 仍会对送达的内容施加该策略。
+
 -----
 
 <a id="understand-the-implementation"></a>
@@ -65,7 +67,7 @@ if (outcome.ok) {
 
 | 路径 | 作用 |
 |---|---|
-| [`src/index.ts`](src/index.ts) | 抽象服务、结果联合类型，以及 `WeakSecretError` |
+| [`src/index.ts`](src/index.ts) | 抽象服务、结果联合类型、密钥策略，以及 `WeakSecretError` |
 | [`src/invariant.ts`](src/invariant.ts) | 不变量伴随插件的注册 |
 
 -----

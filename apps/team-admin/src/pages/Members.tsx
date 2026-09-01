@@ -7,20 +7,24 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
   Avatar, Button, DatePicker, Form, Input, Select, Space, Table, Tag, Tree, Typography,
 } from 'antd'
+import type { Rule } from 'antd/es/form'
 import type { ColumnsType } from 'antd/es/table'
 import type { Dayjs } from 'dayjs'
 import {
   api,
+  type SecretCharacterClass,
   type WireDepartment,
   type WireDevice,
   type WireMember,
   type WireOrganization,
   type WireRole,
+  type WireSecretPolicy,
 } from '../api.ts'
 import { useLocale } from '../locale.tsx'
+import type { CopyKey } from '../locales.ts'
 import {
   ConfirmModal, FormModal, Moment, PageNote, RowActions, StatusSwitch, StatusTag, Toolbar,
-  downloadCsv, useErrorReporter, useLoaded,
+  downloadCsv, toTree, useErrorReporter, useLoaded,
 } from '../ui.tsx'
 
 /** Which dialog is open, and what it is about. */
@@ -63,19 +67,66 @@ interface Filters {
 
 const NO_FILTERS: Filters = { term: '', phone: '', status: undefined, from: undefined, to: undefined }
 
-/** The key the tree uses for "every department, and the accounts in none". */
-const ALL_DEPARTMENTS = ''
+/**
+ * What each required character class looks for.
+ *
+ * The Control Plane applies the same rule and is the authority on it; this map
+ * is what lets the form say so while the password is still being typed.
+ */
+const CLASS_PATTERNS: Record<SecretCharacterClass, RegExp> = {
+  uppercase: /\p{Lu}/u,
+  lowercase: /\p{Ll}/u,
+  digit: /\p{Nd}/u,
+}
+
+/** The console's word for each character class. */
+const CLASS_COPY: Record<SecretCharacterClass, CopyKey> = {
+  uppercase: 'members.classUppercase',
+  lowercase: 'members.classLowercase',
+  digit: 'members.classDigit',
+}
+
+/** One node of the department picker: the company at the root, departments under it. */
+interface DepartmentNode {
+  readonly key: string
+  readonly title: string
+  /** The department this one sits under, absent at the top of the tree. */
+  readonly parentId?: string
+  children?: DepartmentNode[]
+}
+
+/**
+ * Every department inside one, that department included.
+ *
+ * Selecting a department in the picker selects what hangs from it, so a
+ * department whose people all sit in its sub-departments still lists them.
+ * @param departments - the stored list, parents already before their children.
+ * @param rootId - the selected department.
+ * @returns the ids the table admits.
+ */
+function within(departments: readonly WireDepartment[], rootId: string): ReadonlySet<string> {
+  const inside = new Set([rootId])
+  for (const entry of departments) {
+    if (entry.parentId !== undefined && inside.has(entry.parentId)) inside.add(entry.id)
+  }
+  return inside
+}
 
 /**
  * The member directory and everything an administrator does to it.
  * @param props.held - the `resourceType|action` pairs this member holds.
  * @param props.signedInId - the account this session belongs to, which it cannot delete.
+ * @param props.secretPolicy - what a password set here must satisfy.
  * @returns the users view.
  */
 export function Members({
-  held, signedInId,
-}: { readonly held: ReadonlySet<string>; readonly signedInId: string }): ReactNode {
-  const { t } = useLocale()
+  held, signedInId, secretPolicy,
+}: {
+  readonly held: ReadonlySet<string>
+  readonly signedInId: string
+  readonly secretPolicy: WireSecretPolicy
+}): ReactNode {
+  const { t, locale } = useLocale()
   const report = useErrorReporter()
   const members = useLoaded<WireMember[]>(api.members, report)
   const roles = useLoaded<WireRole[]>(api.roles, report)
@@ -96,7 +147,7 @@ export function Members({
   const [dialog, setDialog] = useState<Dialog | undefined>(undefined)
   const [filters, setFilters] = useState<Filters>(NO_FILTERS)
   const [draft, setDraft] = useState<Filters>(NO_FILTERS)
-  const [department, setDepartment] = useState<string>(ALL_DEPARTMENTS)
+  const [department, setDepartment] = useState<string | undefined>(undefined)
   const [expanded, setExpanded] = useState<readonly string[]>([])
 
   const mayCreate = held.has('member|member.create')
@@ -112,8 +163,8 @@ export function Members({
   // and its departments are still being read then, and there is nothing to open.
   useEffect(() => {
     if (organization.data === undefined) return
-    setExpanded([ALL_DEPARTMENTS, organization.data.id])
-  }, [organization.data])
+    setExpanded([organization.data.id, ...(departments.data ?? []).map(entry => entry.id)])
+  }, [organization.data, departments.data])
 
   /** Run one write, put its answer on screen, and close the dialog. */
   const act = async (write: () => Promise<WireMember[]>): Promise<void> => {
@@ -125,6 +176,14 @@ export function Members({
     }
   }
 
+  // The company is the root of the picker and stands for the whole
+  // organization, so a table narrowed by it is narrowed by nothing.
+  const company = organization.data?.id
+  const selected = department ?? company
+  const narrowed = department === undefined || department === company
+    ? undefined
+    : within(departments.data ?? [], department)
+
   const matching = (members.data ?? []).filter((member) => {
     const term = filters.term.trim().toLowerCase()
     const named = term === ''
@@ -135,31 +194,30 @@ export function Members({
     const staged = filters.status === undefined || member.status === filters.status
     const after = filters.from === undefined || member.createdAt >= filters.from.startOf('day').valueOf()
     const before = filters.to === undefined || member.createdAt <= filters.to.endOf('day').valueOf()
-    const placed = department === ALL_DEPARTMENTS || member.departmentId === department
+    const placed = narrowed === undefined
+      || (member.departmentId !== undefined && narrowed.has(member.departmentId))
     return named && phoned && staged && after && before && placed
   })
 
   const everyBranch = [
-    ALL_DEPARTMENTS,
-    ...(organization.data === undefined ? [] : [organization.data.id]),
+    ...(company === undefined ? [] : [company]),
+    ...(departments.data ?? []).map(entry => entry.id),
   ]
 
-  const treeData = [{
-    key: ALL_DEPARTMENTS,
-    title: t('members.allDepartments'),
-    children: organization.data === undefined ? [] : [{
-      key: organization.data.id,
-      title: organization.data.name,
-      selectable: false,
-      children: (departments.data ?? []).map(entry => ({
+  // The picker is the organization chart itself, nested the way the
+  // organizations page draws it, with no row above the company.
+  const treeData: DepartmentNode[] = organization.data === undefined ? [] : [{
+    key: organization.data.id,
+    title: organization.data.name,
+    children: toTree<DepartmentNode>(
+      (departments.data ?? []).map(entry => ({
         key: entry.id,
         title: entry.name,
-        // The tree is one level of departments under the organization: the
-        // list arrives parents-first, and a nested picker would hide a child
-        // department behind a parent nobody is filtering by.
-        children: [],
+        ...(entry.parentId === undefined ? {} : { parentId: entry.parentId }),
       })),
-    }],
+      node => node.key,
+      node => node.parentId,
+    ),
   }]
 
   const columns: ColumnsType<WireMember> = [
@@ -293,6 +351,25 @@ export function Members({
   const bindable = dialog?.kind === 'bind'
     ? (roles.data ?? []).filter(role => !dialog.member.roles.some(bound => bound.id === role.id))
     : []
+  // The Control Plane's policy, applied here as the box is typed and stated in
+  // it while it is empty: an administrator reads what is wanted in this
+  // console's language instead of sending a password and being refused.
+  const classWords = secretPolicy.requiredClasses.map(name => t(CLASS_COPY[name]))
+  const tooShort = t('members.passwordLength', { n: secretPolicy.minLength })
+  const passwordRule = classWords.length === 0
+    ? tooShort
+    : t('members.passwordRule', {
+      n: secretPolicy.minLength,
+      classes: new Intl.ListFormat(locale, { type: 'conjunction' }).format(classWords),
+    })
+  const passwordRules: Rule[] = [
+    { required: true, message: t('login.required') },
+    { min: secretPolicy.minLength, message: tooShort },
+    ...secretPolicy.requiredClasses.map(name => ({
+      pattern: CLASS_PATTERNS[name],
+      message: t('members.passwordClass', { class: t(CLASS_COPY[name]) }),
+    })),
+  ]
   const departmentOptions = (departments.data ?? []).map(entry => ({ value: entry.id, label: entry.name }))
   const genderOptions = (['male', 'female', 'unspecified'] as const)
     .map(value => ({ value, label: t(`members.${value}`) }))
@@ -315,10 +392,10 @@ export function Members({
           <Tree
             blockNode
             expandedKeys={[...expanded]}
-            selectedKeys={[department]}
+            selectedKeys={selected === undefined ? [] : [selected]}
             treeData={treeData}
             onExpand={(keys) => { setExpanded(keys as string[]) }}
-            onSelect={(keys) => { setDepartment((keys[0] ?? ALL_DEPARTMENTS) as string) }}
+            onSelect={(keys) => { setDepartment(keys[0] as string | undefined) }}
           />
         </aside>
         <div className="split-main">
@@ -440,17 +517,17 @@ export function Members({
                       {
                         title: t('devices.runner'),
                         dataIndex: 'runnerVersion',
-                        render: value => <Tag>{value}</Tag>,
+                        render: (value: WireDevice['runnerVersion']) => <Tag>{value}</Tag>,
                       },
                       {
                         title: t('members.status'),
                         dataIndex: 'status',
-                        render: value => <StatusTag value={value} />,
+                        render: (value: WireDevice['status']) => <StatusTag value={value} />,
                       },
                       {
                         title: t('devices.lastSeen'),
                         dataIndex: 'lastSeenAt',
-                        render: value => <Moment value={value} />,
+                        render: (value: WireDevice['lastSeenAt']) => <Moment value={value} />,
                       },
                       {
                         title: t('action.actions'),
@@ -476,6 +553,7 @@ export function Members({
         title={t(editing === undefined ? 'members.addTitle' : 'members.editTitle')}
         open={dialog?.kind === 'add' || dialog?.kind === 'edit'}
         okText={t(editing === undefined ? 'action.create' : 'action.save')}
+        columns={2}
         initialValues={editing === undefined
           ? {}
           : {
@@ -508,7 +586,9 @@ export function Members({
           })))}
       >
         {editing === undefined && (
-          <Typography.Paragraph type="secondary">{t('members.addHint')}</Typography.Paragraph>
+          <Typography.Paragraph className="form-grid-wide" type="secondary">
+            {t('members.addHint')}
+          </Typography.Paragraph>
         )}
         <Form.Item
           name="loginName"
@@ -528,24 +608,20 @@ export function Members({
         </Form.Item>
         {editing === undefined && (
           <>
-            <Form.Item
-              name="secret"
-              label={t('login.password')}
-              rules={[{ required: true, message: t('login.required') }]}
-            >
-              <Input.Password autoComplete="new-password" />
+            <Form.Item name="secret" label={t('login.password')} rules={passwordRules} validateFirst>
+              <Input.Password autoComplete="new-password" placeholder={passwordRule} />
             </Form.Item>
             <Form.Item
               name="confirmSecret"
               label={t('members.confirmPassword')}
               dependencies={['secret']}
+              validateFirst
               rules={[
                 { required: true, message: t('login.required') },
                 ({ getFieldValue }) => ({
-                  validator: async (_rule, value: unknown): Promise<void> => {
-                    if (value === getFieldValue('secret')) return
-                    throw new Error(t('members.passwordMismatch'))
-                  },
+                  validator: (_rule, value: unknown): Promise<void> => value === getFieldValue('secret')
+                    ? Promise.resolve()
+                    : Promise.reject(new Error(t('members.passwordMismatch'))),
                 }),
               ]}
             >
@@ -609,24 +685,20 @@ export function Members({
         <Typography.Paragraph type="secondary">
           {t('members.resetPasswordHint')}
         </Typography.Paragraph>
-        <Form.Item
-          name="secret"
-          label={t('login.password')}
-          rules={[{ required: true, message: t('login.required') }]}
-        >
-          <Input.Password autoComplete="new-password" />
+        <Form.Item name="secret" label={t('login.password')} rules={passwordRules} validateFirst>
+          <Input.Password autoComplete="new-password" placeholder={passwordRule} />
         </Form.Item>
         <Form.Item
           name="confirmSecret"
           label={t('members.confirmPassword')}
           dependencies={['secret']}
+          validateFirst
           rules={[
             { required: true, message: t('login.required') },
             ({ getFieldValue }) => ({
-              validator: async (_rule, value: unknown): Promise<void> => {
-                if (value === getFieldValue('secret')) return
-                throw new Error(t('members.passwordMismatch'))
-              },
+              validator: (_rule, value: unknown): Promise<void> => value === getFieldValue('secret')
+                ? Promise.resolve()
+                : Promise.reject(new Error(t('members.passwordMismatch'))),
             }),
           ]}
         >

@@ -20,6 +20,10 @@ The model page stores only the model gateway's catalog fields. A credential fiel
 
 A credential reference and a credential key address different things, and only the reference resolves when the gateway makes the call. The console and the catalog each refuse a value that is not a reference, so registering one fails where an administrator typed it rather than at the first invocation of a model the catalog reads as active.
 
+The session answer carries the deployment's password policy, and the console checks a new password against it as the box is typed. A console holding its own copy of the requirement would state a rule the Control Plane may not hold, and a refusal after the fact tells an administrator only that something was wrong. The Control Plane still applies the policy to whatever arrives.
+
+The users page narrows by the organization chart itself: the company at the root, departments nested under it, and no row above the company. Selecting the company selects everyone, and selecting a department takes the departments under it with it.
+
 An administrative page or action that fails answers as the site's failure. Without that answer the web server's own fallback replies with a bare 400, which tells a signed-in administrator their request was malformed when the site is what could not serve it.
 
 ## Alternatives considered
@@ -29,6 +33,8 @@ An administrative page or action that fails answers as the site's failure. Witho
 **Styling the existing three pages only.** Rejected because appearance would improve while organization, grants, member-role bindings, and company models remained invisible. The missing information architecture is the product defect.
 
 **Making an administrative role a master key.** Rejected because managing accounts must not imply model invocation or knowledge access. The console displays and edits explicit grants; it does not add permission inheritance outside the existing allow-only union.
+
+**Restating the password requirement in the console.** Rejected because the deployment configures that requirement, and a second copy of the number is a second thing to change. The console reads what the Control Plane answers.
 
 **Letting the page accept arbitrary permission strings.** Rejected because the closed catalog is what makes a typo fail where a grant is written. The form submits only catalog pairs and the service validates the pair again.
 

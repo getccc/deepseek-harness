@@ -37,7 +37,7 @@ let audit: Audit
 let orgId: OrgId
 let alice: UserId
 
-const PASSWORD = 'correct-horse-battery-staple'
+const PASSWORD = 'Correct-Horse-Battery-1'
 
 /** A well-formed request to open a transaction. */
 function startBody(): Record<string, unknown> {
@@ -69,7 +69,8 @@ beforeEach(async () => {
   await ctx.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
   await ctx.plugin(SqliteAccountStore, { path: ':memory:' }).await()
   await ctx.plugin(PasswordAccountAuth, {
-    minSecretLength: 8, maxFailedAttempts: 5, lockDurationMs: 60_000,
+    minSecretLength: 8, requiredClasses: ['uppercase', 'lowercase', 'digit'],
+    maxFailedAttempts: 5, lockDurationMs: 60_000,
     cost: 2, blockSize: 8, parallelization: 1,
   }).await()
   await ctx.plugin(SqliteAudit, { path: ':memory:', maxQueryRows: 100 }).await()
@@ -133,7 +134,8 @@ describe('opening a transaction', () => {
     await ctxSmall.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
     await ctxSmall.plugin(SqliteAccountStore, { path: ':memory:' }).await()
     await ctxSmall.plugin(PasswordAccountAuth, {
-      minSecretLength: 8, maxFailedAttempts: 5, lockDurationMs: 60_000,
+      minSecretLength: 8, requiredClasses: ['uppercase', 'lowercase', 'digit'],
+      maxFailedAttempts: 5, lockDurationMs: 60_000,
       cost: 2, blockSize: 8, parallelization: 1,
     }).await()
     await ctxSmall.plugin(SqliteAudit, { path: ':memory:', maxQueryRows: 100 }).await()
@@ -254,7 +256,8 @@ describe('mounted with default endpoint config', () => {
     await bare.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
     await bare.plugin(SqliteAccountStore, { path: ':memory:' }).await()
     await bare.plugin(PasswordAccountAuth, {
-      minSecretLength: 8, maxFailedAttempts: 5, lockDurationMs: 60_000,
+      minSecretLength: 8, requiredClasses: ['uppercase', 'lowercase', 'digit'],
+      maxFailedAttempts: 5, lockDurationMs: 60_000,
       cost: 2, blockSize: 8, parallelization: 1,
     }).await()
     await bare.plugin(SqliteAudit, { path: ':memory:', maxQueryRows: 100 }).await()

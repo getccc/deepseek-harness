@@ -38,6 +38,8 @@
 
 已存哈希是自描述的：它记录了产生自己的算法与全部参数，校验依据哈希自身的记载而非当前配置，而一次针对较弱参数的成功登录会按当前参数重新派生。这正是让一个账户在其持有者什么都不做的情况下，迁移到更强成本——或迁移到另一种算法——的机制。
 
+`secretPolicy` 公布 `setSecret` 所强制的内容——长度下限，以及密钥必须各含一个字符的类别——好让表单在密钥被键入时就用自己的语言拒绝它。公布并不转移任何决定：`setSecret` 会对送达的内容施加该策略，并以 `WeakSecretError` 指明未被满足的那一项。
+
 ## 消费方
 
 访问控制把主体解析到组织并读取 `policyRevision`——每一次影响授权的变更都在变更自身所在的事务中递增它。它目前还不存在；这些接缝先落地，是因为它需要一个安放身份的地方。
@@ -77,6 +79,12 @@ abstract authenticate(orgId: OrgId, loginName: string, secret: string): Promise<
  * @throws {WeakSecretError} when the secret does not satisfy the deployment's policy.
  */
 abstract setSecret(userId: UserId, secret: string): Promise<void>
+
+/**
+ * The policy {@link AccountAuth.setSecret} applies.
+ * @returns what a secret must satisfy for this deployment to accept it.
+ */
+abstract secretPolicy(): SecretPolicy
 ```
 
 Source: [`packages/account/account-auth/src/index.ts`](../../packages/account/account-auth/src/index.ts)
@@ -123,8 +131,8 @@ abstract bumpPolicyRevision(id: OrgId): Promise<bigint>
 
 /**
  * Issue an account. The account starts active, with no password material and
- * `mustChangePassword` set, so an administrator cannot create a usable
- * account without the member choosing their own secret.
+ * `mustChangePassword` set. A caller that provisions a usable account must
+ * set its secret as a separate operation.
  * @param input - the identity fields an administrator supplies.
  * @returns the stored account.
  * @throws {DuplicateLoginNameError} when the login name is taken in that organization.
@@ -160,6 +168,70 @@ abstract listUsers(orgId: OrgId): Promise<AccountUser[]>
  * @throws {UnknownAccountUserError} when the store holds no such account.
  */
 abstract setUserStatus(id: UserId, status: AccountUserStatus): Promise<void>
+
+/**
+ * Change an account's profile fields, leaving every field the caller did not
+ * name as stored.
+ * @param id - the account to change.
+ * @param changes - the fields to write; `null` clears one, absence leaves it.
+ * @throws {UnknownAccountUserError} when the store holds no such account.
+ */
+abstract updateUser(id: UserId, changes: UpdateAccountUser): Promise<void>
+
+/**
+ * Delete one account, with the browser sessions it holds. The organization or
+ * department this account led is left without a lead rather than deleted with
+ * it.
+ *
+ * Records another service owns — role bindings, device credentials, audit
+ * rows — are not this store's to remove; a caller that must withdraw them
+ * does so before calling this. Audit rows deliberately stay: they are the
+ * history of what the account did, and history does not leave with it.
+ * @param id - the account to delete.
+ * @throws {UnknownAccountUserError} when the store holds no such account.
+ */
+abstract deleteUser(id: UserId): Promise<void>
+
+/**
+ * List an organization's departments, parents before the children that name
+ * them, and siblings in `sortOrder` then creation order.
+ * @param orgId - the organization to list.
+ * @returns every department the organization holds.
+ */
+abstract listDepartments(orgId: OrgId): Promise<Department[]>
+
+/**
+ * Read one department by id.
+ * @param id - the department to read.
+ * @returns the department, or undefined when the store holds none.
+ */
+abstract getDepartment(id: DeptId): Promise<Department | undefined>
+
+/**
+ * Create one department.
+ * @param input - the department's organization, name, code, and optional placement fields.
+ * @returns the stored department.
+ * @throws {DuplicateDepartmentCodeError} when the code is taken in that organization.
+ */
+abstract createDepartment(input: CreateDepartment): Promise<Department>
+
+/**
+ * Change a department's fields, leaving every field the caller did not name
+ * as stored.
+ * @param id - the department to change.
+ * @param changes - the fields to write; `null` clears one, absence leaves it.
+ * @throws {UnknownDepartmentError} when the store holds no such department.
+ * @throws {DuplicateDepartmentCodeError} when the new code is taken in that organization.
+ */
+abstract updateDepartment(id: DeptId, changes: UpdateDepartment): Promise<void>
+
+/**
+ * Delete one department.
+ * @param id - the department to delete.
+ * @throws {UnknownDepartmentError} when the store holds no such department.
+ * @throws {DepartmentNotEmptyError} when a department or an account still names it.
+ */
+abstract deleteDepartment(id: DeptId): Promise<void>
 
 /**
  * Read the authentication material an account carries, if any.
@@ -235,6 +307,13 @@ abstract resolveBrowserSession(tokenHash: string): Promise<BrowserSessionRecord 
  * @param tokenHash - the hash of the token to forget.
  */
 abstract revokeBrowserSession(tokenHash: string): Promise<void>
+
+/**
+ * End every Control Plane browser session held by one account.
+ * Ending sessions for an account that has none is not an error.
+ * @param userId - the account whose sessions must end.
+ */
+abstract revokeBrowserSessions(userId: UserId): Promise<void>
 ```
 
 Source: [`packages/account/account-store/src/index.ts`](../../packages/account/account-store/src/index.ts)

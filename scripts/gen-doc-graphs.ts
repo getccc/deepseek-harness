@@ -126,6 +126,15 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'No explicit deny, no inheritance, no expression language, so a decision is explained by naming the grants that admitted it. The administration API asks it before every administrative act, and the model gateway before every invocation.',
   },
   {
+    key: 'consoleMenu',
+    pkg: 'team-console-menu',
+    title: 'Organization-owned administration navigation',
+    mode: 'seam',
+    implementations: ['team-console-menu-sqlite'],
+    consumers: ['team-admin-api'],
+    note: 'Entries declare navigation and one catalog permission but decide nothing. The administration API translates role menu selection into access-control grants and every destination authorizes its own requests again.',
+  },
+  {
     key: 'audit',
     pkg: 'audit',
     title: 'The append-only audit trail',
@@ -158,8 +167,8 @@ const SERVICE_ROLES: ServiceRole[] = [
     title: 'How a model request reaches a provider',
     mode: 'seam',
     implementations: ['llm-http-transport-team'],
-    consumers: [],
-    note: 'A request names an operation from a closed list and a model, never a URL, so no caller decides where a credential goes. LLM adapters are the consumers as each moves behind it.',
+    consumers: ['llm-deepseek'],
+    note: 'A request names an operation from a closed list and a model, never a URL, so no caller decides where a credential goes. The DeepSeek adapter also delegates model discovery when the transport owns remote policy.',
   },
   {
     key: 'deviceAuthorization',

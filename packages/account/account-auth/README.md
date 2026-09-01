@@ -52,6 +52,8 @@ That also means the surface above must not add the distinction back: one message
 
 `setSecret` stores whatever the provider derives and satisfies what an issued account owed its holder. It rejects a secret the deployment's policy refuses with `WeakSecretError`, whose `requirement` names what was wanted so a form can say it.
 
+`secretPolicy` publishes the same policy as fields, so a caller can refuse a secret in its own words as it is typed rather than sending it and translating a refusal. It is a copy for a form to read, not an authority: `setSecret` still applies the policy to whatever arrives.
+
 -----
 
 <a id="understand-the-implementation"></a>
@@ -65,7 +67,7 @@ That also means the surface above must not add the distinction back: one message
 
 | Path | Role |
 |---|---|
-| [`src/index.ts`](src/index.ts) | The abstract service, the outcome union, and `WeakSecretError` |
+| [`src/index.ts`](src/index.ts) | The abstract service, the outcome union, the secret policy, and `WeakSecretError` |
 | [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----

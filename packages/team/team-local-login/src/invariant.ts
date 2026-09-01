@@ -10,8 +10,8 @@ export const name = 'team-local-login-invariant'
 /** Service required before the companion can register. */
 export const inject = ['invariants']
 
-// The package owns request-local relations proven directly by its route tests;
-// there is no independent mutable relationship for a runtime probe to inspect.
+// No runtime invariant: route tests directly prove the package's request-local
+// relations, and no independent mutable relationship remains to inspect.
 const install: InvariantInstaller = () => {}
 
 /**

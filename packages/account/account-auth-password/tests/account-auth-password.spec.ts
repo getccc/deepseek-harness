@@ -15,7 +15,7 @@ import PasswordAccountAuth, { needsRehash, parse, verifySecret } from '../src/in
 
 // The shipped cost is deliberately slow; these exercise policy, not hardening.
 const FAST = { cost: 16, blockSize: 1, parallelization: 1, minSecretLength: 8 } as const
-const SECRET = 'correct horse battery'
+const SECRET = 'Correct Horse Battery 1'
 
 let ctx: Context
 let store: AccountStore
@@ -26,7 +26,9 @@ let userId: UserId
 beforeEach(async () => {
   ctx = new Context()
   await ctx.plugin(SqliteAccountStore, { path: ':memory:' }).await()
-  await ctx.plugin(PasswordAccountAuth, { ...FAST, maxFailedAttempts: 3, lockDurationMs: 60_000 }).await()
+  await ctx.plugin(PasswordAccountAuth, {
+    ...FAST, requiredClasses: ['uppercase', 'lowercase', 'digit'], maxFailedAttempts: 3, lockDurationMs: 60_000,
+  }).await()
   store = ctx.get('accountStore') as AccountStore
   auth = ctx.get('accountAuth') as AccountAuth
   orgId = (await store.createOrganization('Acme')).id
@@ -50,8 +52,43 @@ describe('setting a secret', () => {
   })
 
   it('refuses a secret shorter than the policy allows', async () => {
-    await expect(auth.setSecret(userId, 'short')).rejects.toBeInstanceOf(WeakSecretError)
+    await expect(auth.setSecret(userId, 'Short-1')).rejects.toBeInstanceOf(WeakSecretError)
     expect(await store.getPasswordHash(userId)).toBeUndefined()
+  })
+
+  it('refuses a long secret missing a class the policy requires', async () => {
+    for (const missing of ['correct horse battery 1', 'CORRECT HORSE BATTERY 1', 'Correct Horse Battery']) {
+      await expect(auth.setSecret(userId, missing), missing).rejects.toBeInstanceOf(WeakSecretError)
+    }
+    expect(await store.getPasswordHash(userId)).toBeUndefined()
+  })
+
+  it('names every class the secret is missing, so a form can say what is wanted', async () => {
+    await expect(auth.setSecret(userId, 'aaaaaaaaaa')).rejects.toMatchObject({
+      requirement: 'at least one of each: an uppercase letter, a digit',
+    })
+  })
+
+  it('accepts a secret that satisfies a policy requiring no class at all', async () => {
+    const open = new Context()
+    await open.plugin(SqliteAccountStore, { path: ':memory:' }).await()
+    await open.plugin(PasswordAccountAuth, {
+      ...FAST, requiredClasses: [], maxFailedAttempts: 3, lockDurationMs: 60_000,
+    }).await()
+    const store2 = open.get('accountStore') as AccountStore
+    const auth2 = open.get('accountAuth') as AccountAuth
+    const org2 = (await store2.createOrganization('Acme')).id
+    const user2 = (await store2.createUser({ orgId: org2, loginName: 'alice', displayName: 'Alice' })).id
+    await auth2.setSecret(user2, 'all lower case')
+    expect(await store2.getPasswordHash(user2)).toBeDefined()
+    await open.fiber.dispose()
+  })
+
+  it('publishes what it refuses below, so a caller can say it first', () => {
+    expect(auth.secretPolicy()).toEqual({
+      minLength: FAST.minSecretLength,
+      requiredClasses: ['uppercase', 'lowercase', 'digit'],
+    })
   })
 
   it('gives two accounts with the same secret different stored hashes', async () => {
@@ -158,7 +195,10 @@ describe('carrying an account onto the current cost', () => {
     const org = await strongerStore.createOrganization('Acme')
     const user = await strongerStore.createUser({ orgId: org.id, loginName: 'alice', displayName: 'Alice' })
     await strongerStore.setPasswordHash(user.id, weak!)
-    await stronger.plugin(PasswordAccountAuth, { ...FAST, cost: 64, maxFailedAttempts: 3, lockDurationMs: 60_000 }).await()
+    await stronger.plugin(PasswordAccountAuth, {
+      ...FAST, requiredClasses: ['uppercase', 'lowercase', 'digit'], cost: 64,
+      maxFailedAttempts: 3, lockDurationMs: 60_000,
+    }).await()
     const strongerAuth = stronger.get('accountAuth') as AccountAuth
 
     try {

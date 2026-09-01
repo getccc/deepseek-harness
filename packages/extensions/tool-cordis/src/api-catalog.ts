@@ -100,6 +100,31 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         throws: ['{DuplicateRoleNameError} when the name is taken in that organization.'],
       },
       {
+        signature: 'abstract updateRole(roleId: RoleId, changes: UpdateRole): Promise<void>',
+        description: 'Change a role\'s readable fields, leaving every field the caller did not name as stored.',
+        parameters: [{ name: 'roleId', description: 'the role to change.' }, { name: 'changes', description: 'the fields to write.' }],
+        throws: ['{UnknownRoleError} when the store holds no such role.', '{DuplicateRoleNameError} when the new name is taken in that organization.', '{DuplicateRoleCodeError} when the new code is taken in that organization.'],
+      },
+      {
+        signature: 'abstract deleteRole(roleId: RoleId): Promise<void>',
+        description: 'Delete one role, with the grants that compose it and the bindings that carry it. Members holding it lose what it admitted at once.',
+        parameters: [{ name: 'roleId', description: 'the role to delete.' }],
+        throws: ['{UnknownRoleError} when the store holds no such role.', '{SystemRoleError} when the role ships with the product.'],
+      },
+      {
+        signature: 'abstract syncCatalogRole(roleId: RoleId): Promise<string[]>',
+        description: 'Give one role every permission the catalog governs that it does not already hold.\n\nIdempotent, and additive only: a pair the catalog no longer names stays where it is, because the grant may still be the reason something works. Callers run this for a role that covers the catalog as the process starts, which is what keeps such a role current as this build\'s catalog grows.',
+        parameters: [{ name: 'roleId', description: 'the role to bring up to the catalog.' }],
+        returns: 'the pairs this call granted, as `resourceType|action`.',
+        throws: ['{UnknownRoleError} when the store holds no such role.'],
+      },
+      {
+        signature: 'abstract listCatalogRoles(orgId: OrgId): Promise<Role[]>',
+        description: 'Every role of one organization that covers the catalog.',
+        parameters: [{ name: 'orgId', description: 'the organization to list.' }],
+        returns: 'those roles, in creation order.',
+      },
+      {
         signature: 'abstract listRoles(orgId: OrgId): Promise<Role[]>',
         description: 'List an organization\'s roles in creation order.',
         parameters: [{ name: 'orgId', description: 'the organization to list.' }],
@@ -202,6 +227,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [{ name: 'userId', description: 'the account whose secret is set.' }, { name: 'secret', description: 'the new secret, in the clear; the provider stores only a derived form.' }],
         throws: ['{WeakSecretError} when the secret does not satisfy the deployment\'s policy.'],
       },
+      {
+        signature: 'abstract secretPolicy(): SecretPolicy',
+        description: 'The policy AccountAuth.setSecret applies.',
+        parameters: [],
+        returns: 'what a secret must satisfy for this deployment to accept it.',
+      },
     ],
   },
   {
@@ -222,9 +253,9 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the organization, or undefined when the store holds none.',
       },
       {
-        signature: 'abstract setOrganizationName(id: OrgId, name: string): Promise<void>',
-        description: 'Change the organization\'s human-readable name.',
-        parameters: [{ name: 'id', description: 'the organization to change.' }, { name: 'name', description: 'the new non-empty display name.' }],
+        signature: 'abstract updateOrganization(id: OrgId, changes: UpdateOrganization): Promise<void>',
+        description: 'Change the organization\'s own fields, leaving every field the caller did not name as stored.',
+        parameters: [{ name: 'id', description: 'the organization to change.' }, { name: 'changes', description: 'the fields to write; `null` clears one, absence leaves it.' }],
         throws: ['{UnknownOrganizationError} when the store holds no such organization.'],
       },
       {
@@ -236,7 +267,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
       },
       {
         signature: 'abstract createUser(input: CreateAccountUser): Promise<AccountUser>',
-        description: 'Issue an account. The account starts active, with no password material and `mustChangePassword` set, so an administrator cannot create a usable account without the member choosing their own secret.',
+        description: 'Issue an account. The account starts active, with no password material and `mustChangePassword` set. A caller that provisions a usable account must set its secret as a separate operation.',
         parameters: [{ name: 'input', description: 'the identity fields an administrator supplies.' }],
         returns: 'the stored account.',
         throws: ['{DuplicateLoginNameError} when the login name is taken in that organization.'],
@@ -264,6 +295,49 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Set whether an account may authenticate.',
         parameters: [{ name: 'id', description: 'the account to change.' }, { name: 'status', description: 'the status to store.' }],
         throws: ['{UnknownAccountUserError} when the store holds no such account.'],
+      },
+      {
+        signature: 'abstract updateUser(id: UserId, changes: UpdateAccountUser): Promise<void>',
+        description: 'Change an account\'s profile fields, leaving every field the caller did not name as stored.',
+        parameters: [{ name: 'id', description: 'the account to change.' }, { name: 'changes', description: 'the fields to write; `null` clears one, absence leaves it.' }],
+        throws: ['{UnknownAccountUserError} when the store holds no such account.'],
+      },
+      {
+        signature: 'abstract deleteUser(id: UserId): Promise<void>',
+        description: 'Delete one account, with the browser sessions it holds. The organization or department this account led is left without a lead rather than deleted with it.\n\nRecords another service owns — role bindings, device credentials, audit rows — are not this store\'s to remove; a caller that must withdraw them does so before calling this. Audit rows deliberately stay: they are the history of what the account did, and history does not leave with it.',
+        parameters: [{ name: 'id', description: 'the account to delete.' }],
+        throws: ['{UnknownAccountUserError} when the store holds no such account.'],
+      },
+      {
+        signature: 'abstract listDepartments(orgId: OrgId): Promise<Department[]>',
+        description: 'List an organization\'s departments, parents before the children that name them, and siblings in `sortOrder` then creation order.',
+        parameters: [{ name: 'orgId', description: 'the organization to list.' }],
+        returns: 'every department the organization holds.',
+      },
+      {
+        signature: 'abstract getDepartment(id: DeptId): Promise<Department | undefined>',
+        description: 'Read one department by id.',
+        parameters: [{ name: 'id', description: 'the department to read.' }],
+        returns: 'the department, or undefined when the store holds none.',
+      },
+      {
+        signature: 'abstract createDepartment(input: CreateDepartment): Promise<Department>',
+        description: 'Create one department.',
+        parameters: [{ name: 'input', description: 'the department\'s organization, name, code, and optional placement fields.' }],
+        returns: 'the stored department.',
+        throws: ['{DuplicateDepartmentCodeError} when the code is taken in that organization.'],
+      },
+      {
+        signature: 'abstract updateDepartment(id: DeptId, changes: UpdateDepartment): Promise<void>',
+        description: 'Change a department\'s fields, leaving every field the caller did not name as stored.',
+        parameters: [{ name: 'id', description: 'the department to change.' }, { name: 'changes', description: 'the fields to write; `null` clears one, absence leaves it.' }],
+        throws: ['{UnknownDepartmentError} when the store holds no such department.', '{DuplicateDepartmentCodeError} when the new code is taken in that organization.'],
+      },
+      {
+        signature: 'abstract deleteDepartment(id: DeptId): Promise<void>',
+        description: 'Delete one department.',
+        parameters: [{ name: 'id', description: 'the department to delete.' }],
+        throws: ['{UnknownDepartmentError} when the store holds no such department.', '{DepartmentNotEmptyError} when a department or an account still names it.'],
       },
       {
         signature: 'abstract getPasswordHash(id: UserId): Promise<string | undefined>',
@@ -311,6 +385,11 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         signature: 'abstract revokeBrowserSession(tokenHash: string): Promise<void>',
         description: 'End one session. Ending an absent session is not an error.',
         parameters: [{ name: 'tokenHash', description: 'the hash of the token to forget.' }],
+      },
+      {
+        signature: 'abstract revokeBrowserSessions(userId: UserId): Promise<void>',
+        description: 'End every Control Plane browser session held by one account. Ending sessions for an account that has none is not an error.',
+        parameters: [{ name: 'userId', description: 'the account whose sessions must end.' }],
       },
     ],
   },
@@ -920,6 +999,50 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'consoleMenu',
+    summary: 'The console\'s navigation, as durable records.',
+    description: 'The console\'s navigation, as durable records. A provider mounts this service; consumers inject `consoleMenu`.',
+    methods: [
+      {
+        signature: 'abstract seedShipped(orgId: OrgId): Promise<number>',
+        description: 'Put the entries this build ships into an organization that does not have them yet, matching on the shipped key.\n\nIdempotent, and never an overwrite: an entry a deployment renamed, hid, or reordered keeps its edit, and one it deleted comes back at its shipped settings on the next start. Entries this build retired are removed; their children move to the retired entry\'s parent.',
+        parameters: [{ name: 'orgId', description: 'the organization to seed.' }],
+        returns: 'how many entries this call inserted.',
+      },
+      {
+        signature: 'abstract listMenus(orgId: OrgId): Promise<ConsoleMenu[]>',
+        description: 'List one organization\'s navigation, parents before the children that name them, and siblings in `sortOrder` then creation order.',
+        parameters: [{ name: 'orgId', description: 'the organization to list.' }],
+        returns: 'every entry the organization holds.',
+      },
+      {
+        signature: 'abstract getMenu(id: MenuId): Promise<ConsoleMenu | undefined>',
+        description: 'Read one entry by id.',
+        parameters: [{ name: 'id', description: 'the entry to read.' }],
+        returns: 'the entry, or undefined when the store holds none.',
+      },
+      {
+        signature: 'abstract createMenu(input: CreateConsoleMenu): Promise<ConsoleMenu>',
+        description: 'Create one entry.',
+        parameters: [{ name: 'input', description: 'the entry\'s organization, name, kind, and optional placement fields.' }],
+        returns: 'the stored entry.',
+        throws: ['{UnknownMenuPermissionError} when it names a permission the catalog does not govern.'],
+      },
+      {
+        signature: 'abstract updateMenu(id: MenuId, changes: UpdateConsoleMenu): Promise<void>',
+        description: 'Change an entry\'s fields, leaving every field the caller did not name as stored. A rename drops the shipped copy key, because the words become the organization\'s own.',
+        parameters: [{ name: 'id', description: 'the entry to change.' }, { name: 'changes', description: 'the fields to write; `null` clears one, absence leaves it.' }],
+        throws: ['{UnknownConsoleMenuError} when the store holds no such entry.', '{UnknownMenuPermissionError} when it names a permission the catalog does not govern.'],
+      },
+      {
+        signature: 'abstract deleteMenu(id: MenuId): Promise<void>',
+        description: 'Delete one entry.',
+        parameters: [{ name: 'id', description: 'the entry to delete.' }],
+        throws: ['{UnknownConsoleMenuError} when the store holds no such entry.', '{ConsoleMenuNotEmptyError} when another entry still sits under it.'],
+      },
+    ],
+  },
+  {
     key: 'credentials',
     summary: 'Abstract credential service over two key spaces that answer two questions.',
     description: 'Abstract credential service over two key spaces that answer two questions.\n\nA CredentialRef answers "what is behind this environment-variable name", layered over the process environment, the provider-managed store, and `.env` files. One seam-wide rule binds that half: an empty stored value is absent everywhere — `resolve` skips it, `describe` reports it unconfigured — so a blank never masquerades as a configured secret.\n\nA CredentialKey answers "what credential does this plugin hold for this id". Nothing can layer here — an authorization grant has no environment to be read from — so presence of the record is the whole fact, and modifyRecord is the only write path because a correct write depends on the current value (a token refresh is read-decide-replace under one lock).',
@@ -1077,6 +1200,11 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         signature: 'abstract revokeDevice(id: DeviceId): Promise<void>',
         description: 'Revoke a device and every credential family it holds. Revoking one that is already revoked is not an error: the caller\'s intent is that it be gone.',
         parameters: [{ name: 'id', description: 'the device to revoke.' }],
+      },
+      {
+        signature: 'abstract revokeUserDevices(orgId: OrgId, userId: UserId): Promise<void>',
+        description: 'Revoke every device and credential family owned by one account in an organization. Accounts without devices need no special handling.',
+        parameters: [{ name: 'orgId', description: 'the organization that owns the devices.' }, { name: 'userId', description: 'the account whose devices must be signed out.' }],
       },
       {
         signature: 'abstract revokeFamily(id: FamilyId): Promise<void>',
@@ -1507,6 +1635,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [{ name: 'request', description: 'the operation, the model, and the body an adapter built.' }],
         returns: 'the provider\'s status, headers, and body stream.',
         throws: ['{TransportFailedError} when the request could not be carried at all.'],
+      },
+      {
+        signature: 'listModels(): Promise<readonly TransportModel[] | undefined>',
+        description: 'List models the transport\'s remote policy currently exposes, when the transport owns model discovery. Direct transports return `undefined` so an adapter uses its own catalog.',
+        parameters: [],
+        returns: 'remote models, or undefined when discovery remains adapter-owned.',
       },
     ],
   },
@@ -2776,9 +2910,9 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         throws: ['{ControlPlaneRefusedError} when authentication or binding is refused.'],
       },
       {
-        signature: 'async complete(transactionId: TransactionId, code: string): Promise<TeamAccountState>',
+        signature: 'async complete( transactionId: TransactionId, code: string, member?: TeamMemberIdentity, ): Promise<TeamAccountState>',
         description: 'Redeem the code the browser carried back, and keep the credential.',
-        parameters: [{ name: 'transactionId', description: 'the transaction the code belongs to.' }, { name: 'code', description: 'the one-time authorization code.' }],
+        parameters: [{ name: 'transactionId', description: 'the transaction the code belongs to.' }, { name: 'code', description: 'the one-time authorization code.' }, { name: 'member', description: 'authenticated member identity returned by a local sign-in.' }],
         returns: 'the state this installation is now in.',
         throws: ['{NotBoundError} when no transaction is awaiting confirmation in this process.', '{ControlPlaneRefusedError} when the Control Plane refused the redemption.'],
       },
@@ -3856,7 +3990,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AccountUser',
-    declaration: 'export interface AccountUser {\n    readonly id: UserId;\n    readonly orgId: OrgId;\n    readonly loginName: string;\n    readonly displayName: string;\n    readonly email: string | undefined;\n    readonly status: AccountUserStatus;\n    readonly mustChangePassword: boolean;\n    readonly failedAttempts: number;\n    readonly lockedUntil: number | undefined;\n    readonly lastLoginAt: number | undefined;\n    readonly createdAt: number;\n    readonly updatedAt: number;\n}',
+    declaration: 'export interface AccountUser {\n    readonly id: UserId;\n    readonly orgId: OrgId;\n    readonly loginName: string;\n    readonly displayName: string;\n    readonly email: string | undefined;\n    readonly phone: string | undefined;\n    readonly gender: MemberGender | undefined;\n    readonly departmentId: DeptId | undefined;\n    readonly status: AccountUserStatus;\n    readonly mustChangePassword: boolean;\n    readonly failedAttempts: number;\n    readonly lockedUntil: number | undefined;\n    readonly lastLoginAt: number | undefined;\n    readonly createdAt: number;\n    readonly updatedAt: number;\n}',
   },
   {
     name: 'AccountUserStatus',
@@ -4211,6 +4345,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type ConfinedSandboxMode = Exclude<SandboxMode, \'danger-full-access\'>;',
   },
   {
+    name: 'ConsoleMenu',
+    declaration: 'export interface ConsoleMenu {\n    readonly id: MenuId;\n    readonly orgId: OrgId;\n    readonly parentId: MenuId | undefined;\n    readonly name: string;\n    readonly labelKey: string | undefined;\n    readonly kind: ConsoleMenuKind;\n    readonly routePath: string | undefined;\n    readonly componentPath: string | undefined;\n    readonly permission: string | undefined;\n    readonly icon: string | undefined;\n    readonly sortOrder: number;\n    readonly status: ConsoleMenuStatus;\n    readonly visible: boolean;\n    readonly seedKey: string | undefined;\n    readonly createdAt: number;\n}',
+  },
+  {
+    name: 'ConsoleMenuKind',
+    declaration: 'export type ConsoleMenuKind = \'catalog\' | \'menu\' | \'action\';',
+  },
+  {
+    name: 'ConsoleMenuStatus',
+    declaration: 'export type ConsoleMenuStatus = \'active\' | \'suspended\';',
+  },
+  {
     name: 'ContentBlockMap',
     declaration: 'export interface ContentBlockMap {\n    \'text\': TextBlock;\n    \'reasoning\': ReasoningBlock;\n    \'image\': ImageBlock;\n    \'tool-call\': ToolCallBlock;\n    \'tool-result\': ToolResultBlock;\n}',
   },
@@ -4320,11 +4466,19 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'CreateAccountUser',
-    declaration: 'export interface CreateAccountUser {\n    readonly orgId: OrgId;\n    readonly loginName: string;\n    readonly displayName: string;\n    readonly email?: string;\n}',
+    declaration: 'export interface CreateAccountUser {\n    readonly orgId: OrgId;\n    readonly loginName: string;\n    readonly displayName: string;\n    readonly email?: string;\n    readonly phone?: string;\n    readonly gender?: MemberGender;\n    readonly departmentId?: DeptId;\n}',
   },
   {
     name: 'CreateAgentOptions',
     declaration: 'export interface CreateAgentOptions {\n    readonly sessionId: SessionId;\n    readonly meta?: {\n        readonly cwd?: string;\n        readonly parentSession?: SessionId;\n        readonly seedLength?: number;\n        readonly origin?: \'subagent\';\n        readonly delegationDepth?: number;\n        readonly agentPreset?: string;\n    };\n    readonly seed?: readonly SessionEvent[];\n    readonly agentOptions?: AgentOptions;\n    readonly signal?: AbortSignal;\n    readonly setup?: AgentSetup;\n}',
+  },
+  {
+    name: 'CreateConsoleMenu',
+    declaration: 'export interface CreateConsoleMenu {\n    readonly orgId: OrgId;\n    readonly name: string;\n    readonly kind: ConsoleMenuKind;\n    readonly parentId?: MenuId;\n    readonly routePath?: string;\n    readonly componentPath?: string;\n    readonly permission?: string;\n    readonly icon?: string;\n    readonly sortOrder?: number;\n    readonly visible?: boolean;\n}',
+  },
+  {
+    name: 'CreateDepartment',
+    declaration: 'export interface CreateDepartment {\n    readonly orgId: OrgId;\n    readonly name: string;\n    readonly code: string;\n    readonly parentId?: DeptId;\n    readonly category?: DepartmentCategory;\n    readonly leaderId?: UserId;\n    readonly phone?: string;\n    readonly email?: string;\n    readonly sortOrder?: number;\n}',
   },
   {
     name: 'CreateGoalRequest',
@@ -4336,7 +4490,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'CreateRole',
-    declaration: 'export interface CreateRole {\n    readonly orgId: OrgId;\n    readonly name: string;\n    readonly description?: string;\n    readonly kind?: RoleKind;\n}',
+    declaration: 'export interface CreateRole {\n    readonly orgId: OrgId;\n    readonly name: string;\n    readonly code?: string;\n    readonly description?: string;\n    readonly kind?: RoleKind;\n    readonly coversCatalog?: boolean;\n}',
   },
   {
     name: 'CreateSessionOptions',
@@ -4385,6 +4539,22 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'DeepSeekLlmApiJson',
     declaration: 'export type DeepSeekLlmApiJson = null | boolean | number | string | DeepSeekLlmApiJson[] | {\n    [key: string]: DeepSeekLlmApiJson;\n};',
+  },
+  {
+    name: 'Department',
+    declaration: 'export interface Department {\n    readonly id: DeptId;\n    readonly orgId: OrgId;\n    readonly parentId: DeptId | undefined;\n    readonly name: string;\n    readonly code: string;\n    readonly category: DepartmentCategory;\n    readonly leaderId: UserId | undefined;\n    readonly phone: string | undefined;\n    readonly email: string | undefined;\n    readonly sortOrder: number;\n    readonly status: DepartmentStatus;\n    readonly createdAt: number;\n}',
+  },
+  {
+    name: 'DepartmentCategory',
+    declaration: 'export type DepartmentCategory = \'company\' | \'department\';',
+  },
+  {
+    name: 'DepartmentStatus',
+    declaration: 'export type DepartmentStatus = \'active\' | \'suspended\';',
+  },
+  {
+    name: 'DeptId',
+    declaration: 'export type DeptId = Branded<\'DeptId\'>;',
   },
   {
     name: 'Device',
@@ -4923,6 +5093,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ManualCompactAgentContext extends CompactionAgentContext {\n    runMaintenance<T>(task: (signal: AbortSignal) => Promise<T>): Promise<T>;\n}',
   },
   {
+    name: 'MemberGender',
+    declaration: 'export type MemberGender = \'male\' | \'female\' | \'unspecified\';',
+  },
+  {
+    name: 'MenuId',
+    declaration: 'export type MenuId = Branded<\'MenuId\'>;',
+  },
+  {
     name: 'Message',
     declaration: 'export interface Message {\n    readonly id: MessageId;\n    readonly role: \'system\' | \'user\' | \'assistant\';\n    readonly content: ContentBlock[];\n    readonly source: MessageSource;\n}',
   },
@@ -5072,7 +5250,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'Organization',
-    declaration: 'export interface Organization {\n    readonly id: OrgId;\n    readonly name: string;\n    readonly policyRevision: bigint;\n    readonly createdAt: number;\n}',
+    declaration: 'export interface Organization {\n    readonly id: OrgId;\n    readonly name: string;\n    readonly code: string | undefined;\n    readonly leaderId: UserId | undefined;\n    readonly phone: string | undefined;\n    readonly email: string | undefined;\n    readonly policyRevision: bigint;\n    readonly createdAt: number;\n}',
   },
   {
     name: 'OrgId',
@@ -5308,7 +5486,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'Role',
-    declaration: 'export interface Role {\n    readonly id: RoleId;\n    readonly orgId: OrgId;\n    readonly name: string;\n    readonly description: string;\n    readonly kind: RoleKind;\n}',
+    declaration: 'export interface Role {\n    readonly id: RoleId;\n    readonly orgId: OrgId;\n    readonly name: string;\n    readonly code: string;\n    readonly description: string;\n    readonly kind: RoleKind;\n    readonly coversCatalog: boolean;\n    readonly createdAt: number | undefined;\n}',
   },
   {
     name: 'RoleGrant',
@@ -5389,6 +5567,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'SearchResultView',
     declaration: 'export type SearchResultView = SearchMatchesResultView | SearchPathsResultView;',
+  },
+  {
+    name: 'SecretCharacterClass',
+    declaration: 'export type SecretCharacterClass = typeof SECRET_CHARACTER_CLASSES[number];',
+  },
+  {
+    name: 'SecretPolicy',
+    declaration: 'export interface SecretPolicy {\n    readonly minLength: number;\n    readonly requiredClasses: readonly SecretCharacterClass[];\n}',
   },
   {
     name: 'SendTeamMessageRequest',
@@ -6204,11 +6390,15 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'TeamAccountState',
-    declaration: 'export interface TeamAccountState {\n    readonly bound: boolean;\n    readonly deviceId?: DeviceId;\n    readonly familyId?: FamilyId;\n}',
+    declaration: 'export interface TeamAccountState {\n    readonly bound: boolean;\n    readonly deviceId?: DeviceId;\n    readonly familyId?: FamilyId;\n    readonly member?: TeamMemberIdentity;\n}',
   },
   {
     name: 'TeamId',
     declaration: 'export type TeamId = Branded<\'TeamId\'>;',
+  },
+  {
+    name: 'TeamMemberIdentity',
+    declaration: 'export interface TeamMemberIdentity {\n    readonly loginName: string;\n    readonly displayName: string;\n}',
   },
   {
     name: 'TeamMembership',
@@ -6459,6 +6649,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type TransactionId = Branded<\'DeviceTransactionId\'>;',
   },
   {
+    name: 'TransportModel',
+    declaration: 'export interface TransportModel {\n    readonly id: string;\n    readonly name: string;\n}',
+  },
+  {
     name: 'TransportOperation',
     declaration: 'export type TransportOperation = typeof TRANSPORT_OPERATIONS[number];',
   },
@@ -6577,6 +6771,26 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'TypertTypeModel',
     declaration: 'export interface TypertTypeModel {\n    readonly name: string;\n    readonly declaration: string;\n}',
+  },
+  {
+    name: 'UpdateAccountUser',
+    declaration: 'export interface UpdateAccountUser {\n    readonly displayName?: string;\n    readonly email?: string | null;\n    readonly phone?: string | null;\n    readonly gender?: MemberGender | null;\n    readonly departmentId?: DeptId | null;\n}',
+  },
+  {
+    name: 'UpdateConsoleMenu',
+    declaration: 'export interface UpdateConsoleMenu {\n    readonly name?: string;\n    readonly kind?: ConsoleMenuKind;\n    readonly routePath?: string | null;\n    readonly componentPath?: string | null;\n    readonly permission?: string | null;\n    readonly icon?: string | null;\n    readonly sortOrder?: number;\n    readonly status?: ConsoleMenuStatus;\n    readonly visible?: boolean;\n}',
+  },
+  {
+    name: 'UpdateDepartment',
+    declaration: 'export interface UpdateDepartment {\n    readonly name?: string;\n    readonly code?: string;\n    readonly category?: DepartmentCategory;\n    readonly leaderId?: UserId | null;\n    readonly phone?: string | null;\n    readonly email?: string | null;\n    readonly sortOrder?: number;\n    readonly status?: DepartmentStatus;\n}',
+  },
+  {
+    name: 'UpdateOrganization',
+    declaration: 'export interface UpdateOrganization {\n    readonly name?: string;\n    readonly code?: string | null;\n    readonly leaderId?: UserId | null;\n    readonly phone?: string | null;\n    readonly email?: string | null;\n}',
+  },
+  {
+    name: 'UpdateRole',
+    declaration: 'export interface UpdateRole {\n    readonly name?: string;\n    readonly code?: string;\n    readonly description?: string;\n    readonly coversCatalog?: boolean;\n}',
   },
   {
     name: 'UpdateTeamTaskRequest',

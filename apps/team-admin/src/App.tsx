@@ -30,7 +30,7 @@ import {
   App as AntApp, Button, ConfigProvider, Empty, Layout, Menu as AntMenu, Select, Space, Spin,
   Tabs, Typography, theme,
 } from 'antd'
-import { api, holdCsrf, type WireMenu, type WireSession } from './api.ts'
+import { api, holdCsrf, type WireMenu, type WireSecretPolicy, type WireSession } from './api.ts'
 import { LOCALE_IDS, useLocale, type LocaleId } from './locale.tsx'
 import { menuLabel, reachableMenus, type ConsoleComponent, type MenuIcon } from './menus.ts'
 import { Departments } from './pages/Departments.tsx'
@@ -47,6 +47,8 @@ interface ViewProps {
   readonly held: ReadonlySet<string>
   /** The account this session belongs to, which some acts refuse to touch. */
   readonly signedInId: string
+  /** What a password this console sets must satisfy. */
+  readonly secretPolicy: WireSecretPolicy
 }
 
 /**
@@ -59,7 +61,9 @@ interface ViewProps {
 const VIEWS: Record<ConsoleComponent, (props: ViewProps) => ReactNode> = {
   'dashboard/OverviewPage': () => <Overview />,
   'system/DepartmentsPage': ({ held }) => <Departments held={held} />,
-  'system/UsersPage': ({ held, signedInId }) => <Members held={held} signedInId={signedInId} />,
+  'system/UsersPage': ({ held, signedInId, secretPolicy }) => (
+    <Members held={held} signedInId={signedInId} secretPolicy={secretPolicy} />
+  ),
   'system/RolesPage': ({ held }) => <Roles held={held} />,
   'system/MenusPage': ({ held }) => <Menus held={held} />,
   'resources/ModelsPage': ({ held }) => <Models held={held} />,
@@ -106,14 +110,16 @@ function useNarrowViewport(): boolean {
  * @param props.menu - the navigation entry the tab stands for.
  * @param props.held - the `resourceType|action` pairs this member holds.
  * @param props.signedInId - the account this session belongs to.
+ * @param props.secretPolicy - what a password this console sets must satisfy.
  * @returns the page, or what to say in place of a page this build does not have.
  */
 function View({
-  menu, held, signedInId,
+  menu, held, signedInId, secretPolicy,
 }: {
   readonly menu: WireMenu
   readonly held: ReadonlySet<string>
   readonly signedInId: string
+  readonly secretPolicy: WireSecretPolicy
 }): ReactNode {
   const { t } = useLocale()
   const render = menu.componentPath === undefined
@@ -133,7 +139,7 @@ function View({
       />
     )
   }
-  return render({ held, signedInId })
+  return render({ held, signedInId, secretPolicy })
 }
 
 /**
@@ -289,6 +295,7 @@ function Console({
                   menu={byId.get(active) as WireMenu}
                   held={held}
                   signedInId={session.member.id}
+                  secretPolicy={session.secretPolicy}
                 />
               )}
         </Layout.Content>

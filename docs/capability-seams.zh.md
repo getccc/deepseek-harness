@@ -22,6 +22,9 @@ flowchart LR
   pkg_access_control["access-control"]
   svc_accessControl["ctx.accessControl<br/>Default-deny authorization over roles and grants"]
   pkg_model_gateway_sqlite["model-gateway-sqlite"]
+  pkg_team_console_menu["team-console-menu"]
+  svc_consoleMenu["ctx.consoleMenu<br/>Organization-owned administration navigation"]
+  pkg_team_console_menu_sqlite["team-console-menu-sqlite"]
   pkg_audit["audit"]
   svc_audit["ctx.audit<br/>The append-only audit trail"]
   pkg_audit_sqlite["audit-sqlite"]
@@ -34,6 +37,7 @@ flowchart LR
   pkg_llm_http_transport["llm-http-transport"]
   svc_llmHttpTransport["ctx.llmHttpTransport<br/>How a model request reaches a provider"]
   pkg_llm_http_transport_team["llm-http-transport-team"]
+  pkg_llm_deepseek["llm-deepseek"]
   pkg_device_authorization["device-authorization"]
   svc_deviceAuthorization["ctx.deviceAuthorization<br/>Binding a successful authentication to one computer"]
   pkg_device_authorization_sqlite["device-authorization-sqlite"]
@@ -47,7 +51,6 @@ flowchart LR
   pkg_api_session_controller["api-session-controller"]
   pkg_tool_fs["tool-fs"]
   pkg_llm_pi_ai["llm-pi-ai"]
-  pkg_llm_deepseek["llm-deepseek"]
   pkg_llm["llm"]
   svc_llm["ctx.llm<br/>LLM adapter registry"]
   pkg_llm_replay["llm-replay"]
@@ -367,6 +370,8 @@ flowchart LR
   pkg_subprocess_local --> svc_subprocess
   pkg_system_prompt --> svc_systemPrompt
   pkg_team_account_client --> svc_teamAccountClient
+  pkg_team_console_menu --> svc_consoleMenu
+  pkg_team_console_menu_sqlite --> svc_consoleMenu
   pkg_terminal --> svc_terminals
   pkg_terminal_bash --> svc_terminals
   pkg_token_meter --> svc_tokenMeter
@@ -415,6 +420,7 @@ flowchart LR
   svc_clientModules --> pkg_client_hmr
   svc_codeRuntime --> pkg_tools
   svc_compaction --> pkg_compaction_basic
+  svc_consoleMenu --> pkg_team_admin_api
   svc_cordisInspect --> pkg_tool_cordis
   svc_credentials --> pkg_api_settings_controller
   svc_credentials --> pkg_llm_deepseek
@@ -439,6 +445,7 @@ flowchart LR
   svc_jobs --> pkg_tool_terminal
   svc_llm --> pkg_agent_loop
   svc_llm --> pkg_compaction_basic
+  svc_llmHttpTransport --> pkg_llm_deepseek
   svc_lsp --> pkg_tool_lsp
   svc_modelGateway --> pkg_model_gateway_http
   svc_quota --> pkg_model_gateway_sqlite
@@ -536,10 +543,11 @@ flowchart LR
 | `ctx.accountStore` | `seam` | [`account-store`](../packages/account/account-store) | [`account-store-sqlite`](../packages/account/account-store-sqlite) | [`account-auth-password`](../packages/account/account-auth-password), [`access-control-sqlite`](../packages/access/access-control-sqlite), [`team-admin-api`](../packages/team/team-admin-api), [`team-control-plane-http`](../packages/team/team-control-plane-http), [`team-shell`](../packages/team/team-shell) | - | 只存在于服务端：由 Control Plane 组合，任何 Runner 都不挂载它。它同时持有每一份授权缓存据以作 Key 的组织策略修订号。 |
 | `ctx.accountAuth` | `seam` | [`account-auth`](../packages/account/account-auth) | [`account-auth-password`](../packages/account/account-auth-password) | [`team-admin-api`](../packages/team/team-admin-api), [`team-control-plane-http`](../packages/team/team-control-plane-http) | - | 验证与存储分离，于是第二种方式以 Provider 的形式到来。密码 Provider 存放自描述的哈希，并在一次成功验证时重新哈希。 |
 | `ctx.accessControl` | `seam` | [`access-control`](../packages/access/access-control) | [`access-control-sqlite`](../packages/access/access-control-sqlite) | [`team-admin-api`](../packages/team/team-admin-api), [`model-gateway-sqlite`](../packages/llm/model-gateway-sqlite) | - | 没有显式拒绝、没有继承、没有表达式语言，因此一个决定通过指名准许它的那些授权来解释。管理 API 在每一次管理动作之前询问它，模型网关在每一次调用之前询问它。 |
+| `ctx.consoleMenu` | `seam` | [`team-console-menu`](../packages/team/team-console-menu) | [`team-console-menu-sqlite`](../packages/team/team-console-menu-sqlite) | [`team-admin-api`](../packages/team/team-admin-api) | - | 条目声明导航和一项目录权限，但不做决定。管理 API 把角色菜单选择转换为访问控制授权，每个目标页面仍会再次鉴权自己的请求。 |
 | `ctx.audit` | `seam` | [`audit`](../packages/access/audit) | [`audit-sqlite`](../packages/access/audit-sqlite) | [`team-admin-api`](../packages/team/team-admin-api), [`team-control-plane-http`](../packages/team/team-control-plane-http), [`team-shell`](../packages/team/team-shell) | - | 封闭的动作与元数据目录，加上对每个调用方提供的字符串的 token 规则，因此一条记录装不下成员的工作内容。成员经由其行动的那些界面写入记录，因为它们才知道是哪个主体在行动。 |
 | `ctx.quota` | `seam` | [`quota`](../packages/access/quota) | [`quota-sqlite`](../packages/access/quota-sqlite) | [`model-gateway-sqlite`](../packages/llm/model-gateway-sqlite) | - | 预留是一个请求所能花费的上限，而结算只发生一次，因此崩溃不会在不留记录的情况下花费，重试也不会计费两次。模型网关正是它为之而建的消费方。 |
 | `ctx.modelGateway` | `seam` | [`model-gateway`](../packages/llm/model-gateway) | [`model-gateway-sqlite`](../packages/llm/model-gateway-sqlite) | [`model-gateway-http`](../packages/llm/model-gateway-http) | - | Runner 指名一个模型，拿回一个它自己构造不出来的调用：Endpoint、上游名和凭据全都来自目录。 |
-| `ctx.llmHttpTransport` | `seam` | [`llm-http-transport`](../packages/llm/llm-http-transport) | [`llm-http-transport-team`](../packages/llm/llm-http-transport-team) | - | - | 请求指名的是封闭列表中的一个操作和一个模型，绝不是一个 URL，因此没有任何调用方决定凭据去往何处。LLM Adapter 会随各自迁到它之后而成为消费方。 |
+| `ctx.llmHttpTransport` | `seam` | [`llm-http-transport`](../packages/llm/llm-http-transport) | [`llm-http-transport-team`](../packages/llm/llm-http-transport-team) | [`llm-deepseek`](../packages/llm/llm-deepseek) | - | 请求指名的是封闭列表中的一个操作和一个模型，绝不是 URL，因此没有任何调用方决定凭据去往何处。远程策略归 Transport 所有时，DeepSeek Adapter 也会把模型发现委托给它。 |
 | `ctx.deviceAuthorization` | `seam` | [`device-authorization`](../packages/account/device-authorization) | [`device-authorization-sqlite`](../packages/account/device-authorization-sqlite) | [`team-admin-api`](../packages/team/team-admin-api), [`team-control-plane-http`](../packages/team/team-control-plane-http), [`team-shell`](../packages/team/team-shell) | - | 默认 Runner 流程认证账户并批准 Transaction；PKCE 与设备签名证明完成兑换的电脑持有密钥。可选的浏览器交接也可以提供批准。 |
 | `ctx.teamAccountClient` | `seam` | [`team-account-client`](../packages/team/team-account-client) | - | [`team-local-login`](../packages/team/team-local-login), [`team-local-handoff`](../packages/team/team-local-handoff) | - | 在成员电脑上持有设备密钥与凭据，并通过 HTTPS 调用 Control Plane。公司 Provider 凭据从不到达它。 |
 | `ctx.attachments` | `seam` | [`attachment`](../packages/attachment/attachment) | [`attachment-local`](../packages/attachment/attachment-local) | [`api-session-controller`](../packages/api/session-controller), [`tool-fs`](../packages/fs/tool-fs), [`llm-pi-ai`](../packages/llm/llm-pi-ai), [`llm-deepseek`](../packages/llm/llm-deepseek) | - | 宿主会在会话事件之前提交已接受的图片；提供方适配器将已授权的持久引用解析为提供方原生内容。 |

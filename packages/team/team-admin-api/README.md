@@ -73,6 +73,8 @@ A session, an `Origin` naming this authority, and the CSRF value derived from th
 
 `GET /team/api/session` answers the `resourceType|action` pairs the member holds, so the console can leave out a button nobody could use. Every route then asks access control again. A console that showed a control it should not have still gets a refusal.
 
+The same answer carries `secretPolicy`, the deployment's password requirement, so a console checks a new password as it is typed instead of sending one the Control Plane will refuse. It enforces nothing: `POST /members` and `PATCH /members/:id/password` apply the policy to whatever arrives.
+
 ### A refusal names a word, not a sentence
 
 `unauthenticated`, `forbidden`, `malformed`, `conflict`, `not-found`, `too-large`, `unavailable`. The console switches on the word; `detail` is for a person to read and never the only thing separating two outcomes. A failed sign-in is one answer for every cause, because which of "no such member", "wrong password", and "locked" it was is exactly what an attacker wants.
