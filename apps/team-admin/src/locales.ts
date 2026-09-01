@@ -12,7 +12,7 @@
 
 /** Simplified Chinese dictionary (the key-set source of truth). */
 export const zh = {
-  'app.title': '团队控制台',
+  'app.title': 'AMEC Work控制台',
   'app.subtitle': '企业版管理',
   'lang.label': '语言',
 
@@ -321,7 +321,7 @@ export const zh = {
 
 /** English dictionary; every key of {@link zh}. */
 export const en: Record<keyof typeof zh, string> = {
-  'app.title': 'Team Console',
+  'app.title': 'AMEC Work Console',
   'app.subtitle': 'Team Edition administration',
   'lang.label': 'Language',
 

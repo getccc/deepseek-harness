@@ -18,7 +18,10 @@ import {
   AppstoreOutlined,
   BankOutlined,
   DashboardOutlined,
+  DownOutlined,
+  GlobalOutlined,
   LaptopOutlined,
+  LogoutOutlined,
   MenuFoldOutlined,
   MenuOutlined,
   MenuUnfoldOutlined,
@@ -27,10 +30,11 @@ import {
   TeamOutlined,
 } from '@ant-design/icons'
 import {
-  App as AntApp, Button, ConfigProvider, Empty, Layout, Menu as AntMenu, Select, Space, Spin,
+  App as AntApp, Avatar, Button, ConfigProvider, Dropdown, Empty, Layout, Menu as AntMenu, Space, Spin,
   Tabs, Typography, theme,
 } from 'antd'
 import { api, holdCsrf, type WireMenu, type WireSecretPolicy, type WireSession } from './api.ts'
+import { AMEC_LOGO_HEIGHT, AMEC_LOGO_SOURCE, AMEC_LOGO_WIDTH } from './brand.ts'
 import { LOCALE_IDS, useLocale, type LocaleId } from './locale.tsx'
 import { menuLabel, reachableMenus, type ConsoleComponent, type MenuIcon } from './menus.ts'
 import { Departments } from './pages/Departments.tsx'
@@ -229,14 +233,26 @@ function Console({
         {/* Collapsed, the sider is an icon rail: the organization's name would
             not fit, and a wrapped fragment of it is worse than none. */}
         <div className="brand" style={{ padding: railed ? '20px 8px' : '20px 16px' }}>
-          <Typography.Title level={5} style={{ color: '#fff', margin: 0, whiteSpace: 'nowrap' }}>
-            {railed ? 'DS' : t('app.title')}
-          </Typography.Title>
-          {!railed && (
+          <div className="brand-row">
+            <img
+              src={AMEC_LOGO_SOURCE}
+              width={26}
+              height={(26 * AMEC_LOGO_HEIGHT) / AMEC_LOGO_WIDTH}
+              alt=""
+              aria-hidden="true"
+              className="brand-logo"
+            />
+            {!railed && (
+              <Typography.Title level={5} style={{ color: '#fff', margin: 0, whiteSpace: 'nowrap' }}>
+                {t('app.title')}
+              </Typography.Title>
+            )}
+          </div>
+          {/* {!railed && (
             <Typography.Text style={{ color: '#98a2b3', fontSize: 12 }}>
               {session.organization.name}
             </Typography.Text>
-          )}
+          )} */}
         </div>
         <AntMenu
           theme="dark"
@@ -256,16 +272,35 @@ function Console({
             icon={railed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={() => { setFolded(!folded) }}
           />
-          <Space>
-            <Select<LocaleId>
-              value={locale}
-              onChange={setLocale}
-              aria-label={t('lang.label')}
-              options={LOCALE_IDS.map(id => ({ value: id, label: id === 'zh' ? '中文' : 'English' }))}
-              style={{ width: 110 }}
-            />
-            <Typography.Text>{session.member.displayName}</Typography.Text>
-            <Button onClick={() => void signOut()}>{t('nav.signOut')}</Button>
+          <Space size={4} className="header-actions">
+            <Dropdown
+              trigger={['click']}
+              menu={{
+                selectedKeys: [locale],
+                items: LOCALE_IDS.map(id => ({ key: id, label: id === 'zh' ? '中文' : 'English' })),
+                onClick: ({ key }) => { setLocale(key as LocaleId) },
+              }}
+            >
+              <Button
+                type="text"
+                className="header-action-btn"
+                aria-label={t('lang.label')}
+                icon={<GlobalOutlined />}
+              />
+            </Dropdown>
+            <Dropdown
+              trigger={['click']}
+              menu={{
+                items: [{ key: 'signOut', icon: <LogoutOutlined />, label: t('nav.signOut') }],
+                onClick: () => { void signOut() },
+              }}
+            >
+              <span className="user-trigger">
+                <Avatar size={28} className="user-avatar">{Array.from(session.member.displayName)[0]}</Avatar>
+                <span className="user-name">{session.member.displayName}</span>
+                <DownOutlined className="user-caret" />
+              </span>
+            </Dropdown>
           </Space>
         </Layout.Header>
         {openIds.length > 0 && (

@@ -46,6 +46,58 @@ body {
   overflow: hidden;
 }
 
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-logo {
+  display: block;
+  flex: none;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.header-action-btn {
+  color: rgb(0 0 0 / 65%);
+}
+
+.user-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding-inline: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.user-trigger:hover {
+  background: rgb(0 0 0 / 4%);
+}
+
+.user-avatar {
+  background: linear-gradient(135deg, #1677ff, #8b5cf6);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.user-name {
+  font-size: 14px;
+  color: rgb(0 0 0 / 88%);
+  white-space: nowrap;
+}
+
+.user-caret {
+  font-size: 10px;
+  color: rgb(0 0 0 / 45%);
+}
+
 .console-header {
   display: flex;
   align-items: center;
