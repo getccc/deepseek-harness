@@ -419,6 +419,27 @@ describe('single-slot mounting (declare + renderSlot)', () => {
     expect(slot.container.querySelector('svg path')).not.toBeNull()
     await runtime.dispose()
   })
+
+  it('folds inlined data URIs to a fingerprint and leaves plain URLs alone', async () => {
+    const runtime = await SlotTestRuntime.create()
+    await runtime.declare({ 'trt.panel': { kind: 'single', scope: 'root' } })
+    // No scoped class and no svg here: the data URI alone must select the
+    // serializer, or an inlined asset prints in full.
+    const inline = 'data:image/png;base64,iVBORw0KGgo='
+    runtime.slots.register({ name: 'trt.panel' }, () => (
+      <div>
+        <img src={inline} alt="" />
+        <img src="/logo.png" alt="" />
+        <a href={inline}>download</a>
+        <a href="/elsewhere">link</a>
+      </div>
+    ))
+    const slot = runtime.renderSlot('trt.panel', {})
+    expect(slot.container).toMatchSnapshot()
+    // The clone again: the live DOM keeps the payload the page actually loads.
+    expect(slot.container.querySelector('img')!.getAttribute('src')).toBe(inline)
+    await runtime.dispose()
+  })
 })
 
 describe('fixture session face', () => {

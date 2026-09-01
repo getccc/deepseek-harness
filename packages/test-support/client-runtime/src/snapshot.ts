@@ -1,6 +1,6 @@
 /**
  * DOM snapshot hygiene: a vitest snapshot serializer that keeps `.snap`
- * files structural. Two normalizations, both on a clone (the live DOM is
+ * files structural. Three normalizations, all on a clone (the live DOM is
  * untouched, so class/tag queries keep working):
  *
  * - CSS-module scoped class names (`_frame_334d2d`, this repo's
@@ -9,6 +9,10 @@
  * - `<svg>` internals collapse to a `data-content` fingerprint on the svg
  *   element: path geometry is print noise, but the fingerprint still flips
  *   when an icon's artwork actually changes.
+ * - `src`/`href` data URIs collapse to their media type plus a payload
+ *   fingerprint (`data:image/png;base64#3f2a1c04`), on the same reasoning:
+ *   an inlined asset is kilobytes of print noise whose fingerprint still
+ *   flips when the asset changes.
  */
 import { expect } from 'vitest'
 import type { SnapshotSerializer } from 'vitest'
@@ -25,7 +29,7 @@ function normalizeClassValue(value: string): string {
     .join(' ')
 }
 
-/** FNV-1a 32-bit over the svg markup: deterministic, dependency-free fingerprint. */
+/** FNV-1a 32-bit over the given text: deterministic, dependency-free fingerprint. */
 function fingerprint(markup: string): string {
   let hash = 0x811c9dc5
   for (let i = 0; i < markup.length; i++) {
@@ -33,6 +37,44 @@ function fingerprint(markup: string): string {
     hash = Math.imul(hash, 0x01000193)
   }
   return (hash >>> 0).toString(16).padStart(8, '0')
+}
+
+/** A data URI through its comma: `data:<mediatype>[;base64],`. */
+const DATA_URI_PREFIX = /^data:[^,]*,/
+
+/** Attribute names whose value can inline a whole asset. */
+const ASSET_ATTRIBUTES = ['src', 'href'] as const
+
+/** One inlined asset: where it sits and what replaces it. */
+interface InlinedAsset {
+  /** Element carrying the data URI (in the clone the serializer prints). */
+  readonly el: Element
+  /** Attribute name holding it. */
+  readonly name: string
+  /** Media type plus payload fingerprint, replacing the payload. */
+  readonly folded: string
+}
+
+/** Data URIs in a subtree, the root included. */
+function inlinedAssetsOf(root: Element): InlinedAsset[] {
+  const found: InlinedAsset[] = []
+  for (const el of [root, ...root.querySelectorAll('[src], [href]')]) {
+    for (const name of ASSET_ATTRIBUTES) {
+      const value = el.getAttribute(name)
+      if (value === null) continue
+      const prefix = DATA_URI_PREFIX.exec(value)?.[0]
+      if (prefix === undefined) continue
+      // The comma is dropped so the folded value no longer matches: the printer
+      // re-tests the clone, and a fold that still looked like a data URI would
+      // send the serializer through itself until the stack ran out.
+      found.push({
+        el,
+        name,
+        folded: `${prefix.slice(0, -1)}#${fingerprint(value.slice(prefix.length))}`,
+      })
+    }
+  }
+  return found
 }
 
 /** svg elements of a subtree, the root included when it is one. */
@@ -48,13 +90,16 @@ function needsNormalization(root: Element): boolean {
     const value = el.getAttribute('class')
     return value !== null && value.split(/\s+/).some(token => SCOPED_CLASS.test(token))
   })
-  return scoped || svgsOf(root).some(svg => svg.childNodes.length > 0)
+  return scoped
+    || svgsOf(root).some(svg => svg.childNodes.length > 0)
+    || inlinedAssetsOf(root).length > 0
 }
 
 /**
  * The serializer plugin. Matches DOM elements whose subtree carries a scoped
- * class or svg internals; serializes a normalized clone, which no longer
- * matches, so printing falls through to the built-in DOM element serializer.
+ * class, svg internals, or an inlined data URI; serializes a normalized clone,
+ * which no longer matches, so printing falls through to the built-in DOM
+ * element serializer.
  */
 export const domSnapshotSerializer: SnapshotSerializer = {
   test(value: unknown): boolean {
@@ -71,6 +116,7 @@ export const domSnapshotSerializer: SnapshotSerializer = {
       svg.setAttribute('data-content', fingerprint(svg.innerHTML))
       svg.replaceChildren()
     }
+    for (const asset of inlinedAssetsOf(clone)) asset.el.setAttribute(asset.name, asset.folded)
     return printer(clone, config, indentation, depth, refs)
   },
 }
