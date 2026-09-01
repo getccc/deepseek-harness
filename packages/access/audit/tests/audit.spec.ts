@@ -130,3 +130,51 @@ describe('the check names the problem instead of throwing it', () => {
     }
   })
 })
+
+describe('a knowledge operation records identity and counts, never content', () => {
+  /** A well-formed knowledge search row, which each test then spoils. */
+  function search(patch: Partial<AuditRecord> = {}): AuditRecord {
+    return record({
+      action: 'knowledge.search',
+      resourceId: 'weknora:prod:690c0727-1af5-4b7a-8465-ebd2845f2266',
+      metadata: { itemCount: 3 },
+      ...patch,
+    })
+  }
+
+  it('accepts the governed resource, the result count, and a failure label', () => {
+    expect(checkAuditRecord(search())).toBeUndefined()
+    expect(checkAuditRecord(search({
+      outcome: 'error',
+      metadata: { knowledgeFailure: 'upstream-unavailable' },
+    }))).toBeUndefined()
+  })
+
+  it('takes a knowledge reference as a resource id, which is why references are bounded', () => {
+    // The 64-character audit token rule is what bounds KnowledgeRef; a longer
+    // reference is one no search could ever record.
+    expect(checkAuditRecord(search({ resourceId: `weknora:prod:${'u'.repeat(60)}` })))
+      .toMatchObject({ name: 'InvalidAuditValueError', field: 'resourceId' })
+  })
+
+  it.each([
+    ['the query', { query: '年假怎么算' }],
+    ['a returned passage', { passage: 'the handbook says…' }],
+    ['a source filename', { knowledgeFilename: '员工手册 v3.pdf' }],
+    ['an upstream URL', { upstreamUrl: 'http://weknora.internal/api/v1' }],
+    ['a raw upstream error', { detail: 'connect ECONNREFUSED' }],
+  ])('cannot carry %s, because no such key is registered', (_label, metadata) => {
+    expect(checkAuditRecord(search({ metadata: metadata as never })))
+      .toBeInstanceOf(UnknownMetadataKeyError)
+  })
+
+  it('cannot smuggle an upstream message through the failure label', () => {
+    expect(checkAuditRecord(search({ metadata: { knowledgeFailure: 'connect ECONNREFUSED 10.0.0.4:8500' } })))
+      .toMatchObject({ name: 'InvalidAuditValueError', field: 'knowledgeFailure' })
+  })
+
+  it('refuses a knowledge metadata key on an unrelated action', () => {
+    expect(checkAuditRecord(record({ metadata: { knowledgeFailure: 'upstream-invalid' } })))
+      .toBeInstanceOf(MetadataKeyNotAllowedError)
+  })
+})

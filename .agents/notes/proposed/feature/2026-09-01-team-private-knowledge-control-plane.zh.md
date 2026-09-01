@@ -99,6 +99,7 @@ WAN、DNS、TLS、代理或远程 Control Plane 不可用时，本地会话和�
 | 包 | 角色与职责 |
 |---|---|
 | `packages/knowledge/knowledge` | 浏览器安全的 Service Definition，以及目录、搜索和会话范围使用的 DSH 品牌化引用类型 |
+| `packages/knowledge/knowledge-source` | 仅 Control Plane 的上游接缝：列出数据源、检索其中一个已授权知识库集合，使用上游 id |
 | `packages/knowledge/knowledge-weknora` | Control Plane Service Provider，负责固定的 WeKnora 列表与搜索端点；每次操作解析凭据 |
 | `packages/knowledge/knowledge-gateway-sqlite` | 持久化目录和受治理操作 Service Provider；同步受治理资源、判定访问并记录审计事件 |
 | `packages/knowledge/knowledge-gateway-http` | 基于 Bearer Token 的面向 Runner HTTP 适配器；拥有知识 `protocolVersion` 并验证每个解码后的请求和响应 |
@@ -110,6 +111,8 @@ WAN、DNS、TLS、代理或远程 Control Plane 不可用时，本地会话和�
 | `apps/team-runner-desktop` | 为一个远程 Control Plane 来源打包仅回环的 3090 Runner；携带版本元数据但不包含 WeKnora 配置 |
 
 Runner 不安装也不应用任何外部 WeKnora 插件，`knowledge-weknora` 也不依赖它。它自有一个最小 REST 适配器和约定 fixture，因为在持有公司凭据的 Control Plane 进程里引入第三方运行时 scope，会是该进程中唯一的非 `@deepseek-ai` 包，而且固定的两端点面比包装它的客户端还小。
+
+上游接缝与面向 Runner 的接缝是分开的，因为两者回答不同的问题：`ctx.knowledge` 命名成员想要什么，`ctx.knowledgeSource` 命名数据源能做什么。把它们分开，才使夹在中间的网关成为唯一把受治理引用映射到上游 id 的一方，也是唯一判定它是否可以这样做的一方。
 
 `packages/api/knowledge-controller` 存在的原因是浏览器无法直接访问 `ctx.knowledge`。模型目录也是这样到达浏览器的，走 session controller 上的 `@Remote('modelCatalog')`。知识不并入那个 controller：`ctx.llm` 在每个 Web build 都挂载，而 `ctx.knowledge` 只在 Team 存在；一个容忍服务缺席的 controller 会让漏挂载看起来像空目录，而不是大声失败。
 

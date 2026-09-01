@@ -679,6 +679,15 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'The directory and passage-search operations a governed deployment authorizes; its Team provider and model-facing tool arrive with the Control Plane knowledge capability.',
   },
   {
+    key: 'knowledgeSource',
+    pkg: 'knowledge-source',
+    title: 'Upstream knowledge source seam',
+    mode: 'seam',
+    implementations: ['knowledge-weknora'],
+    consumers: [],
+    note: 'The Control Plane half: a provider speaks one knowledge product\'s protocol and holds its credential, while the governed gateway in front of it decides who may search what.',
+  },
+  {
     key: 'web',
     pkg: 'web',
     title: 'Web access provider registry',

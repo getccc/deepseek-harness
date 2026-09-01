@@ -54,6 +54,16 @@ export const METADATA_KEYS = {
   runnerVersion: { kind: 'ref' },
   /** How many records an export produced. */
   itemCount: { kind: 'count' },
+  /**
+   * Why a knowledge operation failed upstream of the authorization decision.
+   *
+   * A label rather than a new {@link AuditReason} because `AUDIT_REASONS` is
+   * compiled into the audit table's CHECK constraint, which a store applies
+   * with `CREATE TABLE IF NOT EXISTS` and no rebuild path: a reason added to
+   * the code list would silently fail to apply to a database that already
+   * exists. Metadata keys are re-seeded on every open.
+   */
+  knowledgeFailure: { kind: 'label', members: ['upstream-unavailable', 'upstream-invalid', 'scope-incompatible'] },
 } as const satisfies Record<string, MetadataSpec>
 
 /** A key the metadata catalog registers. */

@@ -24,10 +24,11 @@ export interface AuditActionSpec {
  * Every operation this build audits.
  *
  * The list covers what the Control Plane can do today: authenticate members,
- * manage browser sessions and devices, issue and withdraw credentials, and
- * change policy. Company-resource actions — model calls, knowledge queries,
- * plugin downloads — arrive with the gateways that perform them, because an
- * action nothing records is an entry no reader can trust.
+ * manage browser sessions and devices, issue and withdraw credentials, change
+ * policy, and answer knowledge operations. The remaining company-resource
+ * actions — model calls, plugin downloads — arrive with the gateways that
+ * perform them, because an action nothing records is an entry no reader can
+ * trust.
  */
 export const AUDIT_ACTIONS = {
   'member.login': { resourceType: 'member', metadata: ['authMethod'] },
@@ -61,6 +62,8 @@ export const AUDIT_ACTIONS = {
   'resource.enable': { resourceType: 'managed_resource', metadata: [] },
   'resource.disable': { resourceType: 'managed_resource', metadata: [] },
   'resource.delete': { resourceType: 'managed_resource', metadata: [] },
+  'knowledge.search': { resourceType: 'knowledge_scope', metadata: ['itemCount', 'knowledgeFailure'] },
+  'knowledge.catalog.sync': { resourceType: 'knowledge_scope', metadata: ['itemCount', 'knowledgeFailure'] },
   'policy.update': { resourceType: 'organization', metadata: [] },
   'audit.export': { resourceType: 'organization', metadata: ['itemCount'] },
 } as const satisfies Record<string, AuditActionSpec>

@@ -1063,6 +1063,40 @@ export interface Config {
 
 Source: [`packages/jobs/jobs-local/src/index.ts:31`](../packages/jobs/jobs-local/src/index.ts)
 
+<a id="deepseek-aidsh-knowledge-weknora"></a>
+
+## `@deepseek-ai/dsh-knowledge-weknora`
+
+Requires: `credentials`
+
+```ts config-catalog
+/** Plugin config: which source, where it is, and what it may return. */
+export interface Config {
+  /** This deployment's code for the source, the second `KnowledgeRef` segment. */
+  sourceCode: string
+  /** Origin the WeKnora API is served from, such as `http://127.0.0.1:8080`. */
+  baseUrl: string
+  /**
+   * Credential reference resolving to a WeKnora **space** key.
+   *
+   * A space key is fixed to the space it belongs to. A platform key reaches
+   * any space and takes an `X-Tenant-ID` header to say which, so a Control
+   * Plane holding one could read knowledge outside the space it governs. That
+   * is also why there is no tenant field: with a space key there is nothing
+   * to name.
+   */
+  credentialRef: string
+  /** How long one upstream call may take before it is abandoned. */
+  requestTimeoutMs?: number
+  /** The most passages one search may return, after enrichment. */
+  maxSearchResults?: number
+  /** The most characters one passage may carry. */
+  maxPassageChars?: number
+}
+```
+
+Source: [`packages/knowledge/knowledge-weknora/src/index.ts:65`](../packages/knowledge/knowledge-weknora/src/index.ts)
+
 <a id="deepseek-aidsh-llm-deepseek"></a>
 
 ## `@deepseek-ai/dsh-llm-deepseek`
@@ -3853,6 +3887,7 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 - `@deepseek-ai/dsh-home-paths` ([`packages/util/home-paths/src/index.ts`](../packages/util/home-paths/src/index.ts))
 - `@deepseek-ai/dsh-hook-protocol` ([`packages/hooks/hook-protocol/src/index.ts`](../packages/hooks/hook-protocol/src/index.ts))
 - `@deepseek-ai/dsh-knowledge` ([`packages/knowledge/knowledge/src/index.ts`](../packages/knowledge/knowledge/src/index.ts))
+- `@deepseek-ai/dsh-knowledge-source` ([`packages/knowledge/knowledge-source/src/index.ts`](../packages/knowledge/knowledge-source/src/index.ts))
 - `@deepseek-ai/dsh-launch-environment` ([`packages/util/launch-environment/src/index.ts`](../packages/util/launch-environment/src/index.ts))
 - `@deepseek-ai/dsh-llm-http-transport` ([`packages/llm/llm-http-transport/src/index.ts`](../packages/llm/llm-http-transport/src/index.ts))
 - `@deepseek-ai/dsh-llm-mock-server` ([`packages/test-support/llm-mock-server/src/index.ts`](../packages/test-support/llm-mock-server/src/index.ts))

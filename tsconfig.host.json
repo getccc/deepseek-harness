@@ -250,6 +250,8 @@
     { "path": "./packages/compaction/command-compact" },
     { "path": "./packages/compaction/compaction-tool-result-pruner" },
     { "path": "./packages/knowledge/knowledge" },
+    { "path": "./packages/knowledge/knowledge-source" },
+    { "path": "./packages/knowledge/knowledge-weknora" },
     { "path": "./packages/web/web" },
     { "path": "./packages/web/web-search-exa" },
     { "path": "./packages/web/web-search-perplexity" },

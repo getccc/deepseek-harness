@@ -46,6 +46,8 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/attachment/attachment': { kind: 'indirect', reason: 'The storage seam delegates model request rendering to provider adapters.' },
   'packages/attachment/attachment-local': { kind: 'indirect', reason: 'The local backend delegates model request rendering to provider adapters.' },
   'packages/knowledge/knowledge': { kind: 'indirect', reason: 'The seam registers no prompt or schema; the knowledge tool package renders passages and owns the scope prompt section.' },
+  'packages/knowledge/knowledge-source': { kind: 'none', reason: 'Control Plane seam; the Control Plane mounts no agent or tool registry, so a model never reaches it.' },
+  'packages/knowledge/knowledge-weknora': { kind: 'none', reason: 'Control Plane provider; retrieved passages become model-visible only after a gateway authorizes them and a Runner-side tool renders them.' },
   'packages/shell/shell': { kind: 'indirect', reason: 'The service interface delegates all model rendering to dsh-tool-bash.' },
   'packages/shell/shell-env': { kind: 'indirect', reason: 'The env service exposes managed DSH_* facts through the shell tools (dsh-tool-bash/dsh-tool-pwsh); it registers no prompt or schema of its own.' },
   'packages/shell/bash-local': { kind: 'indirect', reason: 'The executor backend delegates model rendering to dsh-tool-bash.' },

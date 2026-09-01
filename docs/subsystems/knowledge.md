@@ -112,4 +112,32 @@ abstract search(request: KnowledgeSearchRequest): Promise<KnowledgeSearchResult>
 ```
 
 Source: [`packages/knowledge/knowledge/src/index.ts`](../../packages/knowledge/knowledge/src/index.ts)
+
+<a id="ctxknowledgesource--knowledgesource-abstract-seam"></a>
+
+### `ctx.knowledgeSource` — `KnowledgeSource` (abstract seam)
+
+One upstream knowledge product. A provider mounts this service; the governed gateway injects `knowledgeSource`.
+
+Failures are raised as `KnowledgeError` with `upstream-unavailable` or `upstream-invalid`. A provider never raises an authorization reason: it does not know who is asking, which is the point.
+
+```ts cordis-catalog
+/**
+ * Everything the configured source holds.
+ * @param signal - aborts the operation.
+ * @returns every knowledge base, in whatever order the source lists them.
+ * @throws {KnowledgeError} `upstream-unavailable` or `upstream-invalid`.
+ */
+abstract list(signal?: AbortSignal): Promise<readonly UpstreamKnowledgeBase[]>
+
+/**
+ * Search an explicit, already-authorized set of knowledge bases.
+ * @param request - the authorized upstream ids, the query, and the result bound.
+ * @returns the passages, at most `maxResults` of them.
+ * @throws {KnowledgeError} `upstream-unavailable` or `upstream-invalid`.
+ */
+abstract search(request: UpstreamSearchRequest): Promise<readonly UpstreamPassage[]>
+```
+
+Source: [`packages/knowledge/knowledge-source/src/index.ts`](../../packages/knowledge/knowledge-source/src/index.ts)
 <!-- END GENERATED cordis-surface -->

@@ -1559,6 +1559,37 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'knowledgeSource',
+    summary: 'One upstream knowledge product.',
+    description: 'One upstream knowledge product. A provider mounts this service; the governed gateway injects `knowledgeSource`.\n\nFailures are raised as `KnowledgeError` with `upstream-unavailable` or `upstream-invalid`. A provider never raises an authorization reason: it does not know who is asking, which is the point.',
+    methods: [
+      {
+        signature: 'abstract readonly providerKind: string',
+        description: 'Which upstream product this is, as the first segment of a `KnowledgeRef`.\n\nA constant of the provider rather than configuration: it names the code that speaks the protocol, and a deployment renaming it would change the identity of every knowledge base already governed.',
+        parameters: [],
+      },
+      {
+        signature: 'abstract readonly sourceCode: string',
+        description: 'The deployment\'s code for this source, as the second `KnowledgeRef` segment. Configuration, because one company\'s `prod` is another\'s `kb`.',
+        parameters: [],
+      },
+      {
+        signature: 'abstract list(signal?: AbortSignal): Promise<readonly UpstreamKnowledgeBase[]>',
+        description: 'Everything the configured source holds.',
+        parameters: [{ name: 'signal', description: 'aborts the operation.' }],
+        returns: 'every knowledge base, in whatever order the source lists them.',
+        throws: ['{KnowledgeError} `upstream-unavailable` or `upstream-invalid`.'],
+      },
+      {
+        signature: 'abstract search(request: UpstreamSearchRequest): Promise<readonly UpstreamPassage[]>',
+        description: 'Search an explicit, already-authorized set of knowledge bases.',
+        parameters: [{ name: 'request', description: 'the authorized upstream ids, the query, and the result bound.' }],
+        returns: 'the passages, at most `maxResults` of them.',
+        throws: ['{KnowledgeError} `upstream-unavailable` or `upstream-invalid`.'],
+      },
+    ],
+  },
+  {
     key: 'llm',
     summary: 'The abstract `llm` service: an adapter registry plus a streaming model-call API, interceptable via the `llm/stream` waterfall.',
     description: 'The abstract `llm` service: an adapter registry plus a streaming model-call API, interceptable via the `llm/stream` waterfall.',
@@ -6854,6 +6885,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'UpdateTeamTaskRequest',
     declaration: 'export interface UpdateTeamTaskRequest {\n    readonly taskId: TeamTaskId;\n    readonly expectedRevision: number;\n    readonly action: TeamTaskAction;\n    readonly subject?: string;\n    readonly description?: string;\n    readonly blockedBy?: readonly TeamTaskId[];\n    readonly writeScopes?: readonly string[];\n    readonly owner?: string;\n}',
+  },
+  {
+    name: 'UpstreamKnowledgeBase',
+    declaration: 'export interface UpstreamKnowledgeBase {\n    readonly upstreamId: string;\n    readonly name: string;\n    readonly description: string;\n    readonly kind: KnowledgeKind;\n    readonly documentCount: number;\n    readonly chunkCount: number;\n    readonly processingCount: number;\n    readonly embeddingModelId: string;\n    readonly updatedAt: number | undefined;\n}',
+  },
+  {
+    name: 'UpstreamPassage',
+    declaration: 'export interface UpstreamPassage {\n    readonly upstreamId: string;\n    readonly title: string;\n    readonly text: string;\n    readonly truncated: boolean;\n    readonly score: number;\n}',
+  },
+  {
+    name: 'UpstreamSearchRequest',
+    declaration: 'export interface UpstreamSearchRequest {\n    readonly upstreamIds: readonly string[];\n    readonly query: string;\n    readonly maxResults: number;\n    readonly signal?: AbortSignal;\n}',
   },
   {
     name: 'UserGroup',

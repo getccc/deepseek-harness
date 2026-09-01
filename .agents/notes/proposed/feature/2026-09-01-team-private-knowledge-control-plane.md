@@ -99,6 +99,7 @@ When the WAN, DNS, TLS, a proxy, or the remote Control Plane is unavailable, loc
 | Package | Role and responsibility |
 |---|---|
 | `packages/knowledge/knowledge` | Browser-safe Service Definition, plus the DSH-branded reference types used by the directory, search, and Session scope |
+| `packages/knowledge/knowledge-source` | Control Plane-only upstream seam: list a source, search an already-authorized set of its knowledge bases, in upstream ids |
 | `packages/knowledge/knowledge-weknora` | Control Plane Service Provider for the fixed WeKnora list and search endpoints; resolves credentials per operation |
 | `packages/knowledge/knowledge-gateway-sqlite` | Durable catalog and governed-operation Service Provider; syncs governed resources, evaluates access, and records audit events |
 | `packages/knowledge/knowledge-gateway-http` | Bearer-token Runner-facing HTTP adapter; owns the knowledge `protocolVersion` and validates every decoded request and response |
@@ -110,6 +111,8 @@ When the WAN, DNS, TLS, a proxy, or the remote Control Plane is unavailable, loc
 | `apps/team-runner-desktop` | Packages the loopback-only 3090 Runner for one remote Control Plane origin; carries version metadata and no WeKnora configuration |
 
 The Runner installs and applies no external WeKnora plugin, and `knowledge-weknora` takes no dependency on one. It owns a minimal REST adapter with contract fixtures, because a third-party runtime scope inside the Control Plane would be the one non-`@deepseek-ai` package in the process that holds company credentials, and because the fixed two-endpoint surface is smaller than the client that would wrap it.
+
+The upstream seam is separate from the Runner-facing one because the two answer different questions: `ctx.knowledge` names what a member wants, `ctx.knowledgeSource` names what a source can do. Keeping them apart is what leaves the gateway between them as the only party that maps a governed reference to an upstream id, and the only party that decides whether it may.
 
 `packages/api/knowledge-controller` exists because the browser cannot reach `ctx.knowledge` directly. The model catalog reaches the browser the same way, through `@Remote('modelCatalog')` on the session controller. Knowledge does not join that controller: `ctx.llm` is mounted in every Web build while `ctx.knowledge` is Team-only, and a controller that tolerated an absent service would make a missing mount look like an empty directory instead of failing loud.
 
