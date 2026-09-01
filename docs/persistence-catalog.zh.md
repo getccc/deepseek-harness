@@ -465,6 +465,28 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 
 来源：[`packages/hooks/hook-protocol/src/types.ts:31`](../packages/hooks/hook-protocol/src/types.ts)
 
+### `knowledge/*`
+
+<a id="knowledgescope--log-only"></a>
+
+#### `knowledge/scope` — log-only
+
+```ts persistence-catalog
+/**
+ * Which private knowledge this Session may search from this point on:
+ * whole-value replace, last one wins, and a log with none folds to `off`
+ * through {@link foldKnowledgeScope}.
+ *
+ * Model-visible: the folded value decides both the `knowledge:scope`
+ * prompt section and whether `knowledge_search` is offered, so the display
+ * names a `selected` scope carries are recorded here rather than resolved
+ * at assembly time.
+ */
+'knowledge/scope': KnowledgeScope
+```
+
+来源：[`packages/knowledge/knowledge/src/scope.ts:29`](../packages/knowledge/knowledge/src/scope.ts)
+
 ### `llm/*`
 
 <a id="llmretry--log-only"></a>

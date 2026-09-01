@@ -6549,6 +6549,22 @@ importers:
         specifier: workspace:^
         version: link:../../core/tools
 
+  packages/knowledge/knowledge:
+    dependencies:
+      '@deepseek-ai/dsh-brand':
+        specifier: workspace:^
+        version: link:../../util/brand
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:^
+        version: link:../../core/session
+
   packages/llm/deepseek-llm-api-extensions:
     devDependencies:
       '@deepseek-ai/cordis':

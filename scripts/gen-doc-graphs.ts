@@ -670,6 +670,15 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'Producers (background bash, PTY sends, and subagent delegations) register running work; tool-jobs is the model-facing controller that reads, lists, and kills it; jobs-local is the process-local registry.',
   },
   {
+    key: 'knowledge',
+    pkg: 'knowledge',
+    title: 'Private knowledge seam',
+    mode: 'seam',
+    implementations: [],
+    consumers: [],
+    note: 'The directory and passage-search operations a governed deployment authorizes; its Team provider and model-facing tool arrive with the Control Plane knowledge capability.',
+  },
+  {
     key: 'web',
     pkg: 'web',
     title: 'Web access provider registry',

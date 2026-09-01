@@ -21,6 +21,16 @@ describe('the permission catalog', () => {
     ])
   })
 
+  it('separates administering the knowledge catalog from searching knowledge', () => {
+    // Both live on knowledge_scope, so a role granted catalog administration
+    // gains nothing on any knowledge base, and a role granted search gains no
+    // way to change what the catalog holds.
+    expect(isRegisteredPermission('knowledge_scope', 'knowledge.catalog.read')).toBe(true)
+    expect(isRegisteredPermission('knowledge_scope', 'knowledge.catalog.manage')).toBe(true)
+    expect(isRegisteredPermission('knowledge_scope', 'knowledge.search')).toBe(true)
+    expect(isRegisteredPermission('model', 'knowledge.catalog.manage')).toBe(false)
+  })
+
   it('registers each pair once', () => {
     const pairs = PERMISSION_CATALOG.map(entry => `${entry.resourceType} ${entry.action}`)
     expect(new Set(pairs).size).toBe(pairs.length)

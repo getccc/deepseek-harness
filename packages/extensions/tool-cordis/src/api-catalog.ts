@@ -1538,6 +1538,27 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'knowledge',
+    summary: 'Private knowledge, as a Runner sees it.',
+    description: 'Private knowledge, as a Runner sees it. A provider mounts this service; consumers inject `knowledge`.\n\nBoth methods fail with KnowledgeError carrying a closed reason. Neither returns a partial answer: a directory that could not be authorized and a search whose scope was refused both raise, because a quietly narrowed result is indistinguishable from a correct one to the model that reads it.',
+    methods: [
+      {
+        signature: 'abstract catalog(signal?: AbortSignal): Promise<readonly KnowledgeBaseEntry[]>',
+        description: 'The knowledge bases the current principal may search right now.',
+        parameters: [{ name: 'signal', description: 'aborts the operation.' }],
+        returns: 'the authorized directory, empty when the principal holds nothing.',
+        throws: ['{KnowledgeError} when the principal cannot be established or the directory cannot be read.'],
+      },
+      {
+        signature: 'abstract search(request: KnowledgeSearchRequest): Promise<KnowledgeSearchResult>',
+        description: 'Search the knowledge bases one operation names.',
+        parameters: [{ name: 'request', description: 'the query, the scope resolved from the Session, and the caller\'s bounds.' }],
+        returns: 'the passages, with the knowledge bases actually searched.',
+        throws: ['{KnowledgeError} when any named knowledge base is refused, the scope cannot be searched together, or the upstream does not answer usably.'],
+      },
+    ],
+  },
+  {
     key: 'llm',
     summary: 'The abstract `llm` service: an adapter registry plus a streaming model-call API, interceptable via the `llm/stream` waterfall.',
     description: 'The abstract `llm` service: an adapter registry plus a streaming model-call API, interceptable via the `llm/stream` waterfall.',
@@ -4973,6 +4994,34 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'KnobState',
     declaration: 'export interface KnobState {\n    preset: string | null;\n    sandbox: SandboxMode | null;\n    approval: ApprovalPolicy | null;\n}',
+  },
+  {
+    name: 'KnowledgeBaseEntry',
+    declaration: 'export interface KnowledgeBaseEntry {\n    readonly ref: KnowledgeRef;\n    readonly displayName: string;\n    readonly description: string;\n    readonly kind: KnowledgeKind;\n}',
+  },
+  {
+    name: 'KnowledgeKind',
+    declaration: 'export type KnowledgeKind = \'document\' | \'faq\';',
+  },
+  {
+    name: 'KnowledgePassage',
+    declaration: 'export interface KnowledgePassage {\n    readonly ref: KnowledgeRef;\n    readonly title: string;\n    readonly text: string;\n    readonly truncated: boolean;\n    readonly score: number;\n}',
+  },
+  {
+    name: 'KnowledgeRef',
+    declaration: 'export type KnowledgeRef = Branded<\'KnowledgeRef\'>;',
+  },
+  {
+    name: 'KnowledgeScopeSelection',
+    declaration: 'export type KnowledgeScopeSelection = {\n    readonly mode: \'all\';\n} | {\n    readonly mode: \'selected\';\n    readonly refs: readonly KnowledgeRef[];\n};',
+  },
+  {
+    name: 'KnowledgeSearchRequest',
+    declaration: 'export interface KnowledgeSearchRequest {\n    readonly query: string;\n    readonly scope: KnowledgeScopeSelection;\n    readonly maxResults?: number;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
+    name: 'KnowledgeSearchResult',
+    declaration: 'export interface KnowledgeSearchResult {\n    readonly query: string;\n    readonly searched: readonly KnowledgeBaseEntry[];\n    readonly passages: readonly KnowledgePassage[];\n    readonly truncated: boolean;\n}',
   },
   {
     name: 'KvFacet',
