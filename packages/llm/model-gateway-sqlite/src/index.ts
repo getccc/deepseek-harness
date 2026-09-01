@@ -129,6 +129,22 @@ export class SqliteModelGateway extends ModelGateway {
     }
   }
 
+  async remove(orgId: OrgIdType, modelRef: string): Promise<void> {
+    const deleted = this.db.prepare('DELETE FROM model WHERE org_id = ? AND model_ref = ?')
+      .run(orgId, modelRef)
+    // Only an entry this catalog held ungoverns anything. Other subsystems
+    // govern resources of this type that were never catalog models — the
+    // administration console's own model-catalog resource among them — and
+    // ungoverning one of those would revoke the grants an administrator needs
+    // to reach this catalog at all.
+    if (Number(deleted.changes) === 0) return
+    // The governed resource goes with it, so no role keeps a grant naming a
+    // model this organization no longer has.
+    const resources = await this.ctx.accessControl.listResources(orgId, RESOURCE_TYPE)
+    const governed = resources.find(resource => resource.externalRef === modelRef)
+    if (governed !== undefined) await this.ctx.accessControl.deleteResource(governed.id)
+  }
+
   list(orgId: OrgIdType): Promise<ModelEntry[]> {
     const rows = this.db.prepare('SELECT * FROM model WHERE org_id = ? ORDER BY rowid')
       .all(orgId) as unknown as ModelRow[]

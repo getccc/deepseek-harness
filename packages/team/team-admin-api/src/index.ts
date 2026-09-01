@@ -1527,6 +1527,15 @@ export function apply(ctx: Context, config: Config): void {
       return
     }
 
+    if (segments[0] === 'models' && segments.length === 2 && method === 'DELETE') {
+      if (!await mayProceed(res, signed, 'model.catalog.manage', 'model', MODEL_CATALOG_RESOURCE)) return
+      const modelRef = segments[1] as string
+      await ctx.modelGateway.remove(org, modelRef)
+      await record('resource.delete', signed, 'allowed', { resourceId: modelRef })
+      json(res, 200, await readModels(org))
+      return
+    }
+
     refuse(res, 404, 'not-found')
   }
 

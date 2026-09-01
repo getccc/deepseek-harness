@@ -107,6 +107,20 @@ abstract register(input: RegisterModel): Promise<ModelEntry>
 abstract setStatus(orgId: OrgId, modelRef: string, status: ModelStatus): Promise<void>
 
 /**
+ * Take a model out of the catalog, with the grants that named it.
+ *
+ * Deleting is not retiring. A retired model keeps its row and its grants and
+ * returns to service unchanged; a deleted one leaves nothing behind, so a
+ * model registered later under the same ref starts with no access. Only what
+ * {@link register} governed is ungoverned: a ref this catalog holds no entry
+ * for changes nothing and does not fail, even when some other subsystem
+ * governs a resource of the model type under that same ref.
+ * @param orgId - the organization the model belongs to.
+ * @param modelRef - the model to remove.
+ */
+abstract remove(orgId: OrgId, modelRef: string): Promise<void>
+
+/**
  * Every model in an organization's catalog, in registration order.
  *
  * This is the administrator's view and is not filtered by any principal's

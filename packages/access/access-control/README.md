@@ -51,6 +51,8 @@ A **type grant** lets a role perform one action on every enabled resource of a t
 
 `listRoleGrants` returns both grant kinds with the target identity an administrative surface needs; it does not make an authorization decision or imply that the reader may edit them.
 
+`deleteResource` stops governing one resource and takes every grant that named it with it. A resource id is never reused, so a resource registered again under the same external ref takes a new id and starts with no access; `setResourceEnabled` is the reversible act.
+
 ### Reading a refusal
 
 `no-grant` covers both "no grant admits this" and "no such resource", so a refusal never confirms that a resource exists to a principal who holds nothing on it. `default-deny` means the principal holds no roles at all. `resource-disabled` is the deliberate exception that does confirm existence: it answers a principal who *does* hold a grant, and telling them the resource is switched off is the difference between a useful message and a confusing one.

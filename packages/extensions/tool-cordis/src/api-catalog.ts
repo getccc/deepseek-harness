@@ -150,6 +150,11 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [{ name: 'id', description: 'the resource to change.' }, { name: 'enabled', description: 'whether the resource may be used at all.' }],
       },
       {
+        signature: 'abstract deleteResource(id: ResourceId): Promise<void>',
+        description: 'Stop governing a resource, taking every grant that names it with it.\n\nThe grants go too because a resource id is not reused: leaving them would keep rows pointing at nothing, and a resource later registered under the same external ref takes a new id and starts with no access. Disabling a resource is the reversible act; this one is for a resource its owning subsystem no longer has.',
+        parameters: [{ name: 'id', description: 'the resource to stop governing.' }],
+      },
+      {
         signature: 'abstract listResources(orgId: OrgId, type: string): Promise<ManagedResource[]>',
         description: 'List an organization\'s governed resources of one type, in creation order.',
         parameters: [{ name: 'orgId', description: 'the organization to list.' }, { name: 'type', description: 'the resource type to list.' }],
@@ -1704,6 +1709,11 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         signature: 'abstract setStatus(orgId: OrgId, modelRef: string, status: ModelStatus): Promise<void>',
         description: 'Withdraw a model from service, or return it.',
         parameters: [{ name: 'orgId', description: 'the organization the model belongs to.' }, { name: 'modelRef', description: 'the model to change.' }, { name: 'status', description: 'whether it may be invoked.' }],
+      },
+      {
+        signature: 'abstract remove(orgId: OrgId, modelRef: string): Promise<void>',
+        description: 'Take a model out of the catalog, with the grants that named it.\n\nDeleting is not retiring. A retired model keeps its row and its grants and returns to service unchanged; a deleted one leaves nothing behind, so a model registered later under the same ref starts with no access. Only what register governed is ungoverned: a ref this catalog holds no entry for changes nothing and does not fail, even when some other subsystem governs a resource of the model type under that same ref.',
+        parameters: [{ name: 'orgId', description: 'the organization the model belongs to.' }, { name: 'modelRef', description: 'the model to remove.' }],
       },
       {
         signature: 'abstract list(orgId: OrgId): Promise<ModelEntry[]>',

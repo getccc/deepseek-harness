@@ -151,6 +151,44 @@ describe('the catalog', () => {
   it('accepts a status change for a model nobody registered', async () => {
     await expect(gateway.setStatus(orgId, 'never-registered', 'retired')).resolves.toBeUndefined()
   })
+
+  it('takes a removed model out of governance too, so no grant outlives the entry', async () => {
+    await gateway.register(model())
+    await grantEverything()
+    await expect(gateway.authorize(invocation())).resolves.toMatchObject({ modelRef: 'company-v4' })
+
+    await gateway.remove(orgId, 'company-v4')
+    expect(await gateway.list(orgId)).toEqual([])
+    // Deleting is not retiring: the governed resource is gone rather than
+    // disabled, so nothing is left for a grant to name.
+    expect(await access.listResources(orgId, 'model')).toEqual([])
+    await expect(gateway.authorize(invocation())).rejects.toMatchObject({ reason: 'unknown-model' })
+  })
+
+  it('accepts removing a model nobody registered', async () => {
+    await expect(gateway.remove(orgId, 'never-registered')).resolves.toBeUndefined()
+  })
+
+  it('leaves a governed model resource the catalog never held', async () => {
+    // Other subsystems govern resources of this type that were never catalog
+    // entries. Removing a ref this catalog holds nothing for must not take one
+    // of those, and the grants written against it, with it.
+    const outside = await access.registerResource({
+      orgId, type: 'model', externalRef: 'urn:dsh:admin:model-catalog', displayName: 'Model catalog',
+    })
+    await access.grantResource(role, outside.id, 'model.catalog.manage')
+
+    await gateway.remove(orgId, 'urn:dsh:admin:model-catalog')
+    expect((await access.listResources(orgId, 'model')).map(resource => resource.externalRef))
+      .toEqual(['urn:dsh:admin:model-catalog'])
+    expect(await access.authorize({
+      orgId,
+      principalId: alice,
+      action: 'model.catalog.manage',
+      resourceType: 'model',
+      resourceId: 'urn:dsh:admin:model-catalog',
+    })).toMatchObject({ allowed: true })
+  })
 })
 
 describe('what a member is shown', () => {

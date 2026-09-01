@@ -249,6 +249,31 @@ describe('a disabled resource', () => {
   })
 })
 
+describe('a deleted resource', () => {
+  it('leaves no grant naming it, and a resource registered again under the ref starts with none', async () => {
+    const resource = await access.registerResource({ orgId, type: 'model', externalRef: 'v4', displayName: 'V4' })
+    const role = await access.createRole({ orgId, name: 'invoker' })
+    await access.grantResource(role.id, resource.id, 'model.invoke')
+    await access.bindUserRole(alice, role.id)
+    expect(await access.authorize(ask('model.invoke', 'model', 'v4'))).toMatchObject({ allowed: true })
+
+    await access.deleteResource(resource.id)
+    expect(await access.listResources(orgId, 'model')).toEqual([])
+    expect(await access.listRoleGrants(role.id)).toEqual([])
+
+    const again = await access.registerResource({ orgId, type: 'model', externalRef: 'v4', displayName: 'V4' })
+    expect(again.id).not.toBe(resource.id)
+    expect(await access.authorize(ask('model.invoke', 'model', 'v4')))
+      .toMatchObject({ allowed: false, reason: 'no-grant' })
+  })
+
+  it('accepts deleting a resource the catalog does not hold, changing nothing', async () => {
+    const before = (await access.authorize(ask('model.invoke', 'model', 'v4'))).policyRevision
+    await expect(access.deleteResource('missing' as ResourceId)).resolves.toBeUndefined()
+    expect((await access.authorize(ask('model.invoke', 'model', 'v4'))).policyRevision).toBe(before)
+  })
+})
+
 describe('administrative roles are not a master key', () => {
   it('leaves company resources refused to a role that only manages members', async () => {
     await access.registerResource({ orgId, type: 'model', externalRef: 'v4', displayName: 'V4' })

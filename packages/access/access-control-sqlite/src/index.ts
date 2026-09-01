@@ -302,6 +302,15 @@ export class SqliteAccessControl extends AccessControl {
     if (row !== undefined) await this.bump(OrgId(row.org_id))
   }
 
+  async deleteResource(id: ResourceId): Promise<void> {
+    // The grants go first: they reference the resource, and leaving one would
+    // fail the foreign key rather than delete the row.
+    this.db.prepare('DELETE FROM role_resource_grant WHERE resource_id = ?').run(id)
+    const row = this.db.prepare('DELETE FROM resource WHERE id = ? RETURNING org_id')
+      .get(id) as Pick<ResourceRow, 'org_id'> | undefined
+    if (row !== undefined) await this.bump(OrgId(row.org_id))
+  }
+
   listResources(orgId: OrgIdType, type: string): Promise<ManagedResource[]> {
     const rows = this.db.prepare(
       'SELECT * FROM resource WHERE org_id = ? AND type = ? ORDER BY rowid',

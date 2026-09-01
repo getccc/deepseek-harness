@@ -3,23 +3,31 @@
 import { useState, type ReactNode } from 'react'
 import { Button, Form, Input, InputNumber, Typography, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { api, type WireModel } from '../api.ts'
+import { api, type ModelInput, type WireModel } from '../api.ts'
 import { useLocale } from '../locale.tsx'
-import { ConfirmModal, FormModal, PageNote, StatusTag, useErrorReporter, useLoaded } from '../ui.tsx'
+import {
+  ConfirmModal, FormModal, PageNote, RowActions, StatusTag, useErrorReporter, useLoaded,
+} from '../ui.tsx'
 
-/** What the registration form collects. */
-interface NewModel {
-  modelRef: string
-  displayName: string
-  providerRef: string
-  upstreamModel: string
-  endpoint: string
-  credentialRef: string
-  maxOutputTokens: number
-}
+/** Which dialog is open, and what it is about. */
+type Dialog =
+  | { readonly kind: 'add' }
+  | { readonly kind: 'edit'; readonly model: WireModel }
+  | { readonly kind: 'status'; readonly model: WireModel }
+  | { readonly kind: 'delete'; readonly model: WireModel }
+
+/** The route fields the register and edit forms collect. */
+const ROUTE_FIELDS = [
+  ['modelRef', 'models.modelRef', 'deepseek-chat'],
+  ['displayName', 'models.displayName', 'DeepSeek Chat'],
+  ['providerRef', 'models.providerRef', 'deepseek'],
+  ['upstreamModel', 'models.upstreamModel', 'deepseek-chat'],
+  ['endpoint', 'models.endpoint', 'https://api.deepseek.com'],
+  ['credentialRef', 'models.credentialRef', 'COMPANY_DEEPSEEK_KEY'],
+] as const
 
 /**
- * The catalog table and the registration dialog.
+ * The catalog table and everything an administrator does to it.
  * @param props.held - the `resourceType|action` pairs this member holds.
  * @returns the models view.
  */
@@ -27,8 +35,7 @@ export function Models({ held }: { readonly held: ReadonlySet<string> }): ReactN
   const { t } = useLocale()
   const report = useErrorReporter()
   const models = useLoaded<WireModel[]>(api.models, report)
-  const [adding, setAdding] = useState(false)
-  const [changing, setChanging] = useState<WireModel | undefined>(undefined)
+  const [dialog, setDialog] = useState<Dialog | undefined>(undefined)
 
   const mayManage = held.has('model|model.catalog.manage')
 
@@ -36,8 +43,7 @@ export function Models({ held }: { readonly held: ReadonlySet<string> }): ReactN
   const act = async (write: () => Promise<WireModel[]>): Promise<void> => {
     try {
       models.replace(await write())
-      setAdding(false)
-      setChanging(undefined)
+      setDialog(undefined)
     } catch (error) {
       report(error)
     }
@@ -91,21 +97,42 @@ export function Models({ held }: { readonly held: ReadonlySet<string> }): ReactN
     {
       title: t('action.actions'),
       key: 'actions',
-      render: (_value, model) => (mayManage
-        ? (
-          <Button size="small" danger={model.status === 'active'} onClick={() => { setChanging(model) }}>
-            {model.status === 'active' ? t('models.retire') : t('models.activate')}
-          </Button>
-        )
-        : null),
+      render: (_value, model) => (
+        <RowActions
+          actions={[
+            {
+              key: 'edit',
+              label: t('action.edit'),
+              disabled: !mayManage,
+              onClick: () => { setDialog({ kind: 'edit', model }) },
+            },
+            {
+              key: 'status',
+              label: t(model.status === 'active' ? 'models.retire' : 'models.activate'),
+              danger: model.status === 'active',
+              disabled: !mayManage,
+              onClick: () => { setDialog({ kind: 'status', model }) },
+            },
+            {
+              key: 'delete',
+              label: t('action.delete'),
+              danger: true,
+              disabled: !mayManage,
+              onClick: () => { setDialog({ kind: 'delete', model }) },
+            },
+          ]}
+        />
+      ),
     },
   ]
+
+  const editing = dialog?.kind === 'edit' ? dialog.model : undefined
 
   return (
     <>
       <PageNote text={t('models.description')} />
       {mayManage && (
-        <Button type="primary" style={{ marginBottom: 16 }} onClick={() => { setAdding(true) }}>
+        <Button type="primary" style={{ marginBottom: 16 }} onClick={() => { setDialog({ kind: 'add' }) }}>
           {t('models.add')}
         </Button>
       )}
@@ -119,30 +146,38 @@ export function Models({ held }: { readonly held: ReadonlySet<string> }): ReactN
         locale={{ emptyText: t('models.empty') }}
       />
 
-      <FormModal<NewModel>
-        title={t('models.addTitle')}
-        open={adding}
-        okText={t('action.create')}
-        initialValues={{ maxOutputTokens: 8192 }}
-        onCancel={() => { setAdding(false) }}
+      <FormModal<ModelInput>
+        title={t(editing === undefined ? 'models.addTitle' : 'models.editTitle')}
+        open={dialog?.kind === 'add' || dialog?.kind === 'edit'}
+        okText={t(editing === undefined ? 'action.create' : 'action.save')}
+        initialValues={editing === undefined
+          ? { maxOutputTokens: 8192 }
+          : {
+            modelRef: editing.modelRef,
+            displayName: editing.displayName,
+            providerRef: editing.providerRef,
+            upstreamModel: editing.upstreamModel,
+            endpoint: editing.endpoint,
+            credentialRef: editing.credentialRef,
+            maxOutputTokens: editing.maxOutputTokens,
+          }}
+        onCancel={() => { setDialog(undefined) }}
+        // An edit is the same write as a registration: the stable ref is the
+        // identity, so a POST naming a stored one replaces its route and leaves
+        // the status and the grants written against that ref alone.
         onSubmit={values => act(() => api.addModel(values))}
       >
-        <Typography.Paragraph type="secondary">{t('models.addHint')}</Typography.Paragraph>
-        {([
-          ['modelRef', 'models.modelRef', 'deepseek-chat'],
-          ['displayName', 'models.displayName', 'DeepSeek Chat'],
-          ['providerRef', 'models.providerRef', 'deepseek'],
-          ['upstreamModel', 'models.upstreamModel', 'deepseek-chat'],
-          ['endpoint', 'models.endpoint', 'https://api.deepseek.com'],
-          ['credentialRef', 'models.credentialRef', 'COMPANY_DEEPSEEK_KEY'],
-        ] as const).map(([field, label, placeholder]) => (
+        <Typography.Paragraph type="secondary">
+          {t(editing === undefined ? 'models.addHint' : 'models.refFixed')}
+        </Typography.Paragraph>
+        {ROUTE_FIELDS.map(([field, label, placeholder]) => (
           <Form.Item
             key={field}
             name={field}
             label={t(label)}
             rules={[{ required: true, message: t('login.required') }]}
           >
-            <Input placeholder={placeholder} />
+            <Input placeholder={placeholder} disabled={field === 'modelRef' && editing !== undefined} />
           </Form.Item>
         ))}
         <Form.Item
@@ -155,22 +190,32 @@ export function Models({ held }: { readonly held: ReadonlySet<string> }): ReactN
       </FormModal>
 
       <ConfirmModal
-        title={changing === undefined
-          ? ''
-          : t(
-            changing.status === 'active' ? 'models.retireTitle' : 'models.activateTitle',
-            { name: changing.displayName },
-          )}
-        body={changing === undefined
-          ? ''
-          : t(changing.status === 'active' ? 'models.retireBody' : 'models.activateBody')}
-        open={changing !== undefined}
-        danger={changing?.status === 'active'}
-        onCancel={() => { setChanging(undefined) }}
+        title={dialog?.kind === 'status'
+          ? t(
+            dialog.model.status === 'active' ? 'models.retireTitle' : 'models.activateTitle',
+            { name: dialog.model.displayName },
+          )
+          : ''}
+        body={dialog?.kind === 'status'
+          ? t(dialog.model.status === 'active' ? 'models.retireBody' : 'models.activateBody')
+          : ''}
+        open={dialog?.kind === 'status'}
+        danger={dialog?.kind === 'status' && dialog.model.status === 'active'}
+        onCancel={() => { setDialog(undefined) }}
         onConfirm={() => act(() => api.setModelStatus(
-          changing?.modelRef ?? '',
-          changing?.status === 'active' ? 'retired' : 'active',
+          dialog?.kind === 'status' ? dialog.model.modelRef : '',
+          dialog?.kind === 'status' && dialog.model.status === 'active' ? 'retired' : 'active',
         ))}
+      />
+
+      <ConfirmModal
+        title={dialog?.kind === 'delete'
+          ? t('models.deleteTitle', { name: dialog.model.displayName })
+          : ''}
+        body={t('models.deleteBody')}
+        open={dialog?.kind === 'delete'}
+        onCancel={() => { setDialog(undefined) }}
+        onConfirm={() => act(() => api.removeModel(dialog?.kind === 'delete' ? dialog.model.modelRef : ''))}
       />
     </>
   )

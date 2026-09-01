@@ -69,6 +69,10 @@ A model that does not exist and one this principal may not invoke are both `unkn
 
 A Runner asking for more output than the model is configured to produce gets the configured amount, and the reservation is taken against that. A smaller ask is honoured, so a short request does not hold a long request's budget.
 
+### Retiring and deleting are different acts
+
+`setStatus` withdraws a model from service and returns it: the entry and every grant naming it stay as they were. `remove` takes the entry out along with those grants, so a model registered later under the same ref starts with no access. Neither fails on a ref the catalog does not hold, and `remove` ungoverns only what `register` governed: another subsystem's resource of the model type is left alone even when it carries the ref that was asked for.
+
 ### Source map
 
 | Path | Role |

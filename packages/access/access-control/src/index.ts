@@ -234,6 +234,18 @@ export abstract class AccessControl extends Service {
   abstract setResourceEnabled(id: ResourceId, enabled: boolean): Promise<void>
 
   /**
+   * Stop governing a resource, taking every grant that names it with it.
+   *
+   * The grants go too because a resource id is not reused: leaving them would
+   * keep rows pointing at nothing, and a resource later registered under the
+   * same external ref takes a new id and starts with no access. Disabling a
+   * resource is the reversible act; this one is for a resource its owning
+   * subsystem no longer has.
+   * @param id - the resource to stop governing.
+   */
+  abstract deleteResource(id: ResourceId): Promise<void>
+
+  /**
    * List an organization's governed resources of one type, in creation order.
    * @param orgId - the organization to list.
    * @param type - the resource type to list.

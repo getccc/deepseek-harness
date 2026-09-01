@@ -54,6 +54,8 @@ kind: "package-reference"
 
 `POST /roles/:id/models` 是针对具体资源的例外。它把目录模型 id 解析为受治理资源 id，替换该角色精确的 `model.discover` 与 `model.invoke` 授权，并清除 `coversCatalog`。Runner 使用当前设备访问 token 向模型网关请求发现，因此只会显示这些精确授权允许的活跃模型。
 
+`POST /models` 同时也是编辑。稳定模型引用是这条记录的身份，因此一次指名已存储记录的写入只替换它的路由，而不动它的状态和按该引用写下的授权；更改引用等于注册第二条记录。`PATCH /models/:ref` 只让模型退出服务或把它放回来，而 `DELETE /models/:ref` 把记录连同所有指名它的授权一起移出目录。
+
 `POST /members` 要求在创建账户的同一次写入中提供成员初始密码。`PATCH /members/:id/password` 替换密码，撤销该账户拥有的每个浏览器会话与设备凭据族，并在管理员重置自己密码时让本次请求的管理 cookie 过期。
 
 被标记为 `coversCatalog` 的角色持有本构建治理的每一项权限，并在 Control Plane 启动时被补齐到目录——正是这一点让管理员的角色在某次构建新增权限时不会落后。这个标记属于授权管理：只要请求携带该字段，`PATCH /roles/:id` 就会在 `role.update` 之外额外要求 `role.grant.manage`。

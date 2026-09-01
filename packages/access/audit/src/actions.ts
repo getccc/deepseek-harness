@@ -60,6 +60,7 @@ export const AUDIT_ACTIONS = {
   'resource.register': { resourceType: 'managed_resource', metadata: [] },
   'resource.enable': { resourceType: 'managed_resource', metadata: [] },
   'resource.disable': { resourceType: 'managed_resource', metadata: [] },
+  'resource.delete': { resourceType: 'managed_resource', metadata: [] },
   'policy.update': { resourceType: 'organization', metadata: [] },
   'audit.export': { resourceType: 'organization', metadata: ['itemCount'] },
 } as const satisfies Record<string, AuditActionSpec>

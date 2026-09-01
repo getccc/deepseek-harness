@@ -60,6 +60,17 @@ export interface MenuInput {
   visible?: boolean
 }
 
+/** The route fields a model form collects; the stable ref names which entry. */
+export interface ModelInput {
+  modelRef: string
+  displayName: string
+  providerRef: string
+  upstreamModel: string
+  endpoint: string
+  credentialRef: string
+  maxOutputTokens: number
+}
+
 /** The account fields an administrator may edit after issuing the account. */
 export interface MemberProfileInput {
   displayName?: string
@@ -252,17 +263,15 @@ export const api = {
 
   /** The company model catalog. */
   models: (): Promise<WireModel[]> => call('GET', '/models'),
-  /** Put one model in the catalog, or update the one already there. */
-  addModel: (input: {
-    modelRef: string
-    displayName: string
-    providerRef: string
-    upstreamModel: string
-    endpoint: string
-    credentialRef: string
-    maxOutputTokens: number
-  }): Promise<WireModel[]> => call('POST', '/models', input),
+  /**
+   * Put one model in the catalog, or update the one already there. The stable
+   * ref is the identity, so a write naming a stored one is the edit.
+   */
+  addModel: (input: ModelInput): Promise<WireModel[]> => call('POST', '/models', input),
   /** Withdraw one model from service, or return it. */
   setModelStatus: (modelRef: string, status: 'active' | 'retired'): Promise<WireModel[]> =>
     call('PATCH', `/models/${encodeURIComponent(modelRef)}`, { status }),
+  /** Take one model out of the catalog, with the grants that named it. */
+  removeModel: (modelRef: string): Promise<WireModel[]> =>
+    call('DELETE', `/models/${encodeURIComponent(modelRef)}`),
 }

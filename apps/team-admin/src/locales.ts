@@ -252,6 +252,8 @@ export const zh = {
   'models.add': '注册模型',
   'models.addTitle': '注册模型',
   'models.addHint': '凭据字段存的是服务端密钥的引用，不是密钥本身。',
+  'models.editTitle': '编辑模型',
+  'models.refFixed': '稳定模型引用是这条记录的身份，授权按它书写，因此编辑时不可更改。',
   'models.modelRef': '稳定模型引用',
   'models.displayName': '显示名称',
   'models.providerRef': '提供方引用',
@@ -266,6 +268,8 @@ export const zh = {
   'models.retireBody': '这一条会留在目录里，但任何调用都会被拒绝。',
   'models.activateTitle': '启用 {name}？',
   'models.activateBody': '持有 model.invoke 的成员可以再次调用它。',
+  'models.deleteTitle': '删除 {name}？',
+  'models.deleteBody': '这一条会从目录里消失，指名它的授权一并被撤销。停用只是拒绝调用，记录还在。',
   'models.empty': '还没有注册公司模型。',
 
   'status.active': '在用',
@@ -573,6 +577,9 @@ export const en: Record<keyof typeof zh, string> = {
   'models.add': 'Register model',
   'models.addTitle': 'Register model',
   'models.addHint': 'The credential field stores a reference to the server-side secret, not the secret itself.',
+  'models.editTitle': 'Edit model',
+  'models.refFixed':
+    'The stable model ref is the identity of this entry and grants are written against it, so an edit leaves it as it is.',
   'models.modelRef': 'Stable model ref',
   'models.displayName': 'Display name',
   'models.providerRef': 'Provider ref',
@@ -587,6 +594,9 @@ export const en: Record<keyof typeof zh, string> = {
   'models.retireBody': 'The entry stays in the catalog and every invocation of it is refused.',
   'models.activateTitle': 'Activate {name}?',
   'models.activateBody': 'Members holding model.invoke can call it again.',
+  'models.deleteTitle': 'Delete {name}?',
+  'models.deleteBody':
+    'The entry leaves the catalog and every grant naming it is revoked. Retiring only refuses invocations and keeps the entry.',
   'models.empty': 'No company models are registered.',
 
   'status.active': 'active',

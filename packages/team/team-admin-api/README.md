@@ -54,6 +54,8 @@ Navigation is the exception in that table. The console cannot draw itself withou
 
 `POST /roles/:id/models` is the resource-specific exception. It resolves catalog model ids to their governed resource ids, replaces that role's exact `model.discover` and `model.invoke` grants, and clears `coversCatalog`. The Runner asks the model gateway for discovery under its current device access token, so only active models allowed by those exact grants appear.
 
+`POST /models` is also the edit. The stable model ref is the entry's identity, so a write naming one already stored replaces its route and leaves its status and the grants written against that ref alone; changing a ref means registering a second entry. `PATCH /models/:ref` only withdraws a model from service or returns it, while `DELETE /models/:ref` takes the entry out of the catalog with every grant that named it.
+
 `POST /members` requires the member's initial password in the same write that creates the account. `PATCH /members/:id/password` replaces it, revokes every browser session and device credential family owned by that account, and expires the request's administration cookie when an administrator resets their own password.
 
 A role marked `coversCatalog` holds every permission this build governs, and is brought up to the catalog as the Control Plane starts — which is what keeps an administrator's role current when a build adds a permission. The mark is grant management: `PATCH /roles/:id` asks `role.grant.manage` in addition to `role.update` whenever the request carries that field.

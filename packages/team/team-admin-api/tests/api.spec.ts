@@ -458,6 +458,7 @@ describe('what a role does not carry', () => {
       ['DELETE', '/team/api/devices/anything', undefined],
       ['POST', '/team/api/models', USABLE_MODEL],
       ['PATCH', '/team/api/models/deepseek-chat', { status: 'retired' }],
+      ['DELETE', '/team/api/models/deepseek-chat', undefined],
     ] as const) {
       const refused = await write(method, path, held, body)
       expect(refused.status, path).toBe(403)
@@ -673,6 +674,58 @@ describe('administering', () => {
     expect(await audit.query({ orgId, action: 'resource.disable' })).toHaveLength(1)
     expect((await audit.query({ orgId, action: 'resource.enable' }))[0])
       .toMatchObject({ resourceId: 'deepseek-chat' })
+  })
+
+  it('edits a model through the write that registered it, leaving its status alone', async () => {
+    const held = await signIn()
+    await write('POST', '/team/api/models', held, USABLE_MODEL)
+    await write('PATCH', '/team/api/models/deepseek-chat', held, { status: 'retired' })
+
+    const edited = await write('POST', '/team/api/models', held, {
+      ...USABLE_MODEL, displayName: 'DeepSeek Chat v2', endpoint: 'https://api.deepseek.com/v2',
+    })
+    expect(edited.status).toBe(200)
+    // The stable ref is the identity, so the route moves and the status a
+    // separate act set stays as it was.
+    expect((payload(edited) as WireModel[])[0]).toMatchObject({
+      modelRef: 'deepseek-chat',
+      displayName: 'DeepSeek Chat v2',
+      endpoint: 'https://api.deepseek.com/v2',
+      status: 'retired',
+    })
+    expect(await ctx.modelGateway.list(orgId)).toHaveLength(1)
+  })
+
+  it('deletes a model with the grants that named it', async () => {
+    const held = await signIn()
+    await write('POST', '/team/api/models', held, USABLE_MODEL)
+    const governed = (await access.listResources(orgId, 'model'))
+      .find(resource => resource.externalRef === 'deepseek-chat')
+    await access.grantResource(adminRole, governed!.id, 'model.invoke')
+
+    const deleted = await write('DELETE', '/team/api/models/deepseek-chat', held)
+    expect(deleted.status).toBe(200)
+    expect(payload(deleted)).toEqual([])
+    expect(await ctx.modelGateway.list(orgId)).toHaveLength(0)
+    expect((await access.listResources(orgId, 'model')).map(resource => resource.externalRef))
+      .toEqual([api.MODEL_CATALOG_RESOURCE])
+    expect((await access.listRoleGrants(adminRole)).some(grant => grant.kind === 'resource')).toBe(false)
+    expect((await audit.query({ orgId, action: 'resource.delete' }))[0])
+      .toMatchObject({ resourceId: 'deepseek-chat' })
+  })
+
+  it('will not delete the catalog resource an administrator reaches this page through', async () => {
+    const held = await signIn()
+    // The console's own model-catalog resource is governed under the model
+    // type and is not a catalog entry. Ungoverning it would revoke the grants
+    // that admit every later model.catalog request, with no way back through
+    // the console.
+    const deleted = await write('DELETE', `/team/api/models/${encodeURIComponent(api.MODEL_CATALOG_RESOURCE)}`, held)
+    expect(deleted.status).toBe(200)
+    expect((await access.listResources(orgId, 'model')).map(resource => resource.externalRef))
+      .toEqual([api.MODEL_CATALOG_RESOURCE])
+    const registered = await write('POST', '/team/api/models', held, USABLE_MODEL)
+    expect(registered.status).toBe(200)
   })
 })
 
