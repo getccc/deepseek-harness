@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-01-preserve-provider-base-url-path-prefix.md
+2026-09-01-preserve-provider-base-url-path-prefix.md: 4dcd7a527a607f2dd650b2838ac73d4877e04cbb
+2026-09-01-preserve-provider-base-url-path-prefix.zh.md: ff8cdddab0d952277ab0d25cce018f5f3cd2997f

@@ -242,7 +242,12 @@ async function proxy(
   const timeout = setTimeout(() => { controller.abort() }, config.upstreamTimeoutMs)
   let upstream: Response
   try {
-    upstream = await fetch(new URL('/v1/chat/completions', plan.endpoint), {
+    const endpoint = new URL(plan.endpoint)
+    const prefix = endpoint.pathname.replace(/\/+$/, '')
+    endpoint.pathname = `${prefix}${prefix.endsWith('/v1') ? '' : '/v1'}/chat/completions`
+    endpoint.search = ''
+    endpoint.hash = ''
+    upstream = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'authorization': `Bearer ${credential.value}`,

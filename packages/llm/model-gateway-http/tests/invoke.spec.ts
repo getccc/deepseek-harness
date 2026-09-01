@@ -34,9 +34,11 @@ import { MODEL_CATALOG_PATH, MODEL_INVOKE_PATH } from '../src/protocol.ts'
 interface Seen {
   authorization: string | undefined
   body: Record<string, unknown>
+  path: string | undefined
 }
 
 let provider: Server
+let providerOrigin: string
 let providerSeen: Seen[]
 let providerAnswer: (res: ServerResponse) => void
 let cp: Context
@@ -68,6 +70,7 @@ async function startProvider(): Promise<string> {
       providerSeen.push({
         authorization: req.headers.authorization,
         body: JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>,
+        path: req.url,
       })
       providerAnswer(res)
     })
@@ -104,7 +107,7 @@ beforeEach(async () => {
   silent = createServer(() => { /* deliberately silent */ })
   silent.listen(0, '127.0.0.1')
   await once(silent, 'listening')
-  const providerOrigin = await startProvider()
+  providerOrigin = await startProvider()
   home = await mkdtemp(join(tmpdir(), 'dsh-gateway-http-'))
   cp = new Context()
   await cp.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
@@ -204,10 +207,23 @@ describe('a company model call', () => {
     const seen = providerSeen[0] as Seen
     // The credential appears here and nowhere the Runner can reach.
     expect(seen.authorization).toBe('Bearer company-secret-key')
+    expect(seen.path).toBe('/v1/chat/completions')
     // The Runner wrote one model in the body and named another to the gateway;
     // the provider sees the one the catalog holds.
     expect(seen.body.model).toBe('deepseek-chat-20260801')
     expect(seen.body.messages).toEqual([{ role: 'user', content: 'hi' }])
+  })
+
+  it('preserves a provider base URL path prefix', async () => {
+    await gateway.register({
+      orgId, modelRef: 'company-v4', displayName: 'Company V4',
+      providerRef: 'dashscope', upstreamModel: 'qwen-plus',
+      endpoint: `${providerOrigin}/compatible-mode/v1`,
+      credentialRef: CREDENTIAL, maxOutputTokens: 4_000,
+    })
+
+    expect((await invoke(invocation())).status).toBe(200)
+    expect(providerSeen[0]?.path).toBe('/compatible-mode/v1/chat/completions')
   })
 
   it('settles from what the provider reported', async () => {

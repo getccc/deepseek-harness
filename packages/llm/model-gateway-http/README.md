@@ -51,6 +51,10 @@ An unknown token, a lapsed one, and one whose device was revoked all answer 401.
 
 It is resolved here and written nowhere — not into the plan, not into the catalog, not into a log. A catalog entry naming a reference nobody configured, or something that is not a credential reference at all, answers 500 and charges nothing: that is this deployment's problem rather than the member's.
 
+### The provider base URL keeps its path prefix
+
+The catalog endpoint is an OpenAI-compatible base URL rather than a complete operation URL. A base URL ending in `/v1` receives `chat/completions`; every other base receives `v1/chat/completions`. This preserves prefixes such as DashScope's `/compatible-mode/v1` while `https://api.deepseek.com` still reaches `/v1/chat/completions`.
+
 ### Usage is read by watching, not by holding
 
 [`UsageScanner`](src/usage.ts) keeps one line and one usage object as the response goes past. Both response shapes work through the same scanner: a non-streaming body is one JSON document, and a stream is `data:` frames whose last ones carry the usage.
@@ -101,7 +105,7 @@ The endpoint rewrites the model field before the call goes upstream, so two cata
 
 These are current constraints of the contract, not a task backlog.
 
-- **One upstream path** — `/v1/chat/completions`, matching the one operation the transport carries. A second operation needs its own path mapping rather than a caller-supplied one.
+- **One upstream operation** — only Chat Completions, matching the one operation the transport carries. A second operation needs its own path mapping rather than a caller-supplied one.
 - **No audit record** — the design calls for one on every company model allow and deny; the record needs the correlation and the device this endpoint already has, and adding it is a small change this one did not make.
 - **No content-log suppression beyond not logging** — the endpoint writes nothing about a body, but it does not configure the surrounding process, and a deployment that enabled request logging elsewhere would defeat that.
 - **The response is streamed but not bounded** — a provider that never stops sending is cut off by `upstreamTimeoutMs` rather than by a byte limit.

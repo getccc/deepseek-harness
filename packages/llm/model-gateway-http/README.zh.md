@@ -51,6 +51,10 @@ plugins:
 
 它在这里被解析，而不被写到任何地方——不写进计划、不写进目录、不写进日志。一条指名了没人配置过的引用、或者根本不是凭据引用的目录记录，回答 500 且不计费：那是这个部署的问题，不是成员的。
 
+### Provider Base URL 保留路径前缀
+
+目录中的 endpoint 是 OpenAI 兼容 Base URL，而不是完整的操作 URL。以 `/v1` 结尾的 Base URL 会追加 `chat/completions`，其余 Base URL 会追加 `v1/chat/completions`。因此 DashScope 的 `/compatible-mode/v1` 前缀得以保留，而 `https://api.deepseek.com` 仍然到达 `/v1/chat/completions`。
+
 ### Usage 靠"看着它过去"读取，而不是靠留住它
 
 [`UsageScanner`](src/usage.ts) 在响应经过时只保留一行和一个 usage 对象。两种响应形态经由同一个扫描器：非流式响应体是一份 JSON 文档，而流是一串 `data:` 帧、其最后几帧携带 usage。
@@ -101,7 +105,7 @@ plugins:
 
 这些是当前契约的约束，不是任务清单。
 
-- **只有一条上游路径** —— `/v1/chat/completions`，与 Transport 所承载的那一个操作对应。第二个操作需要它自己的路径映射，而不是调用方提供的路径。
+- **只有一种上游操作** —— 仅支持 Chat Completions，与 Transport 所承载的那一个操作对应。第二个操作需要它自己的路径映射，而不是调用方提供的路径。
 - **没有审计记录** —— 设计要求对每一次公司模型的允许与拒绝各写一条；那条记录需要本端点已经持有的关联标识与设备，补上它是一次本次未做的小改动。
 - **除"不记录"之外没有内容日志抑制** —— 端点不写关于请求体的任何东西，但它不配置周围的进程，而一个在别处开启了请求日志的部署会让这一点失效。
 - **响应被流式转发但没有字节上限** —— 一个永不停止发送的 Provider 由 `upstreamTimeoutMs` 切断，而不是由字节上限切断。
