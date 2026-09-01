@@ -62,7 +62,7 @@ export const zh = {
   'access.confirm.cancel': '取消',
   'access.confirm.enable': '启用 Full access',
   'access.fullLabel': 'Full access',
-  'hero.headline': '探索未至之境',
+  'hero.headline': '今天有什么计划？',
   'hero.preview': '预览版',
   'hero.chooseWorkspace': '选择工作区',
   'session.hierarchy': '会话层级',
