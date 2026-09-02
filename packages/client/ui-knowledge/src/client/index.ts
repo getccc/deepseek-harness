@@ -50,12 +50,20 @@ export const inject = ['commandUi', 'locale', 'remote', 'slots']
 /**
  * Client plugin body: mount the knowledge Remote namespace, then register the
  * `/knowledge` picker and the composer chip over it.
+ *
+ * The mount is an effect like every other contribution, so the namespace is
+ * taken back down by the fiber that raised it however that fiber ends. The
+ * surfaces park on `remote.knowledge`, the service the mount provides, so
+ * neither exists before the namespace it calls.
  * @param ctx - client root context.
- * @returns disposer unmounting the Remote namespace after both surfaces are gone.
  */
-export async function apply(ctx: ClientContext): Promise<() => Promise<void>> {
-  const unmount = await ctx.remote.$mount(knowledgeRemote)
+export function apply(ctx: ClientContext): void {
+  ctx.effect(() => ctx.remote.$mount(knowledgeRemote), 'ui-knowledge: knowledge Remote namespace')
+  ctx.inject(['commandUi', 'locale', 'remote.knowledge', 'slots'], registerUi)
+}
 
+/** Register the picker and the chip over a live `knowledge` namespace. */
+function registerUi(ctx: ClientContext): void {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'ui-knowledge: dictionaries')
 
   // The command description and the option rows are this plugin's own copy,
@@ -94,6 +102,4 @@ export async function apply(ctx: ClientContext): Promise<() => Promise<void>> {
     order: 100,
     locale: NS,
   }, KnowledgeChip))
-
-  return unmount
 }

@@ -49,7 +49,7 @@ Chip 读取本次对话的范围，显示`知识库：关闭`、`知识库：全
 <details>
 <summary>实现内部细节——点击展开</summary>
 
-本插件自行挂载仅 Team 的 `knowledge` 远程命名空间，而不经由共享的 Client 装配，因为只有 Team 宿主提供它——否则没有私有知识的构建会多出一个每次调用都失败的命名空间。`src/client/scope.ts` 拥有勾选与记录范围之间的全部映射：`optionsOf` 依据 `knowledge.scope` 绘制行，`choiceOf` 把一组勾选读作 `off`、`all` 或具名选择，再由 `knowledge.choose` 记录。`/knowledge` 是注册在 `ctx.commandUi` 上的 `popupMultiSelect` 贡献项，其互斥首行就是「全部」选择背后的外壳机制。Chip 占据 composer 的 `conversation.input.left` 区域，经标准套件的 `useProjection` 读取宿主计算的 `knowledge` 投影；它不在客户端保存选择的副本。失败文案按错误面策略保持英文，并带上远程自己的 code。
+本插件自行挂载仅 Team 的 `knowledge` 远程命名空间，而不经由共享的 Client 装配，因为只有 Team 宿主提供它——否则没有私有知识的构建会多出一个每次调用都失败的命名空间。这次挂载与其他贡献一样是一个 effect，两个界面都停靠在它提供的 `remote.knowledge` 服务上，因此它们不会早于所调用的命名空间出现，也会先于它消失。`src/client/scope.ts` 拥有勾选与记录范围之间的全部映射：`optionsOf` 依据 `knowledge.scope` 绘制行，`choiceOf` 把一组勾选读作 `off`、`all` 或具名选择，再由 `knowledge.choose` 记录。`/knowledge` 是注册在 `ctx.commandUi` 上的 `popupMultiSelect` 贡献项，其互斥首行就是「全部」选择背后的外壳机制。Chip 占据 composer 的 `conversation.input.left` 区域，经标准套件的 `useProjection` 读取宿主计算的 `knowledge` 投影；它不在客户端保存选择的副本。失败文案按错误面策略保持英文，并带上远程自己的 code。
 
 </details>
 

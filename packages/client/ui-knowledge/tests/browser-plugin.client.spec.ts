@@ -64,6 +64,9 @@ async function bench(scope: KnowledgeScopeView | Error = DIRECTORY) {
       })
     },
   })
+  // The real mount provides this namespace service, which is what the
+  // surfaces park on; the double stands it up so they can register at all.
+  ctx.provide('remote.knowledge', knowledge)
   let contribution: CommandContribution | undefined
   ctx.provide('commandUi', {
     register(c: CommandContribution) {
