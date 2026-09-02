@@ -119,11 +119,7 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
     this.db.prepare('UPDATE knowledge_base SET admin_enabled = ? WHERE org_id = ? AND knowledge_ref = ?')
       .run(enabled ? 1 : 0, orgId, ref)
     const resource = (await this.resourcesByRef(orgId)).get(ref)
-    if (resource !== undefined) {
-      // Effective access is the conjunction: an entry the source no longer
-      // lists stays unusable however an administrator switches it.
-      await this.ctx.accessControl.setResourceEnabled(resource.id, enabled && row.remote_present === 1)
-    }
+    if (resource !== undefined) await this.ctx.accessControl.setResourceEnabled(resource.id, enabled)
   }
 
   async directory(principal: KnowledgePrincipal): Promise<readonly KnowledgeBaseEntry[]> {
@@ -207,7 +203,7 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
     const rows: KnowledgeBaseRow[] = []
     for (const ref of request.scope.refs) {
       const row = this.row(request.orgId, ref)
-      const usable = row !== undefined && row.remote_present === 1 && row.admin_enabled === 1
+      const usable = row !== undefined && row.admin_enabled === 1
       const allowed = usable && await this.maySearch(request, ref)
       if (!allowed) {
         await this.record({ ...request, resourceRef: ref }, 'denied', undefined, 'no-grant')
@@ -241,7 +237,7 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
     // administration resource shares this resource type, and an `all`-mode type
     // grant on knowledge.search would otherwise admit it as a knowledge base.
     for (const row of this.rows(principal.orgId)) {
-      if (row.remote_present !== 1 || row.admin_enabled !== 1) continue
+      if (row.admin_enabled !== 1) continue
       const resource = resources.get(row.knowledge_ref)
       if (resource === undefined) continue
       if (!await this.maySearch(principal, KnowledgeRef(row.knowledge_ref))) continue
@@ -283,32 +279,43 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
       await this.recordSync(orgId, 'error', undefined, reason)
       return this.catalogView(orgId)
     }
-    this.applyListing(orgId, source.sourceCode, source.providerKind, listed, now)
+    // Every reference is minted before anything is written or retired: a
+    // listing this build cannot express changes nothing at all.
+    const named = listed.map(base => ({
+      ref: formatKnowledgeRef({
+        providerKind: source.providerKind, sourceCode: source.sourceCode, upstreamId: base.upstreamId,
+      }) as string,
+      base,
+    }))
+    await this.retire(orgId, source.sourceCode, new Set(named.map(item => item.ref)))
+    this.applyListing(orgId, source.sourceCode, named, now)
     await this.registerResources(orgId)
     await this.recordSync(orgId, 'allowed', listed.length)
     return this.catalogView(orgId)
   }
 
-  /** Write one successful listing into the catalog in a single transaction. */
+  /**
+   * Write one successful listing into the catalog in a single transaction.
+   * @param orgId - the organization being synchronized.
+   * @param sourceCode - the source whose listing this is.
+   * @param named - the listing, each entry beside the reference it was minted under.
+   * @param now - the discovery time to stamp.
+   */
   private applyListing(
     orgId: OrgId,
     sourceCode: string,
-    providerKind: string,
-    listed: readonly UpstreamKnowledgeBase[],
+    named: readonly { readonly ref: string; readonly base: UpstreamKnowledgeBase }[],
     now: number,
   ): void {
-    const seen = new Set<string>()
     this.db.exec('BEGIN')
     try {
-      for (const base of listed) {
-        const ref = formatKnowledgeRef({ providerKind, sourceCode, upstreamId: base.upstreamId })
-        seen.add(ref)
+      for (const { ref, base } of named) {
         this.db.prepare(
           `INSERT INTO knowledge_base (
              org_id, knowledge_ref, source_code, upstream_id, display_name, description, kind,
              document_count, processing_count, embedding_model_id,
-             admin_enabled, remote_present, last_discovered_at, upstream_updated_at
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, ?, ?)
+             admin_enabled, last_discovered_at, upstream_updated_at
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
            ON CONFLICT (org_id, knowledge_ref) DO UPDATE SET
              display_name = excluded.display_name,
              description = excluded.description,
@@ -316,7 +323,6 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
              document_count = excluded.document_count,
              processing_count = excluded.processing_count,
              embedding_model_id = excluded.embedding_model_id,
-             remote_present = 1,
              last_discovered_at = excluded.last_discovered_at,
              upstream_updated_at = excluded.upstream_updated_at`,
         ).run(
@@ -325,14 +331,8 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
           now, base.updatedAt ?? null,
         )
       }
-      for (const row of this.rows(orgId)) {
-        // Absent from a successful full listing: the row and its grants stay,
-        // because a temporary removal must not silently replace identity, and
-        // deleting the resource would delete every grant naming it.
-        if (!seen.has(row.knowledge_ref) && row.remote_present === 1) {
-          this.db.prepare('UPDATE knowledge_base SET remote_present = 0 WHERE org_id = ? AND knowledge_ref = ?')
-            .run(orgId, row.knowledge_ref)
-        }
+      for (const ref of this.absent(orgId, sourceCode, new Set(named.map(item => item.ref)))) {
+        this.db.prepare('DELETE FROM knowledge_base WHERE org_id = ? AND knowledge_ref = ?').run(orgId, ref)
       }
       this.db.prepare('UPDATE knowledge_source SET last_success_at = ?, last_failure = NULL WHERE org_id = ? AND source_code = ?')
         .run(now, orgId, sourceCode)
@@ -340,6 +340,50 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
     } catch (error) {
       this.db.exec('ROLLBACK')
       throw error
+    }
+  }
+
+  /**
+   * The references this source governs that its listing no longer names.
+   *
+   * Scoped to one source: another source's knowledge bases are not missing
+   * from a listing that never covered them.
+   * @param orgId - the organization being synchronized.
+   * @param sourceCode - the source whose listing this is.
+   * @param seen - the references the listing named.
+   * @returns the references to retire.
+   */
+  private absent(orgId: OrgId, sourceCode: string, seen: ReadonlySet<string>): readonly string[] {
+    return this.rows(orgId)
+      .filter(row => row.source_code === sourceCode && !seen.has(row.knowledge_ref))
+      .map(row => row.knowledge_ref)
+  }
+
+  /**
+   * Stop governing what the source has stopped listing.
+   *
+   * The governed resources go before the catalog rows, and their grants with
+   * them: a member cannot be granted a knowledge base that no longer exists,
+   * and an interrupted retirement leaves a row whose resource the next
+   * synchronization registers afresh — with no grants, which is the outcome
+   * either way.
+   * @param orgId - the organization being synchronized.
+   * @param sourceCode - the source whose listing this is.
+   * @param seen - the references the listing named.
+   */
+  private async retire(
+    orgId: OrgId,
+    sourceCode: string,
+    seen: ReadonlySet<string>,
+  ): Promise<void> {
+    const absent = this.absent(orgId, sourceCode, seen)
+    if (absent.length === 0) return
+    const resources = await this.resourcesByRef(orgId)
+    for (const ref of absent) {
+      const resource = resources.get(ref)
+      /* v8 ignore next -- every catalog row is registered before it can be retired; the lookup answers its optional type. */
+      if (resource === undefined) continue
+      await this.ctx.accessControl.deleteResource(resource.id)
     }
   }
 
@@ -352,7 +396,7 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
         externalRef: row.knowledge_ref,
         displayName: row.display_name,
       })
-      const shouldEnable = row.remote_present === 1 && row.admin_enabled === 1
+      const shouldEnable = row.admin_enabled === 1
       if (resource.enabled !== shouldEnable) {
         await this.ctx.accessControl.setResourceEnabled(resource.id, shouldEnable)
       }
@@ -476,7 +520,6 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
 /** Project one catalog row for a reader, with its governed resource state. */
 function toEntry(row: KnowledgeBaseRow, resource: ManagedResource): KnowledgeCatalogEntry {
   const adminEnabled = row.admin_enabled === 1
-  const remotePresent = row.remote_present === 1
   return {
     ref: KnowledgeRef(row.knowledge_ref),
     resourceId: resource.id,
@@ -487,10 +530,9 @@ function toEntry(row: KnowledgeBaseRow, resource: ManagedResource): KnowledgeCat
     processingCount: row.processing_count,
     embeddingModelId: row.embedding_model_id,
     adminEnabled,
-    remotePresent,
     // The governed resource is the authority on whether anything is admitted,
     // so an interrupted write that left it disabled reads as disabled here too.
-    effectiveEnabled: adminEnabled && remotePresent && resource.enabled,
+    effectiveEnabled: adminEnabled && resource.enabled,
     lastDiscoveredAt: row.last_discovered_at,
     upstreamUpdatedAt: row.upstream_updated_at ?? undefined,
   }

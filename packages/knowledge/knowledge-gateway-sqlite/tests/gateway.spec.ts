@@ -175,30 +175,35 @@ describe('synchronizing the catalog', () => {
     expect(directory.map(entry => entry.ref)).toEqual([REF_A])
   })
 
-  it('disables a vanished entry without deleting it or its grants', async () => {
+  it('retires a vanished entry, with the grants that named it', async () => {
+    // The catalog says what the source says: an administrator reading it sees
+    // the knowledge bases that exist, not a history of ones that did.
     await syncBoth()
     const role = await roleFor(ALICE, 'reader')
     const grant = await access.grantResource(role.id, await resourceOf(REF_A), 'knowledge.search')
     source.listing = [upstream(B)]
     await gateway.sync(ORG)
     const view = await gateway.catalogView(ORG)
-    const entry = view.entries.find(candidate => candidate.ref === REF_A)
-    expect(entry).toMatchObject({ remotePresent: false, effectiveEnabled: false })
-    // The grant survives, so a temporary removal is reversible.
-    expect((await access.listRoleGrants(role.id)).map(held => held.id)).toContain(grant)
+    expect(view.entries.map(entry => entry.ref)).toEqual([REF_B])
+    expect((await access.listRoleGrants(role.id)).map(held => held.id)).not.toContain(grant)
     expect(await gateway.directory({ orgId: ORG, principalId: ALICE })).toEqual([])
   })
 
-  it('restores a returning entry, and its grant admits again', async () => {
+  it('gives a returning entry a fresh identity, and no grant comes back with it', async () => {
     await syncBoth()
     const role = await roleFor(ALICE, 'reader')
     await access.grantResource(role.id, await resourceOf(REF_A), 'knowledge.search')
     source.listing = [upstream(B)]
     await gateway.sync(ORG)
     await syncBoth()
-    const directory = await gateway.directory({ orgId: ORG, principalId: ALICE })
-    expect(directory.map(entry => entry.ref)).toEqual([REF_A])
+    const view = await gateway.catalogView(ORG)
+    expect(view.entries.map(entry => entry.ref)).toContain(REF_A)
+    // Access is granted again by an administrator, not resurrected by a
+    // listing: what came back is a knowledge base, not the old authorization.
+    expect(await gateway.directory({ orgId: ORG, principalId: ALICE })).toEqual([])
   })
+
+
 
   it('never overrides an administrator’s disable', async () => {
     await syncBoth()
@@ -207,7 +212,6 @@ describe('synchronizing the catalog', () => {
     const view = await gateway.catalogView(ORG)
     expect(view.entries.find(entry => entry.ref === REF_A)).toMatchObject({
       adminEnabled: false,
-      remotePresent: true,
       effectiveEnabled: false,
     })
   })
@@ -514,14 +518,29 @@ describe('when the two stores disagree', () => {
       .toEqual([REF_A, REF_B].sort())
   })
 
-  it('leaves an entry unusable when it is switched on while the source no longer lists it', async () => {
+  it('refuses to switch an entry the source has stopped listing, because there is none', async () => {
     await syncBoth()
     const role = await roleFor(ALICE, 'all-knowledge')
     await access.grantType(role.id, KNOWLEDGE_RESOURCE_TYPE, 'knowledge.search')
     source.listing = [upstream(B)]
     await gateway.sync(ORG)
-    await gateway.setEnabled(ORG, REF_A, true)
+    await expect(gateway.setEnabled(ORG, REF_A, true)).rejects.toThrow(/no such knowledge base/u)
     expect((await gateway.directory({ orgId: ORG, principalId: ALICE })).map(entry => entry.ref)).toEqual([REF_B])
+  })
+
+  it('rolls the whole listing back when the catalog refuses one row', async () => {
+    await syncBoth()
+    // A kind this schema does not govern: the row is refused where it is
+    // written, and a half-written listing would leave the catalog describing
+    // one answer for some knowledge bases and another for the rest.
+    source.listing = [
+      upstream(A, { name: 'renamed' }),
+      { ...upstream(B), kind: 'spreadsheet' as UpstreamKnowledgeBase['kind'] },
+    ]
+    await expect(gateway.sync(ORG)).rejects.toThrow(/CHECK constraint/u)
+    const view = await gateway.catalogView(ORG)
+    expect(view.entries.map(entry => entry.displayName)).not.toContain('renamed')
+    expect(view.entries).toHaveLength(2)
   })
 
   it('rolls the whole listing back when one entry cannot be given a reference', async () => {

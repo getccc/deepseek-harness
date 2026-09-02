@@ -96,7 +96,7 @@ These limits define when the provider is incomplete on its own. They are current
 - **One active instance** — a SQLite file supports one active Control Plane process with durable storage and backup. Horizontal replicas need a shared-database design rather than copies of this file.
 - **Authorization iterates** — a directory and an `all`-mode search evaluate once per knowledge base. This is acceptable for a full-listing deployment; a bulk access-control operation would have to preserve per-resource evaluation and policy-revision semantics rather than authorizing once for several.
 - **Reconciliation is all-or-nothing per listing** — an entry whose reference cannot be minted rolls the whole listing back, so one malformed upstream id blocks the others until the source is fixed.
-- **No cleanup operation** — a vanished entry is disabled and kept forever; removing it is a separate explicit operation nothing offers yet.
+- **Retirement is not reversible** — a knowledge base a successful listing stops naming is deleted along with its governed resource and every grant on it. A source that lists a subset of what it holds therefore costs an administrator the grants they made.
 - **Nothing here schedules synchronization** — `sync` runs when a caller asks. Start-up and periodic reconciliation belong to the composition that knows which organization this Control Plane serves, which this package does not.
 
 <a id="dev-note"></a>

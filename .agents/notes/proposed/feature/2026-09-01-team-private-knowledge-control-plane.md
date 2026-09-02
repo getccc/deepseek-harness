@@ -156,7 +156,7 @@ One successful full WeKnora listing applies these rules in a single catalog tran
 
 - A new upstream id creates a catalog row and registers an enabled `knowledge_scope` managed resource when the administrator-enabled bit is true.
 - A known upstream id updates display metadata and counts without changing the `KnowledgeRef`, the `ResourceId`, or any grant.
-- An entry missing from a successful full listing becomes `remotePresent = false` and its managed resource becomes disabled. The catalog row and its grants remain, so a temporary removal or restoration does not silently replace identity.
+- An entry missing from a successful full listing is retired: its governed resource is deleted first, taking every grant that named it, and then the catalog row. The catalog says what the source says, so an administrator reads the knowledge bases that exist rather than a history of ones that did. A source answering with a partial listing therefore costs the grants an administrator made, and a returning entry comes back with none.
 - A returning missing entry restores remote presence and is re-enabled in access control only while the administrator-enabled bit is still true.
 - A manual disable changes the administrator-enabled bit and the managed-resource state. Synchronization never overrides that choice.
 

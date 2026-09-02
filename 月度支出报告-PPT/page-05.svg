@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+  <style>
+    text { font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+  </style>
+
+  <!-- 标题区 -->
+  <text x="80" y="56" font-size="26" font-weight="700" fill="#1F4E79">结论与建议</text>
+  <rect x="84" y="66" width="54" height="5" rx="2.5" fill="#ED7D31"/>
+  <text x="880" y="56" font-size="12" fill="#808080" text-anchor="end">复盘 · 2026 年 8 月</text>
+
+  <!-- 左栏：结论 -->
+  <rect x="80" y="120" width="380" height="368" rx="10" fill="#F7F9FC" stroke="#D9E2F3"/>
+  <rect x="104" y="148" width="4" height="18" fill="#4472C4"/>
+  <text x="122" y="166" font-size="16" font-weight="700" fill="#1F4E79">结论</text>
+
+  <rect x="104" y="195" width="7" height="7" fill="#4472C4"/>
+  <text x="122" y="206" font-size="13" fill="#333333">购物 + 餐饮 ¥735.40，占 65.0%</text>
+  <rect x="104" y="259" width="7" height="7" fill="#4472C4"/>
+  <text x="122" y="270" font-size="13" fill="#333333">水电燃气 ¥156.40（13.8%）为固定支出</text>
+  <rect x="104" y="323" width="7" height="7" fill="#4472C4"/>
+  <text x="122" y="334" font-size="13" fill="#333333">交通 / 娱乐 / 医疗 ¥240.00（21.2%）</text>
+
+  <rect x="104" y="398" width="332" height="52" rx="6" fill="#DEEBF7"/>
+  <text x="122" y="430" font-size="12" font-weight="700" fill="#1F4E79">控制购物与餐饮预算，即可显著改善结余。</text>
+
+  <!-- 右栏：下月行动建议 -->
+  <rect x="480" y="120" width="400" height="368" rx="10" fill="#F7F9FC" stroke="#D9E2F3"/>
+  <rect x="504" y="148" width="4" height="18" fill="#ED7D31"/>
+  <text x="522" y="166" font-size="16" font-weight="700" fill="#1F4E79">下月行动建议</text>
+
+  <circle cx="524" cy="200" r="12" fill="#1F4E79"/>
+  <text x="524" y="205" font-size="12" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+  <text x="552" y="200" font-size="13" fill="#333333">购物类设定 ¥400 月预算</text>
+  <text x="552" y="220" font-size="13" fill="#595959">超限前暂停非必要采购</text>
+
+  <circle cx="524" cy="276" r="12" fill="#1F4E79"/>
+  <text x="524" y="281" font-size="12" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+  <text x="552" y="276" font-size="13" fill="#333333">餐饮 3 笔合计 ¥276.50</text>
+  <text x="552" y="296" font-size="13" fill="#595959">提高在家做饭比例</text>
+
+  <circle cx="524" cy="352" r="12" fill="#1F4E79"/>
+  <text x="524" y="357" font-size="12" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+  <text x="552" y="352" font-size="13" fill="#333333">小额支出逐笔记账</text>
+  <text x="552" y="372" font-size="13" fill="#595959">月底复盘娱乐与交通频次</text>
+
+  <!-- 页脚 -->
+  <rect x="80" y="516" width="800" height="1" fill="#D9E2F3"/>
+  <text x="80" y="530" font-size="9" fill="#808080">2026年8月支出报告 · 数据源自《月度支出表》</text>
+  <text x="880" y="530" font-size="9" fill="#808080" text-anchor="end">5 / 5</text>
+</svg>

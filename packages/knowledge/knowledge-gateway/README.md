@@ -66,7 +66,7 @@ Neither member-facing method returns a partial answer. A directory that could no
 
 ### Data model
 
-`KnowledgeCatalogEntry` separates `adminEnabled` from `remotePresent` because they are different facts: the first is a policy choice synchronization must not override, the second is something synchronization discovers. `effectiveEnabled` is their conjunction with the governed resource's own state, so an interrupted write reads as disabled rather than as available. `embeddingModelId` is carried because a multi-base search over knowledge bases that do not share one is refused, and an administrator otherwise cannot see why.
+`KnowledgeCatalogEntry` carries `adminEnabled` because it is a policy choice synchronization must not override; a catalog holds only what the source still lists, so there is no second bit for whether a knowledge base is still there. `effectiveEnabled` is that choice conjoined with the governed resource's own state, so an interrupted write reads as disabled rather than as available. `embeddingModelId` is carried because a multi-base search over knowledge bases that do not share one is refused, and an administrator otherwise cannot see why.
 
 <a id="further-exploration"></a>
 ## Further Exploration
@@ -91,7 +91,7 @@ These limits define when the seam is incomplete on its own. They are current pac
 
 - **One source per gateway** — the seam names no source, so a Control Plane governs one. Several would need a source selection in the catalog and in every operation.
 - **No document read** — a directory and a search are the whole member-facing surface; `knowledge.read` stays ungranted until full-document reading ships.
-- **No cleanup for a vanished entry** — an entry the source stopped listing is disabled and kept, because `deleteResource` also deletes every grant naming it. Removing one is a separate explicit operation nothing offers yet.
+- **A retired entry takes its grants** — an entry a successful listing stops naming is deleted, and `deleteResource` deletes every grant naming it. A source that answers with a partial listing therefore revokes access an administrator has to grant again; there is no undo and no grace period.
 - **Administration methods are unauthorized here** — they take an organization and trust their caller, so a route that forgot its permission check would reach them. The check lives in the route, and its absence is a route defect this seam cannot catch.
 
 <a id="dev-note"></a>

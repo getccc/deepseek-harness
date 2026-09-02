@@ -1779,7 +1779,6 @@ describe('administering the knowledge catalog', () => {
       resourceId: string
       displayName: string
       adminEnabled: boolean
-      remotePresent: boolean
       effectiveEnabled: boolean
       embeddingModelId: string
       upstreamUpdatedAt?: number
@@ -1821,7 +1820,6 @@ describe('administering the knowledge catalog', () => {
       knowledgeRef: REF_A,
       displayName: '临港知识库',
       adminEnabled: true,
-      remotePresent: true,
       effectiveEnabled: true,
       embeddingModelId: 'emb-shared',
     })])

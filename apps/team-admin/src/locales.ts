@@ -280,7 +280,6 @@ export const zh = {
   'knowledge.embeddingUnknown': '数据源未提供',
   'knowledge.searchable': '可检索',
   'knowledge.notSearchable': '不可检索',
-  'knowledge.missingUpstream': '数据源已不再列出',
   'knowledge.switchedOff': '已由管理员停用',
   'knowledge.enable': '启用',
   'knowledge.disable': '停用',
@@ -298,7 +297,6 @@ export const zh = {
   'knowledge.access.title': '知识库权限',
   'knowledge.access.hint': '勾选该角色可以检索哪些知识库；勾选顶层一行即授予全部已启用知识库，含之后新增的。多个角色取并集；这里只授予检索，不授予下载或管理。',
   'knowledge.access.all': '全部已启用知识库',
-  'knowledge.access.missing': '数据源已不再列出，无法新选',
 
   'status.active': '在用',
   'status.suspended': '已停用',
@@ -634,7 +632,6 @@ export const en: Record<keyof typeof zh, string> = {
   'knowledge.embeddingUnknown': 'not reported by the source',
   'knowledge.searchable': 'Searchable',
   'knowledge.notSearchable': 'Not searchable',
-  'knowledge.missingUpstream': 'No longer listed by the source',
   'knowledge.switchedOff': 'Switched off by an administrator',
   'knowledge.enable': 'Enable',
   'knowledge.disable': 'Disable',
@@ -652,7 +649,6 @@ export const en: Record<keyof typeof zh, string> = {
   'knowledge.access.title': 'Knowledge access',
   'knowledge.access.hint': 'Tick the knowledge bases this role may search; ticking the top row grants every enabled knowledge base, including ones added later. Several roles union; this grants search alone, not download or administration.',
   'knowledge.access.all': 'All enabled knowledge bases',
-  'knowledge.access.missing': 'no longer listed by the source, so it cannot be newly chosen',
 
   'status.active': 'active',
   'status.suspended': 'suspended',

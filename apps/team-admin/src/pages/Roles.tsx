@@ -322,9 +322,8 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
   const showingMenus = dialog?.kind === 'menus' ? dialog.role : undefined
   const showingModels = dialog?.kind === 'models' ? dialog.role : undefined
   const showingKnowledge = dialog?.kind === 'knowledge' ? dialog.role : undefined
-  /** Every knowledge base a role may still be newly given. */
-  const selectableKnowledge = (knowledge.data?.knowledgeBases ?? [])
-    .filter(base => base.remotePresent || chosen.includes(base.resourceId))
+  /** Every knowledge base a role may be given: the catalog holds only what the source still lists. */
+  const selectableKnowledge = knowledge.data?.knowledgeBases ?? []
 
   /**
    * What the ticked rows ask the Control Plane to store.
@@ -336,9 +335,8 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
    * @returns the mode, and the references a selection names.
    */
   const knowledgeChoice = (): WireKnowledgeAccess => {
-    const present = (knowledge.data?.knowledgeBases ?? []).filter(base => base.remotePresent)
     if (chosen.length === 0) return { mode: 'none' }
-    if (present.every(base => chosen.includes(base.resourceId))) return { mode: 'all' }
+    if (selectableKnowledge.every(base => chosen.includes(base.resourceId))) return { mode: 'all' }
     return {
       mode: 'selected',
       knowledgeRefs: selectableKnowledge
@@ -511,13 +509,7 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
             title: t('knowledge.access.all'),
             children: selectableKnowledge.map(base => ({
               key: base.resourceId,
-              title: base.remotePresent
-                ? base.displayName
-                : `${base.displayName} — ${t('knowledge.access.missing')}`,
-              // A knowledge base the source no longer lists stays visible while
-              // it is already chosen, so an administrator can see why a role's
-              // access became unusable, but cannot newly pick it.
-              disabled: !base.remotePresent,
+              title: base.displayName,
             })),
           }]}
         />

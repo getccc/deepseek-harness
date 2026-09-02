@@ -92,7 +92,6 @@ export interface KnowledgeCatalogEntry {
   /** Whether an administrator has switched this entry on. */
   readonly adminEnabled: boolean
   /** Whether the last successful listing still held it. */
-  readonly remotePresent: boolean
   /** Whether it can be searched at all: administrator-enabled and still upstream. */
   readonly effectiveEnabled: boolean
   /** Epoch milliseconds when a successful listing last named it. */

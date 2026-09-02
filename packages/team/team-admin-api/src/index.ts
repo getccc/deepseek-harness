@@ -359,7 +359,6 @@ function wireCatalog(view: KnowledgeCatalogView): WireKnowledgeCatalog {
       processingCount: entry.processingCount,
       embeddingModelId: entry.embeddingModelId,
       adminEnabled: entry.adminEnabled,
-      remotePresent: entry.remotePresent,
       effectiveEnabled: entry.effectiveEnabled,
       lastDiscoveredAt: entry.lastDiscoveredAt,
       ...(entry.upstreamUpdatedAt === undefined ? {} : { upstreamUpdatedAt: entry.upstreamUpdatedAt }),

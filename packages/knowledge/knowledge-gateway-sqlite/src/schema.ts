@@ -20,7 +20,7 @@ import type { DatabaseSync } from 'node:sqlite'
  * database written by any other build is rejected rather than migrated, which
  * is this repository's pre-release stance on durable formats.
  */
-export const SCHEMA_VERSION = 2
+export const SCHEMA_VERSION = 3
 
 /** Application id reserved for DeepSeek Harness SQLite knowledge-catalog databases. */
 export const KNOWLEDGE_GATEWAY_SQLITE_APPLICATION_ID = 0x44534841 + 6
@@ -48,7 +48,6 @@ export interface KnowledgeBaseRow {
   readonly processing_count: number
   readonly embedding_model_id: string
   readonly admin_enabled: number
-  readonly remote_present: number
   readonly last_discovered_at: number
   readonly upstream_updated_at: number | null
 }
@@ -71,10 +70,9 @@ CREATE TABLE IF NOT EXISTS knowledge_source (
 -- display_name here without disturbing any grant that names the knowledge base.
 -- The upstream id lives beside it and only the source provider reads it.
 --
--- remote_present separates "an administrator switched this off" from "the
--- source stopped listing it": the first is a policy choice synchronization must
--- not override, the second is a fact synchronization discovers. Both disable
--- access; only one of them is an administrator's.
+-- A row exists exactly while the source lists it: a successful listing that no
+-- longer names one takes the row and its governed resource away, grants
+-- included, so this catalog says what the source says.
 CREATE TABLE IF NOT EXISTS knowledge_base (
   org_id             TEXT    NOT NULL,
   knowledge_ref      TEXT    NOT NULL,
@@ -87,7 +85,6 @@ CREATE TABLE IF NOT EXISTS knowledge_base (
   processing_count   INTEGER NOT NULL CHECK (processing_count >= 0),
   embedding_model_id TEXT    NOT NULL,
   admin_enabled      INTEGER NOT NULL CHECK (admin_enabled IN (0, 1)),
-  remote_present     INTEGER NOT NULL CHECK (remote_present IN (0, 1)),
   last_discovered_at INTEGER NOT NULL,
   upstream_updated_at INTEGER,
   PRIMARY KEY (org_id, knowledge_ref)

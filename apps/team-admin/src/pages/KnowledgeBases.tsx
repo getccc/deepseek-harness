@@ -52,11 +52,16 @@ function failureKey(failure: string): CopyKey {
 export function KnowledgeBases({ held }: { readonly held: ReadonlySet<string> }): ReactNode {
   const { t } = useLocale()
   const report = useErrorReporter()
-  const catalog = useLoaded<WireKnowledgeCatalog>(api.knowledgeBases, report)
+  const mayManage = held.has('knowledge_scope|knowledge.catalog.manage')
+  // Opening the page synchronizes, so what an administrator reads is what the
+  // source says right now rather than what it said the last time somebody
+  // pressed the button. A member who may only read the catalog reads it.
+  const catalog = useLoaded<WireKnowledgeCatalog>(
+    mayManage ? api.syncKnowledgeBases : api.knowledgeBases,
+    report,
+  )
   const [dialog, setDialog] = useState<Dialog | undefined>(undefined)
   const [syncing, setSyncing] = useState(false)
-
-  const mayManage = held.has('knowledge_scope|knowledge.catalog.manage')
 
   /** Run one write, put its answer on screen, and close the dialog. */
   const act = async (write: () => Promise<WireKnowledgeCatalog>): Promise<void> => {
@@ -112,8 +117,7 @@ export function KnowledgeBases({ held }: { readonly held: ReadonlySet<string> })
           <Tag color={base.effectiveEnabled ? 'green' : 'default'}>
             {t(base.effectiveEnabled ? 'knowledge.searchable' : 'knowledge.notSearchable')}
           </Tag>
-          {!base.remotePresent && <Tag color="warning">{t('knowledge.missingUpstream')}</Tag>}
-          {base.remotePresent && !base.adminEnabled && <Tag>{t('knowledge.switchedOff')}</Tag>}
+          {!base.adminEnabled && <Tag>{t('knowledge.switchedOff')}</Tag>}
         </Space>
       ),
     },
@@ -127,10 +131,7 @@ export function KnowledgeBases({ held }: { readonly held: ReadonlySet<string> })
               key: 'toggle',
               label: t(base.adminEnabled ? 'knowledge.disable' : 'knowledge.enable'),
               danger: base.adminEnabled,
-              // A knowledge base the source no longer lists cannot be made
-              // searchable by switching it on, so the control stays out of reach
-              // rather than promising something it cannot do.
-              disabled: !mayManage || (!base.remotePresent && !base.adminEnabled),
+              disabled: !mayManage,
               onClick: () => { setDialog({ kind: 'toggle', base }) },
             },
           ]}

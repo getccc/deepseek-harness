@@ -203,7 +203,6 @@ export interface WireKnowledgeBase {
   /** Whether an administrator has switched this entry on. */
   readonly adminEnabled: boolean
   /** Whether the last successful listing still held it. */
-  readonly remotePresent: boolean
   /** Whether it can be searched at all. */
   readonly effectiveEnabled: boolean
   /** Epoch milliseconds when a successful listing last named it. */
