@@ -139,6 +139,14 @@ export interface ModelCatalogFailure {
 
 /** Host-generation model catalog and the default used by unconfigured Sessions. */
 export interface ModelCatalog {
+  /**
+   * What an unconfigured Session sends to.
+   *
+   * A model the `groups` list whenever they list any: the deployment default
+   * is one setting for everyone, and a caller whose route grants them a
+   * different set would otherwise see a model in the composer that their first
+   * request is refused for.
+   */
   readonly default: ModelSelection
   /** Provider routes currently able to serve a request, including empty catalogs. */
   readonly routableProviders: readonly string[]

@@ -591,6 +591,35 @@ describe('Web session model selection', () => {
     await ctx.fiber.dispose()
   })
 
+  it('offers a default this caller may actually use, not one only the deployment knows', async () => {
+    // A company route lists what its member is granted, while the deployment
+    // default is one setting for everyone: naming an ungranted model in the
+    // composer would refuse the member's first request.
+    const { ctx } = await harness()
+    createSessionTestRemote(ctx, {
+      defaultModelSelection: () => ({ provider: 'deepseek-official', model: 'not-granted-here' }),
+      cwd: '/tmp',
+    })
+
+    const catalog = await buildModelCatalog(ctx)
+    const listed = catalog.groups.flatMap(group => group.models.map(model => `${group.id}/${model.id}`))
+    expect(listed).not.toContain('deepseek-official/not-granted-here')
+    expect(listed).toContain(`${catalog.default.provider}/${catalog.default.model}`)
+    await ctx.fiber.dispose()
+  })
+
+  it('keeps the deployment default when this caller may use it', async () => {
+    const { ctx } = await harness()
+    createSessionTestRemote(ctx, {
+      defaultModelSelection: () => ({ provider: 'deepseek-official', model: 'deepseek-chat' }),
+      cwd: '/tmp',
+    })
+
+    const catalog = await buildModelCatalog(ctx)
+    expect(catalog.default).toEqual({ provider: 'deepseek-official', model: 'deepseek-chat' })
+    await ctx.fiber.dispose()
+  })
+
   it('serves a session and its catalog when the stored default names a route that is gone', async () => {
     const { ctx, sessionId } = await harness()
     createSessionTestRemote(ctx, {

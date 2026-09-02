@@ -3,6 +3,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import type {
   ModelCatalog,
+  ModelProviderGroup,
   ModelReasoning,
   ModelSelection,
 } from './types.ts'
@@ -62,11 +63,43 @@ export async function buildModelCatalog(
       }
     }
   }))
+  const groups = catalog.flatMap(item => item.kind === 'group' ? [item.group] : [])
+    .filter(group => group.models.length > 0)
   return {
-    default: { ...defaultSelection },
+    default: resolveDefault(groups, defaultSelection),
     routableProviders: providers.map(provider => provider.id),
-    groups: catalog.flatMap(item => item.kind === 'group' ? [item.group] : [])
-      .filter(group => group.models.length > 0),
+    groups,
     failures: catalog.flatMap(item => item.kind === 'failure' ? [item.failure] : []),
+  }
+}
+
+/**
+ * The default a reader of this catalog can actually use.
+ *
+ * The deployment's default is one setting for everyone, while the groups are
+ * what this caller may reach — a company route lists what its member is
+ * granted. A default outside those groups would name a model in the composer
+ * that the first request is refused for, so it gives way to the first model
+ * the catalog does list. Membership stays advisory everywhere else: a
+ * selection already made is left alone, because a route may serve a model it
+ * has stopped advertising.
+ * @param groups - the non-empty provider groups this catalog reports.
+ * @param preferred - the deployment default.
+ * @returns the deployment default, or the first listed model when it is not listed.
+ */
+function resolveDefault(
+  groups: readonly ModelProviderGroup[],
+  preferred: ModelSelection,
+): ModelSelection {
+  const listed = groups.some(group => group.id === preferred.provider
+    && group.models.some(model => model.id === preferred.model))
+  const first = groups[0]
+  const model = first?.models[0]
+  if (listed || first === undefined || model === undefined) return { ...preferred }
+  const effort = model.reasoning?.defaultEffort
+  return {
+    provider: first.id,
+    model: model.id,
+    ...effort === undefined ? {} : { reasoningEffort: effort },
   }
 }
