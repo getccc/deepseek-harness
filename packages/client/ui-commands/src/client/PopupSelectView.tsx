@@ -5,15 +5,15 @@
  * inner search input takes focus, plain typing filters the loaded options
  * locally, Enter/↑↓ drive the filtered highlight (scrolled into view), Escape
  * dismisses back to the composer, and ←→ keep the search input's native
- * caret. A multi-choice shell ticks rows instead of settling on them and
- * stays open until its footer control (or ⌘/Ctrl+Enter) applies the set. Any pointer interaction outside the box dismisses (the click's own
+ * caret. A multi-choice shell ticks rows and applies each tick at once,
+ * staying open so the next one can follow. Any pointer interaction outside the box dismisses (the click's own
  * target takes focus). Closed state renders null; the overlay slot stays
  * mounted. The card height clamps to the space above the composer.
  */
 import { useEffect, useRef } from 'react'
 import { useSyncExternalStore } from 'react'
 import clsx from 'clsx'
-import { Button, IconCheckOutline16, RiskConfirmation, useAnchoredMaxHeight } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconCheckOutline16, RiskConfirmation, useAnchoredMaxHeight } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import { filterOptions } from './popup.ts'
 import type { PopupSelectController } from './popup.ts'
@@ -94,11 +94,7 @@ export function PopupSelectView({ popup, t }: PopupSelectViewProps) {
         return
       case 'Enter':
         ev.preventDefault()
-        // Enter ticks the highlighted row, so the whole set needs its own
-        // key; a plain Enter that applied would settle whatever was ticked so
-        // far every time someone confirmed the search box.
-        if (state.multi && (ev.metaKey || ev.ctrlKey)) void popup.submit()
-        else void popup.select(state.active)
+        void popup.select(state.active)
         return
       case 'Escape':
         ev.preventDefault()
@@ -166,19 +162,6 @@ export function PopupSelectView({ popup, t }: PopupSelectViewProps) {
                   )}
                 </div>
               ))}
-            </div>
-          )}
-          {state.multi && state.status === 'ready' && (
-            <div className={css.footer}>
-              <span className={css.hint}>{t('multi.hint')}</span>
-              <Button
-                variant="primary"
-                size="sm"
-                disabled={state.submitting}
-                onClick={() => { void popup.submit() }}
-              >
-                {state.submitLabel}
-              </Button>
             </div>
           )}
         </div>

@@ -49,23 +49,22 @@ export type CommandUiSpec =
   | {
     readonly kind: 'popupMultiSelect'
     /**
-     * The rows to choose among. `active` seeds what is already checked when
-     * the shell opens, so a reopened picker shows the current choice rather
-     * than an empty one.
+     * The rows to choose among. `active` seeds what is already ticked when the
+     * shell opens, so a reopened picker shows the current choice rather than
+     * an empty one.
      */
     options(session: ClientSessionContext, signal: AbortSignal): Promise<readonly SelectOption[]>
     /**
-     * Settle the whole checked set at once.
+     * Settle the whole ticked set, after every tick.
      *
-     * One call rather than one per row, because a multi-choice is a single
-     * intention: settling row by row would make a half-applied set reachable
-     * whenever a settlement failed partway.
-     * @param options - the checked rows, in the order they were loaded.
+     * The whole set rather than the row that changed, because a multi-choice
+     * is one value: settling row by row would make a half-applied set
+     * reachable whenever a settlement failed partway. The shell shows the tick
+     * immediately and takes it back if this rejects.
+     * @param options - the ticked rows, in the order they were loaded.
      * @param session - the context captured when the shell opened.
      */
-    onSubmit(options: readonly SelectOption[], session: ClientSessionContext): void | Promise<void>
-    /** Label of the button that settles the checked set. */
-    readonly submitLabel: string
+    onApply(options: readonly SelectOption[], session: ClientSessionContext): void | Promise<void>
   }
 
 /**

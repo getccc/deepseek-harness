@@ -42,8 +42,7 @@ function multiSpec(overrides: Partial<MultiSpec> = {}): PopupSpec<Ctx> {
   return {
     kind: 'popupMultiSelect',
     options: () => Promise.resolve(OPTIONS),
-    onSubmit: () => undefined,
-    submitLabel: 'Apply',
+    onApply: () => undefined,
     ...overrides,
   }
 }
@@ -416,88 +415,70 @@ describe('dismiss / dispose', () => {
 describe('a multi-choice shell', () => {
   it('opens with the rows the business marked active already ticked', async () => {
     const { popup } = await readyMulti()
-    expect(popup.state.getSnapshot()).toMatchObject({ multi: true, submitLabel: 'Apply', checked: ['light'] })
+    expect(popup.state.getSnapshot()).toMatchObject({ multi: true, checked: ['light'] })
   })
 
   it('leaves a single-choice shell with nothing ticked, however its rows are marked', async () => {
     const { popup } = await readyPopup()
-    expect(popup.state.getSnapshot()).toMatchObject({ multi: false, submitLabel: '', checked: [] })
+    expect(popup.state.getSnapshot()).toMatchObject({ multi: false, checked: [] })
   })
 
-  it('ticks and unticks a row without settling, consuming, or closing', async () => {
-    const onSubmit = vi.fn()
-    const { popup, deps } = await readyMulti({ onSubmit })
+  it('applies each tick at once, and stays open for the next one', async () => {
+    const onApply = vi.fn()
+    const { popup, deps } = await readyMulti({ onApply })
     await popup.select(0)
-    expect(popup.state.getSnapshot()).toMatchObject({ open: true, checked: ['light', 'dark'] })
+    expect(onApply).toHaveBeenLastCalledWith([OPTIONS[0], OPTIONS[1]], CTX_A)
     await popup.select(0)
-    expect(popup.state.getSnapshot().checked).toEqual(['light'])
-    expect(onSubmit).not.toHaveBeenCalled()
+    expect(onApply).toHaveBeenLastCalledWith([OPTIONS[1]], CTX_A)
+    expect(popup.state.getSnapshot()).toMatchObject({ open: true, checked: ['light'] })
+    // The token is the line the member typed; the shell keeps it until they
+    // leave, because there is no single moment that ends this choice.
     expect(deps.consume).not.toHaveBeenCalled()
   })
 
-  it('settles the ticked rows in loaded order, then consumes, closes, and refocuses', async () => {
-    const onSubmit = vi.fn()
-    const { popup, deps } = await readyMulti({ onSubmit })
-    await popup.select(2) // sepia, ticked after the pre-ticked light
-    await popup.submit()
-    expect(onSubmit).toHaveBeenCalledWith([OPTIONS[1], OPTIONS[2]], CTX_A)
-    expect(deps.consume).toHaveBeenCalledWith(SEGMENT)
-    expect(deps.focusComposer).toHaveBeenCalledTimes(1)
-    expect(popup.state.getSnapshot().open).toBe(false)
+  it('applies the whole set rather than the row that changed', async () => {
+    const onApply = vi.fn()
+    const { popup } = await readyMulti({ onApply })
+    await popup.select(2)
+    expect(onApply).toHaveBeenLastCalledWith([OPTIONS[1], OPTIONS[2]], CTX_A)
   })
 
   it('keeps a tick the search has since hidden, so narrowing the list never drops it', async () => {
-    const onSubmit = vi.fn()
-    const { popup } = await readyMulti({ onSubmit })
+    const onApply = vi.fn()
+    const { popup } = await readyMulti({ onApply })
     popup.setSearch('sepia')
     await popup.select(0)
     popup.setSearch('dark')
     await popup.select(0)
-    await popup.submit()
-    expect(onSubmit).toHaveBeenCalledWith([OPTIONS[0], OPTIONS[1], OPTIONS[2]], CTX_A)
+    expect(onApply).toHaveBeenLastCalledWith([OPTIONS[0], OPTIONS[1], OPTIONS[2]], CTX_A)
   })
 
-  it('settles an empty set, which is how a member clears their choice', async () => {
-    const onSubmit = vi.fn()
-    const { popup } = await readyMulti({ onSubmit })
-    await popup.select(1) // untick the only pre-ticked row
-    await popup.submit()
-    expect(onSubmit).toHaveBeenCalledWith([], CTX_A)
+  it('applies an empty set, which is how a member clears their choice', async () => {
+    const onApply = vi.fn()
+    const { popup } = await readyMulti({ onApply })
+    await popup.select(1)
+    expect(onApply).toHaveBeenLastCalledWith([], CTX_A)
   })
 
-  it('keeps the ticks and the shell open when the settlement fails, and submit re-arms', async () => {
-    let attempts = 0
-    const { popup, deps } = await readyMulti({
-      onSubmit: () => {
-        attempts += 1
-        if (attempts === 1) throw new Error('host rejected')
-        return undefined
-      },
+  it('takes a refused tick back, and says why', async () => {
+    // What the shell shows is never a choice the business refused.
+    const { popup } = await readyMulti({ onApply: () => { throw new Error('host rejected') } })
+    await popup.select(0)
+    expect(popup.state.getSnapshot()).toMatchObject({
+      open: true, checked: ['light'], error: 'host rejected',
     })
-    await popup.submit()
-    expect(popup.state.getSnapshot()).toMatchObject({ open: true, submitting: false, checked: ['light'], error: 'host rejected' })
-    expect(deps.consume).not.toHaveBeenCalled()
-    await popup.submit()
-    expect(popup.state.getSnapshot().open).toBe(false)
   })
 
-  it('ignores a submit before the rows are ready, after a dismiss, and on a single-choice shell', async () => {
-    const onSubmit = vi.fn()
-    const pending = new PopupSelectController<Ctx>(makeDeps())
-    pending.open('knowledge', multiSpec({ options: () => new Promise(() => {}), onSubmit }), CTX_A, SEGMENT)
-    await pending.submit()
-
-    const { popup } = await readyMulti({ onSubmit })
+  it('drops a refusal that arrives after the shell is gone', async () => {
+    let reject!: (reason: Error) => void
+    const { popup } = await readyMulti({
+      onApply: () => new Promise((_resolve, no) => { reject = no }),
+    })
+    const ticking = popup.select(0)
     popup.dismiss()
-    await popup.submit()
-
-    const onSelect = vi.fn()
-    const { popup: single } = await readyPopup({ onSelect })
-    await single.submit()
-
-    expect(onSubmit).not.toHaveBeenCalled()
-    expect(onSelect).not.toHaveBeenCalled()
-    expect(single.state.getSnapshot().open).toBe(true)
+    reject(new Error('too late'))
+    await ticking
+    expect(popup.state.getSnapshot()).toMatchObject({ open: false, error: null })
   })
 })
 
@@ -505,14 +486,14 @@ describe('an exclusive row', () => {
   const ROWS: SelectOption[] = [{ id: 'all', label: 'Everything', exclusive: true }, ...OPTIONS]
 
   it('displaces the individual ticks, and they displace it back', async () => {
-    const onSubmit = vi.fn()
-    const { popup } = await readyMulti({ options: () => Promise.resolve(ROWS), onSubmit })
+    const onApply = vi.fn()
+    const { popup } = await readyMulti({ options: () => Promise.resolve(ROWS), onApply })
     await popup.select(0) // the exclusive row, over the pre-ticked light
     expect(popup.state.getSnapshot().checked).toEqual(['all'])
+    expect(onApply).toHaveBeenLastCalledWith([ROWS[0]], CTX_A)
     await popup.select(2) // an ordinary row
     expect(popup.state.getSnapshot().checked).toEqual(['light'])
-    await popup.submit()
-    expect(onSubmit).toHaveBeenCalledWith([OPTIONS[1]], CTX_A)
+    expect(onApply).toHaveBeenLastCalledWith([OPTIONS[1]], CTX_A)
   })
 
   it('unticks like any other row, leaving nothing chosen', async () => {
@@ -522,13 +503,10 @@ describe('an exclusive row', () => {
     expect(popup.state.getSnapshot().checked).toEqual([])
   })
 
-  it('settles alone even when the business opened it beside a ticked row', async () => {
-    const onSubmit = vi.fn()
+  it('opens ticked when the business marked it active', async () => {
     const { popup } = await readyMulti({
       options: () => Promise.resolve([{ id: 'all', label: 'Everything', exclusive: true, active: true }]),
-      onSubmit,
     })
-    await popup.submit()
-    expect(onSubmit).toHaveBeenCalledWith([{ id: 'all', label: 'Everything', exclusive: true, active: true }], CTX_A)
+    expect(popup.state.getSnapshot().checked).toEqual(['all'])
   })
 })

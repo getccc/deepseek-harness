@@ -43,10 +43,8 @@ export type PopupSpec<TCtx> =
     readonly kind: 'popupMultiSelect'
     /** Load the option rows once per open; `active` rows open checked. */
     options(context: TCtx, signal: AbortSignal): Promise<readonly SelectOption[]>
-    /** Settle the whole checked set against the open-time context. */
-    onSubmit(options: readonly SelectOption[], context: TCtx): void | Promise<void>
-    /** Label of the control that settles the checked set. */
-    readonly submitLabel: string
+    /** Settle the whole checked set against the open-time context, after every tick. */
+    onApply(options: readonly SelectOption[], context: TCtx): void | Promise<void>
   }
 
 /** Injected session-wiring callbacks of one controller (tests pass fakes). */
@@ -88,14 +86,12 @@ export interface PopupState {
   readonly multi: boolean
   /** Ids of the checked rows, in loaded order; empty for a single-choice shell. */
   readonly checked: readonly string[]
-  /** The settle button's label while `multi`; empty otherwise. */
-  readonly submitLabel: string
 }
 
 const CLOSED: PopupState = {
   open: false, command: null, status: 'pending', options: [], search: '', active: 0,
   submitting: false, confirming: null, acknowledged: false, error: null,
-  multi: false, checked: [], submitLabel: '',
+  multi: false, checked: [],
 }
 
 /**
@@ -174,7 +170,6 @@ export class PopupSelectController<TCtx = unknown> {
       open: true,
       command,
       multi: spec.kind === 'popupMultiSelect',
-      submitLabel: spec.kind === 'popupMultiSelect' ? spec.submitLabel : '',
     })
     this.load(binding)
   }
@@ -261,7 +256,7 @@ export class PopupSelectController<TCtx = unknown> {
     const option = filterOptions(s.options, s.search)[index]
     if (option === undefined) return
     if (binding.spec.kind === 'popupMultiSelect') {
-      this.state.set({ ...s, checked: toggled(s, option), error: null })
+      await this.tick(binding, s, option)
       return
     }
     if (option.confirmation !== undefined) {
@@ -272,22 +267,29 @@ export class PopupSelectController<TCtx = unknown> {
   }
 
   /**
-   * Settle the checked set through the multi-choice business callback.
+   * Tick one row and settle the set it makes.
    *
-   * The checked rows are read from everything loaded rather than from what the
-   * search text currently shows, so narrowing the list to tick one more row
-   * never drops the rows already ticked. A no-op on a single-choice shell,
-   * whose rows settle one at a time through `select`.
-   * @returns settled when the attempt has closed the shell or surfaced its failure.
+   * The tick shows before the settlement answers, because a picker that waited
+   * would feel broken on a slow answer; a rejection takes it back and says
+   * why, so what the shell shows is never a choice the business refused.
+   * @param binding - the open shell this tick belongs to.
+   * @param before - the state the tick starts from, restored if it is refused.
+   * @param option - the row that was activated.
    */
-  async submit(): Promise<void> {
-    const binding = this.binding
-    const s = this.state.getSnapshot()
-    if (binding === null || !s.open || s.status !== 'ready' || s.submitting) return
-    if (binding.spec.kind !== 'popupMultiSelect') return
+  private async tick(binding: OpenBinding<TCtx>, before: PopupState, option: SelectOption): Promise<void> {
     const { spec } = binding
-    const checked = s.options.filter(option => s.checked.includes(option.id))
-    await this.settleWith(binding, () => spec.onSubmit(checked, binding.context))
+    /* v8 ignore next -- only a multi-choice shell ticks; select() sends every other kind to settle(). */
+    if (spec.kind !== 'popupMultiSelect') return
+    const checked = toggled(before, option)
+    this.state.set({ ...before, checked, error: null })
+    try {
+      await spec.onApply(before.options.filter(row => checked.includes(row.id)), binding.context)
+    } catch (error) {
+      console.error(`[ui-commands] popup apply failed for /${binding.command}:`, error)
+      if (this.binding !== binding) return // dismissed/reopened/disposed while it flew
+      const now = this.state.getSnapshot()
+      this.state.set({ ...now, checked: before.checked, error: errorText(error) })
+    }
   }
 
   /**

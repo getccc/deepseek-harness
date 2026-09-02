@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Typing a `/` command in the composer opens the matching surface — a registered popup, a host command's input, or a direct execution — and a command line is never silently downgraded to a plain prompt. Business packages contribute command surfaces through `ctx.commandUi`, registering a one-row popupSelect spec (`/model`, `/permission`) or a popupMultiSelect spec whose ticked rows apply together or decorating an existing host command with a picker while the host keeps its catalog row and argument claim. Space and Enter resolve the line against the session's directory: a host descriptor with `input` is `leadingInput`, a registered `CommandUiSpec` is `popupSelect`, and everything else is `execute`.
+Typing a `/` command in the composer opens the matching surface — a registered popup, a host command's input, or a direct execution — and a command line is never silently downgraded to a plain prompt. Business packages contribute command surfaces through `ctx.commandUi`, registering a one-row popupSelect spec (`/model`, `/permission`) or a popupMultiSelect spec that applies its ticked set on every tick or decorating an existing host command with a picker while the host keeps its catalog row and argument claim. Space and Enter resolve the line against the session's directory: a host descriptor with `input` is `leadingInput`, a registered `CommandUiSpec` is `popupSelect`, and everything else is `execute`.
 
 ## Table of Contents
 
@@ -29,7 +29,7 @@ Mount this plugin alongside `ui-input-trigger` and `ui-conversation`; the `/` so
 
 ### Kinds and decorations
 
-A contribution is a client-owned command — a host-name collision fails loud. A `popupSelect` row settles on Enter or click and closes the shell; a `popupMultiSelect` row ticks instead, the ticks survive a search that hides them, and the whole set settles once through the footer control or ⌘/Ctrl+Enter. Ticking never settles, so a member can leave a multi-choice shell without changing anything. A row marked `exclusive` is the "everything" row: ticking it clears the individual ticks and ticking an individual row clears it. A decoration adds a bare-invocation popup to an EXISTING host command: the host command keeps its catalog row, its argument claim, and its lifecycle logging, and a decorated name with no host row in the session's directory never fires. Menu queries fuzzy-match ordered, case-insensitive subsequences of command names; prefixes rank first.
+A contribution is a client-owned command — a host-name collision fails loud. A `popupSelect` row settles on Enter or click and closes the shell; a `popupMultiSelect` row ticks instead and applies the whole ticked set at once, staying open for the next tick. The tick shows before the settlement answers and is taken back if it is refused, so the shell never shows a choice the business rejected. Ticks survive a search that hides them, and a row marked `exclusive` is the "everything" row: ticking it clears the individual ticks and ticking an individual row clears it. A decoration adds a bare-invocation popup to an EXISTING host command: the host command keeps its catalog row, its argument claim, and its lifecycle logging, and a decorated name with no host row in the session's directory never fires. Menu queries fuzzy-match ordered, case-insensitive subsequences of command names; prefixes rank first.
 
 ### Image-carrying submissions
 
