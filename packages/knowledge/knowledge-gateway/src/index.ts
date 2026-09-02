@@ -80,7 +80,6 @@ export interface KnowledgeCatalogEntry {
   readonly description: string
   readonly kind: KnowledgeKind
   readonly documentCount: number
-  readonly chunkCount: number
   readonly processingCount: number
   /**
    * Which embedding model indexes it.

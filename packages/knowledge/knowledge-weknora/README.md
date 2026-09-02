@@ -116,7 +116,7 @@ These limits define when the provider is incomplete on its own. They are current
 - **Multi-base retrieval needs one embedding model** — WeKnora's `knowledge_base_ids` spans several knowledge bases only when they share an embedding model, and the API declares no error for a set that does not. The provider reports `embeddingModelId` so the gateway can refuse a mixed set before calling; it does not fan out per model and merge, because scores from separate calls are normalized within their own rerank and are not comparable.
 - **An unknown knowledge base id is silently ignored upstream** — a list mixing a real id with an unknown one answers `success` with results from the real base alone. The provider drops hits from bases the request did not name, but existence and authorization must be settled before the call, not after it.
 - **No document read** — `list` and `search` are the whole surface. WeKnora's chunk endpoints are not called.
-- **Counts come from the listing as-is** — `chunk_count` reads zero on knowledge bases whose chunks a search plainly returns, so an administration page showing it may show zero for a populated base. Whether the field is lazily computed upstream is not established.
+- **No chunk count** — the listing's `chunk_count` reads zero on knowledge bases whose chunks a search plainly returns, so this provider does not read it and nothing downstream carries one. `knowledge_count` and `processing_count` are taken as the listing gives them.
 - **No incremental listing** — `list()` fetches everything; WeKnora offers no paging or change cursor on this endpoint.
 
 <a id="dev-note"></a>

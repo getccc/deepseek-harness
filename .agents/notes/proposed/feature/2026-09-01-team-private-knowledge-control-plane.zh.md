@@ -273,7 +273,7 @@ composer 的左侧区域显示本地化 Chip：`知识库：全部`、`知识库
 
 第一阶段提供方只使用以下 WeKnora 操作：
 
-- `GET /api/v1/knowledge-bases`，从每个条目读取 `id`、`name`、`description`、`type`、`knowledge_count`、`chunk_count`、`processing_count`、`embedding_model_id` 和 `updated_at`；
+- `GET /api/v1/knowledge-bases`，从每个条目读取 `id`、`name`、`description`、`type`、`knowledge_count`、`processing_count`、`embedding_model_id` 和 `updated_at`。不读 `chunk_count`：在检索能返回分片的知识库上它答复零，据此得到的计数会告诉管理员已建索引的内容不存在；
 - `POST /api/v1/knowledge-bases/{id}/hybrid-search`，`SearchParams` 请求体携带 `query_text`、`match_count` 和显式非空的已授权上游 `knowledge_base_ids` 数组。
 
 该端点有三个性质决定了提供方的写法，每一条都由针对真实部署的约定 fixture 钉住。即便请求体覆盖了范围，其路径仍要求一个知识库 id，且该 id 必须是 `knowledge_base_ids` 的成员——列表之外的路径 id 会以 `ErrNotFound` 被拒——因此提供方把一个已授权 id 放在路径上、把完整已授权集合放在请求体里，绝不让路径 id 扩大范围。`match_count` 是跨所选知识库的全局预算而非逐库预算，因此一个知识库可能占满结果集、把其余的完全挤出去。而在上下文增强开启时 `match_count` 不是硬上限：端点返回最佳命中及其父级、邻近和关联分片，因此请求十条会返回十一条。提供方保留增强，因为周边上下文正是延后的文档阅读的部分替代，并在解码之后把 `maxSearchResults` 作为硬上限强制执行。

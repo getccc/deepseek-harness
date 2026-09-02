@@ -41,7 +41,6 @@ class StubGateway extends KnowledgeGateway {
         description: '',
         kind: 'document',
         documentCount: 1,
-        chunkCount: 0,
         processingCount: 0,
         embeddingModelId: 'emb-1',
         adminEnabled: true,

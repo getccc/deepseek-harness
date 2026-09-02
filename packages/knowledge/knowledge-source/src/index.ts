@@ -33,7 +33,6 @@ export interface UpstreamKnowledgeBase {
   readonly description: string
   readonly kind: KnowledgeKind
   readonly documentCount: number
-  readonly chunkCount: number
   /** Documents the source is still ingesting. */
   readonly processingCount: number
   /**

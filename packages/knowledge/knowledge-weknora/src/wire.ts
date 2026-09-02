@@ -64,7 +64,6 @@ export interface WireKnowledgeBase {
   readonly description?: unknown
   readonly type?: unknown
   readonly knowledge_count?: unknown
-  readonly chunk_count?: unknown
   readonly processing_count?: unknown
   readonly embedding_model_id?: unknown
   readonly updated_at?: unknown

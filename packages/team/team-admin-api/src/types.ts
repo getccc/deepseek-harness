@@ -191,7 +191,6 @@ export interface WireKnowledgeBase {
   readonly description: string
   readonly kind: string
   readonly documentCount: number
-  readonly chunkCount: number
   readonly processingCount: number
   /**
    * Which embedding model indexes it.

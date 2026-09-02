@@ -306,15 +306,14 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
         this.db.prepare(
           `INSERT INTO knowledge_base (
              org_id, knowledge_ref, source_code, upstream_id, display_name, description, kind,
-             document_count, chunk_count, processing_count, embedding_model_id,
+             document_count, processing_count, embedding_model_id,
              admin_enabled, remote_present, last_discovered_at, upstream_updated_at
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, ?, ?)
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, ?, ?)
            ON CONFLICT (org_id, knowledge_ref) DO UPDATE SET
              display_name = excluded.display_name,
              description = excluded.description,
              kind = excluded.kind,
              document_count = excluded.document_count,
-             chunk_count = excluded.chunk_count,
              processing_count = excluded.processing_count,
              embedding_model_id = excluded.embedding_model_id,
              remote_present = 1,
@@ -322,7 +321,7 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
              upstream_updated_at = excluded.upstream_updated_at`,
         ).run(
           orgId, ref, sourceCode, base.upstreamId, base.name, base.description, base.kind,
-          base.documentCount, base.chunkCount, base.processingCount, base.embeddingModelId,
+          base.documentCount, base.processingCount, base.embeddingModelId,
           now, base.updatedAt ?? null,
         )
       }
@@ -485,7 +484,6 @@ function toEntry(row: KnowledgeBaseRow, resource: ManagedResource): KnowledgeCat
     description: row.description,
     kind: row.kind as KnowledgeKind,
     documentCount: row.document_count,
-    chunkCount: row.chunk_count,
     processingCount: row.processing_count,
     embeddingModelId: row.embedding_model_id,
     adminEnabled,

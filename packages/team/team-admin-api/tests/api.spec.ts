@@ -82,7 +82,7 @@ class ScriptedKnowledgeSource extends KnowledgeSource {
   override readonly sourceCode = 'prod'
   listing: readonly UpstreamKnowledgeBase[] = [{
     upstreamId: KB_A, name: '临港知识库', description: '', kind: 'document',
-    documentCount: 1, chunkCount: 0, processingCount: 0,
+    documentCount: 1, processingCount: 0,
     embeddingModelId: 'emb-shared', updatedAt: undefined,
   }]
 

@@ -305,7 +305,6 @@ function toKnowledgeBase(entry: unknown): UpstreamKnowledgeBase {
     description: text(row['description']),
     kind: row['type'] === 'faq' ? 'faq' satisfies KnowledgeKind : 'document',
     documentCount: count(row['knowledge_count']),
-    chunkCount: count(row['chunk_count']),
     processingCount: count(row['processing_count']),
     embeddingModelId: text(row['embedding_model_id']),
     updatedAt: timestamp(row['updated_at']),

@@ -16,10 +16,11 @@
 import type { DatabaseSync } from 'node:sqlite'
 
 /**
- * Current physical schema. Monotonic: a database written by a newer build is
- * refused rather than migrated down.
+ * Current physical schema. Monotonic, and refused in both directions: a
+ * database written by any other build is rejected rather than migrated, which
+ * is this repository's pre-release stance on durable formats.
  */
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 /** Application id reserved for DeepSeek Harness SQLite knowledge-catalog databases. */
 export const KNOWLEDGE_GATEWAY_SQLITE_APPLICATION_ID = 0x44534841 + 6
@@ -44,7 +45,6 @@ export interface KnowledgeBaseRow {
   readonly description: string
   readonly kind: string
   readonly document_count: number
-  readonly chunk_count: number
   readonly processing_count: number
   readonly embedding_model_id: string
   readonly admin_enabled: number
@@ -84,7 +84,6 @@ CREATE TABLE IF NOT EXISTS knowledge_base (
   description        TEXT    NOT NULL,
   kind               TEXT    NOT NULL CHECK (kind IN ('document', 'faq')),
   document_count     INTEGER NOT NULL CHECK (document_count >= 0),
-  chunk_count        INTEGER NOT NULL CHECK (chunk_count >= 0),
   processing_count   INTEGER NOT NULL CHECK (processing_count >= 0),
   embedding_model_id TEXT    NOT NULL,
   admin_enabled      INTEGER NOT NULL CHECK (admin_enabled IN (0, 1)),
@@ -115,6 +114,14 @@ export function applySchema(db: DatabaseSync): void {
   }
   if (version > SCHEMA_VERSION) {
     throw new Error(`knowledge-gateway-sqlite: database schema ${version} is newer than this build's ${SCHEMA_VERSION}`)
+  }
+  // An older file is refused too, and for the same reason as a newer one: the
+  // DDL below only creates tables it does not find, so a column this build no
+  // longer writes would still be there and still be NOT NULL. Rebuilding the
+  // catalog costs one synchronization, and every administrator choice it holds
+  // is re-made in the console; nothing here is a record of anyone's work.
+  if (version !== 0 && version < SCHEMA_VERSION) {
+    throw new Error(`knowledge-gateway-sqlite: database schema ${version} is older than this build's ${SCHEMA_VERSION}; delete the file and synchronize again`)
   }
   db.exec('PRAGMA foreign_keys = ON')
   db.exec(DDL)

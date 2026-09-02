@@ -25,7 +25,6 @@ class StubSource extends KnowledgeSource {
       description: '',
       kind: 'document',
       documentCount: 1,
-      chunkCount: 4,
       processingCount: 0,
       embeddingModelId: 'emb-1',
       updatedAt: undefined,

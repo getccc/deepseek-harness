@@ -69,7 +69,6 @@ function upstream(upstreamId: string, patch: Partial<UpstreamKnowledgeBase> = {}
     description: '',
     kind: 'document',
     documentCount: 1,
-    chunkCount: 0,
     processingCount: 0,
     embeddingModelId: 'emb-shared',
     updatedAt: undefined,
@@ -561,6 +560,21 @@ describe('when the two stores disagree', () => {
       db.exec(`PRAGMA application_id = ${KNOWLEDGE_GATEWAY_SQLITE_APPLICATION_ID}`)
       db.exec(`PRAGMA user_version = ${SCHEMA_VERSION + 1}`)
       expect(() => { applySchema(db) }).toThrow(/is newer than this build/u)
+    } finally {
+      db.close()
+    }
+  })
+
+  it('refuses a database an older build wrote', () => {
+    // The DDL only creates tables it does not find, so an older file would keep
+    // a column this build no longer writes and fail on the first insert. The
+    // catalog is one synchronization away from being rebuilt, so it is refused
+    // at the door instead.
+    const db = new DatabaseSync(join(home, 'older.sqlite'))
+    try {
+      db.exec(`PRAGMA application_id = ${KNOWLEDGE_GATEWAY_SQLITE_APPLICATION_ID}`)
+      db.exec(`PRAGMA user_version = ${SCHEMA_VERSION - 1}`)
+      expect(() => { applySchema(db) }).toThrow(/is older than this build/u)
     } finally {
       db.close()
     }

@@ -115,7 +115,7 @@ beforeEach(async () => {
 
   source.listing = [{
     upstreamId: A, name: '临港知识库', description: '', kind: 'document',
-    documentCount: 1, chunkCount: 0, processingCount: 0,
+    documentCount: 1, processingCount: 0,
     embeddingModelId: 'emb-shared', updatedAt: undefined,
   }]
   await (cp.get('knowledgeGateway') as KnowledgeGateway).sync(orgId)
@@ -360,8 +360,8 @@ describe('failures map onto closed reasons', () => {
   it('answers an incompatible scope with a reason a member can act on', async () => {
     await grantAll()
     source.listing = [
-      { upstreamId: A, name: 'A', description: '', kind: 'document', documentCount: 0, chunkCount: 0, processingCount: 0, embeddingModelId: 'one', updatedAt: undefined },
-      { upstreamId: '08f25606-8876-49cc-b509-70e84828db08', name: 'B', description: '', kind: 'document', documentCount: 0, chunkCount: 0, processingCount: 0, embeddingModelId: 'two', updatedAt: undefined },
+      { upstreamId: A, name: 'A', description: '', kind: 'document', documentCount: 0, processingCount: 0, embeddingModelId: 'one', updatedAt: undefined },
+      { upstreamId: '08f25606-8876-49cc-b509-70e84828db08', name: 'B', description: '', kind: 'document', documentCount: 0, processingCount: 0, embeddingModelId: 'two', updatedAt: undefined },
     ]
     await (cp.get('knowledgeGateway') as KnowledgeGateway).sync(orgId)
     const response = await post(KNOWLEDGE_SEARCH_PATH, searchBody())

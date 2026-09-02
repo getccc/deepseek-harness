@@ -356,7 +356,6 @@ function wireCatalog(view: KnowledgeCatalogView): WireKnowledgeCatalog {
       description: entry.description,
       kind: entry.kind,
       documentCount: entry.documentCount,
-      chunkCount: entry.chunkCount,
       processingCount: entry.processingCount,
       embeddingModelId: entry.embeddingModelId,
       adminEnabled: entry.adminEnabled,
