@@ -41,6 +41,13 @@ function props(overrides: Partial<DirectProps> = {}): TeamAccountLauncherProps {
   } as TeamAccountLauncherProps
 }
 
+/** Stand in for the Session selection the sign-in landing clears. */
+function provideSessions(ctx: Context): { clear: ReturnType<typeof vi.fn> } {
+  const sessions = { clear: vi.fn() }
+  ctx.provide('sessions', sessions)
+  return sessions
+}
+
 /** Declare the single launcher slot without mounting the complete sidebar shell. */
 function declare(slots: SlotRegistry): () => void {
   return slots.register({
@@ -89,6 +96,7 @@ describe('Team local-login browser plugin', () => {
     ctx.provide('locale', locale)
     const slots = ctx.get('slots') as SlotRegistry
     declare(slots)
+    provideSessions(ctx)
     const fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ loginName: 'alice', displayName: 'Alice' }),
@@ -116,6 +124,7 @@ describe('Team local-login browser plugin', () => {
     ctx.provide('locale', locale)
     const slots = ctx.get('slots') as SlotRegistry
     declare(slots)
+    provideSessions(ctx)
     const fetch = vi.fn()
       .mockResolvedValueOnce({ ok: false, status: 401 })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ loginName: 4 }) })
@@ -126,5 +135,36 @@ describe('Team local-login browser plugin', () => {
     await expect(injected.loadAccount()).rejects.toThrow('refused with 401')
     await expect(injected.loadAccount()).rejects.toThrow('invalid identity')
     await ctx.fiber.dispose()
+  })
+})
+
+describe('landing after a sign-in', () => {
+  /** Boot the plugin over one address. */
+  async function land(href: string) {
+    window.history.replaceState(null, '', href)
+    const ctx = new Context()
+    await ctx.plugin(SlotRegistry).await()
+    ctx.provide('locale', new LocaleRuntime(ctx))
+    declare(ctx.get('slots') as SlotRegistry)
+    const sessions = provideSessions(ctx)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }))
+    await ctx.plugin({ inject: [...inject], apply }).await()
+    return { ctx, sessions }
+  }
+
+  it('empties the conversation a member just signed in to, and forgets the mark', async () => {
+    // Conversations belong to this computer while the selection is the
+    // browser's, so the next member to sign in would arrive inside the
+    // previous member's conversation.
+    const landed = await land('/app?signed-in=1&workspace=erc')
+    expect(landed.sessions.clear).toHaveBeenCalledTimes(1)
+    expect(window.location.search).toBe('?workspace=erc')
+    await landed.ctx.fiber.dispose()
+  })
+
+  it('leaves an ordinary load alone, so a reload keeps what is open', async () => {
+    const landed = await land('/app')
+    expect(landed.sessions.clear).not.toHaveBeenCalled()
+    await landed.ctx.fiber.dispose()
   })
 })

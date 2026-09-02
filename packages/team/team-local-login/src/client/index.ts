@@ -6,7 +6,9 @@ import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 // Type-only: pulls the settings.launcher slot declaration into this program.
 import type {} from '@deepseek-ai/dsh-client-ui-settings-general/client'
-import { ACCOUNT_PATH, LOGOUT_PATH } from '../paths.ts'
+// Type-only: pulls ctx.sessions into the client Context.
+import type {} from '@deepseek-ai/dsh-api-session-controller/client'
+import { ACCOUNT_PATH, LOGOUT_PATH, SIGNED_IN_PARAM } from '../paths.ts'
 import {
   TeamAccountLauncher, type TeamAccountLauncherInjected, type TeamMemberIdentity,
 } from './TeamAccountLauncher.tsx'
@@ -22,8 +24,8 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
 /** Dictionary namespace owned by the Team account launcher. */
 export const NS = 'team.account'
 
-/** Required browser services for the localized Settings launcher. */
-export const inject = ['slots', 'locale']
+/** Required browser services for the localized Settings launcher and the sign-in landing. */
+export const inject = ['slots', 'locale', 'sessions']
 
 /** Validate the intentionally small identity response from the local Host. */
 function isMemberIdentity(value: unknown): value is TeamMemberIdentity {
@@ -44,8 +46,26 @@ async function loadAccount(): Promise<TeamMemberIdentity> {
   return body
 }
 
+/**
+ * Land a member who has just signed in on an empty conversation.
+ *
+ * The selection is persisted per browser while the conversations belong to
+ * this computer, so a second member signing in would otherwise arrive inside
+ * the first member's conversation. The parameter is removed from the address
+ * as it is consumed, so a reload keeps whatever they have opened since.
+ * @param ctx - client root context carrying the Session selection.
+ */
+function landOnEmptyConversation(ctx: ClientContext): void {
+  const url = new URL(window.location.href)
+  if (!url.searchParams.has(SIGNED_IN_PARAM)) return
+  ctx.sessions.clear()
+  url.searchParams.delete(SIGNED_IN_PARAM)
+  window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`)
+}
+
 /** Register the localized account launcher into the Settings shell. */
 export function apply(ctx: ClientContext): void {
+  landOnEmptyConversation(ctx)
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'team-local-login: account dictionaries')
   ctx.slots.inject('settings.launcher', () => ctx.slots.register({
     name: 'settings.launcher',

@@ -126,7 +126,17 @@ describe('submitting the account form', () => {
     expect(signIn).toHaveBeenCalledWith('alice', 'correct horse')
     expect(landed.status).toBe(200)
     expect(landed.headers['set-cookie']).toEqual(['runner=session'])
-    expect(landed.body).toContain('href="/app"')
+    // Marked as reached through a sign-in, which is what lands the member on
+    // an empty conversation rather than in whatever the last one was reading.
+    expect(landed.body).toContain(`href="/app?${login.SIGNED_IN_PARAM}=1"`)
+  })
+
+  it('marks only a sign-in, never an already-authenticated entry', async () => {
+    // Opening the application again is not a sign-in: a member who walked away
+    // and came back keeps the conversation they were reading.
+    authenticated = true
+    const opened = await send(login.OPEN_PATH)
+    expect(opened.headers.location).toBe('/app')
   })
 
   it('uses one message for every account refusal', async () => {

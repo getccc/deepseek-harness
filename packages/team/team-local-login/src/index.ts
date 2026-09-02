@@ -15,9 +15,9 @@ import type {} from '@deepseek-ai/dsh-client-connection'
 import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
 import type {} from '@deepseek-ai/dsh-team-account-client'
 import { LOGIN_LOCALES, loginPage, pageCopy, problemPage, type LoginLocale } from './pages.ts'
-import { ACCOUNT_PATH, LOGIN_PATH, LOGOUT_PATH, OPEN_PATH } from './paths.ts'
+import { ACCOUNT_PATH, LOGIN_PATH, LOGOUT_PATH, OPEN_PATH, SIGNED_IN_PARAM } from './paths.ts'
 
-export { ACCOUNT_PATH, LOGIN_PATH, LOGOUT_PATH, OPEN_PATH } from './paths.ts'
+export { ACCOUNT_PATH, LOGIN_PATH, LOGOUT_PATH, OPEN_PATH, SIGNED_IN_PARAM } from './paths.ts'
 
 /** Stable Cordis plugin name. */
 export const name = 'team-local-login'
@@ -104,6 +104,15 @@ async function readForm(req: IncomingMessage, limit: number): Promise<URLSearchP
 }
 
 /**
+ * Where a member lands the moment they sign in.
+ * @param destination - the configured application path.
+ * @returns that path, marked as reached through a sign-in.
+ */
+function signedInDestination(destination: string): string {
+  return `${destination}${destination.includes('?') ? '&' : '?'}${SIGNED_IN_PARAM}=1`
+}
+
+/**
  * Register the Runner-local sign-in endpoints.
  * @param ctx - Host context carrying the web server, team account, and browser session.
  * @param config - resolved plugin config.
@@ -145,7 +154,7 @@ export function apply(ctx: Context, config: Config): void {
         html(res, 401, loginPage(copy, copy.credentialsRefused))
         return
       }
-      if (!ctx.browserSession.issueSession(req, res, destination)) {
+      if (!ctx.browserSession.issueSession(req, res, signedInDestination(destination))) {
         html(res, 400, problemPage(copy, copy.sessionFailed))
       }
     },
