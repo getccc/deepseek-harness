@@ -4,12 +4,13 @@
  */
 
 import { useMemo, useState, type ReactNode } from 'react'
-import { Button, Form, Input, Space, Switch, Table, Tag, Tree, Typography } from 'antd'
+import { Button, Form, Input, Radio, Space, Switch, Table, Tag, Tree, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { TreeDataNode } from 'antd'
 import {
   api,
   type WireGrant,
+  type WireKnowledgeCatalog,
   type WireMenu,
   type WireModel,
   type WirePermission,
@@ -29,6 +30,7 @@ type Dialog =
   | { readonly kind: 'menus'; readonly role: WireRole }
   | { readonly kind: 'permissions'; readonly role: WireRole }
   | { readonly kind: 'models'; readonly role: WireRole }
+  | { readonly kind: 'knowledge'; readonly role: WireRole }
   | { readonly kind: 'revoke'; readonly grant: WireGrant }
   | { readonly kind: 'delete'; readonly role: WireRole }
 
@@ -76,7 +78,16 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
       (mayReadModels ? api.models() : Promise.resolve([])), [mayReadModels]),
     report,
   )
+  const mayReadKnowledge = held.has('knowledge_scope|knowledge.catalog.read')
+  const knowledge = useLoaded<WireKnowledgeCatalog>(
+    useMemo(() => (): Promise<WireKnowledgeCatalog> => (mayReadKnowledge
+      ? api.knowledgeBases()
+      : Promise.resolve({ source: { sourceCode: '', providerKind: '', health: 'never-synced' }, knowledgeBases: [] })),
+    [mayReadKnowledge]),
+    report,
+  )
   const [dialog, setDialog] = useState<Dialog | undefined>(undefined)
+  const [knowledgeMode, setKnowledgeMode] = useState<'none' | 'all' | 'selected'>('none')
   const [term, setTerm] = useState('')
   const [draftTerm, setDraftTerm] = useState('')
   const [chosen, setChosen] = useState<readonly string[]>([])
@@ -179,6 +190,26 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
     setDialog({ kind: 'models', role })
   }
 
+  /** Open knowledge access with the mode this role's grants already describe. */
+  const openKnowledge = (role: WireRole): void => {
+    const all = role.grants.some(grant =>
+      grant.scope === 'type'
+      && grant.resourceType === 'knowledge_scope'
+      && grant.action === 'knowledge.search')
+    const exact = role.grants.flatMap(grant =>
+      grant.scope === 'resource'
+      && grant.resourceType === 'knowledge_scope'
+      && grant.action === 'knowledge.search'
+      && grant.resourceId !== undefined
+        ? [grant.resourceId]
+        : [])
+    // The mode is what was stored, not what the set looks like: "none" and an
+    // empty selection are the same list and different intentions.
+    setKnowledgeMode(all ? 'all' : exact.length > 0 ? 'selected' : 'none')
+    setChosen(exact)
+    setDialog({ kind: 'knowledge', role })
+  }
+
   const columns: ColumnsType<WireRole> = [
     { title: t('roles.name'), key: 'name', render: (_value, role) => role.name },
     {
@@ -250,6 +281,12 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
               onClick: () => { openModels(role) },
             },
             {
+              key: 'knowledge',
+              label: t('knowledge.access.title'),
+              disabled: !mayManageGrants || !mayReadKnowledge,
+              onClick: () => { openKnowledge(role) },
+            },
+            {
               key: 'delete',
               label: t('action.delete'),
               danger: true,
@@ -294,6 +331,10 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
   const showingMenus = dialog?.kind === 'menus' ? dialog.role : undefined
   const showingPermissions = dialog?.kind === 'permissions' ? dialog.role : undefined
   const showingModels = dialog?.kind === 'models' ? dialog.role : undefined
+  const showingKnowledge = dialog?.kind === 'knowledge' ? dialog.role : undefined
+  /** Every knowledge base a role may still be newly given. */
+  const selectableKnowledge = (knowledge.data?.knowledgeBases ?? [])
+    .filter(base => base.remotePresent || chosen.includes(base.resourceId))
 
   return (
     <>
@@ -459,6 +500,59 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
           }}
           treeData={permissionNodes()}
         />
+      </FormModal>
+
+      <FormModal<Record<string, never>>
+        title={t('knowledge.access.title')}
+        open={dialog?.kind === 'knowledge'}
+        okText={t('action.save')}
+        onCancel={() => { setDialog(undefined) }}
+        onSubmit={() => act(() => api.setRoleKnowledge(
+          showingKnowledge?.id ?? '',
+          knowledgeMode === 'selected'
+            ? { mode: 'selected', knowledgeRefs: selectableKnowledge
+              .filter(base => chosen.includes(base.resourceId))
+              .map(base => base.knowledgeRef) }
+            : { mode: knowledgeMode },
+        ))}
+      >
+        <Typography.Paragraph type="secondary">{t('knowledge.access.hint')}</Typography.Paragraph>
+        <Radio.Group
+          value={knowledgeMode}
+          onChange={(event) => { setKnowledgeMode(event.target.value as 'none' | 'all' | 'selected') }}
+          style={{ marginBottom: 12 }}
+          options={[
+            { value: 'none', label: t('knowledge.access.none') },
+            { value: 'all', label: t('knowledge.access.all') },
+            { value: 'selected', label: t('knowledge.access.selected') },
+          ]}
+        />
+        {knowledgeMode === 'selected' && (
+          <Tree
+            checkable
+            selectable={false}
+            defaultExpandAll
+            checkedKeys={[...chosen]}
+            onCheck={(keys) => {
+              const checked = Array.isArray(keys) ? keys : keys.checked
+              setChosen((checked as string[]).filter(key => key !== 'knowledge-resources'))
+            }}
+            treeData={[{
+              key: 'knowledge-resources',
+              title: t('knowledge.access.pick'),
+              children: selectableKnowledge.map(base => ({
+                key: base.resourceId,
+                title: base.remotePresent
+                  ? base.displayName
+                  : `${base.displayName} — ${t('knowledge.access.missing')}`,
+                // A knowledge base the source no longer lists stays visible
+                // while it is already chosen, so an administrator can see why
+                // a role's access became unusable, but cannot newly pick it.
+                disabled: !base.remotePresent,
+              })),
+            }]}
+          />
+        )}
       </FormModal>
 
       <FormModal<Record<string, never>>

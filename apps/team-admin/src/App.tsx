@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
   ApiOutlined,
+  ReadOutlined,
   AppstoreOutlined,
   BankOutlined,
   DashboardOutlined,
@@ -41,6 +42,7 @@ import { Departments } from './pages/Departments.tsx'
 import { Login } from './pages/Login.tsx'
 import { Members } from './pages/Members.tsx'
 import { Menus } from './pages/Menus.tsx'
+import { KnowledgeBases } from './pages/KnowledgeBases.tsx'
 import { Models } from './pages/Models.tsx'
 import { Overview } from './pages/Overview.tsx'
 import { Roles } from './pages/Roles.tsx'
@@ -71,6 +73,7 @@ const VIEWS: Record<ConsoleComponent, (props: ViewProps) => ReactNode> = {
   'system/RolesPage': ({ held }) => <Roles held={held} />,
   'system/MenusPage': ({ held }) => <Menus held={held} />,
   'resources/ModelsPage': ({ held }) => <Models held={held} />,
+  'resources/KnowledgeBasesPage': ({ held }) => <KnowledgeBases held={held} />,
 }
 
 /** The icons this build draws, by the name a stored entry gives. */
@@ -84,6 +87,7 @@ const ICONS: Record<MenuIcon, ReactNode> = {
   appstore: <AppstoreOutlined />,
   laptop: <LaptopOutlined />,
   api: <ApiOutlined />,
+  read: <ReadOutlined />,
 }
 
 /** Width below which the sider is an icon rail, matching Ant Design's `lg`. */

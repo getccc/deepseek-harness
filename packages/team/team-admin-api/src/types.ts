@@ -181,6 +181,66 @@ export interface WireModel {
   readonly status: ModelStatus
 }
 
+/** One governed knowledge base, as the console reads the catalog. */
+export interface WireKnowledgeBase {
+  /** The stable reference that names it across upstream renames. */
+  readonly knowledgeRef: string
+  /** Access-control resource id used when a role is granted this exact base. */
+  readonly resourceId: string
+  readonly displayName: string
+  readonly description: string
+  readonly kind: string
+  readonly documentCount: number
+  readonly chunkCount: number
+  readonly processingCount: number
+  /**
+   * Which embedding model indexes it.
+   *
+   * Shown because knowledge bases that do not share one cannot be searched
+   * together, and an administrator otherwise cannot see why a member's
+   * selection was refused.
+   */
+  readonly embeddingModelId: string
+  /** Whether an administrator has switched this entry on. */
+  readonly adminEnabled: boolean
+  /** Whether the last successful listing still held it. */
+  readonly remotePresent: boolean
+  /** Whether it can be searched at all. */
+  readonly effectiveEnabled: boolean
+  /** Epoch milliseconds when a successful listing last named it. */
+  readonly lastDiscoveredAt: number
+  /** Epoch milliseconds the source reported, when it reports one. */
+  readonly upstreamUpdatedAt?: number
+}
+
+/** How the configured knowledge source is doing. */
+export interface WireKnowledgeSource {
+  readonly sourceCode: string
+  readonly providerKind: string
+  readonly health: string
+  readonly lastAttemptAt?: number
+  readonly lastSuccessAt?: number
+  /**
+   * Why the last attempt failed, as a closed word.
+   *
+   * A category rather than the source's own message: an operator diagnoses the
+   * detail in the knowledge deployment's logs, not in a console page.
+   */
+  readonly lastFailure?: string
+}
+
+/** What the knowledge catalog page reads in one call. */
+export interface WireKnowledgeCatalog {
+  readonly source: WireKnowledgeSource
+  readonly knowledgeBases: readonly WireKnowledgeBase[]
+}
+
+/** How much knowledge one role is given. */
+export type WireKnowledgeAccess =
+  | { readonly mode: 'none' }
+  | { readonly mode: 'all' }
+  | { readonly mode: 'selected'; readonly knowledgeRefs: readonly string[] }
+
 /** One `(resourceType, action)` pair a grant may name. */
 export interface WirePermission {
   readonly resourceType: string

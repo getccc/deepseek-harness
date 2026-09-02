@@ -11,6 +11,8 @@ import type {
   WireDevice,
   WireMember,
   WireMenu,
+  WireKnowledgeAccess,
+  WireKnowledgeCatalog,
   WireModel,
   WireOrganization,
   WireOverview,
@@ -22,7 +24,8 @@ import type {
 } from '@deepseek-ai/dsh-team-admin-api'
 
 export type {
-  SecretCharacterClass, WireDepartment, WireDevice, WireGrant, WireMember, WireMenu, WireModel,
+  SecretCharacterClass, WireDepartment, WireDevice, WireGrant, WireKnowledgeAccess,
+  WireKnowledgeBase, WireKnowledgeCatalog, WireKnowledgeSource, WireMember, WireMenu, WireModel,
   WireOrganization, WireOverview, WirePermission, WireRole, WireSecretPolicy, WireSession,
 } from '@deepseek-ai/dsh-team-admin-api'
 
@@ -237,6 +240,9 @@ export const api = {
   /** Make one role's type grants exactly these `resourceType|action` pairs. */
   setRolePermissions: (id: string, permissions: readonly string[]): Promise<WireRole[]> =>
     call('POST', `/roles/${encodeURIComponent(id)}/permissions`, { permissions }),
+  /** Make one role's knowledge grants exactly what this mode describes. */
+  setRoleKnowledge: (id: string, access: WireKnowledgeAccess): Promise<WireRole[]> =>
+    call('POST', `/roles/${encodeURIComponent(id)}/knowledge-bases`, access),
   /** Make one role's model grants match these exact managed models. */
   setRoleModels: (id: string, modelIds: readonly string[]): Promise<WireRole[]> =>
     call('POST', `/roles/${encodeURIComponent(id)}/models`, { modelIds }),
@@ -263,6 +269,14 @@ export const api = {
 
   /** The company model catalog. */
   models: (): Promise<WireModel[]> => call('GET', '/models'),
+  /** The governed knowledge catalog and how its source is doing. */
+  knowledgeBases: (): Promise<WireKnowledgeCatalog> => call('GET', '/knowledge-bases'),
+  /** Reconcile the catalog against the source and answer the result. */
+  syncKnowledgeBases: (): Promise<WireKnowledgeCatalog> =>
+    call('POST', '/knowledge-bases/sync', {}),
+  /** Switch one knowledge base on or off for the whole organization. */
+  setKnowledgeBaseEnabled: (knowledgeRef: string, enabled: boolean): Promise<WireKnowledgeCatalog> =>
+    call('PATCH', `/knowledge-bases/${encodeURIComponent(knowledgeRef)}`, { enabled }),
   /**
    * Put one model in the catalog, or update the one already there. The stable
    * ref is the identity, so a write naming a stored one is the edit.

@@ -83,6 +83,8 @@ import type {
   WireDepartment,
   WireDevice,
   WireGrant,
+  WireKnowledgeBase,
+  WireKnowledgeCatalog,
   WireMember,
   WireMenu,
   WireModel,
@@ -97,6 +99,10 @@ export type {
   WireDepartment,
   WireDevice,
   WireGrant,
+  WireKnowledgeAccess,
+  WireKnowledgeBase,
+  WireKnowledgeCatalog,
+  WireKnowledgeSource,
   WireMember,
   WireMenu,
   WireModel,
@@ -333,10 +339,17 @@ function wireDevice(device: Device): WireDevice {
  * The upstream id is absent by construction — the gateway never returns one —
  * so this projection drops nothing; it renames for a reader.
  */
-function wireCatalog(view: KnowledgeCatalogView): Record<string, unknown> {
+function wireCatalog(view: KnowledgeCatalogView): WireKnowledgeCatalog {
   return {
-    source: view.source,
-    knowledgeBases: view.entries.map(entry => ({
+    source: {
+      sourceCode: view.source.sourceCode,
+      providerKind: view.source.providerKind,
+      health: view.source.health,
+      ...(view.source.lastAttemptAt === undefined ? {} : { lastAttemptAt: view.source.lastAttemptAt }),
+      ...(view.source.lastSuccessAt === undefined ? {} : { lastSuccessAt: view.source.lastSuccessAt }),
+      ...(view.source.lastFailure === undefined ? {} : { lastFailure: view.source.lastFailure }),
+    },
+    knowledgeBases: view.entries.map((entry): WireKnowledgeBase => ({
       knowledgeRef: entry.ref,
       resourceId: entry.resourceId,
       displayName: entry.displayName,
@@ -350,7 +363,7 @@ function wireCatalog(view: KnowledgeCatalogView): Record<string, unknown> {
       remotePresent: entry.remotePresent,
       effectiveEnabled: entry.effectiveEnabled,
       lastDiscoveredAt: entry.lastDiscoveredAt,
-      upstreamUpdatedAt: entry.upstreamUpdatedAt,
+      ...(entry.upstreamUpdatedAt === undefined ? {} : { upstreamUpdatedAt: entry.upstreamUpdatedAt }),
     })),
   }
 }
