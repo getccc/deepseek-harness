@@ -1677,6 +1677,9 @@ importers:
 
   packages/bundle/team:
     dependencies:
+      '@deepseek-ai/dsh-knowledge-team':
+        specifier: workspace:^
+        version: link:../../knowledge/knowledge-team
       '@deepseek-ai/dsh-llm-http-transport-team':
         specifier: workspace:^
         version: link:../../llm/llm-http-transport-team
@@ -1686,6 +1689,9 @@ importers:
       '@deepseek-ai/dsh-team-local-login':
         specifier: workspace:^
         version: link:../../team/team-local-login
+      '@deepseek-ai/dsh-tool-knowledge':
+        specifier: workspace:^
+        version: link:../../knowledge/tool-knowledge
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:^
@@ -6693,6 +6699,28 @@ importers:
         specifier: workspace:^
         version: link:../knowledge
 
+  packages/knowledge/knowledge-team:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+      '@deepseek-ai/dsh-knowledge':
+        specifier: workspace:^
+        version: link:../knowledge
+      '@deepseek-ai/dsh-knowledge-gateway-http':
+        specifier: workspace:^
+        version: link:../knowledge-gateway-http
+      '@deepseek-ai/dsh-team-account-client':
+        specifier: workspace:^
+        version: link:../../team/team-account-client
+
   packages/knowledge/knowledge-weknora:
     dependencies:
       '@deepseek-ai/schemastery':
@@ -6717,6 +6745,40 @@ importers:
       '@deepseek-ai/dsh-util-crypto':
         specifier: workspace:^
         version: link:../../util/crypto
+
+  packages/knowledge/tool-knowledge:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:^
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+      '@deepseek-ai/dsh-knowledge':
+        specifier: workspace:^
+        version: link:../knowledge
+      '@deepseek-ai/dsh-llm':
+        specifier: workspace:^
+        version: link:../../llm/llm
+      '@deepseek-ai/dsh-scope':
+        specifier: workspace:^
+        version: link:../../core/scope
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:^
+        version: link:../../core/session
+      '@deepseek-ai/dsh-system-prompt':
+        specifier: workspace:^
+        version: link:../../core/system-prompt
+      '@deepseek-ai/dsh-tools':
+        specifier: workspace:^
+        version: link:../../core/tools
 
   packages/llm/deepseek-llm-api-extensions:
     devDependencies:

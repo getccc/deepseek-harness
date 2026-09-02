@@ -49,5 +49,9 @@ export function deploymentPatch(deployment: DesktopDeployment): string {
       id: 'llm-http-transport',
       config: { controlPlaneUrl: deployment.controlPlaneUrl },
     },
+    {
+      id: 'knowledge',
+      config: { controlPlaneUrl: deployment.controlPlaneUrl },
+    },
   ], null, 2)}\n`
 }

@@ -64,6 +64,7 @@ import * as ToolTeam from '@deepseek-ai/dsh-experimental-tool-agent-team'
 import * as ToolTodo from '@deepseek-ai/dsh-tool-todo'
 import * as ToolSubagent from '@deepseek-ai/dsh-tool-subagent'
 import { registerListSubagentModels } from '../packages/subagent/tool-subagent/src/list-models.ts'
+import * as ToolKnowledge from '@deepseek-ai/dsh-tool-knowledge'
 import * as ToolWeb from '@deepseek-ai/dsh-tool-web'
 import VmWorkflowEngine from '@deepseek-ai/dsh-workflow-worker-thread'
 import * as ToolRalph from '@deepseek-ai/dsh-tool-ralph'
@@ -595,6 +596,28 @@ const TOOL_PACKAGES: ToolPackage[] = [
       await ctx.plugin(VmWorkflowEngine, { provider: 'mock' })
       await ctx.plugin(ToolWorkflow)
     },
+  },
+  {
+    pkg: '@deepseek-ai/dsh-tool-knowledge',
+    dir: 'tool-knowledge',
+    source: 'packages/knowledge/tool-knowledge/src/index.ts',
+    requires: ['ctx.tools', 'ctx.knowledge', 'ctx.systemPrompt', 'ctx.agents'],
+    writes: ['tool/call', 'tool/result'],
+    async mount(ctx) {
+      // The schema does not depend on which knowledge provider backs the seam,
+      // or on any Session's scope; a stub answers the injection so the tool
+      // registers and its schema can be read.
+      ctx.provide('knowledge', {
+        catalog: () => Promise.resolve([]),
+        search: () => Promise.resolve({ query: '', searched: [], passages: [], truncated: false }),
+      })
+      // No Session is mounted here, so no agent drives one; the tool reads the
+      // registry only to fold a Session's scope, which this catalog has none of.
+      ctx.provide('agents', { currentInitiator: () => undefined, get: () => undefined })
+      await ctx.plugin(ToolKnowledge, ToolKnowledge.Config({}))
+    },
+    note:
+      'The tool is registered globally and hidden per agent while a Session has chosen no knowledge, so a catalogued schema is what a Session using knowledge sees. The scope prompt section is folded from the Session log and is absent from this catalog, which mounts no Session.',
   },
   {
     pkg: '@deepseek-ai/dsh-tool-web',

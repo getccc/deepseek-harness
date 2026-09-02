@@ -674,9 +674,9 @@ const SERVICE_ROLES: ServiceRole[] = [
     pkg: 'knowledge',
     title: 'Private knowledge seam',
     mode: 'seam',
-    implementations: [],
-    consumers: [],
-    note: 'The directory and passage-search operations a governed deployment authorizes; its Team provider and model-facing tool arrive with the Control Plane knowledge capability.',
+    implementations: ['knowledge-team'],
+    consumers: ['tool-knowledge'],
+    note: 'The directory and passage-search operations a governed deployment authorizes; knowledge-team reaches the Control Plane that authorizes them, and tool-knowledge is what a model sees of the result.',
   },
   {
     key: 'knowledgeGateway',

@@ -221,6 +221,8 @@ flowchart LR
   pkg_tool_jobs["tool-jobs"]
   pkg_knowledge["knowledge"]
   svc_knowledge["ctx.knowledge<br/>Private knowledge seam"]
+  pkg_knowledge_team["knowledge-team"]
+  pkg_tool_knowledge["tool-knowledge"]
   pkg_knowledge_gateway["knowledge-gateway"]
   svc_knowledgeGateway["ctx.knowledgeGateway<br/>Governed knowledge gateway"]
   pkg_knowledge_gateway_sqlite["knowledge-gateway-sqlite"]
@@ -320,6 +322,7 @@ flowchart LR
   pkg_knowledge_gateway --> svc_knowledgeGateway
   pkg_knowledge_gateway_sqlite --> svc_knowledgeGateway
   pkg_knowledge_source --> svc_knowledgeSource
+  pkg_knowledge_team --> svc_knowledge
   pkg_knowledge_weknora --> svc_knowledgeSource
   pkg_llm --> svc_llm
   pkg_llm_deepseek --> svc_llm
@@ -454,6 +457,7 @@ flowchart LR
   svc_jobs --> pkg_tool_jobs
   svc_jobs --> pkg_tool_subagent
   svc_jobs --> pkg_tool_terminal
+  svc_knowledge --> pkg_tool_knowledge
   svc_llm --> pkg_agent_loop
   svc_llm --> pkg_compaction_basic
   svc_llmHttpTransport --> pkg_llm_deepseek
@@ -620,7 +624,7 @@ flowchart LR
 | `ctx.agentTeams` | `core` | [`experimental-agent-team`](../packages/experimental/agent-team) | - | [`experimental-tool-agent-team`](../packages/experimental/tool-agent-team), [`experimental-client-ui-agent-team`](../packages/experimental/client-ui-agent-team) | - | Owns the implicit-root roster, durable peer mailbox, shared task DAG, continuable-child lifecycle, and generated Team Remote methods; tool-agent-team contributes model controls and client-ui-agent-team mounts the browser contribution. |
 | `ctx.inspector` | `core` | `inspector` | - | - | - | Owns the Worker-hosted CDP target and the transport-independent Host and Client observation and Cordis-tree query API. |
 | `ctx.jobs` | `seam` | [`jobs`](../packages/jobs/jobs) | [`jobs-local`](../packages/jobs/jobs-local) | [`tool-bash`](../packages/shell/tool-bash), [`tool-terminal`](../packages/terminal/tool-terminal), [`tool-subagent`](../packages/subagent/tool-subagent), [`tool-jobs`](../packages/jobs/tool-jobs) | - | Producers (background bash, PTY sends, and subagent delegations) register running work; tool-jobs is the model-facing controller that reads, lists, and kills it; jobs-local is the process-local registry. |
-| `ctx.knowledge` | `seam` | [`knowledge`](../packages/knowledge/knowledge) | - | - | - | The directory and passage-search operations a governed deployment authorizes; its Team provider and model-facing tool arrive with the Control Plane knowledge capability. |
+| `ctx.knowledge` | `seam` | [`knowledge`](../packages/knowledge/knowledge) | [`knowledge-team`](../packages/knowledge/knowledge-team) | [`tool-knowledge`](../packages/knowledge/tool-knowledge) | - | The directory and passage-search operations a governed deployment authorizes; knowledge-team reaches the Control Plane that authorizes them, and tool-knowledge is what a model sees of the result. |
 | `ctx.knowledgeGateway` | `seam` | [`knowledge-gateway`](../packages/knowledge/knowledge-gateway) | [`knowledge-gateway-sqlite`](../packages/knowledge/knowledge-gateway-sqlite) | - | - | Stands between a member's Runner and a knowledge source: an administrator curates the durable catalog through it, and every member-facing directory and search is authorized per knowledge base by it. |
 | `ctx.knowledgeSource` | `seam` | [`knowledge-source`](../packages/knowledge/knowledge-source) | [`knowledge-weknora`](../packages/knowledge/knowledge-weknora) | - | - | The Control Plane half: a provider speaks one knowledge product's protocol and holds its credential, while the governed gateway in front of it decides who may search what. |
 | `ctx.web` | `seam` | [`web`](../packages/web/web) | [`web-search-exa`](../packages/web/web-search-exa), [`web-search-perplexity`](../packages/web/web-search-perplexity), [`web-search-deepseek`](../packages/web/web-search-deepseek), [`web-fetch-http`](../packages/web/web-fetch-http) | [`tool-web`](../packages/web/tool-web) | - | Search and fetch providers register into one ctx.web seam; tool-web owns the stable model-facing names. |

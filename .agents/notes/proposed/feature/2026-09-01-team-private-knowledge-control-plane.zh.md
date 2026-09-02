@@ -362,7 +362,7 @@ WeKnora 在该字段自身的定义中就给多库检索加了前置条件：`kn
 - 添加 `tool-knowledge`、原生渲染、规范输出、展示元数据、取消、工具 UI 设计和工具描述。
 - 添加带新章节顺序槽位的 `knowledge:scope` 提示词章节，并证明 `off`、`all`、`selected` 各自仅凭日志渲染出预期文本。
 - 通过 agent 作用域上的 `tools.restrict()` 添加范围驱动的工具可见性，并证明恢复会话时在 agent 构造期施加、范围变化时重新施加。
-- 在现有 headless 泳道用 stub 知识提供方添加无 Key 录制会话快照，覆盖 `off` 不可见、`selected` 搜索输出、截断、空结果、拒绝以及范围事件的 fork／rewind。
+- 在现有 headless 泳道用 stub 知识提供方添加无 Key 录制会话快照，覆盖 `off` 不可见、`selected` 搜索输出、截断、空结果、拒绝以及范围事件的 fork／rewind。这需要一个快照语料可以挂载的、随产品交付的 stub 提供方，而目前没有任何 `test-support` 包提供它；新增它属于本步骤，而不是它的前置条件。
 - 更新 `apps/team-runner-desktop`，使生成的 profile 补丁携带知识配置项的 `controlPlaneUrl`，并使产物携带一个公司来源与 Runner 版本、不含 WeKnora 设置、3090 仅绑定回环。
 - 更新工具目录、包 README、模型体验章节、部署指南、配置目录和 Team bundle 组合测试。
 

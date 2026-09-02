@@ -362,7 +362,7 @@ Deliver through a dependent PR stack. Lower branches carry no UI dependency and 
 - Add `tool-knowledge`, native rendering, canonical output, presentation metadata, cancellation, tool UI design, and the tool description.
 - Add the `knowledge:scope` prompt section with its new section-order slot, and prove `off`, `all`, and `selected` each render the intended text from the log alone.
 - Add scope-driven tool visibility through `tools.restrict()` on the agent scope, and prove it is applied at agent construction for a resumed Session and re-applied on a scope change.
-- Add keyless recorded-session snapshots in the existing headless lane with a stub knowledge provider, covering `off` invisibility, `selected` search output, truncation, empty results, refusal, and fork/rewind of the scope event.
+- Add keyless recorded-session snapshots in the existing headless lane with a stub knowledge provider, covering `off` invisibility, `selected` search output, truncation, empty results, refusal, and fork/rewind of the scope event. This needs a shipped stub provider the snapshot corpus may mount, which no `test-support` package offers yet; adding one is part of this step rather than a prerequisite for it.
 - Update `apps/team-runner-desktop` so the generated profile patch carries the knowledge row's `controlPlaneUrl`, and so artifacts carry one company origin and Runner version, no WeKnora setting, and loopback-only 3090.
 - Update the tool catalog, package READMEs, model-experience section, deployment guide, configuration catalog, and Team bundle composition tests.
 

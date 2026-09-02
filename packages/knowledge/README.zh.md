@@ -22,7 +22,7 @@ kind: "package-group"
 <a id="packages"></a>
 ## 包
 
-六个包扮演知识相关角色；子系统参考拥有穷尽的词汇与契约。
+八个包扮演知识相关角色；子系统参考拥有穷尽的词汇与契约。
 
 | 包 | 角色 | ctx key |
 |---|---|---|
@@ -32,6 +32,8 @@ kind: "package-group"
 | [`knowledge-gateway/`](knowledge-gateway/README.zh.md) | 受治理网关接缝：持久化目录，以及已授权目录与检索 | `ctx.knowledgeGateway` |
 | [`knowledge-gateway-sqlite/`](knowledge-gateway-sqlite/README.zh.md) | 基于 SQLite 的持久化目录，含同步、逐资源授权判定和审计 | 注册到 `ctx.knowledgeGateway` |
 | [`knowledge-gateway-http/`](knowledge-gateway-http/README.zh.md) | Runner 调用的两条路由，含 Token 验证与协议版本协商 | 向 `ctx.webServer` 注册路由 |
+| [`knowledge-team/`](knowledge-team/README.zh.md) | Runner 侧提供方：携带当前设备 Token 的出站 Control Plane 请求 | `ctx.knowledge` |
+| [`tool-knowledge/`](tool-knowledge/README.zh.md) | 模型看到的东西：`knowledge_search`、范围提示词章节和范围驱动的可见性 | 注册到 `ctx.tools` |
 
 -----
 

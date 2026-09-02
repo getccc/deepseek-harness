@@ -49,8 +49,10 @@
     "@deepseek-ai/dsh-invariants": "workspace:^"
   },
   "dependencies": {
+    "@deepseek-ai/dsh-knowledge-team": "workspace:^",
     "@deepseek-ai/dsh-llm-http-transport-team": "workspace:^",
     "@deepseek-ai/dsh-team-account-client": "workspace:^",
-    "@deepseek-ai/dsh-team-local-login": "workspace:^"
+    "@deepseek-ai/dsh-team-local-login": "workspace:^",
+    "@deepseek-ai/dsh-tool-knowledge": "workspace:^"
   }
 }

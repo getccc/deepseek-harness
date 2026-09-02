@@ -1097,6 +1097,29 @@ export interface Config {
 
 Source: [`packages/knowledge/knowledge-gateway-sqlite/src/index.ts:49`](../packages/knowledge/knowledge-gateway-sqlite/src/index.ts)
 
+<a id="deepseek-aidsh-knowledge-team"></a>
+
+## `@deepseek-ai/dsh-knowledge-team`
+
+Requires: `teamAccountClient`
+
+```ts config-catalog
+/** Plugin config: which Control Plane this Runner belongs to. */
+export interface Config {
+  /**
+   * Origin of the company Control Plane, such as `https://dsh.company.com`.
+   *
+   * Carried per row rather than read from the account client, matching the
+   * company model transport. The desktop installer's generated profile patch
+   * writes every row from one deployment fact, which is where a single source
+   * of truth belongs.
+   */
+  controlPlaneUrl: string
+}
+```
+
+Source: [`packages/knowledge/knowledge-team/src/index.ts:42`](../packages/knowledge/knowledge-team/src/index.ts)
+
 <a id="deepseek-aidsh-knowledge-weknora"></a>
 
 ## `@deepseek-ai/dsh-knowledge-weknora`
@@ -2809,7 +2832,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/core/system-prompt/src/index.ts:237`](../packages/core/system-prompt/src/index.ts)
+Source: [`packages/core/system-prompt/src/index.ts:238`](../packages/core/system-prompt/src/index.ts)
 
 <a id="deepseek-aidsh-team-account-client"></a>
 
@@ -3194,6 +3217,24 @@ export type CompletionDelivery = 'quiet' | 'wakeup'
 ```
 
 Source: [`packages/jobs/tool-jobs/src/index.ts:32`](../packages/jobs/tool-jobs/src/index.ts)
+
+<a id="deepseek-aidsh-tool-knowledge"></a>
+
+## `@deepseek-ai/dsh-tool-knowledge`
+
+Requires: `tools` · `knowledge` · `systemPrompt` · `agents`
+
+```ts config-catalog
+/** Plugin config: what one search may ask for. */
+export interface Config {
+  /** The most passages one call may request; the deployment's own bound still applies. */
+  maxResults?: number
+  /** How long one search may take before it is abandoned. */
+  timeoutMs?: number
+}
+```
+
+Source: [`packages/knowledge/tool-knowledge/src/index.ts:41`](../packages/knowledge/tool-knowledge/src/index.ts)
 
 <a id="deepseek-aidsh-tool-lsp"></a>
 

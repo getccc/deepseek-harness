@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { deploymentPatch, resolveDeployment } from '../src/deployment.ts'
 
 describe('desktop deployment facts', () => {
-  it('writes the Control Plane into both Runner consumers without secret material', () => {
+  it('writes the Control Plane into every Runner consumer without secret material', () => {
     const deployment = resolveDeployment({
       controlPlaneUrl: 'https://control.acme.example/path',
       runnerVersion: '2.4.1',
@@ -14,7 +14,11 @@ describe('desktop deployment facts', () => {
         controlPlaneUrl: 'https://control.acme.example', runnerVersion: '2.4.1',
       } },
       { id: 'llm-http-transport', config: { controlPlaneUrl: 'https://control.acme.example' } },
+      // Knowledge takes the same origin from the same deployment fact: the
+      // installer is the one place a build learns which company it belongs to.
+      { id: 'knowledge', config: { controlPlaneUrl: 'https://control.acme.example' } },
     ])
+    expect(deploymentPatch(deployment)).not.toMatch(/weknora|knowledgeBase|apiKey/iu)
     expect(deploymentPatch(deployment)).not.toMatch(/password|credential/iu)
   })
 

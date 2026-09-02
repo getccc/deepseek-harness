@@ -22,7 +22,7 @@ The `knowledge/` group gives the harness private company knowledge — an author
 <a id="packages"></a>
 ## Packages
 
-Six packages play the knowledge roles; the subsystem reference owns the exhaustive vocabulary and contracts.
+Eight packages play the knowledge roles; the subsystem reference owns the exhaustive vocabulary and contracts.
 
 | Package | Role | ctx key |
 |---|---|---|
@@ -32,6 +32,8 @@ Six packages play the knowledge roles; the subsystem reference owns the exhausti
 | [`knowledge-gateway/`](knowledge-gateway/README.md) | Governed gateway seam: the durable catalog, and the authorized directory and search | `ctx.knowledgeGateway` |
 | [`knowledge-gateway-sqlite/`](knowledge-gateway-sqlite/README.md) | Durable catalog over SQLite, with synchronization, per-resource authorization, and audit | registers on `ctx.knowledgeGateway` |
 | [`knowledge-gateway-http/`](knowledge-gateway-http/README.md) | The two routes a Runner calls, with token verification and protocol-version negotiation | registers routes on `ctx.webServer` |
+| [`knowledge-team/`](knowledge-team/README.md) | Runner-side provider: an outbound Control Plane request carrying the current device token | `ctx.knowledge` |
+| [`tool-knowledge/`](tool-knowledge/README.md) | What a model sees: `knowledge_search`, the scope prompt section, and scope-driven visibility | registers on `ctx.tools` |
 
 -----
 

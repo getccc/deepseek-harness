@@ -8,8 +8,8 @@
 # earlier layer inserted.
 #
 # This layer owns the loopback port, the team account this computer holds, the
-# three local addresses a browser navigates to, and how a company model request
-# leaves this computer. The knowledge transport arrives as its package lands.
+# three local addresses a browser navigates to, and how company model and
+# knowledge requests leave this computer.
 
 # ── the Team Runner's loopback address ─────────────────────────────────────
 
@@ -89,3 +89,23 @@
     # a stranger.
     - id: llm-http-transport
       name: '@deepseek-ai/dsh-llm-http-transport-team'
+
+    # How a private knowledge request leaves this computer. It carries a query
+    # and the references this Session's scope resolved to — no knowledge
+    # address, credential, tenant, or upstream id, because the protocol has no
+    # place for one.
+    #
+    # `controlPlaneUrl` is absent for the same reason it is absent above: a
+    # Runner that guessed which company it belongs to would ask a stranger what
+    # its member may read.
+    - id: knowledge
+      name: '@deepseek-ai/dsh-knowledge-team'
+
+    # What a model sees of it: one search tool and one prompt section, both
+    # folded from the Session log, and neither present while the member has
+    # chosen no knowledge for this conversation.
+    - id: tool-knowledge
+      name: '@deepseek-ai/dsh-tool-knowledge'
+      config:
+        maxResults: 10
+        timeoutMs: 60000
