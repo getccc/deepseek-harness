@@ -926,6 +926,31 @@ importers:
         specifier: ^4.4.3
         version: 4.4.3
 
+  packages/api/knowledge-controller:
+    dependencies:
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:^
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+      '@deepseek-ai/dsh-knowledge':
+        specifier: workspace:^
+        version: link:../../knowledge/knowledge
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:^
+        version: link:../../core/session
+      '@deepseek-ai/dsh-typert-protocol':
+        specifier: workspace:^
+        version: link:../../typert/protocol
+
   packages/api/remotes:
     dependencies:
       '@deepseek-ai/dsh-scope':
@@ -1677,6 +1702,9 @@ importers:
 
   packages/bundle/team:
     dependencies:
+      '@deepseek-ai/dsh-api-knowledge-controller':
+        specifier: workspace:^
+        version: link:../../api/knowledge-controller
       '@deepseek-ai/dsh-knowledge-team':
         specifier: workspace:^
         version: link:../../knowledge/knowledge-team

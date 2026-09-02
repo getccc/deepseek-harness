@@ -257,6 +257,7 @@
     { "path": "./packages/knowledge/knowledge-gateway-http" },
     { "path": "./packages/knowledge/knowledge-team" },
     { "path": "./packages/knowledge/tool-knowledge" },
+    { "path": "./packages/api/knowledge-controller" },
     { "path": "./packages/web/web" },
     { "path": "./packages/web/web-search-exa" },
     { "path": "./packages/web/web-search-perplexity" },

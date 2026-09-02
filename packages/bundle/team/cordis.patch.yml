@@ -109,3 +109,9 @@
       config:
         maxResults: 10
         timeoutMs: 60000
+
+    # What the browser sees of it: the authorized directory the `/knowledge`
+    # picker offers, and the choice it records. Team-only, so it is mounted
+    # here rather than on the session controller every Web build carries.
+    - id: api-knowledge-controller
+      name: '@deepseek-ai/dsh-api-knowledge-controller'
