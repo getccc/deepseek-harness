@@ -82,15 +82,16 @@ export function KnowledgeBases({ held }: { readonly held: ReadonlySet<string> })
     {
       title: t('knowledge.contents'),
       key: 'contents',
+      // No chunk count: the source's listing does not maintain one, so it
+      // reads as zero on a knowledge base whose passages a member can search.
       render: (_value, base) => (
         <>
           <div>{t('knowledge.documentCount', { count: base.documentCount.toLocaleString() })}</div>
-          <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-            {t('knowledge.chunkCount', { count: base.chunkCount.toLocaleString() })}
-            {base.processingCount > 0
-              ? ` · ${t('knowledge.processingCount', { count: base.processingCount.toLocaleString() })}`
-              : ''}
-          </Typography.Text>
+          {base.processingCount > 0 && (
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+              {t('knowledge.processingCount', { count: base.processingCount.toLocaleString() })}
+            </Typography.Text>
+          )}
         </>
       ),
     },
