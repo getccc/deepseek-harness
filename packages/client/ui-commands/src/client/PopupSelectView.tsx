@@ -5,14 +5,15 @@
  * inner search input takes focus, plain typing filters the loaded options
  * locally, Enter/↑↓ drive the filtered highlight (scrolled into view), Escape
  * dismisses back to the composer, and ←→ keep the search input's native
- * caret. Any pointer interaction outside the box dismisses (the click's own
+ * caret. A multi-choice shell ticks rows instead of settling on them and
+ * stays open until its footer control (or ⌘/Ctrl+Enter) applies the set. Any pointer interaction outside the box dismisses (the click's own
  * target takes focus). Closed state renders null; the overlay slot stays
  * mounted. The card height clamps to the space above the composer.
  */
 import { useEffect, useRef } from 'react'
 import { useSyncExternalStore } from 'react'
 import clsx from 'clsx'
-import { IconCheckOutline16, RiskConfirmation, useAnchoredMaxHeight } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, IconCheckOutline16, RiskConfirmation, useAnchoredMaxHeight } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import { filterOptions } from './popup.ts'
 import type { PopupSelectController } from './popup.ts'
@@ -93,7 +94,11 @@ export function PopupSelectView({ popup, t }: PopupSelectViewProps) {
         return
       case 'Enter':
         ev.preventDefault()
-        void popup.select(state.active)
+        // Enter ticks the highlighted row, so the whole set needs its own
+        // key; a plain Enter that applied would settle whatever was ticked so
+        // far every time someone confirmed the search box.
+        if (state.multi && (ev.metaKey || ev.ctrlKey)) void popup.submit()
+        else void popup.select(state.active)
         return
       case 'Escape':
         ev.preventDefault()
@@ -135,12 +140,18 @@ export function PopupSelectView({ popup, t }: PopupSelectViewProps) {
           {state.submitting && <div className={css.status}>{t('status.applying')}</div>}
           {state.status === 'ready' && rows.length === 0 && <div className={css.status}>{t('status.empty')}</div>}
           {state.status === 'ready' && (
-            <div role="listbox" aria-label={t('listbox.aria', { command: String(state.command) })} className={css.viewport}>
+            <div
+              role="listbox"
+              aria-label={t('listbox.aria', { command: String(state.command) })}
+              aria-multiselectable={state.multi ? true : undefined}
+              className={css.viewport}
+            >
               {rows.map((option, index) => (
                 <div
                   key={option.id}
                   role="option"
                   aria-selected={index === state.active}
+                  aria-checked={state.multi ? state.checked.includes(option.id) : undefined}
                   className={clsx(css.row, index === state.active && css.rowActive)}
                   // mousedown would race the document capture listener; the shell
                   // owns focus anyway, so a plain click (inside the card → no
@@ -150,9 +161,24 @@ export function PopupSelectView({ popup, t }: PopupSelectViewProps) {
                 >
                   <span className={css.label}>{option.label}</span>
                   {option.detail !== undefined && <span className={css.detail}>{option.detail}</span>}
-                  {option.active === true && <span className={css.check}><IconCheckOutline16 /></span>}
+                  {(state.multi ? state.checked.includes(option.id) : option.active === true) && (
+                    <span className={css.check}><IconCheckOutline16 /></span>
+                  )}
                 </div>
               ))}
+            </div>
+          )}
+          {state.multi && state.status === 'ready' && (
+            <div className={css.footer}>
+              <span className={css.hint}>{t('multi.hint')}</span>
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={state.submitting}
+                onClick={() => { void popup.submit() }}
+              >
+                {state.submitLabel}
+              </Button>
             </div>
           )}
         </div>

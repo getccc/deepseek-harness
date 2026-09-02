@@ -116,3 +116,23 @@
   color: var(--dsw-alias-label-primary);
   cursor: pointer;
 }
+
+/* Multi-choice footer: the set is applied here, not by ticking a row. */
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 2px;
+  border-top: 1px solid var(--dsw-alias-border-inverted);
+  margin-top: 4px;
+}
+
+.hint {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

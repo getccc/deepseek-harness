@@ -31,12 +31,23 @@ export type TokenSegment =
  * session wiring passes its session projection; the controller only carries
  * it from open() to the callbacks).
  */
-export interface PopupSpec<TCtx> {
-  /** Load the option rows once per open (retry after failure reuses the same signal). */
-  options(context: TCtx, signal: AbortSignal): Promise<readonly SelectOption[]>
-  /** Settle the picked option against the open-time context. */
-  onSelect(option: SelectOption, context: TCtx): void | Promise<void>
-}
+export type PopupSpec<TCtx> =
+  | {
+    readonly kind: 'popupSelect'
+    /** Load the option rows once per open (retry after failure reuses the same signal). */
+    options(context: TCtx, signal: AbortSignal): Promise<readonly SelectOption[]>
+    /** Settle the picked option against the open-time context. */
+    onSelect(option: SelectOption, context: TCtx): void | Promise<void>
+  }
+  | {
+    readonly kind: 'popupMultiSelect'
+    /** Load the option rows once per open; `active` rows open checked. */
+    options(context: TCtx, signal: AbortSignal): Promise<readonly SelectOption[]>
+    /** Settle the whole checked set against the open-time context. */
+    onSubmit(options: readonly SelectOption[], context: TCtx): void | Promise<void>
+    /** Label of the control that settles the checked set. */
+    readonly submitLabel: string
+  }
 
 /** Injected session-wiring callbacks of one controller (tests pass fakes). */
 export interface PopupSelectDeps {
@@ -71,13 +82,20 @@ export interface PopupState {
   readonly confirming: SelectOption | null
   /** Caller-controlled checkbox state for the pending confirmation. */
   readonly acknowledged: boolean
-  /** Surfaced settlement failure (options load or onSelect); null when none. */
+  /** Surfaced settlement failure (options load or a settlement); null when none. */
   readonly error: string | null
+  /** Whether rows toggle into a checked set instead of settling on click. */
+  readonly multi: boolean
+  /** Ids of the checked rows, in loaded order; empty for a single-choice shell. */
+  readonly checked: readonly string[]
+  /** The settle button's label while `multi`; empty otherwise. */
+  readonly submitLabel: string
 }
 
 const CLOSED: PopupState = {
   open: false, command: null, status: 'pending', options: [], search: '', active: 0,
   submitting: false, confirming: null, acknowledged: false, error: null,
+  multi: false, checked: [], submitLabel: '',
 }
 
 /**
@@ -136,7 +154,13 @@ export class PopupSelectController<TCtx = unknown> {
     this.binding?.abort.abort()
     const binding: OpenBinding<TCtx> = { command, spec, context, segment, abort: new AbortController() }
     this.binding = binding
-    this.state.set({ ...CLOSED, open: true, command })
+    this.state.set({
+      ...CLOSED,
+      open: true,
+      command,
+      multi: spec.kind === 'popupMultiSelect',
+      submitLabel: spec.kind === 'popupMultiSelect' ? spec.submitLabel : '',
+    })
     this.load(binding)
   }
 
@@ -145,7 +169,11 @@ export class PopupSelectController<TCtx = unknown> {
     binding.spec.options(binding.context, binding.abort.signal).then(
       (options) => {
         if (this.binding !== binding) return
-        this.state.set({ ...this.state.getSnapshot(), status: 'ready', options, active: 0, error: null })
+        const s = this.state.getSnapshot()
+        // A reopened multi-choice shell shows the current choice rather than an
+        // empty one, so the business marks it with `active` and it seeds here.
+        const checked = s.multi ? options.filter(o => o.active === true).map(o => o.id) : []
+        this.state.set({ ...s, status: 'ready', options, active: 0, error: null, checked })
       },
       (error: unknown) => {
         if (this.binding !== binding) return
@@ -217,11 +245,37 @@ export class PopupSelectController<TCtx = unknown> {
     if (binding === null || !s.open || s.status !== 'ready' || s.submitting || s.confirming !== null) return
     const option = filterOptions(s.options, s.search)[index]
     if (option === undefined) return
+    if (binding.spec.kind === 'popupMultiSelect') {
+      const checked = s.checked.includes(option.id)
+        ? s.checked.filter(id => id !== option.id)
+        : [...s.checked, option.id]
+      this.state.set({ ...s, checked, error: null })
+      return
+    }
     if (option.confirmation !== undefined) {
       this.state.set({ ...s, confirming: option, acknowledged: false, error: null })
       return
     }
     await this.settle(binding, option)
+  }
+
+  /**
+   * Settle the checked set through the multi-choice business callback.
+   *
+   * The checked rows are read from everything loaded rather than from what the
+   * search text currently shows, so narrowing the list to tick one more row
+   * never drops the rows already ticked. A no-op on a single-choice shell,
+   * whose rows settle one at a time through `select`.
+   * @returns settled when the attempt has closed the shell or surfaced its failure.
+   */
+  async submit(): Promise<void> {
+    const binding = this.binding
+    const s = this.state.getSnapshot()
+    if (binding === null || !s.open || s.status !== 'ready' || s.submitting) return
+    if (binding.spec.kind !== 'popupMultiSelect') return
+    const { spec } = binding
+    const checked = s.options.filter(option => s.checked.includes(option.id))
+    await this.settleWith(binding, () => spec.onSubmit(checked, binding.context))
   }
 
   /**
@@ -251,13 +305,21 @@ export class PopupSelectController<TCtx = unknown> {
 
   /** Run the business settlement for an already admitted option. */
   private async settle(binding: OpenBinding<TCtx>, option: SelectOption): Promise<void> {
+    const { spec } = binding
+    /* v8 ignore next -- only a single-choice row can be selected or gated; a multi-choice row toggles in select(). */
+    if (spec.kind !== 'popupSelect') return
+    await this.settleWith(binding, () => spec.onSelect(option, binding.context))
+  }
+
+  /** Run one business settlement, and close the shell if it succeeds. */
+  private async settleWith(binding: OpenBinding<TCtx>, run: () => void | Promise<void>): Promise<void> {
     const s = this.state.getSnapshot()
     if (this.binding !== binding || !s.open || s.submitting) return
     this.state.set({ ...s, submitting: true, confirming: null, acknowledged: false, error: null })
     try {
-      await binding.spec.onSelect(option, binding.context)
+      await run()
     } catch (error) {
-      console.error(`[ui-commands] popupSelect onSelect failed for /${binding.command}:`, error)
+      console.error(`[ui-commands] popup settlement failed for /${binding.command}:`, error)
       if (this.binding !== binding) return // dismissed/reopened/disposed while onSelect flew
       this.state.set({ ...this.state.getSnapshot(), submitting: false, error: errorText(error) })
       return

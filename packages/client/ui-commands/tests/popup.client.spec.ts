@@ -25,10 +25,25 @@ const GATED: SelectOption = {
 
 const SEGMENT: TokenSegment = { via: 'enter', token: '/theme' }
 
-function spec(overrides: Partial<PopupSpec<Ctx>> = {}): PopupSpec<Ctx> {
+type SingleSpec = Extract<PopupSpec<Ctx>, { kind: 'popupSelect' }>
+type MultiSpec = Extract<PopupSpec<Ctx>, { kind: 'popupMultiSelect' }>
+
+function spec(overrides: Partial<SingleSpec> = {}): PopupSpec<Ctx> {
   return {
+    kind: 'popupSelect',
     options: () => Promise.resolve(OPTIONS),
     onSelect: () => undefined,
+    ...overrides,
+  }
+}
+
+/** A multi-choice spec over the same rows. */
+function multiSpec(overrides: Partial<MultiSpec> = {}): PopupSpec<Ctx> {
+  return {
+    kind: 'popupMultiSelect',
+    options: () => Promise.resolve(OPTIONS),
+    onSubmit: () => undefined,
+    submitLabel: 'Apply',
     ...overrides,
   }
 }
@@ -40,9 +55,17 @@ function makeDeps(consumeResult = true) {
   return { consume, focusComposer }
 }
 
-async function readyPopup(overrides: Partial<PopupSpec<Ctx>> = {}, deps = makeDeps()) {
+async function readyPopup(overrides: Partial<SingleSpec> = {}, deps = makeDeps()) {
   const popup = new PopupSelectController<Ctx>(deps)
   popup.open('theme', spec(overrides), CTX_A, SEGMENT)
+  await Promise.resolve()
+  return { popup, deps }
+}
+
+/** An open multi-choice shell with its rows loaded. */
+async function readyMulti(overrides: Partial<MultiSpec> = {}, deps = makeDeps()) {
+  const popup = new PopupSelectController<Ctx>(deps)
+  popup.open('knowledge', multiSpec(overrides), CTX_A, SEGMENT)
   await Promise.resolve()
   return { popup, deps }
 }
@@ -387,5 +410,93 @@ describe('dismiss / dispose', () => {
     popup.dismiss({ focusComposer: true })
     expect(deps.focusComposer).toHaveBeenCalledTimes(1)
     expect(popup.state.getSnapshot().open).toBe(false)
+  })
+})
+
+describe('a multi-choice shell', () => {
+  it('opens with the rows the business marked active already ticked', async () => {
+    const { popup } = await readyMulti()
+    expect(popup.state.getSnapshot()).toMatchObject({ multi: true, submitLabel: 'Apply', checked: ['light'] })
+  })
+
+  it('leaves a single-choice shell with nothing ticked, however its rows are marked', async () => {
+    const { popup } = await readyPopup()
+    expect(popup.state.getSnapshot()).toMatchObject({ multi: false, submitLabel: '', checked: [] })
+  })
+
+  it('ticks and unticks a row without settling, consuming, or closing', async () => {
+    const onSubmit = vi.fn()
+    const { popup, deps } = await readyMulti({ onSubmit })
+    await popup.select(0)
+    expect(popup.state.getSnapshot()).toMatchObject({ open: true, checked: ['light', 'dark'] })
+    await popup.select(0)
+    expect(popup.state.getSnapshot().checked).toEqual(['light'])
+    expect(onSubmit).not.toHaveBeenCalled()
+    expect(deps.consume).not.toHaveBeenCalled()
+  })
+
+  it('settles the ticked rows in loaded order, then consumes, closes, and refocuses', async () => {
+    const onSubmit = vi.fn()
+    const { popup, deps } = await readyMulti({ onSubmit })
+    await popup.select(2) // sepia, ticked after the pre-ticked light
+    await popup.submit()
+    expect(onSubmit).toHaveBeenCalledWith([OPTIONS[1], OPTIONS[2]], CTX_A)
+    expect(deps.consume).toHaveBeenCalledWith(SEGMENT)
+    expect(deps.focusComposer).toHaveBeenCalledTimes(1)
+    expect(popup.state.getSnapshot().open).toBe(false)
+  })
+
+  it('keeps a tick the search has since hidden, so narrowing the list never drops it', async () => {
+    const onSubmit = vi.fn()
+    const { popup } = await readyMulti({ onSubmit })
+    popup.setSearch('sepia')
+    await popup.select(0)
+    popup.setSearch('dark')
+    await popup.select(0)
+    await popup.submit()
+    expect(onSubmit).toHaveBeenCalledWith([OPTIONS[0], OPTIONS[1], OPTIONS[2]], CTX_A)
+  })
+
+  it('settles an empty set, which is how a member clears their choice', async () => {
+    const onSubmit = vi.fn()
+    const { popup } = await readyMulti({ onSubmit })
+    await popup.select(1) // untick the only pre-ticked row
+    await popup.submit()
+    expect(onSubmit).toHaveBeenCalledWith([], CTX_A)
+  })
+
+  it('keeps the ticks and the shell open when the settlement fails, and submit re-arms', async () => {
+    let attempts = 0
+    const { popup, deps } = await readyMulti({
+      onSubmit: () => {
+        attempts += 1
+        if (attempts === 1) throw new Error('host rejected')
+        return undefined
+      },
+    })
+    await popup.submit()
+    expect(popup.state.getSnapshot()).toMatchObject({ open: true, submitting: false, checked: ['light'], error: 'host rejected' })
+    expect(deps.consume).not.toHaveBeenCalled()
+    await popup.submit()
+    expect(popup.state.getSnapshot().open).toBe(false)
+  })
+
+  it('ignores a submit before the rows are ready, after a dismiss, and on a single-choice shell', async () => {
+    const onSubmit = vi.fn()
+    const pending = new PopupSelectController<Ctx>(makeDeps())
+    pending.open('knowledge', multiSpec({ options: () => new Promise(() => {}), onSubmit }), CTX_A, SEGMENT)
+    await pending.submit()
+
+    const { popup } = await readyMulti({ onSubmit })
+    popup.dismiss()
+    await popup.submit()
+
+    const onSelect = vi.fn()
+    const { popup: single } = await readyPopup({ onSelect })
+    await single.submit()
+
+    expect(onSubmit).not.toHaveBeenCalled()
+    expect(onSelect).not.toHaveBeenCalled()
+    expect(single.state.getSnapshot().open).toBe(true)
   })
 })

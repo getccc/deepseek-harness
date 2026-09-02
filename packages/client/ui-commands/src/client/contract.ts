@@ -31,11 +31,33 @@ export interface SelectOption {
  * The shell component is owned by ui-commands; business never sees it. Both
  * callbacks receive the ClientSessionContext captured at popup open.
  */
-export type CommandUiSpec = {
-  readonly kind: 'popupSelect'
-  options(session: ClientSessionContext, signal: AbortSignal): Promise<readonly SelectOption[]>
-  onSelect(option: SelectOption, session: ClientSessionContext): void | Promise<void>
-}
+export type CommandUiSpec =
+  | {
+    readonly kind: 'popupSelect'
+    options(session: ClientSessionContext, signal: AbortSignal): Promise<readonly SelectOption[]>
+    onSelect(option: SelectOption, session: ClientSessionContext): void | Promise<void>
+  }
+  | {
+    readonly kind: 'popupMultiSelect'
+    /**
+     * The rows to choose among. `active` seeds what is already checked when
+     * the shell opens, so a reopened picker shows the current choice rather
+     * than an empty one.
+     */
+    options(session: ClientSessionContext, signal: AbortSignal): Promise<readonly SelectOption[]>
+    /**
+     * Settle the whole checked set at once.
+     *
+     * One call rather than one per row, because a multi-choice is a single
+     * intention: settling row by row would make a half-applied set reachable
+     * whenever a settlement failed partway.
+     * @param options - the checked rows, in the order they were loaded.
+     * @param session - the context captured when the shell opened.
+     */
+    onSubmit(options: readonly SelectOption[], session: ClientSessionContext): void | Promise<void>
+    /** Label of the button that settles the checked set. */
+    readonly submitLabel: string
+  }
 
 /**
  * One client-owned command contribution: a slash-menu entry whose behavior
@@ -50,7 +72,7 @@ export interface CommandContribution {
   readonly description: string
   /** Capability filter, called with a fresh projection per candidate pass. */
   available(session: ClientSessionContext): boolean
-  /** The command's UI behavior (this phase: popupSelect only). */
+  /** The command's UI behavior: one row settles, or a checked set settles at once. */
   readonly ui: CommandUiSpec
 }
 

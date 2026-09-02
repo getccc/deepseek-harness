@@ -9,6 +9,7 @@ export const zh = {
   'status.empty': '无选项',
   'overlay.aria': '/{command} 选项',
   'listbox.aria': '/{command} 匹配项',
+  'multi.hint': '回车勾选，⌘/Ctrl+回车应用',
   'notice.imagesUnsupported': '/{command} 不接受图片附件，请先移除图片',
 } satisfies Record<string, string>
 
@@ -24,5 +25,6 @@ export const en = {
   'status.empty': 'No options',
   'overlay.aria': '/{command} options',
   'listbox.aria': '/{command} matches',
+  'multi.hint': 'Enter ticks a row, ⌘/Ctrl+Enter applies',
   'notice.imagesUnsupported': '/{command} does not accept image attachments; remove them first',
 } satisfies Record<CommandKey, string>

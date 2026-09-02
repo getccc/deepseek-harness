@@ -6,7 +6,8 @@
  * Escape dismisses back through focusComposer, outside pointerdown dismisses
  * plainly, the submitting/failed states render pending text and a working
  * retry button, the highlighted row scrolls into view, and the card height
- * clamps to the space above the composer.
+ * clamps to the space above the composer. A multi-choice shell ticks rows
+ * instead of settling on them and applies the set from its footer.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
@@ -52,15 +53,30 @@ const GATED: SelectOption = {
 
 const SEGMENT: TokenSegment = { via: 'enter', token: '/theme' }
 
-function spec(overrides: Partial<PopupSpec<string>> = {}): PopupSpec<string> {
+type SingleSpec = Extract<PopupSpec<string>, { kind: 'popupSelect' }>
+type MultiSpec = Extract<PopupSpec<string>, { kind: 'popupMultiSelect' }>
+
+function spec(overrides: Partial<SingleSpec> = {}): PopupSpec<string> {
   return {
+    kind: 'popupSelect',
     options: () => Promise.resolve(OPTIONS),
     onSelect: () => undefined,
     ...overrides,
   }
 }
 
-async function mountOpen(overrides: Partial<PopupSpec<string>> = {}, consumeResult = true) {
+/** A multi-choice spec over the same rows. */
+function multiSpec(overrides: Partial<MultiSpec> = {}): PopupSpec<string> {
+  return {
+    kind: 'popupMultiSelect',
+    options: () => Promise.resolve(OPTIONS),
+    onSubmit: () => undefined,
+    submitLabel: '应用',
+    ...overrides,
+  }
+}
+
+async function mountOpen(overrides: Partial<SingleSpec> = {}, consumeResult = true) {
   const consume = vi.fn((_segment: TokenSegment) => consumeResult)
   const focusComposer = vi.fn()
   const popup = new PopupSelectController<string>({ consume, focusComposer })
@@ -70,6 +86,19 @@ async function mountOpen(overrides: Partial<PopupSpec<string>> = {}, consumeResu
     await Promise.resolve()
   })
   return { popup, view, consume, focusComposer, search: screen.getByRole('textbox', { name: '筛选选项' }) }
+}
+
+/** Open a multi-choice shell over the same rows. */
+async function mountMulti(overrides: Partial<MultiSpec> = {}) {
+  const consume = vi.fn((_segment: TokenSegment) => true)
+  const focusComposer = vi.fn()
+  const popup = new PopupSelectController<string>({ consume, focusComposer })
+  render(<PopupSelectView popup={popup} t={t} />)
+  await act(async () => {
+    popup.open('knowledge', multiSpec(overrides), 'ctx-A', SEGMENT)
+    await Promise.resolve()
+  })
+  return { popup, consume, focusComposer, search: screen.getByRole('textbox', { name: '筛选选项' }) }
 }
 
 function rowLabels(): string[] {
@@ -250,5 +279,43 @@ describe('PopupSelectView', () => {
     act(() => { fireEvent.pointerDown(document.body) })
     expect(view.container.childElementCount).toBe(0)
     expect(focusComposer).not.toHaveBeenCalled()
+  })
+})
+
+describe('PopupSelectView, multi-choice', () => {
+  it('ticks a clicked row and stays open, marking it for a screen reader too', async () => {
+    const onSubmit = vi.fn()
+    await mountMulti({ onSubmit })
+    const rows = screen.getAllByRole('option')
+    expect(rows.map(row => row.getAttribute('aria-checked'))).toEqual(['false', 'true', 'false'])
+    await act(async () => { fireEvent.click(rows[0]!) })
+    expect(screen.getAllByRole('option').map(row => row.getAttribute('aria-checked')))
+      .toEqual(['true', 'true', 'false'])
+    expect(onSubmit).not.toHaveBeenCalled()
+    expect(screen.getByRole('listbox', { name: '/knowledge 匹配项' }).getAttribute('aria-multiselectable')).toBe('true')
+  })
+
+  it('applies the ticked set from the footer control, then closes', async () => {
+    const onSubmit = vi.fn()
+    const { consume, focusComposer } = await mountMulti({ onSubmit })
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '应用' })) })
+    expect(onSubmit).toHaveBeenCalledWith([OPTIONS[1]], 'ctx-A')
+    expect(consume).toHaveBeenCalledExactlyOnceWith(SEGMENT)
+    expect(focusComposer).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('listbox')).toBeNull()
+  })
+
+  it('Enter ticks the highlighted row and ⌘/Ctrl+Enter applies the set', async () => {
+    const onSubmit = vi.fn()
+    const { search } = await mountMulti({ onSubmit })
+    await act(async () => { fireEvent.keyDown(search, { key: 'Enter' }) })
+    expect(onSubmit).not.toHaveBeenCalled()
+    await act(async () => { fireEvent.keyDown(search, { key: 'Enter', metaKey: true }) })
+    expect(onSubmit).toHaveBeenCalledWith([OPTIONS[0], OPTIONS[1]], 'ctx-A')
+  })
+
+  it('shows no footer on a single-choice shell', async () => {
+    await mountOpen()
+    expect(screen.queryByRole('button', { name: '应用' })).toBeNull()
   })
 })
