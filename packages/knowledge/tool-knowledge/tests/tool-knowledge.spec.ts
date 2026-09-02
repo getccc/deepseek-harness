@@ -373,6 +373,87 @@ describe('the tool exists only while the Session uses knowledge', () => {
   })
 })
 
+describe('the projection a client reads', () => {
+  /** Register the unit against a real registry and fold one log through it. */
+  async function unit(): Promise<{
+    init: () => KnowledgeScope
+    apply: (state: KnowledgeScope, event: { type: string; data: unknown }) => KnowledgeScope
+    view: (state: KnowledgeScope) => unknown
+    parse: (value: unknown) => unknown
+  }> {
+    const ctx = new Context()
+    let registered: Record<string, unknown> | undefined
+    ctx.provide('sessionProjections', {
+      register: (definition: Record<string, unknown>) => {
+        registered = definition
+        return () => {}
+      },
+    })
+    ctx.provide('knowledge', { catalog: () => Promise.resolve([]), search: () => Promise.resolve({}) })
+    ctx.provide('agents', { currentInitiator: () => undefined, get: () => undefined })
+    await ctx.plugin(SystemPrompt)
+    await ctx.plugin(ToolRuntime)
+    await ctx.plugin(ToolKnowledge, ToolKnowledge.Config({}))
+    if (registered === undefined) throw new Error('the knowledge unit did not register')
+    const definition = registered as {
+      key: string
+      init: () => KnowledgeScope
+      apply: (state: KnowledgeScope, event: { type: string; data: unknown }) => KnowledgeScope
+      stateSchema: { parse: (value: unknown) => unknown }
+      wire: { view: (state: KnowledgeScope) => unknown; viewSchema: { parse: (value: unknown) => unknown } }
+    }
+    expect(definition.key).toBe('knowledge')
+    return {
+      init: definition.init,
+      apply: definition.apply,
+      view: definition.wire.view,
+      parse: value => definition.stateSchema.parse(value),
+    }
+  }
+
+  it('starts a Session at off and takes the last recorded scope', async () => {
+    const { init, apply } = await unit()
+    expect(init()).toEqual({ version: 1, mode: 'off' })
+    const all = apply(init(), { type: 'knowledge/scope', data: { version: 1, mode: 'all' } })
+    expect(all).toEqual({ version: 1, mode: 'all' })
+  })
+
+  it('returns the same state for an event it does not own', async () => {
+    const { init, apply } = await unit()
+    const state = init()
+    // An unchanged reference is what produces zero downstream work.
+    expect(apply(state, { type: 'turn/start', data: { turn: 1 } })).toBe(state)
+  })
+
+  it('serves clients the whole scope, names included', async () => {
+    const { view } = await unit()
+    const scope: KnowledgeScope = {
+      version: 1, mode: 'selected', bases: [{ ref: REF_A, displayName: '临港知识库' }],
+    }
+    expect(view(scope)).toEqual(scope)
+  })
+
+  it.each([
+    ['off', { version: 1, mode: 'off' }],
+    ['all', { version: 1, mode: 'all' }],
+    ['a selection', { version: 1, mode: 'selected', bases: [{ ref: REF_A, displayName: 'x' }] }],
+  ])('validates a persisted %s row before it seeds a fold', async (_label, value) => {
+    const { parse } = await unit()
+    expect(parse(value)).toEqual(value)
+  })
+
+  it.each([
+    ['an unknown version', { version: 2, mode: 'off' }],
+    ['an unknown mode', { version: 1, mode: 'everything' }],
+    ['a selection with no bases', { version: 1, mode: 'selected' }],
+    ['a base with no name', { version: 1, mode: 'selected', bases: [{ ref: REF_A }] }],
+    ['an extra field', { version: 1, mode: 'off', extra: true }],
+  ])('refuses a persisted row holding %s', async (_label, value) => {
+    const { parse } = await unit()
+    expect(() => parse(value)).toThrow()
+  })
+})
+
 describe('the text a model reads back', () => {
   it('numbers passages, names what was searched, and marks truncation', async () => {
     const mounted = await mountTool()

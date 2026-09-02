@@ -14,9 +14,11 @@ import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import {
+  DEFAULT_KNOWLEDGE_SCOPE,
   KnowledgeError,
   foldKnowledgeScope,
   selectionOf,
+  type KnowledgeRef,
   type KnowledgePassage,
   type KnowledgeScope,
   type KnowledgeSearchResult,
@@ -25,6 +27,8 @@ import type { Session } from '@deepseek-ai/dsh-session'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 import { FIRST_PARTY_SECTION_ORDER } from '@deepseek-ai/dsh-system-prompt'
 import { defineTool } from '@deepseek-ai/dsh-tools'
+import zod, { type ZodType } from 'zod'
+import type {} from '@deepseek-ai/dsh-session-projection'
 
 /** The model-facing name of the search tool. */
 export const KNOWLEDGE_SEARCH = 'knowledge_search'
@@ -179,7 +183,46 @@ export function apply(ctx: Context, config: Config): void {
   }), 'tool-knowledge: scope prompt section')
 
   installVisibility(ctx)
+
+  // The knowledge projection unit: a pure fold serving clients the same scope
+  // the prompt section and the tool visibility read, so a chip, a picker, and
+  // the model never disagree about what this Session chose. The child
+  // activates only when a projection registry is composed, leaving headless
+  // assemblies unaffected.
+  ctx.inject(['sessionProjections'], (projectionCtx) => {
+    projectionCtx.sessionProjections.register<'knowledge', KnowledgeScope>({
+      key: 'knowledge',
+      stateSchema: knowledgeScopeSchema,
+      init: () => DEFAULT_KNOWLEDGE_SCOPE,
+      apply: (state, event) => event.type === 'knowledge/scope' ? event.data : state,
+      wire: { viewSchema: knowledgeScopeSchema, view: state => state },
+      stateVersion: 1,
+    })
+  })
 }
+
+declare module '@deepseek-ai/dsh-session-projection/types' {
+  interface SessionProjectionMap {
+    knowledge: KnowledgeScope
+  }
+  interface SessionProjectionStateMap {
+    knowledge: KnowledgeScope
+  }
+}
+
+/** The scope value, validated before a persisted cache row seeds a fold. */
+const knowledgeScopeSchema: ZodType<KnowledgeScope> = zod.union([
+  zod.object({ version: zod.literal(1), mode: zod.literal('off') }).strict(),
+  zod.object({ version: zod.literal(1), mode: zod.literal('all') }).strict(),
+  zod.object({
+    version: zod.literal(1),
+    mode: zod.literal('selected'),
+    bases: zod.array(zod.object({
+      ref: zod.string() as unknown as ZodType<KnowledgeRef>,
+      displayName: zod.string(),
+    }).strict()),
+  }).strict(),
+])
 
 /**
  * Keep `knowledge_search` out of a Session that is not using knowledge.

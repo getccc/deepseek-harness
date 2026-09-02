@@ -3236,7 +3236,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/knowledge/tool-knowledge/src/index.ts:41`](../packages/knowledge/tool-knowledge/src/index.ts)
+Source: [`packages/knowledge/tool-knowledge/src/index.ts:45`](../packages/knowledge/tool-knowledge/src/index.ts)
 
 <a id="deepseek-aidsh-tool-lsp"></a>
 
