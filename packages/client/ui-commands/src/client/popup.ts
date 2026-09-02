@@ -111,6 +111,21 @@ export function filterOptions(options: readonly SelectOption[], search: string):
   return options.filter(o => o.label.toLowerCase().includes(query) || (o.detail?.toLowerCase().includes(query) ?? false))
 }
 
+/**
+ * The checked set after ticking one row: an exclusive row displaces every
+ * other tick, and any other row displaces the exclusive ones, so the set a
+ * member builds always means one thing.
+ * @param state - the shell's current state.
+ * @param option - the row that was activated.
+ * @returns the new checked ids, in loaded order for the untouched rows.
+ */
+function toggled(state: PopupState, option: SelectOption): readonly string[] {
+  if (state.checked.includes(option.id)) return state.checked.filter(id => id !== option.id)
+  if (option.exclusive === true) return [option.id]
+  const exclusive = new Set(state.options.filter(row => row.exclusive === true).map(row => row.id))
+  return [...state.checked.filter(id => !exclusive.has(id)), option.id]
+}
+
 /** One open shell's bindings (spec + open-time context + segment snapshot + options-fetch abort). */
 interface OpenBinding<TCtx> {
   readonly command: string
@@ -246,10 +261,7 @@ export class PopupSelectController<TCtx = unknown> {
     const option = filterOptions(s.options, s.search)[index]
     if (option === undefined) return
     if (binding.spec.kind === 'popupMultiSelect') {
-      const checked = s.checked.includes(option.id)
-        ? s.checked.filter(id => id !== option.id)
-        : [...s.checked, option.id]
-      this.state.set({ ...s, checked, error: null })
+      this.state.set({ ...s, checked: toggled(s, option), error: null })
       return
     }
     if (option.confirmation !== undefined) {

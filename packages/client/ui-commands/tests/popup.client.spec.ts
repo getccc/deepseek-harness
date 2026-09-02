@@ -500,3 +500,35 @@ describe('a multi-choice shell', () => {
     expect(single.state.getSnapshot().open).toBe(true)
   })
 })
+
+describe('an exclusive row', () => {
+  const ROWS: SelectOption[] = [{ id: 'all', label: 'Everything', exclusive: true }, ...OPTIONS]
+
+  it('displaces the individual ticks, and they displace it back', async () => {
+    const onSubmit = vi.fn()
+    const { popup } = await readyMulti({ options: () => Promise.resolve(ROWS), onSubmit })
+    await popup.select(0) // the exclusive row, over the pre-ticked light
+    expect(popup.state.getSnapshot().checked).toEqual(['all'])
+    await popup.select(2) // an ordinary row
+    expect(popup.state.getSnapshot().checked).toEqual(['light'])
+    await popup.submit()
+    expect(onSubmit).toHaveBeenCalledWith([OPTIONS[1]], CTX_A)
+  })
+
+  it('unticks like any other row, leaving nothing chosen', async () => {
+    const { popup } = await readyMulti({ options: () => Promise.resolve(ROWS) })
+    await popup.select(0)
+    await popup.select(0)
+    expect(popup.state.getSnapshot().checked).toEqual([])
+  })
+
+  it('settles alone even when the business opened it beside a ticked row', async () => {
+    const onSubmit = vi.fn()
+    const { popup } = await readyMulti({
+      options: () => Promise.resolve([{ id: 'all', label: 'Everything', exclusive: true, active: true }]),
+      onSubmit,
+    })
+    await popup.submit()
+    expect(onSubmit).toHaveBeenCalledWith([{ id: 'all', label: 'Everything', exclusive: true, active: true }], CTX_A)
+  })
+})

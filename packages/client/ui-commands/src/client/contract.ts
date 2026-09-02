@@ -21,6 +21,15 @@ export interface SelectOption {
   readonly label: string
   readonly detail?: string
   readonly active?: boolean
+  /**
+   * A row that cannot be ticked alongside any other, in a multi-choice shell.
+   *
+   * This is the "everything" row: ticking it clears the individual ticks and
+   * ticking an individual row clears it, so a shell can offer a whole-set
+   * choice without letting a member build a set that means two things at
+   * once. Ignored by a single-choice shell, where every row is exclusive.
+   */
+  readonly exclusive?: boolean
   /** Optional in-page risk gate owned by the shared popup shell. */
   readonly confirmation?: SelectConfirmation
 }

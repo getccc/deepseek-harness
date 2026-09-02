@@ -29,7 +29,7 @@ Mount this plugin alongside `ui-input-trigger` and `ui-conversation`; the `/` so
 
 ### Kinds and decorations
 
-A contribution is a client-owned command — a host-name collision fails loud. A `popupSelect` row settles on Enter or click and closes the shell; a `popupMultiSelect` row ticks instead, the ticks survive a search that hides them, and the whole set settles once through the footer control or ⌘/Ctrl+Enter. Ticking never settles, so a member can leave a multi-choice shell without changing anything. A decoration adds a bare-invocation popup to an EXISTING host command: the host command keeps its catalog row, its argument claim, and its lifecycle logging, and a decorated name with no host row in the session's directory never fires. Menu queries fuzzy-match ordered, case-insensitive subsequences of command names; prefixes rank first.
+A contribution is a client-owned command — a host-name collision fails loud. A `popupSelect` row settles on Enter or click and closes the shell; a `popupMultiSelect` row ticks instead, the ticks survive a search that hides them, and the whole set settles once through the footer control or ⌘/Ctrl+Enter. Ticking never settles, so a member can leave a multi-choice shell without changing anything. A row marked `exclusive` is the "everything" row: ticking it clears the individual ticks and ticking an individual row clears it. A decoration adds a bare-invocation popup to an EXISTING host command: the host command keeps its catalog row, its argument claim, and its lifecycle logging, and a decorated name with no host row in the session's directory never fires. Menu queries fuzzy-match ordered, case-insensitive subsequences of command names; prefixes rank first.
 
 ### Image-carrying submissions
 
