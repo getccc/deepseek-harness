@@ -74,6 +74,26 @@ describe('dsh-team bundle', () => {
     }
   })
 
+  it('adds every half of private knowledge, so no surface is mounted without the one it needs', () => {
+    // The picker is useless without the Remote that answers it, the Remote
+    // without the transport that reaches the Control Plane, and the transport
+    // without the tool that spends it: this layer is where all four meet.
+    const inserted = new Map(patchRows().flatMap(row => row.insert ?? [])
+      .map(row => [row.id as string, row.name as string]))
+    const manifest = JSON.parse(
+      readFileSync(resolve(root, 'package.json'), 'utf8'),
+    ) as { dependencies?: Record<string, string> }
+    for (const [id, name] of [
+      ['knowledge', '@deepseek-ai/dsh-knowledge-team'],
+      ['tool-knowledge', '@deepseek-ai/dsh-tool-knowledge'],
+      ['api-knowledge-controller', '@deepseek-ai/dsh-api-knowledge-controller'],
+      ['client-ui-knowledge', '@deepseek-ai/dsh-client-ui-knowledge'],
+    ] as const) {
+      expect(inserted.get(id), id).toBe(name)
+      expect(manifest.dependencies ?? {}, id).toHaveProperty(name)
+    }
+  })
+
   it('opens a clean local login entry instead of a process-token URL', () => {
     const patch = patchRows()
     const runtime = patch.find(row => row.id === 'web-runtime')
