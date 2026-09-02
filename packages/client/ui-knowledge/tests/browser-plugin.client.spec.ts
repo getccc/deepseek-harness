@@ -12,7 +12,7 @@ import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { KnowledgeRef } from '@deepseek-ai/dsh-knowledge'
 import type { KnowledgeScopeView } from '@deepseek-ai/dsh-api-knowledge-controller/types'
 import type { CommandContribution, SelectOption } from '@deepseek-ai/dsh-client-ui-commands/client'
-import { KnowledgeChip } from '../src/client/KnowledgeChip.tsx'
+import { KnowledgeSelect, type KnowledgeSelectInjected } from '../src/client/KnowledgeSelect.tsx'
 import { ALL_ROW_ID } from '../src/client/scope.ts'
 import { apply, inject } from '../src/client/index.ts'
 import { apply as nodeApply } from '../src/index.ts'
@@ -107,7 +107,7 @@ async function rows(contribution: CommandContribution): Promise<readonly SelectO
 /** Settle one ticked set through the contribution. */
 async function submit(contribution: CommandContribution, ticked: readonly SelectOption[]): Promise<void> {
   if (contribution.ui.kind !== 'popupMultiSelect') throw new Error('the picker is not a multi-choice one')
-  await contribution.ui.onSubmit(ticked, { sessionId: SID })
+  await contribution.ui.onApply(ticked, { sessionId: SID })
 }
 
 describe('what the plugin installs', () => {
@@ -125,7 +125,7 @@ describe('what the plugin installs', () => {
     expect(b.contribution()).toMatchObject({ name: 'knowledge', description: '选择本次对话可检索的知识库' })
     const seat = b.slots.entries('conversation.input.left')[0]!
     expect(seat).toMatchObject({ locale: 'knowledge', options: { id: 'knowledge', order: 100 } })
-    expect(seat.component).toBe(KnowledgeChip)
+    expect(seat.component).toBe(KnowledgeSelect)
     await b.fiber.dispose()
     expect(b.mounts()).toBe(0)
     expect(b.contribution()).toBeUndefined()
@@ -139,10 +139,9 @@ describe('what the plugin installs', () => {
 })
 
 describe('what a member reads and records', () => {
-  it('draws the authorized directory, whole-set row first, under one apply control', async () => {
+  it('draws the authorized directory, whole-set row first', async () => {
     const b = await bench()
     const contribution = b.contribution()!
-    expect(contribution.ui.kind === 'popupMultiSelect' && contribution.ui.submitLabel).toBe('应用')
     expect((await rows(contribution)).map(row => row.label)).toEqual(['全部已授权知识库', '临港知识库'])
   })
 
@@ -170,6 +169,34 @@ describe('what a member reads and records', () => {
     const contribution = b.contribution()!
     b.refuseNextChoice('that knowledge base is not available to this member')
     await expect(submit(contribution, [{ id: REF, label: '临港知识库' }]))
+      .rejects.toThrow('that knowledge base is not available to this member (bad-request)')
+  })
+})
+
+describe('what the composer control is given', () => {
+  /** The control's injected face for one Session. */
+  function face(b: Awaited<ReturnType<typeof bench>>): KnowledgeSelectInjected {
+    const seat = b.slots.entries('conversation.input.left')[0]!
+    return (seat.inject as unknown as (id: SessionId) => KnowledgeSelectInjected)(SID)
+  }
+
+  it('offers the same authorized directory the picker draws from', async () => {
+    const b = await bench()
+    expect((await face(b).choices()).map(choice => choice.displayName)).toEqual(['临港知识库'])
+  })
+
+  it('reads the choice in force at click time, so one click is one whole choice', async () => {
+    // The control clicks a row; what that means depends on what is chosen now,
+    // and the Control Plane's answer is the only copy of that both surfaces share.
+    const b = await bench()
+    await face(b).apply(REF)
+    expect(b.recorded).toEqual([{ sessionId: SID, mode: 'selected', knowledgeRefs: [REF] }])
+  })
+
+  it('carries a refusal to the control that asked', async () => {
+    const b = await bench()
+    b.refuseNextChoice('that knowledge base is not available to this member')
+    await expect(face(b).apply(REF))
       .rejects.toThrow('that knowledge base is not available to this member (bad-request)')
   })
 })

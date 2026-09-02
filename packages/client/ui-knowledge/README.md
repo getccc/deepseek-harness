@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This package is how a member chooses what a conversation may search: `/knowledge` lists the knowledge bases their roles authorize, they tick the ones this conversation should use, and one control applies the set. The choice is a Session event, so the composer chip, the model's prompt section, and a replay all read the same fact. Nothing is chosen by default — a new conversation searches no private knowledge until someone says otherwise — and a build without private knowledge does not mount this plugin at all.
+This package is how a member chooses what a conversation may search: the composer's knowledge control and the `/knowledge` command both list the knowledge bases their roles authorize, and each tick applies at once. The choice is a Session event, so the composer chip, the model's prompt section, and a replay all read the same fact. Nothing is chosen by default — a new conversation searches no private knowledge until someone says otherwise — and a build without private knowledge does not mount this plugin at all.
 
 ## Table of Contents
 
@@ -29,17 +29,17 @@ Mount this plugin in a Team composition, alongside `api-knowledge-controller` on
 
 ### Choosing knowledge
 
-Typing `/knowledge` opens a multi-choice picker. Ticking rows changes nothing on its own: the set applies when the member presses Apply (or ⌘/Ctrl+Enter), which records one choice for this conversation and nothing beyond it. Ticking nothing and applying turns private knowledge off, which is also where every conversation starts.
+There are two ways in, and they write the same thing. The composer's knowledge control opens a menu of the same rows; typing `/knowledge` opens the picker, which adds a search box for a long directory. Either way a tick applies immediately and the list stays open, so choosing three knowledge bases is three clicks and no confirmation. Unticking the last one turns private knowledge off, which is also where every conversation starts.
 
 The first row, **All authorized knowledge bases**, cannot be ticked beside individual ones: it means whatever the member's roles authorize at the moment of each search, including bases granted later, while a named selection means exactly those bases. The rest of the rows are the directory as the Control Plane answers it right now, so a revoked grant leaves the picker without rewriting what the conversation already recorded.
 
 ### When a chosen knowledge base goes away
 
-A selected knowledge base the directory no longer holds is still listed, unticked, and marked as no longer available. Applying the set drops it — an explicit act by the member, never a silent shrink. Until then the recorded choice stands and a search naming it fails rather than quietly returning less.
+A selected knowledge base the directory no longer holds is still listed in the `/knowledge` picker, unticked, and marked as no longer available. Unticking it drops it — an explicit act by the member, never a silent shrink. Until then the recorded choice stands and a search naming it fails rather than quietly returning less.
 
-### The composer chip
+### The composer control
 
-The chip reads the conversation's scope and says `Knowledge: off`, `Knowledge: all`, or the chosen names. It reports rather than acts: `/knowledge` is the one place the choice is made.
+The control reads the conversation's scope: it says `Knowledge` in the composer's own ink while nothing is chosen, and the chosen names in the business tint once something is. Clicking it opens the same choice the command does.
 
 -----
 
@@ -49,7 +49,7 @@ The chip reads the conversation's scope and says `Knowledge: off`, `Knowledge: a
 <details>
 <summary>Implementation internals — click to expand</summary>
 
-The plugin mounts the Team-only `knowledge` Remote namespace itself, rather than through the shared Client assembly, because only a Team Host serves it — a build without private knowledge would otherwise grow a namespace whose every call fails. The mount is an effect like every other contribution, and the two surfaces park on `remote.knowledge`, the service it provides, so neither exists before the namespace it calls and both are gone before it is. `src/client/scope.ts` owns the whole mapping between ticks and recorded scope: `optionsOf` draws the rows from `knowledge.scope`, and `choiceOf` reads a ticked set as `off`, `all`, or a named selection, which `knowledge.choose` records. The `/knowledge` command is a `popupMultiSelect` contribution on `ctx.commandUi`, whose exclusive first row is the shell mechanism behind the whole-set choice. The chip occupies the composer's `conversation.input.left` zone and reads the host-computed `knowledge` projection through the standard-kit `useProjection`; it holds no client-side copy of the choice. Failure lines stay English by the error-surface policy, and carry the Remote's own code.
+The plugin mounts the Team-only `knowledge` Remote namespace itself, rather than through the shared Client assembly, because only a Team Host serves it — a build without private knowledge would otherwise grow a namespace whose every call fails. The mount is an effect like every other contribution, and the two surfaces park on `remote.knowledge`, the service it provides, so neither exists before the namespace it calls and both are gone before it is. `src/client/scope.ts` owns the whole mapping between clicks and recorded scope: `optionsOf` draws the picker's rows from `knowledge.scope`, `choiceOf` reads a ticked set as `off`, `all`, or a named selection, and `toggleScope` does the same for one menu row against the choice in force. `knowledge.choose` records the result. The `/knowledge` command is a `popupMultiSelect` contribution on `ctx.commandUi`, whose exclusive first row is the shell mechanism behind the whole-set choice; the composer control occupies the `conversation.input.left` zone and reads the host-computed `knowledge` projection through the standard-kit `useProjection`, so neither surface holds a copy of the choice. A menu click reads the scope from the same directory answer it acts on rather than from a projection it may not have seen yet. Failure lines stay English by the error-surface policy, and carry the Remote's own code.
 
 </details>
 
@@ -75,7 +75,7 @@ Indirectly, through the `knowledge/scope` event the picker writes: `dsh-tool-kno
 
 #### KV Cache effect
 
-Applying a choice changes the `knowledge:scope` system-prompt section and whether the search tool is registered, so the next request's prefix differs from the last one and the provider prefix is invalidated from that section onward. Opening the picker and ticking rows costs nothing until Apply.
+Each applied tick changes the `knowledge:scope` system-prompt section and whether the search tool is registered, so the next request's prefix differs from the last one and the provider prefix is invalidated from that section onward. Opening either surface costs nothing until something is clicked.
 
 ## Known Limitations and Deferred Work
 
@@ -86,7 +86,7 @@ These limits define the current picker. They are current package constraints, no
 
 - **The choice lives in one conversation** — there is no remembered default across conversations, so every new conversation starts with private knowledge off.
 - **The picker takes no query** — `/knowledge` only chooses scope; searching is the model's through `knowledge_search`.
-- **The chip cannot open the picker** — it reports the scope; changing it goes through the command line.
+- **The menu has no search** — the composer control lists the directory as it comes; `/knowledge` is where a long directory is filtered.
 
 <a id="dev-note"></a>
 ### Dev Note

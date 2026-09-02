@@ -53,6 +53,9 @@ const MEASURE_STYLE: CSSProperties = { visibility: 'hidden', left: 0, top: 0 }
  * @param props.items - selectable rows and optional separators.
  * @param props.selectedId - row shown as selected.
  * @param props.selectedIds - rows shown as selected when a menu contains independent option groups.
+ * @param props.multiple - the rows toggle rather than choose one, so each is
+ * a checkbox that reports whether it is ticked. The list stays the owner's to
+ * close, since a member ticking two rows should not reopen it between them.
  * @param props.onSelect - row click callback (not called for disabled rows or submenu parents that only open children).
  * @param props.onClose - invoked on outside click or Escape.
  * @param props.align - list alignment against the anchor (default 'start').
@@ -77,13 +80,14 @@ const MEASURE_STYLE: CSSProperties = { visibility: 'hidden', left: 0, top: 0 }
  * by a hairline; they stay visible while the items above scroll.
  * @returns anchor wrapper with the conditional list.
  */
-export function Menu({ open, anchor, items, selectedId, selectedIds, onSelect, onClose, align = 'start', side = 'bottom', portal = false, closeOnPointerLeave = false, dense = false, compact = false, getAnchorRect, footer, className }: {
+export function Menu({ open, anchor, items, selectedId, selectedIds, multiple = false, onSelect, onClose, align = 'start', side = 'bottom', portal = false, closeOnPointerLeave = false, dense = false, compact = false, getAnchorRect, footer, className }: {
   open: boolean
   anchor: ReactNode
   items: readonly MenuEntry[]
   footer?: readonly MenuEntry[]
   selectedId?: string | undefined
   selectedIds?: readonly string[] | undefined
+  multiple?: boolean
   onSelect: (id: string) => void
   onClose: () => void
   align?: 'start' | 'end'
@@ -208,7 +212,8 @@ export function Menu({ open, anchor, items, selectedId, selectedIds, onSelect, o
       >
         <button
           type="button"
-          role="menuitem"
+          role={multiple ? 'menuitemcheckbox' : 'menuitem'}
+          aria-checked={multiple ? selected : undefined}
           className={clsx(css.item, selected && css.selected, entry.danger === true && css.danger)}
           disabled={entry.disabled}
           aria-haspopup={hasSub ? 'menu' : undefined}

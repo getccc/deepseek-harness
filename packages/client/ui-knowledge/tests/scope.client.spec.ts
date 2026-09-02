@@ -14,7 +14,7 @@ import type { KnowledgeRef, KnowledgeScope } from '@deepseek-ai/dsh-knowledge'
 import { makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
 import { zh as commonZh } from '@deepseek-ai/dsh-client-locale/src/locales/zh.ts'
 import { zh } from '../src/client/locales.ts'
-import { ALL_ROW_ID, chipLabel, choiceOf, optionsOf } from '../src/client/scope.ts'
+import { ALL_ROW_ID, chipLabel, choiceOf, chosenRows, optionsOf, toggleScope } from '../src/client/scope.ts'
 
 const REF_A = 'weknora:prod:690c0727' as KnowledgeRef
 const REF_B = 'weknora:prod:08f25606' as KnowledgeRef
@@ -92,8 +92,8 @@ describe('what a ticked set records', () => {
 
 /** The two scopes that name nothing, and the line each one reads as. */
 const NAMELESS: readonly (readonly [string, KnowledgeScope, string])[] = [
-  ['off', { version: 1, mode: 'off' }, '知识库：关闭'],
-  ['all', { version: 1, mode: 'all' }, '知识库：全部'],
+  ['off', { version: 1, mode: 'off' }, '知识库'],
+  ['all', { version: 1, mode: 'all' }, '全部已授权知识库'],
 ]
 
 describe('what the chip says', () => {
@@ -106,6 +106,34 @@ describe('what the chip says', () => {
       version: 1,
       mode: 'selected',
       bases: [{ ref: REF_A, displayName: '临港知识库' }, { ref: REF_B, displayName: '南昌知识库' }],
-    }, t)).toBe('知识库：临港知识库、南昌知识库')
+    }, t)).toBe('临港知识库、南昌知识库')
+  })
+})
+
+describe('what one click on a menu row changes', () => {
+  const chosen = (refs: readonly string[]): KnowledgeScope => (refs.length === 0
+    ? { version: 1, mode: 'off' }
+    : { version: 1, mode: 'selected', bases: refs.map(ref => ({ ref: ref as KnowledgeRef, displayName: ref })) })
+
+  it('turns the whole-set row on, and off again', () => {
+    expect(toggleScope({ version: 1, mode: 'off' }, ALL_ROW_ID)).toEqual({ mode: 'all', knowledgeRefs: [] })
+    expect(toggleScope({ version: 1, mode: 'all' }, ALL_ROW_ID)).toEqual({ mode: 'off', knowledgeRefs: [] })
+  })
+
+  it('adds and removes one knowledge base, and reads the last removal as off', () => {
+    expect(toggleScope(chosen([]), REF_A)).toEqual({ mode: 'selected', knowledgeRefs: [REF_A] })
+    expect(toggleScope(chosen([REF_A, REF_B]), REF_A)).toEqual({ mode: 'selected', knowledgeRefs: [REF_B] })
+    expect(toggleScope(chosen([REF_A]), REF_A)).toEqual({ mode: 'off', knowledgeRefs: [] })
+  })
+
+  it('reads a knowledge base clicked while everything is chosen as that one alone', () => {
+    // The two rows displace each other here exactly as they do in the picker.
+    expect(toggleScope({ version: 1, mode: 'all' }, REF_A)).toEqual({ mode: 'selected', knowledgeRefs: [REF_A] })
+  })
+
+  it('marks the rows one scope has chosen', () => {
+    expect(chosenRows({ version: 1, mode: 'off' })).toEqual([])
+    expect(chosenRows({ version: 1, mode: 'all' })).toEqual([ALL_ROW_ID])
+    expect(chosenRows(chosen([REF_A, REF_B]))).toEqual([REF_A, REF_B])
   })
 })

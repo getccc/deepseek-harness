@@ -26,11 +26,11 @@ import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
-import { KnowledgeChip } from './KnowledgeChip.tsx'
-import { choiceOf, optionsOf } from './scope.ts'
+import { KnowledgeSelect, type KnowledgeSelectInjected } from './KnowledgeSelect.tsx'
+import { choiceOf, optionsOf, toggleScope, type KnowledgeChoiceRequest } from './scope.ts'
 import { en, zh, type KnowledgeKey } from './locales.ts'
 
-export { ALL_ROW_ID, chipLabel, choiceOf, optionsOf } from './scope.ts'
+export { ALL_ROW_ID, chipLabel, choiceOf, chosenRows, optionsOf, toggleScope } from './scope.ts'
 export type { KnowledgeChoiceRequest } from './scope.ts'
 export type { KnowledgeKey } from './locales.ts'
 
@@ -78,28 +78,37 @@ function registerUi(ctx: ClientContext): void {
     return result.value
   }
 
+  /** Record one Session's choice, failing loud enough for a picker to show. */
+  const record = async (sessionId: SessionId, choice: KnowledgeChoiceRequest): Promise<void> => {
+    const result = await ctx.remote.knowledge.choose(sessionId, choice.mode, choice.knowledgeRefs)
+    if (!result.ok) throw new Error(`${result.error.message} (${result.error.code})`)
+  }
+
   ctx.effect(() => (ctx.get('commandUi') as CommandUiContract).register({
     name: NS,
     description: t('command.description'),
     available: () => true,
     ui: {
       kind: 'popupMultiSelect',
-      submitLabel: t('submit'),
       options: async session => optionsOf(await view(session.sessionId), t),
-      onSubmit: async (options, session) => {
-        const choice = choiceOf(options)
-        const result = await ctx.remote.knowledge.choose(session.sessionId, choice.mode, choice.knowledgeRefs)
-        if (!result.ok) throw new Error(`${result.error.message} (${result.error.code})`)
-      },
+      onApply: async (options, session) => { await record(session.sessionId, choiceOf(options)) },
     },
   }), 'ui-knowledge: /knowledge contribution')
 
   ctx.slots.inject('conversation.input.left', () => ctx.slots.register({
     name: 'conversation.input.left',
     id: NS,
-    // After the shipped composer controls: the chip reports a state rather
-    // than offering an action, so it reads last.
+    // After the shipped composer controls, which every conversation has;
+    // knowledge is the one a deployment adds.
     order: 100,
     locale: NS,
-  }, KnowledgeChip))
+    inject: (sessionId: SessionId): KnowledgeSelectInjected => ({
+      choices: async () => (await view(sessionId)).choices,
+      // Read the choice in force from the same directory read, so a click
+      // never rebuilds it from a projection this control has not seen yet.
+      apply: async (clicked) => {
+        await record(sessionId, toggleScope((await view(sessionId)).scope, clicked))
+      },
+    }),
+  }, KnowledgeSelect))
 }

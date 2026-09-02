@@ -92,10 +92,47 @@ export function choiceOf(options: readonly SelectOption[]): KnowledgeChoiceReque
 export function chipLabel(scope: KnowledgeScope, t: TranslateNS<'knowledge'>): string {
   switch (scope.mode) {
     case 'off':
-      return t('chip.off')
+      // The bare noun: a control that says "off" spends the composer's width
+      // on the state a conversation starts in and stays in unless asked.
+      return t('chip.label')
     case 'all':
       return t('chip.all')
     case 'selected':
-      return t('chip.selected', { names: scope.bases.map(base => base.displayName).join('、') })
+      return scope.bases.map(base => base.displayName).join('、')
+  }
+}
+
+/**
+ * The choice one click on a menu row makes, over the choice in force.
+ *
+ * The whole-set row and the individual ones displace each other, exactly as
+ * they do in the picker: a member who clicks a knowledge base while everything
+ * is chosen means that knowledge base, not everything plus it.
+ * @param scope - the Session's current scope.
+ * @param clicked - the row id that was clicked, `ALL_ROW_ID` or a reference.
+ * @returns the choice to record.
+ */
+export function toggleScope(scope: KnowledgeScope, clicked: string): KnowledgeChoiceRequest {
+  if (clicked === ALL_ROW_ID) {
+    return scope.mode === 'all' ? { mode: 'off', knowledgeRefs: [] } : { mode: 'all', knowledgeRefs: [] }
+  }
+  const chosen = scope.mode === 'selected' ? scope.bases.map(base => base.ref as string) : []
+  const refs = chosen.includes(clicked) ? chosen.filter(ref => ref !== clicked) : [...chosen, clicked]
+  return refs.length === 0 ? { mode: 'off', knowledgeRefs: [] } : { mode: 'selected', knowledgeRefs: refs }
+}
+
+/**
+ * The menu rows shown as chosen for one scope.
+ * @param scope - the Session's current scope.
+ * @returns the row ids to mark.
+ */
+export function chosenRows(scope: KnowledgeScope): readonly string[] {
+  switch (scope.mode) {
+    case 'off':
+      return []
+    case 'all':
+      return [ALL_ROW_ID]
+    case 'selected':
+      return scope.bases.map(base => base.ref as string)
   }
 }
