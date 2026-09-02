@@ -16,7 +16,9 @@ type Dialog = { readonly kind: 'toggle'; readonly base: WireKnowledgeBase }
  *
  * Written out rather than interpolated, because the console's copy keys are a
  * closed set: a health word this build does not have a sentence for should
- * read as unknown rather than render a missing key.
+ * read as unknown rather than render a missing key. `healthy` is here for the
+ * same reason, though the banner it belongs to only appears when the source is
+ * not healthy.
  * @param health - the health word the Control Plane reported.
  * @returns the key to read.
  */
@@ -141,10 +143,13 @@ export function KnowledgeBases({ held }: { readonly held: ReadonlySet<string> })
   return (
     <>
       <PageNote text={t('knowledge.description')} />
-      {source !== undefined && (
+      {/* Only when something is wrong with the source: a healthy one repeats
+          what every row's state already says, and takes the top of the page
+          to do it. */}
+      {source !== undefined && source.health !== 'healthy' && (
         <Alert
           style={{ marginBottom: 16 }}
-          type={source.health === 'failing' ? 'error' : source.health === 'never-synced' ? 'info' : 'success'}
+          type={source.health === 'failing' ? 'error' : 'info'}
           showIcon
           title={t('knowledge.sourceHealth', {
             source: source.sourceCode,
