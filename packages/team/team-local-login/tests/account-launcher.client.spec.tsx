@@ -6,6 +6,7 @@ import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import { usePinnedBrowserLanguages } from '@deepseek-ai/dsh-client-test-runtime'
 import { apply, inject, NS } from '../src/client/index.ts'
+import { HeroGreeting, type HeroGreetingProps } from '../src/client/HeroGreeting.tsx'
 import {
   accountInitial, TeamAccountLauncher,
   type TeamAccountLauncherInjected, type TeamAccountLauncherProps,
@@ -48,11 +49,14 @@ function provideSessions(ctx: Context): { clear: ReturnType<typeof vi.fn> } {
   return sessions
 }
 
-/** Declare the single launcher slot without mounting the complete sidebar shell. */
+/** Declare the two slots this plugin fills, without the shells that own them. */
 function declare(slots: SlotRegistry): () => void {
   return slots.register({
     name: 'root',
-    children: { 'settings.launcher': { kind: 'single', scope: 'root' } },
+    children: {
+      'settings.launcher': { kind: 'single', scope: 'root' },
+      'conversation.hero.headline': { kind: 'single', scope: 'root' },
+    },
   } as never, () => null)
 }
 
@@ -166,5 +170,59 @@ describe('landing after a sign-in', () => {
     const landed = await land('/app')
     expect(landed.sessions.clear).not.toHaveBeenCalled()
     await landed.ctx.fiber.dispose()
+  })
+})
+
+describe('the hero greeting', () => {
+  /** Render the greeting over one account read. */
+  function greet(loadAccount: HeroGreetingProps['loadAccount']) {
+    // The renderer-owned global seats are unused by this component.
+    const props = {
+      className: 'headline',
+      loadAccount,
+      signOut: vi.fn(),
+      t: (key: string, params?: Record<string, unknown>) => (key === 'hero.greeting'
+        ? `你好，${String(params?.['name'])}。今天有什么计划？`
+        : key),
+    } as unknown as HeroGreetingProps
+    return render(<HeroGreeting {...props} />)
+  }
+
+  it('greets the signed-in member by the name they are shown under', async () => {
+    const view = greet(vi.fn().mockResolvedValue({ loginName: 'test1', displayName: '测试一' }))
+    await waitFor(() => { expect(view.container.textContent).toBe('你好，测试一。今天有什么计划？') })
+  })
+
+  it('says nothing until the member is known, and nothing if they cannot be read', async () => {
+    // The first line on the page: a name that appears and then changes reads
+    // as the wrong member's.
+    let settle!: (identity: { loginName: string; displayName: string }) => void
+    const pending = greet(() => new Promise((resolve) => { settle = resolve }))
+    expect(pending.container.textContent).toBe('')
+    settle({ loginName: 'test1', displayName: '测试一' })
+    await waitFor(() => { expect(pending.container.textContent).toContain('测试一') })
+    cleanup()
+
+    const refused = greet(vi.fn().mockRejectedValue(new Error('unauthorized')))
+    await waitFor(() => { expect(refused.container.textContent).toBe('') })
+  })
+
+  it('fills the headline slot from the same account read as the launcher', async () => {
+    const ctx = new Context()
+    await ctx.plugin(SlotRegistry).await()
+    ctx.provide('locale', new LocaleRuntime(ctx))
+    const slots = ctx.get('slots') as SlotRegistry
+    declare(slots)
+    provideSessions(ctx)
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ loginName: 'test1', displayName: '测试一' }),
+    }))
+    await ctx.plugin({ inject: [...inject], apply }).await()
+    const entry = slots.entries('conversation.hero.headline')[0]!
+    expect(entry.component).toBe(HeroGreeting)
+    expect(entry.locale).toBe(NS)
+    await ctx.fiber.dispose()
+    expect(slots.entries('conversation.hero.headline')).toHaveLength(0)
   })
 })

@@ -1,5 +1,5 @@
 ---
-description: "面向侧栏与会话首屏的官方 DeepSeek Harness 品牌填充，仅在官方构建中生效；供选择或替换品牌呈现的用户与维护者阅读。"
+description: "面向侧栏的官方 DeepSeek Harness 品牌填充，仅在官方构建中生效；供选择或替换品牌呈现的用户与维护者阅读。"
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-本包向浏览器品牌槽位——`sidebar.brand.mark`、`sidebar.brand.name` 与 `conversation.hero.brand.mark`——填充官方 DeepSeek Harness 标志与名称。它只在客户端以 `official` profile 构建时注册这些填充；其余构建同样加载插件但不注册任何内容，因此外壳回退保持可见。当部署身份就是 DeepSeek 自身时选择它；自有品牌的部署改为在相同槽位中组合另一个包。它不保留任何运行时状态，也不向模型请求贡献任何内容。
+本包向浏览器品牌槽位——`sidebar.brand.mark` 与 `sidebar.brand.name`——填充官方 DeepSeek Harness 标志与名称。它只在客户端以 `official` profile 构建时注册这些填充；其余构建同样加载插件但不注册任何内容，因此外壳回退保持可见。当部署身份就是 DeepSeek 自身时选择它；自有品牌的部署改为在相同槽位中组合另一个包。它不保留任何运行时状态，也不向模型请求贡献任何内容。
 
 ## 目录
 
@@ -29,7 +29,7 @@ kind: "package-reference"
 
 ### 选择 profile
 
-`DSH_CLIENT_BUILD_PROFILE` 决定渲染哪个品牌。`official` 构建在侧栏显示官方标志与名称、在会话首屏显示标志；任何其他取值都让外壳回退——AMEC 标志与本地构建标签——保持原样。两种情况下插件都会照常加载并通过校验；只有注册受 profile 门控。
+`DSH_CLIENT_BUILD_PROFILE` 决定渲染哪个品牌。`official` 构建在侧栏显示官方标志与名称；任何其他取值都让外壳回退——AMEC 标志与本地构建标签——保持原样。两种情况下插件都会照常加载并通过校验；只有注册受 profile 门控。
 
 ### 替换品牌
 
@@ -55,7 +55,6 @@ kind: "package-reference"
 当品牌面不够用时阅读以下页面。它们从本包占据的槽位进入渲染这些槽位的外壳。
 
 - [ui-sidebar](../ui-sidebar/README.zh.md)——声明 `sidebar.brand.mark` 与 `sidebar.brand.name` 并渲染其回退。
-- [ui-conversation](../ui-conversation/README.zh.md)——在首屏声明 `conversation.hero.brand.mark`。
 - [Web 客户端架构](../../../.agents/notes/implemented/architecture/2026-07-19-gui-web-client-architecture.zh.md)——浏览器插件行如何加载并注册槽位。
 
 -----

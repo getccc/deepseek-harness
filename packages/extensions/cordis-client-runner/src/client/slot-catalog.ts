@@ -568,14 +568,14 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     source: 'packages/client/ui-conversation/src/client/contract/slots.ts:125',
   },
   {
-    key: 'conversation.hero.brand.mark',
+    key: 'conversation.hero.headline',
     kind: 'single',
     scope: 'root',
-    summary: 'Brand mark shown before the blank-session headline.',
-    doc: 'Brand mark shown before the blank-session headline.',
+    summary: 'The blank-session headline itself, so a composition that knows the member can greet them.',
+    doc: 'The blank-session headline itself, so a composition that knows the member can greet them.',
     registerOptions: [],
     ownerProps: [
-      '/** Presentation props supplied to the blank-session brand mark. */\nexport interface HeroBrandMarkOwnerProps {\n  /** Requested square edge in pixels. */\n  size: number\n  /** Host class preserving the surrounding mark geometry. */\n  className?: string | undefined\n}',
+      '/** Presentation props supplied to the blank-session headline. */\nexport interface HeroHeadlineOwnerProps {\n  /** Host class carrying the headline\'s own type and placement. */\n  className: string\n}',
     ],
     ownerPropsReferences: [],
     standardProps: [
@@ -589,10 +589,10 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     slotInject: '',
     declaredBy: 'an entry in \'conversation\' (client-ui-conversation), so it exists while that entry is mounted',
     occupants: [
-      'client-ui-brand-official OfficialBrandMark',
+      'team-local-login HeroGreeting',
     ],
     replaceRisk: 'shadows-shipped-ui',
-    example: 'return {\n  inject: [\'slots\'],\n  apply(ctx) {\n    ctx.slots.inject(\'conversation.hero.brand.mark\', () => ctx.slots.register(\n      { name: \'conversation.hero.brand.mark\' },\n      () => React.createElement(\'div\', null, \'hello\'),\n    ))\n  },\n}',
+    example: 'return {\n  inject: [\'slots\'],\n  apply(ctx) {\n    ctx.slots.inject(\'conversation.hero.headline\', () => ctx.slots.register(\n      { name: \'conversation.hero.headline\' },\n      () => React.createElement(\'div\', null, \'hello\'),\n    ))\n  },\n}',
     source: 'packages/client/ui-conversation/src/client/contract/slots.ts:123',
   },
   {

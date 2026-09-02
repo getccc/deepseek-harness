@@ -6,9 +6,12 @@ import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 // Type-only: pulls the settings.launcher slot declaration into this program.
 import type {} from '@deepseek-ai/dsh-client-ui-settings-general/client'
+// Type-only: pulls the conversation.hero.headline slot declaration into this program.
+import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 // Type-only: pulls ctx.sessions into the client Context.
 import type {} from '@deepseek-ai/dsh-api-session-controller/client'
 import { ACCOUNT_PATH, LOGOUT_PATH, SIGNED_IN_PARAM } from '../paths.ts'
+import { HeroGreeting } from './HeroGreeting.tsx'
 import {
   TeamAccountLauncher, type TeamAccountLauncherInjected, type TeamMemberIdentity,
 } from './TeamAccountLauncher.tsx'
@@ -67,12 +70,22 @@ function landOnEmptyConversation(ctx: ClientContext): void {
 export function apply(ctx: ClientContext): void {
   landOnEmptyConversation(ctx)
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'team-local-login: account dictionaries')
+  const operations = (): TeamAccountLauncherInjected => ({
+    loadAccount,
+    signOut: () => { window.location.assign(LOGOUT_PATH) },
+  })
+
   ctx.slots.inject('settings.launcher', () => ctx.slots.register({
     name: 'settings.launcher',
     locale: NS,
-    inject: (): TeamAccountLauncherInjected => ({
-      loadAccount,
-      signOut: () => { window.location.assign(LOGOUT_PATH) },
-    }),
+    inject: operations,
   }, TeamAccountLauncher))
+
+  // The blank-session headline greets whoever is signed in; a composition
+  // without an account keeps the shell's own line.
+  ctx.slots.inject('conversation.hero.headline', () => ctx.slots.register({
+    name: 'conversation.hero.headline',
+    locale: NS,
+    inject: operations,
+  }, HeroGreeting))
 }

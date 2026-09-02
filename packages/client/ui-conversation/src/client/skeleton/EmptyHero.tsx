@@ -4,7 +4,7 @@
 import { useId } from 'react'
 import type { ReactNode, RefObject } from 'react'
 import {
-  AmecLogo, IconChevronDownOutline14, IconFolderClose16, IconFolderOpen16,
+  IconChevronDownOutline14, IconFolderClose16, IconFolderOpen16,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import { workspaceTitleOf } from '@deepseek-ai/dsh-util-workspace-path'
 import type { ConversationSlotProps } from '../contract/slots.ts'
@@ -99,7 +99,7 @@ export function HeroGlow({ className }: { className?: string | undefined }) {
 export interface HeroShellProps {
   /** The owner's locale seat, passed down as a plain prop. */
   t: HeroTranslate
-  /** Authorized renderer for the hero brand-mark slot. */
+  /** Authorized renderer for the hero headline slot. */
   renderSlot: ConversationSlotProps['renderSlot']
   /** Overlay content after the stack (modals). */
   children?: ReactNode
@@ -116,13 +116,11 @@ export function HeroShell({ t, renderSlot, children }: HeroShellProps) {
     <div className={css.root}>
       <div className={css.stack}>
         <div className={css.headline}>
-          <span className={css.markHitbox}>
-            {renderSlot('conversation.hero.brand.mark', { size: 34, className: css.mark }, {
-              fallback: <AmecLogo size={34} className={css.mark} />,
-            })}
-          </span>
-          <span className={css.headlineText}>{t('hero.headline')}</span>
-          <span className={css.previewBadge}>{t('hero.preview')}</span>
+          {/* A composition that knows who is signed in greets them by name;
+              one that does not says the same thing to everyone. */}
+          {renderSlot('conversation.hero.headline', { className: css.headlineText ?? '' }, {
+            fallback: <span className={css.headlineText}>{t('hero.headline')}</span>,
+          })}
         </div>
         <div className={css.body}>
           {/* The composer remains mounted outside this component. */}

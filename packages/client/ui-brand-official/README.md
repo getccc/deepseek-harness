@@ -1,5 +1,5 @@
 ---
-description: "Official DeepSeek Harness brand occupants for the sidebar and conversation hero, active only in official builds; for users and maintainers choosing or replacing brand presentation."
+description: "Official DeepSeek Harness brand occupants for the sidebar, active only in official builds; for users and maintainers choosing or replacing brand presentation."
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This package fills the browser brand slots — `sidebar.brand.mark`, `sidebar.brand.name`, and `conversation.hero.brand.mark` — with the official DeepSeek Harness mark and name. It registers these occupants only when the client bundle builds with the `official` profile; every other build loads the plugin but registers nothing, so the shell fallbacks stay visible. Choose it when the deployed identity is DeepSeek's own; a deployment with its own brand composes a different package into the same slots instead. It retains no runtime state and contributes nothing to model requests.
+This package fills the browser brand slots — `sidebar.brand.mark` and `sidebar.brand.name` — with the official DeepSeek Harness mark and name. It registers these occupants only when the client bundle builds with the `official` profile; every other build loads the plugin but registers nothing, so the shell fallbacks stay visible. Choose it when the deployed identity is DeepSeek's own; a deployment with its own brand composes a different package into the same slots instead. It retains no runtime state and contributes nothing to model requests.
 
 ## Table of Contents
 
@@ -29,7 +29,7 @@ Mount this plugin in the browser roster of a deployment whose identity is DeepSe
 
 ### Choosing the profile
 
-`DSH_CLIENT_BUILD_PROFILE` selects which brand renders. An `official` build shows the official mark and name in the sidebar and the mark in the conversation hero; any other value leaves the shell fallbacks — the AMEC mark and the local-build label — in place. The plugin still loads and validates in both cases; only the registration is profile-gated.
+`DSH_CLIENT_BUILD_PROFILE` selects which brand renders. An `official` build shows the official mark and name in the sidebar; any other value leaves the shell fallbacks — the AMEC mark and the local-build label — in place. The plugin still loads and validates in both cases; only the registration is profile-gated.
 
 ### Replacing the brand
 
@@ -55,7 +55,6 @@ The three occupants install as one declaration-aware registration set: nested `c
 Read these pages when the brand surface is not enough. They move from the slots this package occupies to the shell that renders them.
 
 - [ui-sidebar](../ui-sidebar/README.md) — declares `sidebar.brand.mark` and `sidebar.brand.name` and renders their fallbacks.
-- [ui-conversation](../ui-conversation/README.md) — declares `conversation.hero.brand.mark` in the hero.
 - [Web client architecture](../../../.agents/notes/implemented/architecture/2026-07-19-gui-web-client-architecture.md) — how browser plugin rows load and register slots.
 
 -----

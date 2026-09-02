@@ -119,8 +119,8 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
     'conversation.composer': { kind: 'chain'; scope: 'session'; owner: ComposerChainProps }
     /** Workspace picker shown by the blank-session Hero. */
     'conversation.hero.workspace': { kind: 'single'; scope: 'root'; owner: EmptyWorkspaceOwnerProps }
-    /** Brand mark shown before the blank-session headline. */
-    'conversation.hero.brand.mark': { kind: 'single'; scope: 'root'; owner: HeroBrandMarkOwnerProps }
+    /** The blank-session headline itself, so a composition that knows the member can greet them. */
+    'conversation.hero.headline': { kind: 'single'; scope: 'root'; owner: HeroHeadlineOwnerProps }
     /** Agent-preset control staged for a New Session. */
     'conversation.hero.agentPreset': { kind: 'single'; scope: 'root'; owner: HeroAgentPresetOwnerProps }
     /** Full-width entries above the composer card. */
@@ -307,12 +307,10 @@ export interface ComposerChainProps {
   pendingInteraction: SessionPendingInteraction | undefined
 }
 
-/** Presentation props supplied to the blank-session brand mark. */
-export interface HeroBrandMarkOwnerProps {
-  /** Requested square edge in pixels. */
-  size: number
-  /** Host class preserving the surrounding mark geometry. */
-  className?: string | undefined
+/** Presentation props supplied to the blank-session headline. */
+export interface HeroHeadlineOwnerProps {
+  /** Host class carrying the headline's own type and placement. */
+  className: string
 }
 
 /** Full props of the resident optional-Session Conversation shell. */
@@ -324,7 +322,7 @@ export type ConversationSlotProps =
     | 'conversation.input.overlay'
     | 'conversation.input.dock' | 'conversation.composer.dock'
     | 'conversation.input.left' | 'conversation.input.right'
-    | 'conversation.hero.brand.mark'
+    | 'conversation.hero.headline'
     | 'conversation.hero.workspace'
     | 'conversation.hero.agentPreset'
   >
