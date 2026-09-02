@@ -470,17 +470,6 @@ export function apply(ctx: Context, config: Config): void {
     ] as const) {
       await ctx.accessControl.registerResource({ orgId: organizationId, type, externalRef, displayName })
     }
-    // Only when this Control Plane governs knowledge at all. Registering it
-    // unconditionally would put a resource in the catalog that no route can
-    // act on, and hand an administrator a menu entry leading nowhere.
-    if (ctx.get('knowledgeGateway') !== undefined) {
-      await ctx.accessControl.registerResource({
-        orgId: organizationId,
-        type: KNOWLEDGE_RESOURCE_TYPE,
-        externalRef: KNOWLEDGE_CATALOG_RESOURCE,
-        displayName: 'Knowledge catalog administration',
-      })
-    }
     // The navigation this build ships, for an organization that does not have
     // it yet. Seeding here rather than in the store keeps the store ignorant of
     // which organization a Control Plane serves, which is this plugin's config.
@@ -495,6 +484,26 @@ export function apply(ctx: Context, config: Config): void {
     }
     return () => {}
   }, 'team-admin-api: govern administrative resources')
+
+  // Only where this Control Plane governs knowledge at all: registering the
+  // resource unconditionally would put one in the catalog that no route can
+  // act on, and hand an administrator a menu entry leading nowhere.
+  //
+  // Through an injection rather than a read, because the gateway mounts on its
+  // own schedule: a one-time look that lost that race left the console holding
+  // catalog-wide grants over a resource that did not exist, and every
+  // knowledge control hidden with no way to grant it.
+  ctx.inject(['knowledgeGateway'], (knowledge: Context) => {
+    knowledge.effect(async () => {
+      await knowledge.accessControl.registerResource({
+        orgId: organizationId,
+        type: KNOWLEDGE_RESOURCE_TYPE,
+        externalRef: KNOWLEDGE_CATALOG_RESOURCE,
+        displayName: 'Knowledge catalog administration',
+      })
+      return () => {}
+    }, 'team-admin-api: govern the knowledge catalog')
+  })
 
   /** Record one administrative act, naming who performed it. */
   const record = (

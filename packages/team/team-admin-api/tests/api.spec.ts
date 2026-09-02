@@ -24,6 +24,7 @@ import SqliteModelGateway from '@deepseek-ai/dsh-model-gateway-sqlite'
 import SqliteQuota from '@deepseek-ai/dsh-quota-sqlite'
 import SqliteConsoleMenuStore from '@deepseek-ai/dsh-team-console-menu-sqlite'
 import SqliteKnowledgeGateway from '@deepseek-ai/dsh-knowledge-gateway-sqlite'
+import { KNOWLEDGE_CATALOG_RESOURCE } from '@deepseek-ai/dsh-knowledge-gateway'
 import {
   KnowledgeSource,
   type UpstreamKnowledgeBase,
@@ -66,6 +67,8 @@ let alice: UserId
 let adminRole: RoleId
 let apiFiber: ReturnType<Context['plugin']>
 let knowledgeHome: string
+/** The scripted upstream this assembly's gateway reads. */
+let source: ScriptedKnowledgeSource
 
 const PASSWORD = 'Correct-Horse-Battery-1'
 
@@ -83,8 +86,11 @@ class ScriptedKnowledgeSource extends KnowledgeSource {
     embeddingModelId: 'emb-shared', updatedAt: undefined,
   }]
 
+  /** What the next listing raises instead of answering, when a test sets one. */
+  failure: Error | undefined
+
   list(): Promise<readonly UpstreamKnowledgeBase[]> {
-    return Promise.resolve(this.listing)
+    return this.failure === undefined ? Promise.resolve(this.listing) : Promise.reject(this.failure)
   }
 
   search(): Promise<readonly UpstreamPassage[]> {
@@ -260,6 +266,7 @@ beforeEach(async () => {
   await ctx.plugin(SqliteModelGateway, { path: ':memory:' }).await()
   await ctx.plugin(SqliteConsoleMenuStore, { path: ':memory:' }).await()
   await ctx.plugin(ScriptedKnowledgeSource).await()
+  source = ctx.get('knowledgeSource') as ScriptedKnowledgeSource
   await ctx.plugin(SqliteKnowledgeGateway, { path: join(knowledgeHome, 'knowledge.sqlite') }).await()
 
   store = ctx.get('accountStore') as AccountStore
@@ -1775,6 +1782,7 @@ describe('administering the knowledge catalog', () => {
       remotePresent: boolean
       effectiveEnabled: boolean
       embeddingModelId: string
+      upstreamUpdatedAt?: number
     }[]
   }
 
@@ -1785,6 +1793,23 @@ describe('administering the knowledge catalog', () => {
     const view = payload(answer) as WireCatalog
     expect(view.knowledgeBases).toEqual([])
     expect(view.source.health).toBe('never-synced')
+  })
+
+  it('reports when a knowledge base last changed upstream, and why the last sync failed', async () => {
+    // Both are what the console's health banner and rows are made of: an
+    // administrator reading "failing" needs the reason, and a row that never
+    // says when it last changed cannot be told from one that never changes.
+    const held = await signIn()
+    source.listing = [{ ...source.listing[0]!, updatedAt: 1_756_745_979_714 }]
+    await write('POST', '/team/api/knowledge-bases/sync', held, {})
+    source.failure = new Error('the knowledge host is unreachable')
+    const failed = await write('POST', '/team/api/knowledge-bases/sync', held, {})
+    source.failure = undefined
+    const view = payload(failed) as WireCatalog
+    expect(view.source).toMatchObject({ health: 'failing' })
+    expect(view.source.lastFailure).toBeTypeOf('string')
+    // The catalog it already holds survives a failed listing, timestamps and all.
+    expect(view.knowledgeBases[0]?.upstreamUpdatedAt).toBe(1_756_745_979_714)
   })
 
   it('synchronizes, and shows what the catalog now governs', async () => {
@@ -1918,6 +1943,70 @@ describe('administering the knowledge catalog', () => {
         'knowledge_scope|knowledge.catalog.read',
         'knowledge_scope|knowledge.catalog.manage',
       ]))
+  })
+})
+
+describe('a Control Plane whose knowledge arrives late', () => {
+  it('governs the catalog whenever the gateway mounts, not only when it beat the console', async () => {
+    // The gateway mounts on its own schedule — it waits on a credential and an
+    // upstream source — so the console cannot assume it is already there. A
+    // one-time look that lost that race left an administrator holding
+    // catalog-wide grants over a resource that did not exist: every knowledge
+    // control refused, and no grant that could fix it.
+    const late = new Context()
+    await late.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
+    await late.plugin(SqliteAccountStore, { path: ':memory:' }).await()
+    await late.plugin(PasswordAccountAuth, {
+      minSecretLength: 8, requiredClasses: ['uppercase', 'lowercase', 'digit'],
+      maxFailedAttempts: 5, lockDurationMs: 60_000, cost: 2, blockSize: 8, parallelization: 1,
+    }).await()
+    await late.plugin(SqliteAccessControl, { path: ':memory:' }).await()
+    await late.plugin(SqliteAudit, { path: ':memory:', maxQueryRows: 100 }).await()
+    await late.plugin(SqliteDeviceAuthorization, {
+      path: ':memory:', transactionTtlMs: 300_000, codeTtlMs: 60_000,
+      accessTokenTtlMs: 900_000, refreshTokenTtlMs: 2_592_000_000,
+    }).await()
+    await late.plugin(SqliteQuota, { path: ':memory:', reservationTtlMs: 900_000 }).await()
+    await late.plugin(SqliteModelGateway, { path: ':memory:' }).await()
+    await late.plugin(SqliteConsoleMenuStore, { path: ':memory:' }).await()
+
+    const lateStore = late.get('accountStore') as AccountStore
+    const lateAccess = late.get('accessControl') as AccessControl
+    const lateOrg = (await lateStore.createOrganization('Late')).id
+    const frank = (await lateStore.createUser({
+      orgId: lateOrg, loginName: 'frank', displayName: 'Frank',
+    })).id
+    await late.accountAuth.setSecret(frank, PASSWORD)
+    await late.plugin(api, api.Config({ organizationId: lateOrg, secureCookie: false } as never)).await()
+    const role = (await lateAccess.createRole({ orgId: lateOrg, name: 'admin' })).id
+    for (const [type, action] of ADMIN_PERMISSIONS) await lateAccess.grantType(role, type, action)
+    await lateAccess.bindUserRole(frank, role)
+    expect(await lateAccess.listResources(lateOrg, 'knowledge_scope')).toEqual([])
+
+    await late.plugin({
+      name: 'late-knowledge-gateway',
+      apply: (ctx: Context) => {
+        ctx.provide('knowledgeGateway', {
+          catalogView: () => Promise.resolve({ source: {}, entries: [] }),
+        })
+      },
+    }).await()
+    // Cordis unparks the console's injection on the next tick.
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect((await lateAccess.listResources(lateOrg, 'knowledge_scope'))
+      .map(resource => resource.externalRef)).toEqual([KNOWLEDGE_CATALOG_RESOURCE])
+
+    // What the administrator sees: the console reports the permission its menu
+    // entry is guarded by, so the entry is there to click.
+    const lateOrigin = `http://127.0.0.1:${String(late.webServer.port)}`
+    const landed = await sendTo(lateOrigin, '/team/api/session', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', origin: lateOrigin },
+      body: JSON.stringify({ loginName: 'frank', secret: PASSWORD }),
+    })
+    expect((payload(landed) as WireSession).permissions).toContain('knowledge_scope|knowledge.catalog.read')
+    await late.fiber.dispose()
   })
 })
 
