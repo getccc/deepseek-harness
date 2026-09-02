@@ -23,6 +23,9 @@ import {
 } from '../ui.tsx'
 import { menuLabel } from '../menus.ts'
 
+/** The tree row every model hangs under. */
+const MODEL_ROOT_KEY = 'model-resources'
+
 /**
  * The tree row standing for whole-catalog access.
  *
@@ -175,6 +178,9 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
     setChosen((models.data ?? [])
       .filter(model => allModels || discovered.has(model.resourceId))
       .map(model => model.resourceId))
+    // Expansion is stated rather than defaulted: `defaultExpandAll` reads the
+    // tree at mount, and this one is built when the dialog opens.
+    setOpened([MODEL_ROOT_KEY])
     setDialog({ kind: 'models', role })
   }
 
@@ -197,6 +203,7 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
     // Only the leaves: the tree derives the whole-catalog row's own state from
     // its children, and `chosen` stays a list of knowledge bases throughout.
     setChosen(all ? (knowledge.data?.knowledgeBases ?? []).map(base => base.resourceId) : exact)
+    setOpened([KNOWLEDGE_ALL_KEY])
     setDialog({ kind: 'knowledge', role })
   }
 
@@ -492,7 +499,8 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
         <Tree
           checkable
           selectable={false}
-          defaultExpandAll
+          expandedKeys={[...opened]}
+          onExpand={(keys) => { setOpened(keys as string[]) }}
           checkedKeys={[...chosen]}
           onCheck={(keys) => {
             const checked = Array.isArray(keys) ? keys : keys.checked
@@ -529,14 +537,15 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
         <Tree
           checkable
           selectable={false}
-          defaultExpandAll
+          expandedKeys={[...opened]}
+          onExpand={(keys) => { setOpened(keys as string[]) }}
           checkedKeys={[...chosen]}
           onCheck={(keys) => {
             const checked = Array.isArray(keys) ? keys : keys.checked
-            setChosen((checked as string[]).filter(key => key !== 'model-resources'))
+            setChosen((checked as string[]).filter(key => key !== MODEL_ROOT_KEY))
           }}
           treeData={[{
-            key: 'model-resources',
+            key: MODEL_ROOT_KEY,
             title: t('roles.modelResource'),
             children: (models.data ?? []).map(model => ({
               key: model.resourceId,
