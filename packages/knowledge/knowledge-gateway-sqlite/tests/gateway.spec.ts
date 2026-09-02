@@ -33,6 +33,7 @@ import SqliteKnowledgeGateway, {
   KNOWLEDGE_GATEWAY_SQLITE_APPLICATION_ID,
   SCHEMA_VERSION,
 } from '@deepseek-ai/dsh-knowledge-gateway-sqlite'
+import { applySchema } from '@deepseek-ai/dsh-knowledge-gateway-sqlite/src/schema.ts'
 
 const A = '690c0727-1af5-4b7a-8465-ebd2845f2266'
 const B = '08f25606-8876-49cc-b509-70e84828db08'
@@ -552,25 +553,27 @@ describe('when the two stores disagree', () => {
     expect(view.source).toMatchObject({ health: 'failing', lastFailure: 'upstream-invalid' })
   })
 
-  it('refuses a database a newer build wrote', async () => {
-    const newer = join(home, 'newer.sqlite')
-    const db = new DatabaseSync(newer)
-    db.exec(`PRAGMA application_id = ${KNOWLEDGE_GATEWAY_SQLITE_APPLICATION_ID}`)
-    db.exec(`PRAGMA user_version = ${SCHEMA_VERSION + 1}`)
-    db.close()
-    const other = await dependencies(home)
-    await expect(other.plugin(SqliteKnowledgeGateway, { path: newer }).await())
-      .rejects.toThrow(/is newer than this build/u)
+  it('refuses a database a newer build wrote', () => {
+    // A downgrade cannot know what a column it has never seen means, so it
+    // refuses the file rather than writing rows the newer build will misread.
+    const db = new DatabaseSync(join(home, 'newer.sqlite'))
+    try {
+      db.exec(`PRAGMA application_id = ${KNOWLEDGE_GATEWAY_SQLITE_APPLICATION_ID}`)
+      db.exec(`PRAGMA user_version = ${SCHEMA_VERSION + 1}`)
+      expect(() => { applySchema(db) }).toThrow(/is newer than this build/u)
+    } finally {
+      db.close()
+    }
   })
 
-  it('refuses a database another application wrote', async () => {
-    const foreign = join(home, 'foreign.sqlite')
-    const db = new DatabaseSync(foreign)
-    db.exec('PRAGMA application_id = 12345')
-    db.close()
-    const other = await dependencies(home)
-    await expect(other.plugin(SqliteKnowledgeGateway, { path: foreign }).await())
-      .rejects.toThrow(/belongs to another application/u)
+  it('refuses a database another application wrote', () => {
+    const db = new DatabaseSync(join(home, 'foreign.sqlite'))
+    try {
+      db.exec('PRAGMA application_id = 12345')
+      expect(() => { applySchema(db) }).toThrow(/belongs to another application/u)
+    } finally {
+      db.close()
+    }
   })
 })
 
