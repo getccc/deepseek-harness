@@ -56,6 +56,13 @@ export interface SessionSummary {
    * selected blank entry.
    */
   blank: boolean
+  /**
+   * Nothing-recorded bit (host summary derivation mirror). New Session reuses
+   * a pristine one rather than a merely blank one: a conversation someone
+   * already chose a model or knowledge in is one they set up. Absent means
+   * not pristine.
+   */
+  pristine?: boolean
   updatedAt: number
   /** Current host-computed projection values retained by the object layer. */
   projectionValues?: Readonly<Partial<SessionProjectionMap>>
@@ -588,6 +595,7 @@ export class ClientSessions implements ISessions {
         running: entry.running,
         ...(entry.completed ? { completed: true } : {}),
         blank: entry.blank,
+        ...(entry.pristine === true ? { pristine: true } : {}),
         updatedAt: entry.updatedAt,
         ...(entry.projectionValues === undefined
           ? {}

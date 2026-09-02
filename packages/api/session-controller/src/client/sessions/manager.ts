@@ -567,7 +567,8 @@ export class SessionManager {
       const result = toSessionResult(await this.remote.session.create(payload))
       if (result.ok) {
         this.recordMutation({ kind: 'upsert', summary: {
-          sessionId: result.value.sessionId, updatedAt: Date.now(), running: false, blank: true,
+          sessionId: result.value.sessionId, updatedAt: Date.now(), running: false,
+          blank: true, pristine: true,
           ...(opts.cwd !== undefined ? { cwd: opts.cwd } : {}),
         } })
       } else {
@@ -581,6 +582,7 @@ export class SessionManager {
             updatedAt: Date.now(),
             running: false,
             blank: true,
+            pristine: true,
           } })
         }
       }
@@ -613,7 +615,8 @@ export class SessionManager {
         : workspaceAttachSessionId(result.error)
       if (childId !== undefined) {
         this.recordMutation({ kind: 'upsert', summary: {
-          sessionId: childId, updatedAt: Date.now(), running: false, blank: false,
+          sessionId: childId, updatedAt: Date.now(), running: false,
+          blank: false, pristine: false,
           parentSessionId: opts.sessionId,
           ...(source?.cwd !== undefined ? { cwd: source.cwd } : {}),
         } })
@@ -975,8 +978,10 @@ function applyMutation(summaries: readonly SessionSummary[], mutation: SessionLi
       const filled: SessionSummary = {
         ...existing,
         // Blank only lowers: a stale true (session-added racing the local
-        // first send) never re-hides an already-surfaced session.
+        // first send) never re-hides an already-surfaced session. Pristine
+        // follows it down for the same reason.
         blank: existing.blank && mutation.summary.blank,
+        pristine: existing.pristine === true && mutation.summary.pristine === true,
         ...(existing.cwd === undefined && mutation.summary.cwd !== undefined ? { cwd: mutation.summary.cwd } : {}),
         ...(existing.parentSessionId === undefined && mutation.summary.parentSessionId !== undefined
           ? { parentSessionId: mutation.summary.parentSessionId } : {}),
@@ -985,6 +990,7 @@ function applyMutation(summaries: readonly SessionSummary[], mutation: SessionLi
       }
       if (filled.cwd === existing.cwd && filled.parentSessionId === existing.parentSessionId
         && filled.origin === existing.origin && filled.blank === existing.blank
+        && filled.pristine === existing.pristine
       ) return [...summaries]
       return summaries.map(summary => summary.sessionId === mutation.summary.sessionId ? filled : summary)
     }
@@ -995,7 +1001,12 @@ function applyMutation(summaries: readonly SessionSummary[], mutation: SessionLi
       // never runs, so the first running frame proves a message landed).
       return summaries.map(summary => summary.sessionId === mutation.sessionId
         && (summary.running !== mutation.running || (mutation.running && summary.blank))
-        ? { ...summary, running: mutation.running, blank: summary.blank && !mutation.running }
+        ? {
+          ...summary,
+          running: mutation.running,
+          blank: summary.blank && !mutation.running,
+          pristine: summary.pristine === true && !mutation.running,
+        }
         : summary)
     case 'activity':
       return summaries.map(summary => summary.sessionId === mutation.sessionId
@@ -1004,7 +1015,7 @@ function applyMutation(summaries: readonly SessionSummary[], mutation: SessionLi
         : summary)
     case 'engaged':
       return summaries.map(summary => summary.sessionId === mutation.sessionId && summary.blank
-        ? { ...summary, blank: false }
+        ? { ...summary, blank: false, pristine: false }
         : summary)
   }
 }

@@ -21,6 +21,8 @@ export interface SessionListEntry {
   running: boolean
   /** Empty-log bit mirrored from the summary; lists hide blank sessions (filtering stays with the consumer). */
   blank: boolean
+  /** Nothing-recorded bit mirrored from the summary; New Session reuses one of these. Absent means not pristine. */
+  pristine?: boolean
   parentSessionId?: SessionId
   /** Coarse durable origin for navigation filtering; not a continuation capability. */
   origin?: 'subagent'

@@ -45,6 +45,8 @@ declare module '@deepseek-ai/dsh-session/types' {
 export interface SessionListMetadata {
   /** Whether the folded prefix contains no turn. */
   readonly blank: boolean
+  /** Whether the folded prefix contains nothing at all. */
+  readonly pristine: boolean
   /** Latest human-authored prompt time in the folded prefix. */
   readonly lastPromptAt: number | null
 }
@@ -166,6 +168,21 @@ export interface SessionSummary {
   readonly updatedAt: number
   readonly running: boolean
   readonly blank: boolean
+  /**
+   * Whether this conversation holds nothing at all — nobody has spoken in it
+   * and nobody has set it up.
+   *
+   * Narrower than `blank`, which only says no turn has started: a conversation
+   * where someone chose a model or the knowledge to search is blank and not
+   * pristine. A surface offering "a new conversation" reuses a pristine one
+   * and leaves a set-up one alone, because handing back someone else's
+   * settings is not a new conversation.
+   *
+   * The Host states it on every summary it builds; a reader treats an absent
+   * value as "not pristine", which costs a reusable conversation rather than
+   * handing one back that somebody had already set up.
+   */
+  readonly pristine?: boolean
   readonly parentSessionId?: SessionId
   readonly origin?: 'subagent'
   readonly cwd?: string

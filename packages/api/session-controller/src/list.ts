@@ -29,6 +29,7 @@ const MESSAGE_TYPES = new Set(['user/message', 'assistant/message'])
 
 const sessionListMetadataSchema: z.ZodType<SessionListMetadata> = z.object({
   blank: z.boolean(),
+  pristine: z.boolean(),
   lastPromptAt: z.number().nullable(),
 })
 
@@ -55,9 +56,10 @@ export function applySessionListMetadata(
   const lastPromptAt = event.type === 'user/message' && event.data.source.kind === 'user'
     ? event.time
     : state.lastPromptAt
-  return blank === state.blank && lastPromptAt === state.lastPromptAt
+  // Any event at all ends pristine: whatever it recorded, someone put it there.
+  return blank === state.blank && lastPromptAt === state.lastPromptAt && !state.pristine
     ? state
-    : { blank, lastPromptAt }
+    : { blank, pristine: false, lastPromptAt }
 }
 
 /**
@@ -91,10 +93,12 @@ export class ApiSessionList {
       projectionCtx.sessionProjections.register<'sessionListMetadata', SessionListMetadata>({
         key: 'sessionListMetadata',
         stateSchema: sessionListMetadataSchema,
-        init: () => ({ blank: true, lastPromptAt: null }),
+        init: () => ({ blank: true, pristine: true, lastPromptAt: null }),
         apply: applySessionListMetadata,
         wire: { viewSchema: sessionListMetadataSchema, view: state => state },
-        stateVersion: 1,
+        // 2: `pristine` joined the state, so a cache written by a build that
+        // did not know it cannot answer whether a conversation is untouched.
+        stateVersion: 2,
       })
     })
     ctx.inject(['sessionProjections', 'attachments'], (projectionCtx) => {
@@ -125,6 +129,7 @@ export class ApiSessionList {
       updatedAt: updatedAt(session.header, metadata),
       running: this.ctx.agents.get(session.id)?.status === 'running',
       blank: metadata?.blank ?? session.seq === 0,
+      pristine: metadata?.pristine ?? session.seq === 0,
       ...listFields(session.header),
       ...(projections === undefined ? {} : { projections }),
     }
@@ -179,6 +184,7 @@ export class ApiSessionList {
       running: false,
       // A large or inaccessible cache miss remains unknown and visible.
       blank: metadata?.blank ?? false,
+      pristine: metadata?.pristine ?? false,
       ...listFields(header),
       ...(projections === undefined ? {} : { projections }),
     }

@@ -1,10 +1,12 @@
 /**
- * The summary blank bit means "conversation not started" (no turn has run),
- * not "log empty": standalone plugin events — command lifecycle records,
- * plan/mode, permission knob events, session titles — never flip it, so running /plan or /goal on a
- * fresh session keeps it list-hidden and reusable, while the first accepted
- * prompt's turn/start clears it. The host/session-added frame shares the
- * same predicate function (covered by the workspace spec's frame assertion).
+ * Two bits, two questions. `blank` means "conversation not started" (no turn
+ * has run), so standalone plugin events — command lifecycle records,
+ * plan/mode, permission knob events, session titles — never flip it and a
+ * fresh session running /plan stays list-hidden until the first accepted
+ * prompt's turn/start. `pristine` means "log empty", which those same events
+ * do end: a conversation someone set up is not the one New Session hands
+ * back. The host/session-added frame shares the blank predicate function
+ * (covered by the workspace spec's frame assertion).
  */
 
 import { describe, expect, it } from 'vitest'
@@ -53,6 +55,12 @@ async function listBlank(remote: TestSessionRemote, id: string): Promise<boolean
   return result.value.items.find(item => item.sessionId === id)?.blank
 }
 
+async function listPristine(remote: TestSessionRemote, id: string): Promise<boolean | undefined> {
+  const result = await remote.list({})
+  if (!result.ok) throw new Error('list failed')
+  return result.value.items.find(item => item.sessionId === id)?.pristine
+}
+
 describe('summary blank = conversation not started', () => {
   it('standalone events (command lifecycle, plan/mode, title) keep the session blank', async () => {
     const { ctx, remote, attach } = await harness()
@@ -60,6 +68,17 @@ describe('summary blank = conversation not started', () => {
     attach(session)
     expect(await listBlank(remote, session.id)).toBe(true)
     appendStandalone(session)
+    expect(await listBlank(remote, session.id)).toBe(true)
+  })
+
+  it('those same events end pristine, so New Session does not hand the setup back', async () => {
+    const { ctx, remote, attach } = await harness()
+    const session = ctx.sessions.create()
+    attach(session)
+    expect(await listPristine(remote, session.id)).toBe(true)
+    appendStandalone(session)
+    expect(await listPristine(remote, session.id)).toBe(false)
+    // Still blank: the conversation has not started, it has only been set up.
     expect(await listBlank(remote, session.id)).toBe(true)
   })
 

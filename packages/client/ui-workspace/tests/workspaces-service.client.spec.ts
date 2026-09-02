@@ -206,15 +206,15 @@ async function flush(): Promise<void> {
 }
 
 describe('UiWorkspaceService', () => {
-  it('reuses only an unarchived member blank and coalesces concurrent creation', async () => {
+  it('reuses only an unarchived pristine member and coalesces concurrent creation', async () => {
     const b = bench()
     const memberBlank = sid('member-blank')
     const archivedBlank = sid('archived-blank')
     const summaries: readonly SessionSummary[] = [
-      summary('stray', { blank: true, cwd: '/w/alpha' }),
-      summary('member-blank', { blank: true, cwd: '/w/alpha' }),
+      summary('stray', { blank: true, pristine: true, cwd: '/w/alpha' }),
+      summary('member-blank', { blank: true, pristine: true, cwd: '/w/alpha' }),
       summary('active', { cwd: '/w/beta' }),
-      summary('archived-blank', { blank: true, cwd: '/w/gamma' }),
+      summary('archived-blank', { blank: true, pristine: true, cwd: '/w/gamma' }),
     ]
     b.workspaces.list.set(workspaceState([
       workspace('alpha', [memberBlank]),
@@ -245,6 +245,20 @@ describe('UiWorkspaceService', () => {
     expect(b.sessions.create).toHaveBeenLastCalledWith({ workspaceId: wid('gamma') })
     await expect(b.uiWorkspace.connectWorkspace(wid('ghost')))
       .rejects.toThrow('uiWorkspace.connectWorkspace: unknown workspace ghost')
+  })
+
+  it('leaves a conversation somebody already set up alone, blank or not', async () => {
+    // A conversation where a member chose a model, or the knowledge to search,
+    // is one they set up: handing it back — to them or to whoever signs in
+    // next — would not be the new conversation they asked for.
+    const b = bench()
+    const configured = sid('configured')
+    const summaries: readonly SessionSummary[] = [summary('configured', { blank: true, cwd: '/w/alpha' })]
+    b.workspaces.list.set(workspaceState([workspace('alpha', [configured])]))
+    b.sessions.list.set(sessionState(summaries, configured))
+    b.sessions.create.mockImplementation(async options => sid(`fresh-${String(options?.workspaceId)}`))
+
+    await expect(b.uiWorkspace.connectWorkspace(wid('alpha'))).resolves.toBe(sid('fresh-alpha'))
   })
 
   it('targets an explicit, current-session, then recent Workspace and reports failed starts', async () => {

@@ -101,7 +101,10 @@ class UiWorkspaceService extends Service implements UiWorkspace {
     const sessions = this.sessions.list.getSnapshot()
     for (const id of sessions.ids) {
       const summary = sessions.byId[id]
-      if (summary !== undefined && summary.blank && summary.cwd === workspace.path
+      // Pristine, not merely blank: a conversation where someone already chose
+      // a model or the knowledge to search is one they set up, and handing it
+      // back — to them or to whoever signs in next — is not a new conversation.
+      if (summary !== undefined && summary.pristine === true && summary.cwd === workspace.path
         && workspace.sessionIds.includes(summary.id)
         && !archived.includes(summary.id)) return summary.id
     }
