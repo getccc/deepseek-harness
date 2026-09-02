@@ -237,9 +237,6 @@ export const api = {
     id: string,
     input: { name?: string; code?: string; description?: string; coversCatalog?: boolean },
   ): Promise<WireRole[]> => call('PATCH', `/roles/${encodeURIComponent(id)}`, input),
-  /** Make one role's type grants exactly these `resourceType|action` pairs. */
-  setRolePermissions: (id: string, permissions: readonly string[]): Promise<WireRole[]> =>
-    call('POST', `/roles/${encodeURIComponent(id)}/permissions`, { permissions }),
   /** Make one role's knowledge grants exactly what this mode describes. */
   setRoleKnowledge: (id: string, access: WireKnowledgeAccess): Promise<WireRole[]> =>
     call('POST', `/roles/${encodeURIComponent(id)}/knowledge-bases`, access),

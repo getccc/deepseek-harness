@@ -188,9 +188,6 @@ export const zh = {
   'roles.coversCatalog': '拥有全部权限',
   'roles.coversCatalogHint': '勾选后，这个角色持有本构建治理的每一项权限；以后版本新增的权限也会在启动时自动补齐。',
   'roles.dataScopeCatalog': '全部权限',
-  'roles.permissions': '权限设置',
-  'roles.permissionsTitle': '{name} 的权限',
-  'roles.permissionsHint': '勾选即授予，取消勾选即撤销。针对单个资源的授权不在这里，也不会被改动。',
   'roles.modelAccess': '模型权限',
   'roles.modelAccessTitle': '{name} 的模型权限',
   'roles.modelAccessHint': '勾选后，角色成员的本地 Runner 会展示并允许调用这些模型。',
@@ -299,11 +296,8 @@ export const zh = {
   'knowledge.failure.upstream-unavailable': '数据源没有应答',
   'knowledge.failure.upstream-invalid': '数据源的应答无法读取',
   'knowledge.access.title': '知识库权限',
-  'knowledge.access.hint': '选择该角色可以检索哪些知识库。多个角色取并集；这里只授予检索，不授予下载或管理。',
-  'knowledge.access.none': '无',
+  'knowledge.access.hint': '勾选该角色可以检索哪些知识库；勾选顶层一行即授予全部已启用知识库，含之后新增的。多个角色取并集；这里只授予检索，不授予下载或管理。',
   'knowledge.access.all': '全部已启用知识库',
-  'knowledge.access.selected': '选定知识库',
-  'knowledge.access.pick': '选择知识库',
   'knowledge.access.missing': '数据源已不再列出，无法新选',
 
   'status.active': '在用',
@@ -539,10 +533,6 @@ export const en: Record<keyof typeof zh, string> = {
   'roles.coversCatalogHint':
     'Checked, this role holds every permission this build governs, and gains the ones a later build adds as the Control Plane starts.',
   'roles.dataScopeCatalog': 'Every permission',
-  'roles.permissions': 'Permissions',
-  'roles.permissionsTitle': 'Permissions for {name}',
-  'roles.permissionsHint':
-    'Checking grants; clearing revokes. Grants over one named resource are not shown here and are left as they are.',
   'roles.modelAccess': 'Model access',
   'roles.modelAccessTitle': 'Model access for {name}',
   'roles.modelAccessHint':
@@ -660,11 +650,8 @@ export const en: Record<keyof typeof zh, string> = {
   'knowledge.failure.upstream-unavailable': 'the source did not answer',
   'knowledge.failure.upstream-invalid': 'the source answered something unreadable',
   'knowledge.access.title': 'Knowledge access',
-  'knowledge.access.hint': 'Choose which knowledge bases this role may search. Several roles union; this grants search alone, not download or administration.',
-  'knowledge.access.none': 'None',
+  'knowledge.access.hint': 'Tick the knowledge bases this role may search; ticking the top row grants every enabled knowledge base, including ones added later. Several roles union; this grants search alone, not download or administration.',
   'knowledge.access.all': 'All enabled knowledge bases',
-  'knowledge.access.selected': 'Selected knowledge bases',
-  'knowledge.access.pick': 'Choose knowledge bases',
   'knowledge.access.missing': 'no longer listed by the source, so it cannot be newly chosen',
 
   'status.active': 'active',

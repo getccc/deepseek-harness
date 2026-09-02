@@ -4,16 +4,16 @@
  */
 
 import { useMemo, useState, type ReactNode } from 'react'
-import { Button, Form, Input, Radio, Space, Switch, Table, Tag, Tree, Typography } from 'antd'
+import { Button, Form, Input, Space, Switch, Table, Tag, Tree, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import type { TreeDataNode } from 'antd'
 import {
   api,
   type WireGrant,
+  type WireKnowledgeAccess,
   type WireKnowledgeCatalog,
   type WireMenu,
   type WireModel,
-  type WirePermission,
   type WireRole,
 } from '../api.ts'
 import { useLocale } from '../locale.tsx'
@@ -23,12 +23,20 @@ import {
 } from '../ui.tsx'
 import { menuLabel } from '../menus.ts'
 
+/**
+ * The tree row standing for whole-catalog access.
+ *
+ * It is the parent of every knowledge base, so ticking it ticks them all and
+ * `knowledgeChoice` reads that back as whole-catalog access; it is never a
+ * value the Control Plane stores.
+ */
+const KNOWLEDGE_ALL_KEY = 'knowledge-all'
+
 /** Which dialog is open, and what it is about. */
 type Dialog =
   | { readonly kind: 'add' }
   | { readonly kind: 'edit'; readonly role: WireRole }
   | { readonly kind: 'menus'; readonly role: WireRole }
-  | { readonly kind: 'permissions'; readonly role: WireRole }
   | { readonly kind: 'models'; readonly role: WireRole }
   | { readonly kind: 'knowledge'; readonly role: WireRole }
   | { readonly kind: 'revoke'; readonly grant: WireGrant }
@@ -70,7 +78,6 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
   const { t } = useLocale()
   const report = useErrorReporter()
   const roles = useLoaded<WireRole[]>(api.roles, report)
-  const permissions = useLoaded<WirePermission[]>(api.permissions, report)
   const menus = useLoaded<WireMenu[]>(api.menus, report)
   const mayReadModels = held.has('model|model.catalog.read')
   const models = useLoaded<WireModel[]>(
@@ -87,7 +94,6 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
     report,
   )
   const [dialog, setDialog] = useState<Dialog | undefined>(undefined)
-  const [knowledgeMode, setKnowledgeMode] = useState<'none' | 'all' | 'selected'>('none')
   const [term, setTerm] = useState('')
   const [draftTerm, setDraftTerm] = useState('')
   const [chosen, setChosen] = useState<readonly string[]>([])
@@ -140,18 +146,6 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
         children: menuNodes(menu.id),
       }))
 
-  /** The permission catalog as a tree, one branch per resource type. */
-  const permissionNodes = (): TreeDataNode[] => {
-    const types = [...new Set((permissions.data ?? []).map(permission => permission.resourceType))]
-    return types.map(type => ({
-      key: `type:${type}`,
-      title: type,
-      children: (permissions.data ?? [])
-        .filter(permission => permission.resourceType === type)
-        .map(permission => ({ key: `${type}|${permission.action}`, title: permission.action })),
-    }))
-  }
-
   /** Open the menu-access dialog with the entries this role already reaches. */
   const openMenus = (role: WireRole): void => {
     const holds = typeGrantsOf(role)
@@ -163,12 +157,6 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
     // nothing to expand.
     setOpened((menus.data ?? []).filter(menu => menu.kind === 'catalog').map(menu => menu.id))
     setDialog({ kind: 'menus', role })
-  }
-
-  /** Open the permission dialog with the pairs this role already holds. */
-  const openPermissions = (role: WireRole): void => {
-    setChosen([...typeGrantsOf(role)])
-    setDialog({ kind: 'permissions', role })
   }
 
   /** Open exact-model access with every model this role can currently discover. */
@@ -203,10 +191,12 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
       && grant.resourceId !== undefined
         ? [grant.resourceId]
         : [])
-    // The mode is what was stored, not what the set looks like: "none" and an
-    // empty selection are the same list and different intentions.
-    setKnowledgeMode(all ? 'all' : exact.length > 0 ? 'selected' : 'none')
-    setChosen(exact)
+    // Whole-catalog access opens with every row ticked, which is the same
+    // picture an administrator would draw by hand and the same one `save`
+    // reads back as whole-catalog access.
+    // Only the leaves: the tree derives the whole-catalog row's own state from
+    // its children, and `chosen` stays a list of knowledge bases throughout.
+    setChosen(all ? (knowledge.data?.knowledgeBases ?? []).map(base => base.resourceId) : exact)
     setDialog({ kind: 'knowledge', role })
   }
 
@@ -269,12 +259,6 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
               onClick: () => { openMenus(role) },
             },
             {
-              key: 'permissions',
-              label: t('roles.permissions'),
-              disabled: !mayManageGrants,
-              onClick: () => { openPermissions(role) },
-            },
-            {
               key: 'models',
               label: t('roles.modelAccess'),
               disabled: !mayManageGrants || !mayReadModels,
@@ -329,12 +313,32 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
 
   const editing = dialog?.kind === 'edit' ? dialog.role : undefined
   const showingMenus = dialog?.kind === 'menus' ? dialog.role : undefined
-  const showingPermissions = dialog?.kind === 'permissions' ? dialog.role : undefined
   const showingModels = dialog?.kind === 'models' ? dialog.role : undefined
   const showingKnowledge = dialog?.kind === 'knowledge' ? dialog.role : undefined
   /** Every knowledge base a role may still be newly given. */
   const selectableKnowledge = (knowledge.data?.knowledgeBases ?? [])
     .filter(base => base.remotePresent || chosen.includes(base.resourceId))
+
+  /**
+   * What the ticked rows ask the Control Plane to store.
+   *
+   * Ticking every knowledge base is stored as whole-catalog access rather than
+   * as that list of names, so a knowledge base added tomorrow is included:
+   * an administrator who ticked the top row asked for everything, not for the
+   * four things that happened to exist while the dialog was open.
+   * @returns the mode, and the references a selection names.
+   */
+  const knowledgeChoice = (): WireKnowledgeAccess => {
+    const present = (knowledge.data?.knowledgeBases ?? []).filter(base => base.remotePresent)
+    if (chosen.length === 0) return { mode: 'none' }
+    if (present.every(base => chosen.includes(base.resourceId))) return { mode: 'all' }
+    return {
+      mode: 'selected',
+      knowledgeRefs: selectableKnowledge
+        .filter(base => chosen.includes(base.resourceId))
+        .map(base => base.knowledgeRef),
+    }
+  }
 
   return (
     <>
@@ -478,81 +482,37 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
       </FormModal>
 
       <FormModal<Record<string, never>>
-        title={t('roles.permissionsTitle', { name: showingPermissions?.name ?? '' })}
-        open={dialog?.kind === 'permissions'}
-        okText={t('action.save')}
-        onCancel={() => { setDialog(undefined) }}
-        onSubmit={() => act(() => api.setRolePermissions(
-          dialog?.kind === 'permissions' ? dialog.role.id : '',
-          // A resource type is a branch, not a permission: checking one checks
-          // the actions under it, and only those are pairs the catalog names.
-          chosen.filter(key => key.includes('|')),
-        ))}
-      >
-        <Typography.Paragraph type="secondary">{t('roles.permissionsHint')}</Typography.Paragraph>
-        <Tree
-          checkable
-          selectable={false}
-          checkedKeys={[...chosen]}
-          onCheck={(keys) => {
-            const checked = Array.isArray(keys) ? keys : keys.checked
-            setChosen(checked as string[])
-          }}
-          treeData={permissionNodes()}
-        />
-      </FormModal>
-
-      <FormModal<Record<string, never>>
         title={t('knowledge.access.title')}
         open={dialog?.kind === 'knowledge'}
         okText={t('action.save')}
         onCancel={() => { setDialog(undefined) }}
-        onSubmit={() => act(() => api.setRoleKnowledge(
-          showingKnowledge?.id ?? '',
-          knowledgeMode === 'selected'
-            ? { mode: 'selected', knowledgeRefs: selectableKnowledge
-              .filter(base => chosen.includes(base.resourceId))
-              .map(base => base.knowledgeRef) }
-            : { mode: knowledgeMode },
-        ))}
+        onSubmit={() => act(() => api.setRoleKnowledge(showingKnowledge?.id ?? '', knowledgeChoice()))}
       >
         <Typography.Paragraph type="secondary">{t('knowledge.access.hint')}</Typography.Paragraph>
-        <Radio.Group
-          value={knowledgeMode}
-          onChange={(event) => { setKnowledgeMode(event.target.value as 'none' | 'all' | 'selected') }}
-          style={{ marginBottom: 12 }}
-          options={[
-            { value: 'none', label: t('knowledge.access.none') },
-            { value: 'all', label: t('knowledge.access.all') },
-            { value: 'selected', label: t('knowledge.access.selected') },
-          ]}
+        <Tree
+          checkable
+          selectable={false}
+          defaultExpandAll
+          checkedKeys={[...chosen]}
+          onCheck={(keys) => {
+            const checked = Array.isArray(keys) ? keys : keys.checked
+            setChosen((checked as string[]).filter(key => key !== KNOWLEDGE_ALL_KEY))
+          }}
+          treeData={[{
+            key: KNOWLEDGE_ALL_KEY,
+            title: t('knowledge.access.all'),
+            children: selectableKnowledge.map(base => ({
+              key: base.resourceId,
+              title: base.remotePresent
+                ? base.displayName
+                : `${base.displayName} — ${t('knowledge.access.missing')}`,
+              // A knowledge base the source no longer lists stays visible while
+              // it is already chosen, so an administrator can see why a role's
+              // access became unusable, but cannot newly pick it.
+              disabled: !base.remotePresent,
+            })),
+          }]}
         />
-        {knowledgeMode === 'selected' && (
-          <Tree
-            checkable
-            selectable={false}
-            defaultExpandAll
-            checkedKeys={[...chosen]}
-            onCheck={(keys) => {
-              const checked = Array.isArray(keys) ? keys : keys.checked
-              setChosen((checked as string[]).filter(key => key !== 'knowledge-resources'))
-            }}
-            treeData={[{
-              key: 'knowledge-resources',
-              title: t('knowledge.access.pick'),
-              children: selectableKnowledge.map(base => ({
-                key: base.resourceId,
-                title: base.remotePresent
-                  ? base.displayName
-                  : `${base.displayName} — ${t('knowledge.access.missing')}`,
-                // A knowledge base the source no longer lists stays visible
-                // while it is already chosen, so an administrator can see why
-                // a role's access became unusable, but cannot newly pick it.
-                disabled: !base.remotePresent,
-              })),
-            }]}
-          />
-        )}
       </FormModal>
 
       <FormModal<Record<string, never>>
