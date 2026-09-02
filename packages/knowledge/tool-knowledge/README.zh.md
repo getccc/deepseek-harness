@@ -57,6 +57,7 @@ kind: "package-reference"
 | 文件 | 内容 |
 |---|---|
 | [`src/index.ts`](src/index.ts) | 工具、提示词章节、可见性规则和结果投影 |
+| [`src/types.ts`](src/types.ts) | `knowledge` 投影键，声明在浏览器也能读到的地方 |
 
 <a id="further-exploration"></a>
 ## 延伸阅读

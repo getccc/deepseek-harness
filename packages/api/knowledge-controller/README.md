@@ -66,6 +66,7 @@ Nothing here authorizes. The directory this controller offers is one the Control
 <a id="further-exploration"></a>
 ## Further Exploration
 
+- [dsh-client-ui-knowledge](../../client/ui-knowledge/README.md) — the picker and chip this namespace answers.
 - [Knowledge subsystem](../../../docs/subsystems/knowledge.md) — the scope value this records.
 - [Team private knowledge Agent Note](../../../.agents/notes/proposed/feature/2026-09-01-team-private-knowledge-control-plane.md) — why the scope lives in the Session log.
 

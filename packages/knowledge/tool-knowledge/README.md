@@ -57,6 +57,7 @@ A restriction is a live registration on one agent's scoped context rather than a
 | File | Holds |
 |---|---|
 | [`src/index.ts`](src/index.ts) | The tool, the prompt section, the visibility rule, and the result projection |
+| [`src/types.ts`](src/types.ts) | The `knowledge` projection key, declared where the browser reads it too |
 
 <a id="further-exploration"></a>
 ## Further Exploration

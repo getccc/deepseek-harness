@@ -29,6 +29,8 @@ import { FIRST_PARTY_SECTION_ORDER } from '@deepseek-ai/dsh-system-prompt'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import zod, { type ZodType } from 'zod'
 import type {} from '@deepseek-ai/dsh-session-projection'
+// The projection key this plugin registers, declared where the browser can read it too.
+import type {} from './types.ts'
 
 /** The model-facing name of the search tool. */
 export const KNOWLEDGE_SEARCH = 'knowledge_search'
@@ -199,15 +201,6 @@ export function apply(ctx: Context, config: Config): void {
       stateVersion: 1,
     })
   })
-}
-
-declare module '@deepseek-ai/dsh-session-projection/types' {
-  interface SessionProjectionMap {
-    knowledge: KnowledgeScope
-  }
-  interface SessionProjectionStateMap {
-    knowledge: KnowledgeScope
-  }
 }
 
 /** The scope value, validated before a persisted cache row seeds a fold. */

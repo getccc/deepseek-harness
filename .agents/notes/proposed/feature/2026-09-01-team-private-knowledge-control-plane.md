@@ -239,9 +239,11 @@ Tool visibility follows the same folded state. While the scope is `off`, `knowle
 
 ### Command behavior
 
-`/knowledge` is a Host command with a Web `popupSelect` decoration, sitting beside `/model` in the command list. A bare invocation opens `All authorized`, `Off`, and a multi-select of the current authorized directory. Saving appends a `knowledge/scope` event and returns a visible confirmation; it starts no model turn. The first delivery's command takes no query, because a human command does not run a model turn and combining a state change with a hidden prompt would create a second input path.
+`/knowledge` is a browser-owned command contribution registered on `ctx.commandUi`, sitting beside `/model` in the command list. It is a `popupMultiSelect`: ticking rows changes nothing, and one apply control settles the whole set. The first row, `All authorized`, is `exclusive` — ticking it clears the individual ticks and ticking a knowledge base clears it — so a member can never build a set meaning both "whatever I am granted later" and "exactly these". Ticking nothing and applying is `Off`, the same gesture as unticking the last knowledge base. Applying appends a `knowledge/scope` event through the `knowledge` Remote; it starts no model turn. The first delivery's command takes no query, because a human command does not run a model turn and combining a state change with a hidden prompt would create a second input path.
 
-The input box shows a localized chip reading `Knowledge: all`, `Knowledge: off`, or the selected names. The chip reads the Session projection and directory metadata; it never reads role grants directly. Reconnection and policy-revision invalidation refresh directory names and availability without rewriting the recorded choice.
+A selected knowledge base the directory no longer holds is listed unticked and named as unavailable, so applying drops it as an explicit member act rather than a silent shrink. Until then the recorded choice stands and a search naming it fails.
+
+The composer's left zone shows a localized chip reading `Knowledge: all`, `Knowledge: off`, or the selected names. The chip reads the Session projection alone — the names it shows are the ones the log recorded — and reports rather than acts, because a chip that also changed the scope would be a second way to write the same event. Reconnection and policy-revision invalidation refresh directory names and availability without rewriting the recorded choice.
 
 The choice lives only in the Session log. It is not written to user settings and a new Session does not inherit it, so every Session begins at `Off` and the member states intent once per Session.
 

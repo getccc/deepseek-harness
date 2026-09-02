@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-tool-knowledge",
-  "description": "Model-facing private-knowledge search for the DeepSeek Harness \u2014 the knowledge_search tool, the Session scope prompt section, and scope-driven tool visibility",
+  "description": "Model-facing private-knowledge search for the DeepSeek Harness — the knowledge_search tool, the Session scope prompt section, and scope-driven tool visibility",
   "version": "0.1.2-alpha.1",
   "publishConfig": {
     "access": "public"
@@ -22,12 +22,21 @@
       "types": "./lib/types/invariant.d.ts",
       "default": "./lib/invariant.js"
     },
+    "./types": {
+      "types": "./lib/types/types.d.ts",
+      "default": "./lib/types/types.js"
+    },
+    "./client": {
+      "types": "./lib/types/client.d.ts",
+      "default": "./lib/types/client.js"
+    },
     "./src/*": "./src/*",
     "./package.json": "./package.json"
   },
   "files": [
     "lib/index.js",
     "lib/invariant.js",
+    "lib/types/**/*.js",
     "lib/types/**/*.d.ts"
   ],
   "license": "MIT",

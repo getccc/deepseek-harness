@@ -115,3 +115,10 @@
     # here rather than on the session controller every Web build carries.
     - id: api-knowledge-controller
       name: '@deepseek-ai/dsh-api-knowledge-controller'
+
+    # The browser surfaces themselves: the `/knowledge` picker and the composer
+    # chip naming what this conversation may search. The plugin carries no
+    # Host behavior; mounting it here is what puts its browser half in the
+    # boot graph, and only a Team build has a knowledge namespace to serve it.
+    - id: client-ui-knowledge
+      name: '@deepseek-ai/dsh-client-ui-knowledge'

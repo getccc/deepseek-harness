@@ -66,6 +66,7 @@ kind: "package-reference"
 <a id="further-exploration"></a>
 ## 延伸阅读
 
+- [dsh-client-ui-knowledge](../../client/ui-knowledge/README.zh.md) —— 本命名空间服务的选择器与 Chip。
 - [知识子系统](../../../docs/subsystems/knowledge.zh.md) —— 本包记录的范围值。
 - [Team 私有知识 Agent Note](../../../.agents/notes/proposed/feature/2026-09-01-team-private-knowledge-control-plane.zh.md) —— 范围为何存在于会话日志中。
 

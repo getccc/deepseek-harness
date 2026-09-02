@@ -25,7 +25,7 @@ import type {
 
 export type {
   SecretCharacterClass, WireDepartment, WireDevice, WireGrant, WireKnowledgeAccess,
-  WireKnowledgeBase, WireKnowledgeCatalog, WireKnowledgeSource, WireMember, WireMenu, WireModel,
+  WireKnowledgeBase, WireKnowledgeCatalog, WireMember, WireMenu, WireModel,
   WireOrganization, WireOverview, WirePermission, WireRole, WireSecretPolicy, WireSession,
 } from '@deepseek-ai/dsh-team-admin-api'
 

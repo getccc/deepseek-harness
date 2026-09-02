@@ -173,6 +173,12 @@ async function bench() {
 
 const projection = (id: string) => ({ sessionId: sid(id) })
 
+/** The single-choice picker of one registration: both kinds load rows, only this one settles one. */
+function picker(contribution: CommandContribution): Extract<CommandContribution['ui'], { kind: 'popupSelect' }> {
+  if (contribution.ui.kind !== 'popupSelect') throw new Error('expected a single-choice picker')
+  return contribution.ui
+}
+
 describe('ui-model-selection dual entry', () => {
   it('registers the /model contribution and the composer model seat', async () => {
     const b = await bench()
@@ -225,7 +231,7 @@ describe('ui-model-selection dual entry', () => {
     const seatFace = b.seat().inject!(sid('s1'))
     const options = await b.contribution().ui.options(projection('s1'), new AbortController().signal)
     const pro = options.find((o: SelectOption) => o.label === 'DeepSeek-V4-Pro')!
-    await b.contribution().ui.onSelect(pro, projection('s1'))
+    await picker(b.contribution()).onSelect(pro, projection('s1'))
     expect(seatFace.directory.getSnapshot().current).toEqual({
       provider: 'deepseek-official',
       model: 'deepseek-v4-pro',

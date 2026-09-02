@@ -52,6 +52,7 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/knowledge/knowledge-gateway-http': { kind: 'none', reason: 'Control Plane routes; passages become model-visible only after a Runner-side tool renders them.' },
   'packages/knowledge/knowledge-team': { kind: 'indirect', reason: 'The transport registers no prompt or schema; dsh-tool-knowledge renders passages and owns the scope prompt section.' },
   'packages/api/knowledge-controller': { kind: 'indirect', reason: 'The Remote registers no prompt or schema; the scope it records is what dsh-tool-knowledge names and gates on.' },
+  'packages/client/ui-knowledge': { kind: 'indirect', reason: 'Browser-side picker and chip; the scope it records is what dsh-tool-knowledge names in the prompt and gates the search tool on.' },
   'packages/knowledge/knowledge-weknora': { kind: 'none', reason: 'Control Plane provider; retrieved passages become model-visible only after a gateway authorizes them and a Runner-side tool renders them.' },
   'packages/shell/shell': { kind: 'indirect', reason: 'The service interface delegates all model rendering to dsh-tool-bash.' },
   'packages/shell/shell-env': { kind: 'indirect', reason: 'The env service exposes managed DSH_* facts through the shell tools (dsh-tool-bash/dsh-tool-pwsh); it registers no prompt or schema of its own.' },

@@ -3236,7 +3236,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/knowledge/tool-knowledge/src/index.ts:45`](../packages/knowledge/tool-knowledge/src/index.ts)
+Source: [`packages/knowledge/tool-knowledge/src/index.ts:47`](../packages/knowledge/tool-knowledge/src/index.ts)
 
 <a id="deepseek-aidsh-tool-lsp"></a>
 
@@ -3859,6 +3859,7 @@ export interface Config {
 - `@deepseek-ai/dsh-client-ui-goal`（[`packages/client/ui-goal/src/index.ts`](../packages/client/ui-goal/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-input-trigger`（[`packages/client/ui-input-trigger/src/index.ts`](../packages/client/ui-input-trigger/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-jobs`（[`packages/client/ui-jobs/src/index.ts`](../packages/client/ui-jobs/src/index.ts)）
+- `@deepseek-ai/dsh-client-ui-knowledge`（[`packages/client/ui-knowledge/src/index.ts`](../packages/client/ui-knowledge/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-layout`（[`packages/client/ui-layout/src/index.ts`](../packages/client/ui-layout/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-message-feedback`（[`packages/client/ui-message-feedback/src/index.ts`](../packages/client/ui-message-feedback/src/index.ts)）
 - `@deepseek-ai/dsh-client-ui-model-selection`（[`packages/client/ui-model-selection/src/index.ts`](../packages/client/ui-model-selection/src/index.ts)）

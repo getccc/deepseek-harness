@@ -159,7 +159,9 @@ function menuPick(source: InputTriggerSource, name: string, session: ClientSessi
   return source.onPick(pick)
 }
 
-const themeUi = (over: Partial<CommandUiSpec> = {}): CommandUiSpec => ({
+type PopupSelectUi = Extract<CommandUiSpec, { kind: 'popupSelect' }>
+
+const themeUi = (over: Partial<PopupSelectUi> = {}): CommandUiSpec => ({
   kind: 'popupSelect',
   options: () => Promise.resolve([{ id: 'dark', label: 'Dark' }]),
   onSelect: () => undefined,

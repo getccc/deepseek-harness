@@ -98,6 +98,12 @@ async function bench() {
   }
 }
 
+/** The single-choice picker of one registration: both kinds load rows, only this one settles one. */
+function picker(decoration: CommandDecoration): Extract<CommandDecoration['ui'], { kind: 'popupSelect' }> {
+  if (decoration.ui.kind !== 'popupSelect') throw new Error('expected a single-choice picker')
+  return decoration.ui
+}
+
 describe('ui-permission browser plugin', () => {
   it('hangs the /permission popup decoration on the host command', async () => {
     const b = await bench()
@@ -150,14 +156,14 @@ describe('ui-permission browser plugin', () => {
     const c = b.decoration()!
     const proj = { sessionId: sid('s1') }
     b.values.set(sid('s1'), SELECT)
-    await c.ui.onSelect({ id: 'danger-full-access', label: 'danger-full-access' }, proj)
+    await picker(c).onSelect({ id: 'danger-full-access', label: 'danger-full-access' }, proj)
     expect(b.commands).toEqual(['/permission danger-full-access'])
     b.setResult({ ok: false })
-    await expect(c.ui.onSelect({ id: 'read-only', label: 'read-only' }, proj)).rejects.toThrow(/permission switch failed/)
+    await expect(picker(c).onSelect({ id: 'read-only', label: 'read-only' }, proj)).rejects.toThrow(/permission switch failed/)
     b.setResult({ ok: true, matched: false })
-    await expect(c.ui.onSelect({ id: 'read-only', label: 'read-only' }, proj)).rejects.toThrow(/no \/permission command/)
+    await expect(picker(c).onSelect({ id: 'read-only', label: 'read-only' }, proj)).rejects.toThrow(/no \/permission command/)
     // An unmaterialized session throws before any submit.
-    await expect(c.ui.onSelect({ id: 'read-only', label: 'read-only' }, { sessionId: sid('ghost') }))
+    await expect(picker(c).onSelect({ id: 'read-only', label: 'read-only' }, { sessionId: sid('ghost') }))
       .rejects.toThrow(/not materialized/)
   })
 
