@@ -254,6 +254,7 @@
     { "path": "./packages/knowledge/knowledge-weknora" },
     { "path": "./packages/knowledge/knowledge-gateway" },
     { "path": "./packages/knowledge/knowledge-gateway-sqlite" },
+    { "path": "./packages/knowledge/knowledge-gateway-http" },
     { "path": "./packages/web/web" },
     { "path": "./packages/web/web-search-exa" },
     { "path": "./packages/web/web-search-perplexity" },

@@ -358,6 +358,8 @@
       "@deepseek-ai/dsh-knowledge/invariant": ["./packages/knowledge/knowledge/src/invariant.ts"],
       "@deepseek-ai/dsh-knowledge-gateway": ["./packages/knowledge/knowledge-gateway/src"],
       "@deepseek-ai/dsh-knowledge-gateway/invariant": ["./packages/knowledge/knowledge-gateway/src/invariant.ts"],
+      "@deepseek-ai/dsh-knowledge-gateway-http": ["./packages/knowledge/knowledge-gateway-http/src"],
+      "@deepseek-ai/dsh-knowledge-gateway-http/invariant": ["./packages/knowledge/knowledge-gateway-http/src/invariant.ts"],
       "@deepseek-ai/dsh-knowledge-gateway-sqlite": ["./packages/knowledge/knowledge-gateway-sqlite/src"],
       "@deepseek-ai/dsh-knowledge-gateway-sqlite/invariant": ["./packages/knowledge/knowledge-gateway-sqlite/src/invariant.ts"],
       "@deepseek-ai/dsh-knowledge-source": ["./packages/knowledge/knowledge-source/src"],

@@ -39,6 +39,12 @@
       "path": "../team-browser-session"
     },
     {
+      "path": "../../knowledge/knowledge"
+    },
+    {
+      "path": "../../knowledge/knowledge-gateway"
+    },
+    {
       "path": "../team-console-menu"
     }
   ]

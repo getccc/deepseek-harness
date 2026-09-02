@@ -8,7 +8,10 @@
  */
 
 import { generateKeyPairSync, sign } from 'node:crypto'
+import { mkdtempSync, rmSync } from 'node:fs'
 import { request as httpRequest } from 'node:http'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { Context } from '@deepseek-ai/cordis'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import HttpServer from '@deepseek-ai/dsh-host-webserver'
@@ -20,6 +23,12 @@ import SqliteDeviceAuthorization from '@deepseek-ai/dsh-device-authorization-sql
 import SqliteModelGateway from '@deepseek-ai/dsh-model-gateway-sqlite'
 import SqliteQuota from '@deepseek-ai/dsh-quota-sqlite'
 import SqliteConsoleMenuStore from '@deepseek-ai/dsh-team-console-menu-sqlite'
+import SqliteKnowledgeGateway from '@deepseek-ai/dsh-knowledge-gateway-sqlite'
+import {
+  KnowledgeSource,
+  type UpstreamKnowledgeBase,
+  type UpstreamPassage,
+} from '@deepseek-ai/dsh-knowledge-source'
 import type { AccountStore, OrgId, UserId } from '@deepseek-ai/dsh-account-store'
 import type { AccessControl, GrantId, RoleId } from '@deepseek-ai/dsh-access-control'
 import type { Audit } from '@deepseek-ai/dsh-audit'
@@ -56,10 +65,33 @@ let orgId: OrgId
 let alice: UserId
 let adminRole: RoleId
 let apiFiber: ReturnType<Context['plugin']>
+let knowledgeHome: string
 
 const PASSWORD = 'Correct-Horse-Battery-1'
 
 /** Every permission the console's own routes ask for. */
+const KB_A = '690c0727-1af5-4b7a-8465-ebd2845f2266'
+const REF_A = `stub:prod:${KB_A}`
+
+/** A knowledge source a test scripts, so the catalog has something to hold. */
+class ScriptedKnowledgeSource extends KnowledgeSource {
+  override readonly providerKind = 'stub'
+  override readonly sourceCode = 'prod'
+  listing: readonly UpstreamKnowledgeBase[] = [{
+    upstreamId: KB_A, name: '临港知识库', description: '', kind: 'document',
+    documentCount: 1, chunkCount: 0, processingCount: 0,
+    embeddingModelId: 'emb-shared', updatedAt: undefined,
+  }]
+
+  list(): Promise<readonly UpstreamKnowledgeBase[]> {
+    return Promise.resolve(this.listing)
+  }
+
+  search(): Promise<readonly UpstreamPassage[]> {
+    return Promise.resolve([])
+  }
+}
+
 const ADMIN_PERMISSIONS = [
   ['organization', 'organization.admin.access'],
   ['organization', 'organization.read'], ['organization', 'organization.settings.manage'],
@@ -72,6 +104,7 @@ const ADMIN_PERMISSIONS = [
   ['menu', 'menu.manage'],
   ['device', 'device.inventory.read'], ['device', 'device.revoke'],
   ['model', 'model.catalog.read'], ['model', 'model.catalog.manage'],
+  ['knowledge_scope', 'knowledge.catalog.read'], ['knowledge_scope', 'knowledge.catalog.manage'],
 ] as const
 
 /** A model registration the catalog accepts, for tests that break one field. */
@@ -90,9 +123,18 @@ function send(
   path: string,
   init: { method?: string; headers?: Record<string, string>; body?: string } = {},
 ): Promise<Answer> {
+  return sendTo(origin, path, init)
+}
+
+/** The same, against an assembly other than the one this file mostly uses. */
+function sendTo(
+  base: string,
+  path: string,
+  init: { method?: string; headers?: Record<string, string>; body?: string } = {},
+): Promise<Answer> {
   const { method = 'GET', headers = {}, body } = init
   return new Promise((resolve, reject) => {
-    const req = httpRequest(`${origin}${path}`, { method, headers }, (res) => {
+    const req = httpRequest(`${base}${path}`, { method, headers }, (res) => {
       const chunks: Buffer[] = []
       res.on('data', (chunk) => { chunks.push(chunk as Buffer) })
       res.on('end', () => {
@@ -199,6 +241,7 @@ async function bindCredential(
 }
 
 beforeEach(async () => {
+  knowledgeHome = mkdtempSync(join(tmpdir(), 'dsh-admin-knowledge-'))
   ctx = new Context()
   await ctx.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
   await ctx.plugin(SqliteAccountStore, { path: ':memory:' }).await()
@@ -216,6 +259,8 @@ beforeEach(async () => {
   await ctx.plugin(SqliteQuota, { path: ':memory:', reservationTtlMs: 900_000 }).await()
   await ctx.plugin(SqliteModelGateway, { path: ':memory:' }).await()
   await ctx.plugin(SqliteConsoleMenuStore, { path: ':memory:' }).await()
+  await ctx.plugin(ScriptedKnowledgeSource).await()
+  await ctx.plugin(SqliteKnowledgeGateway, { path: join(knowledgeHome, 'knowledge.sqlite') }).await()
 
   store = ctx.get('accountStore') as AccountStore
   access = ctx.get('accessControl') as AccessControl
@@ -239,6 +284,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   await ctx.fiber.dispose()
+  rmSync(knowledgeHome, { recursive: true, force: true })
 })
 
 describe('signing in', () => {
@@ -1714,5 +1760,299 @@ describe('starting with a role that covers the catalog', () => {
     apiFiber = ctx.plugin(api, api.Config({ organizationId: orgId, secureCookie: false } as never))
     await apiFiber.await()
     expect(await access.listRoleGrants(reader.id)).toHaveLength(0)
+  })
+})
+
+describe('administering the knowledge catalog', () => {
+  /** One catalog read, projected the way the console receives it. */
+  interface WireCatalog {
+    source: { health: string; lastFailure?: string }
+    knowledgeBases: {
+      knowledgeRef: string
+      resourceId: string
+      displayName: string
+      adminEnabled: boolean
+      remotePresent: boolean
+      effectiveEnabled: boolean
+      embeddingModelId: string
+    }[]
+  }
+
+  it('answers an empty catalog before anyone synchronizes', async () => {
+    const held = await signIn()
+    const answer = await send('/team/api/knowledge-bases', { headers: { cookie: held.cookie } })
+    expect(answer.status).toBe(200)
+    const view = payload(answer) as WireCatalog
+    expect(view.knowledgeBases).toEqual([])
+    expect(view.source.health).toBe('never-synced')
+  })
+
+  it('synchronizes, and shows what the catalog now governs', async () => {
+    const held = await signIn()
+    const synced = await write('POST', '/team/api/knowledge-bases/sync', held, {})
+    expect(synced.status).toBe(200)
+    const view = payload(synced) as WireCatalog
+    expect(view.knowledgeBases).toEqual([expect.objectContaining({
+      knowledgeRef: REF_A,
+      displayName: '临港知识库',
+      adminEnabled: true,
+      remotePresent: true,
+      effectiveEnabled: true,
+      embeddingModelId: 'emb-shared',
+    })])
+    // No upstream identifier field: the reference is the only knowledge id
+    // that leaves this Control Plane.
+    expect(Object.keys(view.knowledgeBases[0] ?? {})).not.toContain('upstreamId')
+  })
+
+  it('switches one entry off and records it', async () => {
+    const held = await signIn()
+    await write('POST', '/team/api/knowledge-bases/sync', held, {})
+    const patched = await write('PATCH', `/team/api/knowledge-bases/${encodeURIComponent(REF_A)}`, held, { enabled: false })
+    expect(patched.status).toBe(200)
+    expect((payload(patched) as WireCatalog).knowledgeBases[0]).toMatchObject({
+      adminEnabled: false, effectiveEnabled: false,
+    })
+    expect((await audit.query({ orgId, action: 'resource.disable' }))[0]).toMatchObject({ resourceId: REF_A })
+
+    const restored = await write('PATCH', `/team/api/knowledge-bases/${encodeURIComponent(REF_A)}`, held, { enabled: true })
+    expect((payload(restored) as WireCatalog).knowledgeBases[0]).toMatchObject({
+      adminEnabled: true, effectiveEnabled: true,
+    })
+    expect((await audit.query({ orgId, action: 'resource.enable' }))[0]).toMatchObject({ resourceId: REF_A })
+  })
+
+  it.each([
+    ['a reference the catalog does not hold', 'stub:prod:00000000-0000-0000-0000-000000000000', { enabled: false }, 404],
+    ['a reference that is not one', 'not-a-reference', { enabled: false }, 400],
+    ['a switch that is not a boolean', REF_A, { enabled: 'off' }, 400],
+  ])('refuses %s', async (_label, ref, body, status) => {
+    const held = await signIn()
+    await write('POST', '/team/api/knowledge-bases/sync', held, {})
+    const answer = await write('PATCH', `/team/api/knowledge-bases/${encodeURIComponent(ref)}`, held, body)
+    expect(answer.status).toBe(status)
+  })
+
+  it('gives a role none, all, or selected knowledge — and nothing else changes', async () => {
+    const held = await signIn()
+    await write('POST', '/team/api/knowledge-bases/sync', held, {})
+    const readers = (await access.createRole({ orgId, name: 'readers' })).id
+    await access.grantType(readers, 'model', 'model.invoke')
+
+    const all = await write('POST', `/team/api/roles/${readers}/knowledge-bases`, held, { mode: 'all' })
+    expect(all.status).toBe(200)
+    const afterAll = await access.listRoleGrants(readers)
+    expect(afterAll.filter(grant => grant.action === 'knowledge.search'))
+      .toEqual([expect.objectContaining({ kind: 'type', resourceType: 'knowledge_scope' })])
+
+    const resourceId = (await access.listResources(orgId, 'knowledge_scope'))
+      .find(resource => resource.externalRef === REF_A)?.id
+    const some = await write('POST', `/team/api/roles/${readers}/knowledge-bases`, held, {
+      mode: 'selected', knowledgeRefs: [REF_A],
+    })
+    expect(some.status).toBe(200)
+    const afterSome = await access.listRoleGrants(readers)
+    expect(afterSome.filter(grant => grant.action === 'knowledge.search'))
+      .toEqual([expect.objectContaining({ kind: 'resource', resourceId })])
+
+    const none = await write('POST', `/team/api/roles/${readers}/knowledge-bases`, held, { mode: 'none' })
+    expect(none.status).toBe(200)
+    const afterNone = await access.listRoleGrants(readers)
+    expect(afterNone.filter(grant => grant.action === 'knowledge.search')).toEqual([])
+    // The unrelated model grant survived every one of those replacements.
+    expect(afterNone.some(grant => grant.action === 'model.invoke')).toBe(true)
+  })
+
+  it('refuses to grant search on the catalog administration resource', async () => {
+    const held = await signIn()
+    await write('POST', '/team/api/knowledge-bases/sync', held, {})
+    const readers = (await access.createRole({ orgId, name: 'readers' })).id
+    // It is a knowledge_scope resource, so it would pass a naive membership
+    // check against listResources; the durable catalog is what decides.
+    const answer = await write('POST', `/team/api/roles/${readers}/knowledge-bases`, held, {
+      mode: 'selected', knowledgeRefs: ['urn:dsh:admin:knowledge-catalog'],
+    })
+    expect(answer.status).toBe(400)
+    expect(await access.listRoleGrants(readers)).toEqual([])
+  })
+
+  it.each([
+    ['no mode', {}],
+    ['an unknown mode', { mode: 'everything' }],
+    ['a selection that is not a list', { mode: 'selected', knowledgeRefs: 'all of them' }],
+    ['a selection holding a non-string', { mode: 'selected', knowledgeRefs: [7] }],
+    ['a knowledge base this organization does not govern', { mode: 'selected', knowledgeRefs: ['stub:prod:nope'] }],
+  ])('refuses a role knowledge editor sent %s', async (_label, body) => {
+    const held = await signIn()
+    await write('POST', '/team/api/knowledge-bases/sync', held, {})
+    const readers = (await access.createRole({ orgId, name: 'readers' })).id
+    const answer = await write('POST', `/team/api/roles/${readers}/knowledge-bases`, held, body)
+    expect(answer.status).toBe(400)
+  })
+
+  it('refuses a role this organization does not administer', async () => {
+    const held = await signIn()
+    const elsewhere = (await store.createOrganization('Other')).id
+    const outsiders = (await access.createRole({ orgId: elsewhere, name: 'outsiders' })).id
+    const answer = await write('POST', `/team/api/roles/${outsiders}/knowledge-bases`, held, { mode: 'all' })
+    expect(answer.status).toBe(404)
+  })
+
+  it('refuses every knowledge route to a member without the permission', async () => {
+    const bob = (await store.createUser({ orgId, loginName: 'bob', displayName: 'Bob' })).id
+    await ctx.accountAuth.setSecret(bob, PASSWORD)
+    const console_ = (await access.createRole({ orgId, name: 'console-only' })).id
+    await access.grantType(console_, 'organization', 'organization.admin.access')
+    await access.bindUserRole(bob, console_)
+    const held = await signIn('bob')
+    expect((await send('/team/api/knowledge-bases', { headers: { cookie: held.cookie } })).status).toBe(403)
+    expect((await write('POST', '/team/api/knowledge-bases/sync', held, {})).status).toBe(403)
+    expect((await write('PATCH', `/team/api/knowledge-bases/${encodeURIComponent(REF_A)}`, held, { enabled: false })).status).toBe(403)
+  })
+
+  it('projects the knowledge permissions a console member actually holds', async () => {
+    const held = await signIn()
+    const session = await send('/team/api/session', { headers: { cookie: held.cookie } })
+    expect((payload(session) as { permissions: string[] }).permissions)
+      .toEqual(expect.arrayContaining([
+        'knowledge_scope|knowledge.catalog.read',
+        'knowledge_scope|knowledge.catalog.manage',
+      ]))
+  })
+})
+
+describe('a Control Plane that governs no knowledge', () => {
+  it('registers no knowledge resource and answers every knowledge route as absent', async () => {
+    // A deployment without knowledge is a complete Control Plane, not a broken
+    // one: the API loads, and the routes report that this installation has no
+    // such thing rather than that the caller did something wrong.
+    const bare = new Context()
+    await bare.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
+    await bare.plugin(SqliteAccountStore, { path: ':memory:' }).await()
+    await bare.plugin(PasswordAccountAuth, {
+      minSecretLength: 8, requiredClasses: ['uppercase', 'lowercase', 'digit'],
+      maxFailedAttempts: 5, lockDurationMs: 60_000, cost: 2, blockSize: 8, parallelization: 1,
+    }).await()
+    await bare.plugin(SqliteAccessControl, { path: ':memory:' }).await()
+    await bare.plugin(SqliteAudit, { path: ':memory:', maxQueryRows: 100 }).await()
+    await bare.plugin(SqliteDeviceAuthorization, {
+      path: ':memory:', transactionTtlMs: 300_000, codeTtlMs: 60_000,
+      accessTokenTtlMs: 900_000, refreshTokenTtlMs: 2_592_000_000,
+    }).await()
+    await bare.plugin(SqliteQuota, { path: ':memory:', reservationTtlMs: 900_000 }).await()
+    await bare.plugin(SqliteModelGateway, { path: ':memory:' }).await()
+    await bare.plugin(SqliteConsoleMenuStore, { path: ':memory:' }).await()
+
+    const bareStore = bare.get('accountStore') as AccountStore
+    const bareAccess = bare.get('accessControl') as AccessControl
+    const bareOrg = (await bareStore.createOrganization('Sparse')).id
+    const dana = (await bareStore.createUser({
+      orgId: bareOrg, loginName: 'dana', displayName: 'Dana',
+    })).id
+    await bare.accountAuth.setSecret(dana, PASSWORD)
+    await bare.plugin(api, api.Config({ organizationId: bareOrg, secureCookie: false } as never)).await()
+    const role = (await bareAccess.createRole({ orgId: bareOrg, name: 'admin' })).id
+    for (const [type, action] of ADMIN_PERMISSIONS) await bareAccess.grantType(role, type, action)
+    await bareAccess.bindUserRole(dana, role)
+
+    // Nothing governs a knowledge catalog here, so the menu entry guarding it
+    // is unreachable rather than leading to a page that cannot load.
+    expect(await bareAccess.listResources(bareOrg, 'knowledge_scope')).toEqual([])
+
+    const bareOrigin = `http://127.0.0.1:${String(bare.webServer.port)}`
+    const landed = await sendTo(bareOrigin, '/team/api/session', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', origin: bareOrigin },
+      body: JSON.stringify({ loginName: 'dana', secret: PASSWORD }),
+    })
+    const cookie = (head(landed, 'set-cookie') as string).split(';')[0] as string
+    const csrf = (payload(landed) as WireSession).csrf
+    const headers = { 'content-type': 'application/json', origin: bareOrigin, cookie, 'x-dsh-csrf': csrf }
+
+    for (const [method, path, body] of [
+      ['GET', '/team/api/knowledge-bases', undefined],
+      ['POST', '/team/api/knowledge-bases/sync', {}],
+      ['PATCH', `/team/api/knowledge-bases/${encodeURIComponent(REF_A)}`, { enabled: false }],
+      ['POST', `/team/api/roles/${role}/knowledge-bases`, { mode: 'all' }],
+    ] as const) {
+      const answer = await sendTo(bareOrigin, path, {
+        method,
+        headers: method === 'GET' ? { cookie } : headers,
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      })
+      expect(answer.status, path).toBe(404)
+    }
+    await bare.fiber.dispose()
+  })
+})
+
+describe('knowledge administration refuses what it should', () => {
+  it('refuses the role knowledge editor to a member without role.grant.manage', async () => {
+    const bob = (await store.createUser({ orgId, loginName: 'bob', displayName: 'Bob' })).id
+    await ctx.accountAuth.setSecret(bob, PASSWORD)
+    const limited = (await access.createRole({ orgId, name: 'catalog-only' })).id
+    await access.grantType(limited, 'organization', 'organization.admin.access')
+    await access.grantType(limited, 'knowledge_scope', 'knowledge.catalog.manage')
+    await access.bindUserRole(bob, limited)
+    const held = await signIn('bob')
+    // Curating the catalog and changing another role's grants are different
+    // permissions: holding the first admits nothing about the second.
+    const answer = await write('POST', `/team/api/roles/${adminRole}/knowledge-bases`, held, { mode: 'all' })
+    expect(answer.status).toBe(403)
+    expect((await access.listRoleGrants(adminRole)).some(grant => grant.action === 'knowledge.search'))
+      .toBe(false)
+  })
+
+  it('does not turn an unexpected gateway fault into "no such knowledge base"', async () => {
+    const faulty = new Context()
+    await faulty.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
+    await faulty.plugin(SqliteAccountStore, { path: ':memory:' }).await()
+    await faulty.plugin(PasswordAccountAuth, {
+      minSecretLength: 8, requiredClasses: ['uppercase', 'lowercase', 'digit'],
+      maxFailedAttempts: 5, lockDurationMs: 60_000, cost: 2, blockSize: 8, parallelization: 1,
+    }).await()
+    await faulty.plugin(SqliteAccessControl, { path: ':memory:' }).await()
+    await faulty.plugin(SqliteAudit, { path: ':memory:', maxQueryRows: 100 }).await()
+    await faulty.plugin(SqliteDeviceAuthorization, {
+      path: ':memory:', transactionTtlMs: 300_000, codeTtlMs: 60_000,
+      accessTokenTtlMs: 900_000, refreshTokenTtlMs: 2_592_000_000,
+    }).await()
+    await faulty.plugin(SqliteQuota, { path: ':memory:', reservationTtlMs: 900_000 }).await()
+    await faulty.plugin(SqliteModelGateway, { path: ':memory:' }).await()
+    await faulty.plugin(SqliteConsoleMenuStore, { path: ':memory:' }).await()
+    faulty.provide('knowledgeGateway', {
+      catalogView: () => Promise.resolve({ source: {}, entries: [] }),
+      setEnabled: () => Promise.reject(new Error('the disk is on fire')),
+    })
+
+    const faultyStore = faulty.get('accountStore') as AccountStore
+    const faultyAccess = faulty.get('accessControl') as AccessControl
+    const faultyOrg = (await faultyStore.createOrganization('Fault')).id
+    const erin = (await faultyStore.createUser({
+      orgId: faultyOrg, loginName: 'erin', displayName: 'Erin',
+    })).id
+    await faulty.accountAuth.setSecret(erin, PASSWORD)
+    await faulty.plugin(api, api.Config({ organizationId: faultyOrg, secureCookie: false } as never)).await()
+    const role = (await faultyAccess.createRole({ orgId: faultyOrg, name: 'admin' })).id
+    for (const [type, action] of ADMIN_PERMISSIONS) await faultyAccess.grantType(role, type, action)
+    await faultyAccess.bindUserRole(erin, role)
+
+    const faultyOrigin = `http://127.0.0.1:${String(faulty.webServer.port)}`
+    const landed = await sendTo(faultyOrigin, '/team/api/session', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', origin: faultyOrigin },
+      body: JSON.stringify({ loginName: 'erin', secret: PASSWORD }),
+    })
+    const cookie = (head(landed, 'set-cookie') as string).split(';')[0] as string
+    const csrf = (payload(landed) as WireSession).csrf
+    const answer = await sendTo(faultyOrigin, `/team/api/knowledge-bases/${encodeURIComponent(REF_A)}`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json', origin: faultyOrigin, cookie, 'x-dsh-csrf': csrf },
+      body: JSON.stringify({ enabled: false }),
+    })
+    // 500, not 404: a fault of this deployment must not read as a member
+    // naming something that does not exist.
+    expect(answer.status).toBe(500)
+    await faulty.fiber.dispose()
   })
 })

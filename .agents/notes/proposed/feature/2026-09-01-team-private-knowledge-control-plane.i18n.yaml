@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/proposed/feature/2026-09-01-team-private-knowledge-control-plane.md
-2026-09-01-team-private-knowledge-control-plane.md: ebc4a4d4795658ba259df8e1be34c3f8956d13d7
-2026-09-01-team-private-knowledge-control-plane.zh.md: 98bbe87d326d5ba55291b8a89f353812e201d770
+2026-09-01-team-private-knowledge-control-plane.md: c1d56a585633b58c1c63898bea9c8ea158a2e84c
+2026-09-01-team-private-knowledge-control-plane.zh.md: 3d6c01313827a31bb9958ea1e7dc1e54f325a915

@@ -103,7 +103,7 @@ When the WAN, DNS, TLS, a proxy, or the remote Control Plane is unavailable, loc
 | `packages/knowledge/knowledge-weknora` | Control Plane Service Provider for the fixed WeKnora list and search endpoints; resolves credentials per operation |
 | `packages/knowledge/knowledge-gateway` | Governed gateway seam: the durable catalog an administrator curates, and the authorized directory and search a Runner reaches |
 | `packages/knowledge/knowledge-gateway-sqlite` | Durable catalog and governed-operation Service Provider; syncs governed resources, evaluates access, and records audit events |
-| `packages/knowledge/knowledge-gateway-http` | Bearer-token Runner-facing HTTP adapter; owns the knowledge `protocolVersion` and validates every decoded request and response |
+| `packages/knowledge/knowledge-gateway-http` | Bearer-token Runner-facing HTTP adapter; owns the knowledge `protocolVersion` and validates every decoded request |
 | `packages/knowledge/knowledge-team` | Runner-side `ctx.knowledge` Service Provider; reads the current `teamAccountClient` token per operation and calls its configured Control Plane |
 | `packages/knowledge/tool-knowledge` | Registers `knowledge_search`, the scope prompt section, scope-driven tool visibility, native rendering, and Web presentation metadata |
 | `packages/api/knowledge-controller` | Team-only Typert remote serving the browser its authorized directory and recording a scope choice; mounted by the `team` bundle alone |

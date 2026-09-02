@@ -1720,6 +1720,15 @@ importers:
       '@deepseek-ai/dsh-host-webserver':
         specifier: workspace:^
         version: link:../../host/webserver
+      '@deepseek-ai/dsh-knowledge-gateway-http':
+        specifier: workspace:^
+        version: link:../../knowledge/knowledge-gateway-http
+      '@deepseek-ai/dsh-knowledge-gateway-sqlite':
+        specifier: workspace:^
+        version: link:../../knowledge/knowledge-gateway-sqlite
+      '@deepseek-ai/dsh-knowledge-weknora':
+        specifier: workspace:^
+        version: link:../../knowledge/knowledge-weknora
       '@deepseek-ai/dsh-model-gateway-http':
         specifier: workspace:^
         version: link:../../llm/model-gateway-http
@@ -6583,6 +6592,55 @@ importers:
         specifier: workspace:^
         version: link:../knowledge
 
+  packages/knowledge/knowledge-gateway-http:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:^
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-access-control-sqlite':
+        specifier: workspace:^
+        version: link:../../access/access-control-sqlite
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:^
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:^
+        version: link:../../account/account-store-sqlite
+      '@deepseek-ai/dsh-audit-sqlite':
+        specifier: workspace:^
+        version: link:../../access/audit-sqlite
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:^
+        version: link:../../account/device-authorization
+      '@deepseek-ai/dsh-device-authorization-sqlite':
+        specifier: workspace:^
+        version: link:../../account/device-authorization-sqlite
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:^
+        version: link:../../host/webserver
+      '@deepseek-ai/dsh-invariants':
+        specifier: workspace:^
+        version: link:../../runtime-diagnostics/invariants
+      '@deepseek-ai/dsh-knowledge':
+        specifier: workspace:^
+        version: link:../knowledge
+      '@deepseek-ai/dsh-knowledge-gateway':
+        specifier: workspace:^
+        version: link:../knowledge-gateway
+      '@deepseek-ai/dsh-knowledge-gateway-sqlite':
+        specifier: workspace:^
+        version: link:../knowledge-gateway-sqlite
+      '@deepseek-ai/dsh-knowledge-source':
+        specifier: workspace:^
+        version: link:../knowledge-source
+
   packages/knowledge/knowledge-gateway-sqlite:
     dependencies:
       '@deepseek-ai/schemastery':
@@ -9557,6 +9615,18 @@ importers:
       '@deepseek-ai/dsh-invariants':
         specifier: workspace:^
         version: link:../../runtime-diagnostics/invariants
+      '@deepseek-ai/dsh-knowledge':
+        specifier: workspace:^
+        version: link:../../knowledge/knowledge
+      '@deepseek-ai/dsh-knowledge-gateway':
+        specifier: workspace:^
+        version: link:../../knowledge/knowledge-gateway
+      '@deepseek-ai/dsh-knowledge-gateway-sqlite':
+        specifier: workspace:^
+        version: link:../../knowledge/knowledge-gateway-sqlite
+      '@deepseek-ai/dsh-knowledge-source':
+        specifier: workspace:^
+        version: link:../../knowledge/knowledge-source
       '@deepseek-ai/dsh-team-console-menu-sqlite':
         specifier: workspace:^
         version: link:../team-console-menu-sqlite

@@ -1,6 +1,6 @@
 {
-  "name": "@deepseek-ai/dsh-team-admin-api",
-  "description": "The administration console's browser API: JSON over the Control Plane session, with the same authorization and audit path a form post took",
+  "name": "@deepseek-ai/dsh-knowledge-gateway-http",
+  "description": "Runner-facing knowledge endpoints for the DeepSeek Harness Control Plane \u2014 device-token verification, protocol-version negotiation, strict request parsing, and closed refusal mapping",
   "version": "0.1.2-alpha.1",
   "publishConfig": {
     "access": "public"
@@ -8,7 +8,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
-    "directory": "packages/team/team-admin-api"
+    "directory": "packages/knowledge/knowledge-gateway-http"
   },
   "type": "module",
   "main": "lib/index.js",
@@ -22,6 +22,7 @@
       "types": "./lib/types/invariant.d.ts",
       "default": "./lib/invariant.js"
     },
+    "./src/*": "./src/*",
     "./package.json": "./package.json"
   },
   "files": [
@@ -30,33 +31,31 @@
     "lib/types/**/*.d.ts"
   ],
   "license": "MIT",
-  "dependencies": {
-    "@deepseek-ai/dsh-access-control": "workspace:^",
-    "@deepseek-ai/dsh-account-store": "workspace:^",
-    "@deepseek-ai/dsh-audit": "workspace:^",
-    "@deepseek-ai/dsh-device-authorization": "workspace:^",
-    "@deepseek-ai/dsh-model-gateway": "workspace:^",
-    "@deepseek-ai/dsh-team-browser-session": "workspace:^",
-    "@deepseek-ai/dsh-team-console-menu": "workspace:^",
-    "@deepseek-ai/schemastery": "workspace:^"
-  },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-account-auth": "workspace:^",
+    "@deepseek-ai/dsh-device-authorization": "workspace:^",
     "@deepseek-ai/dsh-host-webserver": "workspace:^",
     "@deepseek-ai/dsh-invariants": "workspace:^",
     "@deepseek-ai/dsh-knowledge": "workspace:^",
     "@deepseek-ai/dsh-knowledge-gateway": "workspace:^"
   },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "workspace:^"
+  },
   "devDependencies": {
     "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-account-auth": "workspace:^",
+    "@deepseek-ai/dsh-access-control": "workspace:^",
+    "@deepseek-ai/dsh-access-control-sqlite": "workspace:^",
+    "@deepseek-ai/dsh-account-store": "workspace:^",
+    "@deepseek-ai/dsh-account-store-sqlite": "workspace:^",
+    "@deepseek-ai/dsh-audit-sqlite": "workspace:^",
+    "@deepseek-ai/dsh-device-authorization": "workspace:^",
+    "@deepseek-ai/dsh-device-authorization-sqlite": "workspace:^",
     "@deepseek-ai/dsh-host-webserver": "workspace:^",
     "@deepseek-ai/dsh-invariants": "workspace:^",
     "@deepseek-ai/dsh-knowledge": "workspace:^",
     "@deepseek-ai/dsh-knowledge-gateway": "workspace:^",
     "@deepseek-ai/dsh-knowledge-gateway-sqlite": "workspace:^",
-    "@deepseek-ai/dsh-knowledge-source": "workspace:^",
-    "@deepseek-ai/dsh-team-console-menu-sqlite": "workspace:^"
+    "@deepseek-ai/dsh-knowledge-source": "workspace:^"
   }
 }

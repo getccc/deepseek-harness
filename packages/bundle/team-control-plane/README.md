@@ -33,11 +33,25 @@ You do not mount this bundle directly. Select the profile that names it:
 dsh --profile team-control-plane
 ```
 
-The profile composes this bundle alone and listens on `127.0.0.1:3095`. Ordinary members do not browse this port; administrators reach `/team/admin/`, while Runners call the device and model endpoints.
+The profile composes this bundle alone and listens on `127.0.0.1:3095`. Ordinary members do not browse this port; administrators reach `/team/admin/`, while Runners call the device, model, and knowledge endpoints.
 
 ### Production binding
 
 The default binds loopback. A production deployment terminates TLS in a reverse proxy in front of this listener rather than exposing it directly. A deployment that must bind all interfaces states that in its own profile patch, restating every key the `webserver` row owns.
+
+### Deploying private knowledge
+
+Three rows have no default and the composition fails to load without them: `sourceCode`, `baseUrl`, and `credentialRef` on the knowledge source. A Control Plane that guessed which knowledge deployment it governs would read a stranger's knowledge, and one that guessed a source code would mint knowledge references that outlive the mistake.
+
+The credential must resolve to a WeKnora **space** key, not a platform key. A space key is fixed to the space it belongs to; a platform key reaches any space and takes a tenant header to say which, so a Control Plane holding one could read knowledge outside the space it governs.
+
+Run the knowledge deployment on this host and give `baseUrl` its loopback address. Reaching it over loopback is what makes "a member cannot read company knowledge except through a decision made here" a network fact rather than a policy: there is no origin for a member to discover, and no credential in flight across a segment. A deployment that must separate the two hosts restores the equivalent restriction — a private segment and a service identity — before it moves the address off loopback.
+
+The `sourceCode` is bounded at 19 characters over the audit token alphabet. It is the part of a knowledge reference a deployment chooses, and the reference as a whole has to fit what the audit store will record, so a longer one fails at load rather than at the first refused search.
+
+### Storage and instance count
+
+Every store is a SQLite file under the DSH home, which limits a deployment to one active Control Plane process with durable storage and backup. That is a real constraint rather than a default: two processes over copies of these files would disagree about grants and about which knowledge bases exist. Horizontal replicas need a shared-database design, not copies.
 
 ### Running beside a Runner
 

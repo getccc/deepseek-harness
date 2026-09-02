@@ -1063,6 +1063,22 @@ export interface Config {
 
 Source: [`packages/jobs/jobs-local/src/index.ts:31`](../packages/jobs/jobs-local/src/index.ts)
 
+<a id="deepseek-aidsh-knowledge-gateway-http"></a>
+
+## `@deepseek-ai/dsh-knowledge-gateway-http`
+
+Requires: `webServer` · `knowledgeGateway` · `deviceAuthorization`
+
+```ts config-catalog
+/** Plugin config: how much of a request the endpoints read. */
+export interface Config {
+  /** Largest request body accepted, in bytes. */
+  maxRequestBodyBytes?: number
+}
+```
+
+Source: [`packages/knowledge/knowledge-gateway-http/src/index.ts:55`](../packages/knowledge/knowledge-gateway-http/src/index.ts)
+
 <a id="deepseek-aidsh-knowledge-gateway-sqlite"></a>
 
 ## `@deepseek-ai/dsh-knowledge-gateway-sqlite`
@@ -2848,7 +2864,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/team/team-admin-api/src/index.ts:142`](../packages/team/team-admin-api/src/index.ts)
+Source: [`packages/team/team-admin-api/src/index.ts:150`](../packages/team/team-admin-api/src/index.ts)
 
 <a id="deepseek-aidsh-team-console-menu-sqlite"></a>
 

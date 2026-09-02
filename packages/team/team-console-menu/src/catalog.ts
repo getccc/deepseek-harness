@@ -110,4 +110,19 @@ export const SHIPPED_CONSOLE_MENUS: readonly ShippedConsoleMenu[] = [
     icon: 'api',
     sortOrder: 1,
   },
+  {
+    key: 'knowledge-bases',
+    parentKey: 'resources',
+    name: 'Knowledge bases',
+    labelKey: 'nav.knowledgeBases',
+    kind: 'menu',
+    routePath: '/resources/knowledge-bases',
+    componentPath: 'resources/KnowledgeBasesPage',
+    // The catalog administration resource is registered only when this Control
+    // Plane governs knowledge, so a deployment without it grants this to
+    // nobody and the entry stays hidden.
+    permission: 'knowledge_scope|knowledge.catalog.read',
+    icon: 'read',
+    sortOrder: 2,
+  },
 ]

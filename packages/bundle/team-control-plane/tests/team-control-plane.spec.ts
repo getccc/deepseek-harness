@@ -112,8 +112,11 @@ describe('dsh-team-control-plane bundle', () => {
       ['device-authorization', '@deepseek-ai/dsh-device-authorization-sqlite'],
       ['quota', '@deepseek-ai/dsh-quota-sqlite'],
       ['model-gateway', '@deepseek-ai/dsh-model-gateway-sqlite'],
+      ['knowledge-source', '@deepseek-ai/dsh-knowledge-weknora'],
+      ['knowledge-gateway', '@deepseek-ai/dsh-knowledge-gateway-sqlite'],
       ['team-control-plane-http', '@deepseek-ai/dsh-team-control-plane-http'],
       ['model-gateway-http', '@deepseek-ai/dsh-model-gateway-http'],
+      ['knowledge-gateway-http', '@deepseek-ai/dsh-knowledge-gateway-http'],
       ['team-admin-api', '@deepseek-ai/dsh-team-admin-api'],
       ['team-admin-app', '@deepseek-ai/dsh-team-admin-app'],
     ] as const) {
@@ -128,7 +131,7 @@ describe('dsh-team-control-plane bundle', () => {
     // across whatever directories it was launched from.
     //
     const stores = rows().filter(row => row.config?.['path'] !== undefined)
-    expect(stores).toHaveLength(7)
+    expect(stores).toHaveLength(8)
     for (const row of stores) {
       const expression = (row.config?.['path'] as { __jsExpr: string }).__jsExpr
       expect(expression, row.id).toMatch(/^dshHomePath\('control-plane', '[a-z]+\.sqlite'\)$/u)

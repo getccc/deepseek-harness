@@ -49,6 +49,14 @@ import {
   type ModelEntry,
   type ModelStatus,
 } from '@deepseek-ai/dsh-model-gateway'
+import { KnowledgeError, isKnowledgeRef, KnowledgeRef } from '@deepseek-ai/dsh-knowledge'
+import {
+  KNOWLEDGE_CATALOG_RESOURCE,
+  KNOWLEDGE_RESOURCE_TYPE,
+  type KnowledgeCatalogEntry,
+  type KnowledgeCatalogView,
+  type KnowledgeGateway,
+} from '@deepseek-ai/dsh-knowledge-gateway'
 import {
   ConsoleMenuNotEmptyError,
   MenuId,
@@ -319,6 +327,34 @@ function wireDevice(device: Device): WireDevice {
   }
 }
 
+/**
+ * Project the knowledge catalog for the console.
+ *
+ * The upstream id is absent by construction — the gateway never returns one —
+ * so this projection drops nothing; it renames for a reader.
+ */
+function wireCatalog(view: KnowledgeCatalogView): Record<string, unknown> {
+  return {
+    source: view.source,
+    knowledgeBases: view.entries.map(entry => ({
+      knowledgeRef: entry.ref,
+      resourceId: entry.resourceId,
+      displayName: entry.displayName,
+      description: entry.description,
+      kind: entry.kind,
+      documentCount: entry.documentCount,
+      chunkCount: entry.chunkCount,
+      processingCount: entry.processingCount,
+      embeddingModelId: entry.embeddingModelId,
+      adminEnabled: entry.adminEnabled,
+      remotePresent: entry.remotePresent,
+      effectiveEnabled: entry.effectiveEnabled,
+      lastDiscoveredAt: entry.lastDiscoveredAt,
+      upstreamUpdatedAt: entry.upstreamUpdatedAt,
+    })),
+  }
+}
+
 /** Project one catalog entry. */
 function wireModel(entry: ModelEntry, resourceId: ResourceId): WireModel {
   return {
@@ -374,11 +410,28 @@ async function heldPermissions(
     principalId,
     action: permission.action,
     resourceType: permission.resourceType,
-    resourceId: permission.resourceType === 'model' ? MODEL_CATALOG_RESOURCE : orgId,
+    resourceId: adminResourceOf(permission.resourceType, orgId),
   })))
   return PERMISSION_CATALOG
     .filter((_permission, index) => decisions[index]?.allowed === true)
     .map(permission => `${permission.resourceType}|${permission.action}`)
+}
+
+/**
+ * Which resource a console permission is asked about.
+ *
+ * A catalog is one thing an organization owns, so every permission over one
+ * answers for the catalog resource rather than for each entry. This projection
+ * only decides which controls the console shows; each route still evaluates the
+ * exact resource its own operation acts on.
+ * @param resourceType - the permission's governed resource type.
+ * @param orgId - the organization the console is signed in to.
+ * @returns the external ref to evaluate this permission against.
+ */
+function adminResourceOf(resourceType: string, orgId: OrgId): string {
+  if (resourceType === 'model') return MODEL_CATALOG_RESOURCE
+  if (resourceType === KNOWLEDGE_RESOURCE_TYPE) return KNOWLEDGE_CATALOG_RESOURCE
+  return orgId
 }
 
 /**
@@ -403,6 +456,17 @@ export function apply(ctx: Context, config: Config): void {
       ['model', MODEL_CATALOG_RESOURCE, 'Model catalog administration'],
     ] as const) {
       await ctx.accessControl.registerResource({ orgId: organizationId, type, externalRef, displayName })
+    }
+    // Only when this Control Plane governs knowledge at all. Registering it
+    // unconditionally would put a resource in the catalog that no route can
+    // act on, and hand an administrator a menu entry leading nowhere.
+    if (ctx.get('knowledgeGateway') !== undefined) {
+      await ctx.accessControl.registerResource({
+        orgId: organizationId,
+        type: KNOWLEDGE_RESOURCE_TYPE,
+        externalRef: KNOWLEDGE_CATALOG_RESOURCE,
+        displayName: 'Knowledge catalog administration',
+      })
     }
     // The navigation this build ships, for an organization that does not have
     // it yet. Seeding here rather than in the store keeps the store ignorant of
@@ -883,6 +947,16 @@ export function apply(ctx: Context, config: Config): void {
     if (segments[0] === 'models' && segments.length === 1) {
       if (!await mayProceed(res, signed, 'model.catalog.read', 'model', MODEL_CATALOG_RESOURCE)) return
       json(res, 200, await readModels(org))
+      return
+    }
+    if (segments[0] === 'knowledge-bases' && segments.length === 1) {
+      const gateway = knowledgeGateway()
+      if (gateway === undefined) {
+        refuse(res, 404, 'not-found')
+        return
+      }
+      if (!await mayProceed(res, signed, 'knowledge.catalog.read', KNOWLEDGE_RESOURCE_TYPE, KNOWLEDGE_CATALOG_RESOURCE)) return
+      json(res, 200, wireCatalog(await gateway.catalogView(org)))
       return
     }
     refuse(res, 404, 'not-found')
@@ -1527,6 +1601,59 @@ export function apply(ctx: Context, config: Config): void {
       return
     }
 
+    if (segments[0] === 'knowledge-bases' && segments[1] === 'sync' && method === 'POST' && segments.length === 2) {
+      const gateway = knowledgeGateway()
+      if (gateway === undefined) {
+        refuse(res, 404, 'not-found')
+        return
+      }
+      if (!await mayProceed(res, signed, 'knowledge.catalog.manage', KNOWLEDGE_RESOURCE_TYPE, KNOWLEDGE_CATALOG_RESOURCE)) return
+      // The gateway records its own sync audit row and serializes concurrent
+      // callers, so this route neither repeats the record nor guards the race.
+      json(res, 200, wireCatalog(await gateway.sync(org)))
+      return
+    }
+
+    if (segments[0] === 'knowledge-bases' && method === 'PATCH' && segments.length === 2) {
+      const gateway = knowledgeGateway()
+      if (gateway === undefined) {
+        refuse(res, 404, 'not-found')
+        return
+      }
+      if (!await mayProceed(res, signed, 'knowledge.catalog.manage', KNOWLEDGE_RESOURCE_TYPE, KNOWLEDGE_CATALOG_RESOURCE)) return
+      const ref = decodeURIComponent(segments[1] as string)
+      const enabled = body['enabled']
+      if (typeof enabled !== 'boolean' || !isKnowledgeRef(ref)) {
+        refuse(res, 400, 'malformed', { reason: 'fields', detail: 'A knowledge base is switched by reference and a boolean.' })
+        return
+      }
+      try {
+        await gateway.setEnabled(org, KnowledgeRef(ref), enabled)
+      } catch (error) {
+        // The one refusal this raises is an entry the catalog does not hold.
+        if (!(error instanceof KnowledgeError)) throw error
+        refuse(res, 404, 'not-found')
+        return
+      }
+      await record(enabled ? 'resource.enable' : 'resource.disable', signed, 'allowed', { resourceId: ref })
+      json(res, 200, wireCatalog(await gateway.catalogView(org)))
+      return
+    }
+
+    if (segments[0] === 'roles' && segments[2] === 'knowledge-bases' && method === 'POST' && segments.length === 3) {
+      const gateway = knowledgeGateway()
+      if (gateway === undefined) {
+        refuse(res, 404, 'not-found')
+        return
+      }
+      if (!await mayProceed(res, signed, 'role.grant.manage', 'role', org)) return
+      const applied = await setRoleKnowledge(res, gateway, org, RoleId(segments[1] as string), body)
+      if (!applied) return
+      await record('grant.add', signed, 'allowed', { resourceId: segments[1] as string })
+      json(res, 200, await readRoles(org))
+      return
+    }
+
     if (segments[0] === 'models' && segments.length === 2 && method === 'DELETE') {
       if (!await mayProceed(res, signed, 'model.catalog.manage', 'model', MODEL_CATALOG_RESOURCE)) return
       const modelRef = segments[1] as string
@@ -1537,6 +1664,71 @@ export function apply(ctx: Context, config: Config): void {
     }
 
     refuse(res, 404, 'not-found')
+  }
+
+  /**
+   * The knowledge gateway, when this Control Plane governs knowledge.
+   *
+   * Read per request rather than injected: a deployment without knowledge is a
+   * complete Control Plane, and a hard injection would keep the whole
+   * administration API from loading in one.
+   */
+  const knowledgeGateway = (): KnowledgeGateway | undefined => ctx.get('knowledgeGateway')
+
+  /**
+   * Make one role's knowledge grants exactly what the editor asked for.
+   *
+   * The mode is explicit rather than inferred from the set, because "none" and
+   * "an empty selection" are the same list and different intentions, and a
+   * silent read of one as the other would either widen or revoke access nobody
+   * asked to change.
+   * @returns true when the grants were written.
+   */
+  async function setRoleKnowledge(
+    res: ServerResponse,
+    gateway: KnowledgeGateway,
+    orgId: OrgId,
+    roleId: RoleId,
+    body: Record<string, unknown>,
+  ): Promise<boolean> {
+    const mode = body['mode']
+    const refs = body['knowledgeRefs']
+    if (mode !== 'none' && mode !== 'all' && mode !== 'selected') {
+      refuse(res, 400, 'malformed', { reason: 'fields', detail: 'Knowledge access is none, all, or selected.' })
+      return false
+    }
+    if (mode === 'selected' && (!Array.isArray(refs) || refs.some(ref => typeof ref !== 'string'))) {
+      refuse(res, 400, 'malformed', { reason: 'fields', detail: 'Selected knowledge access is a list of knowledge references.' })
+      return false
+    }
+    if (!(await ctx.accessControl.listRoles(orgId)).some(role => role.id === roleId)) {
+      refuse(res, 404, 'not-found')
+      return false
+    }
+    // The durable catalog decides what is selectable, never `listResources`:
+    // the catalog administration resource shares this resource type, and
+    // offering it as a knowledge base would let a role be granted search on it.
+    const entries = new Map((await gateway.catalogView(orgId)).entries.map(entry => [entry.ref as string, entry]))
+    const wanted = mode === 'selected' ? (refs as string[]) : []
+    const selected = wanted.map(ref => entries.get(ref))
+    if (selected.includes(undefined)) {
+      refuse(res, 400, 'malformed', { reason: 'fields', detail: 'That knowledge base is not in this organization.' })
+      return false
+    }
+    for (const grant of await ctx.accessControl.listRoleGrants(roleId)) {
+      if (grant.resourceType !== KNOWLEDGE_RESOURCE_TYPE || grant.action !== 'knowledge.search') continue
+      await ctx.accessControl.revokeGrant(grant.id)
+    }
+    if (mode === 'all') {
+      await ctx.accessControl.grantType(roleId, KNOWLEDGE_RESOURCE_TYPE, 'knowledge.search')
+    }
+    for (const entry of selected as KnowledgeCatalogEntry[]) {
+      await ctx.accessControl.grantResource(roleId, entry.resourceId, 'knowledge.search')
+    }
+    // Anything narrower than the whole permission catalog means the role no
+    // longer covers it, so start-up must stop bringing it back up to one.
+    if (mode !== 'all') await ctx.accessControl.updateRole(roleId, { coversCatalog: false })
+    return true
   }
 
   /**

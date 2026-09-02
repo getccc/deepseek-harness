@@ -11,10 +11,8 @@
 # assert their absence, and the profile template names no bundle that would
 # reintroduce them.
 #
-# The company services below are the Control Plane. The remaining ones
-# (Knowledge MCP Gateway, Private Catalog) insert into this list as their
-# packages land. Each addition must keep the absence assertions
-# passing.
+# The company services below are the Control Plane. Each addition must keep the
+# absence assertions passing.
 #
 # Every store writes under the DSH home rather than the working directory, so
 # a service started from anywhere finds the same data.
@@ -100,6 +98,37 @@
       config:
         path: !!js dshHomePath('control-plane', 'models.sqlite')
 
+    # ── which private knowledge a member may reach ───────────────────────
+    # The source provider holds the knowledge credential and speaks one
+    # product's protocol; the governed gateway in front of it owns the durable
+    # catalog and authorizes every operation against current grants. Only the
+    # gateway is reachable from outside this process.
+    #
+    # `sourceCode`, `baseUrl`, and `credentialRef` are deliberately absent, and
+    # the row fails to load without them. A Control Plane that guessed which
+    # knowledge deployment it governs would read a stranger's knowledge, and one
+    # that guessed a source code would mint knowledge references that outlive
+    # the mistake.
+    #
+    # The credential must resolve to a WeKnora *space* key. A platform key
+    # reaches any space and takes a tenant header to say which, so a Control
+    # Plane holding one could read knowledge outside the space it governs.
+    - id: knowledge-source
+      name: '@deepseek-ai/dsh-knowledge-weknora'
+      config:
+        requestTimeoutMs: 30000
+        # High on purpose: retrieved passages are charged as prompt tokens on
+        # the member's next model request, so the bound that matters is what a
+        # deployment is willing to put in front of a model rather than a
+        # transport limit.
+        maxSearchResults: 20
+        maxPassageChars: 4000
+    - id: knowledge-gateway
+      name: '@deepseek-ai/dsh-knowledge-gateway-sqlite'
+      config:
+        path: !!js dshHomePath('control-plane', 'knowledge.sqlite')
+        defaultMaxResults: 10
+
     # ── the two HTTP surfaces ────────────────────────────────────────────
     # Runner-facing: account authentication approves a transaction, then PKCE,
     # a device signature, and a one-time code bind the credential to the Runner.
@@ -120,6 +149,13 @@
         # here is charged its ceiling, because a provider that stopped
         # answering may still have generated tokens.
         upstreamTimeoutMs: 600000
+    # Company knowledge traffic: authorized by the device access token, and
+    # refused before any other field is read when the Runner speaks a knowledge
+    # protocol version this build does not.
+    - id: knowledge-gateway-http
+      name: '@deepseek-ai/dsh-knowledge-gateway-http'
+      config:
+        maxRequestBodyBytes: 65536
     # Administrator-facing: the administration console's API and application.
     #
     # `secureCookie` stays true because a deployment terminates TLS in front
