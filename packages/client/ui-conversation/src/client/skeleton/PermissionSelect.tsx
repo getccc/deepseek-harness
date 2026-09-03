@@ -61,7 +61,19 @@ function optionLabel(
   option: PermissionSelectValue['options'][number],
   t: ComposerBarProps['t'],
 ): string {
-  return option.value === FULL_ACCESS ? t('access.fullLabel') : displayName(option.name)
+  // The three built-in presets carry localized product labels; a
+  // host-configured preset outside the set falls through to its title-cased
+  // machine name.
+  switch (option.value) {
+    case FULL_ACCESS:
+      return t('access.fullLabel')
+    case 'read-only':
+      return t('access.readOnlyLabel')
+    case 'workspace-write':
+      return t('access.workspaceWriteLabel')
+    default:
+      return displayName(option.name)
+  }
 }
 
 export interface PermissionSelectProps {
