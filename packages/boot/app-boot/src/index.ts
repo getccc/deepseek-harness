@@ -50,6 +50,7 @@ export {
   type ProfileModuleFallbackOptions,
   type ProfilePatchReload,
   type ProfileTemplate,
+  isPackagedExecutable,
 } from './profile.ts'
 
 /**

@@ -27,7 +27,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createRequire } from 'node:module'
-import { dirname, isAbsolute, join } from 'node:path'
+import { dirname, isAbsolute, join, resolve as resolvePath } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { Service } from '@deepseek-ai/cordis'
 import type { Context } from '@deepseek-ai/cordis'
@@ -469,6 +469,44 @@ export function orderByModuleGraph(entries: readonly WebBootEntry[]): WebBootEnt
   return ordered
 }
 
+/**
+ * The generated stand-in `dsh-app-boot` writes into a profile for one
+ * installation package. A packaged executable keeps its own modules in a
+ * filesystem no operating-system link can enter, so the profile receives a
+ * proxy package that re-exports them instead of a symlink to the real one.
+ */
+interface ModuleFallbackProxy {
+  name?: unknown
+  exports?: Record<string, unknown>
+  dsh?: { moduleFallback?: { targets?: Record<string, unknown> } }
+}
+
+/**
+ * Resolve one proxy entry file back to the installation module it stands for.
+ * The proxy is transparent to `import`, but it carries neither the package's
+ * `dsh.client` declaration nor its bundle bytes, so a manifest walk that
+ * stopped at the proxy would drop every browser plugin the installation owns.
+ * @param manifest - the parsed manifest the walk reached.
+ * @param manifestPath - that manifest's path, which its export paths are relative to.
+ * @param moduleUrl - the module the walk started from.
+ * @returns the real module's URL, or `undefined` when this manifest is not a proxy for it.
+ */
+function moduleFallbackTarget(
+  manifest: ModuleFallbackProxy, manifestPath: string, moduleUrl: string,
+): string | undefined {
+  const targets = manifest.dsh?.moduleFallback?.targets
+  if (targets === undefined) return undefined
+  const dir = dirname(manifestPath)
+  for (const [subpath, file] of Object.entries(manifest.exports ?? {})) {
+    if (typeof file !== 'string') continue
+    if (pathToFileURL(resolvePath(dir, file)).href !== moduleUrl) continue
+    const target = targets[subpath]
+    // A target naming the entry file itself would restart the same walk.
+    if (typeof target === 'string' && target !== moduleUrl) return target
+  }
+  return undefined
+}
+
 /** Bootstrap package whose ordinary client bundle supplies the module-system implementation. */
 const CLIENT_MODULES_ID = '@deepseek-ai/dsh-client-modules'
 
@@ -830,9 +868,13 @@ export class ClientModuleRegistry extends Service {
       const candidate = join(dir, 'package.json')
       if (existsSync(candidate)) {
         try {
-          const name = (JSON.parse(readFileSync(candidate, 'utf8')) as { name?: unknown }).name
+          const manifest = JSON.parse(readFileSync(candidate, 'utf8')) as ModuleFallbackProxy
+          const name = manifest.name
           if (typeof name === 'string' && (expectedPackageName === undefined || name === expectedPackageName)) {
-            return { path: candidate, packageName: name }
+            const target = moduleFallbackTarget(manifest, candidate, moduleUrl)
+            return target === undefined
+              ? { path: candidate, packageName: name }
+              : this.nearestPackage(target, expectedPackageName)
           }
         } catch {
           // An unreadable or malformed intermediate manifest cannot own the

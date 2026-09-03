@@ -73,6 +73,8 @@ const SOURCE_EXCLUDES = [
   '**/lib/**',
   '**/dist/**',
   '**/coverage/**',
+  'apps/*/dist/**',
+  'apps/*/release/**',
 ]
 
 /** Convert a host path from glob output to the repository's slash form. */

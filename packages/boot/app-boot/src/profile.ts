@@ -359,8 +359,13 @@ interface ModuleProxyRecord {
   dsh?: { moduleFallback?: { targets?: unknown } }
 }
 
-/** Return whether the process reads application modules from pkg's virtual filesystem. */
-function isPackagedExecutable(): boolean {
+/**
+ * Return whether the process reads application modules from pkg's virtual
+ * filesystem — the single-file executable build. That build is also every
+ * child's Node: a spawn of `process.execPath` re-enters the executable.
+ * @returns whether this process is the packaged executable.
+ */
+export function isPackagedExecutable(): boolean {
   return (process as NodeJS.Process & { pkg?: unknown }).pkg !== undefined
 }
 

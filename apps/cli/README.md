@@ -20,6 +20,8 @@ The invoking directory is the default workspace root. The `web`, `headless`, `sd
 
 ## App arguments
 
+The single-file executable build is also every child's Node: a plugin that spawns `process.execPath` with its own worker script re-enters the executable, so when the first argument is an absolute path to an existing `.js`, `.mjs`, or `.cjs` file the launcher runs that script exactly as `node <script>` would and never reads it as a `dsh` command. Every `dsh` invocation starts with an option, so nothing the launcher accepts is shadowed; plain Node launches are unaffected. This serves a child process and is not an application launcher.
+
 The launcher parses only its own flags and hands everything after them to the booted profile, where any injected app plugin may parse the shared immutable snapshot ([`dsh-cmdline`](../../packages/boot/cmdline/README.md)). The first token the launcher does not recognize starts the app's arguments:
 
 ```sh

@@ -7,6 +7,8 @@ import { COMPOSITION_FILE, discoverPresets, scanRoot } from '@deepseek-ai/dsh-ag
 
 const fsHarness = vi.hoisted(() => ({
   nextReadError: undefined as NodeJS.ErrnoException | undefined,
+  /** Answer every directory listing with plain names, as a packaged executable's snapshot does. */
+  namesOnly: false,
 }))
 
 vi.mock('node:fs/promises', async (importOriginal) => {
@@ -21,6 +23,13 @@ vi.mock('node:fs/promises', async (importOriginal) => {
       }
       return (actual.readFile as (path: unknown, ...args: never[]) => Promise<unknown>)(path, ...rest)
     }) as typeof actual.readFile,
+    readdir: (async (path: unknown, options?: unknown) => {
+      const listing = actual.readdir as (path: unknown, options?: unknown) => Promise<unknown[]>
+      const entries = await listing(path, options)
+      return fsHarness.namesOnly
+        ? entries.map(entry => typeof entry === 'string' ? entry : (entry as { name: string }).name)
+        : entries
+    }) as typeof actual.readdir,
   }
 })
 
@@ -33,6 +42,33 @@ const USER = { path: join(FIXTURES, 'user'), trust: 'user' as const }
 
 beforeEach(() => {
   fsHarness.nextReadError = undefined
+  fsHarness.namesOnly = false
+})
+
+describe('packaged executable roots', () => {
+  it('discovers the shipped presets when the filesystem lists names without kinds', async () => {
+    // pkg's virtual filesystem, which carries the shipped root, ignores
+    // `withFileTypes` and returns plain names; a scan that trusted a Dirent
+    // there failed every Session creation in the desktop build.
+    fsHarness.namesOnly = true
+    const found = await scanRoot(SYSTEM, HARNESS)
+    expect(found.map(preset => preset.id)).toEqual(
+      (await scanRoot(SYSTEM, HARNESS)).map(preset => preset.id),
+    )
+    expect(found.length).toBeGreaterThan(0)
+    expect(found.every(preset => preset.broken === undefined)).toBe(true)
+  })
+})
+
+describe('unreadable preset-named entries', () => {
+  it('skips a dangling link that carries a preset name instead of reporting it broken', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'dsh-presets-ghost-'))
+    await symlink(join(root, 'nowhere'), join(root, 'ghost'))
+    await mkdir(join(root, 'real'))
+    await writeFile(join(root, 'real', COMPOSITION_FILE), '[]\n')
+    const found = await scanRoot({ path: root, trust: 'user' }, HARNESS)
+    expect(found.map(preset => preset.id)).toEqual(['real'])
+  })
 })
 
 describe('display order', () => {

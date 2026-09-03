@@ -272,6 +272,35 @@ describe('client bundle activation', () => {
     },
   )
 
+  it('follows a packaged-executable module proxy to the real client declaration', () => {
+    // A packaged executable cannot link its own filesystem into a profile, so
+    // `dsh-app-boot` writes a proxy package that re-exports the installation's
+    // modules. Its generated manifest carries no `dsh.client`, and a walk that
+    // stopped there would drop every browser plugin the installation owns.
+    const packageName = '@fixture/proxied-installation'
+    const clientPath = writePackage(packageName)
+    const realHostPath = join(dirname(clientPath), 'index.js')
+    mkdirSync(dirname(realHostPath), { recursive: true })
+    writeFileSync(realHostPath, 'export default {}\n')
+    writeFileSync(clientPath, 'module.exports = {}\n')
+
+    const proxyRoot = join(root!, 'profiles', 'node_modules', ...packageName.split('/'))
+    mkdirSync(proxyRoot, { recursive: true })
+    writeFileSync(join(proxyRoot, 'entry-0.js'), `export * from ${JSON.stringify(pathToFileURL(realHostPath).href)}\n`)
+    writeFileSync(join(proxyRoot, 'package.json'), JSON.stringify({
+      name: packageName,
+      private: true,
+      type: 'module',
+      exports: { '.': './entry-0.js' },
+      dsh: { moduleFallback: { targets: { '.': pathToFileURL(realHostPath).href } } },
+    }))
+
+    const service = construct([pathToFileURL(join(proxyRoot, 'entry-0.js')).href])
+
+    expect(service.clientPath(packageName)).toBe(clientPath)
+    expect(service.graph().entries.map(entry => entry.id)).toEqual([packageName])
+  })
+
   it('derives the browser module id from a file entry owning manifest', () => {
     const packageName = '@fixture/file-entry'
     const clientPath = writePackage(packageName)
