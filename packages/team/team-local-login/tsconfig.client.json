@@ -8,6 +8,7 @@
   "files": [
     "src/client/index.ts",
     "src/client/locales.ts",
+    "src/client/day-parts.ts",
     "src/client/HeroGreeting.tsx",
     "src/client/TeamAccountLauncher.tsx",
     "src/css-modules.d.ts",

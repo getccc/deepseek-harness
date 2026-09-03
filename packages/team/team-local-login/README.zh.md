@@ -60,6 +60,10 @@ HTML 表单由回环地址上的 Runner 提供。提交后，Runner 开启一个
 
 浏览器端占用设置 Shell 的可选 `settings.launcher` Slot。它携带本地浏览器 Cookie 读取 `/team/account`，展示返回的显示名与文字头像，并打开包含设置和退出登录的菜单。设置会调用 Shell 拥有的面板动作；退出登录会导航到 `/team/logout`。身份响应只包含 `loginName` 与 `displayName`。
 
+### 空白会话按成员自己的时钟问候
+
+同一个浏览器端用同一次 `/team/account` 读取填充 Conversation Shell 的 `conversation.hero.headline` Slot。标题有两行：一行是称呼显示名的问候，一行是它下面的寄语。两行都属于成员浏览器时钟所处的时段——深夜、清晨、晨会、上午其余时间、中午、下午、晚上——边界写在 [`day-parts.ts`](src/client/day-parts.ts) 中。一直开着的会话会自己跨入下一个时段。身份到达之前，标题保持为空，而不是问候一个无名者。
+
 ### 源码地图
 
 | 路径 | 角色 |
@@ -67,7 +71,7 @@ HTML 表单由回环地址上的 Runner 提供。提交后，Runner 开启一个
 | [`src/index.ts`](src/index.ts) | 请求验证与四条本地路由 |
 | [`src/pages.ts`](src/pages.ts) | 应用解锁前提供的独立 HTML |
 | [`src/paths.ts`](src/paths.ts) | 固定本地路径 |
-| [`src/client/`](src/client/) | 本地化成员入口与账户菜单 |
+| [`src/client/`](src/client/) | 本地化成员入口、账户菜单与欢迎标题 |
 | [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件注册 |
 
 -----

@@ -1,0 +1,15 @@
+/* The headline slot carries two lines here: the greeting in the hero's own
+   26/32 type, and a quieter tagline under it. */
+.greeting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.tagline {
+  font-size: 14px;
+  line-height: 22px;
+  font-weight: 400;
+  color: var(--dsw-alias-label-secondary);
+}

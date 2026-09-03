@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { Context } from '@deepseek-ai/cordis'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
@@ -15,6 +15,7 @@ import {
 usePinnedBrowserLanguages('zh-CN')
 afterEach(() => {
   cleanup()
+  vi.useRealTimers()
   vi.unstubAllGlobals()
 })
 
@@ -174,23 +175,49 @@ describe('landing after a sign-in', () => {
 })
 
 describe('the hero greeting', () => {
-  /** Render the greeting over one account read. */
-  function greet(loadAccount: HeroGreetingProps['loadAccount']) {
+  /** Greeting props over one account read; `t` echoes the key it is given. */
+  function greeting(loadAccount: HeroGreetingProps['loadAccount']): HeroGreetingProps {
     // The renderer-owned global seats are unused by this component.
-    const props = {
+    return {
       className: 'headline',
       loadAccount,
       signOut: vi.fn(),
-      t: (key: string, params?: Record<string, unknown>) => (key === 'hero.greeting'
-        ? `你好，${String(params?.['name'])}。今天有什么计划？`
-        : key),
+      t: (key: string, params?: Record<string, unknown>) => (params === undefined
+        ? key
+        : `${key}:${String(params['name'])}`),
     } as unknown as HeroGreetingProps
-    return render(<HeroGreeting {...props} />)
   }
 
-  it('greets the signed-in member by the name they are shown under', async () => {
+  /** Render the greeting over one account read. */
+  function greet(loadAccount: HeroGreetingProps['loadAccount']) {
+    return render(<HeroGreeting {...greeting(loadAccount)} />)
+  }
+
+  /** Hold the local clock at one wall-clock reading on an ordinary day. */
+  function clockAt(hours: number, minutes: number, seconds = 0) {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 8, 2, hours, minutes, seconds))
+  }
+
+  it('greets the signed-in member with the copy for this part of their day', async () => {
+    clockAt(10, 0)
     const view = greet(vi.fn().mockResolvedValue({ loginName: 'test1', displayName: '测试一' }))
-    await waitFor(() => { expect(view.container.textContent).toBe('你好，测试一。今天有什么计划？') })
+    await act(async () => {})
+
+    expect(view.container.textContent)
+      .toBe('hero.morning.greeting:测试一hero.morning.tagline')
+  })
+
+  it('follows the clock into the next part while the conversation stays blank', async () => {
+    // A member who opens a blank conversation before the morning gathering
+    // and leaves it open should not be greeted by the stretch that has passed.
+    clockAt(8, 29, 59)
+    const view = greet(vi.fn().mockResolvedValue({ loginName: 'test1', displayName: '测试一' }))
+    await act(async () => {})
+    expect(view.container.textContent).toContain('hero.earlyMorning.greeting')
+
+    act(() => { vi.advanceTimersByTime(1_000) })
+    expect(view.container.textContent).toContain('hero.morningSong.greeting')
   })
 
   it('says nothing until the member is known, and nothing if they cannot be read', async () => {
@@ -205,6 +232,25 @@ describe('the hero greeting', () => {
 
     const refused = greet(vi.fn().mockRejectedValue(new Error('unauthorized')))
     await waitFor(() => { expect(refused.container.textContent).toBe('') })
+  })
+
+  it('keeps the newer member when a slower read settles after them', async () => {
+    // Two reads in flight across a re-registration: the first must not put a
+    // name back on the page after a later one has replaced it.
+    clockAt(10, 0)
+    let settleFirst!: (identity: { loginName: string; displayName: string }) => void
+    const view = render(
+      <HeroGreeting {...greeting(() => new Promise((resolve) => { settleFirst = resolve }))} />,
+    )
+    view.rerender(
+      <HeroGreeting {...greeting(vi.fn().mockResolvedValue({ loginName: 'test2', displayName: '测试二' }))} />,
+    )
+    await act(async () => {})
+    expect(view.container.textContent).toContain('测试二')
+
+    settleFirst({ loginName: 'test1', displayName: '测试一' })
+    await act(async () => {})
+    expect(view.container.textContent).toContain('测试二')
   })
 
   it('fills the headline slot from the same account read as the launcher', async () => {

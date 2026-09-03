@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-02-the-hero-greeting-follows-the-part-of-the-day.md
+2026-09-02-the-hero-greeting-follows-the-part-of-the-day.md: d81ceb13964d48bc550048082f81d0e07e2d8b23
+2026-09-02-the-hero-greeting-follows-the-part-of-the-day.zh.md: 2a3faf8a73366545688642e7f590e3b91da11fcc
