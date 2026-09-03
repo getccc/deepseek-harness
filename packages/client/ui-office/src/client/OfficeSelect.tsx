@@ -18,7 +18,7 @@ import type { OfficeKey } from './locales.ts'
  * `OFFICE_KINDS`; kept local because a client bundle may not import a runtime
  * value across plugins.
  */
-const OFFICE_KINDS = ['word', 'ppt', 'amec-ppt', 'excel'] as const satisfies readonly Exclude<OfficeKind, 'none'>[]
+const OFFICE_KINDS = ['word', 'excel', 'ppt', 'amec-ppt', 'chart'] as const satisfies readonly Exclude<OfficeKind, 'none'>[]
 
 /** What this control needs from the plugin that registered it. */
 export interface OfficeSelectInjected {

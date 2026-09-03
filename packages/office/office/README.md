@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-office` is the shared vocabulary of one small choice: which office document a conversation should produce — `word`, `ppt`, `amec-ppt`, `excel`, or `none`. It owns the `OfficeKind`, the `office/kind` Session event that records a choice, the fold that recovers the current one from a log, and the validator that reads one back off a wire. It carries no plugin, no prompt, and no projection: the model-facing tool (`dsh-tool-office`) and the browser Remote (`dsh-api-office-controller`) build on this vocabulary, which is deliberately free of any module augmentation beyond the Session event so a generated Remote face that names `OfficeChoice` never drags a projection registry into itself.
+`dsh-office` is the shared vocabulary of one small choice: which office deliverable a conversation should produce — `word`, `excel`, `ppt`, `amec-ppt`, `chart`, or `none`. It owns the `OfficeKind`, the `office/kind` Session event that records a choice, the fold that recovers the current one from a log, and the validator that reads one back off a wire. It carries no plugin, no prompt, and no projection: the model-facing tool (`dsh-tool-office`) and the browser Remote (`dsh-api-office-controller`) build on this vocabulary, which is deliberately free of any module augmentation beyond the Session event so a generated Remote face that names `OfficeChoice` never drags a projection registry into itself.
 
 ## Table of Contents
 

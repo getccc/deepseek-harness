@@ -48,6 +48,6 @@ Each choice changes the `office:kind` system-prompt section that `dsh-tool-offic
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-The chip lists the four kinds from a local const rather than importing the vocabulary's `OFFICE_KINDS`, because a client bundle may not import a runtime value across plugins; the type still comes from `@deepseek-ai/dsh-office`.
+The chip lists the five kinds from a local const rather than importing the vocabulary's `OFFICE_KINDS`, because a client bundle may not import a runtime value across plugins; the type still comes from `@deepseek-ai/dsh-office`.
 
 </details>

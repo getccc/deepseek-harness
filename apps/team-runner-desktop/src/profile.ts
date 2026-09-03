@@ -19,7 +19,7 @@ export const RUNNER_BUNDLES = [
 ] as const
 
 /** Bundle layers the installer ships as a plugin tree, in mount order. */
-export const SHIPPED_PLUGIN_BUNDLES = ['dsh-univer-office', 'dsh-better-sidebar'] as const
+export const SHIPPED_PLUGIN_BUNDLES = ['dsh-univer-office', 'dsh-better-sidebar', '@dsh-external/dsh-echarts'] as const
 
 /**
  * Render the deployment-owned profile manifest.

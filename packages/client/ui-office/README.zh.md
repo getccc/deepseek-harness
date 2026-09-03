@@ -48,6 +48,6 @@ kind: "package-reference"
 <details>
 <summary>面向维护者的工作背景——点击展开</summary>
 
-芯片从一个本地常量列出四种类型，而非导入词汇的 `OFFICE_KINDS`，因为客户端 bundle 不得跨插件导入运行时值；类型仍来自 `@deepseek-ai/dsh-office`。
+芯片从一个本地常量列出五种类型，而非导入词汇的 `OFFICE_KINDS`，因为客户端 bundle 不得跨插件导入运行时值；类型仍来自 `@deepseek-ai/dsh-office`。
 
 </details>

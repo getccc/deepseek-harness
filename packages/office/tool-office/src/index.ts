@@ -49,8 +49,8 @@ const OFFICE_SECTION = 'office:kind'
 const officeChoiceSchema: ZodType<OfficeChoice> = zod.object({
   version: zod.literal(1),
   kind: zod.union([
-    zod.literal('none'), zod.literal('word'), zod.literal('ppt'),
-    zod.literal('amec-ppt'), zod.literal('excel'),
+    zod.literal('none'), zod.literal('word'), zod.literal('excel'),
+    zod.literal('ppt'), zod.literal('amec-ppt'), zod.literal('chart'),
   ]),
 }).strict()
 
@@ -66,14 +66,16 @@ export function renderOfficeSection(choice: OfficeChoice, amecTemplatePath?: str
       return ''
     case 'word':
       return 'Produce the deliverable as a Word document (.docx) with the univer office tools: create or import a .docx Unit, edit it there, and hand back the file.'
-    case 'ppt':
-      return 'Produce the deliverable as a PowerPoint presentation (.pptx) with the univer office tools: create or import a .pptx Unit, build the slides there, and hand back the file.'
     case 'excel':
       return 'Produce the deliverable as an Excel workbook (.xlsx) with the univer office tools: create or import a .xlsx Unit, fill the sheets there, and hand back the file.'
+    case 'ppt':
+      return 'Produce the deliverable as a PowerPoint presentation (.pptx) with the univer office tools: create or import a .pptx Unit, build the slides there, and hand back the file.'
     case 'amec-ppt':
       return amecTemplatePath === undefined
         ? 'Produce the deliverable as a PowerPoint presentation in the AMEC company style — dark navy (#0A1E3A) with a tech-blue gradient (#0066CC to #00A3E0) and the Microsoft YaHei font — using the univer office tools. This build carries no AMEC template file, so build the deck to match that style.'
         : `Produce the deliverable as a PowerPoint presentation built from the AMEC company template at ${amecTemplatePath}: import it with the univer office tools as the starting Unit, keep its slide masters, layouts, fonts, and brand colours, and replace only the content. Hand back the .pptx.`
+    case 'chart':
+      return 'Produce the deliverable as interactive charts in the answer itself. Write one fenced code block per chart whose info string is exactly `echarts`, holding nothing but a strict-JSON Apache ECharts option: double-quoted keys and strings, no comments, no trailing commas, and no JavaScript functions, expressions, `renderItem`, or event handlers. String formatters such as "{value}%" are supported. Keep the explanation in prose outside the fence.'
   }
 }
 

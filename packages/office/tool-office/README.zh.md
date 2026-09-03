@@ -46,7 +46,7 @@ kind: "package-reference"
 
 #### 模型所见
 
-一个分节 `office:kind`，其文本由会话折叠后的办公选择决定。选择为 `none` 时它整段缺席。每种类型命名要生成的格式；`amec-ppt` 另外携带已配置的模版路径以导入并保留，或在未配置模版时携带要匹配的 AMEC 品牌风格。
+一个分节 `office:kind`，其文本由会话折叠后的办公选择决定。选择为 `none` 时它整段缺席。每种类型命名要生成的格式；`amec-ppt` 另外携带已配置的模版路径以导入并保留，或在未配置模版时携带要匹配的 AMEC 品牌风格。`chart` 不命名任何文件：它要求输出由 Web 界面就地渲染的 `echarts` 围栏。
 
 ##### 选择 Word、PowerPoint 或 Excel 类型时
 
@@ -58,6 +58,12 @@ Produce the deliverable as a PowerPoint presentation (.pptx) with the univer off
 
 ```markdown
 Produce the deliverable as a PowerPoint presentation built from the AMEC company template at <the configured template path>: import it with the univer office tools as the starting Unit, keep its slide masters, layouts, fonts, and brand colours, and replace only the content. Hand back the .pptx.
+```
+
+##### 选择可视化类型时
+
+```markdown
+Produce the deliverable as interactive charts in the answer itself. Write one fenced code block per chart whose info string is exactly `echarts`, holding nothing but a strict-JSON Apache ECharts option: double-quoted keys and strings, no comments, no trailing commas, and no JavaScript functions, expressions, `renderItem`, or event handlers. String formatters such as "{value}%" are supported. Keep the explanation in prose outside the fence.
 ```
 
 #### Token effect

@@ -24,6 +24,13 @@ describe('renderOfficeSection', () => {
     expect(text).toMatch(/keep its slide masters, layouts, fonts, and brand colours/)
   })
 
+  it('names the echarts fence and its strict-JSON rule for the chart kind', () => {
+    const text = renderOfficeSection({ version: 1, kind: 'chart' })
+    expect(text).toMatch(/info string is exactly `echarts`/)
+    expect(text).toMatch(/strict-JSON Apache ECharts option/)
+    expect(text).toMatch(/no JavaScript functions/)
+  })
+
   it('falls back to the AMEC brand style when no template is bundled', () => {
     const text = renderOfficeSection({ version: 1, kind: 'amec-ppt' })
     expect(text).toMatch(/#0A1E3A/)

@@ -14,12 +14,14 @@
  *
  * `none` is where every Session starts: no format is imposed and the office
  * prompt section is absent. `amec-ppt` is a PowerPoint built from the
- * deployment's own AMEC template rather than from a blank deck.
+ * deployment's own AMEC template rather than from a blank deck. `chart` is not
+ * a file at all: the deliverable is Apache ECharts options the web surface
+ * renders in the answer itself.
  */
-export type OfficeKind = 'none' | 'word' | 'ppt' | 'amec-ppt' | 'excel'
+export type OfficeKind = 'none' | 'word' | 'excel' | 'ppt' | 'amec-ppt' | 'chart'
 
 /** Every kind a picker offers, in display order; excludes the `none` clear-state. */
-export const OFFICE_KINDS = ['word', 'ppt', 'amec-ppt', 'excel'] as const satisfies readonly Exclude<OfficeKind, 'none'>[]
+export const OFFICE_KINDS = ['word', 'excel', 'ppt', 'amec-ppt', 'chart'] as const satisfies readonly Exclude<OfficeKind, 'none'>[]
 
 /**
  * Whether a value is one of the offerable office kinds (the `none` clear-state excluded).
