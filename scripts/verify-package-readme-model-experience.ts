@@ -35,6 +35,7 @@ const NO_MODEL_EXPERIENCE_SECTION: Readonly<Record<string, string>> = {
   'packages/util/home-paths': 'The package only resolves harness-owned host paths; model-facing consumers own any rendered use.',
   'packages/util/launch-environment': 'The package only resolves host environment values; model-facing consumers own any rendered use.',
   'packages/util/workspace-path': 'The package only formats Workspace paths for browser UI; it never constructs model input.',
+  'packages/office/office': 'The package is model-agnostic vocabulary — types, a fold, and a validator over the Session log; the tool package renders any model-facing text.',
 }
 
 /**
@@ -53,6 +54,8 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/knowledge/knowledge-team': { kind: 'indirect', reason: 'The transport registers no prompt or schema; dsh-tool-knowledge renders passages and owns the scope prompt section.' },
   'packages/api/knowledge-controller': { kind: 'indirect', reason: 'The Remote registers no prompt or schema; the scope it records is what dsh-tool-knowledge names and gates on.' },
   'packages/client/ui-knowledge': { kind: 'indirect', reason: 'Browser-side picker and chip; the scope it records is what dsh-tool-knowledge names in the prompt and gates the search tool on.' },
+  'packages/api/office-controller': { kind: 'indirect', reason: 'The Remote records the office choice the browser makes; dsh-tool-office is what names it to the model.' },
+  'packages/client/ui-office': { kind: 'indirect', reason: 'Browser-side composer chip; the choice it records is what dsh-tool-office names in the prompt.' },
   'packages/knowledge/knowledge-weknora': { kind: 'none', reason: 'Control Plane provider; retrieved passages become model-visible only after a gateway authorizes them and a Runner-side tool renders them.' },
   'packages/shell/shell': { kind: 'indirect', reason: 'The service interface delegates all model rendering to dsh-tool-bash.' },
   'packages/shell/shell-env': { kind: 'indirect', reason: 'The env service exposes managed DSH_* facts through the shell tools (dsh-tool-bash/dsh-tool-pwsh); it registers no prompt or schema of its own.' },

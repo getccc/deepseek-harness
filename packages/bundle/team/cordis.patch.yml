@@ -122,3 +122,17 @@
     # boot graph, and only a Team build has a knowledge namespace to serve it.
     - id: client-ui-knowledge
       name: '@deepseek-ai/dsh-client-ui-knowledge'
+
+    # The office-deliverable choice: which document kind a conversation should
+    # produce. The tool folds the choice into a prompt section; the controller
+    # records it from the browser; the client chip is the composer control.
+    # `amecTemplatePath` is absent in the bundle on purpose — only an installer
+    # knows where the AMEC template it shipped landed, and writes it in.
+    - id: office
+      name: '@deepseek-ai/dsh-tool-office'
+
+    - id: api-office-controller
+      name: '@deepseek-ai/dsh-api-office-controller'
+
+    - id: client-ui-office
+      name: '@deepseek-ai/dsh-client-ui-office'
