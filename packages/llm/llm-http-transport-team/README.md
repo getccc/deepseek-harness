@@ -29,7 +29,10 @@ English | [中文](README.zh.md)
 plugins:
   '@deepseek-ai/dsh-llm-http-transport-team':
     controlPlaneUrl: https://dsh.company.com
+    controlPlaneCa: /opt/company/control-plane-ca.crt
 ```
+
+`controlPlaneCa` names a PEM file, and is how a Runner reaches a Control Plane whose certificate no public authority signed. Its certificates replace the public authorities for Control Plane connections only, so the deployment's own certificate is pinned rather than added to what this Runner trusts everywhere. Absent, the Control Plane is verified like any other host. A file that cannot be read throws at load, because a Runner that quietly fell back to public trust would report a misconfigured deployment as an ordinary TLS failure much later.
 
 It injects `teamAccountClient`, so this computer must be bound before a company model call can leave it. A call made from an unbound computer fails with `not-bound`, which is a different thing to tell a member than `refused`: one is "connect this computer", the other is "ask an administrator".
 

@@ -33,11 +33,15 @@ kind: "package-reference"
 - name: '@deepseek-ai/dsh-knowledge-team'
   config:
     controlPlaneUrl: https://dsh.company.com
+    controlPlaneCa: /opt/company/control-plane-ca.crt
 ```
 
 | 字段 | 默认值 | 含义 |
 |---|---|---|
 | `controlPlaneUrl` | — | 公司 Control Plane 的来源 |
+| `controlPlaneCa` | — | PEM 文件，其中的证书是它唯一被接受的证书 |
+
+`controlPlaneCa` 指向一个 PEM 文件，供证书未经公共机构签发的 Control Plane 部署使用。文件中的证书**仅**对 Control Plane 连接取代公共信任机构，因此它固定的是这个部署自己的证书，而不是往这台 Runner 到处生效的信任里再添一个机构。不填时，Control Plane 与其他主机一样按默认信任校验。文件读不出来会在加载期抛错——若悄悄退回公共信任，一个配置错误的部署要到很久以后才会以一次普通的 TLS 失败暴露出来。
 
 `controlPlaneUrl` 没有默认值，缺少它该配置项就无法加载。猜测自己属于哪家公司的 Runner，会去问一个陌生人它的成员可以读什么。桌面安装器生成的 profile 补丁从同一个部署事实出发，把它写进这里以及其他每一个需要它的配置项。
 

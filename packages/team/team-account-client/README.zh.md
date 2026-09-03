@@ -29,10 +29,13 @@ kind: "package-reference"
 plugins:
   '@deepseek-ai/dsh-team-account-client':
     controlPlaneUrl: https://dsh.company.com
+    controlPlaneCa: /opt/company/control-plane-ca.crt
     callbackUri: http://127.0.0.1:3080/team/callback
     runnerVersion: 2.4.1
     refreshLeadMs: 60000
 ```
+
+`controlPlaneCa` 指向一个 PEM 文件，供证书未经公共机构签发的 Control Plane 部署使用。文件中的证书**仅**对 Control Plane 连接取代公共信任机构，因此它固定的是这个部署自己的证书，而不是往这台 Runner 到处生效的信任里再添一个机构。不填时，Control Plane 与其他主机一样按默认信任校验。文件读不出来会在加载期抛错——若悄悄退回公共信任，一个配置错误的部署要到很久以后才会以一次普通的 TLS 失败暴露出来。
 
 默认 Team 流程调用 `signIn(loginName, secret)`：它开启设备 Transaction，经 Control Plane 认证，用 PKCE 与设备签名兑换一次性 Code，再把结果与返回的成员身份一起存储。`begin()` 与 `complete()` 继续供可选浏览器 Handoff 组合使用。`accessToken()` 提供已存 Token，并在它临近过期到会输掉自身竞态时先行刷新，同时保留成员字段。
 

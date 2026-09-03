@@ -29,7 +29,10 @@ kind: "package-reference"
 plugins:
   '@deepseek-ai/dsh-llm-http-transport-team':
     controlPlaneUrl: https://dsh.company.com
+    controlPlaneCa: /opt/company/control-plane-ca.crt
 ```
+
+`controlPlaneCa` 指向一个 PEM 文件，供证书未经公共机构签发的 Control Plane 部署使用。文件中的证书**仅**对 Control Plane 连接取代公共信任机构，因此它固定的是这个部署自己的证书，而不是往这台 Runner 到处生效的信任里再添一个机构。不填时，Control Plane 与其他主机一样按默认信任校验。文件读不出来会在加载期抛错——若悄悄退回公共信任，一个配置错误的部署要到很久以后才会以一次普通的 TLS 失败暴露出来。
 
 它注入 `teamAccountClient`，因此这台电脑必须先完成绑定，公司模型调用才能离开它。从未绑定电脑发起的调用以 `not-bound` 失败，而这与 `refused` 对成员是两件不同的事：一个是"连接这台电脑"，另一个是"去问管理员"。
 

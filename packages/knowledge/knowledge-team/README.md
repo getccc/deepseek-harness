@@ -33,11 +33,15 @@ Mount it after `dsh-team-account-client`, which owns the device credential this 
 - name: '@deepseek-ai/dsh-knowledge-team'
   config:
     controlPlaneUrl: https://dsh.company.com
+    controlPlaneCa: /opt/company/control-plane-ca.crt
 ```
 
 | Field | Default | Meaning |
 |---|---|---|
 | `controlPlaneUrl` | — | Origin of the company Control Plane |
+| `controlPlaneCa` | — | PEM file holding the only certificates accepted for it |
+
+`controlPlaneCa` names a PEM file, and is how a Runner reaches a Control Plane whose certificate no public authority signed. Its certificates replace the public authorities for Control Plane connections only, so the deployment's own certificate is pinned rather than added to what this Runner trusts everywhere. Absent, the Control Plane is verified like any other host. A file that cannot be read throws at load, because a Runner that quietly fell back to public trust would report a misconfigured deployment as an ordinary TLS failure much later.
 
 `controlPlaneUrl` has no default and the row fails to load without it. A Runner that guessed which company it belongs to would ask a stranger what its member may read. The desktop installer's generated profile patch writes it here and into every other row that needs it, from one deployment fact.
 

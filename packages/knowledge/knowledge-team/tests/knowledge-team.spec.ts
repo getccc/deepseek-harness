@@ -6,7 +6,9 @@
  * has no place for one.
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
+import { once } from 'node:events'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import { KnowledgeError, KnowledgeRef } from '@deepseek-ai/dsh-knowledge'
 import {
@@ -15,7 +17,7 @@ import {
 } from '@deepseek-ai/dsh-knowledge-gateway-http'
 import TeamKnowledge from '@deepseek-ai/dsh-knowledge-team'
 
-const ORIGIN = 'https://dsh.example.com'
+let ORIGIN = ''
 const REF = 'weknora:prod:690c0727-1af5-4b7a-8465-ebd2845f2266'
 const TOKEN = 'device-access-token'
 
@@ -28,21 +30,32 @@ interface Captured {
 }
 
 let calls: Captured[] = []
+let plane: Server
 
-/** Answer every call with one scripted status and body. */
+/**
+ * A Control Plane that records each request and answers however a test says.
+ *
+ * A recording server rather than a stubbed `fetch`: the provider reaches the
+ * Control Plane through Undici, so a global stub would leave these requests to
+ * the real network. This is also what the company model transport's own test
+ * does.
+ */
 function controlPlane(status: number, body: unknown): void {
   calls = []
-  vi.stubGlobal('fetch', (input: string | URL, init?: RequestInit) => {
-    calls.push({
-      url: input instanceof URL ? input.href : input,
-      method: init?.method ?? 'GET',
-      headers: { ...(init?.headers as Record<string, string>) },
-      body: JSON.parse(init?.body as string) as Record<string, unknown>,
+  plane.removeAllListeners('request')
+  plane.on('request', (req: IncomingMessage, res: ServerResponse) => {
+    const chunks: Buffer[] = []
+    req.on('data', (chunk) => { chunks.push(chunk as Buffer) })
+    req.on('end', () => {
+      calls.push({
+        url: new URL(req.url ?? '/', ORIGIN).href,
+        method: req.method ?? 'GET',
+        headers: { ...req.headers } as Record<string, string>,
+        body: JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>,
+      })
+      res.writeHead(status, { 'content-type': 'application/json' })
+      res.end(typeof body === 'string' ? body : JSON.stringify(body))
     })
-    return Promise.resolve(new Response(typeof body === 'string' ? body : JSON.stringify(body), {
-      status,
-      headers: { 'content-type': 'application/json' },
-    }))
   })
 }
 
@@ -71,7 +84,20 @@ function results(): unknown {
   }
 }
 
-afterEach(() => { vi.unstubAllGlobals() })
+beforeEach(async () => {
+  plane = createServer()
+  plane.listen(0, '127.0.0.1')
+  await once(plane, 'listening')
+  const address = plane.address()
+  ORIGIN = `http://127.0.0.1:${String(typeof address === 'object' && address !== null ? address.port : 0)}`
+  calls = []
+})
+
+afterEach(async () => {
+  if (!plane.listening) return
+  plane.close()
+  await once(plane, 'close')
+})
 
 describe('what leaves this computer', () => {
   it('carries the protocol version, the token, and nothing else', async () => {
@@ -222,11 +248,14 @@ describe('failures a member can act on', () => {
   })
 
   it('answers an unreachable network as unreachable, without naming the origin', async () => {
-    vi.stubGlobal('fetch', () => Promise.reject(new Error('getaddrinfo ENOTFOUND dsh.example.com')))
+    // The port this server just released: connecting there fails the way a
+    // Control Plane that is down does, without waiting on a name to resolve.
+    plane.close()
+    await once(plane, 'close')
     const ctx = await mount()
     const error = await ctx.knowledge.catalog().catch((thrown: unknown) => thrown)
     expect(error).toMatchObject({ reason: 'control-plane-unreachable' })
-    expect(String(error)).not.toMatch(/ENOTFOUND|dsh\.example\.com/u)
+    expect(String(error)).not.toMatch(/ECONNREFUSED|127\.0\.0\.1/u)
   })
 
   it('answers a computer that is not signed in as unauthenticated, before any request', async () => {

@@ -34,7 +34,8 @@
     "@deepseek-ai/dsh-credentials": "workspace:^",
     "@deepseek-ai/dsh-device-authorization": "workspace:^",
     "@deepseek-ai/dsh-team-control-plane-http": "workspace:^",
-    "@deepseek-ai/schemastery": "workspace:^"
+    "@deepseek-ai/schemastery": "workspace:^",
+    "undici": "^8.10.0"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:^",

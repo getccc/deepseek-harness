@@ -29,7 +29,12 @@ import {
   KNOWLEDGE_PROTOCOL_VERSION,
   KNOWLEDGE_SEARCH_PATH,
 } from '@deepseek-ai/dsh-knowledge-gateway-http'
-import type {} from '@deepseek-ai/dsh-team-account-client'
+import {
+  controlPlaneConfigFields,
+  controlPlaneFetch,
+  type ControlPlaneFetch,
+  type Response,
+} from '@deepseek-ai/dsh-team-account-client'
 
 /** Every reason the Control Plane may answer with, for decoding one back. */
 const KNOWN_REASONS: readonly string[] = [
@@ -49,6 +54,12 @@ export interface Config {
    * of truth belongs.
    */
   controlPlaneUrl: string
+  /**
+   * Path to a PEM file whose certificates are the only ones this Runner
+   * accepts for the Control Plane, carried per row for the same reason
+   * `controlPlaneUrl` is.
+   */
+  controlPlaneCa?: string
 }
 
 /** Cordis plugin name. */
@@ -64,12 +75,14 @@ export const name = 'knowledge-team'
 export default class TeamKnowledge extends Knowledge {
   static inject = ['teamAccountClient']
 
-  static Config: z<Config> = z.object({
-    controlPlaneUrl: z.string().required(),
-  })
+  static Config: z<Config> = z.object({ ...controlPlaneConfigFields })
+
+  /** The fetch every Control Plane call goes through, carrying this deployment's trust. */
+  private readonly fetch: ControlPlaneFetch
 
   constructor(ctx: Context, public config: Config) {
     super(ctx)
+    this.fetch = controlPlaneFetch(ctx, config.controlPlaneCa)
   }
 
   async catalog(signal?: AbortSignal): Promise<readonly KnowledgeBaseEntry[]> {
@@ -117,7 +130,7 @@ export default class TeamKnowledge extends Knowledge {
     const token = await this.accessToken()
     let response: Response
     try {
-      response = await fetch(new URL(path, this.config.controlPlaneUrl), {
+      response = await this.fetch(new URL(path, this.config.controlPlaneUrl), {
         method: 'POST',
         headers: {
           [ACCESS_TOKEN_HEADER]: `Bearer ${token}`,

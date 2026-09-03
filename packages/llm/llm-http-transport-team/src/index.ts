@@ -24,12 +24,24 @@ import {
   MODEL_INVOKE_PATH,
   type ModelCatalogBody,
 } from '@deepseek-ai/dsh-model-gateway-http'
-import type {} from '@deepseek-ai/dsh-team-account-client'
+import {
+  controlPlaneConfigFields,
+  controlPlaneFetch,
+  type ControlPlaneFetch,
+  type Response,
+} from '@deepseek-ai/dsh-team-account-client'
 
 /** Plugin config: which Control Plane, and which budget period. */
 export interface Config {
   /** Origin of the company Control Plane, such as `https://dsh.company.com`. */
   controlPlaneUrl: string
+  /**
+   * Path to a PEM file whose certificates are the only ones this Runner
+   * accepts for the Control Plane. Carried per row for the same reason
+   * `controlPlaneUrl` is: the desktop installer writes every row from one
+   * deployment fact.
+   */
+  controlPlaneCa?: string
 }
 
 /**
@@ -42,19 +54,21 @@ export interface Config {
 export class TeamLlmHttpTransport extends LlmHttpTransport {
   static inject = ['teamAccountClient']
 
-  static Config: z<Config> = z.object({
-    controlPlaneUrl: z.string().required(),
-  })
+  static Config: z<Config> = z.object({ ...controlPlaneConfigFields })
+
+  /** The fetch both calls below go through, carrying this deployment's trust. */
+  private readonly fetch: ControlPlaneFetch
 
   constructor(ctx: Context, public config: Config) {
     super(ctx)
+    this.fetch = controlPlaneFetch(ctx, config.controlPlaneCa)
   }
 
   async send(request: TransportRequest): Promise<TransportResponse> {
     const token = await this.accessToken()
     let response: Response
     try {
-      response = await fetch(new URL(MODEL_INVOKE_PATH, this.config.controlPlaneUrl), {
+      response = await this.fetch(new URL(MODEL_INVOKE_PATH, this.config.controlPlaneUrl), {
         method: 'POST',
         headers: {
           [ACCESS_TOKEN_HEADER]: `Bearer ${token}`,
@@ -89,7 +103,7 @@ export class TeamLlmHttpTransport extends LlmHttpTransport {
     const token = await this.accessToken()
     let response: Response
     try {
-      response = await fetch(new URL(MODEL_CATALOG_PATH, this.config.controlPlaneUrl), {
+      response = await this.fetch(new URL(MODEL_CATALOG_PATH, this.config.controlPlaneUrl), {
         headers: { [ACCESS_TOKEN_HEADER]: `Bearer ${token}` },
       })
     } catch (error) {

@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-knowledge-team",
-  "description": "Runner-side private-knowledge provider for the DeepSeek Harness \u2014 reads the current device token per operation and reaches the company Control Plane, holding no knowledge address or credential",
+  "description": "Runner-side private-knowledge provider for the DeepSeek Harness — reads the current device token per operation and reaches the company Control Plane, holding no knowledge address or credential",
   "version": "0.1.2-alpha.1",
   "publishConfig": {
     "access": "public"
@@ -39,13 +39,13 @@
     "@deepseek-ai/dsh-team-account-client": "workspace:^"
   },
   "dependencies": {
+    "@deepseek-ai/dsh-team-account-client": "workspace:^",
     "@deepseek-ai/schemastery": "workspace:^"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "workspace:^",
     "@deepseek-ai/dsh-invariants": "workspace:^",
     "@deepseek-ai/dsh-knowledge": "workspace:^",
-    "@deepseek-ai/dsh-knowledge-gateway-http": "workspace:^",
-    "@deepseek-ai/dsh-team-account-client": "workspace:^"
+    "@deepseek-ai/dsh-knowledge-gateway-http": "workspace:^"
   }
 }

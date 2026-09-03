@@ -34,9 +34,12 @@ import {
   type TeamMemberIdentity,
 } from '@deepseek-ai/dsh-team-control-plane-http'
 import { TEAM_CREDENTIAL_RECORD, readCredential, readDeviceKey, writeCredential } from './storage.ts'
+import { controlPlaneConfigFields, controlPlaneFetch, type ControlPlaneFetch } from './transport.ts'
 import type { BindingHandle, TeamAccountState } from './types.ts'
 
 export { DEVICE_KEY_RECORD, TEAM_CREDENTIAL_RECORD } from './storage.ts'
+export { controlPlaneConfigFields, controlPlaneFetch } from './transport.ts'
+export type { ControlPlaneFetch, RequestInit, Response } from './transport.ts'
 export type { BindingHandle, StoredCredential, TeamAccountState, TeamMemberIdentity } from './types.ts'
 
 declare module '@deepseek-ai/cordis' {
@@ -88,6 +91,13 @@ export interface Config {
    * lapsing, so a request does not race its own expiry.
    */
   refreshLeadMs: number
+  /**
+   * Path to a PEM file whose certificates are the only ones this Runner
+   * accepts for the Control Plane, for a deployment whose certificate no
+   * public authority signed. Absent, the Control Plane is verified against
+   * Node's default authorities like any other host.
+   */
+  controlPlaneCa?: string
 }
 
 /**
@@ -116,7 +126,7 @@ export class TeamAccountClient extends Service {
   static inject = ['credentials']
 
   static Config: z<Config> = z.object({
-    controlPlaneUrl: z.string().required(),
+    ...controlPlaneConfigFields,
     callbackUri: z.string().required(),
     runnerVersion: z.string().required(),
     refreshLeadMs: z.natural().default(60_000),
@@ -125,8 +135,12 @@ export class TeamAccountClient extends Service {
   /** The verifier for the transaction currently awaiting confirmation. */
   private pendingVerifier: string | undefined
 
+  /** The fetch every call below goes through, carrying this deployment's trust. */
+  private readonly fetch: ControlPlaneFetch
+
   constructor(ctx: Context, public config: Config) {
     super(ctx, 'teamAccountClient')
+    this.fetch = controlPlaneFetch(ctx, config.controlPlaneCa)
   }
 
   /**
@@ -269,7 +283,7 @@ export class TeamAccountClient extends Service {
 
   /** POST one JSON body to the Control Plane and read one JSON answer. */
   private async post<T>(path: string, body: unknown): Promise<T> {
-    const response = await fetch(new URL(`/team/device${path}`, this.config.controlPlaneUrl), {
+    const response = await this.fetch(new URL(`/team/device${path}`, this.config.controlPlaneUrl), {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
