@@ -9,6 +9,7 @@
     { "path": "../../../vendor/cordis" },
     { "path": "../locale" },
     { "path": "../ui-conversation" },
+    { "path": "../ui-deliverables" },
     { "path": "../ui-primitives" },
     { "path": "../ui-renderer" },
     { "path": "../ui-session" },

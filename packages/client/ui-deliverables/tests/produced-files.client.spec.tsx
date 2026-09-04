@@ -25,10 +25,10 @@ import {
   fitProducedFiles, ProducedFiles, type ProducedFilesInjected, type ProducedFilesProps,
 } from '../src/client/ProducedFiles.tsx'
 import {
-  basename, deliverablesDefinition, producedFileMentions, producedForClosing, selectProducedFiles,
-  type DeliverablesTurnData,
+  basename, createDeliverablesDefinition, documentKind, extensionOf, producedFileMentions, producedForClosing,
+  selectProducedFiles, type DeliverablesTurnData, type ProducedFileRecognizer, type ProducedFileRecognizers,
 } from '../src/client/turn-deliverables.ts'
-import { apply, inject } from '../src/client/index.ts'
+import { apply, inject, TURN_TAIL_PRIORITY, type DeliverablesService } from '../src/client/index.ts'
 import { apply as applyInvariant } from '../src/invariant.ts'
 import { en, zh } from '../src/client/locales.ts'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
@@ -86,8 +86,12 @@ interface TimelineSnapshot {
   readonly timeline: ConversationTimelineSnapshot
 }
 
+/** The Definition as the plugin registers it before any plugin taught it a tool. */
+const deliverablesDefinition = createDeliverablesDefinition(new Map())
+
 class TestEventDefinitions {
-  entries(): readonly ConversationNodeDefinition[] { return [deliverablesDefinition] }
+  constructor(private readonly definition: ConversationNodeDefinition = deliverablesDefinition) {}
+  entries(): readonly ConversationNodeDefinition[] { return [this.definition] }
   fallbackEntry(): ConversationNodeDefinition | undefined { return undefined }
 }
 
@@ -162,8 +166,15 @@ function result(seq: number, callId: string, isError = false, turn = 1): Session
   })
 }
 
-function assembler(entries: readonly SessionLiveEventEntry[], hasMore = false): ConversationNodeAssembler {
-  const value = new ConversationNodeAssembler(new TestEventDefinitions(), new TestViewDefinitions())
+function assembler(
+  entries: readonly SessionLiveEventEntry[],
+  hasMore = false,
+  recognizers?: ProducedFileRecognizers,
+): ConversationNodeAssembler {
+  const definitions = recognizers === undefined
+    ? new TestEventDefinitions()
+    : new TestEventDefinitions(createDeliverablesDefinition(recognizers))
+  const value = new ConversationNodeAssembler(definitions, new TestViewDefinitions())
   value.replaceWindow(entries, hasMore)
   value.flush()
   return value
@@ -295,6 +306,31 @@ describe('produced-file Turn data', () => {
     ])
 
     expect(producedForClosing(deliverablesOf(value))).toEqual([])
+  })
+
+  it('folds the tools other plugins teach it, with the same blank-path test', () => {
+    const univerExport: ProducedFileRecognizer = {
+      tool: 'univer_export',
+      path: args => typeof args.output === 'string' ? args.output : null,
+    }
+    const recognizers = new Map([[univerExport.tool, univerExport]])
+    const value = assembler([
+      at(1, 'turn/start', { turn: 1 }),
+      call(2, 'deck', 'univer_export', {
+        file: 'build/training.univer', unitId: 'u-1', output: 'build/training.pptx',
+      }),
+      result(3, 'deck'),
+      call(4, 'blank', 'univer_export', { file: 'build/training.univer', unitId: 'u-1', output: '  ' }),
+      result(5, 'blank'),
+      call(6, 'no-output', 'univer_export', { file: 'build/training.univer', unitId: 'u-1' }),
+      result(7, 'no-output'),
+      call(8, 'failed', 'univer_export', { file: 'build/x.univer', unitId: 'u-2', output: 'build/x.docx' }),
+      result(9, 'failed', true),
+      call(10, 'untaught', 'univer_screenshot', { file: 'build/training.univer', output: 'shot.png' }),
+      result(11, 'untaught'),
+    ], false, recognizers)
+
+    expect(producedForClosing(deliverablesOf(value))).toEqual(['build/training.pptx'])
   })
 
   it('ignores editor views, unsupported tools, failures, interruptions, malformed calls, and orphan results', () => {
@@ -502,9 +538,9 @@ describe('ProducedFiles row', () => {
   it('keeps the folder action absent without overflow or a local native opener', () => {
     const openFile = vi.fn<(path: string) => void>()
     const view = render(
-      <ProducedFiles matched={['a.md']} openFile={openFile} {...capability(true)} t={t} />,
+      <ProducedFiles matched={['a.ts']} openFile={openFile} {...capability(true)} t={t} />,
     )
-    const overflowing = ['a.md', 'b.md', 'c.md', 'd.md', 'e.md', 'f.md', 'g.md']
+    const overflowing = ['a.ts', 'b.ts', 'c.ts', 'd.ts', 'e.ts', 'f.ts', 'g.ts']
     expect(view.queryByRole('button', { name: '在文件夹中显示' })).toBeNull()
     for (const unavailable of [capability(false), capability(true, false), capability(undefined)]) {
       view.rerender(<ProducedFiles matched={overflowing} openFile={openFile} {...unavailable} t={t} />)
@@ -515,7 +551,7 @@ describe('ProducedFiles row', () => {
   it('uses singular English copy when exactly one file is hidden', () => {
     const view = render(
       <ProducedFiles
-        matched={['a.md', 'b.md', 'c.md', 'd.md', 'e.md', 'f.md', 'g.md']}
+        matched={['a.ts', 'b.ts', 'c.ts', 'd.ts', 'e.ts', 'f.ts', 'g.ts']}
         openFile={() => {}}
         {...capability(false)}
         t={makeTranslate(en)}
@@ -524,6 +560,70 @@ describe('ProducedFiles row', () => {
     const row = view.container.querySelector('[data-produced-files-row]')
     if (!(row instanceof HTMLElement)) throw new Error('produced row missing')
     expect(within(row).getByText('+ 1 file')).toBeTruthy()
+  })
+})
+
+describe('document cards', () => {
+  const t = makeTranslate(zh)
+
+  it('names the document family by extension and nothing else', () => {
+    expect(extensionOf('docs/报告.DOCX')).toBe('docx')
+    expect(extensionOf('Makefile')).toBe('')
+    expect(extensionOf('.env')).toBe('')
+    expect(documentKind('docs/report.docx')).toBe('word')
+    expect(documentKind('out\\data.xlsx')).toBe('sheet')
+    expect(documentKind('deck.pptx')).toBe('slides')
+    expect(documentKind('README.md')).toBe('text')
+    expect(documentKind('manual.pdf')).toBe('pdf')
+    expect(documentKind('src/app.ts')).toBeUndefined()
+    expect(documentKind('site/index.html')).toBeUndefined()
+  })
+
+  it('renders a card per document and keeps the rest as chips', () => {
+    const openFile = vi.fn<(path: string) => void>()
+    const ensureWorkspacePathOpen = vi.fn()
+    const view = render(
+      <ProducedFiles
+        matched={['docs/report.docx', 'out/data.xlsx', 'deck.pptx', 'src/app.ts']}
+        openFile={openFile}
+        isLoopback
+        ensureWorkspacePathOpen={ensureWorkspacePathOpen}
+        useWorkspacePathOpen={selector => selector(true)}
+        t={t}
+      />,
+    )
+    const cards = view.container.querySelector('[data-produced-documents]')
+    if (!(cards instanceof HTMLElement)) throw new Error('document cards missing')
+    expect(within(cards).getAllByRole('button')).toHaveLength(3)
+    const report = within(cards).getByRole('button', { name: '打开 docs/report.docx' })
+    expect(report.getAttribute('title')).toBe('docs/report.docx')
+    expect(report.textContent).toBe('DOCXreport.docxdocs/report.docx')
+    expect(within(cards).getByRole('button', { name: '打开 deck.pptx' }).textContent).toContain('PPTX')
+    fireEvent.click(report)
+    expect(openFile).toHaveBeenCalledWith('docs/report.docx')
+    // The one non-document file keeps its chip in the measured lane.
+    const row = view.container.querySelector('[data-produced-files-row]')
+    if (!(row instanceof HTMLElement)) throw new Error('produced row missing')
+    expect(within(row).getByRole('button', { name: '打开 src/app.ts' })).toBeTruthy()
+    expect(ensureWorkspacePathOpen).toHaveBeenCalled()
+  })
+
+  it('shows neither the lane nor its folder action for a documents-only turn', () => {
+    const ensureWorkspacePathOpen = vi.fn()
+    const view = render(
+      <ProducedFiles
+        matched={['notes.md', 'manual.pdf']}
+        openFile={() => {}}
+        isLoopback
+        ensureWorkspacePathOpen={ensureWorkspacePathOpen}
+        useWorkspacePathOpen={selector => selector(true)}
+        t={t}
+      />,
+    )
+    expect(view.queryByText('产物')).toBeNull()
+    expect(view.container.querySelector('[data-produced-files-row]')).toBeNull()
+    expect(view.queryByRole('button', { name: '在文件夹中显示' })).toBeNull()
+    expect(ensureWorkspacePathOpen).not.toHaveBeenCalled()
   })
 })
 
@@ -596,6 +696,11 @@ describe('plugin registration', () => {
     await fiber.await()
     const [entry] = ctx.slots.entries('conversation.chat.turnTail')
     expect(entry).toBeDefined()
+    // Below the default rank, and below a plugin's row twin, so the cards win
+    // the chain while every open still leaves through the Workspace opener.
+    expect(entry?.options).toMatchObject({ priority: TURN_TAIL_PRIORITY })
+    expect(entry?.registrant).toBe('@deepseek-ai/dsh-client-ui-deliverables')
+    expect(TURN_TAIL_PRIORITY).toBeLessThan(-1)
     const injected = entry?.inject?.() as unknown as ProducedFilesInjected
     expect(injected.isLoopback).toBe(false)
     expect(typeof injected.ensureWorkspacePathOpen).toBe('function')
@@ -626,6 +731,65 @@ describe('plugin registration', () => {
     expect(ctx.slots.entries('conversation.chat.turnTail')).toHaveLength(0)
     // Fiber teardown retracts the service: the consumer's ctx.get sees the off state.
     expect((ctx as unknown as { get(name: string): unknown }).get('chatFileMentions')).toBeUndefined()
+    expect((ctx as unknown as { get(name: string): unknown }).get('deliverables')).toBeUndefined()
+    expect(ctx.uiConversation.events.entries()).toHaveLength(0)
+  })
+
+  it('lets another plugin teach the vocabulary a tool, and forgets it with that plugin', async () => {
+    const ctx = new Context()
+    await ctx.plugin(SlotRegistry).await()
+    new UiConversation(ctx, { binding: () => undefined } as never)
+    ctx.slots.register({
+      name: 'root',
+      children: { 'conversation.chat.turnTail': { kind: 'chain', scope: 'session' } },
+    } as never, () => null)
+    ctx.provide('connection', {
+      isLoopback: true,
+      generation: { getSnapshot: () => undefined, subscribe: () => () => {} },
+    } as never)
+    const session = { canOpenWorkspacePath: () => Promise.resolve({ ok: true as const, value: true }) }
+    ctx.provide('remote', { $on: () => () => {}, session } as never)
+    ctx.provide('remote.session', session as never)
+    ctx.provide('settingsScope', { bind: () => stubSettingsScope().scope } as never)
+    await ctx.plugin({ inject: localeInject, apply: applyLocale }).await()
+    const fiber = ctx.plugin({ inject: [...inject], apply })
+    await fiber.await()
+    const service = (ctx as unknown as { get(name: string): DeliverablesService | undefined }).get('deliverables')
+    if (service === undefined) throw new Error('deliverables service missing')
+    const definitions = (): readonly ConversationNodeDefinition[] => ctx.uiConversation.events.entries()
+    const before = definitions()[0]
+    expect(before?.kind).toBe('deliverables')
+
+    // Teaching a tool re-registers the Definition, so a live assembly folds again.
+    const univerExport: ProducedFileRecognizer = {
+      tool: 'univer_export',
+      path: args => typeof args.output === 'string' ? args.output : null,
+    }
+    const forget = service.recognize(univerExport)
+    expect(definitions()).toHaveLength(1)
+    expect(definitions()[0]).not.toBe(before)
+    const taught = definitions()[0] as ConversationNodeDefinition
+    const folded = new ConversationNodeAssembler(
+      { entries: () => [taught], fallbackEntry: () => undefined },
+      new TestViewDefinitions(),
+    )
+    folded.replaceWindow([
+      at(1, 'turn/start', { turn: 1 }),
+      call(2, 'deck', 'univer_export', { file: 'a.univer', unitId: 'u', output: 'build/deck.pptx' }),
+      result(3, 'deck'),
+    ], false)
+    folded.flush()
+    expect(producedForClosing(deliverablesOf(folded))).toEqual(['build/deck.pptx'])
+
+    // A tool is taught once: the first-party set and a taught tool both refuse a second teacher.
+    expect(() => service.recognize(univerExport)).toThrow('tool "univer_export" is already recognized')
+    expect(() => service.recognize({ tool: 'write', path: () => null })).toThrow('tool "write" is already recognized')
+
+    forget()
+    await vi.waitFor(() => { expect(definitions()[0]).not.toBe(taught) })
+    expect(() => service.recognize(univerExport)).not.toThrow()
+    await fiber.dispose()
+    expect(definitions()).toHaveLength(0)
   })
 
   it('queries the workspace opener lazily and replaces stale results after reconnect', async () => {

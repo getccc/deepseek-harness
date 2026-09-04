@@ -8,7 +8,9 @@ import { describe, expect, it } from 'vitest'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
+import type { DeliverablesService, ProducedFileRecognizer } from '@deepseek-ai/dsh-client-ui-deliverables/client'
 import { OfficeSelect, type OfficeSelectInjected } from '../src/client/OfficeSelect.tsx'
+import { UNIVER_EXPORT_RECOGNIZER } from '../src/client/deliverables.ts'
 import { apply, inject } from '../src/client/index.ts'
 import { apply as nodeApply } from '../src/index.ts'
 
@@ -40,6 +42,14 @@ async function bench(refuse?: string) {
     $mount: () => { mounted += 1; return Promise.resolve(() => { mounted -= 1; return Promise.resolve() }) },
   })
   ctx.provide('remote.office', office)
+  const recognized: ProducedFileRecognizer[] = []
+  const deliverables: DeliverablesService = {
+    recognize: (recognizer) => {
+      recognized.push(recognizer)
+      return () => { recognized.splice(recognized.indexOf(recognizer), 1) }
+    },
+  }
+  ctx.provide('deliverables', deliverables)
   await ctx.plugin(SlotRegistry).await()
   const slots = ctx.get('slots') as SlotRegistry
   slots.register({
@@ -51,7 +61,9 @@ async function bench(refuse?: string) {
   ctx.provide('locale', locale)
   const fiber = ctx.plugin({ inject: [...inject], apply })
   await fiber.await()
-  return { ctx, fiber, recorded, slots, mounts: () => mounted, refuseNextChoice: (m: string) => { refusal = m } }
+  return {
+    ctx, fiber, recorded, recognized, slots, mounts: () => mounted, refuseNextChoice: (m: string) => { refusal = m },
+  }
 }
 
 /** The control's injected face for one Session. */
@@ -62,7 +74,7 @@ function face(b: Awaited<ReturnType<typeof bench>>): OfficeSelectInjected {
 
 describe('what the plugin installs', () => {
   it('declares every service it binds', () => {
-    expect(inject).toEqual(['locale', 'remote', 'slots'])
+    expect(inject).toEqual(['deliverables', 'locale', 'remote', 'slots'])
   })
 
   it('node-half apply is an intentional no-op', () => {
@@ -78,6 +90,19 @@ describe('what the plugin installs', () => {
     await b.fiber.dispose()
     expect(b.mounts()).toBe(0)
     expect(b.slots.entries('conversation.input.left')).toHaveLength(0)
+  })
+
+  it('teaches the produced-files row the office export, and forgets it on teardown', async () => {
+    const b = await bench()
+    expect(b.recognized).toEqual([UNIVER_EXPORT_RECOGNIZER])
+    // `univer_export` names the document it wrote in `output`; a call without one produced nothing.
+    expect(UNIVER_EXPORT_RECOGNIZER.tool).toBe('univer_export')
+    expect(UNIVER_EXPORT_RECOGNIZER.path({ file: 'docs/plan.univer', unitId: 'u-1', output: 'docs/plan.docx' }))
+      .toBe('docs/plan.docx')
+    expect(UNIVER_EXPORT_RECOGNIZER.path({ file: 'docs/plan.univer', unitId: 'u-1' })).toBeNull()
+    expect(UNIVER_EXPORT_RECOGNIZER.path({ output: 7 })).toBeNull()
+    await b.fiber.dispose()
+    expect(b.recognized).toEqual([])
   })
 })
 

@@ -23,7 +23,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-在 Team 浏览器组合中挂载；它在编辑器左区安置一个控件，并挂载它调用的 `office` Remote 命名空间。它无需配置。Host 不折叠任何办公选择的构建不渲染任何内容。
+在 Team 浏览器组合中挂载；它在编辑器左区安置一个控件，并挂载它调用的 `office` Remote 命名空间。它还教会产出文件行识别办公工具的 `univer_export`——其 `output` 指明写出的文档——因此交回 `.docx`、`.xlsx` 或 `.pptx` 的轮次会以一张打开它的卡片收尾。它无需配置。Host 不折叠任何办公选择的构建不渲染任何内容。
 
 -----
 
@@ -41,6 +41,7 @@ kind: "package-reference"
 <a id="known-limitations-and-deferred-work"></a>
 
 - **选择只存在于一次对话** —— 没有被记住的默认值，因此每个新对话都以未选择任何办公格式开始。
+- **只教会了 `univer_export`** —— 模型用 shell 命令或自己的脚本写出的文档不会列为卡片；它仍可从工作区打开。
 
 <a id="dev-note"></a>
 ### 开发备注

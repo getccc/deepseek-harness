@@ -23,7 +23,7 @@ English | [中文](README.zh.md)
 <a id="use-this-package"></a>
 ## Use this package
 
-Mount it in a Team browser composition; it seats a control in the composer's left zone and mounts the `office` Remote namespace it calls. It needs no configuration. A build whose Host folds no office choice renders nothing.
+Mount it in a Team browser composition; it seats a control in the composer's left zone and mounts the `office` Remote namespace it calls. It also teaches the produced-files row the office tools' `univer_export`, whose `output` names the document written, so a turn that handed back a `.docx`, `.xlsx`, or `.pptx` ends with a card that opens it. It needs no configuration. A build whose Host folds no office choice renders nothing.
 
 -----
 
@@ -41,6 +41,7 @@ Each choice changes the `office:kind` system-prompt section that `dsh-tool-offic
 <a id="known-limitations-and-deferred-work"></a>
 
 - **The choice lives in one conversation** — there is no remembered default, so every new conversation starts with no office format chosen.
+- **Only `univer_export` is taught** — a document the model writes through a shell command or a script of its own is not listed as a card; it stays reachable from the workspace.
 
 <a id="dev-note"></a>
 ### Dev Note

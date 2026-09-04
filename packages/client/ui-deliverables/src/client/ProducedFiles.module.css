@@ -1,16 +1,121 @@
-/* Turn-tail produced-files summary: one measured chip lane plus an optional
-   native-folder action below it. */
+/* Turn-tail produced-files summary: a card per document the turn handed
+   back, then one measured chip lane plus an optional native-folder action
+   below it. */
 
 .root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  font-size: 13px;
+  line-height: 22px;
+}
+
+/* Document cards: one per report, workbook, or deck, each opening its
+   preview. They stack because a document's name is what a reader scans for,
+   and a name has room to be read only on its own line. */
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 520px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: 12px;
+  background: var(--dsw-alias-bg-base);
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.card:hover {
+  border-color: var(--dsw-alias-border-l2);
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.card:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
+}
+
+/* The tile names the document family by its extension, in that family's
+   own tint, so a deck and a workbook read apart before the name is read. */
+.tile {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: var(--dsw-alias-label-primary-inverted);
+}
+
+.tileText {
+  background: var(--dsw-alias-label-secondary);
+}
+
+.tileWord {
+  background: var(--dsw-alias-state-business-primary);
+}
+
+.tileSheet {
+  background: var(--dsw-alias-state-success-primary);
+}
+
+.tileSlides {
+  background: var(--dsw-alias-state-warn-primary);
+}
+
+.tilePdf {
+  background: var(--dsw-alias-state-error-primary);
+}
+
+.cardText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.cardName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.cardPath {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+/* The chip lane: one measured row of the turn's remaining files. */
+.lane {
   position: relative;
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   align-items: center;
   column-gap: 8px;
   row-gap: 6px;
-  margin-top: 16px;
-  font-size: 13px;
-  line-height: 22px;
 }
 
 .label {
