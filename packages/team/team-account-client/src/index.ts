@@ -35,7 +35,7 @@ import {
 } from '@deepseek-ai/dsh-team-control-plane-http'
 import { TEAM_CREDENTIAL_RECORD, readCredential, readDeviceKey, writeCredential } from './storage.ts'
 import { controlPlaneConfigFields, controlPlaneFetch, type ControlPlaneFetch } from './transport.ts'
-import type { BindingHandle, TeamAccountState } from './types.ts'
+import type { BindingHandle, StoredCredential, TeamAccountState } from './types.ts'
 
 export { DEVICE_KEY_RECORD, TEAM_CREDENTIAL_RECORD } from './storage.ts'
 export { controlPlaneConfigFields, controlPlaneFetch } from './transport.ts'
@@ -134,6 +134,14 @@ export class TeamAccountClient extends Service {
 
   /** The verifier for the transaction currently awaiting confirmation. */
   private pendingVerifier: string | undefined
+
+  /**
+   * The `accessToken` call in flight, while one is. A refresh token is spent
+   * by its first presentation, so callers arriving while one call reads and
+   * possibly exchanges the credential share that call instead of reading the
+   * same lapsing token and presenting it again.
+   */
+  private serving: Promise<string> | undefined
 
   /** The fetch every call below goes through, carrying this deployment's trust. */
   private readonly fetch: ControlPlaneFetch
@@ -250,14 +258,36 @@ export class TeamAccountClient extends Service {
   /**
    * An access token that will still be valid when it arrives, refreshing first
    * when the stored one is close enough to lapsing to lose the race.
+   *
+   * Concurrent callers share one refresh. The Control Plane spends a refresh
+   * token on its first presentation and reads a second presentation as a
+   * replay that revokes the whole family, so the model catalog and the
+   * knowledge search waking together must not each exchange the token they
+   * both read.
    * @returns the access token to present to a company-resource entry.
    * @throws {NotBoundError} when this computer holds no credential.
    * @throws {ControlPlaneRefusedError} when the refresh was refused, including after a replay revoked the family.
    */
   async accessToken(): Promise<string> {
+    this.serving ??= this.serveAccessToken().finally(() => { this.serving = undefined })
+    return this.serving
+  }
+
+  /** Whether a stored credential will still be valid when a request carrying it arrives. */
+  private fresh(stored: StoredCredential): boolean {
+    return Date.now() + this.config.refreshLeadMs < stored.accessExpiresAt
+  }
+
+  /**
+   * Read the stored credential and, when it is about to lapse, exchange its
+   * refresh token for the next credential and keep that. The read sits inside
+   * the shared flight so a caller arriving after an exchange completes reads
+   * the rotated credential rather than the one it replaced.
+   */
+  private async serveAccessToken(): Promise<string> {
     const stored = await readCredential(this.ctx.credentials)
     if (stored === undefined) throw new NotBoundError()
-    if (Date.now() + this.config.refreshLeadMs < stored.accessExpiresAt) return stored.accessToken
+    if (this.fresh(stored)) return stored.accessToken
     const key = await readDeviceKey(this.ctx.credentials, generateKeyPairSync)
     const issued = await this.post<IssuedCredential>(REFRESH_PATH, {
       familyId: stored.familyId,

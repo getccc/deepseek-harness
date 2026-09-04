@@ -210,6 +210,23 @@ describe('holding the credential', () => {
     })
   })
 
+  it('shares one refresh between callers that wake to the same lapsing token', async () => {
+    // The model catalog and the knowledge search both ask for a token when the
+    // browser reconnects. Each exchange spends the refresh token it presents,
+    // and the Control Plane reads a second presentation of a spent token as a
+    // replay that revokes the family, so the two must share one exchange.
+    runner = await bootRunner(cp, { refreshLeadMs: 3_600_000 })
+    client = runner.get('teamAccountClient') as TeamAccountClient
+    await bind()
+    const tokens = await Promise.all([client.accessToken(), client.accessToken(), client.accessToken()])
+    expect(new Set(tokens).size).toBe(1)
+    expect(await auth.verifyAccessToken(tokens[0])).toMatchObject({ orgId })
+    // The family is still alive: the next wake exchanges the rotated token.
+    const later = await client.accessToken()
+    expect(later).not.toBe(tokens[0])
+    expect(await auth.verifyAccessToken(later)).toMatchObject({ orgId })
+  })
+
   it('reports a revoked device as a refusal, not as a token', async () => {
     runner = await bootRunner(cp, { refreshLeadMs: 3_600_000 })
     client = runner.get('teamAccountClient') as TeamAccountClient

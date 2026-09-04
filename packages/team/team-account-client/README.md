@@ -37,7 +37,7 @@ plugins:
 
 `controlPlaneCa` names a PEM file, and is how a Runner reaches a Control Plane whose certificate no public authority signed. Its certificates replace the public authorities for Control Plane connections only, so the deployment's own certificate is pinned rather than added to what this Runner trusts everywhere. Absent, the Control Plane is verified like any other host. A file that cannot be read throws at load, because a Runner that quietly fell back to public trust would report a misconfigured deployment as an ordinary TLS failure much later.
 
-The default Team flow calls `signIn(loginName, secret)`: it opens a device transaction, authenticates it through the Control Plane, redeems the one-time code with PKCE and a device signature, and stores the result with the returned member identity. `begin()` and `complete()` remain available to the optional browser-handoff composition. `accessToken()` serves the stored token, refreshing first when it is close enough to lapsing to lose its own race while preserving the member fields.
+The default Team flow calls `signIn(loginName, secret)`: it opens a device transaction, authenticates it through the Control Plane, redeems the one-time code with PKCE and a device signature, and stores the result with the returned member identity. `begin()` and `complete()` remain available to the optional browser-handoff composition. `accessToken()` serves the stored token, refreshing first when it is close enough to lapsing to lose its own race while preserving the member fields; callers that overlap share one read-and-refresh, because the Control Plane spends a refresh token on its first presentation and revokes the family on a second.
 
 -----
 
