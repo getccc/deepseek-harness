@@ -44,12 +44,7 @@
   - img
 - button "Branch into a new conversation":
   - img
-- text: {{clock}} Ran for {{duration}} TTFT {{duration}} {{throughput}} tok/s
-- button "System prompt":
-  - img
-  - img
-  - text: System prompt
-- text: Now give the same explanation to a human reader. {{clock}}
+- text: {{clock}} Ran for {{duration}} TTFT {{duration}} {{throughput}} tok/s Now give the same explanation to a human reader. {{clock}}
 - button "Copy":
   - img
 - button "Xiaowei thought for a while" [expanded]:
