@@ -6,15 +6,18 @@
  * key through the optional credential seam (`ctx.credentials`), so a changed
  * base URL, catalog, or key reaches the very next request without restarting
  * anything, while an in-flight stream keeps the facts it started with. The
- * one registration-captured fact — the retry policy — re-registers the route
- * in place when it changes.
+ * member route is registered only while its credential reference resolves,
+ * so a keyless composition advertises no DeepSeek models and the route
+ * appears the moment a key is stored; a mounted LLM HTTP transport adds the
+ * `built-in` route regardless. The registration-captured facts — the route
+ * set and the retry policy — re-register in place when they change.
  * @module @deepseek-ai/dsh-llm-deepseek
  */
 
-import type { Context } from '@deepseek-ai/cordis'
+import { FiberState, type Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { assertUsableApiKey, LlmError, resolveImageAttachmentAccess, resolveRetryPolicy, RetryPolicySchema } from '@deepseek-ai/dsh-llm'
-import type { ModelModality, RetryPolicyConfig } from '@deepseek-ai/dsh-llm'
+import type { AdapterRegistrationHandle, ModelModality, ResolvedRetryPolicy, RetryPolicyConfig } from '@deepseek-ai/dsh-llm'
 import type {} from '@deepseek-ai/dsh-fs'
 import type {} from '@deepseek-ai/dsh-llm-http-transport'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
@@ -88,8 +91,14 @@ export const inject = ['llm']
 
 const NS = settingsNamespace('llm-deepseek')
 const DEFAULT_API_KEY_ENV = 'DEEPSEEK_API_KEY'
-/** The single provider route this plugin owns. */
+/** The member-configured provider route this plugin owns. */
 const PROVIDER = 'deepseek-official'
+/** Fiber states in which a late credential lookup must leave the registry alone. */
+const INACTIVE_STATES: ReadonlySet<FiberState> = new Set([
+  FiberState.UNLOADING,
+  FiberState.DISPOSED,
+  FiberState.FAILED,
+])
 
 const DEFAULT_MODELS: DeepSeekCatalogModel[] = [
   {
@@ -119,10 +128,11 @@ const MODEL_MODALITIES = ['text', 'image'] as const satisfies readonly ModelModa
 /**
  * Plugin config, validated by the same-named schemastery schema and doubling
  * as the `llm-deepseek` settings-section shape. Every field is optional in
- * yml: a missing API key resolves through {@link Config.apiKeyEnv} at each
- * request (a request without any key fails with `MISSING_CREDENTIAL`, not at
- * plugin load), omitted thinking mode uses the provider default, and omitted
- * reasoning effort resolves to `high`.
+ * yml: the API key resolves through {@link Config.apiKeyEnv} at each request,
+ * and while that reference resolves nothing the `deepseek-official` route
+ * stays dormant instead of failing plugin load (a request whose key vanished
+ * after registration fails with `MISSING_CREDENTIAL`), omitted thinking mode
+ * uses the provider default, and omitted reasoning effort resolves to `high`.
  */
 export interface Config {
   /** Credential reference (environment-variable name) resolved per request; defaults to `DEEPSEEK_API_KEY`. */
@@ -404,7 +414,7 @@ export function resolveAdapterOptions(config: Config, environment?: LaunchEnviro
   }
 }
 
-export function apply(ctx: Context, config: Config): void {
+export async function apply(ctx: Context, config: Config): Promise<void> {
   let current: () => Config = () => config
   let lastRaw: Config | undefined
   let lastGood: ResolvedDeepSeekOptions | undefined
@@ -473,32 +483,96 @@ export function apply(ctx: Context, config: Config): void {
         ?? Promise.resolve({ fields: {}, accept: () => Promise.resolve() })
     },
   })
+  // The declaration outlives the route: it is what keeps the Models card and
+  // the first-run key prompt reachable while the route below is dormant.
   ctx.llm.registerConfigurableProviders([
     { provider: PROVIDER, displayName: 'DeepSeek', settingsNs: NS, settingsPath: [] },
   ])
+
+  // Whether the member route's reference resolves right now, read from the
+  // same two planes `resolveApiKey` reads: the credentials seam when mounted,
+  // otherwise the launching environment alone.
+  const keyConfigured = async (): Promise<boolean> => {
+    const ref = options().apiKeyEnv
+    const credentials = ctx.get('credentials')
+    if (credentials !== undefined) return (await credentials.describe(ref)).configured
+    const ambient = launchEnvironmentOf(ctx).get(ref)
+    return ambient !== undefined && ambient.value.length > 0
+  }
+  // The member route follows its credential and the built-in route follows the
+  // mounted transport, whose credential lives on the Control Plane; a selector
+  // therefore never offers a route no request could reach.
+  let memberKeyConfigured = false
+  const providerRoutes = (): string[] => [
+    ...memberKeyConfigured ? [PROVIDER] : [],
+    ...ctx.get('llmHttpTransport') === undefined ? [] : [BUILT_IN_PROVIDER],
+  ]
   // Route effects bind to this apply fiber via the stable `ctx` reference,
   // even when a swap runs inside the scoped settings callback below.
-  const providerRoutes = (): string[] => ctx.get('llmHttpTransport') === undefined
-    ? [PROVIDER]
-    : [PROVIDER, BUILT_IN_PROVIDER]
-  const registration = ctx.llm.registerAdapter(providerRoutes(), adapter)
-  let registeredPolicy = options().retryPolicy
+  let registration: AdapterRegistrationHandle | undefined
+  let registeredFacts: { routes: string[]; retryPolicy: ResolvedRetryPolicy } | undefined
   const ensureRegistrationFacts = (): void => {
-    const policy = options().retryPolicy
-    if (deepEqualJson(policy, registeredPolicy)) return
-    // The registry captures the retry policy at registration, so it is the one
-    // fact per-request resolution cannot refresh. `replace` re-reads it in one
-    // synchronous registry section: disposing and re-registering instead would
-    // publish an empty route set between the two, and an observer that reacted
-    // to it would see this provider disappear and come back.
-    registration.replace(providerRoutes())
-    registeredPolicy = policy
+    const facts = { routes: providerRoutes(), retryPolicy: options().retryPolicy }
+    if (deepEqualJson(facts, registeredFacts)) return
+    // The registry captures the route set and the retry policy at
+    // registration, so a change to either re-registers. `replace` re-reads
+    // both in one synchronous registry section: disposing and re-registering
+    // instead would publish an empty route set between the two, and an
+    // observer that reacted to it would see this provider disappear and come
+    // back. The registry refuses an empty first registration, so a dormant
+    // plugin holds none until some route is on; `replace([])` then carries a
+    // live registration through a later dormant stretch.
+    if (registration === undefined) {
+      if (facts.routes.length === 0) {
+        registeredFacts = facts
+        return
+      }
+      registration = ctx.llm.registerAdapter(facts.routes, adapter)
+    } else {
+      registration.replace(facts.routes)
+    }
+    registeredFacts = facts
   }
+  // Credential lookups are asynchronous and may overlap: the latest one owns
+  // the registry, and none of them touches it once this fiber is going away.
+  let evaluation = 0
+  const reevaluateMemberRoute = async (): Promise<void> => {
+    const generation = ++evaluation
+    const configured = await keyConfigured()
+    if (generation !== evaluation || INACTIVE_STATES.has(ctx.fiber.state)) return
+    memberKeyConfigured = configured
+    ensureRegistrationFacts()
+  }
+  const reevaluateInBackground = (): void => {
+    void reevaluateMemberRoute().catch((error: unknown) => {
+      ctx.logger.error('llm-deepseek: keeping the previously registered routes after a refused update')
+      ctx.logger.error(error)
+    })
+  }
+  ctx.on('credentials/reference-updated', (ref) => {
+    if (ref === options().apiKeyEnv) reevaluateInBackground()
+  })
+  // A credentials seam attaching or detaching changes which plane answers, so
+  // the route is re-judged on both edges; the plugin's own unload is not one.
+  ctx.inject(['credentials'], (scoped) => {
+    reevaluateInBackground()
+    scoped.effect(() => () => {
+      if (!INACTIVE_STATES.has(ctx.fiber.state)) reevaluateInBackground()
+    }, 'llm-deepseek: credentials seam detached')
+  })
 
   installSettingsSection(ctx, NS, Config, config, {
     setSource: (source) => {
       current = source
     },
-    onChange: ensureRegistrationFacts,
+    onChange: () => {
+      // A changed retry policy re-registers at once; a renamed reference is
+      // re-judged behind it.
+      ensureRegistrationFacts()
+      reevaluateInBackground()
+    },
   })
+  // Loading completes only once the route set is known, so a request issued
+  // right after the plugin's own await never lands in an unregistered window.
+  await reevaluateMemberRoute()
 }

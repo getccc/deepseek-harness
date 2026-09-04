@@ -939,8 +939,19 @@ export class LlmRuntime extends TypertRemoteService {
 
   private registration(provider: string): AdapterRegistration {
     const registration = this.adapters.get(provider)
-    if (!registration) throw new LlmError(`no adapter registered for provider "${provider}"`, 'NO_ADAPTER')
-    return registration
+    if (registration !== undefined) return registration
+    // A declared route with no registration is dormant configuration, and the
+    // failure names the section that activates it; an undeclared route is a
+    // plain miss.
+    const declared = this.directory.get(provider)
+    throw new LlmError(
+      declared === undefined
+        ? `no adapter registered for provider "${provider}"`
+        : `no adapter registered for provider "${provider}"; the "${declared.settingsNs}" settings section`
+          + ' declares it and registers the route once its configuration and credential are in place'
+          + ' (the web Models page writes both)',
+      'NO_ADAPTER',
+    )
   }
 
   /** Remove replay state whose historical route is owned by another adapter. */

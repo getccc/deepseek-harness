@@ -278,6 +278,27 @@ describe('LlmRuntime', () => {
     })
     if (finish?.type !== 'finish' || finish.reason.kind !== 'error') throw new Error('expected error finish')
     expect(finish.reason.failure.message).toContain('no adapter registered')
+    expect(finish.reason.failure.message).not.toContain('settings section')
+  })
+
+  it('names the declaring settings section when a dormant configurable provider is requested', async () => {
+    const ctx = new Context()
+    await ctx.plugin(LlmRuntime)
+    ctx.llm.registerConfigurableProviders([
+      { provider: 'dormant', displayName: 'Dormant', settingsNs: 'llm-dormant', settingsPath: [] },
+    ])
+
+    const chunks = await collect(ctx.llm.stream({
+      provider: 'dormant',
+      model: 'any-model',
+      messages: [],
+    }))
+
+    const finish = chunks.at(-1)
+    if (finish?.type !== 'finish' || finish.reason.kind !== 'error') throw new Error('expected error finish')
+    expect(finish.reason.failure.code).toBe('NO_ADAPTER')
+    expect(finish.reason.failure.message).toContain('no adapter registered for provider "dormant"')
+    expect(finish.reason.failure.message).toContain('"llm-dormant" settings section')
   })
 
   it.each(['done', 'value'] as const)('normalizes a throwing IteratorResult.%s getter', async (field) => {

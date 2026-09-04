@@ -32,7 +32,7 @@ provider id 同时决定调用路径。若只在浏览器中移动模型行，�
 
 ## 后果
 
-模型选择器与 Subagent 授权卡片可以同时显示 `DeepSeek` 与本地化的 `Built-in Models` 或 `内置模型` 标题。成员的 DeepSeek 设置继续影响 `deepseek-official`，Control Plane 发现结果则只更新 `built-in`。
+成员存入 DeepSeek 密钥后，模型选择器与 Subagent 授权卡片可以同时显示 `DeepSeek` 与本地化的 `Built-in Models` 或 `内置模型` 标题；没有密钥时，[成员路由休眠决策](2026-09-03-member-deepseek-route-dormant-without-a-key.zh.md)只留下公司分组。成员的 DeepSeek 设置继续影响 `deepseek-official`，Control Plane 发现结果则只更新 `built-in`。
 
 持久化的公司模型选择使用 provider `built-in`。这项预发布变更不会推断旧有 `deepseek-official` model id 属于成员还是公司；已有的歧义选择必须重新选择。
 

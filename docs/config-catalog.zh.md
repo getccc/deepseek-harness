@@ -1166,10 +1166,11 @@ Source: [`packages/knowledge/knowledge-weknora/src/index.ts:65`](../packages/kno
 /**
  * Plugin config, validated by the same-named schemastery schema and doubling
  * as the `llm-deepseek` settings-section shape. Every field is optional in
- * yml: a missing API key resolves through {@link Config.apiKeyEnv} at each
- * request (a request without any key fails with `MISSING_CREDENTIAL`, not at
- * plugin load), omitted thinking mode uses the provider default, and omitted
- * reasoning effort resolves to `high`.
+ * yml: the API key resolves through {@link Config.apiKeyEnv} at each request,
+ * and while that reference resolves nothing the `deepseek-official` route
+ * stays dormant instead of failing plugin load (a request whose key vanished
+ * after registration fails with `MISSING_CREDENTIAL`), omitted thinking mode
+ * uses the provider default, and omitted reasoning effort resolves to `high`.
  */
 export interface Config {
   /** Credential reference (environment-variable name) resolved per request; defaults to `DEEPSEEK_API_KEY`. */

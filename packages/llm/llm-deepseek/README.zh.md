@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`@deepseek-ai/dsh-llm-deepseek` 是 harness LLM 服务的 DeepSeek chat-completions 适配器：它拥有成员配置的 `deepseek-official` 提供方路由，并把 DeepSeek 的协议格式翻译为 harness 的流式分片协议。没有 LLM HTTP 传输时，它直接调用已配置的提供方。挂载传输后，它还会拥有一个 `built-in` 路由，该路由的模型发现与 chat 调用使用传输；Team Runner 因此能把公司端点、凭据与模型授权留在 Control Plane，同时不替换成员自己的 DeepSeek 路由。它是 DeepSeek 的两个结构不同适配器之一：pi-ai 孪生通过库与更多提供方服务自己的路由名，两者可以并排挂载。
+`@deepseek-ai/dsh-llm-deepseek` 是 harness LLM 服务的 DeepSeek chat-completions 适配器：它拥有成员配置的 `deepseek-official` 提供方路由，并把 DeepSeek 的协议格式翻译为 harness 的流式分片协议。该路由只在其 API 密钥引用能解析出值时才注册，因此没有密钥的组合不会宣告任何 DeepSeek 模型，而密钥一旦存入，路由随即出现。没有 LLM HTTP 传输时，它直接调用已配置的提供方。挂载传输后，它还会拥有一个 `built-in` 路由，该路由的模型发现与 chat 调用使用传输；Team Runner 因此能把公司端点、凭据与模型授权留在 Control Plane，同时不替换成员自己的 DeepSeek 路由。它是 DeepSeek 的两个结构不同适配器之一：pi-ai 孪生通过库与更多提供方服务自己的路由名，两者可以并排挂载。
 
 ## 目录
 
@@ -25,7 +25,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-当组合需要通过 harness LLM 服务流式调用 DeepSeek 模型时挂载本插件。它注册唯一的 `deepseek-official` 路由，并按请求解析连接事实，因此组合条目加可选用户设置分节即可驱动整个适配器。
+当组合需要通过 harness LLM 服务流式调用 DeepSeek 模型时挂载本插件。它在加载时把 `deepseek-official` 路由声明为可配置，在其 API 密钥可解析期间注册该路由，并按请求解析连接事实，因此组合条目加可选用户设置分节即可驱动整个适配器。
 
 ### 何时选择
 
@@ -48,7 +48,7 @@ kind: "package-reference"
 
 请求用 `provider: deepseek-official` 选择路由；模型 id 原样传到协议，因此新增 DeepSeek 模型无需重新注册。省略 `models` 时会公布适合专注任务、快速且经济的 `deepseek-v4-flash`，适合复杂或质量关键任务、能力更强且成本更高的 `deepseek-v4-pro`，以及支持图像的 `deepseek-v4-flash-vision-exp`；每个模型都有 1,000,000 token 上下文窗口。显式列表会替换这些默认值，未列出的模型 id 仍作为纯文本路由原样通过。包括模型发现工具在内的客户端可通过 `ctx.llm.listModels('deepseek-official')` 读取这些建议性条目。支持图片的条目可把 `imagePixelBudget` 设置为正整数或 `low`，也可以设置 `imageMaxBytes`。
 
-存在 `ctx.llmHttpTransport` 时，它的 `listModels()` 会提供 `built-in` 路由，每份经该路由选择的序列化请求都由其 `send()` 方法发送。`deepseek-official` 路由保留本机建议性列表与已配置 API 密钥。Team 传输提供经过角色筛选的内置目录，并使用 Runner 当前设备访问 token 让这些调用通过 Control Plane 网关。
+存在 `ctx.llmHttpTransport` 时，它的 `listModels()` 会提供 `built-in` 路由，每份经该路由选择的序列化请求都由其 `send()` 方法发送。`deepseek-official` 路由保留本机建议性列表与已配置 API 密钥，并在该密钥未配置期间缺席。Team 传输提供经过角色筛选的内置目录，并使用 Runner 当前设备访问 token 让这些调用通过 Control Plane 网关。
 
 | 字段 | 默认值 | 含义 |
 |---|---|---|
@@ -86,7 +86,7 @@ Files 模式通过 `maxRequestFilesBytes` 与 `maxImagesPerRequest` 限制保留
 
 ### 动态配置
 
-连接事实通过可选 settings 与凭据 seam 每次操作重新读取一次。用户设置文档中的 `llm-deepseek:` 分节无需重启即可覆盖任何字段；未通过超 schema 上限的快照会保留最后有效事实并记录失败。对于 `deepseek-official` 请求，API 密钥从提供端点、图片与 Files 策略及空闲预算的同一快照按流调用解析。`built-in` 请求改用已挂载传输，因此不会解析本机提供方密钥；如果该传输不可用，此路由会失败，不会回退到成员端点。图片请求在请求时解析附件服务，因此加载顺序不会冻结图片可用性。
+连接事实通过可选 settings 与凭据 seam 每次操作重新读取一次。用户设置文档中的 `llm-deepseek:` 分节无需重启即可覆盖任何字段；未通过超 schema 上限的快照会保留最后有效事实并记录失败。对于 `deepseek-official` 请求，API 密钥从提供端点、图片与 Files 策略及空闲预算的同一快照按流调用解析。该路由的注册跟随同一引用：插件会在该引用的每次 `credentials/reference-updated` 提交、设置变更以及凭据 seam 挂载或卸载时重新判定它；没有 seam 时，仅由启动环境在加载时决定一次，因为环境变化不可观察。`built-in` 请求改用已挂载传输，因此不会解析本机提供方密钥；如果该传输不可用，此路由会失败，不会回退到成员端点。图片请求在请求时解析附件服务，因此加载顺序不会冻结图片可用性。
 
 ### 提供方专用请求字段
 
@@ -94,7 +94,7 @@ Files 模式通过 `maxRequestFilesBytes` 与 `maxImagesPerRequest` 限制保留
 
 ### 失败与恢复
 
-非 2xx 响应以稳定 code 失败：`AUTH`（401/403）、`QUOTA`、`RATE_LIMIT`、`CONTEXT_WINDOW_EXCEEDED`、`INVALID_REQUEST`、`SERVER` 以及其他情况的 `HTTP_<status>`；响应前传输失败抛出 `TRANSPORT`，调用方中止抛出 `ABORTED`，流空闲超时抛出 `TIMEOUT`。请求扩展准备、字段冲突或 2xx 后接受失败使用 `REQUEST_EXTENSION`。当提供方未指出 file id 时，规范化图片拒绝会列出所有可能附件及其持久位置。陈旧文件拒绝会使点名映射（或该次尝试使用的全部映射）失效，并允许一次替换 chat 尝试。协议违规抛出 `STREAM_CLOSED` 或 `MALFORMED_RESPONSE`；不带内容块的终止 `stop` 变成 `EMPTY_RESPONSE`，默认重试策略会重试它。任何位置都没有密钥的请求以 `MISSING_CREDENTIAL` 失败；格式错误的凭据以 `INVALID_CREDENTIAL` 失败，并点名需要修复的引用——绝不包含密钥的任何部分。
+非 2xx 响应以稳定 code 失败：`AUTH`（401/403）、`QUOTA`、`RATE_LIMIT`、`CONTEXT_WINDOW_EXCEEDED`、`INVALID_REQUEST`、`SERVER` 以及其他情况的 `HTTP_<status>`；响应前传输失败抛出 `TRANSPORT`，调用方中止抛出 `ABORTED`，流空闲超时抛出 `TIMEOUT`。请求扩展准备、字段冲突或 2xx 后接受失败使用 `REQUEST_EXTENSION`。当提供方未指出 file id 时，规范化图片拒绝会列出所有可能附件及其持久位置。陈旧文件拒绝会使点名映射（或该次尝试使用的全部映射）失效，并允许一次替换 chat 尝试。协议违规抛出 `STREAM_CLOSED` 或 `MALFORMED_RESPONSE`；不带内容块的终止 `stop` 变成 `EMPTY_RESPONSE`，默认重试策略会重试它。选中休眠成员路由的请求以 `NO_ADAPTER` 失败并点名 `llm-deepseek` 设置分节；密钥在注册后消失的请求以 `MISSING_CREDENTIAL` 失败；格式错误的凭据以 `INVALID_CREDENTIAL` 失败，并点名需要修复的引用——绝不包含密钥的任何部分。
 
 -----
 
@@ -108,7 +108,7 @@ Files 模式通过 `maxRequestFilesBytes` 与 `maxImagesPerRequest` 限制保留
 
 ### 设计理念
 
-插件建立在一个显式解析步骤与一条注册事实之上。`resolveAdapterOptions()` 是从原始配置到已校验连接事实的唯一路径，适配器通过 thunk 每次操作重新读取这些事实——基址、目录、请求默认值、图片与 Files 策略及空闲预算都会作用于下一个请求，而进行中的流保持其启动时的事实。注册时捕获的唯一事实是重试策略：解析值变化时，插件会在一次同步分节中原位重新注册路由，因此任何请求都观察不到空档。
+插件建立在一个显式解析步骤与两条注册事实之上。`resolveAdapterOptions()` 是从原始配置到已校验连接事实的唯一路径，适配器通过 thunk 每次操作重新读取这些事实——基址、目录、请求默认值、图片与 Files 策略及空闲预算都会作用于下一个请求，而进行中的流保持其启动时的事实。注册时捕获的事实是路由集合与重试策略：任一变化时——密钥存入或移除、传输挂载、策略编辑——插件都会在一次同步注册表分节中原位重新注册，因此任何请求都观察不到空档。首次注册会等到至少一条路由开启；之后的空集合让该注册在休眠期间保持存活。
 
 ### 源码地图
 
@@ -186,6 +186,7 @@ loop 保留的响应块会追加到下一个请求，并保留其更早的可复
 这些限制说明适配器在哪里停止、由未来工作接续。它们是当前包约束，不是通用 DeepSeek 对比或任务积压。
 
 - **设置中的 `models` 列表会整体替换组合列表**——设置层按字段合并，数组只算一个字段；按条目合并目录需要带键的形状。
+- **仅来自环境的密钥只在加载时判定一次**——进程环境的变化不可观察，因此启动后才导出的密钥要等到下一次设置变更或凭据 seam 挂载才会激活路由；托管凭据存储才是实时路径。
 - **不映射 `tool_choice`**——不属于核心词汇（与 pi-ai 孪生共享）。
 - **直连请求使用原始 `fetch`，而非 `@cordisjs/plugin-http`**——没有共享代理或拦截配置；Team 请求使用挂载的传输。
 - **跳过插件新增的内容块类型**——核心文本与受支持图片块会被序列化，空工具输出以字面量 `(no output)` 过线。

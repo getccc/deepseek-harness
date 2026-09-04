@@ -236,7 +236,6 @@ describe('DeepSeekOnboardingDialog', () => {
       harness({ credential: { writable: false } }),
       harness({ settingsWritable: false }),
       harness({ providersReject: true }),
-      harness({ providerActive: false }),
       harness({ settingsNamespace: false }),
       harness({ apiKeyEnv: null }),
     ]) {
@@ -247,6 +246,28 @@ describe('DeepSeekOnboardingDialog', () => {
       expect(h.openSection).not.toHaveBeenCalled()
       view.unmount()
     }
+  })
+
+  it('prompts while the official route is dormant and completes once the stored key registers it', async () => {
+    // The adapter registers `deepseek-official` only while its key resolves, so
+    // a keyless deployment lists the declared route as inactive: that is the
+    // state the prompt repairs, not a fault that ends the step.
+    const options = { providerActive: false }
+    const h = harness(options)
+    render(<DeepSeekOnboardingDialog {...h.props} />)
+    expect(await screen.findByRole('dialog', { name: en.onboardingTitle })).toBeTruthy()
+
+    // A stored key on a route the registry has not picked up yet is a
+    // registration in flight: the prompt closes and the step stays open.
+    h.configure()
+    await act(async () => { await h.controller.load() })
+    await waitFor(() => { expect(screen.queryByRole('dialog')).toBeNull() })
+    expect(h.complete).not.toHaveBeenCalled()
+
+    // The topology refresh that follows the registration ends the step.
+    options.providerActive = true
+    await act(async () => { await h.controller.load() })
+    await waitFor(() => { expect(h.complete).toHaveBeenCalledOnce() })
   })
 
   it('skips an absent adapter and an already-configured environment credential', async () => {

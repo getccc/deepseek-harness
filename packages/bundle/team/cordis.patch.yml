@@ -48,8 +48,9 @@
     provider: built-in
     model: deepseek-v4-flash
 
-# The base adapter keeps its direct DeepSeek route and adds the company route
-# only after the Team transport is mounted.
+# The base adapter adds the company route only after the Team transport is
+# mounted, and keeps its direct DeepSeek route for the member who stored a key
+# of their own; a member without one is offered company models alone.
 - id: llm-deepseek
   inject: [llmHttpTransport]
 

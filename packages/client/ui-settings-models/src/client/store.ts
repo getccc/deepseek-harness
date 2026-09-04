@@ -311,7 +311,6 @@ export type OnboardingReadiness =
     kind: 'unavailable'
     reason:
       | 'load-failed'
-      | 'provider-inactive'
       | 'credentials-unavailable'
       | 'settings-read-only'
       | 'credential-read-only'
@@ -324,6 +323,9 @@ export type OnboardingReadiness =
  * DeepSeek route — the one route the prompt can offer a key field for — decide
  * whether prompting can help. A missing official configurable-provider
  * declaration means the adapter is not repairable by navigating to Models.
+ * That route registers itself only while its credential resolves, so its
+ * declared-but-inactive state is the keyless posture the prompt repairs, not
+ * a deployment fault.
  * @param state - current shared Models join snapshot.
  * @returns the onboarding state without reading a parallel fact source.
  */
@@ -343,20 +345,19 @@ export function onboardingReadiness(state: ModelsSettingsState): OnboardingReadi
     && candidate.entry.settingsNs === 'llm-deepseek'
     && candidate.entry.settingsPath.length === 0)
   if (row === undefined) return { kind: 'adapter-absent' }
-  if (!row.entry.active) {
-    return {
-      kind: 'unavailable',
-      reason: 'provider-inactive',
-    }
-  }
-  // Past the usable gate an active route names a reference it has no stored
-  // credential for, so the remaining questions are all about that credential.
+  // Past the usable gate the declared route names a reference it has no
+  // stored credential for, so the remaining questions are all about that
+  // credential.
   if (state.credentialError !== null || row.credential === undefined) {
     return {
       kind: 'unavailable',
       reason: 'credentials-unavailable',
     }
   }
+  // A stored credential on a route not yet registered is a registration in
+  // flight: the adapter re-registers on the same credential commit, and the
+  // `llm/adapters-updated` refresh turns this join provider-ready.
+  if (row.credential.configured) return { kind: 'loading' }
   if (!state.writable) {
     return {
       kind: 'unavailable',

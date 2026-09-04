@@ -85,6 +85,23 @@ describe('onboardingReadiness', () => {
     expect(onboardingReadiness(state())).toEqual({ kind: 'credential-missing' })
   })
 
+  it('prompts for the key while the official route is dormant and waits once the key is stored', () => {
+    // The adapter registers the route only while its reference resolves, so
+    // a keyless deployment shows the declared row inactive: exactly the state
+    // the prompt repairs.
+    expect(onboardingReadiness(state({
+      rows: [row({ entry: { ...row().entry, active: false } })],
+    }))).toEqual({ kind: 'credential-missing' })
+    // A stored key on a still-inactive route is the registration in flight
+    // that the next topology refresh turns provider-ready.
+    expect(onboardingReadiness(state({
+      rows: [row({
+        entry: { ...row().entry, active: false },
+        credential: { configured: true, source: 'file', writable: true },
+      })],
+    }))).toEqual({ kind: 'loading' })
+  })
+
   it('ends onboarding once any other registered provider can serve requests', () => {
     expect(onboardingReadiness(state({ rows: [row(), otherRow()] }))).toEqual({ kind: 'provider-ready' })
     // A provider the user cannot reach yet leaves the prompt in place.
@@ -107,9 +124,6 @@ describe('onboardingReadiness', () => {
       kind: 'unavailable',
       reason: 'load-failed',
     })
-    expect(onboardingReadiness(state({
-      rows: [row({ entry: { ...row().entry, active: false } })],
-    }))).toEqual({ kind: 'unavailable', reason: 'provider-inactive' })
     expect(onboardingReadiness(state({
       credentialError: 'credentials service is absent',
     }))).toEqual({

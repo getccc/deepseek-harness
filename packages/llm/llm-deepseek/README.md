@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`@deepseek-ai/dsh-llm-deepseek` is the DeepSeek chat-completions adapter for the harness LLM service: it owns the member-configured `deepseek-official` provider route and translates DeepSeek's wire format into the harness stream-chunk protocol. Without an LLM HTTP transport it calls the configured provider directly. With one mounted, it also owns a `built-in` route whose model discovery and chat invocation use that transport, which is how the Team Runner keeps the company endpoint, credential, and model authorization on the Control Plane without replacing the member's DeepSeek route. It is one of two structurally different adapters for DeepSeek: the pi-ai twin serves its own route names through a library and additional providers, and both can be mounted side by side.
+`@deepseek-ai/dsh-llm-deepseek` is the DeepSeek chat-completions adapter for the harness LLM service: it owns the member-configured `deepseek-official` provider route and translates DeepSeek's wire format into the harness stream-chunk protocol. That route is registered only while its API-key reference resolves, so a keyless composition advertises no DeepSeek models and the route appears the moment a key is stored. Without an LLM HTTP transport it calls the configured provider directly. With one mounted, it also owns a `built-in` route whose model discovery and chat invocation use that transport, which is how the Team Runner keeps the company endpoint, credential, and model authorization on the Control Plane without replacing the member's DeepSeek route. It is one of two structurally different adapters for DeepSeek: the pi-ai twin serves its own route names through a library and additional providers, and both can be mounted side by side.
 
 ## Table of Contents
 
@@ -25,7 +25,7 @@ English | [中文](README.zh.md)
 <a id="use-this-package"></a>
 ## Use this package
 
-Mount this plugin when a composition streams DeepSeek models through the harness LLM service. It registers the single `deepseek-official` route and resolves connection facts per request, so a composition entry plus an optional user settings section drive the whole adapter.
+Mount this plugin when a composition streams DeepSeek models through the harness LLM service. It declares the `deepseek-official` route as configurable at load, registers it while its API key resolves, and resolves connection facts per request, so a composition entry plus an optional user settings section drive the whole adapter.
 
 ### When to choose it
 
@@ -48,7 +48,7 @@ Choose this adapter when the deployment targets DeepSeek's official API, optiona
 
 A request selects the route with `provider: deepseek-official`; the model id passes through to the wire, so new DeepSeek models need no re-registration. Omitted `models` advertises `deepseek-v4-flash` as the fast, economical choice for focused work, `deepseek-v4-pro` as the stronger, higher-cost choice for complex or quality-critical work, and the image-capable `deepseek-v4-flash-vision-exp`; each has a 1,000,000-token context window. An explicit list replaces those defaults, and unlisted model ids still pass through as text-only routes. Clients, including model discovery tools, can read the advisory entries through `ctx.llm.listModels('deepseek-official')`. Image-capable entries may set `imagePixelBudget` to a positive integer or `low`, and may set `imageMaxBytes`.
 
-When `ctx.llmHttpTransport` is present, its `listModels()` supplies the `built-in` route and each serialized request selected through that route goes through its `send()` method. The `deepseek-official` route keeps its local advisory list and configured API key. A Team transport supplies the role-filtered built-in catalog and routes those invocations through the Control Plane gateway under the Runner's current device access token.
+When `ctx.llmHttpTransport` is present, its `listModels()` supplies the `built-in` route and each serialized request selected through that route goes through its `send()` method. The `deepseek-official` route keeps its local advisory list and configured API key, and is absent while that key is unconfigured. A Team transport supplies the role-filtered built-in catalog and routes those invocations through the Control Plane gateway under the Runner's current device access token.
 
 | Field | Default | Meaning |
 |---|---|---|
@@ -86,7 +86,7 @@ Files mode bounds retained request versions by `maxRequestFilesBytes` and `maxIm
 
 ### Dynamic configuration
 
-Connection facts are re-read once per operation through the optional settings and credentials seams. A `llm-deepseek:` section in the user settings document overrides any field without a restart; a snapshot that fails a beyond-schema bound keeps the last good facts and logs the failure. For a `deepseek-official` request, the API key resolves per stream call from the same snapshot that supplies the endpoint, image and Files policies, and idle budget. A `built-in` request uses the mounted transport instead, so it resolves no local provider key; if that transport is unavailable, the route fails instead of falling back to the member endpoint. Image requests resolve the attachment service at request time, so load order does not freeze image availability.
+Connection facts are re-read once per operation through the optional settings and credentials seams. A `llm-deepseek:` section in the user settings document overrides any field without a restart; a snapshot that fails a beyond-schema bound keeps the last good facts and logs the failure. For a `deepseek-official` request, the API key resolves per stream call from the same snapshot that supplies the endpoint, image and Files policies, and idle budget. The route's registration follows the same reference: the plugin re-judges it on every `credentials/reference-updated` commit for that reference, on a settings change, and when the credentials seam attaches or detaches; without the seam the launching environment alone decides, and only at load, because environment changes are not observable. A `built-in` request uses the mounted transport instead, so it resolves no local provider key; if that transport is unavailable, the route fails instead of falling back to the member endpoint. Image requests resolve the attachment service at request time, so load order does not freeze image availability.
 
 ### Provider-specific request fields
 
@@ -94,7 +94,7 @@ When `ctx.deepseekLlmApiExtensions` is present, the adapter prepares its registe
 
 ### Failures and recovery
 
-Non-2xx responses fail with stable codes: `AUTH` (401/403), `QUOTA`, `RATE_LIMIT`, `CONTEXT_WINDOW_EXCEEDED`, `INVALID_REQUEST`, `SERVER`, and `HTTP_<status>` otherwise; pre-response transport failures throw `TRANSPORT`, caller aborts throw `ABORTED`, and stream-idle expiry throws `TIMEOUT`. Request-extension preparation, field collision, or post-2xx acceptance fails with `REQUEST_EXTENSION`. A normalized-image rejection names every plausible attachment and its durable position when the provider does not identify a file id. Stale-file rejection invalidates the named mappings (or every mapping used by the attempt) and permits one replacement chat attempt. Protocol violations throw `STREAM_CLOSED` or `MALFORMED_RESPONSE`, and a terminal `stop` with no content blocks becomes `EMPTY_RESPONSE`, which the default retry policy retries. A request with no key anywhere fails with `MISSING_CREDENTIAL`, and a malformed credential fails with `INVALID_CREDENTIAL` naming the reference to fix — never any part of the key.
+Non-2xx responses fail with stable codes: `AUTH` (401/403), `QUOTA`, `RATE_LIMIT`, `CONTEXT_WINDOW_EXCEEDED`, `INVALID_REQUEST`, `SERVER`, and `HTTP_<status>` otherwise; pre-response transport failures throw `TRANSPORT`, caller aborts throw `ABORTED`, and stream-idle expiry throws `TIMEOUT`. Request-extension preparation, field collision, or post-2xx acceptance fails with `REQUEST_EXTENSION`. A normalized-image rejection names every plausible attachment and its durable position when the provider does not identify a file id. Stale-file rejection invalidates the named mappings (or every mapping used by the attempt) and permits one replacement chat attempt. Protocol violations throw `STREAM_CLOSED` or `MALFORMED_RESPONSE`, and a terminal `stop` with no content blocks becomes `EMPTY_RESPONSE`, which the default retry policy retries. A request selecting the dormant member route fails with `NO_ADAPTER` naming the `llm-deepseek` settings section, a request whose key vanished after registration fails with `MISSING_CREDENTIAL`, and a malformed credential fails with `INVALID_CREDENTIAL` naming the reference to fix — never any part of the key.
 
 -----
 
@@ -108,7 +108,7 @@ This section explains the design behind the adapter; the observable behavior is 
 
 ### Design philosophy
 
-The plugin is built on one explicit resolve step and one registration fact. `resolveAdapterOptions()` is the single path from raw config to validated connection facts, and the adapter re-reads those facts through a thunk once per operation — base URL, catalog, request defaults, image and Files policies, and idle budget all take effect on the next request, while an in-flight stream keeps the facts it started with. The only fact captured at registration is the retry policy: when its resolved value changes, the plugin re-registers the route in place, in one synchronous section, so no request observes a gap.
+The plugin is built on one explicit resolve step and two registration facts. `resolveAdapterOptions()` is the single path from raw config to validated connection facts, and the adapter re-reads those facts through a thunk once per operation — base URL, catalog, request defaults, image and Files policies, and idle budget all take effect on the next request, while an in-flight stream keeps the facts it started with. The facts captured at registration are the route set and the retry policy: when either changes — a key stored or removed, a transport mounted, a policy edited — the plugin re-registers in place, in one synchronous registry section, so no request observes a gap. A first registration waits for some route to be on, and a later empty set keeps that registration alive through the dormant stretch.
 
 ### Source map
 
@@ -186,6 +186,7 @@ Loop-retained response blocks append to the next request and preserve its earlie
 These limits define where the adapter stops and future work begins. They are current package constraints, not a general DeepSeek comparison or a task backlog.
 
 - **A settings `models` list replaces the composition list wholesale** — settings-layer merging is per-field, and arrays are one field; per-entry catalog merging would need a keyed shape.
+- **An ambient-only key is judged at load** — process-environment changes are not observable, so a key exported after boot activates the route only on the next settings change or credentials-seam attach; the managed credential store is the live path.
 - **`tool_choice` is not mapped** — not part of the core vocabulary (shared with the pi-ai twin).
 - **Direct requests use raw `fetch`, not `@cordisjs/plugin-http`** — no shared proxy or interception configuration; Team requests use the mounted transport.
 - **Plugin-added content block types are skipped** — core text and supported image blocks are serialized, and empty tool output crosses the wire as the literal `(no output)`.

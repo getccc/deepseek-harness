@@ -154,19 +154,43 @@ describe('request-level dynamic configuration', () => {
     expect(serverB.headers[0]?.authorization).toBe('Bearer second-key')
   })
 
-  it('starts keyless and serves the next request once the key arrives', async () => {
+  it('starts keyless and dormant, registers the route once the key is stored, and drops it when the key is removed', async () => {
     vi.stubEnv('DEEPSEEK_API_KEY', '')
     const dir = await home()
     const server = await mockServer([{ kind: 'sse', events: textEvents }])
     const { ctx } = await boot(dir, { baseURL: server.url })
 
-    const keyless = await prompt(ctx)
-    expect(keyless.finish).toMatchObject({ kind: 'error', failure: { code: 'MISSING_CREDENTIAL' } })
+    // Nothing to advertise and nothing touched until a key exists; the
+    // configurable declaration is what the Models page writes the key through.
+    expect(ctx.llm.listProviders()).toEqual([])
+    expect(ctx.llm.listConfigurableProviders().map(entry => entry.provider)).toEqual(['deepseek-official'])
     await expect(access(join(dir, '.anonymous-user-id'))).rejects.toMatchObject({ code: 'ENOENT' })
+
+    // The store's own commit notification is the trigger: no restart, no poll.
     await ctx.credentials.set(KEY_REF, 'sk-arrived')
+    await vi.waitFor(() => {
+      expect(ctx.llm.listProviders()).toEqual([{ id: 'deepseek-official', name: 'DeepSeek' }])
+    })
     await prompt(ctx)
     expect(server.headers[0]?.authorization).toBe('Bearer sk-arrived')
     await expect(access(join(dir, '.anonymous-user-id'))).resolves.toBeUndefined()
+
+    await ctx.credentials.unset(KEY_REF)
+    await vi.waitFor(() => { expect(ctx.llm.listProviders()).toEqual([]) })
+  })
+
+  it('follows a renamed credential reference from the settings section', async () => {
+    vi.stubEnv('DEEPSEEK_API_KEY', '')
+    const dir = await home()
+    const { ctx } = await boot(dir, { baseURL: 'http://127.0.0.1:1' })
+    await ctx.credentials.set(credentialRef('MEMBER_DEEPSEEK_KEY'), 'sk-under-another-name')
+    // A key under a name the section does not point at is no key.
+    expect(ctx.llm.listProviders()).toEqual([])
+
+    await ctx.settings.update(NS, { apiKeyEnv: 'MEMBER_DEEPSEEK_KEY' })
+    await vi.waitFor(() => {
+      expect(ctx.llm.listProviders()).toEqual([{ id: 'deepseek-official', name: 'DeepSeek' }])
+    })
   })
 
   it('rejects a stored credential no header can carry, never echoing it in the failure', async () => {
@@ -189,6 +213,7 @@ describe('request-level dynamic configuration', () => {
   })
 
   it('advertises a live settings catalog without re-registration', async () => {
+    vi.stubEnv('DEEPSEEK_API_KEY', 'test-key')
     const dir = await home()
     const { ctx } = await boot(dir, { baseURL: 'http://127.0.0.1:1' })
 
@@ -231,6 +256,7 @@ describe('request-level dynamic configuration', () => {
   })
 
   it('re-registers the route in place when the captured retry policy changes, without an empty-registry window', async () => {
+    vi.stubEnv('DEEPSEEK_API_KEY', 'test-key')
     const dir = await home()
     const { ctx } = await boot(dir, { baseURL: 'http://127.0.0.1:1' })
 
@@ -256,6 +282,7 @@ describe('request-level dynamic configuration', () => {
   })
 
   it('keeps the last good options when a settings snapshot fails beyond-schema validation', async () => {
+    vi.stubEnv('DEEPSEEK_API_KEY', 'test-key')
     const dir = await home()
     const { ctx } = await boot(dir, { baseURL: 'http://127.0.0.1:1' })
 

@@ -32,7 +32,7 @@ This route split complements the existing decisions that [a Runner names a model
 
 ## Consequences
 
-The model selector and Subagent authorization card can show `DeepSeek` and the locale-owned `Built-in Models` or `内置模型` headings at the same time. A member's DeepSeek settings continue to affect `deepseek-official`, while Control Plane discovery updates only `built-in`.
+The model selector and Subagent authorization card can show `DeepSeek` and the locale-owned `Built-in Models` or `内置模型` headings at the same time once the member has stored a DeepSeek key; without one the [dormant member route decision](2026-09-03-member-deepseek-route-dormant-without-a-key.md) leaves only the company group. A member's DeepSeek settings continue to affect `deepseek-official`, while Control Plane discovery updates only `built-in`.
 
 Persisted company selections use provider `built-in`. This pre-release change does not infer whether an old `deepseek-official` model id belonged to the member or the company; an existing ambiguous selection must be selected again.
 

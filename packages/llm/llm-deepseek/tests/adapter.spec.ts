@@ -23,6 +23,10 @@ import type { PreparedDeepSeekLlmApiExtensions } from '@deepseek-ai/dsh-deepseek
 import type {
   LlmHttpTransport, TransportRequest, TransportResponse,
 } from '@deepseek-ai/dsh-llm-http-transport'
+import { CredentialProvider, credentialRef } from '@deepseek-ai/dsh-credentials'
+import type {
+  CredentialInfo, CredentialRecord, CredentialRecordEntry, CredentialRecordInfo, CredentialRef, ResolvedCredential,
+} from '@deepseek-ai/dsh-credentials'
 import * as LlmDeepSeek from '@deepseek-ai/dsh-llm-deepseek'
 import { BUILT_IN_PROVIDER, DeepSeekAdapter, resolveAdapterOptions } from '@deepseek-ai/dsh-llm-deepseek'
 import { httpErrorCode } from '../src/adapter.ts'
@@ -32,7 +36,58 @@ import { closeMockServers, mockServer, textEvents } from './mock-server.ts'
 import type { Behavior } from './mock-server.ts'
 
 const TEST_USER_ID = '00000000-0000-4000-8000-000000000001' as AnonymousUserId
+const KEY_REF = credentialRef('DEEPSEEK_API_KEY')
 let testHome: string
+
+/**
+ * A credentials seam whose reference answers a test scripts and whose commit
+ * notification a test raises by hand; the record half and every write are
+ * out of scope for the route tests that mount it.
+ */
+class ScriptedCredentials extends CredentialProvider {
+  static script: (ref: CredentialRef) => Promise<CredentialInfo> = () => Promise.resolve({ configured: false, writable: false })
+
+  override resolve(): Promise<ResolvedCredential | undefined> {
+    return Promise.resolve(undefined)
+  }
+
+  override describe(ref: CredentialRef): Promise<CredentialInfo> {
+    return ScriptedCredentials.script(ref)
+  }
+
+  override set(): Promise<void> {
+    return Promise.reject(new Error('ScriptedCredentials: writes are not scripted'))
+  }
+
+  override unset(): Promise<void> {
+    return Promise.reject(new Error('ScriptedCredentials: writes are not scripted'))
+  }
+
+  override readRecord(): Promise<CredentialRecord | undefined> {
+    return Promise.resolve(undefined)
+  }
+
+  override describeRecord(): Promise<CredentialRecordInfo> {
+    return Promise.resolve({ configured: false, writable: false })
+  }
+
+  override listRecords(): Promise<readonly CredentialRecordEntry[]> {
+    return Promise.resolve([])
+  }
+
+  override modifyRecord(): Promise<CredentialRecord | undefined> {
+    return Promise.resolve(undefined)
+  }
+
+  override deleteRecord(): Promise<void> {
+    return Promise.resolve()
+  }
+
+  /** Raise the seam's commit notification for `ref`. */
+  announce(ref: CredentialRef): void {
+    this.notifyUpdated(ref)
+  }
+}
 
 beforeEach(() => {
   testHome = mkdtempSync(join(tmpdir(), 'dsh-llm-deepseek-'))
@@ -1693,6 +1748,7 @@ describe('plugin registration and config', () => {
   })
 
   it('registers the deepseek provider and unregisters on dispose (HMR safety)', async () => {
+    vi.stubEnv('DEEPSEEK_API_KEY', 'test-key')
     const server = await mockServer([])
     const ctx = new Context()
     await ctx.plugin(LlmRuntime)
@@ -1711,7 +1767,36 @@ describe('plugin registration and config', () => {
     expect(ctx.llm.listConfigurableProviders()).toEqual([])
   })
 
+  it('serves only the transport-owned built-in catalog while the member key is absent', async () => {
+    // The Team Runner's ordinary posture: the company route is on, and a
+    // member who stored no DeepSeek key is offered no DeepSeek models.
+    vi.stubEnv('DEEPSEEK_API_KEY', '')
+    const ctx = new Context()
+    await ctx.plugin(LlmRuntime)
+    ctx.provide('llmHttpTransport', {
+      listModels: () => Promise.resolve([{ id: 'testModel', name: 'testModel' }]),
+    } as unknown as LlmHttpTransport)
+    await ctx.plugin(LlmDeepSeek, { baseURL: 'http://127.0.0.1:1' })
+
+    expect(ctx.llm.listProviders()).toEqual([
+      { id: 'built-in', name: 'Built-in Models', category: 'built-in' },
+    ])
+    await expect(ctx.llm.listModels('built-in')).resolves.toEqual([{
+      provider: 'built-in',
+      id: 'testModel',
+      name: 'testModel',
+      inputModalities: ['text'],
+    }])
+    expect(ctx.llm.listConfigurableProviders()).toEqual([{
+      provider: 'deepseek-official',
+      displayName: 'DeepSeek',
+      settingsNs: 'llm-deepseek',
+      settingsPath: [],
+    }])
+  })
+
   it('keeps a member DeepSeek catalog beside the transport-owned built-in catalog', async () => {
+    vi.stubEnv('DEEPSEEK_API_KEY', 'test-key')
     const ctx = new Context()
     await ctx.plugin(LlmRuntime)
     ctx.provide('llmHttpTransport', {
@@ -1739,6 +1824,7 @@ describe('plugin registration and config', () => {
   })
 
   it('registers retryPolicy from the provider config', async () => {
+    vi.stubEnv('DEEPSEEK_API_KEY', 'test-key')
     const ctx = new Context()
     await ctx.plugin(LlmRuntime)
     await ctx.plugin(LlmDeepSeek, {
@@ -1758,6 +1844,7 @@ describe('plugin registration and config', () => {
   })
 
   it('owns the deepseek provider and advertises the default models', async () => {
+    vi.stubEnv('DEEPSEEK_API_KEY', 'test-key')
     const ctx = new Context()
     await ctx.plugin(LlmRuntime)
     await ctx.plugin(LlmDeepSeek, { baseURL: 'http://127.0.0.1:1' })
@@ -1808,6 +1895,7 @@ describe('plugin registration and config', () => {
   })
 
   it.each(['off', 'low', 'max'] as const)('uses the configured %s reasoning default', async (effort) => {
+    vi.stubEnv('DEEPSEEK_API_KEY', 'test-key')
     const ctx = new Context()
     await ctx.plugin(LlmRuntime)
     await ctx.plugin(LlmDeepSeek, {
@@ -1829,6 +1917,7 @@ describe('plugin registration and config', () => {
   })
 
   it('accepts off as the default when thinking is deployment-disabled', async () => {
+    vi.stubEnv('DEEPSEEK_API_KEY', 'test-key')
     const ctx = new Context()
     await ctx.plugin(LlmRuntime)
     await ctx.plugin(LlmDeepSeek, {
@@ -1886,9 +1975,10 @@ describe('plugin registration and config', () => {
   })
 
   it('uses the default model catalog when apply is called directly', async () => {
+    vi.stubEnv('DEEPSEEK_API_KEY', 'test-key')
     const ctx = new Context()
     await ctx.plugin(LlmRuntime)
-    LlmDeepSeek.apply(ctx, { baseURL: 'http://127.0.0.1:1' })
+    await LlmDeepSeek.apply(ctx, { baseURL: 'http://127.0.0.1:1' })
     await expect(ctx.llm.listModels('deepseek-official')).resolves.toEqual([
       {
         provider: 'deepseek-official',
@@ -1964,6 +2054,7 @@ describe('plugin registration and config', () => {
   })
 
   it('advertises configured models without restricting arbitrary request ids', async () => {
+    vi.stubEnv('DEEPSEEK_API_KEY', 'test-key')
     const ctx = new Context()
     await ctx.plugin(LlmRuntime)
     await ctx.plugin(LlmDeepSeek, {
@@ -1999,6 +2090,7 @@ describe('plugin registration and config', () => {
   })
 
   it('uses exact model capacity before the adapter-wide default', async () => {
+    vi.stubEnv('DEEPSEEK_API_KEY', 'test-key')
     const ctx = new Context()
     await ctx.plugin(LlmRuntime)
     await ctx.plugin(LlmDeepSeek, {
@@ -2019,6 +2111,7 @@ describe('plugin registration and config', () => {
   })
 
   it('allows an explicit empty model catalog', async () => {
+    vi.stubEnv('DEEPSEEK_API_KEY', 'test-key')
     const ctx = new Context()
     await ctx.plugin(LlmRuntime)
     await ctx.plugin(LlmDeepSeek, {
@@ -2117,14 +2210,13 @@ describe('plugin registration and config', () => {
   })
 
   it('rejects invalid context capacity when apply is called directly', async () => {
+    vi.stubEnv('DEEPSEEK_API_KEY', 'test-key')
     const ctx = new Context()
     await ctx.plugin(LlmRuntime)
-    expect(() => {
-      LlmDeepSeek.apply(ctx, {
-        baseURL: 'http://127.0.0.1:1',
-        models: [{ id: 'invalid-context', contextWindow: 0 }],
-      })
-    }).toThrow(/contextWindow must be a positive integer/)
+    await expect(LlmDeepSeek.apply(ctx, {
+      baseURL: 'http://127.0.0.1:1',
+      models: [{ id: 'invalid-context', contextWindow: 0 }],
+    })).rejects.toThrow(/contextWindow must be a positive integer/)
     expect(ctx.llm.listProviders()).toEqual([])
   })
 
@@ -2235,24 +2327,42 @@ describe('plugin registration and config', () => {
     expect(ctx.llm.listProviders()).toEqual([{ id: 'deepseek-official', name: 'DeepSeek' }])
   })
 
-  it('loads keyless, keeps the catalog browsable, and fails the request actionably', async () => {
-    vi.stubEnv('DEEPSEEK_API_KEY', '')
+  it('loads keyless as a dormant route: nothing advertised, the Models card still declared', async () => {
+    vi.stubEnv('DEEPSEEK_API_KEY', undefined)
     const ctx = new Context()
     await ctx.plugin(LlmRuntime)
     await ctx.plugin(LlmDeepSeek, { baseURL: 'http://127.0.0.1:1' })
-    // First-boot onboarding: the route registers so models stay discoverable;
-    // only the request itself needs a key.
+    // No key anywhere: a selector is offered no model no request could reach,
+    // while the configurable declaration keeps the key entry point open.
+    expect(ctx.llm.listProviders()).toEqual([])
+    expect(ctx.llm.listConfigurableProviders()).toEqual([{
+      provider: 'deepseek-official',
+      displayName: 'DeepSeek',
+      settingsNs: 'llm-deepseek',
+      settingsPath: [],
+    }])
+    const result = await assemble(ctx, { model: 'deepseek-v4-flash', messages: [] })
+    expect(result.finish).toMatchObject({ kind: 'error', failure: { code: 'NO_ADAPTER' } })
+    if (result.finish.kind !== 'error') throw new Error('expected an error finish')
+    // The registry's failure points at the section that activates the route.
+    expect(result.finish.failure.message).toContain('"llm-deepseek" settings section')
+  })
+
+  it('fails a request actionably when the ambient key vanishes after registration', async () => {
+    // Process-environment changes are not observable, so the route stays
+    // registered and the request itself reports the gap. The guidance names
+    // both places a credential can come from, and nothing else: configuration
+    // carries the reference, never a literal key.
+    vi.stubEnv('DEEPSEEK_API_KEY', 'boot-key')
+    const ctx = new Context()
+    await ctx.plugin(LlmRuntime)
+    await ctx.plugin(LlmDeepSeek, { baseURL: 'http://127.0.0.1:1' })
     expect(ctx.llm.listProviders()).toEqual([{ id: 'deepseek-official', name: 'DeepSeek' }])
-    await expect(ctx.llm.listModels('deepseek-official')).resolves.toHaveLength(3)
-    const first = await assemble(ctx, { model: 'deepseek-v4-flash', messages: [] })
-    expect(first.finish).toMatchObject({ kind: 'error', failure: { code: 'MISSING_CREDENTIAL' } })
-    // The guidance leads with the managed credential store.
-    const second = await assemble(ctx, { model: 'deepseek-v4-flash', messages: [] })
-    expect(second.finish.kind).toBe('error')
-    if (second.finish.kind !== 'error') throw new Error('expected an error finish')
-    // The guidance names both places a credential can come from, and nothing
-    // else: configuration carries the reference, never a literal key.
-    expect(second.finish.failure.message)
+    vi.stubEnv('DEEPSEEK_API_KEY', '')
+    const result = await assemble(ctx, { model: 'deepseek-v4-flash', messages: [] })
+    expect(result.finish).toMatchObject({ kind: 'error', failure: { code: 'MISSING_CREDENTIAL' } })
+    if (result.finish.kind !== 'error') throw new Error('expected an error finish')
+    expect(result.finish.failure.message)
       .toMatch(/store DEEPSEEK_API_KEY through the credentials service.*export DEEPSEEK_API_KEY/s)
   })
 
@@ -2273,8 +2383,128 @@ describe('plugin registration and config', () => {
     const ctx = new Context()
     await ctx.plugin(LlmRuntime)
     await ctx.plugin(LlmDeepSeek, { baseURL: 'http://127.0.0.1:1' })
+    expect(ctx.llm.listProviders()).toEqual([])
+  })
+
+  it('registers the member route only while the credentials seam reports its reference configured', async () => {
+    vi.stubEnv('DEEPSEEK_API_KEY', '')
+    let stored = false
+    ScriptedCredentials.script = ref => Promise.resolve({ configured: ref === 'DEEPSEEK_API_KEY' && stored, writable: true })
+    const ctx = new Context()
+    await ctx.plugin(LlmRuntime)
+    await ctx.plugin(ScriptedCredentials)
+    await ctx.plugin(LlmDeepSeek, { baseURL: 'http://127.0.0.1:1' })
+    expect(ctx.llm.listProviders()).toEqual([])
+    const observed: string[][] = []
+    ctx.on('llm/adapters-updated', () => {
+      observed.push(ctx.llm.listProviders().map(provider => provider.id))
+    })
+    const seam = ctx.credentials as ScriptedCredentials
+
+    // Another reference's commit is not this route's business, even once the
+    // seam would answer differently.
+    stored = true
+    seam.announce(credentialRef('OTHER_API_KEY'))
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(observed).toEqual([])
+
+    seam.announce(KEY_REF)
+    await vi.waitFor(() => {
+      expect(ctx.llm.listProviders()).toEqual([{ id: 'deepseek-official', name: 'DeepSeek' }])
+    })
+    stored = false
+    seam.announce(KEY_REF)
+    await vi.waitFor(() => { expect(ctx.llm.listProviders()).toEqual([]) })
+    // The registration outlives the dormant stretch, so the next key lands in
+    // place rather than through a second first registration.
+    stored = true
+    seam.announce(KEY_REF)
+    await vi.waitFor(() => {
+      expect(ctx.llm.listProviders()).toEqual([{ id: 'deepseek-official', name: 'DeepSeek' }])
+    })
+    expect(observed).toEqual([['deepseek-official'], [], ['deepseek-official']])
+  })
+
+  it('re-judges the member route when the credentials seam detaches or attaches', async () => {
+    vi.stubEnv('DEEPSEEK_API_KEY', '')
+    ScriptedCredentials.script = () => Promise.resolve({ configured: true, source: 'memory', writable: true })
+    const ctx = new Context()
+    await ctx.plugin(LlmRuntime)
+    const seam = await ctx.plugin(ScriptedCredentials)
+    await ctx.plugin(LlmDeepSeek, { baseURL: 'http://127.0.0.1:1' })
+    expect(ctx.llm.listProviders()).toEqual([{ id: 'deepseek-official', name: 'DeepSeek' }])
+
+    // Without the seam the environment is the whole plane, and it holds nothing.
+    await seam.dispose()
+    await vi.waitFor(() => { expect(ctx.llm.listProviders()).toEqual([]) })
+    // A seam arriving later answers for the route again.
+    await ctx.plugin(ScriptedCredentials)
+    await vi.waitFor(() => {
+      expect(ctx.llm.listProviders()).toEqual([{ id: 'deepseek-official', name: 'DeepSeek' }])
+    })
+  })
+
+  it('keeps the registered routes and logs when a credential lookup fails', async () => {
+    vi.stubEnv('DEEPSEEK_API_KEY', '')
+    ScriptedCredentials.script = () => Promise.resolve({ configured: true, source: 'memory', writable: true })
+    const ctx = new Context()
+    await ctx.plugin(LlmRuntime)
+    await ctx.plugin(ScriptedCredentials)
+    await ctx.plugin(LlmDeepSeek, { baseURL: 'http://127.0.0.1:1' })
+    const error = vi.spyOn(ctx.logger, 'error').mockImplementation(() => undefined)
+
+    ScriptedCredentials.script = () => Promise.reject(new Error('store unreadable'))
+    ;(ctx.credentials as ScriptedCredentials).announce(KEY_REF)
+    await vi.waitFor(() => {
+      expect(error).toHaveBeenCalledWith('llm-deepseek: keeping the previously registered routes after a refused update')
+    })
+    expect(error).toHaveBeenCalledWith(expect.objectContaining({ message: 'store unreadable' }))
+    expect(ctx.llm.listProviders()).toEqual([{ id: 'deepseek-official', name: 'DeepSeek' }])
+  })
+
+  it('fails a request actionably when the seam registered the route but no longer resolves the key', async () => {
+    // Registration follows `describe`; the request resolves the value. A seam
+    // whose answers disagree — the value withdrawn between the two reads —
+    // reaches the same guidance an ambient key's disappearance does.
+    vi.stubEnv('DEEPSEEK_API_KEY', '')
+    ScriptedCredentials.script = () => Promise.resolve({ configured: true, source: 'memory', writable: true })
+    const ctx = new Context()
+    await ctx.plugin(LlmRuntime)
+    await ctx.plugin(ScriptedCredentials)
+    await ctx.plugin(LlmDeepSeek, { baseURL: 'http://127.0.0.1:1' })
+    expect(ctx.llm.listProviders()).toEqual([{ id: 'deepseek-official', name: 'DeepSeek' }])
     const result = await assemble(ctx, { model: 'deepseek-v4-flash', messages: [] })
     expect(result.finish).toMatchObject({ kind: 'error', failure: { code: 'MISSING_CREDENTIAL' } })
+  })
+
+  it('lets the latest lookup own the registry and none of them touch it after unload', async () => {
+    vi.stubEnv('DEEPSEEK_API_KEY', '')
+    const pending: Array<(info: CredentialInfo) => void> = []
+    ScriptedCredentials.script = () => new Promise((resolve) => { pending.push(resolve) })
+    const ctx = new Context()
+    await ctx.plugin(LlmRuntime)
+    await ctx.plugin(ScriptedCredentials)
+    const loading = ctx.plugin(LlmDeepSeek, { baseURL: 'http://127.0.0.1:1' })
+    // Both load-time lookups (the awaited one and the seam scope's) are still
+    // open; answering the older one first must not register anything.
+    await vi.waitFor(() => { expect(pending).toHaveLength(2) })
+    pending[0]!({ configured: true, source: 'memory', writable: true })
+    await new Promise(resolve => setTimeout(resolve, 0))
+    pending[1]!({ configured: true, source: 'memory', writable: true })
+    const fiber = await loading
+    await vi.waitFor(() => {
+      expect(ctx.llm.listProviders()).toEqual([{ id: 'deepseek-official', name: 'DeepSeek' }])
+    })
+
+    const error = vi.spyOn(ctx.logger, 'error').mockImplementation(() => undefined)
+    ;(ctx.credentials as ScriptedCredentials).announce(KEY_REF)
+    await vi.waitFor(() => { expect(pending).toHaveLength(3) })
+    await fiber.dispose()
+    expect(ctx.llm.listProviders()).toEqual([])
+    pending[2]!({ configured: true, source: 'memory', writable: true })
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(ctx.llm.listProviders()).toEqual([])
+    expect(error).not.toHaveBeenCalled()
   })
 
   it('prefers explicit config over env for key and base URL', async () => {
