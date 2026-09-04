@@ -119,17 +119,16 @@ describe('Chat inject API', () => {
     await b.runtime.dispose()
   })
 
-  it('resolves file paths against the Session cwd and preserves failures', async () => {
+  it('resolves file paths against the Session cwd through the Workspace opener and preserves failures', async () => {
     const b = await bench()
     const { injected } = b.chatViewApi(ROOT)
     await injected.openFile('src/a.ts')
-    expect(b.openWorkspacePath).toHaveBeenCalledWith({ path: '/proj/src/a.ts' })
+    // The Workspace service is the one door: the Host opener is never called directly.
+    expect(b.runtime.workspaces.calls).toContainEqual({ method: 'openPath', args: ['/proj/src/a.ts'] })
+    expect(b.openWorkspacePath).not.toHaveBeenCalled()
 
-    b.openWorkspacePath.mockResolvedValueOnce({
-      ok: false,
-      error: { code: 'internal', message: 'xdg-open is not available', details: {} },
-    })
-    await expect(injected.openFile('src/b.ts')).rejects.toThrow('path open failed: xdg-open is not available')
+    b.runtime.workspaces.stub('openPath', () => Promise.reject(new Error('xdg-open is not available')))
+    await expect(injected.openFile('src/b.ts')).rejects.toThrow('xdg-open is not available')
     await b.runtime.dispose()
   })
 

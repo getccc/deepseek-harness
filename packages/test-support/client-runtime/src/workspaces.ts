@@ -127,6 +127,15 @@ export class TestWorkspaces implements IWorkspaces {
   }
 
   /**
+   * Open a resolved Host path (recorded; default no-op). Stub it to refuse.
+   * @param path - absolute Host path.
+   */
+  async openPath(path: string): Promise<void> {
+    this.calls.push({ method: 'openPath', args: [path] })
+    await (this.stubs.get('openPath')?.(path) as Promise<void> | undefined)
+  }
+
+  /**
    * Archive a session (recorded). The default mirrors the production face's
    * observable effect: the id joins the list state's archive set.
    * @param sessionId - session to archive.

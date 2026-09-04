@@ -14,7 +14,9 @@ import {
   createWorkspaceStateStream,
   WorkspaceController,
   WorkspaceCreateError,
+  WorkspaceOpenPathError,
   type WorkspaceFollowSink,
+  type WorkspacePathOpener,
   type WorkspaceRemote,
 } from '../src/client/index.ts'
 import type {
@@ -42,12 +44,21 @@ const AVAILABLE_CONNECTION = {
   },
 }
 
+/** The Session Remote's opener, answering every path with the Host's confirmation. */
+function pathOpener(): WorkspacePathOpener & { openWorkspacePath: ReturnType<typeof vi.fn> } {
+  return {
+    openWorkspacePath: vi.fn(() => Promise.resolve({ ok: true as const, value: { opened: true as const } })),
+  }
+}
+
 function workspaceClient(
   remote: WorkspaceRemote,
   connection: Pick<ConnectionHandle, 'generation'> = AVAILABLE_CONNECTION,
+  session: WorkspacePathOpener = pathOpener(),
 ) {
   return {
     workspace: remote,
+    session,
     $stream: <Item>(options: RemoteStreamOptions<Item>) => new RemoteStream(connection, options),
   }
 }
@@ -206,8 +217,10 @@ function provideClientServices(ctx: Context, remote: WorkspaceRemote): void {
     start: () => ({ stop: () => {} }),
   }
   ctx.reflect.provide('connection', connection)
-  ctx.reflect.provide('remote', workspaceClient(remote, connection))
+  const client = workspaceClient(remote, connection)
+  ctx.reflect.provide('remote', client)
   ctx.reflect.provide('remote.workspace', remote)
+  ctx.reflect.provide('remote.session', client.session)
 }
 
 describe('Workspace Controller Client apply', () => {
@@ -429,9 +442,12 @@ describe('WorkspaceController', () => {
     const remote = new CommandWorkspaceRemote()
     const model = new ClientWorkspaceModel(remote)
     model.replaceBaseline({ items: [workspace('one')], archivedSessionIds: [] })
-    const controller = new WorkspaceController(new Context(), model)
+    const opener = pathOpener()
+    const controller = new WorkspaceController(new Context(), model, opener)
 
     expect(controller.list).toBe(model)
+    await expect(controller.openPath('/work/one/report.docx')).resolves.toBeUndefined()
+    expect(opener.openWorkspacePath).toHaveBeenCalledWith({ path: '/work/one/report.docx' })
     await expect(controller.create({ path: '/work/created' })).resolves.toMatchObject({ workspaceId: 'created' })
     await expect(controller.rename(wid('one'), 'renamed')).resolves.toMatchObject({ title: 'renamed' })
     await expect(controller.insertBefore(wid('one'))).resolves.toBeUndefined()
@@ -444,7 +460,16 @@ describe('WorkspaceController', () => {
 
   it('maps generated business failures to the command facade errors', async () => {
     const remote = new CommandWorkspaceRemote()
-    const controller = new WorkspaceController(new Context(), new ClientWorkspaceModel(remote))
+    const opener = pathOpener()
+    const controller = new WorkspaceController(new Context(), new ClientWorkspaceModel(remote), opener)
+    // The Host's own words reach the dialog that shows a refused open.
+    opener.openWorkspacePath.mockResolvedValueOnce({
+      ok: false,
+      error: { code: 'internal', message: 'xdg-open is not available', details: {} },
+    })
+    const open = controller.openPath('/work/one/report.docx')
+    await expect(open).rejects.toBeInstanceOf(WorkspaceOpenPathError)
+    await expect(open).rejects.toThrow('xdg-open is not available')
     const missingWorkspace: WorkspaceError = {
       code: 'workspace-not-found',
       message: 'gone',

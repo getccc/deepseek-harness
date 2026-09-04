@@ -2,7 +2,10 @@
 
 import { Service, type Context } from '@deepseek-ai/cordis'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
-import type { RemoteFailure } from '@deepseek-ai/dsh-typert-protocol'
+import type { RemoteFailure, RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
+import type {
+  SessionOpenWorkspacePathRequest, SessionOpenWorkspacePathValue,
+} from '@deepseek-ai/dsh-api-session-controller/types'
 import type { WorkspaceId } from '@deepseek-ai/dsh-workspace/types'
 import type { WorkspaceView } from '../types.ts'
 import type { ClientWorkspaceModel, WorkspaceSnapshot } from './model.ts'
@@ -15,6 +18,29 @@ export class WorkspaceCreateError extends Error {
   constructor(readonly rpcError: RemoteFailure) {
     super(`workspace create failed: ${rpcError.code}: ${rpcError.message}`)
   }
+}
+
+/** Host refusal to open a path, carrying the Host's own message for the dialog that shows it. */
+export class WorkspaceOpenPathError extends Error {
+  override readonly name = 'WorkspaceOpenPathError'
+
+  /** @param rpcError - Host business or folded transport failure. */
+  constructor(readonly rpcError: RemoteFailure) {
+    super(rpcError.message)
+  }
+}
+
+/**
+ * The one Session Remote call the path opener makes, typed structurally so
+ * this package needs no assembled Remote face.
+ */
+export interface WorkspacePathOpener {
+  /**
+   * Hand one path to the Host's native opener.
+   * @param request - the resolved path.
+   * @returns the Host's confirmation or refusal.
+   */
+  openWorkspacePath(request: SessionOpenWorkspacePathRequest): Promise<RemoteResult<SessionOpenWorkspacePathValue>>
 }
 
 /** Bare observable source for the Workspace Controller snapshot. */
@@ -74,6 +100,19 @@ export interface IWorkspaces {
     sessionId: SessionId,
     beforeSessionId?: SessionId,
   ): Promise<WorkspaceView>
+  /**
+   * Hand one resolved Host path to the Host's native opener.
+   *
+   * Every browser-side file open goes through this one method — the chat's
+   * produced-file cards and chips, tool-row path links, and prose file
+   * mentions — so a plugin that shows files itself wraps it once and receives
+   * them all. The chat resolves a Session-relative path against the Session
+   * workspace before calling; `.` under that workspace is the folder-reveal
+   * gesture.
+   * @param path - absolute path in Host filesystem syntax.
+   * @throws {WorkspaceOpenPathError} when the Host refused, carrying its message.
+   */
+  openPath(path: string): Promise<void>
 }
 
 /** Owns the bare Workspace snapshot and Workspace-only commands. */
@@ -83,8 +122,13 @@ export class WorkspaceController extends Service implements IWorkspaces {
   /**
    * @param ctx - Client root Context.
    * @param model - Remote-backed Workspace state model.
+   * @param opener - the Session Remote call that reaches the Host's native opener.
    */
-  constructor(ctx: Context, private readonly model: ClientWorkspaceModel) {
+  constructor(
+    ctx: Context,
+    private readonly model: ClientWorkspaceModel,
+    private readonly opener: WorkspacePathOpener,
+  ) {
     super(ctx, 'workspaces')
     this.list = model
   }
@@ -124,6 +168,11 @@ export class WorkspaceController extends Service implements IWorkspaces {
     const result = await this.model.insertSessionBefore(workspaceId, sessionId, beforeSessionId)
     if (!result.ok) throw commandError('move', result.error)
     return result.value.workspace
+  }
+
+  async openPath(path: string): Promise<void> {
+    const result = await this.opener.openWorkspacePath({ path })
+    if (!result.ok) throw new WorkspaceOpenPathError(result.error)
   }
 }
 
