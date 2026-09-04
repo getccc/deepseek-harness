@@ -65,6 +65,7 @@ describe('desktop profile composition', () => {
       '@deepseek-ai/dsh-team',
       'dsh-univer-office',
       'dsh-better-sidebar',
+      '@huanlin/dsh-plugin-better-sidebar-plugin-office',
       '@dsh-external/dsh-echarts',
     ])
     expect(manifest.dsh.profile.patchReload).toBe('live')

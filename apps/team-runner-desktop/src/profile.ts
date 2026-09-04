@@ -18,8 +18,17 @@ export const RUNNER_BUNDLES = [
   '@deepseek-ai/dsh-team',
 ] as const
 
-/** Bundle layers the installer ships as a plugin tree, in mount order. */
-export const SHIPPED_PLUGIN_BUNDLES = ['dsh-univer-office', 'dsh-better-sidebar', '@dsh-external/dsh-echarts'] as const
+/**
+ * Bundle layers the installer ships as a plugin tree, in mount order. The
+ * office previewer registers its `.docx`, `.xlsx`, and `.pptx` viewers with
+ * the sidebar's service, so it follows the sidebar.
+ */
+export const SHIPPED_PLUGIN_BUNDLES = [
+  'dsh-univer-office',
+  'dsh-better-sidebar',
+  '@huanlin/dsh-plugin-better-sidebar-plugin-office',
+  '@dsh-external/dsh-echarts',
+] as const
 
 /**
  * Render the deployment-owned profile manifest.
