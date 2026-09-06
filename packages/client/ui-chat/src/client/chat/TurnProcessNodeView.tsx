@@ -46,9 +46,11 @@ export const TurnProcessNodeView = memo(function TurnProcessNodeView({
       { count: node.data.subagentCount },
     ))
   }
+  // The summary speaks as the assistant: each segment is a verb phrase, and
+  // the template puts the name in front of the joined phrases.
   const label = labels.length === 0
     ? t('message.turnProcess.thoughtForAWhile')
-    : labels.join(t('message.turnProcess.separator'))
+    : t('message.turnProcess.summary', { labels: labels.join(t('message.turnProcess.separator')) })
   return (
     <>
       {renderIdentity(identity)}

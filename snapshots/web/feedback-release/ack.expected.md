@@ -16,8 +16,8 @@
 - text: Reply with the single word LIGHTHOUSE and stop. {{clock}}
 - button "Copy":
   - img
-- button "Thought for a while":
-  - text: Thought for a while
+- button "Xiaowei thought for a while":
+  - text: Xiaowei thought for a while
   - img
 - paragraph: LIGHTHOUSE
 - button "Copy":

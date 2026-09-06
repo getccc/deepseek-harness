@@ -24,8 +24,8 @@
 - text: Explain event sourcing in one sentence. {{clock}}
 - button "Copy":
   - img
-- button "Thought for a while" [expanded]:
-  - text: Thought for a while
+- button "Xiaowei thought for a while" [expanded]:
+  - text: Xiaowei thought for a while
   - img
 - button "Context injection @deepseek-ai/dsh-system-prompt":
   - img
@@ -52,8 +52,8 @@
 - text: Now give the same explanation to a human reader. {{clock}}
 - button "Copy":
   - img
-- button "Thought for a while" [expanded]:
-  - text: Thought for a while
+- button "Xiaowei thought for a while" [expanded]:
+  - text: Xiaowei thought for a while
   - img
 - button "Think The user is asking for a one-sentence description of event sourcing. This is a straightforward knowledge question that doesn't require any skill loading or tool calls.":
   - img

@@ -21,7 +21,7 @@
   - img
   - text: Context injection @deepseek-ai/dsh-system-prompt
 - group:
-  - status: Retried model request (2/2) · {{duration}}
+  - status: Xiaowei retried the model request (2/2) · {{duration}}
 - status:
   - text: This turn failedupstream 503
   - code: SERVER

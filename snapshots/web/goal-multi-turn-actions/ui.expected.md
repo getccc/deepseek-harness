@@ -21,8 +21,8 @@
   - img
   - img
   - text: System prompt
-- button "6 tool calls":
-  - text: 6 tool calls
+- button "Xiaowei made 6 tool calls":
+  - text: Xiaowei made 6 tool calls
   - img
 - paragraph:
   - strong: Turn 1 / 2
@@ -47,8 +47,8 @@
   - img
   - img
   - text: System prompt
-- button "5 tool calls · 2 messages":
-  - text: 5 tool calls · 2 messages
+- button "Xiaowei made 5 tool calls · sent 2 messages":
+  - text: Xiaowei made 5 tool calls · sent 2 messages
   - img
 - paragraph: 两个 turn 都完成了 ✅
 - paragraph:

@@ -21,8 +21,8 @@
   - img
   - img
   - text: System prompt
-- button "6 tool calls" [expanded]:
-  - text: 6 tool calls
+- button "Xiaowei made 6 tool calls" [expanded]:
+  - text: Xiaowei made 6 tool calls
   - img
 - button "Context injection goal":
   - img
@@ -102,8 +102,8 @@
   - img
   - img
   - text: System prompt
-- button "5 tool calls · 2 messages" [expanded]:
-  - text: 5 tool calls · 2 messages
+- button "Xiaowei made 5 tool calls · sent 2 messages" [expanded]:
+  - text: Xiaowei made 5 tool calls · sent 2 messages
   - img
 - button "Context injection goal":
   - img

@@ -24,8 +24,8 @@
   - img
   - img
   - text: System prompt
-- button "Thought for a while":
-  - text: Thought for a while
+- button "Xiaowei thought for a while":
+  - text: Xiaowei thought for a while
   - img
 - paragraph: "Review complete: no actionable findings."
 - button "Copy":

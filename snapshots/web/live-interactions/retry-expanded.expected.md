@@ -16,15 +16,15 @@
 - text: Reply with a one-sentence description of event sourcing, then stop. {{clock}}
 - button "Copy":
   - img
-- button "Thought for a while" [expanded]:
-  - text: Thought for a while
+- button "Xiaowei thought for a while" [expanded]:
+  - text: Xiaowei thought for a while
   - img
 - button "Context injection @deepseek-ai/dsh-system-prompt":
   - img
   - img
   - text: Context injection @deepseek-ai/dsh-system-prompt
 - group:
-  - status: Retried model request (1/5) · {{duration}}
+  - status: Xiaowei retried the model request (1/5) · {{duration}}
 - button "Think The user is asking for a one-sentence description of event sourcing. This is a straightforward knowledge question that doesn't require any skill loading or tool calls.":
   - img
   - img

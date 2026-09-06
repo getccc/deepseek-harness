@@ -16,11 +16,11 @@
 - text: Reply with a one-sentence description of event sourcing, then stop. {{clock}}
 - button "Copy":
   - img
-- button "Thought for a while":
-  - text: Thought for a while
+- button "Xiaowei thought for a while":
+  - text: Xiaowei thought for a while
   - img
 - paragraph: partial
-- text: Stopped
+- text: Xiaowei stopped
 - button "Copy":
   - img
 - button "Good response":

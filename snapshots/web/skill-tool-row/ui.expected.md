@@ -14,8 +14,8 @@
 - text: Load the editing-cordis-compositions skill with the skill tool, then reply DONE. {{date}} {{clock}}
 - button "Copy":
   - img
-- button "1 tool call" [expanded]:
-  - text: 1 tool call
+- button "Xiaowei made 1 tool call" [expanded]:
+  - text: Xiaowei made 1 tool call
   - img
 - button "Context injection @deepseek-ai/dsh-system-prompt":
   - img
