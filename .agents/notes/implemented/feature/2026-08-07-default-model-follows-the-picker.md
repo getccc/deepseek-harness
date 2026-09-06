@@ -20,13 +20,13 @@ Reasoning effort makes the persistence shape significant: a model selection with
 
 `ApiProxyDefaults` carries `defaultModelSelection()` and `saveDefaultModelSelection()` closures, so `createApiProxy` has no dependency on the Settings seam. `ApiProxyService` wires them to `ctx.agentDefaultModel.currentSelection()` and `ctx.agentDefaultModel.saveSelection()`.
 
-`selectionFor(agent)` resolves its tiers on every read: a process-local session selection, otherwise the session's latest logged `request/header`, otherwise the live Agent default. A session with a logged request remains bound to that durable selection. A blank session observes the current default even when it was created before the preference was saved; this matches the New Session surface, which may reuse a blank session.
+`selectionFor(agent)` resolves its tiers on every read: a process-local session selection, otherwise the session's latest logged `request/header`, otherwise the live Agent default. `session.prompt` first binds a session on that last tier to the default the model catalog offers ([the first request uses the model the composer names](../bug-fix/2026-09-05-the-first-request-uses-the-model-the-composer-names.md)). A session with a logged request remains bound to that durable selection. A blank session observes the current default even when it was created before the preference was saved; this matches the New Session surface, which may reuse a blank session.
 
 The stored selection does not require catalog membership. A provider route may serve a model omitted from its advisory catalog. `session.models` therefore reports the stored selection independently of advertised groups and separately reports whether an adapter serves its provider.
 
 ## Consequences
 
-`session/modelCatalog` reports the live Agent default. A successful model switch stores an `agent-default-model:` section in `settings.yaml`. The Settings page does not expose that namespace; the model picker is its editor.
+`session/modelCatalog` reports the live Agent default when the catalog lists it, otherwise the first listed model. A successful model switch stores an `agent-default-model:` section in `settings.yaml`. The Settings page does not expose that namespace; the model picker is its editor.
 
 ## A session that cannot send
 

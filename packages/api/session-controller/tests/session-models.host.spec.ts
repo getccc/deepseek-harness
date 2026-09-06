@@ -524,6 +524,79 @@ describe('Web session model selection', () => {
     await ctx.fiber.dispose()
   })
 
+  it('binds a session without its own selection to the default the catalog offers before admitting a prompt', async () => {
+    const { ctx, agent, sessionId } = await harness()
+    Object.assign(agent, { followup: vi.fn() })
+    const remote = createSessionTestRemote(ctx, {
+      defaultModelSelection: () => ({ provider: 'deepseek-official', model: 'ungranted' }),
+      cwd: '/tmp',
+    })
+    const offered = expectValue(await remote.modelCatalog()).default
+    expect(offered).toEqual({ provider: 'deepseek-official', model: 'deepseek-chat', reasoningEffort: 'high' })
+
+    expect(expectValue(await remote.prompt(promptRequest({
+      sessionId, mode: 'queue', content: [{ type: 'text', text: 'hello' }],
+    }))).accepted).toBe(true)
+    const seed: LlmCallConfig = { provider: 'seed', model: 'seed' }
+    const signal = new AbortController().signal
+    expect((await ctx.systemPrompt.assemble()).variables)
+      .toMatchObject({ provider: 'deepseek-official', model: 'deepseek-chat' })
+    await expect(agentEvents(ctx, agent).waterfall(
+      'agent/request', { turn: 1, step: 0, signal }, () => Promise.resolve(seed),
+    )).resolves.toEqual(offered)
+    await ctx.fiber.dispose()
+  })
+
+  it('keeps a session on the live deployment default while the catalog lists it', async () => {
+    const { ctx, agent, sessionId } = await harness()
+    Object.assign(agent, { followup: vi.fn() })
+    let stored = { provider: 'deepseek-official', model: 'deepseek-chat' }
+    const remote = createSessionTestRemote(ctx, { defaultModelSelection: () => stored, cwd: '/tmp' })
+
+    expect(expectValue(await remote.prompt(promptRequest({
+      sessionId, mode: 'queue', content: [{ type: 'text', text: 'hello' }],
+    }))).accepted).toBe(true)
+    stored = { provider: 'deepseek-official', model: 'deepseek-reasoner' }
+    expect((await ctx.systemPrompt.assemble()).variables)
+      .toMatchObject({ provider: 'deepseek-official', model: 'deepseek-reasoner' })
+    await ctx.fiber.dispose()
+  })
+
+  it('leaves a picked selection alone at prompt time even when the catalog omits it', async () => {
+    const { ctx, agent, sessionId } = await harness()
+    Object.assign(agent, { followup: vi.fn() })
+    const remote = createSessionTestRemote(ctx, {
+      defaultModelSelection: () => ({ provider: 'deepseek-official', model: 'ungranted' }),
+      cwd: '/tmp',
+    })
+    expectValue(await remote.selectModel(request({
+      sessionId, provider: 'deepseek-official', model: 'private-preview',
+    })))
+
+    expect(expectValue(await remote.prompt(promptRequest({
+      sessionId, mode: 'queue', content: [{ type: 'text', text: 'hello' }],
+    }))).accepted).toBe(true)
+    expect((await ctx.systemPrompt.assemble()).variables)
+      .toMatchObject({ provider: 'deepseek-official', model: 'private-preview' })
+    await ctx.fiber.dispose()
+  })
+
+  it('leaves a logged selection alone at prompt time even when the catalog omits it', async () => {
+    const { ctx, agent, sessionId } = await harness({ provider: 'deepseek-official', model: 'retired' })
+    Object.assign(agent, { followup: vi.fn() })
+    const remote = createSessionTestRemote(ctx, {
+      defaultModelSelection: () => ({ provider: 'deepseek-official', model: 'ungranted' }),
+      cwd: '/tmp',
+    })
+
+    expect(expectValue(await remote.prompt(promptRequest({
+      sessionId, mode: 'queue', content: [{ type: 'text', text: 'hello' }],
+    }))).accepted).toBe(true)
+    expect((await ctx.systemPrompt.assemble()).variables)
+      .toMatchObject({ provider: 'deepseek-official', model: 'retired' })
+    await ctx.fiber.dispose()
+  })
+
   it('saves an accepted selection as the default and survives a storage failure', async () => {
     const { ctx, sessionId } = await harness()
     const saved: unknown[] = []
@@ -561,7 +634,10 @@ describe('Web session model selection', () => {
   })
 
   it('refuses a prompt no adapter can route, and reports it on the directory', async () => {
-    const { ctx, sessionId } = await harness()
+    // A Session bound by its logged request to a route that has since gone:
+    // a Session still on the default tier is bound to the catalog's default
+    // first, so the stored default alone never produces this refusal.
+    const { ctx, sessionId } = await harness({ provider: 'deleted-gateway', model: 'deleted-model' })
     const remote = createSessionTestRemote(ctx, {
       defaultModelSelection: () => ({ provider: 'deleted-gateway', model: 'deleted-model' }),
       cwd: '/tmp',
@@ -605,6 +681,18 @@ describe('Web session model selection', () => {
     const listed = catalog.groups.flatMap(group => group.models.map(model => `${group.id}/${model.id}`))
     expect(listed).not.toContain('deepseek-official/not-granted-here')
     expect(listed).toContain(`${catalog.default.provider}/${catalog.default.model}`)
+    await ctx.fiber.dispose()
+  })
+
+  it('offers the first listed model without an effort when that model declares no reasoning default', async () => {
+    const ctx = new Context()
+    await ctx.plugin(LlmRuntime)
+    ctx.llm.registerAdapter(['plain'], new CatalogAdapter('Plain Provider', [
+      { provider: 'plain', id: 'plain-chat', name: 'Plain Chat' },
+    ]))
+
+    const catalog = await buildModelCatalog(ctx, { provider: 'plain', model: 'not-granted-here' })
+    expect(catalog.default).toEqual({ provider: 'plain', model: 'plain-chat' })
     await ctx.fiber.dispose()
   })
 

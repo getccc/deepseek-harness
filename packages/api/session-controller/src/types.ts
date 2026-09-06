@@ -142,7 +142,9 @@ export interface ModelCatalogFailure {
 /** Host-generation model catalog and the default used by unconfigured Sessions. */
 export interface ModelCatalog {
   /**
-   * What an unconfigured Session sends to.
+   * What an unconfigured Session sends to: `session.prompt` binds a Session
+   * with neither a picked nor a logged selection to this value before
+   * admitting the prompt.
    *
    * A model the `groups` list whenever they list any: the deployment default
    * is one setting for everyone, and a caller whose route grants them a

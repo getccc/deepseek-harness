@@ -13,6 +13,7 @@ import type { Session, SessionEvent, SessionHeader, SessionId } from '@deepseek-
 import { SessionQueryError, type SessionObservation } from '@deepseek-ai/dsh-session-query'
 import { TypertLookupFailure } from '@deepseek-ai/dsh-typert-protocol'
 import type {} from '@deepseek-ai/dsh-typert-registry'
+import { buildModelCatalog } from './catalog.ts'
 import type { ModelSelection, SessionError } from './types.ts'
 
 /** Cold Session identity absent from persistence. */
@@ -69,6 +70,14 @@ export type ApiSessionAgentResult =
 
 type InstalledSelection = ModelSelectionRef & {
   current: AgentModelSelection
+  /** Whether `current` is the deployment default rather than a selection this Session picked or logged. */
+  readonly defaulted: boolean
+  /**
+   * Install the default the model catalog offers as what the default tier
+   * returns, or clear it while the catalog and the deployment default agree.
+   * @param offered - the catalog's default, or undefined to read the deployment default live.
+   */
+  settle(offered: AgentModelSelection | undefined): void
   consume(provider: string, model: string, reasoningEffort: string | undefined): boolean
 }
 
@@ -287,12 +296,13 @@ export class ApiSessionAgentController {
     let picked = projectionState.pending === null
       ? undefined
       : agentModelSelection(projectionState.pending)
+    let settled: AgentModelSelection | undefined
     const defaultModel = this.ctx.agentDefaultModel
     const selection: InstalledSelection = {
       get current(): AgentModelSelection {
         if (picked !== undefined) return picked
         const loggedHeader = agent.session.requestHeader()
-        if (loggedHeader === undefined) return defaultModel.currentSelection()
+        if (loggedHeader === undefined) return settled ?? defaultModel.currentSelection()
         const logged = loggedHeader.config
         return {
           provider: logged.provider,
@@ -308,6 +318,12 @@ export class ApiSessionAgentController {
       set current(next: AgentModelSelection) {
         picked = next
       },
+      get defaulted(): boolean {
+        return picked === undefined && agent.session.requestHeader() === undefined
+      },
+      settle(offered: AgentModelSelection | undefined): void {
+        settled = offered
+      },
       consume(provider: string, model: string, reasoningEffort: string | undefined): boolean {
         if (picked?.provider !== provider
           || picked.model !== model
@@ -320,6 +336,24 @@ export class ApiSessionAgentController {
     installModelSelection(agent.ctx, selection)
     this.selections.set(agent, selection)
     return selection
+  }
+
+  /**
+   * Bind a Session that has no selection of its own to the default the model
+   * catalog offers, so its first request uses the model the composer names.
+   * That default is the deployment default whenever the catalog lists it and
+   * otherwise the first listed model; a picked or logged selection is left
+   * alone, because catalog membership stays advisory for a selection already
+   * made. Re-read on every prompt until a request is logged, so a catalog or
+   * default that moved between prompts reaches the Session.
+   * @param agent - live Agent about to admit a prompt.
+   */
+  async settleDefaultSelection(agent: Agent): Promise<void> {
+    const installed = this.selectionFor(agent)
+    if (!installed.defaulted) return
+    const stored = this.ctx.agentDefaultModel.currentSelection()
+    const offered = (await buildModelCatalog(this.ctx, stored)).default
+    installed.settle(sameSelection(offered, stored) ? undefined : agentModelSelection(offered))
   }
 
   /**
@@ -520,6 +554,12 @@ export class ApiSessionAgentController {
     if (requested === undefined || requested === existing) return
     throw new ApiSessionPresetConflict(sessionId, requested, existing)
   }
+}
+
+function sameSelection(left: ModelSelection, right: ModelSelection): boolean {
+  return left.provider === right.provider
+    && left.model === right.model
+    && left.reasoningEffort === right.reasoningEffort
 }
 
 function agentModelSelection(selection: ModelSelection): AgentModelSelection {

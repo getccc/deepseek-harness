@@ -277,6 +277,9 @@ export class SessionCommandController {
 
   /**
    * Admit one browser prompt after explicit Agent resume and image validation.
+   * A Session with neither a picked nor a logged selection is first bound to
+   * the model catalog's default, so the request uses the model the composer
+   * names.
    * @param request - Session identity, prompt content, source metadata, and delivery mode.
    * @returns acknowledgement that the Agent accepted the prompt.
    */
@@ -292,6 +295,7 @@ export class SessionCommandController {
       )
     }
     const agent = await this.resolveAgent(request.sessionId)
+    await this.agents.settleDefaultSelection(agent)
     const selection = this.agents.selectionFor(agent).current
     if (!routeServed(this.ctx, selection.provider)) {
       reject(
