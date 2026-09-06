@@ -9,6 +9,7 @@
     "src/client/index.ts",
     "src/client/locales.ts",
     "src/client/day-parts.ts",
+    "src/client/AssistantIdentity.tsx",
     "src/client/HeroGreeting.tsx",
     "src/client/TeamAccountLauncher.tsx",
     "src/css-modules.d.ts",
@@ -24,6 +25,9 @@
     },
     {
       "path": "../../api/session-controller/tsconfig.client.json"
+    },
+    {
+      "path": "../../client/ui-chat"
     },
     {
       "path": "../../client/ui-conversation"

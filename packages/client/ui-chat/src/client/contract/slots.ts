@@ -1,4 +1,5 @@
 /** Chat-owned Slot declarations and composed component props. */
+import type { ReactNode } from 'react'
 import type { MessageId } from '@deepseek-ai/dsh-llm/brand'
 import type {
   ConversationTurnDataMap, MessageImageLoader, MessageImagesOwnerProps, RenderMessageImages, TurnLocation,
@@ -12,7 +13,7 @@ import type { MarkdownFileMentions } from '@deepseek-ai/dsh-client-ui-primitives
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 import type { createChatStore } from '../stores.ts'
 import type { ToolCallId, SelectionTarget } from './store.ts'
-import type { ChatNode, ChatNodeKind } from './chat-nodes.ts'
+import type { AssistantChatData, ChatNode, ChatNodeKind } from './chat-nodes.ts'
 import type { ChatSnapshot, CommandNode, CompactionSummaryNode, ToolCallBlock } from './snapshot.ts'
 import type { TurnProcessSpec } from './turn-process.ts'
 import type { TranscriptViewMode } from '../../chat-settings.ts'
@@ -26,6 +27,19 @@ export interface TurnTailOwnerProps {
   seq: number
   openFile: (path: string) => void
 }
+
+/** Owner share of the header that opens one Turn's assistant activity with the assistant's identity. */
+export interface AssistantIdentityOwnerProps {
+  /** Turn the activity belongs to. */
+  turn: number
+  /** Whether the Turn's reply is still streaming, settled, or was interrupted. */
+  status: AssistantChatData['status']
+  /** Date-aware clock of the Turn's start (or of the step, before the Turn reports one); absent when neither is known. */
+  clock?: string | undefined
+}
+
+/** Render the identity header that opens one Turn's assistant activity; empty when nothing occupies the slot. */
+export type RenderAssistantIdentity = (owner: AssistantIdentityOwnerProps) => ReactNode
 
 /** Owner currency of finalized-assistant actions. */
 export interface AssistantActionOwnerProps {
@@ -67,6 +81,8 @@ export interface ChatNodeOwnerProps {
   inspectCall: (callId: ToolCallId) => void
   forkAt: (seq: number) => void
   renderMessageImages: RenderMessageImages
+  /** The identity header, rendered once per Turn by the process control or the first Assistant step. */
+  renderIdentity: RenderAssistantIdentity
   fileMentions: (owner: TurnTailOwnerProps) => MarkdownFileMentions | undefined
   /** Turn-process state when this Node belongs to a projected Turn. */
   turnProcess?: TurnProcessOwnerProps | undefined
@@ -130,7 +146,7 @@ export interface ChatViewInjected {
 /** Full Chat view props. */
 export type ChatViewSlotProps =
   PropsRuntime<'conversation.view'>
-  & PropsRenderSlots<'conversation.chat.node' | 'conversation.message.images'>
+  & PropsRenderSlots<'conversation.chat.node' | 'conversation.message.images' | 'conversation.chat.assistant-identity'>
   & PropsStore<ChatStore>
   & InjectFace<ChatViewInjected>
   & PropsLocale<'chat'>
@@ -200,6 +216,15 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
      * that entry. With no entries, the standard action row remains unchanged.
      */
     'conversation.chat.assistant-actions': { kind: 'list'; scope: 'session'; owner: AssistantActionOwnerProps }
+    /**
+     * Optional header that opens a Turn's assistant activity: rendered by the
+     * Turn-process control whenever that control is shown, and otherwise by
+     * the first Assistant step, so one header sits above everything the
+     * assistant did in the Turn. The component receives the Turn, the reply's
+     * streaming status, and a formatted clock. A registration heads every
+     * Turn with a face or a name; without one, nothing is added.
+     */
+    'conversation.chat.assistant-identity': { kind: 'single'; scope: 'session'; owner: AssistantIdentityOwnerProps }
     /**
      * Whole details-panel body for the selected Tool call. The component receives
      * the running or settled block and optional workspace root. A registration

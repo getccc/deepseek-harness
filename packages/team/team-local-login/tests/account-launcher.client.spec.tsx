@@ -6,6 +6,7 @@ import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import { usePinnedBrowserLanguages } from '@deepseek-ai/dsh-client-test-runtime'
 import { apply, inject, NS } from '../src/client/index.ts'
+import { AssistantIdentity, type AssistantIdentityProps } from '../src/client/AssistantIdentity.tsx'
 import { HeroGreeting, type HeroGreetingProps } from '../src/client/HeroGreeting.tsx'
 import {
   accountInitial, TeamAccountLauncher,
@@ -57,6 +58,7 @@ function declare(slots: SlotRegistry): () => void {
     children: {
       'settings.launcher': { kind: 'single', scope: 'root' },
       'conversation.hero.headline': { kind: 'single', scope: 'root' },
+      'conversation.chat.assistant-identity': { kind: 'single', scope: 'session' },
     },
   } as never, () => null)
 }
@@ -282,7 +284,33 @@ describe('the hero greeting', () => {
     const entry = slots.entries('conversation.hero.headline')[0]!
     expect(entry.component).toBe(HeroGreeting)
     expect(entry.locale).toBe(NS)
+    const identity = slots.entries('conversation.chat.assistant-identity')[0]!
+    expect(identity.component).toBe(AssistantIdentity)
+    expect(identity.locale).toBe(NS)
     await ctx.fiber.dispose()
     expect(slots.entries('conversation.hero.headline')).toHaveLength(0)
+    expect(slots.entries('conversation.chat.assistant-identity')).toHaveLength(0)
+  })
+
+  it('opens a turn with the face, the name, the role tag, and the clock, the face silent to a screen reader', () => {
+    const view = render(<AssistantIdentity {...{
+      turn: 1,
+      status: 'running',
+      clock: '18:03',
+      t: (key: string) => key,
+    } as unknown as AssistantIdentityProps} />)
+    const face = view.container.querySelector('img')
+    expect(face?.getAttribute('alt')).toBe('')
+    expect(face?.getAttribute('src')).toMatch(/^data:image\/webp;base64,/)
+    expect(view.container.textContent).toBe('assistant.nameassistant.tag18:03')
+    expect(view.container.firstElementChild?.getAttribute('data-status')).toBe('running')
+    view.unmount()
+
+    const unclocked = render(<AssistantIdentity {...{
+      turn: 1,
+      status: 'settled',
+      t: (key: string) => key,
+    } as unknown as AssistantIdentityProps} />)
+    expect(unclocked.container.textContent).toBe('assistant.nameassistant.tag')
   })
 })

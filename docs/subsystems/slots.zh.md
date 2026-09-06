@@ -136,6 +136,7 @@ root
 │  │     │  ├─ conversation.chat.turnTail
 │  │     │  └─ tool.call.toolview
 │  │     │     └─ tool.view.cordis
+│  │     ├─ conversation.chat.assistant-identity
 │  │     ├─ conversation.message.images
 │  │     └─ conversation.trajectory.images
 │  ├─ conversation.session.header

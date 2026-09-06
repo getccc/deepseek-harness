@@ -8,9 +8,12 @@ import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-settings-general/client'
 // Type-only: pulls the conversation.hero.headline slot declaration into this program.
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
+// Type-only: pulls the conversation.chat.assistant-identity slot declaration into this program.
+import type {} from '@deepseek-ai/dsh-client-ui-chat/client'
 // Type-only: pulls ctx.sessions into the client Context.
 import type {} from '@deepseek-ai/dsh-api-session-controller/client'
 import { ACCOUNT_PATH, LOGOUT_PATH, SIGNED_IN_PARAM } from '../paths.ts'
+import { AssistantIdentity } from './AssistantIdentity.tsx'
 import { HeroGreeting } from './HeroGreeting.tsx'
 import {
   TeamAccountLauncher, type TeamAccountLauncherInjected, type TeamMemberIdentity,
@@ -88,4 +91,10 @@ export function apply(ctx: ClientContext): void {
     locale: NS,
     inject: operations,
   }, HeroGreeting))
+
+  // Every reply in the transcript opens with the same face and name the hero uses.
+  ctx.slots.inject('conversation.chat.assistant-identity', () => ctx.slots.register({
+    name: 'conversation.chat.assistant-identity',
+    locale: NS,
+  }, AssistantIdentity))
 }

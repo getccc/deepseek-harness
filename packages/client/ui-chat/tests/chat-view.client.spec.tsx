@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { useEffect } from 'react'
 import type {
-  AssistantMessageNode, ChatNode, ChatNodeOwnerProps, ChatNodeViewProps, ChatSnapshot,
+  AssistantIdentityOwnerProps, AssistantMessageNode, ChatNode, ChatNodeOwnerProps, ChatNodeViewProps, ChatSnapshot,
   ChatViewSlotProps, CommandNode, CompactionSummaryNode, ContextMessageNode, ConversationNode,
   LegacyConversationSlice, ModelRetryNode, RunningToolCall, SelectionTarget, SteeringMessageNode,
   ToolCallBlock, ToolResultNode, TurnErrorNode, TurnMaxTokensNode, UseChatNodeTurnData,
@@ -242,6 +242,9 @@ function makeHarness(
   }> = []
   const renderCommandSlot = ((_key: string, _owner: object, opts?: { fallback?: React.ReactNode }) =>
     opts?.fallback ?? null) as unknown as React.ComponentProps<typeof CommandNodeView>['renderSlot']
+  // The identity slot is a child of the Chat view itself; the view wraps it
+  // into the `renderIdentity` owner function every node renderer receives.
+  let identityRenderer: ((owner: AssistantIdentityOwnerProps) => React.ReactNode) | undefined
   const renderTurnTail = ((_key: string, _owner: object) => null) as unknown as
     React.ComponentProps<typeof TurnTailNodeView>['renderSlotChain']
   const renderTurnTailSlot = (() => null) as unknown as
@@ -252,6 +255,9 @@ function makeHarness(
     hookContext?: unknown
   }) => {
     if (nodeSlotOverride !== undefined) return nodeSlotOverride(key as never, owner as never, opts as never)
+    if (key === 'conversation.chat.assistant-identity') {
+      return identityRenderer === undefined ? null : identityRenderer(owner as AssistantIdentityOwnerProps)
+    }
     if (key !== 'conversation.chat.node') return opts?.fallback ?? null
     const nodeOwner = owner as RoutedChatNodeOwner
     const nodeKey = opts?.hookContext as string | undefined
@@ -399,6 +405,9 @@ function makeHarness(
     setTranscriptView: (mode: TranscriptViewMode) => { transcriptView.set(mode) },
     setNodeRenderer: (renderer: React.ComponentProps<typeof ChatNodeSeat>['renderSlot']) => {
       nodeSlotOverride = renderer
+    },
+    setIdentityRenderer: (renderer: (owner: AssistantIdentityOwnerProps) => React.ReactNode) => {
+      identityRenderer = renderer
     },
   }
 }
@@ -1034,6 +1043,63 @@ describe('ChatView', () => {
     const branchButtons = view.getAllByRole('button', { name: '在新对话中分支' })
     expect(branchButtons).toHaveLength(2)
     expect(branchButtons.map(button => button.getAttribute('aria-disabled'))).toEqual([null, null])
+  })
+
+  /** Visible identity headers as `turn:status@host`, host being the flow kind that rendered it. */
+  function visibleIdentities(container: HTMLElement): string[] {
+    return [...container.querySelectorAll<HTMLElement>('[data-identity]')]
+      .filter(row => row.closest('[hidden]') === null)
+      .map(row => `${row.getAttribute('data-identity') ?? ''}@${row.closest('[data-chat-flow-kind]')?.getAttribute('data-chat-flow-kind') ?? ''}`)
+  }
+
+  /** An identity occupant that records which Turn it was asked to head, and whether it got a clock. */
+  const identityOccupant = (owner: AssistantIdentityOwnerProps): React.ReactNode => (
+    <span data-identity={`${String(owner.turn)}:${owner.status}`} data-clock={owner.clock ?? ''} />
+  )
+
+  it('opens a closed Turn with the identity header on the process control, folded or expanded', () => {
+    // The control is the top of the Turn's activity whenever it is shown, so
+    // the header stays with it; the first step, hidden or revealed, adds none.
+    const first = {
+      ...assistant(2, 'earlier reply', 1, 1),
+      blocks: [
+        { kind: 'reasoning' as const, text: 'inspect the repository' },
+        { kind: 'text' as const, text: 'earlier reply' },
+      ],
+    }
+    const second = assistant(5, 'final answer', 1, 2)
+    const h = makeHarness({
+      nodes: [
+        user(1, 'question'),
+        first,
+        toolResult(3, 'a'),
+        toolResult(4, 'b', 'subagent'),
+        second,
+      ],
+      turnTimings: new Map([[1, { startTime: 1_000, endTime: 5_000 }]]),
+      turnEnds: new Map([[1, 6]]),
+    })
+    h.setIdentityRenderer(identityOccupant)
+    const view = render(<h.ChatView {...h.props} />)
+    expect(visibleIdentities(view.container)).toEqual(['1:settled@turn-process'])
+    expect(view.container.querySelector('[data-identity]')?.getAttribute('data-clock')).not.toBe('')
+
+    fireEvent.click(view.getByRole('button', { name: '1 次工具调用 · 1 条消息 · 1 个 subagent' }))
+    expect(visibleIdentities(view.container)).toEqual(['1:settled@turn-process'])
+  })
+
+  it('opens a streaming Turn from its first step, and adds nothing without an occupant', () => {
+    const h = makeHarness({
+      nodes: [user(1, 'question')],
+      partial: { turn: 1, step: 1, blocks: [{ kind: 'text', text: 'typing' }] },
+    })
+    const bare = render(<h.ChatView {...h.props} />)
+    expect(bare.container.querySelector('[data-identity]')).toBeNull()
+    bare.unmount()
+
+    h.setIdentityRenderer(identityOccupant)
+    const view = render(<h.ChatView {...h.props} />)
+    expect(visibleIdentities(view.container)).toEqual(['1:running@assistant-step'])
   })
 
   it('folds Think and Tool rows before the final answer without unmounting them', () => {

@@ -1,0 +1,45 @@
+/* The header that opens a turn: the face hangs into the gutter left of the
+   content column when the column leaves room for it (--hang shrinks to 0px in
+   a narrow column, where the face simply leads the row), so the name and the
+   rows below share one left edge. */
+.identity {
+  --hang: min(56px, max(0px, calc((var(--dsh-conversation-column-width, 0px) - var(--dsh-chat-content-width, 680px)) / 2 - 16px)));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 10px calc(-1 * var(--hang));
+  min-height: 44px;
+  line-height: 20px;
+}
+
+/* The white disc is the artwork's own; a ring in the layer colour lifts it
+   off either theme's ground. */
+.face {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin-right: 4px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--dsw-alias-bg-layer-1), 0 2px 8px rgba(30, 50, 80, .16);
+}
+
+.name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary);
+}
+
+.tag {
+  padding: 1px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--dsw-alias-label-secondary);
+  background: var(--dsw-alias-bg-layer-2);
+}
+
+.clock {
+  font-size: 12px;
+  color: var(--dsw-alias-label-tertiary);
+}
