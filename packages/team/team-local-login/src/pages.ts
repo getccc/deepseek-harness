@@ -11,7 +11,6 @@ export interface PageCopy {
   readonly productName: string
   readonly teamLabel: string
   readonly loginTitle: string
-  readonly loginIntroduction: string
   readonly account: string
   readonly accountPlaceholder: string
   readonly password: string
@@ -33,9 +32,8 @@ const COPY: Record<LoginLocale, PageCopy> = {
   'en-US': {
     lang: 'en',
     productName: 'AMEC Work',
-    teamLabel: 'Team workspace',
+    teamLabel: 'Personal and team workspace',
     loginTitle: 'Welcome back',
-    loginIntroduction: 'Sign in with the account your administrator assigned to continue to your workspace.',
     account: 'Account',
     accountPlaceholder: 'Enter your account',
     password: 'Password',
@@ -55,9 +53,8 @@ const COPY: Record<LoginLocale, PageCopy> = {
   'zh-CN': {
     lang: 'zh-CN',
     productName: 'AMEC Work',
-    teamLabel: '团队工作空间',
+    teamLabel: '个人与团队工作空间',
     loginTitle: '欢迎回来',
-    loginIntroduction: '使用管理员分配的账户登录，继续进入你的工作空间。',
     account: '账户',
     accountPlaceholder: '请输入账户',
     password: '密码',
@@ -168,7 +165,7 @@ body {
 .brand-name { font-size: 14px; font-weight: 700; letter-spacing: -.01em; }
 .brand-team { color: var(--muted); font-size: 12px; }
 h1 { margin: 0; font-size: 30px; line-height: 1.2; letter-spacing: -.035em; }
-.introduction { margin: 10px 0 28px; color: var(--muted); }
+.login-card h1 { margin-bottom: 28px; }
 .alert {
   display: flex;
   align-items: flex-start;
@@ -298,7 +295,6 @@ ${head(copy.loginTitle)}
 <section class="login-card" aria-labelledby="login-title">
 ${brand(copy)}
 <h1 id="login-title">${escape(copy.loginTitle)}</h1>
-<p class="introduction">${escape(copy.loginIntroduction)}</p>
 ${problem === undefined ? '' : `<div class="alert" role="alert"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="6.5" stroke="currentColor"/><path d="M8 4.6v4.2M8 11.3v.1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg><span>${escape(problem)}</span></div>`}
 <form class="form" method="post" action="/team/login">
 <label class="field"><span class="field-label">${escape(copy.account)}</span><span class="input-wrap">${ACCOUNT_ICON}<input name="loginName" autocomplete="username" placeholder="${escape(copy.accountPlaceholder)}" spellcheck="false" autofocus required></span></label>

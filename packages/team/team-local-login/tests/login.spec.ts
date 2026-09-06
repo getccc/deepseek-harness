@@ -90,6 +90,8 @@ describe('the local entry', () => {
     expect(page.status).toBe(200)
     expect(page.body).toContain('action="/team/login"')
     expect(page.body).toContain('class="login-card"')
+    expect(page.body).toContain('Personal and team workspace')
+    expect(page.body).not.toContain('data:image/webp')
     expect(page.body).toContain('autocomplete="username"')
     expect(page.body).not.toContain('3095')
   })

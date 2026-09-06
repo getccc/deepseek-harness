@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-05-the-hero-tagline-changes-every-half-hour.md
+2026-09-05-the-hero-tagline-changes-every-half-hour.md: 2cbde20cf96a4d08f27ccc0f15d596954aa10ef7
+2026-09-05-the-hero-tagline-changes-every-half-hour.zh.md: 783696421e3bbbbc1c1840f07108ad01c844b43b

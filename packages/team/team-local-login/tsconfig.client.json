@@ -12,7 +12,8 @@
     "src/client/HeroGreeting.tsx",
     "src/client/TeamAccountLauncher.tsx",
     "src/css-modules.d.ts",
-    "src/paths.ts"
+    "src/paths.ts",
+    "src/xiaowei-avatar.ts"
   ],
   "references": [
     {

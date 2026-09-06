@@ -10,15 +10,15 @@ The blank-session headline said one thing at every hour: `你好，{name}。今�
 
 ## Decision
 
-**Seven parts divide the local day, and one table owns them.** [`day-parts.ts`](../../../../packages/team/team-local-login/src/client/day-parts.ts) lists the boundaries in ascending order — 06:00, 08:30, 09:00, 11:30, 13:00, 17:30 — beside the part each one closes: late night, early morning, the morning gathering, the rest of the morning, midday, afternoon. Evening is the part that runs from the last boundary to midnight, which is why it is the only one not in the table. `dayPartAt` returns both the part that owns a moment and the milliseconds until the next one begins, so the two facts cannot drift apart.
+**Seven parts divide the local day, and one table owns them.** [`day-parts.ts`](../../../../packages/team/team-local-login/src/client/day-parts.ts) lists the boundaries in ascending order — 06:00, 08:30, 09:00, 11:30, 13:00, 17:30 — beside the part each one closes: late night, early morning, the morning gathering, the rest of the morning, midday, afternoon. Evening is the part that runs from the last boundary to midnight, which is why it is the only one not in the table. `halfHourAt` returns the part that owns a moment together with the half hour it falls in and the milliseconds until that half hour ends, so the facts cannot drift apart ([the tagline changes every half hour](2026-09-05-the-hero-tagline-changes-every-half-hour.md)).
 
 The gathering is its own part rather than a slice of the morning: it is a company ritual with its own sentence, and the two morning parts open the same way but ask different things.
 
 **The clock is the member's browser clock.** A Team Runner is loopback on the member's own machine, so the browser and the Runner read the same clock; deriving the part in the component keeps the greeting a client concern and adds no request.
 
-**Both lines are locale-owned, keyed by part.** `hero.<part>.greeting` addresses the display name and `hero.<part>.tagline` carries the line under it, in both dictionaries. The greeting alone does not identify the part — two parts say `上午好` — so the tagline is what makes the division visible.
+**Both lines are locale-owned; the greeting is keyed by part.** `hero.<part>.greeting` addresses the display name, in both dictionaries; the tagline under it is keyed by half hour rather than by part ([the tagline changes every half hour](2026-09-05-the-hero-tagline-changes-every-half-hour.md)). The greeting alone does not identify the part — two parts say `上午好` — so the tagline is what makes the division visible.
 
-**An open conversation crosses into the next part.** The component holds the current window and schedules one timeout for `endsIn`; the blank hero is exactly the screen a member leaves open, and a greeting frozen at page load would be wrong for hours.
+**An open conversation crosses into the next part.** The component holds the current window and schedules one timeout for `endsIn`, the wait to the next half hour, which is where every part boundary falls; the blank hero is exactly the screen a member leaves open, and a greeting frozen at page load would be wrong for hours.
 
 **The name still gates the whole headline.** Nothing renders until `/team/account` answers, as before: this is the first thing on the page, and a name that appears and then changes reads as the wrong member's.
 
@@ -34,10 +34,10 @@ The gathering is its own part rather than a slice of the morning: it is a compan
 
 ## Consequences
 
-The dictionary grew from one greeting to fourteen keys per language, and `satisfies Record<TeamAccountKey, string>` keeps English complete against the Chinese key set as parts are added or renamed. The English taglines are written for English readers rather than translated line by line, and `hero.morningSong.tagline` says "the company song" where the Chinese names 中微 — an English deployment that wants the name says so in its own dictionary.
+The dictionary grew from one greeting to a greeting per part, and `satisfies Record<TeamAccountKey, string>` keeps English complete against the Chinese key set as parts are added or renamed. The English lines are written for English readers rather than translated line by line, and the gathering's tagline, `hero.tagline.0830`, says "the company song" where the Chinese names 中微 — an English deployment that wants the name says so in its own dictionary.
 
 The headline is two lines now, so the hero stack is taller and the composer sits lower on a blank session.
 
 The greeting is exactly as right as the member's system clock; a machine set to the wrong zone greets from that zone. That is the clock the rest of their working day already runs on, so no correction is attempted.
 
-`day-parts.spec.ts` pins every part and the wait to each boundary, including the wait to midnight from the last part. The component suite pins one crossing (08:29:59 to the gathering) and that a slower account read cannot put an older name back on the page. None of this copy reaches a model or a session log, so no snapshot owns it.
+`day-parts.client.spec.ts` pins every part and the wait to the next half hour, including the wait to midnight. The component suite pins the crossing at 08:29:59 into the gathering and that a slower account read cannot put an older name back on the page. None of this copy reaches a model or a session log, so no snapshot owns it.

@@ -199,25 +199,39 @@ describe('the hero greeting', () => {
     vi.setSystemTime(new Date(2026, 8, 2, hours, minutes, seconds))
   }
 
-  it('greets the signed-in member with the copy for this part of their day', async () => {
+  it('greets the signed-in member for this part of their day, with the tagline for this half hour', async () => {
     clockAt(10, 0)
     const view = greet(vi.fn().mockResolvedValue({ loginName: 'test1', displayName: '测试一' }))
     await act(async () => {})
 
     expect(view.container.textContent)
-      .toBe('hero.morning.greeting:测试一hero.morning.tagline')
+      .toBe('hero.morning.greeting:测试一hero.tagline.1000')
   })
 
-  it('follows the clock into the next part while the conversation stays blank', async () => {
+  it('shows 小微 above the words, named for readers who cannot see the face', async () => {
+    clockAt(10, 0)
+    const view = greet(vi.fn().mockResolvedValue({ loginName: 'test1', displayName: '测试一' }))
+    await act(async () => {})
+
+    const face = view.container.querySelector('img')
+    expect(face?.getAttribute('alt')).toBe('assistant.name')
+    expect(face?.getAttribute('src')).toMatch(/^data:image\/webp;base64,/)
+  })
+
+  it('follows the clock into the next half hour while the conversation stays blank', async () => {
     // A member who opens a blank conversation before the morning gathering
     // and leaves it open should not be greeted by the stretch that has passed.
     clockAt(8, 29, 59)
     const view = greet(vi.fn().mockResolvedValue({ loginName: 'test1', displayName: '测试一' }))
     await act(async () => {})
-    expect(view.container.textContent).toContain('hero.earlyMorning.greeting')
+    expect(view.container.textContent).toBe('hero.earlyMorning.greeting:测试一hero.tagline.0800')
 
     act(() => { vi.advanceTimersByTime(1_000) })
-    expect(view.container.textContent).toContain('hero.morningSong.greeting')
+    expect(view.container.textContent).toBe('hero.morningSong.greeting:测试一hero.tagline.0830')
+
+    // The gathering is one half hour: the next boundary moves both lines.
+    act(() => { vi.advanceTimersByTime(30 * 60_000) })
+    expect(view.container.textContent).toBe('hero.morning.greeting:测试一hero.tagline.0900')
   })
 
   it('says nothing until the member is known, and nothing if they cannot be read', async () => {
