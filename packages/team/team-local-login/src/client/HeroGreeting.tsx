@@ -5,7 +5,7 @@ import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-cli
 // Type-only: pulls the conversation.hero.headline slot declaration into this program.
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type { TeamAccountLauncherInjected } from './TeamAccountLauncher.tsx'
-import { XIAOWEI_FACE_SIZE, XIAOWEI_FACE_SOURCE } from '../xiaowei-avatar.ts'
+import { XIAOWEI_FIGURE_HEIGHT, XIAOWEI_FIGURE_SOURCE, XIAOWEI_FIGURE_WIDTH } from '../xiaowei-avatar.ts'
 import { halfHourAt, type HalfHourWindow } from './day-parts.ts'
 import css from './HeroGreeting.module.css'
 
@@ -36,10 +36,10 @@ function useHalfHour(): HalfHourWindow {
  *
  * Until the identity arrives the headline stays empty rather than greeting
  * nobody: this is the first thing on the page, and a name that appears and
- * then changes reads as the wrong member's. The face waits with the words so
+ * then changes reads as the wrong member's. The figure waits with the words so
  * the block lands once, not in two steps.
  * @param props - the headline's own class, the locale seat, and the account reader.
- * @returns 小微's face over the greeting for the part of the day and the tagline
+ * @returns 小微's figure over the greeting for the part of the day and the tagline
  * for its half hour, or an empty line until the member is known.
  */
 export function HeroGreeting({ className, loadAccount, t }: HeroGreetingProps) {
@@ -59,10 +59,10 @@ export function HeroGreeting({ className, loadAccount, t }: HeroGreetingProps) {
   return (
     <span className={`${className} ${css.greeting}`}>
       <img
-        className={css.face}
-        src={XIAOWEI_FACE_SOURCE}
-        width={XIAOWEI_FACE_SIZE}
-        height={XIAOWEI_FACE_SIZE}
+        className={css.figure}
+        src={XIAOWEI_FIGURE_SOURCE}
+        width={XIAOWEI_FIGURE_WIDTH}
+        height={XIAOWEI_FIGURE_HEIGHT}
         alt={t('assistant.name')}
       />
       <span>{t(`hero.${part}.greeting`, { name })}</span>

@@ -1,4 +1,4 @@
-/* The headline slot carries 小微's face and two lines here: the greeting in
+/* The headline slot carries 小微's figure and two lines here: the greeting in
    the hero's own 26/32 type, and a quieter tagline under it. */
 .greeting {
   display: flex;
@@ -7,14 +7,13 @@
   gap: 8px;
 }
 
-/* The face is a circular crop on a transparent ground; the white disc is
-   the artwork's own, so it reads the same over both themes. */
-.face {
-  width: 96px;
-  height: 96px;
-  margin-bottom: 8px;
-  border-radius: 50%;
-  box-shadow: 0 8px 24px rgba(30, 50, 80, .14);
+/* The figure stands whole on a transparent ground, so the shadow follows its
+   outline rather than a box, and lifts the white body off the light theme. */
+.figure {
+  width: 160px;
+  height: auto;
+  margin-bottom: 4px;
+  filter: drop-shadow(0 8px 16px rgba(30, 50, 80, .18));
 }
 
 .tagline {

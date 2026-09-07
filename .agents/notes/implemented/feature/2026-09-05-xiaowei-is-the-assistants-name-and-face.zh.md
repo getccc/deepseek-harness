@@ -12,9 +12,9 @@ Status: implemented
 
 **名字住在 agent preset 的 persona 里。** [`agent-presets`](../../../../packages/preset/agent-presets/presets/) 中的 `standard`、`ptc`、`cordis` 三个 preset 在原有句子前加上 `You are 小微 (Xiaowei), the AMEC Work assistant:`。preset 就是成员在 AMEC Work 里挑选的模式，它们的 persona 本来就是 agent 身份所在之处；固定的 harness 身份句保留，因为它说的是引擎而不是助手。`minimal` preset 保留它的完整提示词，`sdk`、`acp`、`headless` 三个 profile 的 bundle 级 persona 不动：它们是自动化界面，从不挂载 preset，也从不显示这张脸。
 
-**脸是一个内联源、两个消费者。** `team-local-login` 里的 [`xiaowei-avatar.ts`](../../../../packages/team/team-local-login/src/xiaowei-avatar.ts) 把形象导出为 data URI：从吉祥物原图裁出头部的 256×256 圆形 WebP，圆外透明，编码后约 12 KB。空白会话的 hero 在问候上方以 96 px 绘制它，轮次头部以 44 px 绘制它。登录页仍然属于公司：AMEC 标志、`AMEC Work`、`个人与团队工作空间` 和表单上方的 `欢迎回来`，没有脸也没有介绍句，因为尚未登录的成员还没有在和助手对话。
+**脸是一个内联源、两个消费者。** `team-local-login` 里的 [`xiaowei-avatar.ts`](../../../../packages/team/team-local-login/src/xiaowei-avatar.ts) 把形象导出为 data URI；[小微在 hero 与轮次头部完整站立](2026-09-07-xiaowei-stands-whole-in-the-hero-and-the-turn-header.zh.md)拥有当前的原图、它的编码，以及每个消费者绘制它的尺寸。登录页仍然属于公司：AMEC 标志、`AMEC Work`、`个人与团队工作空间` 和表单上方的 `欢迎回来`，没有脸也没有介绍句，因为尚未登录的成员还没有在和助手对话。
 
-**每个轮次都以同一张脸开头。** `ui-chat` 新增一个 single slot `conversation.chat.assistant-identity`，轮次过程控件显示时由它渲染，否则由第一个 Assistant 步骤渲染，因此一个头部位于助手在该轮次所做的一切之上——收起的摘要、展开的过程行或正在流式输出的第一步——并且控件一旦出现就不再移动。owner 份额携带轮次、回复状态，以及消息操作行已在使用的日期感知时钟。`team-local-login` 以聊天署名的形态填充它：44 px 的脸在 `--dsh-conversation-column-width` 留出空间时悬挂在内容列左侧留白里（空间不够时则领在行首），名字加粗，一个 `Agent` 标签和时钟，因此名字与其下每一行共享同一条左边缘。没有占位者的组合不添加任何内容，这也是通用 Web 场景的 ARIA 输出保持不变的原因。
+**每个轮次都以同一张脸开头。** `ui-chat` 新增一个 single slot `conversation.chat.assistant-identity`，轮次过程控件显示时由它渲染，否则由第一个 Assistant 步骤渲染，因此一个头部位于助手在该轮次所做的一切之上——收起的摘要、展开的过程行或正在流式输出的第一步——并且控件一旦出现就不再移动。owner 份额携带轮次、回复状态，以及消息操作行已在使用的日期感知时钟。`team-local-login` 以聊天署名的形态填充它：脸在 `--dsh-conversation-column-width` 留出空间时悬挂在内容列左侧留白里（空间不够时则领在行首），名字加粗，一个 `Agent` 标签和时钟，因此名字与其下每一行共享同一条左边缘。没有占位者的组合不添加任何内容，这也是通用 Web 场景的 ARIA 输出保持不变的原因。
 
 **transcript 里的过程文案以小微的口吻陈述。** `chat` 词典的运行态文案——收起的过程摘要、中断标记、重试状态、压缩状态、指令执行中摘要，以及推理行与指令卡片的隐藏运行标签——都点出助手：`小微调用了 1 次工具 · 回复了 1 条消息`、`小微思考了一会儿`、`小微停下了`、`小微正在思考`。过程摘要是覆盖动词短语分段的模板 `message.turnProcess.summary`，因此每种语言只写一次名字，而不是写进每个计数形式。其他包里工具、终端与后台任务的状态描述的是那些东西而不是助手，措辞不变。
 
@@ -26,7 +26,7 @@ Status: implemented
 
 **用团队层的提示词分节代替修改 preset。** 一个在 harness 身份与 persona 之间注册 `team:assistant` 分节的 Host 插件可以让通用 preset 保持无名。拒绝：preset 的 persona 恰恰就是说明 agent 是谁的那个槽位，preset 已经是 AMEC Work 提供的模式，而为一句话建一个包，表面积大过那句话本身。
 
-**在 hero 上放全身形象。** 拒绝：原图坐在白底上，身体也是白色的，因此去背景在翅膀和脚下阴影处很脆弱，而深色主题上的一块白色矩形比没有形象更糟。圆形头部裁切保留它自己的白色圆盘，在两种主题上都读作头像。
+**在 hero 上放全身形象。** 对第一版原图拒绝：它坐在白底上，身体也是白色的，因此去背景在翅膀和脚下阴影处很脆弱，而深色主题上的一块白色矩形比没有形象更糟。圆形头部裁切保留了它自己的白色圆盘，在两种主题上都读作头像。[小微在 hero 与轮次头部完整站立](2026-09-07-xiaowei-stands-whole-in-the-hero-and-the-turn-header.zh.md)记录了消除这一反对理由的透明底原图。
 
 **裁切用 PNG。** 拒绝：同一裁切 PNG 是 66 KB，WebP 是 9 KB，而本产品支持的每个浏览器都能解码 WebP。
 
@@ -38,7 +38,7 @@ Status: implemented
 
 三个 Web 场景钉住标准 preset 的提示词——`fresh-round-trip`、`cordis-tool-round`、`ptc-round`——它们的 `system-prompt.expected.md` 与 `web-context.expected.md` sidecar 带上了新句子。SDK、ACP、headless 场景不变，因为它们的 profile 从不挂载 preset。
 
-`team-local-login` 的客户端包增大一份编码后的脸；登录文档大小不变。空白会话上的 hero 高出 104 px，输入框坐得更低。
+`team-local-login` 的客户端包增大一份编码后的形象；登录文档大小不变。空白会话上的 hero 高出形象的高度，输入框坐得更低。
 
 二十二个场景的四十八个 Web 期望输出带有过程摘要、中断标记或重试状态，已按新措辞刷新；刷新结果逐行核对过，只有这些行发生变化，另有一个在角色查询里点名旧摘要的 e2e 文件随之更新。一张介绍小微的引导卡是助手还能以名字说话的剩余一处，这里没有开始。
 

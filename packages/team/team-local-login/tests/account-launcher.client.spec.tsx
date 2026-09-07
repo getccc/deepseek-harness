@@ -210,14 +210,14 @@ describe('the hero greeting', () => {
       .toBe('hero.morning.greeting:测试一hero.tagline.1000')
   })
 
-  it('shows 小微 above the words, named for readers who cannot see the face', async () => {
+  it('shows 小微 whole above the words, named for readers who cannot see the figure', async () => {
     clockAt(10, 0)
     const view = greet(vi.fn().mockResolvedValue({ loginName: 'test1', displayName: '测试一' }))
     await act(async () => {})
 
-    const face = view.container.querySelector('img')
-    expect(face?.getAttribute('alt')).toBe('assistant.name')
-    expect(face?.getAttribute('src')).toMatch(/^data:image\/webp;base64,/)
+    const figure = view.container.querySelector('img')
+    expect(figure?.getAttribute('alt')).toBe('assistant.name')
+    expect(figure?.getAttribute('src')).toMatch(/^data:image\/webp;base64,/)
   })
 
   it('follows the clock into the next half hour while the conversation stays blank', async () => {
@@ -292,16 +292,16 @@ describe('the hero greeting', () => {
     expect(slots.entries('conversation.chat.assistant-identity')).toHaveLength(0)
   })
 
-  it('opens a turn with the face, the name, the role tag, and the clock, the face silent to a screen reader', () => {
+  it('opens a turn with the figure, the name, the role tag, and the clock, the figure silent to a screen reader', () => {
     const view = render(<AssistantIdentity {...{
       turn: 1,
       status: 'running',
       clock: '18:03',
       t: (key: string) => key,
     } as unknown as AssistantIdentityProps} />)
-    const face = view.container.querySelector('img')
-    expect(face?.getAttribute('alt')).toBe('')
-    expect(face?.getAttribute('src')).toMatch(/^data:image\/webp;base64,/)
+    const figure = view.container.querySelector('img')
+    expect(figure?.getAttribute('alt')).toBe('')
+    expect(figure?.getAttribute('src')).toMatch(/^data:image\/webp;base64,/)
     expect(view.container.textContent).toBe('assistant.nameassistant.tag18:03')
     expect(view.container.firstElementChild?.getAttribute('data-status')).toBe('running')
     view.unmount()

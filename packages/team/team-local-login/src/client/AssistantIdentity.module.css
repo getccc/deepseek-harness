@@ -1,9 +1,10 @@
-/* The header that opens a turn: the face hangs into the gutter left of the
+/* The header that opens a turn: the figure hangs into the gutter left of the
    content column when the column leaves room for it (--hang shrinks to 0px in
-   a narrow column, where the face simply leads the row), so the name and the
-   rows below share one left edge. */
+   a narrow column, where the figure simply leads the row), so the name and the
+   rows below share one left edge. The full hang is the figure's width plus its
+   margin and the row gap. */
 .identity {
-  --hang: min(56px, max(0px, calc((var(--dsh-conversation-column-width, 0px) - var(--dsh-chat-content-width, 680px)) / 2 - 16px)));
+  --hang: min(64px, max(0px, calc((var(--dsh-conversation-column-width, 0px) - var(--dsh-chat-content-width, 680px)) / 2 - 16px)));
   display: flex;
   align-items: center;
   gap: 8px;
@@ -12,15 +13,14 @@
   line-height: 20px;
 }
 
-/* The white disc is the artwork's own; a ring in the layer colour lifts it
-   off either theme's ground. */
-.face {
+/* The whole figure on a transparent ground; a shadow along its outline lifts
+   the white body off the light theme. */
+.figure {
   flex: none;
-  width: 44px;
-  height: 44px;
+  width: 52px;
+  height: auto;
   margin-right: 4px;
-  border-radius: 50%;
-  box-shadow: 0 0 0 2px var(--dsw-alias-bg-layer-1), 0 2px 8px rgba(30, 50, 80, .16);
+  filter: drop-shadow(0 1px 3px rgba(30, 50, 80, .28));
 }
 
 .name {

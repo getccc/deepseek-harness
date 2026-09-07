@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-05-xiaowei-is-the-assistants-name-and-face.md
-2026-09-05-xiaowei-is-the-assistants-name-and-face.md: 786c7cefefce3968a793f27ffa66d70b0f46fdc3
-2026-09-05-xiaowei-is-the-assistants-name-and-face.zh.md: 17f781fd05391f9a555a72684f6e18b0d5779d84
+2026-09-05-xiaowei-is-the-assistants-name-and-face.md: 3a6e375e930c384690b96b23cdda8d0e0ef74db1
+2026-09-05-xiaowei-is-the-assistants-name-and-face.zh.md: 604b71c3238349178880a880e435bb1a3dea2e80

@@ -62,9 +62,9 @@ HTML 表单由回环地址上的 Runner 提供。提交后，Runner 开启一个
 
 ### 空白会话按成员自己的时钟问候
 
-同一个浏览器端用同一次 `/team/account` 读取填充 Conversation Shell 的 `conversation.hero.headline` Slot。标题是小微的头像加两行：一行是助手称呼显示名的问候，一行是它下面的寄语。问候属于成员浏览器时钟所处的时段——深夜、清晨、晨会、上午其余时间、中午、下午、晚上——寄语属于所处的半小时；时段边界写在 [`day-parts.ts`](src/client/day-parts.ts) 中，文案写在 [`locales.ts`](src/client/locales.ts) 中。一直开着的会话会自己跨入下一个半小时。身份到达之前，标题保持为空，而不是问候一个无名者。
+同一个浏览器端用同一次 `/team/account` 读取填充 Conversation Shell 的 `conversation.hero.headline` Slot。标题是小微的全身形象加两行：一行是助手称呼显示名的问候，一行是它下面的寄语。问候属于成员浏览器时钟所处的时段——深夜、清晨、晨会、上午其余时间、中午、下午、晚上——寄语属于所处的半小时；时段边界写在 [`day-parts.ts`](src/client/day-parts.ts) 中，文案写在 [`locales.ts`](src/client/locales.ts) 中。一直开着的会话会自己跨入下一个半小时。身份到达之前，标题保持为空，而不是问候一个无名者。
 
-此后 transcript 里的每个轮次都以一个头部开头：同一张脸——在内容列左侧留白够用时悬挂在留白里——加上名字、`Agent` 标签和该轮次的时钟，经由 Chat 视图的 `conversation.chat.assistant-identity` slot；有过程控件时头部位于控件之上，否则位于第一步之上。
+此后 transcript 里的每个轮次都以一个头部开头：同一个形象——在内容列左侧留白够用时悬挂在留白里——加上名字、`Agent` 标签和该轮次的时钟，经由 Chat 视图的 `conversation.chat.assistant-identity` slot；有过程控件时头部位于控件之上，否则位于第一步之上。
 
 ### 源码地图
 
@@ -74,7 +74,7 @@ HTML 表单由回环地址上的 Runner 提供。提交后，Runner 开启一个
 | [`src/pages.ts`](src/pages.ts) | 应用解锁前提供的独立 HTML |
 | [`src/paths.ts`](src/paths.ts) | 固定本地路径 |
 | [`src/client/`](src/client/) | 本地化成员入口、账户菜单与欢迎标题 |
-| [`src/xiaowei-avatar.ts`](src/xiaowei-avatar.ts) | 小微的头像，内联供欢迎标题与回复署名行使用 |
+| [`src/xiaowei-avatar.ts`](src/xiaowei-avatar.ts) | 小微的全身形象，内联供欢迎标题与回复署名行使用 |
 | [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件注册 |
 
 -----

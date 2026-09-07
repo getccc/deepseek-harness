@@ -62,9 +62,9 @@ The browser half occupies the Settings shell's optional `settings.launcher` slot
 
 ### The blank conversation greets the member by their own clock
 
-The same browser half fills the Conversation shell's `conversation.hero.headline` slot from the same `/team/account` read. The headline is 小微's face over two lines: a greeting in which the assistant addresses the display name, and a tagline under it. The greeting belongs to the part of the day the member's browser clock is in — late night, early morning, the morning gathering, the rest of the morning, midday, afternoon, evening — and the tagline to the half hour, with the part boundaries in [`day-parts.ts`](src/client/day-parts.ts) and the copy in [`locales.ts`](src/client/locales.ts). A conversation left open crosses into the next half hour on its own. Until the identity arrives the headline stays empty rather than greeting nobody.
+The same browser half fills the Conversation shell's `conversation.hero.headline` slot from the same `/team/account` read. The headline is 小微's whole figure over two lines: a greeting in which the assistant addresses the display name, and a tagline under it. The greeting belongs to the part of the day the member's browser clock is in — late night, early morning, the morning gathering, the rest of the morning, midday, afternoon, evening — and the tagline to the half hour, with the part boundaries in [`day-parts.ts`](src/client/day-parts.ts) and the copy in [`locales.ts`](src/client/locales.ts). A conversation left open crosses into the next half hour on its own. Until the identity arrives the headline stays empty rather than greeting nobody.
 
-Every turn in the transcript then opens with a header from the same face — hanging in the gutter left of the content column where the column leaves room — with the name, an `Agent` tag, and the turn's clock, through the Chat view's `conversation.chat.assistant-identity` slot; the header sits above the process control when there is one and above the first step otherwise.
+Every turn in the transcript then opens with a header from the same figure — hanging in the gutter left of the content column where the column leaves room — with the name, an `Agent` tag, and the turn's clock, through the Chat view's `conversation.chat.assistant-identity` slot; the header sits above the process control when there is one and above the first step otherwise.
 
 ### Source map
 
@@ -74,7 +74,7 @@ Every turn in the transcript then opens with a header from the same face — han
 | [`src/pages.ts`](src/pages.ts) | Standalone HTML rendered before the application is unlocked |
 | [`src/paths.ts`](src/paths.ts) | Fixed local paths |
 | [`src/client/`](src/client/) | Localized member launcher, account menu, and hero greeting |
-| [`src/xiaowei-avatar.ts`](src/xiaowei-avatar.ts) | 小微's face, inlined for the hero and the reply row |
+| [`src/xiaowei-avatar.ts`](src/xiaowei-avatar.ts) | 小微's whole figure, inlined for the hero and the reply row |
 | [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
