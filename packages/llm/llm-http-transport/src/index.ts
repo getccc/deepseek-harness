@@ -13,8 +13,9 @@
 import { Service, type Context } from '@deepseek-ai/cordis'
 import type { TransportModel, TransportRequest, TransportResponse } from './types.ts'
 
-export { TRANSPORT_OPERATIONS } from './vocabulary.ts'
+export { MODEL_INPUT_MODALITIES, TRANSPORT_OPERATIONS } from './vocabulary.ts'
 export type {
+  ModelInputModality,
   TransportOperation,
   TransportModel,
   TransportRequest,
@@ -69,7 +70,9 @@ export abstract class LlmHttpTransport extends Service {
   /**
    * List models the transport's remote policy currently exposes, when the
    * transport owns model discovery. Direct transports return `undefined` so
-   * an adapter uses its own catalog.
+   * an adapter uses its own catalog. Each remote model carries the catalog's
+   * input-modality declaration, which is the only way an adapter learns
+   * whether a company model accepts images.
    * @returns remote models, or undefined when discovery remains adapter-owned.
    */
   listModels(): Promise<readonly TransportModel[] | undefined> {

@@ -54,6 +54,7 @@ function model(patch: Partial<RegisterModel> = {}): RegisterModel {
     endpoint: 'https://api.deepseek.com',
     credentialRef: 'COMPANY_DEEPSEEK_KEY',
     maxOutputTokens: 4_000,
+    inputModalities: ['text'],
     ...patch,
   }
 }
@@ -200,10 +201,23 @@ describe('what a member is shown', () => {
     await access.grantResource(role, mini?.id as never, 'model.discover')
 
     const visible = await gateway.discover(orgId, alice)
-    expect(visible).toEqual([{ modelRef: 'company-v4-mini', displayName: 'Company V4 Mini' }])
+    expect(visible).toEqual([{ modelRef: 'company-v4-mini', displayName: 'Company V4 Mini', inputModalities: ['text'] }])
     // Not the endpoint, not the upstream name, not the credential reference.
     expect(JSON.stringify(visible)).not.toContain('deepseek')
     expect(JSON.stringify(visible)).not.toContain('COMPANY_DEEPSEEK_KEY')
+  })
+
+  it('tells a member what a request may carry, and lets a later registration change it', async () => {
+    await gateway.register(model({ inputModalities: ['text', 'image'] }))
+    await grantEverything()
+    // The Runner decides before sending whether a message with an image may go
+    // to this model, and the catalog is its only source for that.
+    expect(await gateway.discover(orgId, alice)).toEqual([
+      { modelRef: 'company-v4', displayName: 'Company V4', inputModalities: ['text', 'image'] },
+    ])
+    expect(await gateway.list(orgId)).toMatchObject([{ inputModalities: ['text', 'image'] }])
+    await gateway.register(model({ inputModalities: ['text'] }))
+    expect(await gateway.discover(orgId, alice)).toMatchObject([{ inputModalities: ['text'] }])
   })
 
   it('hides a retired model from a member who could otherwise discover it', async () => {
@@ -347,14 +361,18 @@ describe('opening a catalog', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
-  it('stamps the application id and schema version, and refuses foreign or newer files', () => {
+  it('stamps the application id and schema version, and refuses foreign files and other versions', () => {
     const db = new DatabaseSync(path)
     applySchema(db)
     expect((db.prepare('PRAGMA application_id').get() as { application_id: number }).application_id)
       .toBe(MODEL_GATEWAY_SQLITE_APPLICATION_ID)
     expect((db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version).toBe(SCHEMA_VERSION)
     db.exec(`PRAGMA user_version = ${SCHEMA_VERSION + 1}`)
-    expect(() => { applySchema(db) }).toThrow(/newer than this build/u)
+    expect(() => { applySchema(db) }).toThrow(/not supported by this build/u)
+    // A file an older build wrote lacks a column this build reads; it is
+    // refused rather than opened and failed on the first row.
+    db.exec(`PRAGMA user_version = ${SCHEMA_VERSION - 1}`)
+    expect(() => { applySchema(db) }).toThrow(/not supported by this build/u)
     db.close()
 
     const foreign = new DatabaseSync(join(dir, 'other.sqlite'))
@@ -363,16 +381,21 @@ describe('opening a catalog', () => {
     foreign.close()
   })
 
-  it('refuses a status and an output ceiling the catalog does not hold', () => {
+  it('refuses a status, an output ceiling, and a modality list the catalog does not hold', () => {
     const db = new DatabaseSync(path)
     applySchema(db)
     const insert = db.prepare(
       `INSERT INTO model (org_id, model_ref, display_name, provider_ref, upstream_model,
-                          endpoint, credential_ref, max_output_tokens, status)
-       VALUES ('o', ?, 'n', 'p', 'u', 'e', 'c', ?, ?)`,
+                          endpoint, credential_ref, max_output_tokens, input_modalities, status)
+       VALUES ('o', ?, 'n', 'p', 'u', 'e', 'c', ?, ?, ?)`,
     )
-    expect(() => insert.run('a', 100, 'invented')).toThrow(/CHECK/u)
-    expect(() => insert.run('b', 0, 'active')).toThrow(/CHECK/u)
+    expect(() => insert.run('a', 100, '["text"]', 'invented')).toThrow(/CHECK/u)
+    expect(() => insert.run('b', 0, '["text"]', 'active')).toThrow(/CHECK/u)
+    // An empty list would make an adapter refuse text itself, and a bare word
+    // is not the JSON array every reader parses.
+    expect(() => insert.run('c', 100, '[]', 'active')).toThrow(/CHECK/u)
+    expect(() => insert.run('d', 100, 'text', 'active')).toThrow(/CHECK/u)
+    expect(() => insert.run('e', 100, '["text"]', 'active')).not.toThrow()
     db.close()
   })
 })

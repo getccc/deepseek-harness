@@ -18,6 +18,9 @@
       "path": "../../account/account-store"
     },
     {
+      "path": "../llm-http-transport"
+    },
+    {
       "path": "../../access/quota"
     },
     {

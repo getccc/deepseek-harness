@@ -20,7 +20,7 @@ import type {
 } from '@deepseek-ai/dsh-account-store'
 import type { RoleKind } from '@deepseek-ai/dsh-access-control'
 import type { ConsoleMenuKind, ConsoleMenuStatus } from '@deepseek-ai/dsh-team-console-menu'
-import type { ModelStatus } from '@deepseek-ai/dsh-model-gateway'
+import type { ModelInputModality, ModelStatus } from '@deepseek-ai/dsh-model-gateway'
 
 /**
  * The organization one Control Plane serves, and the company row at the root
@@ -178,6 +178,8 @@ export interface WireModel {
   /** A credential reference, never secret material. */
   readonly credentialRef: string
   readonly maxOutputTokens: number
+  /** What a request may carry; a Runner refuses an image for a model that does not list `image`. */
+  readonly inputModalities: readonly ModelInputModality[]
   readonly status: ModelStatus
 }
 
@@ -342,6 +344,8 @@ export type WireRefusalReason =
   | 'credential'
   /** The catalog does not have the model status that was asked for. */
   | 'model-status'
+  /** The input modality list was empty, repeated a word, or named one this build does not carry. */
+  | 'modalities'
 
 /**
  * Why a request was not carried out.

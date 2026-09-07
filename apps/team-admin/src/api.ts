@@ -72,6 +72,8 @@ export interface ModelInput {
   endpoint: string
   credentialRef: string
   maxOutputTokens: number
+  /** What a request may carry; `text` alone, or `text` and `image`. */
+  inputModalities: WireModel['inputModalities']
 }
 
 /** The account fields an administrator may edit after issuing the account. */

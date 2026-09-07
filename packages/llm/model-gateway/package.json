@@ -33,6 +33,7 @@
   "dependencies": {
     "@deepseek-ai/dsh-account-store": "workspace:^",
     "@deepseek-ai/dsh-credentials": "workspace:^",
+    "@deepseek-ai/dsh-llm-http-transport": "workspace:^",
     "@deepseek-ai/dsh-quota": "workspace:^"
   },
   "peerDependencies": {

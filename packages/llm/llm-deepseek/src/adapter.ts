@@ -5,6 +5,11 @@
  * operation and the bearer token through a per-request resolver, so the
  * registering plugin owns validation, layering, and credential policy.
  *
+ * A route with a mounted LLM HTTP transport takes its model facts from that
+ * transport's catalog rather than the connection's list, and sends images
+ * inline as base64: the transport carries no provider credential, so the
+ * Files API path a direct route prefers is not available to it.
+ *
  * @module dsh-llm-deepseek/adapter
  */
 
@@ -29,7 +34,7 @@ import type {
   RequestImageAttachment,
 } from '@deepseek-ai/dsh-attachment'
 import type { CredentialRef } from '@deepseek-ai/dsh-credentials'
-import type { LlmHttpTransport } from '@deepseek-ai/dsh-llm-http-transport'
+import type { LlmHttpTransport, TransportModel } from '@deepseek-ai/dsh-llm-http-transport'
 import { deadline, idleWatchdog, timeoutOf } from '@deepseek-ai/dsh-timeout'
 import type { AnonymousUserId } from '@deepseek-ai/dsh-anonymous-user-id'
 import type {
@@ -217,6 +222,33 @@ function collectImageRefs(
   }
 }
 
+/**
+ * A transport-controlled catalog entry in the adapter's own catalog shape.
+ * The remote catalog declares only the modalities; the image budgets are this
+ * adapter's defaults, because that catalog carries no per-model image policy.
+ */
+function catalogModelOf(remote: TransportModel): DeepSeekCatalogModel {
+  return { id: remote.id, name: remote.name, inputModalities: [...remote.inputModalities] }
+}
+
+/**
+ * What a route's transport says about discovery: the catalog it owns, keyed
+ * by model id, or `connection-owned` when it leaves discovery to the
+ * connection's own list (a direct transport, or no transport at all).
+ */
+type RemoteCatalog = ReadonlyMap<string, DeepSeekCatalogModel> | 'connection-owned'
+
+/** The catalog entry for one model id under one discovery owner. */
+function catalogEntry(
+  catalog: RemoteCatalog,
+  connection: DeepSeekConnectionOptions,
+  model: string,
+): DeepSeekCatalogModel | undefined {
+  return catalog === 'connection-owned'
+    ? connection.models.find(entry => entry.id === model)
+    : catalog.get(model)
+}
+
 async function prepareRequestImages(
   options: GenerateOptions,
   attachments: AttachmentStore,
@@ -359,6 +391,12 @@ export function httpErrorCode(status: number, error?: WireError['error']): strin
  */
 export class DeepSeekAdapter extends LlmAdapter {
   private readonly files: DeepSeekFileStore
+  /**
+   * The last catalog each transport route listed. Every resolution re-reads
+   * the transport, so this serves only the synchronous pricing path, which
+   * cannot wait for a listing and is always preceded by one.
+   */
+  private readonly remoteCatalogs = new Map<string, RemoteCatalog>()
 
   constructor(private readonly config: DeepSeekAdapterOptions) {
     super()
@@ -375,7 +413,7 @@ export class DeepSeekAdapter extends LlmAdapter {
     return this.config.options().retryPolicy
   }
 
-  override imageRequestPricing(_provider: string, model: string): ReturnType<LlmAdapter['imageRequestPricing']> {
+  override imageRequestPricing(provider: string, model: string): ReturnType<LlmAdapter['imageRequestPricing']> {
     // The same access resolution the serializer uses, so priced handle and
     // placeholder text matches what the request actually sends.
     const attachments = this.config.resolveAttachments?.()
@@ -384,7 +422,14 @@ export class DeepSeekAdapter extends LlmAdapter {
       : (ref: ImageAttachmentRef): ImageAttachmentAccess | undefined => (
         this.config.resolveImageAccess?.(attachments, ref)
       )
-    return deepSeekImageRequestPricing(this.config.options(), model, resolveAccess)
+    const connection = this.config.options()
+    // Before a transport route has listed once, a model is unknown here and
+    // prices as text-only; a prepared call lists before every request.
+    const catalog = this.config.transport?.(provider) === undefined
+      ? 'connection-owned'
+      : this.remoteCatalogs.get(provider)
+    const configured = catalog === undefined ? undefined : catalogEntry(catalog, connection, model)
+    return deepSeekImageRequestPricing(connection, configured, resolveAccess)
   }
 
   override listModels(provider: string): Promise<readonly LlmModelInfo[]> {
@@ -401,24 +446,44 @@ export class DeepSeekAdapter extends LlmAdapter {
 
   /** Resolve the provider-owned catalog without crossing provider routes. */
   private async listConfiguredModels(provider: string): Promise<readonly LlmModelInfo[]> {
-    const remote = await this.transportFor(provider)?.listModels()
-    return (remote ?? this.config.options().models).map(model => modelInfo(provider, model))
+    const catalog = await this.remoteCatalog(provider)
+    const models = catalog === 'connection-owned' ? this.config.options().models : [...catalog.values()]
+    return models.map(model => modelInfo(provider, model))
   }
 
-  override resolveModel(
+  /**
+   * Who owns discovery on one route right now. A transport route is re-read
+   * on every call, so a catalog change on the Control Plane reaches the next
+   * request rather than the next restart, and the answer is remembered for
+   * {@link imageRequestPricing}.
+   */
+  private async remoteCatalog(provider: string): Promise<RemoteCatalog> {
+    const transport = this.transportFor(provider)
+    if (transport === undefined) return 'connection-owned'
+    const remote = await transport.listModels()
+    const catalog: RemoteCatalog = remote === undefined
+      ? 'connection-owned'
+      : new Map(remote.map(model => [model.id, catalogModelOf(model)]))
+    this.remoteCatalogs.set(provider, catalog)
+    return catalog
+  }
+
+  override async resolveModel(
     provider: string,
     model: string,
     _signal?: AbortSignal,
   ): Promise<LlmResolvedModelInfo> {
-    return Promise.resolve(this.modelInfoFor(this.config.options(), provider, model))
+    const connection = this.config.options()
+    const configured = catalogEntry(await this.remoteCatalog(provider), connection, model)
+    return this.modelInfoFor(connection, provider, model, configured)
   }
 
   private modelInfoFor(
     connection: DeepSeekConnectionOptions,
     provider: string,
     model: string,
+    configured: DeepSeekCatalogModel | undefined,
   ): LlmResolvedModelInfo {
-    const configured = connection.models.find(entry => entry.id === model)
     const contextWindow = configured?.contextWindow
       ?? connection.defaultContextWindow
     return {
@@ -452,21 +517,32 @@ export class DeepSeekAdapter extends LlmAdapter {
     }
   }
 
-  override prepareCall(provider: string, model: string, _signal?: AbortSignal): Promise<PreparedAdapterCall> {
+  override async prepareCall(provider: string, model: string, _signal?: AbortSignal): Promise<PreparedAdapterCall> {
     const connection = this.config.options()
-    return Promise.resolve({
-      model: this.modelInfoFor(connection, provider, model),
-      stream: options => this.streamWithConnection(options, connection),
-    })
+    const configured = catalogEntry(await this.remoteCatalog(provider), connection, model)
+    return {
+      model: this.modelInfoFor(connection, provider, model, configured),
+      stream: options => this.streamWithConnection(options, connection, configured),
+    }
   }
 
   stream(options: GenerateOptions): AsyncIterable<StreamChunk> {
-    return this.streamWithConnection(options, this.config.options())
+    return this.streamResolving(options, this.config.options())
+  }
+
+  /** Resolve the route's catalog entry, then stream with it. */
+  private async * streamResolving(
+    options: GenerateOptions,
+    connection: DeepSeekConnectionOptions,
+  ): AsyncIterable<StreamChunk> {
+    const configured = catalogEntry(await this.remoteCatalog(options.provider), connection, options.model)
+    yield* this.streamWithConnection(options, connection, configured)
   }
 
   private async * streamWithConnection(
     options: GenerateOptions,
     connection: DeepSeekConnectionOptions,
+    configured: DeepSeekCatalogModel | undefined,
   ): AsyncIterable<StreamChunk> {
     // One resolution per stream call: connection facts and the credential
     // freeze here and hold for this whole request, so an in-flight stream
@@ -475,16 +551,12 @@ export class DeepSeekAdapter extends LlmAdapter {
     // sent to it can never come from different configuration generations.
     const hasImages = options.messages.some(message => contentHasImage(message.content))
     const transport = this.transportFor(options.provider)
-    if (hasImages && transport !== undefined) {
-      throw new LlmError(
-        'The Team model transport does not carry DeepSeek Files API image references.',
-        'UNSUPPORTED_CONTENT',
-      )
-    }
     let attachments: AttachmentStore | undefined
     if (hasImages) {
-      const model = connection.models.find(entry => entry.id === options.model)
-      if (model?.inputModalities?.includes('image') !== true) {
+      // The route's catalog entry is the only declaration there is: a direct
+      // route's connection list, or the transport's catalog, which the
+      // Control Plane administrator wrote.
+      if (configured?.inputModalities?.includes('image') !== true) {
         throw new LlmError(
           `DeepSeek model "${options.model}" does not accept image input.`,
           'UNSUPPORTED_CONTENT',
@@ -515,6 +587,7 @@ export class DeepSeekAdapter extends LlmAdapter {
       transport,
       userId,
       attachments,
+      configured,
       () => { watchdog.pulse() },
     )[Symbol.asyncIterator]()
     let exhausted = false
@@ -560,6 +633,7 @@ export class DeepSeekAdapter extends LlmAdapter {
     transport: LlmHttpTransport | undefined,
     userId: AnonymousUserId,
     attachments: AttachmentStore | undefined,
+    model: DeepSeekCatalogModel | undefined,
     onActivity: () => void,
   ): AsyncIterable<StreamChunk> {
     const headers = {
@@ -576,10 +650,11 @@ export class DeepSeekAdapter extends LlmAdapter {
         : {},
     }
 
+    // Only a direct route holds a key, and only a key reaches the Files API;
+    // a transport route serializes every image inline instead.
     const fileConnection = apiKey === undefined
       ? undefined
       : { baseURL: connection.baseURL, apiKey }
-    const model = connection.models.find(entry => entry.id === options.model)
     const policy = model === undefined ? undefined : resolveRequestImagePolicy(model)
     const resolveImageAccess = attachments === undefined
       ? undefined
@@ -605,7 +680,7 @@ export class DeepSeekAdapter extends LlmAdapter {
       let body: WireRequest
       if (attachments === undefined) {
         body = serializeRequest(requestOptions, connection.defaults)
-      } else if (representation === 'base64') {
+      } else if (fileConnection === undefined || representation === 'base64') {
         body = await serializeRequestWithImages(requestOptions, {
           representation: { kind: 'base64' },
           requestImages,
@@ -624,12 +699,6 @@ export class DeepSeekAdapter extends LlmAdapter {
                 using filesDeadline = deadline(signal, connection.filesApiTimeoutMs, FILES_API_TIMEOUT_CODE)
                 let resolved: Awaited<ReturnType<DeepSeekFileStore['ensureUploaded']>>
                 try {
-                  if (fileConnection === undefined) {
-                    throw new LlmError(
-                      'The configured model transport cannot upload DeepSeek Files API images.',
-                      'UNSUPPORTED_CONTENT',
-                    )
-                  }
                   resolved = await this.files.ensureUploaded(
                     version,
                     fileConnection,
@@ -729,12 +798,12 @@ export class DeepSeekAdapter extends LlmAdapter {
         const detail = [providerError?.code, providerError?.type, providerError?.message]
           .filter((field): field is string => typeof field === 'string')
           .join(' ')
-        const staleFile = usedFiles.length > 0 && providerRejectedFileId(detail)
+        // A used file implies the file representation, which only a direct
+        // route with a key ever chooses.
+        const staleFile = fileConnection !== undefined && usedFiles.length > 0 && providerRejectedFileId(detail)
         if (staleFile) {
           await Promise.all(staleMappings(usedFiles, detail).map(file => (
-            fileConnection === undefined
-              ? Promise.resolve()
-              : this.files.invalidate(file.version, file.fileId, fileConnection)
+            this.files.invalidate(file.version, file.fileId, fileConnection)
           )))
           if (fileAttempt === 0) {
             fileAttempt += 1

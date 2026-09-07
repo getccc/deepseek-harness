@@ -1750,7 +1750,12 @@ export interface Config {
 ```ts config-catalog
 /** Plugin config: how much the endpoint reads, and how long it waits. */
 export interface Config {
-  /** Largest request body accepted, in bytes. */
+  /**
+   * Largest request body accepted, in bytes. Images travel inline as base64
+   * in the body an adapter built, so this bounds a whole image-bearing
+   * request; the DeepSeek adapter's inline image budget is 20 MiB before
+   * encoding, and the default leaves room for that plus the text around it.
+   */
   maxRequestBodyBytes: number
   /** How long to wait for the upstream provider before giving up, in milliseconds. */
   upstreamTimeoutMs: number

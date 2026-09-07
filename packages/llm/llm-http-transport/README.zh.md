@@ -41,7 +41,7 @@ const response = await ctx.llmHttpTransport.send({
 
 响应体是一个流。模型响应很长，而一个把它缓冲起来的 Transport，会为每个请求在内存里留住一整份 completion。
 
-`listModels()` 可以选择把发现所有权交给 Transport。它默认返回 `undefined`，表示 Adapter 使用本机目录。远程策略 Transport 则返回当前主体的稳定 id 与显示名。
+`listModels()` 可以选择把发现所有权交给 Transport。它默认返回 `undefined`，表示 Adapter 使用本机目录。远程策略 Transport 则返回当前主体的稳定 id、显示名与输入模态。模态列表是目录对“发往该模型的请求可以携带什么”的声明，取自封闭列表 `MODEL_INPUT_MODALITIES`（`text`、`image`）；Adapter 在发送图片之前先在这里读到 `image`，因为 Transport 不持有任何可供试探的提供方凭据。
 
 -----
 

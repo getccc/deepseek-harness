@@ -1774,7 +1774,7 @@ describe('plugin registration and config', () => {
     const ctx = new Context()
     await ctx.plugin(LlmRuntime)
     ctx.provide('llmHttpTransport', {
-      listModels: () => Promise.resolve([{ id: 'testModel', name: 'testModel' }]),
+      listModels: () => Promise.resolve([{ id: 'testModel', name: 'testModel', inputModalities: ['text'] }]),
     } as unknown as LlmHttpTransport)
     await ctx.plugin(LlmDeepSeek, { baseURL: 'http://127.0.0.1:1' })
 
@@ -1800,7 +1800,7 @@ describe('plugin registration and config', () => {
     const ctx = new Context()
     await ctx.plugin(LlmRuntime)
     ctx.provide('llmHttpTransport', {
-      listModels: () => Promise.resolve([{ id: 'testModel', name: 'testModel' }]),
+      listModels: () => Promise.resolve([{ id: 'testModel', name: 'testModel', inputModalities: ['text'] }]),
     } as unknown as LlmHttpTransport)
     await ctx.plugin(LlmDeepSeek, { baseURL: 'http://127.0.0.1:1' })
 
@@ -2019,7 +2019,7 @@ describe('plugin registration and config', () => {
     const adapter = new DeepSeekAdapter({
       options: () => connection,
       transport: () => ({
-        listModels: () => Promise.resolve([{ id: 'company-v4', name: 'Company V4' }]),
+        listModels: () => Promise.resolve([{ id: 'company-v4', name: 'Company V4', inputModalities: ['text'] }]),
       }) as unknown as LlmHttpTransport,
       resolveApiKey: () => Promise.resolve('k'),
       resolveUserId: () => TEST_USER_ID,
@@ -2051,6 +2051,154 @@ describe('plugin registration and config', () => {
       messages: [],
     }))).rejects.toMatchObject({ code: 'TRANSPORT' })
     expect(resolveApiKey).not.toHaveBeenCalled()
+  })
+
+  describe('a company model route', () => {
+    const imageMessage = createUserMessage({
+      content: [{ type: 'image', attachment: imageRef }],
+      source: { kind: 'plugin', plugin: 'test' },
+    })
+    const remoteVision = { id: 'company-vision', name: 'Company Vision', inputModalities: ['text', 'image'] as const }
+    const sseAnswer = (): Promise<TransportResponse> => Promise.resolve({
+      status: 200,
+      headers: { 'content-type': 'text/event-stream' },
+      body: Readable.from([Buffer.from(textEvents.map(event => `data: ${event}\n\n`).join(''))]),
+    })
+
+    it('resolves a company model from the transport catalog rather than the connection list', async () => {
+      const adapter = new DeepSeekAdapter({
+        // The connection lists the same id as text-only; the Control Plane's
+        // declaration is the one that counts on the company route.
+        options: () => resolveAdapterOptions({ models: [{ id: 'company-vision' }] }),
+        transport: provider => (provider === BUILT_IN_PROVIDER
+          ? { listModels: () => Promise.resolve([remoteVision]) } as unknown as LlmHttpTransport
+          : undefined),
+        resolveApiKey: () => Promise.resolve('k'),
+        resolveUserId: () => TEST_USER_ID,
+        prepareExtensions: noExtensions,
+      })
+
+      await expect(adapter.resolveModel(BUILT_IN_PROVIDER, 'company-vision')).resolves.toMatchObject({
+        provider: BUILT_IN_PROVIDER,
+        id: 'company-vision',
+        name: 'Company Vision',
+        inputModalities: ['text', 'image'],
+      })
+      // An id the Control Plane does not list is text-only, whatever the connection says.
+      await expect(adapter.resolveModel(BUILT_IN_PROVIDER, 'unlisted')).resolves.toMatchObject({
+        name: 'unlisted',
+        inputModalities: ['text'],
+      })
+      await expect(adapter.resolveModel('deepseek-official', 'company-vision')).resolves.toMatchObject({
+        inputModalities: ['text'],
+      })
+    })
+
+    it('sends a company model its images inline, never through the Files API', async () => {
+      const resolveApiKey = vi.fn(() => Promise.reject(new Error('must not resolve')))
+      const send = vi.fn<(request: TransportRequest) => Promise<TransportResponse>>(sseAnswer)
+      const files = fileStoreOf(() => Promise.reject(new Error('must not upload')))
+      const attachments = attachmentStoreOf(ref => Promise.resolve(requestImage(ref))).store
+      const adapter = new DeepSeekAdapter({
+        options: () => resolveAdapterOptions({}),
+        transport: () => ({ send, listModels: () => Promise.resolve([remoteVision]) }) as unknown as LlmHttpTransport,
+        resolveApiKey,
+        resolveUserId: () => TEST_USER_ID,
+        resolveAttachments: () => attachments,
+        resolveFiles: () => files.store,
+        prepareExtensions: noExtensions,
+      })
+
+      await drain(adapter.stream({ provider: BUILT_IN_PROVIDER, model: 'company-vision', messages: [imageMessage] }))
+
+      const body = JSON.stringify(send.mock.calls[0]?.[0]?.body)
+      expect(body).toContain('"type":"image_url"')
+      expect(body).toContain('data:image/png;base64,')
+      expect(body).not.toContain('file_id')
+      expect(files.ensureUploaded).not.toHaveBeenCalled()
+      expect(resolveApiKey).not.toHaveBeenCalled()
+    })
+
+    it('refuses an image for a company model whose catalog entry does not declare it', async () => {
+      const send = vi.fn(sseAnswer)
+      const attachments = attachmentStoreOf(ref => Promise.resolve(requestImage(ref))).store
+      const adapter = new DeepSeekAdapter({
+        options: () => resolveAdapterOptions({}),
+        transport: () => ({
+          send,
+          listModels: () => Promise.resolve([{ id: 'company-text', name: 'Company Text', inputModalities: ['text'] }]),
+        }) as unknown as LlmHttpTransport,
+        resolveApiKey: () => Promise.resolve('k'),
+        resolveUserId: () => TEST_USER_ID,
+        resolveAttachments: () => attachments,
+        prepareExtensions: noExtensions,
+      })
+
+      await expect(drain(adapter.stream({ provider: BUILT_IN_PROVIDER, model: 'company-text', messages: [imageMessage] })))
+        .rejects.toMatchObject({
+          code: 'UNSUPPORTED_CONTENT',
+          message: 'DeepSeek model "company-text" does not accept image input.',
+        })
+      expect(send).not.toHaveBeenCalled()
+    })
+
+    it('reports a company model answer that carried no body', async () => {
+      const send = vi.fn<(request: TransportRequest) => Promise<TransportResponse>>(() => Promise.resolve({
+        status: 204,
+        headers: {},
+        body: Readable.from([]),
+      }))
+      const adapter = new DeepSeekAdapter({
+        options: () => resolveAdapterOptions({}),
+        transport: () => ({ send, listModels: () => Promise.resolve([remoteVision]) }) as unknown as LlmHttpTransport,
+        resolveApiKey: () => Promise.resolve('k'),
+        resolveUserId: () => TEST_USER_ID,
+        prepareExtensions: noExtensions,
+      })
+
+      await expect(drain(adapter.stream({ provider: BUILT_IN_PROVIDER, model: 'company-vision', messages: [] })))
+        .rejects.toMatchObject({ code: 'EMPTY_RESPONSE' })
+    })
+
+    it('prices a company model from the catalog it last listed', async () => {
+      const adapter = new DeepSeekAdapter({
+        options: () => resolveAdapterOptions({}),
+        transport: () => ({ listModels: () => Promise.resolve([remoteVision]) }) as unknown as LlmHttpTransport,
+        resolveApiKey: () => Promise.resolve('k'),
+        resolveUserId: () => TEST_USER_ID,
+        prepareExtensions: noExtensions,
+      })
+      const visualTokens = (): number | undefined => (
+        adapter.imageRequestPricing(BUILT_IN_PROVIDER, 'company-vision')?.priceImages([imageRef])[0]?.visualTokens
+      )
+
+      // Nothing listed yet: the model is unknown here and prices as text-only.
+      expect(visualTokens()).toBe(0)
+      await adapter.listModels(BUILT_IN_PROVIDER)
+      expect(visualTokens()).toBeGreaterThan(0)
+    })
+
+    it('leaves discovery with the connection when the mounted transport owns no catalog', async () => {
+      const adapter = new DeepSeekAdapter({
+        options: () => resolveAdapterOptions({ models: [{ id: 'local-vision', inputModalities: ['text', 'image'] }] }),
+        transport: () => ({ listModels: () => Promise.resolve(undefined) }) as unknown as LlmHttpTransport,
+        resolveApiKey: () => Promise.resolve('k'),
+        resolveUserId: () => TEST_USER_ID,
+        prepareExtensions: noExtensions,
+      })
+
+      await expect(adapter.listModels(BUILT_IN_PROVIDER)).resolves.toEqual([{
+        provider: BUILT_IN_PROVIDER,
+        id: 'local-vision',
+        name: 'local-vision',
+        inputModalities: ['text', 'image'],
+      }])
+      await expect(adapter.resolveModel(BUILT_IN_PROVIDER, 'local-vision')).resolves.toMatchObject({
+        inputModalities: ['text', 'image'],
+      })
+      expect(adapter.imageRequestPricing(BUILT_IN_PROVIDER, 'local-vision')?.priceImages([imageRef])[0]?.visualTokens)
+        .toBeGreaterThan(0)
+    })
   })
 
   it('advertises configured models without restricting arbitrary request ids', async () => {

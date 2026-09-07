@@ -56,7 +56,8 @@ function textOnlyPrice(ref: ImageAttachmentRef): LlmImageRequestPrice {
 
 /**
  * Build the request-image pricing for one DeepSeek route from a validated
- * connection snapshot. Uncatalogued and text-only models price every
+ * connection snapshot and the catalog entry the route resolved for the
+ * request's model. Uncatalogued and text-only models price every
  * occurrence as its deterministic text substitution; image-capable models
  * reproduce the adapter's first-stage oldest-first offload from durable byte
  * lengths and price retained images by their projected request dimensions,
@@ -66,16 +67,15 @@ function textOnlyPrice(ref: ImageAttachmentRef): LlmImageRequestPrice {
  * this estimate; access paths resolve at pricing time, so a path that changes
  * before the request only shifts the text price by its own length.
  * @param connection - validated connection facts of the pricing resolution.
- * @param model - exact model id named by the request header.
+ * @param catalogModel - the catalog entry the route resolved for the request's model id, or `undefined` for an uncatalogued id.
  * @param resolveAccess - current execution-world access resolution shared with request serialization.
  * @returns synchronous per-occurrence pricing for the route.
  */
 export function deepSeekImageRequestPricing(
   connection: DeepSeekConnectionOptions,
-  model: string,
+  catalogModel: DeepSeekCatalogModel | undefined,
   resolveAccess?: ImageAttachmentAccessResolver,
 ): LlmImageRequestPricing {
-  const catalogModel = connection.models.find(entry => entry.id === model)
   if (catalogModel?.inputModalities?.includes('image') !== true) {
     return { priceImages: images => images.map(textOnlyPrice) }
   }

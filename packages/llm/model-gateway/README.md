@@ -65,6 +65,10 @@ A model that does not exist and one this principal may not invoke are both `unkn
 
 `credentialRef` is a name the credential provider resolves, such as `COMPANY_DEEPSEEK_KEY` — not a `scope/id` credential key, which addresses a different thing and resolves as nothing. [`register`](src/index.ts) refuses a value that is not a reference, so the mistake fails where an administrator makes it rather than on every call to a model the catalog reads as active.
 
+### The catalog declares what a request may carry
+
+`inputModalities` on an entry is the one place a model's accepted input is written down: `text`, or `text` and `image`. `discover` hands it to a member's Runner with the ref and the display name, and the Runner refuses an image for a model that does not list `image` before anything is sent, because it holds no provider credential with which to find out. The word list is the transport seam's `MODEL_INPUT_MODALITIES`, re-exported here, so the catalog that stores the declaration and the adapter that reads it name the same closed set.
+
 ### The catalog's ceiling wins
 
 A Runner asking for more output than the model is configured to produce gets the configured amount, and the reservation is taken against that. A smaller ask is honoured, so a short request does not hold a long request's budget.

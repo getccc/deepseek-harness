@@ -26,23 +26,28 @@ function connection(config: Omit<Config, 'models'> = {}): ReturnType<typeof reso
   return resolveAdapterOptions(Object.assign({ models: [VISION_MODEL] }, config))
 }
 
+/** The catalog entry a route would resolve for one model id. */
+function entry(options: ReturnType<typeof resolveAdapterOptions>, id: string) {
+  return options.models.find(model => model.id === id)
+}
+
 describe('DeepSeek request-image pricing', () => {
   it('prices an uncatalogued model as its text-only substitution', () => {
     const image = ref('photo', 1920, 1080)
-    const prices = deepSeekImageRequestPricing(connection(), 'unlisted').priceImages([image])
+    const prices = deepSeekImageRequestPricing(connection(), entry(connection(), 'unlisted')).priceImages([image])
     expect(prices).toEqual([{ visualTokens: 0, text: textOnlyImageText(image) }])
   })
 
   it('prices a catalogued text-only model as its text-only substitution', () => {
     const image = ref('photo', 1920, 1080)
     const options = resolveAdapterOptions({ models: [{ id: 'text-only' }] })
-    const prices = deepSeekImageRequestPricing(options, 'text-only').priceImages([image])
+    const prices = deepSeekImageRequestPricing(options, entry(options, 'text-only')).priceImages([image])
     expect(prices).toEqual([{ visualTokens: 0, text: textOnlyImageText(image) }])
   })
 
   it('prices a retained image by its projected request dimensions plus its handle text', () => {
     const image = ref('photo', 1920, 1080)
-    const prices = deepSeekImageRequestPricing(connection(), 'vision').priceImages([image])
+    const prices = deepSeekImageRequestPricing(connection(), entry(connection(), 'vision')).priceImages([image])
     expect(prices).toEqual([{
       visualTokens: 369,
       text: requestImageHandleText(image, { width: 1066, height: 600 }),
@@ -54,7 +59,7 @@ describe('DeepSeek request-image pricing', () => {
     const options = resolveAdapterOptions({
       models: [{ ...VISION_MODEL, imagePixelBudget: 'low' as const }],
     })
-    const prices = deepSeekImageRequestPricing(options, 'vision').priceImages([image])
+    const prices = deepSeekImageRequestPricing(options, entry(options, 'vision')).priceImages([image])
     expect(prices[0]!.visualTokens).toBe(201)
   })
 
@@ -63,7 +68,7 @@ describe('DeepSeek request-image pricing', () => {
     const images = [ref('first', 800, 800), ref('second', 800, 800)]
     const prices = deepSeekImageRequestPricing(
       connection({ maxImagesPerRequest: 1, imageOffloadCountQuantum: 1 }),
-      'vision',
+      VISION_MODEL,
       () => access,
     ).priceImages(images)
     expect(prices[0]).toEqual({ visualTokens: 0, text: offloadedImageText(images[0]!, access) })
@@ -78,7 +83,7 @@ describe('DeepSeek request-image pricing', () => {
     const images = [ref('first', 800, 800), ref('second', 800, 800), ref('third', 800, 800)]
     const prices = deepSeekImageRequestPricing(
       connection({ maxImagesPerRequest: 2, imageOffloadCountQuantum: 1 }),
-      'vision',
+      VISION_MODEL,
     ).priceImages(images)
     expect(prices).toEqual([
       { visualTokens: 0, text: offloadedImageText(images[0]!) },
@@ -98,7 +103,7 @@ describe('DeepSeek request-image pricing', () => {
     ]
     const prices = deepSeekImageRequestPricing(
       connection({ maxRequestFilesBytes: 2 * 1024 * 1024, imageOffloadByteQuantum: 1 }),
-      'vision',
+      VISION_MODEL,
     ).priceImages(images)
     expect(prices.map(price => price.visualTokens)).toEqual([0, 349, 349])
     expect(prices[0]!.text).toBe(offloadedImageText(images[0]!))

@@ -28,7 +28,7 @@ English | [中文](README.zh.md)
 ```yaml
 plugins:
   '@deepseek-ai/dsh-model-gateway-http':
-    maxRequestBodyBytes: 4194304
+    maxRequestBodyBytes: 33554432
     upstreamTimeoutMs: 600000
 ```
 
@@ -45,7 +45,7 @@ An unknown token, a lapsed one, and one whose device was revoked all answer 401.
 
 ### Discovery uses the same device principal
 
-`GET /team/model/catalog` verifies the current device token and returns only the stable ref and display name of each active model allowed by `model.discover`. Endpoint, upstream model, and credential reference remain on the Control Plane. `POST /team/model/invoke` independently asks `model.invoke`, so knowing or retaining a model ref never bypasses the invocation decision.
+`GET /team/model/catalog` verifies the current device token and returns only the stable ref, display name, and input modalities of each active model allowed by `model.discover`. Endpoint, upstream model, and credential reference remain on the Control Plane. Images travel inline as base64 inside the body an adapter built, so `maxRequestBodyBytes` bounds a whole image-bearing request; the 32 MiB default leaves room for the DeepSeek adapter's 20 MiB inline image budget after encoding plus the text around it. `POST /team/model/invoke` independently asks `model.invoke`, so knowing or retaining a model ref never bypasses the invocation decision.
 
 ### The credential exists for one call
 

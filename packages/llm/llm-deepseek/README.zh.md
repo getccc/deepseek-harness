@@ -48,7 +48,7 @@ kind: "package-reference"
 
 请求用 `provider: deepseek-official` 选择路由；模型 id 原样传到协议，因此新增 DeepSeek 模型无需重新注册。省略 `models` 时会公布适合专注任务、快速且经济的 `deepseek-v4-flash`，适合复杂或质量关键任务、能力更强且成本更高的 `deepseek-v4-pro`，以及支持图像的 `deepseek-v4-flash-vision-exp`；每个模型都有 1,000,000 token 上下文窗口。显式列表会替换这些默认值，未列出的模型 id 仍作为纯文本路由原样通过。包括模型发现工具在内的客户端可通过 `ctx.llm.listModels('deepseek-official')` 读取这些建议性条目。支持图片的条目可把 `imagePixelBudget` 设置为正整数或 `low`，也可以设置 `imageMaxBytes`。
 
-存在 `ctx.llmHttpTransport` 时，它的 `listModels()` 会提供 `built-in` 路由，每份经该路由选择的序列化请求都由其 `send()` 方法发送。`deepseek-official` 路由保留本机建议性列表与已配置 API 密钥，并在该密钥未配置期间缺席。Team 传输提供经过角色筛选的内置目录，并使用 Runner 当前设备访问 token 让这些调用通过 Control Plane 网关。
+存在 `ctx.llmHttpTransport` 时，它的 `listModels()` 会提供 `built-in` 路由，每份经该路由选择的序列化请求都由其 `send()` 方法发送。`deepseek-official` 路由保留本机建议性列表与已配置 API 密钥，并在该密钥未配置期间缺席。Team 传输提供经过角色筛选的内置目录，并使用 Runner 当前设备访问 token 让这些调用通过 Control Plane 网关。在这条路由上，决定每个模型接受什么的是传输的目录而不是本机 `models` 列表：声明了 `image` 的条目接收图片，图片在 `maxInlineRequestImageBytes` 之内以 base64 内联序列化，而不走需要 Runner 并不持有的密钥的 Files API；没有声明的条目在任何内容离开 Runner 之前就拒绝图片。每次解析模型都会重读目录，因此管理员的修改会到达下一次请求，而最近一次列举结果为 token 计量器给图片定价。
 
 | 字段 | 默认值 | 含义 |
 |---|---|---|

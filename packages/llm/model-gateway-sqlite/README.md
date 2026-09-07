@@ -85,6 +85,7 @@ These are current constraints of the contract, not a task backlog.
 - **`discover` asks access control once per model** — fine at the catalog sizes this version targets, and a bulk decision is the access-control seam's to offer rather than this one's to work around.
 - **No price metadata** — the catalog carries an output ceiling, not a rate, so the ledger counts tokens rather than money.
 - **A model is never deleted** — `setStatus` retires it, because grants, reservations, and settlements reference the ref.
+- **Schema version 2 is refused in both directions** — `input_modalities` is a JSON-array column with a non-empty CHECK, and a file at any other `user_version` is refused at open rather than migrated; before the first tagged release a deployment recreates the catalog and registers its models again.
 
 <a id="dev-note"></a>
 ### Dev Note

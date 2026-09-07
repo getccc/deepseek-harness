@@ -41,7 +41,7 @@ const response = await ctx.llmHttpTransport.send({
 
 The response body is a stream. A model response is long, and a transport that buffered it would hold a whole completion in memory per request.
 
-`listModels()` optionally transfers discovery ownership to the transport. Its default returns `undefined`, which tells an adapter to use its local catalog. A remote-policy transport returns the current principal's stable ids and display names instead.
+`listModels()` optionally transfers discovery ownership to the transport. Its default returns `undefined`, which tells an adapter to use its local catalog. A remote-policy transport returns the current principal's stable ids, display names, and input modalities instead. The modality list is the catalog's declaration of what a request to the model may carry, drawn from the closed `MODEL_INPUT_MODALITIES` list (`text`, `image`); an adapter reads `image` there before it sends an image, because a transport carries no provider credential with which to find out.
 
 -----
 

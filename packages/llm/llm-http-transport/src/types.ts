@@ -4,15 +4,27 @@
  */
 
 import type { Readable } from 'node:stream'
-import type { TRANSPORT_OPERATIONS } from './vocabulary.ts'
+import type { MODEL_INPUT_MODALITIES, TRANSPORT_OPERATIONS } from './vocabulary.ts'
 
 /** One provider operation this build knows how to carry. */
 export type TransportOperation = typeof TRANSPORT_OPERATIONS[number]
 
-/** One model a transport-controlled catalog exposes to an adapter. */
+/** One input modality a transport-controlled catalog declares for a model. */
+export type ModelInputModality = typeof MODEL_INPUT_MODALITIES[number]
+
+/**
+ * One model a transport-controlled catalog exposes to an adapter.
+ *
+ * `inputModalities` is the catalog's declaration of what a request to the
+ * model may carry. An adapter that reads `image` here sends images; one that
+ * does not read it refuses them before anything leaves the Runner, because
+ * the transport carries no provider credential with which to try.
+ */
 export interface TransportModel {
   readonly id: string
   readonly name: string
+  /** The modalities a request to this model may carry; never empty. */
+  readonly inputModalities: readonly ModelInputModality[]
 }
 
 /**

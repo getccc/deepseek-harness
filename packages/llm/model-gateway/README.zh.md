@@ -65,6 +65,10 @@ await ctx.modelGateway.settle(plan.reservationId, { kind: 'reported', inputToken
 
 `credentialRef` 是凭据提供者能解析的一个名字，例如 `COMPANY_DEEPSEEK_KEY`——而不是 `scope/id` 形式的凭据键，后者寻址的是另一样东西，解析结果什么也不是。[`register`](src/index.ts) 拒绝不是引用的取值，因此这个错误在管理员犯下之处失败，而不是在每一次调用一个目录读作 active 的模型时失败。
 
+### 目录声明请求可以携带什么
+
+条目上的 `inputModalities` 是写下一个模型接受何种输入的唯一地方：`text`，或 `text` 加 `image`。`discover` 把它连同引用与显示名一起交给成员的 Runner，Runner 对没有列出 `image` 的模型在发送任何内容之前就拒绝图片，因为它不持有任何可供试探的提供方凭据。词表是传输接缝的 `MODEL_INPUT_MODALITIES`，在这里重新导出，因此存储声明的目录与读取它的 Adapter 指名同一个封闭集合。
+
 ### 目录的上限说了算
 
 一个索取超过该模型配置产出量的 Runner，得到的是配置的数额，而预留按那个数额取走。更小的索取会被尊重，因此一个短请求不会占住一个长请求的预算。

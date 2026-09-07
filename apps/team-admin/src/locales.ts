@@ -258,6 +258,9 @@ export const zh = {
   'models.endpoint': '提供方地址',
   'models.credentialRef': '凭据引用',
   'models.maxOutputTokens': '最大输出 token',
+  'models.acceptsImages': '接受图片输入',
+  'models.acceptsImagesHint': '勾选后，成员的 Runner 允许在消息里附带图片并经控制面转发；上游模型必须真的支持视觉输入。',
+  'models.imageInput': '图片',
   'models.route': '路由',
   'models.retire': '停用',
   'models.activate': '启用',
@@ -343,6 +346,7 @@ export const zh = {
   'refuse.endpoint-security': '地址要用 HTTPS，token 上限要是正整数。',
   'refuse.credential': '凭据引用要写成 COMPANY_DEEPSEEK_KEY 这样的名字：字母、数字和下划线。',
   'refuse.model-status': '模型目录没有这种状态。',
+  'refuse.modalities': '输入模态列表为空、有重复，或包含本构建不支持的模态。',
 } as const
 
 /** English dictionary; every key of {@link zh}. */
@@ -609,6 +613,9 @@ export const en: Record<keyof typeof zh, string> = {
   'models.endpoint': 'Provider endpoint',
   'models.credentialRef': 'Credential reference',
   'models.maxOutputTokens': 'Maximum output tokens',
+  'models.acceptsImages': 'Accepts image input',
+  'models.acceptsImagesHint': 'When checked, members\' Runners may attach images to messages and send them through the Control Plane; the upstream model must actually accept vision input.',
+  'models.imageInput': 'Images',
   'models.route': 'Route',
   'models.retire': 'Retire',
   'models.activate': 'Activate',
@@ -696,6 +703,7 @@ export const en: Record<keyof typeof zh, string> = {
   'refuse.credential':
     'The credential reference must be a name like COMPANY_DEEPSEEK_KEY: letters, digits, and underscores.',
   'refuse.model-status': 'The model catalog does not have that status.',
+  'refuse.modalities': 'The input modality list was empty, repeated a word, or named one this build does not carry.',
 }
 
 /** Every copy key the console can ask for. */

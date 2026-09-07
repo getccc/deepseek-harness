@@ -14,7 +14,10 @@ import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import {
   LlmHttpTransport,
+  MODEL_INPUT_MODALITIES,
   TransportFailedError,
+  type ModelInputModality,
+  type TransportModel,
   type TransportRequest,
   type TransportResponse,
 } from '@deepseek-ai/dsh-llm-http-transport'
@@ -99,7 +102,7 @@ export class TeamLlmHttpTransport extends LlmHttpTransport {
     }
   }
 
-  override async listModels(): Promise<readonly { id: string; name: string }[]> {
+  override async listModels(): Promise<readonly TransportModel[]> {
     const token = await this.accessToken()
     let response: Response
     try {
@@ -116,7 +119,11 @@ export class TeamLlmHttpTransport extends LlmHttpTransport {
     if (!isModelCatalogBody(body)) {
       throw new TransportFailedError('refused', 'model catalog response is malformed')
     }
-    return body.models.map(model => ({ id: model.modelRef, name: model.displayName }))
+    return body.models.map(model => ({
+      id: model.modelRef,
+      name: model.displayName,
+      inputModalities: model.inputModalities,
+    }))
   }
 
   /** The Runner's current access token, or the reason there is none. */
@@ -139,7 +146,19 @@ function isModelCatalogBody(value: unknown): value is ModelCatalogBody {
   if (!isRecord(value) || !Array.isArray(value['models'])) return false
   return value['models'].every(model => isRecord(model)
     && typeof model['modelRef'] === 'string'
-    && typeof model['displayName'] === 'string')
+    && typeof model['displayName'] === 'string'
+    && isModalityList(model['inputModalities']))
+}
+
+/**
+ * A non-empty list of modality words this build carries. A Control Plane
+ * that declares a modality this Runner does not know is a newer deployment,
+ * and the answer is a malformed catalog rather than a guess at what it meant.
+ */
+function isModalityList(value: unknown): value is readonly ModelInputModality[] {
+  return Array.isArray(value)
+    && value.length > 0
+    && value.every(word => (MODEL_INPUT_MODALITIES as readonly unknown[]).includes(word))
 }
 
 /** Narrow one decoded JSON object to string-keyed fields. */

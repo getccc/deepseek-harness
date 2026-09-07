@@ -15,3 +15,12 @@
  * an operation it has not agreed to carry.
  */
 export const TRANSPORT_OPERATIONS = ['chat.completions'] as const
+
+/**
+ * Every input modality a transport-controlled catalog can declare for a model.
+ *
+ * One closed list for the Control Plane catalog that stores the declaration
+ * and the adapter that reads it, so "this model accepts images" is a fact
+ * written once rather than two hand-matched flags on either side of the wire.
+ */
+export const MODEL_INPUT_MODALITIES = ['text', 'image'] as const

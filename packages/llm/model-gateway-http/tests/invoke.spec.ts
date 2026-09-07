@@ -135,6 +135,7 @@ beforeEach(async () => {
     orgId, modelRef: 'company-v4', displayName: 'Company V4',
     providerRef: 'deepseek', upstreamModel: 'deepseek-chat-20260801',
     endpoint: providerOrigin, credentialRef: CREDENTIAL, maxOutputTokens: 4_000,
+    inputModalities: ['text', 'image'],
   })
   const role = (await access.createRole({ orgId, name: 'engineering' })).id
   await access.bindUserRole(alice, role)
@@ -190,8 +191,10 @@ describe('a company model call', () => {
     })
 
     expect(response.status).toBe(200)
+    // The modality list rides along: it is how a Runner knows, before sending,
+    // whether a message with an image may go to this model.
     expect(await response.json()).toEqual({
-      models: [{ modelRef: 'company-v4', displayName: 'Company V4' }],
+      models: [{ modelRef: 'company-v4', displayName: 'Company V4', inputModalities: ['text', 'image'] }],
     })
   })
 
@@ -220,6 +223,7 @@ describe('a company model call', () => {
       providerRef: 'dashscope', upstreamModel: 'qwen-plus',
       endpoint: `${providerOrigin}/compatible-mode/v1`,
       credentialRef: CREDENTIAL, maxOutputTokens: 4_000,
+      inputModalities: ['text'],
     })
 
     expect((await invoke(invocation())).status).toBe(200)
@@ -498,6 +502,7 @@ describe('what the endpoint refuses', () => {
       orgId, modelRef: 'company-v4', displayName: 'Company V4',
       providerRef: 'deepseek', upstreamModel: 'deepseek-chat-20260801',
       endpoint: cpOrigin, credentialRef: 'COMPANY_MISSING_KEY', maxOutputTokens: 4_000,
+      inputModalities: ['text'],
     })
     const answered = await invoke(invocation())
     expect(answered.status).toBe(500)

@@ -28,7 +28,7 @@ kind: "package-reference"
 ```yaml
 plugins:
   '@deepseek-ai/dsh-model-gateway-http':
-    maxRequestBodyBytes: 4194304
+    maxRequestBodyBytes: 33554432
     upstreamTimeoutMs: 600000
 ```
 
@@ -45,7 +45,7 @@ plugins:
 
 ### 发现使用同一个设备主体
 
-`GET /team/model/catalog` 验证当前设备 token，并且只返回 `model.discover` 允许的每个活跃模型的稳定引用与显示名。端点、上游模型与凭据引用留在 Control Plane。`POST /team/model/invoke` 会独立询问 `model.invoke`，因此知道或保留模型引用无法绕过调用决策。
+`GET /team/model/catalog` 验证当前设备 token，并且只返回 `model.discover` 允许的每个活跃模型的稳定引用、显示名与输入模态。端点、上游模型与凭据引用留在 Control Plane。图片以 base64 内联在适配器构造的请求体里传输，因此 `maxRequestBodyBytes` 约束的是整个带图请求；32 MiB 的默认值给 DeepSeek 适配器 20 MiB 的内联图片预算编码后再加上周围文本留出了余地。`POST /team/model/invoke` 会独立询问 `model.invoke`，因此知道或保留模型引用无法绕过调用决策。
 
 ### 凭据只为一次调用而存在
 

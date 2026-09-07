@@ -37,7 +37,12 @@ export const inject = ['webServer', 'modelGateway', 'deviceAuthorization', 'cred
 
 /** Plugin config: how much the endpoint reads, and how long it waits. */
 export interface Config {
-  /** Largest request body accepted, in bytes. */
+  /**
+   * Largest request body accepted, in bytes. Images travel inline as base64
+   * in the body an adapter built, so this bounds a whole image-bearing
+   * request; the DeepSeek adapter's inline image budget is 20 MiB before
+   * encoding, and the default leaves room for that plus the text around it.
+   */
   maxRequestBodyBytes: number
   /** How long to wait for the upstream provider before giving up, in milliseconds. */
   upstreamTimeoutMs: number
@@ -45,7 +50,7 @@ export interface Config {
 
 /** Plugin config schema. */
 export const Config: z<Config> = z.object({
-  maxRequestBodyBytes: z.natural().min(1).default(4 * 1024 * 1024),
+  maxRequestBodyBytes: z.natural().min(1).default(32 * 1024 * 1024),
   upstreamTimeoutMs: z.natural().min(1).default(600_000),
 })
 

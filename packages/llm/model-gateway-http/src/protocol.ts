@@ -7,6 +7,8 @@
  * @module @deepseek-ai/dsh-model-gateway-http/protocol
  */
 
+import type { ModelInputModality } from '@deepseek-ai/dsh-llm-http-transport'
+
 /** Path the Control Plane serves company model invocations under. */
 export const MODEL_INVOKE_PATH = '/team/model/invoke'
 
@@ -41,10 +43,16 @@ export interface InvokeBody {
   readonly body: Record<string, unknown>
 }
 
-/** One model the Control Plane permits this device principal to discover. */
+/**
+ * One model the Control Plane permits this device principal to discover.
+ *
+ * `inputModalities` is the catalog's declaration; a Runner refuses an image
+ * for a model whose list lacks `image` rather than sending it to find out.
+ */
 export interface DiscoveredModel {
   readonly modelRef: string
   readonly displayName: string
+  readonly inputModalities: readonly ModelInputModality[]
 }
 
 /** Runner-facing model discovery response. */

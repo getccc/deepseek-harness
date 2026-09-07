@@ -4,6 +4,7 @@
  */
 
 import type { OrgId, UserId } from '@deepseek-ai/dsh-account-store'
+import type { ModelInputModality } from '@deepseek-ai/dsh-llm-http-transport'
 import type { ReservationId } from '@deepseek-ai/dsh-quota'
 import type { INVOCATION_REFUSALS, MODEL_STATUSES } from './vocabulary.ts'
 
@@ -40,6 +41,12 @@ export interface ModelEntry {
   readonly credentialRef: string
   /** The most output tokens one invocation may reserve against. */
   readonly maxOutputTokens: number
+  /**
+   * What a request to this model may carry. The catalog is the one place this
+   * is declared: a Runner has no provider credential with which to find out,
+   * so it refuses an image for a model that does not declare `image` here.
+   */
+  readonly inputModalities: readonly ModelInputModality[]
   readonly status: ModelStatus
 }
 
@@ -53,6 +60,18 @@ export interface RegisterModel {
   readonly endpoint: string
   readonly credentialRef: string
   readonly maxOutputTokens: number
+  /** The modalities a request may carry; the administration API defaults an omitted list to `text`. */
+  readonly inputModalities: readonly ModelInputModality[]
+}
+
+/**
+ * One model as a member's Runner is shown it: the stable ref, the display
+ * name, and what a request to it may carry. Nothing an upstream call needs.
+ */
+export interface DiscoveredCatalogModel {
+  readonly modelRef: string
+  readonly displayName: string
+  readonly inputModalities: readonly ModelInputModality[]
 }
 
 /** What a Runner asks the gateway before its request reaches a provider. */

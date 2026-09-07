@@ -44,9 +44,11 @@ import { WeakSecretError } from '@deepseek-ai/dsh-account-auth'
 import type { AuditActionName, AuditOutcome } from '@deepseek-ai/dsh-audit'
 import { DeviceId, type Device } from '@deepseek-ai/dsh-device-authorization'
 import {
+  MODEL_INPUT_MODALITIES,
   MODEL_STATUSES,
   isUsableCredentialRef,
   type ModelEntry,
+  type ModelInputModality,
   type ModelStatus,
 } from '@deepseek-ai/dsh-model-gateway'
 import { KnowledgeError, isKnowledgeRef, KnowledgeRef } from '@deepseek-ai/dsh-knowledge'
@@ -377,8 +379,28 @@ function wireModel(entry: ModelEntry, resourceId: ResourceId): WireModel {
     endpoint: entry.endpoint,
     credentialRef: entry.credentialRef,
     maxOutputTokens: entry.maxOutputTokens,
+    inputModalities: entry.inputModalities,
     status: entry.status,
   }
+}
+
+/**
+ * Read the modality list a model registration carries, or name why it cannot.
+ *
+ * An absent list means `text`: every model the catalog has held so far was a
+ * text model, and a console that did not ask registers one. A present list
+ * is taken as written, and refused when it is empty, repeats a word, or names
+ * a modality this build does not carry, because a Runner reads it as the
+ * whole truth about what it may send.
+ */
+function modalityList(body: Record<string, unknown>): readonly ModelInputModality[] | 'modalities' {
+  const value = body['inputModalities']
+  if (value === undefined) return ['text']
+  if (!Array.isArray(value) || value.length === 0) return 'modalities'
+  const known = MODEL_INPUT_MODALITIES as readonly unknown[]
+  if (!value.every(word => known.includes(word))) return 'modalities'
+  if (new Set(value).size !== value.length) return 'modalities'
+  return value as ModelInputModality[]
 }
 
 /**
@@ -1784,6 +1806,11 @@ export function apply(ctx: Context, config: Config): void {
       refuse(res, 400, 'malformed', { reason: 'credential', detail: 'The credential reference must be a name like COMPANY_DEEPSEEK_KEY.' })
       return false
     }
+    const inputModalities = modalityList(body)
+    if (inputModalities === 'modalities') {
+      refuse(res, 400, 'malformed', { reason: 'modalities', detail: 'inputModalities must be a non-empty list of distinct words from: text, image.' })
+      return false
+    }
     await ctx.modelGateway.register({
       orgId: org,
       modelRef: fields[0] as string,
@@ -1793,6 +1820,7 @@ export function apply(ctx: Context, config: Config): void {
       endpoint: endpoint.href,
       credentialRef: fields[5] as string,
       maxOutputTokens,
+      inputModalities,
     })
     await record('resource.register', signed, 'allowed', { resourceId: fields[0] as string })
     return true

@@ -280,6 +280,7 @@ export const LINK_MAP: Readonly<Record<string, string>> = {
   Settlement: 'quota.md',
   SettlementRecord: 'quota.md',
   CallPlan: 'model-gateway.md',
+  DiscoveredCatalogModel: 'model-gateway.md',
   InvocationRequest: 'model-gateway.md',
   ModelEntry: 'model-gateway.md',
   ModelStatus: 'model-gateway.md',

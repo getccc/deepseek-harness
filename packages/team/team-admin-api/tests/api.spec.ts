@@ -804,6 +804,22 @@ describe('what an action refuses on its own terms', () => {
     expect((await access.listRoleGrants(adminRole))).toHaveLength(ADMIN_PERMISSIONS.length)
   })
 
+  it('records what a request to a model may carry, and reads an omitted list as text', async () => {
+    const held = await signIn()
+    // A console that did not ask registers a text model, which is every model
+    // the catalog held before the list existed.
+    const text = payload(await write('POST', '/team/api/models', held, USABLE_MODEL)) as WireModel[]
+    expect(text[0]).toMatchObject({ modelRef: 'deepseek-chat', inputModalities: ['text'] })
+    // The same write with the list is the edit that turns image input on, and
+    // the Runner's catalog read is what carries it to members.
+    const vision = payload(await write('POST', '/team/api/models', held, {
+      ...USABLE_MODEL, inputModalities: ['text', 'image'],
+    })) as WireModel[]
+    expect(vision).toHaveLength(1)
+    expect(vision[0]).toMatchObject({ modelRef: 'deepseek-chat', inputModalities: ['text', 'image'] })
+    expect(await ctx.modelGateway.list(orgId)).toMatchObject([{ inputModalities: ['text', 'image'] }])
+  })
+
   it('will not register a model no call could reach, and names which field', async () => {
     const held = await signIn()
     for (const [reason, broken] of [
@@ -816,6 +832,12 @@ describe('what an action refuses on its own terms', () => {
       // and only the reference resolves when the gateway makes the call.
       ['credential', { credentialRef: 'company/deepseek' }],
       ['fields', { modelRef: '' }],
+      // A Runner reads the list as the whole truth about what it may send, so
+      // an empty, repetitive, or unknown list is refused rather than repaired.
+      ['modalities', { inputModalities: [] }],
+      ['modalities', { inputModalities: ['text', 'text'] }],
+      ['modalities', { inputModalities: ['text', 'audio'] }],
+      ['modalities', { inputModalities: 'text' }],
     ] as const) {
       const refused = await write('POST', '/team/api/models', held, { ...USABLE_MODEL, ...broken })
       expect(refused.status, reason).toBe(400)
@@ -1349,7 +1371,7 @@ describe('roles as the console administers them', () => {
     const bob = (await store.createUser({ orgId, loginName: 'bob', displayName: 'Bob' })).id
     await access.bindUserRole(bob, role.id as RoleId)
     await expect(ctx.modelGateway.discover(orgId, bob)).resolves.toEqual([
-      { modelRef: 'deepseek-reasoner', displayName: 'DeepSeek Reasoner' },
+      { modelRef: 'deepseek-reasoner', displayName: 'DeepSeek Reasoner', inputModalities: ['text'] },
     ])
   })
 

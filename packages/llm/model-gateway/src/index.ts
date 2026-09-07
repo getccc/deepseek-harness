@@ -17,6 +17,7 @@ import type { ReservationId } from '@deepseek-ai/dsh-quota'
 import type { Settlement } from '@deepseek-ai/dsh-quota'
 import type {
   CallPlan,
+  DiscoveredCatalogModel,
   InvocationRefusal,
   InvocationRequest,
   ModelEntry,
@@ -31,6 +32,7 @@ export {
 } from './body.ts'
 export type {
   CallPlan,
+  DiscoveredCatalogModel,
   InvocationRefusal,
   InvocationRequest,
   ModelEntry,
@@ -38,6 +40,10 @@ export type {
   RegisterModel,
 } from './types.ts'
 export { INVOCATION_REFUSALS, MODEL_STATUSES } from './vocabulary.ts'
+// The modality vocabulary is the transport seam's: the value crosses that wire
+// from this catalog to an adapter, so both sides read one list.
+export { MODEL_INPUT_MODALITIES } from '@deepseek-ai/dsh-llm-http-transport'
+export type { ModelInputModality } from '@deepseek-ai/dsh-llm-http-transport'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
@@ -142,16 +148,17 @@ export abstract class ModelGateway extends Service {
   /**
    * The models one principal may see, with nothing an upstream call needs.
    *
-   * A Runner is told the stable ref and the display name and no more: the
-   * endpoint, the upstream name, and the credential reference are the
-   * gateway's, and a member's model list is not the place to publish them.
+   * A Runner is told the stable ref, the display name, and the input
+   * modalities and no more: the endpoint, the upstream name, and the
+   * credential reference are the gateway's, and a member's model list is not
+   * the place to publish them. The modalities are there because the Runner
+   * decides before sending whether a message with an image may go to this
+   * model, and has no other way to know.
    * @param orgId - the organization to list.
    * @param principalId - the account asking.
    * @returns the active models this principal holds `model.discover` on.
    */
-  abstract discover(orgId: OrgId, principalId: string): Promise<
-    { readonly modelRef: string; readonly displayName: string }[]
-  >
+  abstract discover(orgId: OrgId, principalId: string): Promise<DiscoveredCatalogModel[]>
 
   /**
    * Decide one invocation and hold the budget for it.

@@ -1,7 +1,7 @@
 /** The company model catalog: what a Runner may invoke, and where each call really goes. */
 
 import { useState, type ReactNode } from 'react'
-import { Button, Form, Input, InputNumber, Typography, Table } from 'antd'
+import { Button, Checkbox, Form, Input, InputNumber, Tag, Typography, Table } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { api, type ModelInput, type WireModel } from '../api.ts'
 import { useLocale } from '../locale.tsx'
@@ -15,6 +15,18 @@ type Dialog =
   | { readonly kind: 'edit'; readonly model: WireModel }
   | { readonly kind: 'status'; readonly model: WireModel }
   | { readonly kind: 'delete'; readonly model: WireModel }
+
+/**
+ * What the register and edit forms collect: the route fields as they are
+ * sent, and one box for image input, which becomes the modality list.
+ */
+type ModelFormValues = Omit<ModelInput, 'inputModalities'> & { readonly acceptsImages: boolean }
+
+/** The registration a form's values describe. */
+function modelInputOf(values: ModelFormValues): ModelInput {
+  const { acceptsImages, ...route } = values
+  return { ...route, inputModalities: acceptsImages ? ['text', 'image'] : ['text'] }
+}
 
 /** The route fields the register and edit forms collect. */
 const ROUTE_FIELDS = [
@@ -65,7 +77,12 @@ export function Models({ held }: { readonly held: ReadonlySet<string> }): ReactN
       key: 'provider',
       render: (_value, model) => (
         <>
-          <div>{model.providerRef}</div>
+          <div>
+            {model.providerRef}
+            {model.inputModalities.includes('image') && (
+              <Tag color="blue" style={{ marginLeft: 8 }}>{t('models.imageInput')}</Tag>
+            )}
+          </div>
           <Typography.Text type="secondary" code style={{ fontSize: 12 }}>{model.upstreamModel}</Typography.Text>
         </>
       ),
@@ -146,12 +163,12 @@ export function Models({ held }: { readonly held: ReadonlySet<string> }): ReactN
         locale={{ emptyText: t('models.empty') }}
       />
 
-      <FormModal<ModelInput>
+      <FormModal<ModelFormValues>
         title={t(editing === undefined ? 'models.addTitle' : 'models.editTitle')}
         open={dialog?.kind === 'add' || dialog?.kind === 'edit'}
         okText={t(editing === undefined ? 'action.create' : 'action.save')}
         initialValues={editing === undefined
-          ? { maxOutputTokens: 8192 }
+          ? { maxOutputTokens: 8192, acceptsImages: false }
           : {
             modelRef: editing.modelRef,
             displayName: editing.displayName,
@@ -160,12 +177,13 @@ export function Models({ held }: { readonly held: ReadonlySet<string> }): ReactN
             endpoint: editing.endpoint,
             credentialRef: editing.credentialRef,
             maxOutputTokens: editing.maxOutputTokens,
+            acceptsImages: editing.inputModalities.includes('image'),
           }}
         onCancel={() => { setDialog(undefined) }}
         // An edit is the same write as a registration: the stable ref is the
         // identity, so a POST naming a stored one replaces its route and leaves
         // the status and the grants written against that ref alone.
-        onSubmit={values => act(() => api.addModel(values))}
+        onSubmit={values => act(() => api.addModel(modelInputOf(values)))}
       >
         <Typography.Paragraph type="secondary">
           {t(editing === undefined ? 'models.addHint' : 'models.refFixed')}
@@ -186,6 +204,9 @@ export function Models({ held }: { readonly held: ReadonlySet<string> }): ReactN
           rules={[{ required: true, message: t('login.required') }]}
         >
           <InputNumber min={1} step={1} style={{ width: '100%' }} />
+        </Form.Item>
+        <Form.Item name="acceptsImages" valuePropName="checked" extra={t('models.acceptsImagesHint')}>
+          <Checkbox>{t('models.acceptsImages')}</Checkbox>
         </Form.Item>
       </FormModal>
 

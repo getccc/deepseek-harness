@@ -21,8 +21,10 @@ import {
   ModelGateway,
   isUsableCredentialRef,
   type CallPlan,
+  type DiscoveredCatalogModel,
   type InvocationRequest,
   type ModelEntry,
+  type ModelInputModality,
   type ModelStatus,
   type RegisterModel,
 } from '@deepseek-ai/dsh-model-gateway'
@@ -49,6 +51,9 @@ function toEntry(row: ModelRow): ModelEntry {
     endpoint: row.endpoint,
     credentialRef: row.credential_ref,
     maxOutputTokens: row.max_output_tokens,
+    // The column's CHECK admits only a non-empty JSON array, and register()
+    // is the only writer, so the parse restates what the schema guarantees.
+    inputModalities: JSON.parse(row.input_modalities) as ModelInputModality[],
     status: row.status as ModelStatus,
   }
 }
@@ -93,18 +98,20 @@ export class SqliteModelGateway extends ModelGateway {
     this.db.prepare(
       `INSERT INTO model
          (org_id, model_ref, display_name, provider_ref, upstream_model, endpoint,
-          credential_ref, max_output_tokens, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')
+          credential_ref, max_output_tokens, input_modalities, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')
        ON CONFLICT (org_id, model_ref) DO UPDATE SET
          display_name = excluded.display_name,
          provider_ref = excluded.provider_ref,
          upstream_model = excluded.upstream_model,
          endpoint = excluded.endpoint,
          credential_ref = excluded.credential_ref,
-         max_output_tokens = excluded.max_output_tokens`,
+         max_output_tokens = excluded.max_output_tokens,
+         input_modalities = excluded.input_modalities`,
     ).run(
       input.orgId, input.modelRef, input.displayName, input.providerRef,
       input.upstreamModel, input.endpoint, input.credentialRef, input.maxOutputTokens,
+      JSON.stringify(input.inputModalities),
     )
     // Governed in the same act. A catalog entry access control does not know
     // about is a model no grant can name and nobody can ever invoke.
@@ -151,12 +158,10 @@ export class SqliteModelGateway extends ModelGateway {
     return Promise.resolve(rows.map(toEntry))
   }
 
-  async discover(orgId: OrgIdType, principalId: string): Promise<
-    { readonly modelRef: string; readonly displayName: string }[]
-  > {
+  async discover(orgId: OrgIdType, principalId: string): Promise<DiscoveredCatalogModel[]> {
     const rows = this.db.prepare("SELECT * FROM model WHERE org_id = ? AND status = 'active' ORDER BY rowid")
       .all(orgId) as unknown as ModelRow[]
-    const visible: { modelRef: string; displayName: string }[] = []
+    const visible: DiscoveredCatalogModel[] = []
     for (const row of rows) {
       const decision = await this.ctx.accessControl.authorize({
         orgId,
@@ -165,9 +170,12 @@ export class SqliteModelGateway extends ModelGateway {
         resourceType: RESOURCE_TYPE,
         resourceId: row.model_ref,
       })
-      // Only the stable ref and the display name. The endpoint, the upstream
-      // name, and the credential reference are the gateway's.
-      if (decision.allowed) visible.push({ modelRef: row.model_ref, displayName: row.display_name })
+      // The stable ref, the display name, and what a request may carry. The
+      // endpoint, the upstream name, and the credential reference are the
+      // gateway's.
+      if (!decision.allowed) continue
+      const entry = toEntry(row)
+      visible.push({ modelRef: entry.modelRef, displayName: entry.displayName, inputModalities: entry.inputModalities })
     }
     return visible
   }

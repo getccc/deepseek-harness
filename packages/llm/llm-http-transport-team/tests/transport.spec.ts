@@ -80,16 +80,16 @@ afterEach(async () => {
 })
 
 describe('what leaves the Runner', () => {
-  it('reads only the model refs and names the Control Plane exposes', async () => {
+  it('reads only the model refs, names, and input modalities the Control Plane exposes', async () => {
     answer = (res) => {
       res.writeHead(200, { 'content-type': 'application/json' })
       res.end(JSON.stringify({
-        models: [{ modelRef: 'company-v4', displayName: 'Company V4' }],
+        models: [{ modelRef: 'company-v4', displayName: 'Company V4', inputModalities: ['text', 'image'] }],
       }))
     }
 
     await expect(transport.listModels()).resolves.toEqual([
-      { id: 'company-v4', name: 'Company V4' },
+      { id: 'company-v4', name: 'Company V4', inputModalities: ['text', 'image'] },
     ])
     expect(seen[0]).toMatchObject({
       path: '/team/model/catalog',
@@ -98,10 +98,17 @@ describe('what leaves the Runner', () => {
     })
   })
 
-  it('refuses a malformed model catalog at the HTTP wire', async () => {
+  it.each([
+    ['a ref that is not a string', { modelRef: 7, displayName: 'Company V4', inputModalities: ['text'] }],
+    ['no modality list', { modelRef: 'company-v4', displayName: 'Company V4' }],
+    ['an empty modality list', { modelRef: 'company-v4', displayName: 'Company V4', inputModalities: [] }],
+    // A word this Runner does not carry is a newer Control Plane, and the
+    // answer is a malformed catalog rather than a guess at what it meant.
+    ['a modality this build does not carry', { modelRef: 'company-v4', displayName: 'Company V4', inputModalities: ['text', 'audio'] }],
+  ])('refuses a model catalog with %s at the HTTP wire', async (_case, model) => {
     answer = (res) => {
       res.writeHead(200, { 'content-type': 'application/json' })
-      res.end(JSON.stringify({ models: [{ modelRef: 7, displayName: 'Company V4' }] }))
+      res.end(JSON.stringify({ models: [model] }))
     }
 
     await expect(transport.listModels()).rejects.toMatchObject({

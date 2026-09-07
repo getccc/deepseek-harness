@@ -10,10 +10,11 @@ import type { DatabaseSync } from 'node:sqlite'
 import { MODEL_STATUSES } from '@deepseek-ai/dsh-model-gateway'
 
 /**
- * Current physical schema. Monotonic: a database written by a newer build is
- * refused rather than migrated down.
+ * Current physical schema. Monotonic, and refused in both directions: a
+ * database written by another version is neither migrated up nor read down.
+ * Version 2 added `input_modalities`.
  */
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 /** Application id reserved for DeepSeek Harness SQLite model-catalog databases. */
 export const MODEL_GATEWAY_SQLITE_APPLICATION_ID = 0x44534841 + 5
@@ -28,6 +29,8 @@ export interface ModelRow {
   readonly endpoint: string
   readonly credential_ref: string
   readonly max_output_tokens: number
+  /** JSON array of input modality words; the catalog entry's `inputModalities`. */
+  readonly input_modalities: string
   readonly status: string
 }
 
@@ -49,16 +52,19 @@ CREATE TABLE IF NOT EXISTS model (
   endpoint          TEXT    NOT NULL,
   credential_ref    TEXT    NOT NULL,
   max_output_tokens INTEGER NOT NULL CHECK (max_output_tokens > 0),
+  -- A JSON array of modality words. Never empty: a model that accepts nothing
+  -- is not a model, and an adapter reading an empty list would refuse text.
+  input_modalities  TEXT    NOT NULL CHECK (json_valid(input_modalities) AND json_array_length(input_modalities) > 0),
   status            TEXT    NOT NULL CHECK (status IN ${words(MODEL_STATUSES)}),
   PRIMARY KEY (org_id, model_ref)
 ) STRICT;
 `
 
 /**
- * Bring a connection to {@link SCHEMA_VERSION}, refusing a database written by
- * a build that knew more than this one.
+ * Bring a fresh connection to {@link SCHEMA_VERSION}, refusing a database
+ * written at any other version.
  * @param db - an open SQLite connection.
- * @throws when the file belongs to another application or a newer schema.
+ * @throws when the file belongs to another application or another schema version.
  */
 export function applySchema(db: DatabaseSync): void {
   const appId = readPragma(db, 'application_id')
@@ -66,8 +72,8 @@ export function applySchema(db: DatabaseSync): void {
   if (appId !== 0 && appId !== MODEL_GATEWAY_SQLITE_APPLICATION_ID) {
     throw new Error(`model-gateway-sqlite: database belongs to another application (application_id ${appId})`)
   }
-  if (version > SCHEMA_VERSION) {
-    throw new Error(`model-gateway-sqlite: database schema ${version} is newer than this build's ${SCHEMA_VERSION}`)
+  if (version !== 0 && version !== SCHEMA_VERSION) {
+    throw new Error(`model-gateway-sqlite: database schema ${version} is not supported by this build's ${SCHEMA_VERSION}`)
   }
   db.exec('PRAGMA foreign_keys = ON')
   db.exec(DDL)

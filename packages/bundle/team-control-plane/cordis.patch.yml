@@ -144,7 +144,9 @@
     - id: model-gateway-http
       name: '@deepseek-ai/dsh-model-gateway-http'
       config:
-        maxRequestBodyBytes: 4194304
+        # Images ride inline as base64 in the body the Runner's adapter built,
+        # up to the adapter's 20 MiB inline budget before encoding.
+        maxRequestBodyBytes: 33554432
         # Above the longest completion a deployment expects: a request cut off
         # here is charged its ceiling, because a provider that stopped
         # answering may still have generated tokens.

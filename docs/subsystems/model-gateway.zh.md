@@ -69,7 +69,9 @@ abstract send(request: TransportRequest): Promise<TransportResponse>
 /**
  * List models the transport's remote policy currently exposes, when the
  * transport owns model discovery. Direct transports return `undefined` so
- * an adapter uses its own catalog.
+ * an adapter uses its own catalog. Each remote model carries the catalog's
+ * input-modality declaration, which is the only way an adapter learns
+ * whether a company model accepts images.
  * @returns remote models, or undefined when discovery remains adapter-owned.
  */
 listModels(): Promise<readonly TransportModel[] | undefined>
@@ -133,14 +135,17 @@ abstract list(orgId: OrgId): Promise<ModelEntry[]>
 /**
  * The models one principal may see, with nothing an upstream call needs.
  *
- * A Runner is told the stable ref and the display name and no more: the
- * endpoint, the upstream name, and the credential reference are the
- * gateway's, and a member's model list is not the place to publish them.
+ * A Runner is told the stable ref, the display name, and the input
+ * modalities and no more: the endpoint, the upstream name, and the
+ * credential reference are the gateway's, and a member's model list is not
+ * the place to publish them. The modalities are there because the Runner
+ * decides before sending whether a message with an image may go to this
+ * model, and has no other way to know.
  * @param orgId - the organization to list.
  * @param principalId - the account asking.
  * @returns the active models this principal holds `model.discover` on.
  */
-abstract discover(orgId: OrgId, principalId: string): Promise< { readonly modelRef: string; readonly displayName: string }[] >
+abstract discover(orgId: OrgId, principalId: string): Promise<DiscoveredCatalogModel[]>
 
 /**
  * Decide one invocation and hold the budget for it.

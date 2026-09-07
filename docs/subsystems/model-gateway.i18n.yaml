@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/subsystems/model-gateway.md
-model-gateway.md: 493b10a23ae6b838e8a5221ce6bdcd3c1d61aeae
-model-gateway.zh.md: 6fc09dcfa85ce1bbf81e2594ba634f90cfd4b47d
+model-gateway.md: 6774d16af5e3729f2d0277b1777499a4d94c7b6b
+model-gateway.zh.md: 2b900e4a39a293e2cbe0408b8568419c7ee7aedc
