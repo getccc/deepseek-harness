@@ -13,7 +13,7 @@ import type { MarkdownFileMentions } from '@deepseek-ai/dsh-client-ui-primitives
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 import type { createChatStore } from '../stores.ts'
 import type { ToolCallId, SelectionTarget } from './store.ts'
-import type { AssistantChatData, ChatNode, ChatNodeKind } from './chat-nodes.ts'
+import type { ChatNode, ChatNodeKind } from './chat-nodes.ts'
 import type { ChatSnapshot, CommandNode, CompactionSummaryNode, ToolCallBlock } from './snapshot.ts'
 import type { TurnProcessSpec } from './turn-process.ts'
 import type { TranscriptViewMode } from '../../chat-settings.ts'
@@ -32,9 +32,12 @@ export interface TurnTailOwnerProps {
 export interface AssistantIdentityOwnerProps {
   /** Turn the activity belongs to. */
   turn: number
-  /** Whether the Turn's reply is still streaming, settled, or was interrupted. */
-  status: AssistantChatData['status']
-  /** Date-aware clock of the Turn's start (or of the step, before the Turn reports one); absent when neither is known. */
+  /** Whether the Turn is still running or has closed. */
+  status: 'running' | 'settled'
+  /**
+   * Date-aware clock of the Turn's start, or of the leading Assistant step when
+   * the Turn's start is outside the loaded window; absent when neither is known.
+   */
   clock?: string | undefined
 }
 
@@ -81,8 +84,6 @@ export interface ChatNodeOwnerProps {
   inspectCall: (callId: ToolCallId) => void
   forkAt: (seq: number) => void
   renderMessageImages: RenderMessageImages
-  /** The identity header, rendered once per Turn by the process control or the first Assistant step. */
-  renderIdentity: RenderAssistantIdentity
   fileMentions: (owner: TurnTailOwnerProps) => MarkdownFileMentions | undefined
   /** Turn-process state when this Node belongs to a projected Turn. */
   turnProcess?: TurnProcessOwnerProps | undefined
@@ -217,12 +218,14 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
      */
     'conversation.chat.assistant-actions': { kind: 'list'; scope: 'session'; owner: AssistantActionOwnerProps }
     /**
-     * Optional header that opens a Turn's assistant activity: rendered by the
-     * Turn-process control whenever that control is shown, and otherwise by
-     * the first Assistant step, so one header sits above everything the
-     * assistant did in the Turn. The component receives the Turn, the reply's
-     * streaming status, and a formatted clock. A registration heads every
-     * Turn with a face or a name; without one, nothing is added.
+     * Optional header that opens a Turn's assistant activity: the seat of the
+     * Turn's first visible activity row renders it above that row — the
+     * Turn-process control whenever it is shown, otherwise the first row after
+     * the member's words, whether injected context, a retry, or the first
+     * Assistant step — so one header sits above everything the assistant did
+     * in the Turn. The component receives the Turn, whether it is still
+     * running, and a formatted clock. A registration heads every Turn with a
+     * face or a name; without one, nothing is added.
      */
     'conversation.chat.assistant-identity': { kind: 'single'; scope: 'session'; owner: AssistantIdentityOwnerProps }
     /**

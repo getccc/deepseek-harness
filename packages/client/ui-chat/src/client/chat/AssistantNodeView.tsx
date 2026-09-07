@@ -1,12 +1,10 @@
 import { memo, useCallback, useMemo } from 'react'
-import type { AssistantIdentityOwnerProps, ChatNodeViewProps, TurnTailOwnerProps } from '../contract/slots.ts'
+import type { ChatNodeViewProps, TurnTailOwnerProps } from '../contract/slots.ts'
 import { AssistantMarkdown } from './AssistantMarkdown.tsx'
-import { formatMessageClock } from './message-chrome.ts'
-import { useCalendarDay } from './use-calendar-day.ts'
 
 /** Streaming, settled, and interrupted Assistant states share one keyed renderer instance. */
 export const AssistantNodeView = memo(function AssistantNodeView({
-  node, useTurnData, turnProcess, openFile, renderMessageImages, renderIdentity, fileMentions, t,
+  node, useTurnData, turnProcess, openFile, renderMessageImages, fileMentions, t,
 }: ChatNodeViewProps<'assistant-step'>) {
   const data = node.data
   const turn = node.location.kind === 'turn' || node.location.kind === 'step'
@@ -28,29 +26,16 @@ export const AssistantNodeView = memo(function AssistantNodeView({
     && turnProcess.spec.inlineReasoning
     && !turnProcess.open
   const revealProcess = useCallback(() => { turnProcess?.setOpen(true) }, [turnProcess])
-  // The first step opens the Turn's activity with the identity header unless
-  // the Turn-process control is shown, in which case the control carries it
-  // above the whole process; `foldable` on this node is exactly that state.
-  const leadsReply = data.step === 1 && !(turnProcess !== undefined && turnProcess.foldable)
-  const day = useCalendarDay()
-  const startTime = turn?.start?.time ?? data.time
-  const identity = useMemo<AssistantIdentityOwnerProps>(
-    () => ({ turn: data.turn, status: data.status, clock: formatMessageClock(startTime, t, day) }),
-    [data.status, data.turn, day, startTime, t],
-  )
   return (
-    <>
-      {leadsReply && renderIdentity(identity)}
-      <AssistantMarkdown
-        blocks={data.blocks}
-        streaming={data.status === 'running'}
-        interrupted={data.status === 'interrupted'}
-        renderMessageImages={renderMessageImages}
-        reasoningHidden={reasoningHidden}
-        revealProcess={revealProcess}
-        mentions={mentions}
-        t={t}
-      />
-    </>
+    <AssistantMarkdown
+      blocks={data.blocks}
+      streaming={data.status === 'running'}
+      interrupted={data.status === 'interrupted'}
+      renderMessageImages={renderMessageImages}
+      reasoningHidden={reasoningHidden}
+      revealProcess={revealProcess}
+      mentions={mentions}
+      t={t}
+    />
   )
 })

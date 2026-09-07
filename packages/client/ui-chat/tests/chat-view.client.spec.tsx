@@ -243,7 +243,7 @@ function makeHarness(
   const renderCommandSlot = ((_key: string, _owner: object, opts?: { fallback?: React.ReactNode }) =>
     opts?.fallback ?? null) as unknown as React.ComponentProps<typeof CommandNodeView>['renderSlot']
   // The identity slot is a child of the Chat view itself; the view wraps it
-  // into the `renderIdentity` owner function every node renderer receives.
+  // into the `renderIdentity` function the Turn's leading seat renders.
   let identityRenderer: ((owner: AssistantIdentityOwnerProps) => React.ReactNode) | undefined
   const renderTurnTail = ((_key: string, _owner: object) => null) as unknown as
     React.ComponentProps<typeof TurnTailNodeView>['renderSlotChain']
@@ -1088,9 +1088,13 @@ describe('ChatView', () => {
     expect(visibleIdentities(view.container)).toEqual(['1:settled@turn-process'])
   })
 
-  it('opens a streaming Turn from its first step, and adds nothing without an occupant', () => {
+  it('opens a streaming Turn above the context injected for it, and adds nothing without an occupant', () => {
+    // The context rows are the first thing the reader sees of the reply, so
+    // the header sits above them rather than above the step that follows;
+    // the Turn's start is outside this window, and a context row has no clock
+    // of its own.
     const h = makeHarness({
-      nodes: [user(1, 'question')],
+      nodes: [user(1, 'question'), context(2, 'skill catalog', 1), context(3, 'workspace instructions', 1)],
       partial: { turn: 1, step: 1, blocks: [{ kind: 'text', text: 'typing' }] },
     })
     const bare = render(<h.ChatView {...h.props} />)
@@ -1099,7 +1103,33 @@ describe('ChatView', () => {
 
     h.setIdentityRenderer(identityOccupant)
     const view = render(<h.ChatView {...h.props} />)
+    expect(visibleIdentities(view.container)).toEqual(['1:running@context'])
+    expect(view.container.querySelector('[data-identity]')?.getAttribute('data-clock')).toBe('')
+  })
+
+  it('opens a streaming Turn from its first step when nothing precedes it, with the step\'s own clock', () => {
+    const h = makeHarness({
+      nodes: [user(1, 'question')],
+      partial: { turn: 1, step: 1, blocks: [{ kind: 'text', text: 'typing' }] },
+    })
+    h.setIdentityRenderer(identityOccupant)
+    const view = render(<h.ChatView {...h.props} />)
     expect(visibleIdentities(view.container)).toEqual(['1:running@assistant-step'])
+    expect(view.container.querySelector('[data-identity]')?.getAttribute('data-clock')).not.toBe('')
+  })
+
+  it('opens a closed Turn without a process from its answer, and heads a Turn of words alone with nothing', () => {
+    // A plain answer shows no process control, so the answer step is the
+    // first activity row; a Turn holding only the member's words has no
+    // activity yet to head.
+    const h = makeHarness({
+      nodes: [user(1, 'question'), assistant(2, 'answer', 1, 1), userInTurn(4, 'follow-up', 2)],
+      turnTimings: new Map([[1, { startTime: 1_000, endTime: 2_000 }]]),
+      turnEnds: new Map([[1, 3]]),
+    })
+    h.setIdentityRenderer(identityOccupant)
+    const view = render(<h.ChatView {...h.props} />)
+    expect(visibleIdentities(view.container)).toEqual(['1:settled@assistant-step'])
   })
 
   it('folds Think and Tool rows before the final answer without unmounting them', () => {
