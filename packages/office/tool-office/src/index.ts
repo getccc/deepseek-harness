@@ -31,8 +31,9 @@ export const inject = ['systemPrompt']
 export interface Config {
   /**
    * Absolute path to the AMEC PowerPoint template the `amec-ppt` kind builds
-   * from. Absent when a build carries no template; the prompt section then
-   * asks for the AMEC brand style instead of an import.
+   * from. Absent when the installation stages no template; the prompt section
+   * then sends the model to an AMEC template skill in the session catalog
+   * instead of naming a path.
    */
   amecTemplatePath?: string
 }
@@ -72,7 +73,7 @@ export function renderOfficeSection(choice: OfficeChoice, amecTemplatePath?: str
       return 'Produce the deliverable as a PowerPoint presentation (.pptx) with the univer office tools: create or import a .pptx Unit, build the slides there, and hand back the file.'
     case 'amec-ppt':
       return amecTemplatePath === undefined
-        ? 'Produce the deliverable as a PowerPoint presentation in the AMEC company style — dark navy (#0A1E3A) with a tech-blue gradient (#0066CC to #00A3E0) and the Microsoft YaHei font — using the univer office tools. This build carries no AMEC template file, so build the deck to match that style.'
+        ? 'Produce the deliverable as a PowerPoint presentation built from the AMEC company template, using the univer office tools. No template path is configured here, so find the template through the session skill catalog: if it lists an AMEC PowerPoint template skill, load that skill first and import the template it names as the starting Unit, keeping its slide masters, layouts, fonts, and brand colours and replacing only the content. If the catalog lists no such skill, say that the AMEC template is not reachable before building a plain .pptx.'
         : `Produce the deliverable as a PowerPoint presentation built from the AMEC company template at ${amecTemplatePath}: import it with the univer office tools as the starting Unit, keep its slide masters, layouts, fonts, and brand colours, and replace only the content. Hand back the .pptx.`
     case 'chart':
       return 'Produce the deliverable as interactive charts in the answer itself. Write one fenced code block per chart whose info string is exactly `echarts`, holding nothing but a strict-JSON Apache ECharts option: double-quoted keys and strings, no comments, no trailing commas, and no JavaScript functions, expressions, `renderItem`, or event handlers. String formatters such as "{value}%" are supported. Keep the explanation in prose outside the fence.'

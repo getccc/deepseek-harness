@@ -14,7 +14,7 @@ Status: implemented
 
 **单选，且再次点击已选类型即清除。** 与知识库的多选范围不同，一次对话生成一种文档，因此该控件是单选：着色的芯片命名已选类型，再次点击它则回到 `none`（不强加格式、无分节）。
 
-**AMEC 类型携带模版路径，而非副本。** 当部署随附一个 PowerPoint 模版时，安装程序把它的绝对路径写入 `office` 行，提示词分节告诉模型导入该文件并保留其母版、版式、字体与颜色。未配置模版时，该分节改为请求 AMEC 品牌风格，因此该选项绝不会失效。
+**AMEC 类型携带模版路径，而非副本。** 当部署随附一个 PowerPoint 模版时，安装程序把它的绝对路径写入 `office` 行，提示词分节告诉模型导入该文件并保留其母版、版式、字体与颜色。未配置模版时，该分节改为让模型去会话技能目录加载 AMEC 模版技能，因此该选项绝不会失效；[办公分节让位于模版技能](../bug-fix/2026-09-06-the-office-section-defers-to-the-template-skill.zh.md)记录了先前品牌风格兜底被替换的原因。
 
 **四个包，镜像知识库三件套。** `dsh-office` 是词汇（类型、`office/kind` 事件、折叠、校验器）；`dsh-tool-office` 拥有提示词分节与投影；`dsh-api-office-controller` 是浏览器据以记录的仅限 Team 的 Remote；`dsh-client-ui-office` 是芯片。Team bundle 挂载后三者；词汇是共享依赖。
 

@@ -14,7 +14,7 @@ A member asking a Team Runner for "a deck" or "a spreadsheet" had no way to say 
 
 **Single-select, and clicking the chosen kind clears it.** Unlike knowledge's multi-select scope, a conversation produces one kind of document, so the control is a radio: the tinted chip names the chosen kind, and clicking it again returns to `none` (no imposed format, no section).
 
-**The AMEC kind carries a template path, not a copy.** When the deployment ships a PowerPoint template, the installer writes its absolute path into the `office` row, and the prompt section tells the model to import that file and keep its masters, layouts, fonts, and colours. With no template configured, the section asks for the AMEC brand style instead, so the option is never dead.
+**The AMEC kind carries a template path, not a copy.** When the deployment ships a PowerPoint template, the installer writes its absolute path into the `office` row, and the prompt section tells the model to import that file and keep its masters, layouts, fonts, and colours. With no template configured, the section sends the model to an AMEC template skill in the session catalog, so the option is never dead; [the office section defers to the template skill](../bug-fix/2026-09-06-the-office-section-defers-to-the-template-skill.md) records why the earlier brand-style fallback was replaced.
 
 **Four packages, mirroring the knowledge triad.** `dsh-office` is the vocabulary (the kind, the `office/kind` event, the fold, the validator); `dsh-tool-office` owns the prompt section and the projection; `dsh-api-office-controller` is the Team-only Remote the browser records through; `dsh-client-ui-office` is the chip. The Team bundle mounts the last three; the vocabulary is a shared dependency.
 

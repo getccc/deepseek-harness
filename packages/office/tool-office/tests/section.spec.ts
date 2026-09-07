@@ -31,10 +31,14 @@ describe('renderOfficeSection', () => {
     expect(text).toMatch(/no JavaScript functions/)
   })
 
-  it('falls back to the AMEC brand style when no template is bundled', () => {
+  it('sends the model to an AMEC template skill when no template path is configured', () => {
     const text = renderOfficeSection({ version: 1, kind: 'amec-ppt' })
-    expect(text).toMatch(/#0A1E3A/)
-    expect(text).toMatch(/no AMEC template file/)
+    expect(text).toMatch(/No template path is configured here/)
+    expect(text).toMatch(/AMEC PowerPoint template skill, load that skill first/)
+    expect(text).toMatch(/keeping its slide masters, layouts, fonts, and brand colours/)
+    // The section asserts nothing about the environment and invents no palette.
+    expect(text).not.toMatch(/carries no AMEC template/)
+    expect(text).not.toMatch(/#[0-9A-Fa-f]{6}/)
   })
 })
 
@@ -81,10 +85,10 @@ describe('apply', () => {
     expect(projection.wire.view(applied)).toBe(applied)
   })
 
-  it('asks for the AMEC brand style when no template path is configured', () => {
+  it('sends the model to an AMEC template skill when no template path is configured', () => {
     const { ctx, sections } = fakeCtx()
     apply(ctx, {})
     const events = [{ type: 'office/kind', data: { version: 1, kind: 'amec-ppt' } }] as unknown as SessionEvent[]
-    expect(sections[0]!.text({ agent: { session: { events } } })).toMatch(/no AMEC template file/)
+    expect(sections[0]!.text({ agent: { session: { events } } })).toMatch(/AMEC PowerPoint template skill/)
   })
 })

@@ -33,7 +33,7 @@ Mount it in a Team composition beside the office Remote and the composer chip:
 
 | Field | Default | Meaning |
 |---|---|---|
-| `amecTemplatePath` | — | The AMEC PowerPoint template the `amec-ppt` kind imports; absent asks for the AMEC brand style instead |
+| `amecTemplatePath` | — | The AMEC PowerPoint template the `amec-ppt` kind imports; absent sends the model to an AMEC template skill in the session catalog instead |
 
 A log with no `office/kind` event folds to `none`, so a fresh Session gets no section. A member chooses through the composer chip, which records the choice; the section then names the format.
 
@@ -46,7 +46,7 @@ A log with no `office/kind` event folds to `none`, so a fresh Session gets no se
 
 #### What the model sees
 
-One section, `office:kind`, whose text is chosen by the Session's folded office choice. It is absent entirely while the choice is `none`. Each kind names the format to produce; `amec-ppt` additionally carries the configured template path to import and preserve, or, when no template is configured, the AMEC brand style to match. `chart` names no file at all: it asks for `echarts` fences the web surface renders in place.
+One section, `office:kind`, whose text is chosen by the Session's folded office choice. It is absent entirely while the choice is `none`. Each kind names the format to produce; `amec-ppt` additionally carries the configured template path to import and preserve, or, when no template is configured, the instruction to load an AMEC template skill from the session catalog and import the template it names; the section never asserts that no template exists and names no palette of its own. `chart` names no file at all: it asks for `echarts` fences the web surface renders in place.
 
 ##### With a Word, PowerPoint, or Excel kind chosen
 
@@ -58,6 +58,12 @@ Produce the deliverable as a PowerPoint presentation (.pptx) with the univer off
 
 ```markdown
 Produce the deliverable as a PowerPoint presentation built from the AMEC company template at <the configured template path>: import it with the univer office tools as the starting Unit, keep its slide masters, layouts, fonts, and brand colours, and replace only the content. Hand back the .pptx.
+```
+
+##### With the AMEC PowerPoint template kind chosen and no template configured
+
+```markdown
+Produce the deliverable as a PowerPoint presentation built from the AMEC company template, using the univer office tools. No template path is configured here, so find the template through the session skill catalog: if it lists an AMEC PowerPoint template skill, load that skill first and import the template it names as the starting Unit, keeping its slide masters, layouts, fonts, and brand colours and replacing only the content. If the catalog lists no such skill, say that the AMEC template is not reachable before building a plain .pptx.
 ```
 
 ##### With the visualization kind chosen
