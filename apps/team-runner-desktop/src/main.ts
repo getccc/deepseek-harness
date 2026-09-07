@@ -369,6 +369,11 @@ function trayIcon(): Electron.NativeImage {
 
 /** Create the hidden-on-close window and the resident tray control. */
 function createDesktop(): void {
+  // Windows and Linux draw Electron's default menu as a bar inside the window.
+  // This shell contributes no menu commands, so the bar is removed; Chromium
+  // keeps the clipboard and undo accelerators in the page itself. macOS keeps
+  // the default menu, which owns Quit, Hide, and the same accelerators there.
+  if (process.platform !== 'darwin') Menu.setApplicationMenu(null)
   const background = process.argv.includes('--background')
     || app.getLoginItemSettings().wasOpenedAtLogin
   window = new BrowserWindow({
