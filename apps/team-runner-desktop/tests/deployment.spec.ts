@@ -47,6 +47,19 @@ describe('desktop deployment facts', () => {
   it('rejects a certificate path the Runner would resolve against its own working directory', () => {
     expect(() => resolveDeployment({ ...facts, controlPlaneCa: 'control-plane-ca.crt' }))
       .toThrow(/absolute path/u)
+    expect(() => resolveDeployment({ ...facts, controlPlaneCa: String.raw`C:control-plane-ca.crt` }))
+      .toThrow(/absolute path/u)
+    expect(() => resolveDeployment({ ...facts, controlPlaneCa: String.raw`\control-plane-ca.crt` }))
+      .toThrow(/absolute path/u)
+  })
+
+  it('accepts fully qualified Windows deployment paths', () => {
+    const controlPlaneCa = String.raw`C:\Program Files\AMEC Work\resources\runner\control-plane-ca.crt`
+    const amecTemplatePath = String.raw`C:\Program Files\AMEC Work\resources\runner\AMEC-PPT.pptx`
+    expect(resolveDeployment({ ...facts, controlPlaneCa, amecTemplatePath })).toMatchObject({
+      controlPlaneCa,
+      amecTemplatePath,
+    })
   })
 
   it('omits the pin entirely for a publicly trusted Control Plane', () => {

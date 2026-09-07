@@ -1,3 +1,5 @@
+import { posix, win32 } from 'node:path'
+
 /** Deployment facts baked into one enterprise desktop build. */
 export interface DesktopDeployment {
   readonly controlPlaneUrl: string
@@ -22,6 +24,11 @@ export interface DesktopDeployment {
 /** The locales `dsh-team-local-login` renders. */
 export type LoginLocale = 'en-US' | 'zh-CN'
 
+function isFullyQualifiedPath(value: string): boolean {
+  if (posix.isAbsolute(value)) return true
+  return win32.isAbsolute(value) && win32.parse(value).root.length > 1
+}
+
 /**
  * Validate the non-secret deployment facts the desktop installer carries.
  * @param input - values read from packaged metadata and the application version.
@@ -40,10 +47,10 @@ export function resolveDeployment(input: DesktopDeployment): DesktopDeployment {
   }
   // A relative path would resolve against the Runner's working directory,
   // which the desktop shell does not own; the Runner reads the file itself.
-  if (input.controlPlaneCa !== undefined && !input.controlPlaneCa.startsWith('/')) {
+  if (input.controlPlaneCa !== undefined && !isFullyQualifiedPath(input.controlPlaneCa)) {
     throw new Error('the Control Plane certificate authority must be an absolute path')
   }
-  if (input.amecTemplatePath !== undefined && !input.amecTemplatePath.startsWith('/')) {
+  if (input.amecTemplatePath !== undefined && !isFullyQualifiedPath(input.amecTemplatePath)) {
     throw new Error('the AMEC template path must be absolute')
   }
   return {
