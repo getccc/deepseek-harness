@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-04-deliverable-cards-open-in-the-sidebar.md
-2026-09-04-deliverable-cards-open-in-the-sidebar.md: ad066175a9bfc2525bc056c7d25c1fcfd151b357
-2026-09-04-deliverable-cards-open-in-the-sidebar.zh.md: 800209a4ede96904a435c351405ab90641ecb83f
+2026-09-04-deliverable-cards-open-in-the-sidebar.md: f2f33955f13a310b4cc59d8c655b1ae02e8dde1d
+2026-09-04-deliverable-cards-open-in-the-sidebar.zh.md: 413c34f3197138e43df6f99ec00c9b3993191d22

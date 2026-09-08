@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-office",
-  "description": "The office-deliverable choice vocabulary: which document kind a conversation should produce (Word, PowerPoint, the AMEC PowerPoint template, or Excel), its Session log event, fold, and validator",
+  "description": "The office-deliverable choice vocabulary: which document kind a conversation should produce (Word, PowerPoint, the Welinkin PowerPoint template, or Excel), its Session log event, fold, and validator",
   "version": "0.1.2-alpha.1",
   "publishConfig": { "access": "public" },
   "repository": {

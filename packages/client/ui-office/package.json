@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-client-ui-office",
-  "description": "The composer chip choosing which office deliverable this conversation should produce: Word, PowerPoint, the AMEC PowerPoint template, or Excel",
+  "description": "The composer chip choosing which office deliverable this conversation should produce: Word, PowerPoint, the Welinkin PowerPoint template, or Excel",
   "version": "0.1.2-alpha.1",
   "publishConfig": {
     "access": "public"

@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-06-the-office-section-defers-to-the-template-skill.md
-2026-09-06-the-office-section-defers-to-the-template-skill.md: 0576eba2547f193edcfbd3bb969be13d6bed6354
-2026-09-06-the-office-section-defers-to-the-template-skill.zh.md: 6154f6087e2ae73e88a4fcac09ff897d92cdd08b
+2026-09-06-the-office-section-defers-to-the-template-skill.md: 05898d7ff0639e73ffebf3242e79a4c9d01b988c
+2026-09-06-the-office-section-defers-to-the-template-skill.zh.md: 51c29cd732caeb529a06b6f8fee27333b29e75f7

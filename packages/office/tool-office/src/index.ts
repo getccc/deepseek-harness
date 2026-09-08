@@ -30,17 +30,17 @@ export const inject = ['systemPrompt']
 /** Deployment-varying office facts. */
 export interface Config {
   /**
-   * Absolute path to the AMEC PowerPoint template the `amec-ppt` kind builds
+   * Absolute path to the Welinkin PowerPoint template the `welinkin-ppt` kind builds
    * from. Absent when the installation stages no template; the prompt section
-   * then sends the model to an AMEC template skill in the session catalog
+   * then sends the model to a Welinkin template skill in the session catalog
    * instead of naming a path.
    */
-  amecTemplatePath?: string
+  welinkinTemplatePath?: string
 }
 
 /** Config schema; the loader fills defaults before {@link apply} runs. */
 export const Config: z<Config> = z.object({
-  amecTemplatePath: z.string(),
+  welinkinTemplatePath: z.string(),
 })
 
 /** The office prompt-section id. */
@@ -51,17 +51,17 @@ const officeChoiceSchema: ZodType<OfficeChoice> = zod.object({
   version: zod.literal(1),
   kind: zod.union([
     zod.literal('none'), zod.literal('word'), zod.literal('excel'),
-    zod.literal('ppt'), zod.literal('amec-ppt'), zod.literal('chart'),
+    zod.literal('ppt'), zod.literal('welinkin-ppt'), zod.literal('chart'),
   ]),
 }).strict()
 
 /**
  * The prompt text one folded choice contributes.
  * @param choice - the Session's folded office choice.
- * @param amecTemplatePath - the configured AMEC template, or undefined.
+ * @param welinkinTemplatePath - the configured Welinkin template, or undefined.
  * @returns the section text, empty when the Session imposes no format.
  */
-export function renderOfficeSection(choice: OfficeChoice, amecTemplatePath?: string): string {
+export function renderOfficeSection(choice: OfficeChoice, welinkinTemplatePath?: string): string {
   switch (choice.kind) {
     case 'none':
       return ''
@@ -71,10 +71,10 @@ export function renderOfficeSection(choice: OfficeChoice, amecTemplatePath?: str
       return 'Produce the deliverable as an Excel workbook (.xlsx) with the univer office tools: create or import a .xlsx Unit, fill the sheets there, and hand back the file.'
     case 'ppt':
       return 'Produce the deliverable as a PowerPoint presentation (.pptx) with the univer office tools: create or import a .pptx Unit, build the slides there, and hand back the file.'
-    case 'amec-ppt':
-      return amecTemplatePath === undefined
-        ? 'Produce the deliverable as a PowerPoint presentation built from the AMEC company template, using the univer office tools. No template path is configured here, so find the template through the session skill catalog: if it lists an AMEC PowerPoint template skill, load that skill first and import the template it names as the starting Unit, keeping its slide masters, layouts, fonts, and brand colours and replacing only the content. If the catalog lists no such skill, say that the AMEC template is not reachable before building a plain .pptx.'
-        : `Produce the deliverable as a PowerPoint presentation built from the AMEC company template at ${amecTemplatePath}: import it with the univer office tools as the starting Unit, keep its slide masters, layouts, fonts, and brand colours, and replace only the content. Hand back the .pptx.`
+    case 'welinkin-ppt':
+      return welinkinTemplatePath === undefined
+        ? 'Produce the deliverable as a PowerPoint presentation built from the Welinkin company template, using the univer office tools. No template path is configured here, so find the template through the session skill catalog: if it lists a Welinkin PowerPoint template skill, load that skill first and import the template it names as the starting Unit, keeping its slide masters, layouts, fonts, and brand colours and replacing only the content. If the catalog lists no such skill, say that the Welinkin template is not reachable before building a plain .pptx.'
+        : `Produce the deliverable as a PowerPoint presentation built from the Welinkin company template at ${welinkinTemplatePath}: import it with the univer office tools as the starting Unit, keep its slide masters, layouts, fonts, and brand colours, and replace only the content. Hand back the .pptx.`
     case 'chart':
       return 'Produce the deliverable as interactive charts in the answer itself. Write one fenced code block per chart whose info string is exactly `echarts`, holding nothing but a strict-JSON Apache ECharts option: double-quoted keys and strings, no comments, no trailing commas, and no JavaScript functions, expressions, `renderItem`, or event handlers. String formatters such as "{value}%" are supported. Keep the explanation in prose outside the fence.'
   }
@@ -93,7 +93,7 @@ export function apply(ctx: Context, config: Config): void {
     order: FIRST_PARTY_SECTION_ORDER.TEAM_POLICY + 50,
     text: (context) => {
       if (context.agent === undefined) return ''
-      return renderOfficeSection(foldOfficeChoice(context.agent.session.events), config.amecTemplatePath)
+      return renderOfficeSection(foldOfficeChoice(context.agent.session.events), config.welinkinTemplatePath)
     },
   }), 'tool-office: kind prompt section')
 

@@ -6,7 +6,7 @@ English | [中文](2026-09-05-the-first-request-uses-the-model-the-composer-name
 
 ## Problem
 
-A member of the Team Runner opened a blank conversation, read `AMEC Model · High` in the composer's model seat, sent a message, and watched the turn fail with `API 密钥无效` while the seat now read `built-in/test-Qwen`. The request had gone to a model the member could not see and had not chosen.
+A member of the Team Runner opened a blank conversation, read `Welinkin Model · High` in the composer's model seat, sent a message, and watched the turn fail with `API 密钥无效` while the seat now read `built-in/test-Qwen`. The request had gone to a model the member could not see and had not chosen.
 
 Two readers of one deployment default disagreed. Since [the default follows the picker](../feature/2026-08-07-default-model-follows-the-picker.md), every accepted `session.selectModel` writes the picked model into the machine-wide `agent-default-model` settings section, so a machine on which someone once picked `test-Qwen` keeps naming it for every later blank Session and for every member who signs in there afterwards. The company route lists only what the signed-in member's roles grant, and when that catalog stops listing the stored default the composer names the first model it does list. `session.prompt`, though, read the stored default straight from `ctx.agentDefaultModel` and sent the request there; the Control Plane refused the ungranted model with `403 unknown-model`, which the adapter classifies as `AUTH` and the client words as an invalid key.
 

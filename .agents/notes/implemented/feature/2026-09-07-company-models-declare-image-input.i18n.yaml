@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-07-company-models-declare-image-input.md
-2026-09-07-company-models-declare-image-input.md: f54935b4a08e722ded34ef83167b8a897e8e2310
-2026-09-07-company-models-declare-image-input.zh.md: d1db0b969e45ba7d37c0d9708402e087d3efda34
+2026-09-07-company-models-declare-image-input.md: a1a41faa2b9117f49b361d8199569417cf216c9e
+2026-09-07-company-models-declare-image-input.zh.md: ee1f0764a7d732888becd38030135888d0b20b32

@@ -33,8 +33,8 @@ const RUNNER_RESOURCES = 'runner'
 const CONTROL_PLANE_CA = 'control-plane-ca.crt'
 /** The out-of-tree plugin tree linked into the private profile's node_modules. */
 const PLUGIN_TREE = 'plugins'
-/** The AMEC PowerPoint template the office picker's `amec-ppt` kind builds from. */
-const PPT_TEMPLATE = 'templates/amec-ppt.pptx'
+/** The Welinkin PowerPoint template the office picker's `welinkin-ppt` kind builds from. */
+const PPT_TEMPLATE = 'templates/welinkin-ppt.pptx'
 /** Records which application version materialized the profile's plugin tree. */
 const PLUGIN_TREE_STAMP = '.dsh-plugin-tree'
 /**
@@ -258,7 +258,7 @@ function startRunner(): void {
     runnerVersion: app.getVersion(),
     callbackUrl: 'http://127.0.0.1:3090/team/callback',
     locale: loginLocale(),
-    ...pptTemplate === undefined ? {} : { amecTemplatePath: pptTemplate },
+    ...pptTemplate === undefined ? {} : { welinkinTemplatePath: pptTemplate },
   })
   writeFileSync(patchPath, deploymentPatch(deployment), { encoding: 'utf8', mode: 0o600 })
   const home = join(data, 'home')

@@ -20,7 +20,7 @@ describe('foldOfficeChoice', () => {
   })
 
   it('takes the last recorded choice', () => {
-    expect(foldOfficeChoice([chose('word'), chose('amec-ppt')])).toEqual({ version: 1, kind: 'amec-ppt' })
+    expect(foldOfficeChoice([chose('word'), chose('welinkin-ppt')])).toEqual({ version: 1, kind: 'welinkin-ppt' })
   })
 
   it('folds only the first end events, for a rewind read', () => {

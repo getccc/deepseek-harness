@@ -15,10 +15,10 @@ export interface DesktopDeployment {
   /** Locale of the Runner-local login pages. */
   readonly locale: LoginLocale
   /**
-   * Absolute path to the AMEC PowerPoint template the office picker's
-   * `amec-ppt` kind builds from, or undefined when the build carries none.
+   * Absolute path to the Welinkin PowerPoint template the office picker's
+   * `welinkin-ppt` kind builds from, or undefined when the build carries none.
    */
-  readonly amecTemplatePath?: string
+  readonly welinkinTemplatePath?: string
 }
 
 /** The locales `dsh-team-local-login` renders. */
@@ -50,8 +50,8 @@ export function resolveDeployment(input: DesktopDeployment): DesktopDeployment {
   if (input.controlPlaneCa !== undefined && !isFullyQualifiedPath(input.controlPlaneCa)) {
     throw new Error('the Control Plane certificate authority must be an absolute path')
   }
-  if (input.amecTemplatePath !== undefined && !isFullyQualifiedPath(input.amecTemplatePath)) {
-    throw new Error('the AMEC template path must be absolute')
+  if (input.welinkinTemplatePath !== undefined && !isFullyQualifiedPath(input.welinkinTemplatePath)) {
+    throw new Error('the Welinkin template path must be absolute')
   }
   return {
     controlPlaneUrl: controlPlane.origin,
@@ -59,7 +59,7 @@ export function resolveDeployment(input: DesktopDeployment): DesktopDeployment {
     runnerVersion: input.runnerVersion,
     callbackUrl: callback.href,
     locale: input.locale,
-    ...input.amecTemplatePath === undefined ? {} : { amecTemplatePath: input.amecTemplatePath },
+    ...input.welinkinTemplatePath === undefined ? {} : { welinkinTemplatePath: input.welinkinTemplatePath },
   }
 }
 
@@ -92,8 +92,8 @@ export function deploymentPatch(deployment: DesktopDeployment): string {
     },
     { id: 'llm-http-transport', config: address },
     { id: 'knowledge', config: address },
-    ...deployment.amecTemplatePath === undefined
+    ...deployment.welinkinTemplatePath === undefined
       ? []
-      : [{ id: 'office', config: { amecTemplatePath: deployment.amecTemplatePath } }],
+      : [{ id: 'office', config: { welinkinTemplatePath: deployment.welinkinTemplatePath } }],
   ], null, 2)}\n`
 }

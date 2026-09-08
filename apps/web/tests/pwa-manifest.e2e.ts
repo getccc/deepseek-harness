@@ -12,8 +12,8 @@ it('ships install metadata with the built web application', async () => {
   const manifest: unknown = JSON.parse(await readFile(join(DIST_ROOT, 'manifest.webmanifest'), 'utf8'))
   expect(manifest).toEqual({
     id: '/',
-    name: 'AMEC Work',
-    short_name: 'AMEC Work',
+    name: 'Welinkin Work',
+    short_name: 'Welinkin Work',
     start_url: '/',
     scope: '/',
     display: 'fullscreen',
@@ -26,10 +26,12 @@ it('ships install metadata with the built web application', async () => {
   })
 })
 
-it('ships a favicon that switches to a light mark under dark color scheme', async () => {
+it('ships a favicon carrying the product mark at the full icon width', async () => {
   const favicon = await readFile(join(DIST_ROOT, 'favicon.svg'), 'utf8')
-  // The light fill must live inside the dark-scheme media query, so the icon
-  // stays black in light mode and only turns white under a dark scheme.
-  expect(favicon).toMatch(/@media \(prefers-color-scheme: dark\)\s*{\s*path\s*{[^}]*fill:\s*#fff/i)
-  expect(favicon).toContain('fill="#000"')
+  // The mark is a two-tone raster inlined as a data URI and drawn to the whole
+  // 50-unit width. Both tones read on a light and a dark ground, so the icon
+  // carries no colour-scheme swap.
+  expect(favicon).toMatch(/<svg[^>]*viewBox="0 0 50 50"/)
+  expect(favicon).toMatch(/<image[^>]*width="50"[^>]*href="data:image\/png;base64,/)
+  expect(favicon).not.toContain('prefers-color-scheme')
 })

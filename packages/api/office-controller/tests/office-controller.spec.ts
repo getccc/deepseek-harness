@@ -32,9 +32,9 @@ describe('office Remote', () => {
 
   it('records a chosen kind and reads it back', async () => {
     const { controller, events } = await mount()
-    expect((await controller.choose('s1', 'amec-ppt')).choice).toEqual({ version: 1, kind: 'amec-ppt' })
-    expect(events).toEqual([{ type: 'office/kind', data: { version: 1, kind: 'amec-ppt' } }])
-    expect((await controller.scope('s1')).choice).toEqual({ version: 1, kind: 'amec-ppt' })
+    expect((await controller.choose('s1', 'welinkin-ppt')).choice).toEqual({ version: 1, kind: 'welinkin-ppt' })
+    expect(events).toEqual([{ type: 'office/kind', data: { version: 1, kind: 'welinkin-ppt' } }])
+    expect((await controller.scope('s1')).choice).toEqual({ version: 1, kind: 'welinkin-ppt' })
   })
 
   it('records none to clear an imposed format', async () => {

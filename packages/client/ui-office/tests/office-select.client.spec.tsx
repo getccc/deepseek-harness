@@ -45,8 +45,8 @@ describe('OfficeSelect', () => {
     const { store } = setup({ version: 1, kind: 'ppt' })
     expect(trigger().textContent).toBe('PPT')
     expect(trigger().className).toContain('triggerChosen')
-    act(() => { store.set({ value: { version: 1, kind: 'amec-ppt' } }) })
-    expect(trigger().textContent).toBe('AMEC PPT 模版')
+    act(() => { store.set({ value: { version: 1, kind: 'welinkin-ppt' } }) })
+    expect(trigger().textContent).toBe('Welinkin PPT 模版')
     act(() => { store.set({ value: { version: 1, kind: 'none' } }) })
     expect(trigger().className).not.toContain('triggerChosen')
   })
@@ -56,7 +56,7 @@ describe('OfficeSelect', () => {
     await act(async () => { fireEvent.click(trigger()) })
     await waitFor(() => { expect(screen.getByRole('menuitem', { name: 'Word' })).toBeTruthy() })
     expect(screen.getAllByRole('menuitem').map(item => item.textContent))
-      .toEqual(['Word', 'Excel', 'PPT', 'AMEC PPT 模版', '可视化'])
+      .toEqual(['Word', 'Excel', 'PPT', 'Welinkin PPT 模版', '可视化'])
   })
 
   it('records the visualization kind', async () => {
@@ -69,8 +69,8 @@ describe('OfficeSelect', () => {
   it('records a click as the whole choice it makes', async () => {
     const { apply } = setup({ version: 1, kind: 'none' })
     await act(async () => { fireEvent.click(trigger()) })
-    await act(async () => { fireEvent.click(screen.getByRole('menuitem', { name: 'AMEC PPT 模版' })) })
-    expect(apply).toHaveBeenCalledWith('amec-ppt')
+    await act(async () => { fireEvent.click(screen.getByRole('menuitem', { name: 'Welinkin PPT 模版' })) })
+    expect(apply).toHaveBeenCalledWith('welinkin-ppt')
   })
 
   it('clears the choice when the chosen kind is clicked again', async () => {

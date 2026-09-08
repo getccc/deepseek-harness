@@ -6,7 +6,7 @@ Status: implemented
 
 ## 问题
 
-一位 Team Runner 成员打开空白对话，在 composer 的模型 seat 里看到 `AMEC Model · High`，发出消息后，这一轮却以 `API 密钥无效` 失败，seat 也变成了 `built-in/test-Qwen`。请求发给了一个成员看不到、也没有选过的模型。
+一位 Team Runner 成员打开空白对话，在 composer 的模型 seat 里看到 `Welinkin Model · High`，发出消息后，这一轮却以 `API 密钥无效` 失败，seat 也变成了 `built-in/test-Qwen`。请求发给了一个成员看不到、也没有选过的模型。
 
 同一个部署默认值有两个读取方，而它们的答案不一致。自[默认模型跟随选择器](../feature/2026-08-07-default-model-follows-the-picker.zh.md)起，每次被接受的 `session.selectModel` 都把所选模型写入整机共享的 `agent-default-model` 设置节，于是某台机器上一旦有人选过 `test-Qwen`，之后每个空白 Session、之后在这台机器上登录的每位成员都会被继续指向它。公司路由只列出当前登录成员的角色所授权的模型，当目录不再列出已存默认值时，composer 会显示目录列出的第一个模型。但 `session.prompt` 直接从 `ctx.agentDefaultModel` 读取已存默认值并把请求发到那里；Control Plane 以 `403 unknown-model` 拒绝这个未授权的模型，adapter 将其归类为 `AUTH`，客户端则把它表述为密钥无效。
 

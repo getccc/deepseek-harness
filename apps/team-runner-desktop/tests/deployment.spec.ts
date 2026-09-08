@@ -37,9 +37,9 @@ describe('desktop deployment facts', () => {
 
   it('pins a private certificate authority on every Control Plane consumer', () => {
     const patch = JSON.parse(deploymentPatch(resolveDeployment({
-      ...facts, controlPlaneCa: '/opt/amec/control-plane-ca.crt', locale: 'zh-CN',
+      ...facts, controlPlaneCa: '/opt/welinkin/control-plane-ca.crt', locale: 'zh-CN',
     }))) as { id: string; config: Record<string, unknown> }[]
-    const pinned = patch.filter(row => row.config['controlPlaneCa'] === '/opt/amec/control-plane-ca.crt')
+    const pinned = patch.filter(row => row.config['controlPlaneCa'] === '/opt/welinkin/control-plane-ca.crt')
     expect(pinned.map(row => row.id)).toEqual(['team-account-client', 'llm-http-transport', 'knowledge'])
     expect(patch[1]?.config).toMatchObject({ locale: 'zh-CN' })
   })
@@ -54,11 +54,11 @@ describe('desktop deployment facts', () => {
   })
 
   it('accepts fully qualified Windows deployment paths', () => {
-    const controlPlaneCa = String.raw`C:\Program Files\AMEC Work\resources\runner\control-plane-ca.crt`
-    const amecTemplatePath = String.raw`C:\Program Files\AMEC Work\resources\runner\AMEC-PPT.pptx`
-    expect(resolveDeployment({ ...facts, controlPlaneCa, amecTemplatePath })).toMatchObject({
+    const controlPlaneCa = String.raw`C:\Program Files\Welinkin Work\resources\runner\control-plane-ca.crt`
+    const welinkinTemplatePath = String.raw`C:\Program Files\Welinkin Work\resources\runner\WELINKIN-PPT.pptx`
+    expect(resolveDeployment({ ...facts, controlPlaneCa, welinkinTemplatePath })).toMatchObject({
       controlPlaneCa,
-      amecTemplatePath,
+      welinkinTemplatePath,
     })
   })
 

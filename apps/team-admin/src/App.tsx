@@ -35,7 +35,7 @@ import {
   Tabs, Typography, theme,
 } from 'antd'
 import { api, holdCsrf, type WireMenu, type WireSecretPolicy, type WireSession } from './api.ts'
-import { AMEC_LOGO_HEIGHT, AMEC_LOGO_SOURCE, AMEC_LOGO_WIDTH } from './brand.ts'
+import { WELINKIN_LOGO_HEIGHT, WELINKIN_LOGO_SOURCE, WELINKIN_LOGO_WIDTH } from './brand.ts'
 import { LOCALE_IDS, useLocale, type LocaleId } from './locale.tsx'
 import { menuLabel, reachableMenus, type ConsoleComponent, type MenuIcon } from './menus.ts'
 import { Departments } from './pages/Departments.tsx'
@@ -239,9 +239,9 @@ function Console({
         <div className="brand" style={{ padding: railed ? '20px 8px' : '20px 16px' }}>
           <div className="brand-row">
             <img
-              src={AMEC_LOGO_SOURCE}
+              src={WELINKIN_LOGO_SOURCE}
               width={26}
-              height={(26 * AMEC_LOGO_HEIGHT) / AMEC_LOGO_WIDTH}
+              height={(26 * WELINKIN_LOGO_HEIGHT) / WELINKIN_LOGO_WIDTH}
               alt=""
               aria-hidden="true"
               className="brand-logo"

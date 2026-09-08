@@ -6,7 +6,7 @@
 
 ## 问题
 
-2026-09-07，AMEC Control Plane 的 `AMEC Model` 条目已切到上游 `deepseek-v4-flash-vision-exp`，而每台成员 Runner 在 `built-in` 路由上仍然拒绝图片。两道门槛都在拒绝，而两者都读不到目录。`session-controller` 里的输入框门槛向 LLM 服务询问所选模型的 `inputModalities`，DeepSeek 适配器对每条路由（包括 `built-in`）都用本机 `models` 列表回答这个问题；Control Plane 目录没有模态字段，因此除非每台 Runner 自己的 profile 另行声明，公司模型就是纯文本，而那份声明又压在整体替换数组的 settings 用户层之下。这道门槛之后，适配器对任何经传输发送的带图请求一律拒绝，因为它的图片路径用成员自己的密钥经 DeepSeek Files API 上传，而传输路由没有密钥。
+2026-09-07，Welinkin Control Plane 的 `Welinkin Model` 条目已切到上游 `deepseek-v4-flash-vision-exp`，而每台成员 Runner 在 `built-in` 路由上仍然拒绝图片。两道门槛都在拒绝，而两者都读不到目录。`session-controller` 里的输入框门槛向 LLM 服务询问所选模型的 `inputModalities`，DeepSeek 适配器对每条路由（包括 `built-in`）都用本机 `models` 列表回答这个问题；Control Plane 目录没有模态字段，因此除非每台 Runner 自己的 profile 另行声明，公司模型就是纯文本，而那份声明又压在整体替换数组的 settings 用户层之下。这道门槛之后，适配器对任何经传输发送的带图请求一律拒绝，因为它的图片路径用成员自己的密钥经 DeepSeek Files API 上传，而传输路由没有密钥。
 
 ## 决定
 
@@ -36,6 +36,6 @@
 
 传输路由上的每次模型解析花费一次 `GET /team/model/catalog`：每次预备调用一次，消息带图时再多一次。目录是对少数几个模型逐行做的访问控制判定，而同一台 Runner 本来就在输入框每次打开时列举它。
 
-AMEC 部署重建 `models.sqlite`，重新注册它的两个模型，并把 `AMEC Model` 标为接受图片；打包的管理台在下一次构建时获得该复选框。`built-in` 路由上的图片 token 估算来自最近一次列举，因此从未列举过的路由在第一次预备调用之前把图片按文本定价。
+Welinkin 部署重建 `models.sqlite`，重新注册它的两个模型，并把 `Welinkin Model` 标为接受图片；打包的管理台在下一次构建时获得该复选框。`built-in` 路由上的图片 token 估算来自最近一次列举，因此从未列举过的路由在第一次预备调用之前把图片按文本定价。
 
-单元测试套件覆盖目录列与版本拒绝、端点的目录响应体、传输的线路校验、管理 API 的默认值与拒绝，以及适配器的远端解析、内联序列化、拒绝与定价。没有无密钥的录制会话快照覆盖 Team 传输，因为快照 harness 不组合 Control Plane；图片路径在 AMEC 部署上用源码启动的 Runner 做了端到端验证。
+单元测试套件覆盖目录列与版本拒绝、端点的目录响应体、传输的线路校验、管理 API 的默认值与拒绝，以及适配器的远端解析、内联序列化、拒绝与定价。没有无密钥的录制会话快照覆盖 Team 传输，因为快照 harness 不组合 Control Plane；图片路径在 Welinkin 部署上用源码启动的 Runner 做了端到端验证。

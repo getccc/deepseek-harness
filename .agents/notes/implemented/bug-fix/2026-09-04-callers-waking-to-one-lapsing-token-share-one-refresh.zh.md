@@ -6,7 +6,7 @@ Status: implemented
 
 ## 问题
 
-成员关闭 AMEC Work 桌面应用，稍后再次打开。重新打开的浏览器同时加载模型目录与知识库范围，两个界面一起失败：编辑器旁显示 `Built-in Models 加载失败：transport failed: refused (control plane refused: reused)`，知识库选择器以同样的方式拒绝。重试无济于事，等待也一样；只有重新登录才能恢复 Runner。
+成员关闭 Welinkin Work 桌面应用，稍后再次打开。重新打开的浏览器同时加载模型目录与知识库范围，两个界面一起失败：编辑器旁显示 `Built-in Models 加载失败：transport failed: refused (control plane refused: reused)`，知识库选择器以同样的方式拒绝。重试无济于事，等待也一样；只有重新登录才能恢复 Runner。
 
 `reused` 这个词是 Control Plane 的重放裁决：Refresh Token 在第一次出示时即被用掉，第二次出示则吊销整个凭据 Family，使窃取者与合法持有者同样无法继续（[设备授权](../../../../packages/account/device-authorization/README.zh.md)）。`TeamAccountClient.accessToken()` 读取已存凭据，判断它临近过期，便用它的 Refresh Token 去兑换——而且每次调用各做一遍。模型传输的目录请求与知识库 Provider 的范围请求都在重连后的第一次绘制时调用它，两者读到同一份临近过期的凭据，也出示了同一个 Refresh Token。第一次兑换成功；第二次成了重放，并吊销了第一次刚刚轮换出来的 Family。应用关闭的时间超过 Access Token 的寿命，这场竞态就必然发生，因为此后每次唤醒都从一个已过期的 Token 开始。
 

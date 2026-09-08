@@ -51,7 +51,7 @@ Every deployment-varying fact is a packaging environment variable, so one source
 | `DSH_TEAM_PLUGIN_TREE` | no | An installed profile's `node_modules`, carrying the out-of-tree plugins. |
 | `DSH_TEAM_PRODUCT_NAME`, `DSH_TEAM_APP_ID` | no | The installed application's name and bundle identifier. |
 | `DSH_TEAM_APP_ICON`, `DSH_TEAM_TRAY_ICON` | no | The application icon, and the menu bar template image whose `@2x` neighbour is staged with it. |
-| `DSH_TEAM_PPT_TEMPLATE` | no | The AMEC PowerPoint template the office picker's `amec-ppt` kind imports; staged beside the Runner and pathed at runtime. |
+| `DSH_TEAM_PPT_TEMPLATE` | no | The Welinkin PowerPoint template the office picker's `welinkin-ppt` kind imports; staged beside the Runner and pathed at runtime. |
 | `DSH_TEAM_APPLE_TEAM_ID` | no | Apple Developer Team ID; when set (with `APPLE_ID` and `APPLE_APP_SPECIFIC_PASSWORD` in the environment) the macOS build is notarized. |
 
 ### Pinning a private certificate authority

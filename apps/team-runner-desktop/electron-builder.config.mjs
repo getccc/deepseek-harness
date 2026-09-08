@@ -31,9 +31,9 @@ if (controlPlaneCa !== undefined && !existsSync(controlPlaneCa)) {
 if (pluginTree !== undefined && !existsSync(pluginTree)) {
   throw new Error('DSH_TEAM_PLUGIN_TREE must name the installed plugin tree directory')
 }
-// The AMEC PowerPoint template the office picker's `amec-ppt` kind builds from.
+// The Welinkin PowerPoint template the office picker's `welinkin-ppt` kind builds from.
 if (pptTemplate !== undefined && !existsSync(pptTemplate)) {
-  throw new Error('DSH_TEAM_PPT_TEMPLATE must name the AMEC PowerPoint template file')
+  throw new Error('DSH_TEAM_PPT_TEMPLATE must name the Welinkin PowerPoint template file')
 }
 for (const [variable, path] of [['DSH_TEAM_APP_ICON', appIcon], ['DSH_TEAM_TRAY_ICON', trayIcon]]) {
   if (path !== undefined && !existsSync(path)) throw new Error(`${variable} must name an existing image`)
@@ -59,7 +59,7 @@ const extraResources = [
       ],
   ...controlPlaneCa === undefined ? [] : [{ from: controlPlaneCa, to: 'runner/control-plane-ca.crt' }],
   ...pluginTree === undefined ? [] : [{ from: pluginTree, to: 'runner/plugins' }],
-  ...pptTemplate === undefined ? [] : [{ from: pptTemplate, to: 'runner/templates/amec-ppt.pptx' }],
+  ...pptTemplate === undefined ? [] : [{ from: pptTemplate, to: 'runner/templates/welinkin-ppt.pptx' }],
   ...trayVariants.map(path => ({ from: path, to: `runner/${path.split('/').pop()}` })),
 ]
 

@@ -107,7 +107,7 @@ describe('SidebarRoot shell', () => {
         options?.fallback ?? null) as SidebarRootComponentProps['renderSlot']}
     />)
 
-    expect(screen.getByText('AMEC Work')).toBeTruthy()
+    expect(screen.getByText('Welinkin Work')).toBeTruthy()
     expect(container.querySelector('img')).not.toBeNull()
   })
 

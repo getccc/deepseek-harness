@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-03-composer-office-deliverable-picker.md
-2026-09-03-composer-office-deliverable-picker.md: 3b9090c594f9c3151c4abffe4d596bd855912550
-2026-09-03-composer-office-deliverable-picker.zh.md: 14a6e5acdd49bfc7576aa3c129ff2c59187df5b6
+2026-09-03-composer-office-deliverable-picker.md: 99a085ced5db5b5aa240138c64fc926a8bfa0220
+2026-09-03-composer-office-deliverable-picker.zh.md: bb5640f8f83884d3f7f299f0cc7214ca5d01a049

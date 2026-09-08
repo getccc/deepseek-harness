@@ -109,8 +109,8 @@ describe('what the plugin installs', () => {
 describe('what the composer control is given', () => {
   it('records a chosen kind through the office Remote', async () => {
     const b = await bench()
-    await face(b).apply('amec-ppt')
-    expect(b.recorded).toEqual([{ sessionId: SID, kind: 'amec-ppt' }])
+    await face(b).apply('welinkin-ppt')
+    expect(b.recorded).toEqual([{ sessionId: SID, kind: 'welinkin-ppt' }])
   })
 
   it('carries a refusal to the control that asked', async () => {
