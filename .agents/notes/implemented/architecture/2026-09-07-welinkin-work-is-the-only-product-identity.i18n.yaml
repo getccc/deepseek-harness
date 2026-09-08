@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-07-welinkin-work-is-the-only-product-identity.md
-2026-09-07-welinkin-work-is-the-only-product-identity.md: 11bdf3f5317e23f951463b76a6427384590f43f8
-2026-09-07-welinkin-work-is-the-only-product-identity.zh.md: 54cc29460102678bac3e64c29f83700050f74291
+2026-09-07-welinkin-work-is-the-only-product-identity.md: be86aa1f5a87a7db00bb58548ef424b049bb4461
+2026-09-07-welinkin-work-is-the-only-product-identity.zh.md: 531d0bdb2bacd7a7f4ad5bac96efc66e4c8c3a14

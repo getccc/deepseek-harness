@@ -5,41 +5,217 @@ body {
   background: #f5f5f5;
 }
 
+/* The sign-in card repeats the Runner's own sign-in page
+   (packages/team/team-local-login/src/pages.ts) down to the ground, the
+   lockup, the field metrics, and the button: a member who administers this
+   deployment meets one product on both origins. Its palette is that page's,
+   restated here because the two surfaces share no stylesheet. */
 .auth {
+  position: relative;
   display: grid;
   place-items: center;
   min-height: 100vh;
-  padding: 32px;
+  padding: 40px 20px;
+  overflow: hidden;
   background:
-    radial-gradient(circle at 15% 10%, #ebe9ff 0, transparent 36%),
-    radial-gradient(circle at 90% 90%, #e0f2fe 0, transparent 34%),
-    #f7f8fc;
+    radial-gradient(circle at 12% 12%, rgb(97 154 255 / 18%) 0, transparent 34rem),
+    radial-gradient(circle at 88% 88%, rgb(95 211 190 / 16%) 0, transparent 30rem),
+    #f5f8fc;
+  color: #182230;
+}
+
+/* Two blurred discs bleeding off the left and right edges, as on the Runner. */
+.auth::before,
+.auth::after {
+  content: "";
+  position: absolute;
+  width: 24rem;
+  height: 24rem;
+  border-radius: 50%;
+  filter: blur(2px);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.auth::before {
+  left: -10rem;
+  top: 36%;
+  background: linear-gradient(135deg, rgb(67 122 246 / 15%), transparent 70%);
+}
+
+.auth::after {
+  right: -10rem;
+  top: 6%;
+  background: linear-gradient(135deg, rgb(55 199 167 / 14%), transparent 72%);
 }
 
 .auth-card {
+  position: relative;
+  z-index: 1;
   width: min(100%, 440px);
-  box-shadow: 0 24px 64px rgb(16 24 40 / 12%);
+  border: 1px solid rgb(215 223 234 / 90%);
+  border-radius: 24px;
+  background: rgb(255 255 255 / 92%);
+  box-shadow: 0 28px 72px rgb(30 50 80 / 14%), 0 4px 14px rgb(30 50 80 / 5%);
+  backdrop-filter: blur(18px);
 }
 
-.brand-mark {
+.auth-card .ant-card-body {
+  padding: 36px;
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 32px;
+}
+
+.auth-brand-mark {
+  flex: none;
   display: grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 13px;
-  background: linear-gradient(135deg, #1677ff, #8b5cf6);
-  color: #fff;
-  font-weight: 800;
 }
 
-.eyebrow {
+.auth-brand-mark img {
   display: block;
-  margin-top: 16px;
-  color: #1677ff;
+  width: 40px;
+  height: auto;
+}
+
+.auth-brand-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.auth-brand-name {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.auth-brand-team {
+  color: #697586;
   font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
+}
+
+.auth-heading {
+  margin: 0 0 28px;
+  font-size: 30px;
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+}
+
+.auth .ant-form-item {
+  margin-bottom: 18px;
+}
+
+.auth .ant-form-item-label {
+  padding-bottom: 7px;
+}
+
+.auth .ant-form-item-label > label {
+  height: auto;
+  color: #182230;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Ant Design sizes and rounds its own controls; the Runner's page draws taller,
+   softer fields on a tinted ground, and these restate that here. */
+.auth .ant-input-affix-wrapper {
+  height: 48px;
+  padding-inline: 14px;
+  border-color: #e4e9f0;
+  border-radius: 13px;
+  background: #f8fafc;
+}
+
+.auth .ant-input-affix-wrapper:hover {
+  border-color: #cbd4e1;
+  background: #fff;
+}
+
+.auth .ant-input-affix-wrapper-focused {
+  border-color: #2563eb;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgb(37 99 235 / 18%);
+}
+
+.auth .ant-input-affix-wrapper > input.ant-input {
+  background: transparent;
+}
+
+.auth .ant-input-prefix {
+  margin-inline-end: 12px;
+  color: #8995a5;
+}
+
+.auth-submit.ant-btn {
+  height: 48px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 13px;
+  background: linear-gradient(180deg, #3475ef, #2563eb);
+  box-shadow: 0 8px 18px rgb(37 99 235 / 22%);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.auth-submit.ant-btn:not(:disabled):hover {
+  background: linear-gradient(180deg, #2d6ee4, #1d4ed8);
+  box-shadow: 0 10px 22px rgb(37 99 235 / 28%);
+}
+
+.auth-submit.ant-btn:active {
+  transform: translateY(1px);
+}
+
+/* The Runner closes its card with a muted line about where the password goes;
+   this one closes with what signing in here is for. */
+.auth-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin: 22px 0 0;
+  color: #697586;
+  font-size: 12px;
+}
+
+.auth-note svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+@media (width <= 540px) {
+  .auth {
+    align-items: start;
+    padding: 18px 12px;
+  }
+
+  .auth-card {
+    margin-top: 4vh;
+    border-radius: 20px;
+  }
+
+  .auth-card .ant-card-body {
+    padding: 28px 22px;
+  }
+
+  .auth-brand {
+    margin-bottom: 26px;
+  }
+
+  .auth-heading {
+    font-size: 27px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-submit.ant-btn {
+    transition: none;
+  }
 }
 
 .brand {

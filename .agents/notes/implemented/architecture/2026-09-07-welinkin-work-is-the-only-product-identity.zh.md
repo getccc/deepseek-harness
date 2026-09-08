@@ -20,6 +20,8 @@ Status: implemented
 
 **标记是一份美术资源、五个落点。** 同一个 PNG 以 data URI 的形式出现在外壳的 [`WelinkinLogo`](../../../../packages/client/ui-primitives/src/WelinkinLogo.tsx) 原子组件、[`apps/team-admin`](../../../../apps/team-admin/src/brand.ts) 及该应用自己的 `index.html` favicon、[`apps/web/public/favicon.svg`](../../../../apps/web/public/favicon.svg)，以及 [`team-local-login`](../../../../packages/team/team-local-login/src/pages.ts) 的前置页面中。五者读不到彼此的副本：客户端包打包时没有资源加载器，管理台独立于它们打包，而登录页在任何应用资源路由存在之前就已送出。更换标记意味着五处连同各自携带的绘制比例一起更换。标记的两种色调在浅色与深色底上都可辨认，因此 favicon 自身不带配色方案切换。
 
+**管理台的登录卡片重复 Runner 的登录页。** 3095 端口原先在 eyebrow、标题与段落之上画一个渐变 `DS` 字母块；现在它画的是标记加 `Welinkin Work` 与管理台自己的副标题，铺在 Runner 的底色、卡片、字段尺寸、字形与渐变按钮之上。两个来源不共享样式表，因此 `apps/team-admin/src/main.css` 重述那一页的配色与尺寸，而不是引入它；管理台保留自己的词汇（`成员`，而非`账户`），并在 Runner 为自身脚注保留的位置上写明在此登录是做什么的。
+
 **Windows 与 Linux 的桌面窗口不带应用菜单。** `createDesktop` 在窗口存在之前把它清空。Chromium 在页面内保留剪贴板与撤销快捷键，成员用到的东西一个都不会丢。macOS 保留默认菜单：它的系统菜单栏拥有退出与隐藏，这些快捷键别无他处。
 
 ## 考虑过的替代方案

@@ -34,11 +34,13 @@ export const zh = {
   'shell.closeAll': '全部关闭',
   'shell.refresh': '刷新',
 
-  'login.eyebrow': '安全团队访问',
+  'login.product': 'Welinkin Work',
   'login.heading': '欢迎回来',
   'login.kicker': '登录以管理你的组织，并把这个账户连接到本地 Runner。',
   'login.member': '成员',
+  'login.memberPlaceholder': '请输入成员名',
   'login.password': '密码',
+  'login.passwordPlaceholder': '请输入密码',
   'login.submit': '登录',
   'login.required': '请填写这一项。',
 
@@ -374,11 +376,13 @@ export const en: Record<keyof typeof zh, string> = {
   'shell.closeAll': 'Close all',
   'shell.refresh': 'Refresh',
 
-  'login.eyebrow': 'Secure team access',
+  'login.product': 'Welinkin Work',
   'login.heading': 'Welcome back',
   'login.kicker': 'Sign in to manage your organization and connect this account to a local Runner.',
   'login.member': 'Member',
+  'login.memberPlaceholder': 'Enter the member name',
   'login.password': 'Password',
+  'login.passwordPlaceholder': 'Enter your password',
   'login.submit': 'Sign in',
   'login.required': 'This field is required.',
 
