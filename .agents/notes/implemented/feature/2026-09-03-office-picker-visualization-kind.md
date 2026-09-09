@@ -6,15 +6,15 @@ English | [中文](2026-09-03-office-picker-visualization-kind.zh.md)
 
 ## Problem
 
-The composer's office picker named four file formats — Word, Excel, PowerPoint, the Welinkin PowerPoint template — and a member who wanted the answer to contain a chart had no way to say so. Charts are the one deliverable a Team Runner can hand back without producing a file at all: the `@dsh-external/dsh-echarts` plugin renders any fenced block whose info string is exactly `echarts` as an interactive Apache ECharts canvas, but only if the model knows to emit one, and nothing told it to.
+The composer's office picker named file formats only — Word, Excel, and PowerPoint (then two rows, one per template state) — and a member who wanted the answer to contain a chart had no way to say so. Charts are the one deliverable a Team Runner can hand back without producing a file at all: the `@dsh-external/dsh-echarts` plugin renders any fenced block whose info string is exactly `echarts` as an interactive Apache ECharts canvas, but only if the model knows to emit one, and nothing told it to.
 
 ## Decision
 
-**A fifth kind, `chart`, joins the same fold, event, and projection as the file kinds.** It is an `OfficeKind` like the others: one `office/kind` event records it, one `office:kind` prompt section carries it, and the chip reads it back from the `office` projection. Nothing about the picker's shape changes — the [office-deliverable picker](2026-09-03-composer-office-deliverable-picker.md) already owns that.
+**A further kind, `chart`, joins the same fold, event, and projection as the file kinds.** It is an `OfficeKind` like the others: one `office/kind` event records it, one `office:kind` prompt section carries it, and the chip reads it back from the `office` projection. Nothing about the picker's shape changes — the [office-deliverable picker](2026-09-03-composer-office-deliverable-picker.md) already owns that.
 
 **Its prompt names the fence contract, not a tool.** The renderer supplies no tool call: it captures settled markdown fences. The section therefore tells the model to write one fenced block per chart whose info string is exactly `echarts`, holding nothing but a strict-JSON ECharts option — the renderer rejects JavaScript functions, expressions, `renderItem`, and event handlers, and parses with `JSON.parse` alone, so the section states those limits where the model reads them.
 
-**The picker's display order is the order a member reaches for: Word, Excel, PPT, Welinkin PPT, visualization.** `OFFICE_KINDS`, the chip's local mirror of it, and the `renderOfficeSection` switch all carry that one order, so a reader comparing them sees no unexplained asymmetry.
+**The picker's display order is the order a member reaches for: Word, Excel, PPT, visualization.** `OFFICE_KINDS`, the chip's local mirror of it, and the `renderOfficeSection` switch all carry that one order, so a reader comparing them sees no unexplained asymmetry.
 
 **The chip's copy says deliverable, not document.** A chart is not a document, and the chip now names a set that is not all files.
 

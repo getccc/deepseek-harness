@@ -51,7 +51,7 @@ pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 | `DSH_TEAM_PLUGIN_TREE` | 否 | 一个已安装 profile 的 `node_modules`，携带树外插件。 |
 | `DSH_TEAM_PRODUCT_NAME`、`DSH_TEAM_APP_ID` | 否 | 安装后应用的名称与 bundle 标识符。 |
 | `DSH_TEAM_APP_ICON`、`DSH_TEAM_TRAY_ICON` | 否 | 应用图标，以及菜单栏模板图像——其 `@2x` 相邻文件随它一同置入资源。 |
-| `DSH_TEAM_PPT_TEMPLATE` | 否 | 办公选择器的 `welinkin-ppt` 类型导入的 Welinkin PowerPoint 模版；置于 Runner 旁并在运行时定位路径。 |
+| `DSH_TEAM_PPT_TEMPLATE` | 否 | 办公选择器的 `ppt` 类型导入的 PowerPoint 模版；置于 Runner 旁并在运行时定位路径。 |
 | `DSH_TEAM_APPLE_TEAM_ID` | 否 | Apple Developer Team ID；设置后（且环境含 `APPLE_ID` 与 `APPLE_APP_SPECIFIC_PASSWORD`）对 macOS 构建进行公证。 |
 
 ### 固定一个私有证书颁发机构

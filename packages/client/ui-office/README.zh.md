@@ -1,5 +1,5 @@
 ---
-description: "选择本次对话应生成哪种办公交付物的编辑器芯片：Word、PowerPoint、Welinkin PowerPoint 模版或 Excel。"
+description: "选择本次对话应生成哪种办公交付物的编辑器芯片：Word、Excel、PowerPoint 或图表。"
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-client-ui-office` 是成员用来指定一次对话应生成哪种办公文档的编辑器芯片。它是单选——Word、PowerPoint、Welinkin PowerPoint 模版或 Excel——再次点击已选类型即清除。芯片从 `office` 投影读取已选类型，并通过仅限 Team 的 `office` Remote 记录一次点击，因此重载或第二个浏览器显示相同选择，而模型通过 `dsh-tool-office` 拥有的提示词分节读取它。
+`dsh-client-ui-office` 是成员用来指定一次对话应生成哪种办公文档的编辑器芯片。它是单选——Word、Excel、PowerPoint 或图表，每行各带自己的图标——再次点击已选类型即清除。芯片从 `office` 投影读取已选类型，并通过仅限 Team 的 `office` Remote 记录一次点击，因此重载或第二个浏览器显示相同选择，而模型通过 `dsh-tool-office` 拥有的提示词分节读取它。
 
 ## 目录
 
@@ -49,6 +49,6 @@ kind: "package-reference"
 <details>
 <summary>面向维护者的工作背景——点击展开</summary>
 
-芯片从一个本地常量列出五种类型，而非导入词汇的 `OFFICE_KINDS`，因为客户端 bundle 不得跨插件导入运行时值；类型仍来自 `@deepseek-ai/dsh-office`。
+芯片从一个本地常量列出四种类型，而非导入词汇的 `OFFICE_KINDS`，因为客户端 bundle 不得跨插件导入运行时值；类型仍来自 `@deepseek-ai/dsh-office`。
 
 </details>

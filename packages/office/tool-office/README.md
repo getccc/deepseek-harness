@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-tool-office` is everything the model sees of a conversation's office choice: one prompt section that names the document kind to produce, and — for the Welinkin PowerPoint kind — the template path to build from. It registers no tool of its own; the univer office tools produce the file. The section is a fold over the `office/kind` Session log, and a composer chip reads the same fold as the `office` projection, so the picker and the model never disagree. A Session that chose nothing has no section.
+`dsh-tool-office` is everything the model sees of a conversation's office choice: one prompt section that names the document kind to produce, and — for a PowerPoint — the company template path to build from. It registers no tool of its own; the univer office tools produce the file. The section is a fold over the `office/kind` Session log, and a composer chip reads the same fold as the `office` projection, so the picker and the model never disagree. A Session that chose nothing has no section.
 
 ## Table of Contents
 
@@ -28,12 +28,12 @@ Mount it in a Team composition beside the office Remote and the composer chip:
 ```yaml
 - name: '@deepseek-ai/dsh-tool-office'
   config:
-    welinkinTemplatePath: /absolute/path/to/welinkin-ppt.pptx
+    welinkinTemplatePath: /absolute/path/to/company-template.pptx
 ```
 
 | Field | Default | Meaning |
 |---|---|---|
-| `welinkinTemplatePath` | — | The Welinkin PowerPoint template the `welinkin-ppt` kind imports; absent sends the model to a Welinkin template skill in the session catalog instead |
+| `welinkinTemplatePath` | — | The PowerPoint template every `ppt` deliverable is built from; absent sends the model to a template skill in the session catalog instead |
 
 A log with no `office/kind` event folds to `none`, so a fresh Session gets no section. A member chooses through the composer chip, which records the choice; the section then names the format.
 
@@ -46,24 +46,24 @@ A log with no `office/kind` event folds to `none`, so a fresh Session gets no se
 
 #### What the model sees
 
-One section, `office:kind`, whose text is chosen by the Session's folded office choice. It is absent entirely while the choice is `none`. Each kind names the format to produce; `welinkin-ppt` additionally carries the configured template path to import and preserve, or, when no template is configured, the instruction to load a Welinkin template skill from the session catalog and import the template it names; the section never asserts that no template exists and names no palette of its own. `chart` names no file at all: it asks for `echarts` fences the web surface renders in place.
+One section, `office:kind`, whose text is chosen by the Session's folded office choice. It is absent entirely while the choice is `none`. Each kind names the format to produce; `ppt` additionally carries the configured template path to import and preserve, or, when no template is configured, the instruction to load a template skill from the session catalog and import the template it names; the section never asserts that no template exists, and it names neither a palette nor a brand of its own. `chart` names no file at all: it asks for `echarts` fences the web surface renders in place.
 
-##### With a Word, PowerPoint, or Excel kind chosen
+##### With the Word or Excel kind chosen
 
 ```markdown
-Produce the deliverable as a PowerPoint presentation (.pptx) with the univer office tools: create or import a .pptx Unit, build the slides there, and hand back the file.
+Produce the deliverable as a Word document (.docx) with the univer office tools: create or import a .docx Unit, edit it there, and hand back the file.
 ```
 
-##### With the Welinkin PowerPoint template kind chosen
+##### With the PowerPoint kind chosen
 
 ```markdown
-Produce the deliverable as a PowerPoint presentation built from the Welinkin company template at <the configured template path>: import it with the univer office tools as the starting Unit, keep its slide masters, layouts, fonts, and brand colours, and replace only the content. Hand back the .pptx.
+Produce the deliverable as a PowerPoint presentation built from the company template at <the configured template path>: import it with the univer office tools as the starting Unit, keep its slide masters, layouts, fonts, and brand colours, and replace only the content. Hand back the .pptx.
 ```
 
-##### With the Welinkin PowerPoint template kind chosen and no template configured
+##### With the PowerPoint kind chosen and no template configured
 
 ```markdown
-Produce the deliverable as a PowerPoint presentation built from the Welinkin company template, using the univer office tools. No template path is configured here, so find the template through the session skill catalog: if it lists a Welinkin PowerPoint template skill, load that skill first and import the template it names as the starting Unit, keeping its slide masters, layouts, fonts, and brand colours and replacing only the content. If the catalog lists no such skill, say that the Welinkin template is not reachable before building a plain .pptx.
+Produce the deliverable as a PowerPoint presentation built from the company template, using the univer office tools. No template path is configured here, so find the template through the session skill catalog: if it lists a PowerPoint template skill, load that skill first and import the template it names as the starting Unit, keeping its slide masters, layouts, fonts, and brand colours and replacing only the content. If the catalog lists no such skill, say that the company template is not reachable before building a plain .pptx.
 ```
 
 ##### With the visualization kind chosen
@@ -74,7 +74,7 @@ Produce the deliverable as interactive charts in the answer itself. Write one fe
 
 #### Token effect
 
-Nothing while the choice is `none`. Otherwise one short fixed paragraph; the `welinkin-ppt` paragraph also carries the template path, which does not grow with the conversation.
+Nothing while the choice is `none`. Otherwise one short fixed paragraph; the `ppt` paragraph also carries the template path, which does not grow with the conversation.
 
 #### KV Cache effect
 

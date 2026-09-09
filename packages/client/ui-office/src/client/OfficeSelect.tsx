@@ -1,8 +1,12 @@
 /** The composer control choosing which office document this conversation should produce. */
 
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 import clsx from 'clsx'
-import { IconChevronDownOutline14, IconListPenOutline16, Menu } from '@deepseek-ai/dsh-client-ui-primitives'
+import {
+  IconChartOutline16, IconChevronDownOutline14, IconDocumentOutline16, IconListPenOutline16,
+  IconSlidesOutline16, IconSpreadsheetOutline16, Menu,
+} from '@deepseek-ai/dsh-client-ui-primitives'
 import type { MenuEntry } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 // Type-only: pulls the ui-conversation SlotMap merge (the composer left zone).
@@ -18,7 +22,15 @@ import type { OfficeKey } from './locales.ts'
  * `OFFICE_KINDS`; kept local because a client bundle may not import a runtime
  * value across plugins.
  */
-const OFFICE_KINDS = ['word', 'excel', 'ppt', 'welinkin-ppt', 'chart'] as const satisfies readonly Exclude<OfficeKind, 'none'>[]
+const OFFICE_KINDS = ['word', 'excel', 'ppt', 'chart'] as const satisfies readonly Exclude<OfficeKind, 'none'>[]
+
+/** The mark each row carries, so a kind is recognizable before its label is read. */
+const KIND_ICONS: Record<Exclude<OfficeKind, 'none'>, ReactNode> = {
+  word: <IconDocumentOutline16 size={16} />,
+  excel: <IconSpreadsheetOutline16 size={16} />,
+  ppt: <IconSlidesOutline16 size={16} />,
+  chart: <IconChartOutline16 size={16} />,
+}
 
 /** What this control needs from the plugin that registered it. */
 export interface OfficeSelectInjected {
@@ -56,7 +68,7 @@ export function OfficeSelect({ useProjection, apply, t }: OfficeSelectProps) {
   const chosen = choice.kind !== 'none'
   const label = chosen ? t(kindKey(choice.kind)) : t('chip.label')
 
-  const items: MenuEntry[] = OFFICE_KINDS.map(kind => ({ id: kind, label: t(kindKey(kind)) }))
+  const items: MenuEntry[] = OFFICE_KINDS.map(kind => ({ id: kind, label: t(kindKey(kind)), icon: KIND_ICONS[kind] }))
 
   const choose = (id: string): void => {
     setFailed(false)

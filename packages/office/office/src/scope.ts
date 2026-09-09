@@ -32,7 +32,7 @@ export const DEFAULT_OFFICE_CHOICE: OfficeChoice = { version: 1, kind: 'none' }
  * Recover the Session's current office choice from its log.
  * @param events - the Session's committed events, in order.
  * @param end - fold only the first `end` events, for rewind and fork reads.
- * @returns the last recorded choice, or {@link DEFAULT_OFFICE_CHOICE} when the log records none.
+ * @returns the last recorded choice, or {@link DEFAULT_OFFICE_CHOICE} when the log records none this build accepts.
  */
 export function foldOfficeChoice(events: readonly SessionEvent[], end = events.length): OfficeChoice {
   let choice: OfficeChoice = DEFAULT_OFFICE_CHOICE
@@ -40,7 +40,10 @@ export function foldOfficeChoice(events: readonly SessionEvent[], end = events.l
   for (const event of events) {
     if (index >= end) break
     index++
-    if (event.type === 'office/kind') choice = event.data
+    // A log written by a build whose kind vocabulary was wider records values
+    // this one cannot render, so a kind it does not know imposes no format
+    // rather than reaching a prompt section with no branch for it.
+    if (event.type === 'office/kind') choice = parseOfficeChoice(event.data) ?? DEFAULT_OFFICE_CHOICE
   }
   return choice
 }

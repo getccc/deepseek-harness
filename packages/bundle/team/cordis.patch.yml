@@ -128,8 +128,8 @@
     # produce. The tool folds the choice into a prompt section; the controller
     # records it from the browser; the client chip is the composer control.
     # `welinkinTemplatePath` is absent in the bundle on purpose — only an
-    # installer knows where the Welinkin template it shipped landed, and writes
-    # it in.
+    # installer knows where the PowerPoint template it shipped landed, and
+    # writes it in.
     - id: office
       name: '@deepseek-ai/dsh-tool-office'
 

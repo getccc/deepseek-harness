@@ -10,7 +10,6 @@ export const zh = {
   'kind.word': 'Word',
   'kind.excel': 'Excel',
   'kind.ppt': 'PPT',
-  'kind.welinkin-ppt': 'Welinkin PPT 模版',
   'kind.chart': '可视化',
 } satisfies Record<string, string>
 
@@ -27,6 +26,5 @@ export const en = {
   'kind.word': 'Word',
   'kind.excel': 'Excel',
   'kind.ppt': 'PowerPoint',
-  'kind.welinkin-ppt': 'Welinkin PowerPoint template',
   'kind.chart': 'Visualization',
 } satisfies Record<OfficeKey, string>

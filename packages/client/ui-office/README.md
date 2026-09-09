@@ -1,5 +1,5 @@
 ---
-description: "The composer chip choosing which office deliverable this conversation should produce: Word, PowerPoint, the Welinkin PowerPoint template, or Excel."
+description: "The composer chip choosing which office deliverable this conversation should produce: Word, Excel, PowerPoint, or charts."
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-client-ui-office` is the composer chip a member uses to say which office document a conversation should produce. It is single-select — Word, PowerPoint, the Welinkin PowerPoint template, or Excel — and clicking the chosen kind again clears it. The chip reads the chosen kind from the `office` projection and records a click through the Team-only `office` Remote, so a reload or a second browser shows the same choice, and the model reads it through the prompt section `dsh-tool-office` owns.
+`dsh-client-ui-office` is the composer chip a member uses to say which office document a conversation should produce. It is single-select — Word, Excel, PowerPoint, or charts, each row carrying its own mark — and clicking the chosen kind again clears it. The chip reads the chosen kind from the `office` projection and records a click through the Team-only `office` Remote, so a reload or a second browser shows the same choice, and the model reads it through the prompt section `dsh-tool-office` owns.
 
 ## Table of Contents
 
@@ -49,6 +49,6 @@ Each choice changes the `office:kind` system-prompt section that `dsh-tool-offic
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-The chip lists the five kinds from a local const rather than importing the vocabulary's `OFFICE_KINDS`, because a client bundle may not import a runtime value across plugins; the type still comes from `@deepseek-ai/dsh-office`.
+The chip lists the four kinds from a local const rather than importing the vocabulary's `OFFICE_KINDS`, because a client bundle may not import a runtime value across plugins; the type still comes from `@deepseek-ai/dsh-office`.
 
 </details>

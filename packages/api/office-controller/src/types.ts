@@ -10,7 +10,7 @@
  */
 
 /** The office document kind a conversation should produce, as the wire carries it. */
-export type OfficeKind = 'none' | 'word' | 'excel' | 'ppt' | 'welinkin-ppt' | 'chart'
+export type OfficeKind = 'none' | 'word' | 'excel' | 'ppt' | 'chart'
 
 /** The Session's office choice on the wire. */
 export interface OfficeChoiceWire {

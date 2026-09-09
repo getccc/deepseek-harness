@@ -33,7 +33,7 @@ const RUNNER_RESOURCES = 'runner'
 const CONTROL_PLANE_CA = 'control-plane-ca.crt'
 /** The out-of-tree plugin tree linked into the private profile's node_modules. */
 const PLUGIN_TREE = 'plugins'
-/** The Welinkin PowerPoint template the office picker's `welinkin-ppt` kind builds from. */
+/** The PowerPoint template the office picker's `ppt` kind builds from. */
 const PPT_TEMPLATE = 'templates/welinkin-ppt.pptx'
 /** Records which application version materialized the profile's plugin tree. */
 const PLUGIN_TREE_STAMP = '.dsh-plugin-tree'

@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 /**
  * The composer control over the `office` projection: it names the chosen
- * office kind, offers the five kinds single-select in display order, records a
- * click, clears the choice when the chosen kind is clicked again, and
- * disappears entirely in a build whose Host folds no office choice.
+ * office kind, offers the four kinds single-select in display order each with
+ * its own mark, records a click, clears the choice when the chosen kind is
+ * clicked again, and disappears entirely in a build whose Host folds no office
+ * choice.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
@@ -45,18 +46,28 @@ describe('OfficeSelect', () => {
     const { store } = setup({ version: 1, kind: 'ppt' })
     expect(trigger().textContent).toBe('PPT')
     expect(trigger().className).toContain('triggerChosen')
-    act(() => { store.set({ value: { version: 1, kind: 'welinkin-ppt' } }) })
-    expect(trigger().textContent).toBe('Welinkin PPT 模版')
+    act(() => { store.set({ value: { version: 1, kind: 'chart' } }) })
+    expect(trigger().textContent).toBe('可视化')
     act(() => { store.set({ value: { version: 1, kind: 'none' } }) })
     expect(trigger().className).not.toContain('triggerChosen')
   })
 
-  it('offers the five kinds in display order and marks the chosen one', async () => {
+  it('offers the four kinds in display order and marks the chosen one', async () => {
     setup({ version: 1, kind: 'excel' })
     await act(async () => { fireEvent.click(trigger()) })
     await waitFor(() => { expect(screen.getByRole('menuitem', { name: 'Word' })).toBeTruthy() })
     expect(screen.getAllByRole('menuitem').map(item => item.textContent))
-      .toEqual(['Word', 'Excel', 'PPT', 'Welinkin PPT 模版', '可视化'])
+      .toEqual(['Word', 'Excel', 'PPT', '可视化'])
+  })
+
+  it('carries one mark per row, so a kind reads before its label does', async () => {
+    setup({ version: 1, kind: 'none' })
+    await act(async () => { fireEvent.click(trigger()) })
+    await waitFor(() => { expect(screen.getByRole('menuitem', { name: 'Word' })).toBeTruthy() })
+    const marks = screen.getAllByRole('menuitem').map(item => item.querySelector('svg')?.innerHTML)
+    expect(marks.filter(mark => mark !== undefined)).toHaveLength(4)
+    // Four distinct glyphs: no kind borrows another's mark.
+    expect(new Set(marks).size).toBe(4)
   })
 
   it('records the visualization kind', async () => {
@@ -69,8 +80,8 @@ describe('OfficeSelect', () => {
   it('records a click as the whole choice it makes', async () => {
     const { apply } = setup({ version: 1, kind: 'none' })
     await act(async () => { fireEvent.click(trigger()) })
-    await act(async () => { fireEvent.click(screen.getByRole('menuitem', { name: 'Welinkin PPT 模版' })) })
-    expect(apply).toHaveBeenCalledWith('welinkin-ppt')
+    await act(async () => { fireEvent.click(screen.getByRole('menuitem', { name: 'PPT' })) })
+    expect(apply).toHaveBeenCalledWith('ppt')
   })
 
   it('clears the choice when the chosen kind is clicked again', async () => {

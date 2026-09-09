@@ -15,8 +15,8 @@ export interface DesktopDeployment {
   /** Locale of the Runner-local login pages. */
   readonly locale: LoginLocale
   /**
-   * Absolute path to the Welinkin PowerPoint template the office picker's
-   * `welinkin-ppt` kind builds from, or undefined when the build carries none.
+   * Absolute path to the PowerPoint template the office picker's `ppt` kind
+   * builds from, or undefined when the build carries none.
    */
   readonly welinkinTemplatePath?: string
 }
@@ -51,7 +51,7 @@ export function resolveDeployment(input: DesktopDeployment): DesktopDeployment {
     throw new Error('the Control Plane certificate authority must be an absolute path')
   }
   if (input.welinkinTemplatePath !== undefined && !isFullyQualifiedPath(input.welinkinTemplatePath)) {
-    throw new Error('the Welinkin template path must be absolute')
+    throw new Error('the PowerPoint template path must be absolute')
   }
   return {
     controlPlaneUrl: controlPlane.origin,

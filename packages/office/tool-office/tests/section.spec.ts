@@ -14,12 +14,11 @@ describe('renderOfficeSection', () => {
 
   it('names each ordinary office format', () => {
     expect(renderOfficeSection({ version: 1, kind: 'word' })).toMatch(/Word document \(\.docx\)/)
-    expect(renderOfficeSection({ version: 1, kind: 'ppt' })).toMatch(/PowerPoint presentation \(\.pptx\)/)
     expect(renderOfficeSection({ version: 1, kind: 'excel' })).toMatch(/Excel workbook \(\.xlsx\)/)
   })
 
-  it('names the Welinkin template path when one is configured', () => {
-    const text = renderOfficeSection({ version: 1, kind: 'welinkin-ppt' }, '/opt/welinkin/welinkin-ppt.pptx')
+  it('builds every deck from the configured template, with no second PowerPoint kind to pick', () => {
+    const text = renderOfficeSection({ version: 1, kind: 'ppt' }, '/opt/welinkin/welinkin-ppt.pptx')
     expect(text).toContain('/opt/welinkin/welinkin-ppt.pptx')
     expect(text).toMatch(/keep its slide masters, layouts, fonts, and brand colours/)
   })
@@ -31,14 +30,17 @@ describe('renderOfficeSection', () => {
     expect(text).toMatch(/no JavaScript functions/)
   })
 
-  it('sends the model to a Welinkin template skill when no template path is configured', () => {
-    const text = renderOfficeSection({ version: 1, kind: 'welinkin-ppt' })
+  it('sends the model to a template skill when no template path is configured', () => {
+    const text = renderOfficeSection({ version: 1, kind: 'ppt' })
     expect(text).toMatch(/No template path is configured here/)
-    expect(text).toMatch(/Welinkin PowerPoint template skill, load that skill first/)
+    expect(text).toMatch(/PowerPoint template skill, load that skill first/)
     expect(text).toMatch(/keeping its slide masters, layouts, fonts, and brand colours/)
+    expect(text).toMatch(/building a plain \.pptx/)
     // The section asserts nothing about the environment and invents no palette.
-    expect(text).not.toMatch(/carries no Welinkin template/)
+    expect(text).not.toMatch(/carries no .* template/)
     expect(text).not.toMatch(/#[0-9A-Fa-f]{6}/)
+    // The deployment names the catalog entry, so the section names no brand.
+    expect(text).not.toMatch(/Welinkin/)
   })
 })
 
@@ -70,25 +72,33 @@ describe('apply', () => {
     expect(section.name).toBe('office:kind')
     // No agent: nothing to fold, empty section.
     expect(section.text({})).toBe('')
-    // A recorded welinkin-ppt choice reaches the model with the template path.
-    const events = [{ type: 'office/kind', data: { version: 1, kind: 'welinkin-ppt' } }] as unknown as SessionEvent[]
+    // A recorded ppt choice reaches the model with the template path.
+    const events = [{ type: 'office/kind', data: { version: 1, kind: 'ppt' } }] as unknown as SessionEvent[]
     expect(section.text({ agent: { session: { events } } })).toContain('/opt/welinkin/welinkin-ppt.pptx')
 
     const projection = projections[0]!
     expect(projection.key).toBe('office')
     expect(projection.init()).toEqual(DEFAULT_OFFICE_CHOICE)
     const applied = projection.apply(DEFAULT_OFFICE_CHOICE, events[0]!)
-    expect(applied).toEqual({ version: 1, kind: 'welinkin-ppt' })
+    expect(applied).toEqual({ version: 1, kind: 'ppt' })
     // An unrelated event leaves the state alone.
     expect(projection.apply(applied, { type: 'other' } as unknown as SessionEvent)).toBe(applied)
     // The wire view is the state itself.
     expect(projection.wire.view(applied)).toBe(applied)
   })
 
-  it('sends the model to a Welinkin template skill when no template path is configured', () => {
+  it('sends the model to a template skill when no template path is configured', () => {
     const { ctx, sections } = fakeCtx()
     apply(ctx, {})
-    const events = [{ type: 'office/kind', data: { version: 1, kind: 'welinkin-ppt' } }] as unknown as SessionEvent[]
-    expect(sections[0]!.text({ agent: { session: { events } } })).toMatch(/Welinkin PowerPoint template skill/)
+    const events = [{ type: 'office/kind', data: { version: 1, kind: 'ppt' } }] as unknown as SessionEvent[]
+    expect(sections[0]!.text({ agent: { session: { events } } })).toMatch(/PowerPoint template skill/)
+  })
+
+  it('reads a retired kind out of both the section and the projection', () => {
+    const { ctx, sections, projections } = fakeCtx()
+    apply(ctx, {})
+    const retired = { type: 'office/kind', data: { version: 1, kind: 'welinkin-ppt' } } as unknown as SessionEvent
+    expect(sections[0]!.text({ agent: { session: { events: [retired] } } })).toBe('')
+    expect(projections[0]!.apply({ version: 1, kind: 'word' }, retired)).toEqual(DEFAULT_OFFICE_CHOICE)
   })
 })

@@ -6,15 +6,15 @@ Status: implemented
 
 ## Problem
 
-编辑器的办公选择器只命名四种文件格式——Word、Excel、PowerPoint、Welinkin PowerPoint 模版——想让回答里直接出现图表的成员无从表达。图表是 Team Runner 唯一无需生成文件即可交付的成果：`@dsh-external/dsh-echarts` 插件会把 infostring 严格等于 `echarts` 的围栏渲染为可交互的 Apache ECharts 画布，但前提是模型知道要输出这样一段围栏，而此前没有任何东西这样告诉它。
+编辑器的办公选择器只命名文件格式——Word、Excel 与 PowerPoint（当时是两行，各对应一种模版状态）——想让回答里直接出现图表的成员无从表达。图表是 Team Runner 唯一无需生成文件即可交付的成果：`@dsh-external/dsh-echarts` 插件会把 infostring 严格等于 `echarts` 的围栏渲染为可交互的 Apache ECharts 画布，但前提是模型知道要输出这样一段围栏，而此前没有任何东西这样告诉它。
 
 ## Decision
 
-**第五种类型 `chart` 接入与文件类型相同的折叠、事件与投影。** 它和其他类型一样是一个 `OfficeKind`：一个 `office/kind` 事件记录它，一个 `office:kind` 提示词分节承载它，芯片从 `office` 投影读回它。选择器的形态没有任何变化——那由[办公交付物选择器](2026-09-03-composer-office-deliverable-picker.zh.md)拥有。
+**又一种类型 `chart` 接入与文件类型相同的折叠、事件与投影。** 它和其他类型一样是一个 `OfficeKind`：一个 `office/kind` 事件记录它，一个 `office:kind` 提示词分节承载它，芯片从 `office` 投影读回它。选择器的形态没有任何变化——那由[办公交付物选择器](2026-09-03-composer-office-deliverable-picker.zh.md)拥有。
 
 **它的提示词命名围栏约定，而非工具。** 渲染器不提供任何工具调用：它捕获已完成的 markdown 围栏。因此该分节告诉模型为每张图写一段 infostring 严格等于 `echarts` 的围栏，其中只放严格 JSON 的 ECharts option——渲染器拒绝 JavaScript function、expression、`renderItem` 与事件处理器，且只用 `JSON.parse` 解析，所以这些限制写在模型读得到的地方。
 
-**选择器的展示顺序即成员的取用顺序：Word、Excel、PPT、Welinkin PPT、可视化。** `OFFICE_KINDS`、芯片对它的本地镜像，以及 `renderOfficeSection` 的 switch 都采用这同一顺序，读者对照三处时看不到无解释的不对称。
+**选择器的展示顺序即成员的取用顺序：Word、Excel、PPT、可视化。** `OFFICE_KINDS`、芯片对它的本地镜像，以及 `renderOfficeSection` 的 switch 都采用这同一顺序，读者对照三处时看不到无解释的不对称。
 
 **芯片的文案说交付物，不说文档。** 图表不是文档，而芯片现在命名的集合已不全是文件。
 

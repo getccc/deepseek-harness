@@ -20,11 +20,15 @@ describe('foldOfficeChoice', () => {
   })
 
   it('takes the last recorded choice', () => {
-    expect(foldOfficeChoice([chose('word'), chose('welinkin-ppt')])).toEqual({ version: 1, kind: 'welinkin-ppt' })
+    expect(foldOfficeChoice([chose('word'), chose('ppt')])).toEqual({ version: 1, kind: 'ppt' })
   })
 
   it('folds only the first end events, for a rewind read', () => {
     expect(foldOfficeChoice([chose('word'), chose('excel')], 1)).toEqual({ version: 1, kind: 'word' })
+  })
+
+  it('imposes no format where a wider build recorded a kind this one retired', () => {
+    expect(foldOfficeChoice([chose('word'), chose('welinkin-ppt')])).toEqual(DEFAULT_OFFICE_CHOICE)
   })
 })
 

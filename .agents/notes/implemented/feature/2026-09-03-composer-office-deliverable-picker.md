@@ -10,11 +10,11 @@ A member asking a Team Runner for "a deck" or "a spreadsheet" had no way to say 
 
 ## Decision
 
-**The office-deliverable choice is a Session event folded into a prompt section, chosen from a composer chip — the knowledge chip's exact shape.** A member picks one of Word, PowerPoint, the Welinkin PowerPoint template, or Excel; the choice records an `office/kind` event; a prompt section names the format for the model; a projection lets the chip show the current choice. Resume, fork, and a second browser all recover it from the log, and nothing is stored twice.
+**The office-deliverable choice is a Session event folded into a prompt section, chosen from a composer chip — the knowledge chip's exact shape.** A member picks one of Word, Excel, PowerPoint, or charts; the choice records an `office/kind` event; a prompt section names the format for the model; a projection lets the chip show the current choice. Resume, fork, and a second browser all recover it from the log, and nothing is stored twice.
 
 **Single-select, and clicking the chosen kind clears it.** Unlike knowledge's multi-select scope, a conversation produces one kind of document, so the control is a radio: the tinted chip names the chosen kind, and clicking it again returns to `none` (no imposed format, no section).
 
-**The Welinkin kind carries a template path, not a copy.** When the deployment ships a PowerPoint template, the installer writes its absolute path into the `office` row, and the prompt section tells the model to import that file and keep its masters, layouts, fonts, and colours. With no template configured, the section sends the model to a Welinkin template skill in the session catalog, so the option is never dead; [the office section defers to the template skill](../bug-fix/2026-09-06-the-office-section-defers-to-the-template-skill.md) records why the earlier brand-style fallback was replaced.
+**The PowerPoint kind carries a template path, not a copy.** When the deployment ships a PowerPoint template, the installer writes its absolute path into the `office` row, and the prompt section tells the model to import that file and keep its masters, layouts, fonts, and colours. With no template configured, the section sends the model to a template skill in the session catalog, so the option is never dead; [the office section defers to the template skill](../bug-fix/2026-09-06-the-office-section-defers-to-the-template-skill.md) records why the earlier brand-style fallback was replaced, and [one PowerPoint row carries the company template](../simplification/2026-09-09-one-powerpoint-row-carries-the-company-template.md) records why the template stopped being a kind of its own.
 
 **Four packages, mirroring the knowledge triad.** `dsh-office` is the vocabulary (the kind, the `office/kind` event, the fold, the validator); `dsh-tool-office` owns the prompt section and the projection; `dsh-api-office-controller` is the Team-only Remote the browser records through; `dsh-client-ui-office` is the chip. The Team bundle mounts the last three; the vocabulary is a shared dependency.
 
@@ -30,4 +30,4 @@ The four packages reach the packaged Runner transitively through the Team bundle
 
 The prompt section instructs; it does not enforce. Producing the named format is the univer office tools' work, and a model may still choose otherwise. The section is guidance, and a snapshot proving the section text against a recorded office choice is deferred — it is additive and absent from a default (`none`) Session, so no shipped snapshot changes.
 
-The desktop shell carries the template as `DSH_TEAM_PPT_TEMPLATE`, staged beside the Runner and pathed at runtime like the Control Plane certificate. A build with no template still ships the Welinkin option.
+The desktop shell carries the template as `DSH_TEAM_PPT_TEMPLATE`, staged beside the Runner and pathed at runtime like the Control Plane certificate. A build with no template still ships the PowerPoint option.

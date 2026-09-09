@@ -10,11 +10,11 @@ Status: implemented
 
 ## 决定
 
-**办公交付物选择是一个折叠进提示词分节、从编辑器芯片选择的会话事件——与知识库芯片形态完全一致。** 成员从 Word、PowerPoint、Welinkin PowerPoint 模版、Excel 中选一个；该选择记录一个 `office/kind` 事件；一个提示词分节为模型命名该格式；一个投影让芯片显示当前选择。恢复、分叉与第二个浏览器都从日志恢复它，且没有任何东西被存两次。
+**办公交付物选择是一个折叠进提示词分节、从编辑器芯片选择的会话事件——与知识库芯片形态完全一致。** 成员从 Word、Excel、PowerPoint、图表中选一个；该选择记录一个 `office/kind` 事件；一个提示词分节为模型命名该格式；一个投影让芯片显示当前选择。恢复、分叉与第二个浏览器都从日志恢复它，且没有任何东西被存两次。
 
 **单选，且再次点击已选类型即清除。** 与知识库的多选范围不同，一次对话生成一种文档，因此该控件是单选：着色的芯片命名已选类型，再次点击它则回到 `none`（不强加格式、无分节）。
 
-**Welinkin 类型携带模版路径，而非副本。** 当部署随附一个 PowerPoint 模版时，安装程序把它的绝对路径写入 `office` 行，提示词分节告诉模型导入该文件并保留其母版、版式、字体与颜色。未配置模版时，该分节改为让模型去会话技能目录加载 Welinkin 模版技能，因此该选项绝不会失效；[办公分节让位于模版技能](../bug-fix/2026-09-06-the-office-section-defers-to-the-template-skill.zh.md)记录了先前品牌风格兜底被替换的原因。
+**PowerPoint 类型携带模版路径，而非副本。** 当部署随附一个 PowerPoint 模版时，安装程序把它的绝对路径写入 `office` 行，提示词分节告诉模型导入该文件并保留其母版、版式、字体与颜色。未配置模版时，该分节改为让模型去会话技能目录加载模版技能，因此该选项绝不会失效；[办公分节让位于模版技能](../bug-fix/2026-09-06-the-office-section-defers-to-the-template-skill.zh.md)记录了先前品牌风格兜底被替换的原因，而[一个 PowerPoint 行承载公司模版](../simplification/2026-09-09-one-powerpoint-row-carries-the-company-template.zh.md)记录了模版为何不再是一个独立类型。
 
 **四个包，镜像知识库三件套。** `dsh-office` 是词汇（类型、`office/kind` 事件、折叠、校验器）；`dsh-tool-office` 拥有提示词分节与投影；`dsh-api-office-controller` 是浏览器据以记录的仅限 Team 的 Remote；`dsh-client-ui-office` 是芯片。Team bundle 挂载后三者；词汇是共享依赖。
 
@@ -30,4 +30,4 @@ Status: implemented
 
 提示词分节是指示，不是强制。生成所命名的格式是 univer office 工具的工作，模型仍可能另作选择。分节是引导，而证明该分节文本对某个已记录办公选择的快照被推迟——它是增量的、在默认（`none`）会话中缺席，因此没有随附快照发生变化。
 
-桌面外壳以 `DSH_TEAM_PPT_TEMPLATE` 携带模版，置于 Runner 旁并在运行时像 Control Plane 证书一样定位路径。没有模版的构建仍然随附 Welinkin 选项。
+桌面外壳以 `DSH_TEAM_PPT_TEMPLATE` 携带模版，置于 Runner 旁并在运行时像 Control Plane 证书一样定位路径。没有模版的构建仍然随附 PowerPoint 选项。

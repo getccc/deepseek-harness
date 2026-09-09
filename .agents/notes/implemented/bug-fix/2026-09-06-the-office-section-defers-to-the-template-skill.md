@@ -14,11 +14,11 @@ One fixed string carried two defects. It asserted a fact about the environment t
 
 ## Decision
 
-**With no template path configured, the `office:kind` section sends the model to the session skill catalog instead of describing the template.** The `welinkin-ppt` fallback in `renderOfficeSection` (`packages/office/tool-office/src/index.ts`) states that no template path is configured here, tells the model to load a Welinkin PowerPoint template skill if the catalog lists one and to import the template that skill names as the starting Unit, keeping its masters, layouts, fonts, and brand colours, and, when the catalog lists no such skill, to say the template is not reachable before building a plain `.pptx`. It names no colours and asserts nothing about which files exist.
+**With no template path configured, the `office:kind` section sends the model to the session skill catalog instead of describing the template.** The `ppt` fallback in `renderOfficeSection` (`packages/office/tool-office/src/index.ts`) states that no template path is configured here, tells the model to load a PowerPoint template skill if the catalog lists one and to import the template that skill names as the starting Unit, keeping its masters, layouts, fonts, and brand colours, and, when the catalog lists no such skill, to say the template is not reachable before building a plain `.pptx`. It names no colours, asserts nothing about which files exist, and — since [one PowerPoint row carries the company template](../simplification/2026-09-09-one-powerpoint-row-carries-the-company-template.md) — names no brand either, because the deployment names its own catalog entry.
 
 **The section states only what the configuration knows.** "No template path is configured here" is a fact about the `office` row. Whether a template exists on the machine is not; a skill, or the model's own inspection, establishes that.
 
-**The configured branch is unchanged.** When `welinkinTemplatePath` is set, the section names the path and the import-and-preserve instruction, which agrees with the `welinkin-ppt` skill's workflow; the two sources name the same file.
+**The configured branch is unchanged.** When `welinkinTemplatePath` is set, the section names the path and the import-and-preserve instruction, which agrees with the template skill's workflow; the two sources name the same file.
 
 ## Alternatives considered
 
@@ -26,14 +26,14 @@ One fixed string carried two defects. It asserted a fact about the environment t
 
 **Have the section read `~/.dsh/skills` or the skill registry to decide whether a template skill exists.** Rejected: the section would then assert a second environment fact from a second reader, and a skill under another name would defeat the check. The model already holds the catalog in its prompt and the `skill` tool; the section points at those.
 
-**Drop the fallback and refuse to load without `welinkinTemplatePath`.** Rejected: the Team bundle leaves the path absent on purpose, because only the installer knows where a staged template landed, and failing at load would remove the option from every build without a staged template, including a source-launched profile whose template is reachable through a skill.
+**Drop the fallback and refuse to load without `welinkinTemplatePath`.** Rejected: the Team bundle leaves the path absent on purpose, because only the installer knows where a staged template landed, and failing at load would remove PowerPoint from every build without a staged template, including a source-launched profile whose template is reachable through a skill.
 
 **Make the loaded skill outrank the system prompt.** Not available: that ranking is the model's. A section that contradicts a skill is the defect, not the ranking.
 
 ## Consequences
 
-A conversation whose office choice is `welinkin-ppt` on a Runner with no `office` row now reaches the skill's template instead of a fabricated style, and a Runner with neither a row nor a skill is told that the template is unreachable rather than handed a deck in invented colours. The section grows by one sentence in the fallback case only.
+A conversation whose office choice is `ppt` on a Runner with no `office` row now reaches the skill's template instead of a fabricated style, and a Runner with neither a row nor a skill is told that the template is unreachable rather than handed a deck in invented colours. The section grows by one sentence in the fallback case only.
 
-The section still instructs and does not enforce; a model may choose otherwise. The `welinkin-ppt` skill and the `office` row are two places that name the template path, and they can disagree: an installer that stages a template writes the row, and the skill should name the same file.
+The section still instructs and does not enforce; a model may choose otherwise. The template skill and the `office` row are two places that name the template path, and they can disagree: an installer that stages a template writes the row, and the skill should name the same file.
 
 `packages/office/tool-office/tests/section.spec.ts` pins the fallback: it names the skill route, keeps the import-and-preserve instruction, asserts nothing about missing files, and contains no hex colour. The keyless recorded-session snapshots carry no `office/kind` event, so none changes; a snapshot proving the section against a recorded choice stays deferred as [the picker note](../feature/2026-09-03-composer-office-deliverable-picker.md) records.

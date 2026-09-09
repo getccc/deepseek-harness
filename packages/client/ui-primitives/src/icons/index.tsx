@@ -886,3 +886,70 @@ export const IconArchiveOutline20 = ({ size = 20, className }: IconProps) => (
     <path d="M12.7962 12.5661V11.0832H7.20548V12.5661L12.7962 12.5661Z" fill="currentColor" />
   </svg>
 )
+
+/* The office-kind glyphs below are harness-drawn rather than figma extracts:
+   the composer's office picker needs one mark per deliverable kind, and the
+   set carries none. Each is a 1.15px-thick outline built from rounded rects,
+   so the four read as one family beside the extracted glyphs. */
+
+/** Word deliverable: page outline over three text lines. */
+export const IconDocumentOutline16 = ({ size = 16, className }: IconProps) => (
+  <svg width={size} height={size} className={className} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M5.2 1.4H10.8A2.2 2.2 0 0 1 13 3.6V12.4A2.2 2.2 0 0 1 10.8 14.6H5.2A2.2 2.2 0 0 1 3 12.4V3.6A2.2 2.2 0 0 1 5.2 1.4ZM5.2 2.55H10.8A1.05 1.05 0 0 1 11.85 3.6V12.4A1.05 1.05 0 0 1 10.8 13.45H5.2A1.05 1.05 0 0 1 4.15 12.4V3.6A1.05 1.05 0 0 1 5.2 2.55Z"
+      fill="currentColor"
+    />
+    <path
+      d="M5.95 4.9H10.05A0.55 0.55 0 0 1 10.6 5.45V5.5A0.55 0.55 0 0 1 10.05 6.05H5.95A0.55 0.55 0 0 1 5.4 5.5V5.45A0.55 0.55 0 0 1 5.95 4.9ZM5.95 7.4H10.05A0.55 0.55 0 0 1 10.6 7.95V8A0.55 0.55 0 0 1 10.05 8.55H5.95A0.55 0.55 0 0 1 5.4 8V7.95A0.55 0.55 0 0 1 5.95 7.4ZM5.95 9.9H8.15A0.55 0.55 0 0 1 8.7 10.45V10.5A0.55 0.55 0 0 1 8.15 11.05H5.95A0.55 0.55 0 0 1 5.4 10.5V10.45A0.55 0.55 0 0 1 5.95 9.9Z"
+      fill="currentColor"
+    />
+  </svg>
+)
+
+/** Excel deliverable: sheet outline over a header rule and a column rule. */
+export const IconSpreadsheetOutline16 = ({ size = 16, className }: IconProps) => (
+  <svg width={size} height={size} className={className} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M4.1 2.6H11.9A2.2 2.2 0 0 1 14.1 4.8V11.2A2.2 2.2 0 0 1 11.9 13.4H4.1A2.2 2.2 0 0 1 1.9 11.2V4.8A2.2 2.2 0 0 1 4.1 2.6ZM4.1 3.75H11.9A1.05 1.05 0 0 1 12.95 4.8V11.2A1.05 1.05 0 0 1 11.9 12.25H4.1A1.05 1.05 0 0 1 3.05 11.2V4.8A1.05 1.05 0 0 1 4.1 3.75Z"
+      fill="currentColor"
+    />
+    <path
+      d="M3.2 6H12.8A0.15 0.15 0 0 1 12.95 6.15V7A0.15 0.15 0 0 1 12.8 7.15H3.2A0.15 0.15 0 0 1 3.05 7V6.15A0.15 0.15 0 0 1 3.2 6ZM7.57 7.15H8.42A0.15 0.15 0 0 1 8.57 7.3V12.1A0.15 0.15 0 0 1 8.42 12.25H7.57A0.15 0.15 0 0 1 7.42 12.1V7.3A0.15 0.15 0 0 1 7.57 7.15Z"
+      fill="currentColor"
+    />
+  </svg>
+)
+
+/** PowerPoint deliverable: slide board on a stand. */
+export const IconSlidesOutline16 = ({ size = 16, className }: IconProps) => (
+  <svg width={size} height={size} className={className} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M4.1 1.9H11.9A2.2 2.2 0 0 1 14.1 4.1V9.3A2.2 2.2 0 0 1 11.9 11.5H4.1A2.2 2.2 0 0 1 1.9 9.3V4.1A2.2 2.2 0 0 1 4.1 1.9ZM4.1 3.05H11.9A1.05 1.05 0 0 1 12.95 4.1V9.3A1.05 1.05 0 0 1 11.9 10.35H4.1A1.05 1.05 0 0 1 3.05 9.3V4.1A1.05 1.05 0 0 1 4.1 3.05Z"
+      fill="currentColor"
+    />
+    <path
+      d="M7.57 11.5H8.42A0.15 0.15 0 0 1 8.57 11.65V12.95A0.15 0.15 0 0 1 8.42 13.1H7.57A0.15 0.15 0 0 1 7.42 12.95V11.65A0.15 0.15 0 0 1 7.57 11.5ZM5.55 13.1H10.45A0.55 0.55 0 0 1 11 13.65V13.7A0.55 0.55 0 0 1 10.45 14.25H5.55A0.55 0.55 0 0 1 5 13.7V13.65A0.55 0.55 0 0 1 5.55 13.1Z"
+      fill="currentColor"
+    />
+  </svg>
+)
+
+/** Visualization deliverable: axis corner under three rising bars. */
+export const IconChartOutline16 = ({ size = 16, className }: IconProps) => (
+  <svg width={size} height={size} className={className} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M2.5 2H2.65A0.5 0.5 0 0 1 3.15 2.5V12.65A0.5 0.5 0 0 1 2.65 13.15H2.5A0.5 0.5 0 0 1 2 12.65V2.5A0.5 0.5 0 0 1 2.5 2ZM2.5 12H13.5A0.5 0.5 0 0 1 14 12.5V12.65A0.5 0.5 0 0 1 13.5 13.15H2.5A0.5 0.5 0 0 1 2 12.65V12.5A0.5 0.5 0 0 1 2.5 12Z"
+      fill="currentColor"
+    />
+    <path
+      d="M5.15 8.1H6.05A0.6 0.6 0 0 1 6.65 8.7V11.4A0.6 0.6 0 0 1 6.05 12H5.15A0.6 0.6 0 0 1 4.55 11.4V8.7A0.6 0.6 0 0 1 5.15 8.1ZM8.25 5.6H9.15A0.6 0.6 0 0 1 9.75 6.2V11.4A0.6 0.6 0 0 1 9.15 12H8.25A0.6 0.6 0 0 1 7.65 11.4V6.2A0.6 0.6 0 0 1 8.25 5.6ZM11.35 3.3H12.25A0.6 0.6 0 0 1 12.85 3.9V11.4A0.6 0.6 0 0 1 12.25 12H11.35A0.6 0.6 0 0 1 10.75 11.4V3.9A0.6 0.6 0 0 1 11.35 3.3Z"
+      fill="currentColor"
+    />
+  </svg>
+)

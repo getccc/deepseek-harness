@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write apps/team-runner-desktop/README.md
-README.md: 01b220b2bff2c361384a20ffeb5294492b174a99
-README.zh.md: d532f1e2adda82b0469700357d9d8679c40abf6d
+README.md: 7e2dd4d16398def837283e681d4aadb30546a802
+README.zh.md: 3d5a4fcb407d5a1441701f3db0db255eea135147

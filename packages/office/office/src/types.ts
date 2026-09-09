@@ -13,15 +13,16 @@
  * The office document kind a conversation should produce.
  *
  * `none` is where every Session starts: no format is imposed and the office
- * prompt section is absent. `welinkin-ppt` is a PowerPoint built from the
- * deployment's own Welinkin template rather than from a blank deck. `chart` is
- * not a file at all: the deliverable is Apache ECharts options the web surface
- * renders in the answer itself.
+ * prompt section is absent. `ppt` is one kind, not two: a deployment that
+ * configures a PowerPoint template gets a deck built from it, and one that
+ * configures none gets a plain deck, so a member never picks between them.
+ * `chart` is not a file at all: the deliverable is Apache ECharts options the
+ * web surface renders in the answer itself.
  */
-export type OfficeKind = 'none' | 'word' | 'excel' | 'ppt' | 'welinkin-ppt' | 'chart'
+export type OfficeKind = 'none' | 'word' | 'excel' | 'ppt' | 'chart'
 
 /** Every kind a picker offers, in display order; excludes the `none` clear-state. */
-export const OFFICE_KINDS = ['word', 'excel', 'ppt', 'welinkin-ppt', 'chart'] as const satisfies readonly Exclude<OfficeKind, 'none'>[]
+export const OFFICE_KINDS = ['word', 'excel', 'ppt', 'chart'] as const satisfies readonly Exclude<OfficeKind, 'none'>[]
 
 /**
  * Whether a value is one of the offerable office kinds (the `none` clear-state excluded).
