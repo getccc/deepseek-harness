@@ -25,8 +25,8 @@
 - text: "Explain event sourcing in one sentence.Your parent agent id is \"session-{{uuid}}\". Before you finish, send your result to that agent with send_message({ agent_id: \"session-{{uuid}}\", message: \"<self-contained result>\" }). The parent shares your workspace but does not automatically receive your transcript, tool output, or reasoning. Send earlier messages as well when a finding changes what the parent should do next; sending a message does not end your turn. {{clock}}"
 - button "Copy":
   - img
-- button "Thought for a while" [expanded]:
-  - text: Thought for a while
+- button "Xiaowei thought for a while" [expanded]:
+  - text: Xiaowei thought for a while
   - img
 - button "Context injection @deepseek-ai/dsh-system-prompt":
   - img
@@ -56,8 +56,8 @@
 - text: Now give the same explanation to a human reader. {{clock}}
 - button "Copy":
   - img
-- button "Thought for a while" [expanded]:
-  - text: Thought for a while
+- button "Xiaowei thought for a while" [expanded]:
+  - text: Xiaowei thought for a while
   - img
 - button "Think The user is asking for a one-sentence description of event sourcing. This is a straightforward knowledge question that doesn't require any skill loading or tool calls.":
   - img

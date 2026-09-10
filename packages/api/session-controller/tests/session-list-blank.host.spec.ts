@@ -3,10 +3,13 @@
  * has run), so standalone plugin events — command lifecycle records,
  * plan/mode, permission knob events, session titles — never flip it and a
  * fresh session running /plan stays list-hidden until the first accepted
- * prompt's turn/start. `pristine` means "log empty", which those same events
- * do end: a conversation someone set up is not the one New Session hands
- * back. The host/session-added frame shares the blank predicate function
- * (covered by the workspace spec's frame assertion).
+ * prompt's turn/start. `pristine` means "nobody set it up", which those same
+ * events do end: a conversation someone set up is not the one New Session
+ * hands back. The facts the composition pins on every fresh Session
+ * (permission preset, sandbox mode, approval policy, agent preset) are not
+ * anyone's setup and leave it pristine. The host/session-added frame shares
+ * the blank predicate function (covered by the workspace spec's frame
+ * assertion).
  */
 
 import { describe, expect, it } from 'vitest'
@@ -79,6 +82,18 @@ describe('summary blank = conversation not started', () => {
     appendStandalone(session)
     expect(await listPristine(remote, session.id)).toBe(false)
     // Still blank: the conversation has not started, it has only been set up.
+    expect(await listBlank(remote, session.id)).toBe(true)
+  })
+
+  it('the facts pinned at creation leave pristine alone', async () => {
+    const { ctx, remote, attach } = await harness()
+    const session = ctx.sessions.create()
+    attach(session)
+    session.append('permission/preset', { preset: 'workspace-write' })
+    session.append('sandbox/mode', { mode: 'workspace-write' })
+    session.append('approval/policy', { policy: 'ask' })
+    session.append('agent-preset/selected', { agentPreset: 'standard' })
+    expect(await listPristine(remote, session.id)).toBe(true)
     expect(await listBlank(remote, session.id)).toBe(true)
   })
 

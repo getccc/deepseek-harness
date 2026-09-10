@@ -20,8 +20,8 @@
 - text: Read the attached file with the read tool, reply with exactly the single word it contains, and stop. {{clock}}
 - button "Copy":
   - img
-- button "1 tool call":
-  - text: 1 tool call
+- button "Xiaowei made 1 tool call":
+  - text: Xiaowei made 1 tool call
   - img
 - paragraph: UPLOAD_ROUND_OK
 - button "Copy":

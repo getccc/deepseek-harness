@@ -31,8 +31,8 @@
 - button "Add attachment":
   - img
 - 'button "Access mode, current: Workspace Write"': Workspace Write
-- button "Select model, current streaming-fence-highlight-test/streaming-fence":
-  - text: streaming-fence-highlight-test/streaming-fence
+- button "Select model, current streaming-fence":
+  - text: streaming-fence
   - img
 - button "Stop generating"
 

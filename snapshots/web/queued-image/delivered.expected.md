@@ -21,11 +21,11 @@
 - text: Reply with a one-sentence description of event sourcing, then stop. {{clock}}
 - button "Copy":
   - img
-- button "Thought for a while":
-  - text: Thought for a while
+- button "Xiaowei thought for a while":
+  - text: Xiaowei thought for a while
   - img
 - paragraph: partial
-- text: Stopped
+- text: Xiaowei stopped
 - button "Copy":
   - img
 - button "Good response":
@@ -43,8 +43,8 @@
 - text: Compare with this screenshot {{clock}}
 - button "Copy":
   - img
-- button "Thought for a while":
-  - text: Thought for a while
+- button "Xiaowei thought for a while":
+  - text: Xiaowei thought for a while
   - img
 - paragraph: Event sourcing is a pattern where all changes to an application's state are stored as an immutable, append-only sequence of events, rather than persisting only the current state, enabling full auditability, temporal queries, and event-driven architectures.
 - button "Copy":
@@ -61,8 +61,8 @@
 - text: {{clock}} Continue with the queued comparison {{clock}}
 - button "Copy":
   - img
-- button "Thought for a while":
-  - text: Thought for a while
+- button "Xiaowei thought for a while":
+  - text: Xiaowei thought for a while
   - img
 - paragraph: Event sourcing is a pattern where all changes to an application's state are stored as an immutable, append-only sequence of events, rather than persisting only the current state, enabling full auditability, temporal queries, and event-driven architectures.
 - button "Copy":

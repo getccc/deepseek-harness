@@ -20,7 +20,7 @@
 - button "Settings":
   - img
   - text: Settings
-- text: Into the Unknown Preview
+- text: What is the plan today?
 - button "Choose workspace":
   - img
   - text: workspace

@@ -317,7 +317,9 @@ async function bootPreview(origin: string, browser: Browser): Promise<void> {
     const configureLater = page.getByRole('button', { name: 'Configure later' })
     await configureLater.waitFor({ timeout: 30_000 })
     await configureLater.click()
-    await page.locator('[data-composer-input][data-placeholder="Describe what you want to build, / commands, @ files or sessions"]')
+    // Keyless preview: the member DeepSeek route stays dormant until a key
+    // resolves, so the composer asks for a model instead of inviting a prompt.
+    await page.locator('[data-composer-input][data-placeholder="This model is unavailable — select one to continue"]')
       .waitFor({ timeout: 30_000 })
 
     const exercised = await page.evaluate(async ({ seededSessionId, seededSessionTitle }) => {

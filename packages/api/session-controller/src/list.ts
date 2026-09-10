@@ -39,6 +39,17 @@ const imageLimitsSchema = z.object({
 }) as unknown as z.ZodType<ImageAttachmentLimits>
 
 /**
+ * Events the composition writes before a fresh Session is published: the
+ * permission facts pinned at creation and the agent preset mounted for it.
+ * They describe the build, not a person's choice, so they leave `pristine`
+ * alone; without this a Session is set up before anyone sees it and New
+ * Session could never hand one back.
+ */
+const SEED_EVENT_TYPES: ReadonlySet<string> = new Set([
+  'permission/preset', 'sandbox/mode', 'approval/policy', 'agent-preset/selected',
+])
+
+/**
  * Advance the Session-list metadata projection by one committed event.
  * @param state - metadata before the event.
  * @param event - next committed Session event.
@@ -52,10 +63,11 @@ export function applySessionListMetadata(
   const lastPromptAt = event.type === 'user/message' && event.data.source.kind === 'user'
     ? event.time
     : state.lastPromptAt
-  // Any event at all ends pristine: whatever it recorded, someone put it there.
-  return blank === state.blank && lastPromptAt === state.lastPromptAt && !state.pristine
+  // Every other event ends pristine: whatever it recorded, someone put it there.
+  const pristine = state.pristine && SEED_EVENT_TYPES.has(event.type)
+  return blank === state.blank && lastPromptAt === state.lastPromptAt && pristine === state.pristine
     ? state
-    : { blank, pristine: false, lastPromptAt }
+    : { blank, pristine, lastPromptAt }
 }
 
 /**
@@ -87,7 +99,9 @@ export class ApiSessionList {
       wire: { viewSchema: sessionListMetadataSchema, view: state => state },
       // 2: `pristine` joined the state, so a cache written by a build that
       // did not know it cannot answer whether a conversation is untouched.
-      stateVersion: 2,
+      // 3: the seed events a fresh Session receives stopped ending `pristine`,
+      // so a cache that counted them holds the wrong answer.
+      stateVersion: 3,
     })
     ctx.inject(['attachments'], (attachmentCtx) => {
       ctx.sessionProjections.register<'imageLimits', null>({

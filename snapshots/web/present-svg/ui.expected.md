@@ -5,8 +5,8 @@
 - text: 简单画一个 SVG 表示冯诺依曼架构, 保存为 von-neumann.svg {{clock}}
 - button "复制":
   - img
-- button "2 次工具调用 · 1 条消息" [expanded]:
-  - text: 2 次工具调用 · 1 条消息
+- button "小微调用了 2 次工具 · 回复了 1 条消息" [expanded]:
+  - text: 小微调用了 2 次工具 · 回复了 1 条消息
   - img
 - button "上下文注入 @deepseek-ai/dsh-system-prompt":
   - img

@@ -11,8 +11,8 @@
 - text: "Assemble the link gallery: write the report and styles, inspect the sources, and summarize. {{clock}}"
 - button "Copy":
   - img
-- button "16 tool calls" [expanded]:
-  - text: 16 tool calls
+- button "Xiaowei made 16 tool calls" [expanded]:
+  - text: Xiaowei made 16 tool calls
   - img
 - button "Write site/report.html +1 -0":
   - img

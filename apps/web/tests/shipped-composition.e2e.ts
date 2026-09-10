@@ -85,33 +85,13 @@ it('assembles the shipped Web transport, catalog, guidance, and defaults', async
   expect(index.headers.get('content-encoding')).toBe('gzip')
   expect(index.headers.get('vary')).toContain('Accept-Encoding')
   await index.body?.cancel()
-  expect(ctx.llm.providerRetryPolicy('deepseek-official')).toMatchInlineSnapshot(`
-    {
-      "initialDelayMs": 500,
-      "jitterRatio": 0.1,
-      "maxDelayMs": 10000,
-      "maxRetries": 5,
-      "mode": "normal",
-      "retryableCodes": [
-        "EMPTY_RESPONSE",
-        "RATE_LIMIT",
-        "SERVER",
-        "TIMEOUT",
-        "TRANSPORT",
-      ],
-    }
-  `)
+  // Keyless composition: the member DeepSeek route stays dormant until a key
+  // resolves, so no adapter serves it and no retry policy can be read.
+  expect(() => ctx.llm.providerRetryPolicy('deepseek-official')).toThrow(/no adapter registered for provider "deepseek-official"/)
   await ctx.settings.update('llm-deepseek', {
     retryPolicy: { mode: 'always', maxRetries: 5 },
   })
-  expect(ctx.llm.providerRetryPolicy('deepseek-official')).toMatchInlineSnapshot(`
-    {
-      "initialDelayMs": 500,
-      "jitterRatio": 0.1,
-      "maxDelayMs": 10000,
-      "mode": "always",
-    }
-  `)
+  expect(() => ctx.llm.providerRetryPolicy('deepseek-official')).toThrow(/no adapter registered for provider "deepseek-official"/)
   await ctx.settings.update('llm-pi-ai', {
     providers: {
       openai: {},

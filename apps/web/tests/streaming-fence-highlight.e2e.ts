@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import type { Browser, Page } from 'playwright'
 import { chromium } from 'playwright'
 import { afterAll, beforeAll, describe, expect, it, onTestFailed } from 'vitest'
-import type { GenerateOptions, StreamChunk } from '@deepseek-ai/dsh-llm'
+import type { GenerateOptions, LlmModelInfo, StreamChunk } from '@deepseek-ai/dsh-llm'
 import { LlmAdapter } from '@deepseek-ai/dsh-llm'
 import type {} from '@deepseek-ai/dsh-agent-default-model'
 import {
@@ -40,6 +40,12 @@ class StreamingFenceAdapter extends LlmAdapter {
   readonly secondPaused = new Promise<void>((resolve) => { this.resolveSecondPaused = resolve })
   private readonly firstContinuation = new Promise<void>((resolve) => { this.resolveFirstContinuation = resolve })
   private readonly secondContinuation = new Promise<void>((resolve) => { this.resolveSecondContinuation = resolve })
+
+  // The catalog default gives way to the first listed model when the default
+  // is not listed, so the route advertises the model the scenario saves.
+  override listModels(provider: string): Promise<readonly LlmModelInfo[]> {
+    return Promise.resolve([{ provider, id: MODEL, name: MODEL }])
+  }
 
   grow(): void {
     if (this.firstContinued) return

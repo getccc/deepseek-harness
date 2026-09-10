@@ -188,6 +188,9 @@ export interface SessionSummary {
    * pristine. A surface offering "a new conversation" reuses a pristine one
    * and leaves a set-up one alone, because handing back someone else's
    * settings is not a new conversation.
+   * The permission facts, sandbox mode, approval policy, and agent preset the
+   * composition pins on every fresh Session describe the build, not a choice,
+   * and leave it pristine.
    *
    * The Host states it on every summary it builds; a reader treats an absent
    * value as "not pristine", which costs a reusable conversation rather than

@@ -87,6 +87,8 @@ interface FixtureSessionSummary {
   updatedAt: number
   running: boolean
   blank: boolean
+  /** Host mirror: an empty log is pristine until its first prompt, like `dsh-api-session-controller` derives it. */
+  pristine?: boolean
   readonly parentSessionId?: SessionId
   readonly origin?: 'subagent'
   readonly cwd?: string
@@ -3174,7 +3176,7 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
         }
       }
       const created: FixtureSessionSummary = {
-        sessionId: requestedId ?? sid(`fx-${nextSession++}`), updatedAt: Date.now(), running: false, blank: true, cwd,
+        sessionId: requestedId ?? sid(`fx-${nextSession++}`), updatedAt: Date.now(), running: false, blank: true, pristine: true, cwd,
       }
       sessions.push(created)
       modelSelections.set(created.sessionId, { provider: 'deepseek-official', model: 'deepseek-v4-flash' })
@@ -3308,8 +3310,10 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
         })
       }
       summary.updatedAt = Date.now()
-      // First accepted prompt appends events: the summary stops being blank.
+      // First accepted prompt appends events: the summary stops being blank
+      // and pristine.
       summary.blank = false
+      summary.pristine = false
       const userText = content.map(b => (b.type === 'text' ? b.text : '')).join('')
       const durable: ContentBlock[] = content.map((block) => {
         if (block.type === 'text') return block
