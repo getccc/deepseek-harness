@@ -23,11 +23,20 @@ describe('renderOfficeSection', () => {
     expect(text).toMatch(/keep its slide masters, layouts, fonts, and brand colours/)
   })
 
-  it('names the echarts fence and its strict-JSON rule for the chart kind', () => {
+  it('asks for SVG chart files declared through the present tool for the chart kind', () => {
     const text = renderOfficeSection({ version: 1, kind: 'chart' })
-    expect(text).toMatch(/info string is exactly `echarts`/)
-    expect(text).toMatch(/strict-JSON Apache ECharts option/)
-    expect(text).toMatch(/no JavaScript functions/)
+    expect(text).toMatch(/SVG file under the working directory/)
+    expect(text).toMatch(/declare every file with the present tool/)
+    expect(text).not.toMatch(/echarts/)
+  })
+
+  it('ends every file-producing kind with the present-tool delivery rule', () => {
+    for (const kind of ['word', 'excel', 'ppt', 'chart'] as const) {
+      const text = renderOfficeSection({ version: 1, kind }, kind === 'ppt' ? '/opt/welinkin/welinkin-ppt.pptx' : undefined)
+      expect(text).toMatch(/present tool/)
+      expect(text).toMatch(/only the present call does\.$/)
+    }
+    expect(renderOfficeSection({ version: 1, kind: 'ppt' })).toMatch(/only the present call does\.$/)
   })
 
   it('sends the model to a template skill when no template path is configured', () => {
