@@ -17,6 +17,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Context } from '@deepseek-ai/cordis'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { installProxyFromEnvironment } from '@deepseek-ai/dsh-http-proxy'
 import { controlPlaneFetch } from '../src/transport.ts'
 
 let plane: Server
@@ -91,5 +92,66 @@ describe('the Control Plane fetch', () => {
     // A closed agent refuses the next call rather than opening a socket the
     // unloaded plugin would own.
     await expect(call(new URL('/team/device/login', origin))).rejects.toThrow()
+  })
+
+  describe('behind the launch environment\'s proxy', () => {
+    let proxy: Server
+    let proxyUrl: string
+    /** Absolute-form targets and CONNECT authorities the fake proxy saw. */
+    let seen: string[]
+    let disposeProxy: (() => Promise<void>) | undefined
+
+    beforeEach(async () => {
+      seen = []
+      proxy = createServer((req: IncomingMessage, res: ServerResponse) => {
+        seen.push(req.url ?? '')
+        res.writeHead(200, { 'content-type': 'application/json' })
+        res.end(JSON.stringify({ via: 'proxy' }))
+      })
+      proxy.on('connect', (req: IncomingMessage, socket) => {
+        seen.push(`CONNECT ${req.url ?? ''}`)
+        // Refusing the tunnel keeps the test free of a TLS origin; the tunnel
+        // request itself is what proves the pinned-trust agent honored the route.
+        socket.end('HTTP/1.1 502 Bad Gateway\r\n\r\n')
+      })
+      proxy.listen(0, '127.0.0.1')
+      await once(proxy, 'listening')
+      const address = proxy.address()
+      proxyUrl = `http://127.0.0.1:${String(typeof address === 'object' && address !== null ? address.port : 0)}`
+      const env = { get: (name: string) => (name === 'HTTP_PROXY' || name === 'HTTPS_PROXY' ? { value: proxyUrl } : undefined) }
+      disposeProxy = await installProxyFromEnvironment(env, () => undefined)
+    })
+
+    afterEach(async () => {
+      await disposeProxy?.()
+      disposeProxy = undefined
+      proxy.close()
+      await once(proxy, 'close')
+    })
+
+    it('routes a call without a certificate through the installed dispatcher', async () => {
+      const ctx = new Context()
+      const call = controlPlaneFetch(ctx, undefined)
+      const response = await call(new URL('http://control-plane.test/team/device/login'))
+      await expect(response.json()).resolves.toEqual({ via: 'proxy' })
+      expect(seen).toEqual(['http://control-plane.test/team/device/login'])
+    })
+
+    it('tunnels a call carrying pinned trust through the same proxy', async () => {
+      const ctx = new Context()
+      const call = controlPlaneFetch(ctx, certificateFile('ca.crt'))
+      await expect(call(new URL('https://control-plane.test/team/device/login'))).rejects.toThrow()
+      expect(seen).toEqual(['CONNECT control-plane.test:443'])
+      await ctx.fiber.dispose()
+    })
+
+    it('keeps a loopback Control Plane direct with pinned trust', async () => {
+      const ctx = new Context()
+      const call = controlPlaneFetch(ctx, certificateFile('ca.crt'))
+      const response = await call(new URL('/team/device/login', origin))
+      expect(response.status).toBe(200)
+      expect(seen).toEqual([])
+      await ctx.fiber.dispose()
+    })
   })
 })

@@ -710,7 +710,7 @@ export interface Config {
 }
 ```
 
-来源：[`packages/e2b/e2b/src/index.ts:43`](../packages/e2b/e2b/src/index.ts)
+来源：[`packages/e2b/e2b/src/index.ts:45`](../packages/e2b/e2b/src/index.ts)
 
 <a id="deepseek-aidsh-experimental-agent-team"></a>
 
@@ -1331,7 +1331,7 @@ export interface PiAiProviderProfile {
    * to answer instead.
    */
   defaultInput?: PiAiModality[]
-  /** Provider request headers; Harness attribution wins reserved names. */
+  /** Provider request headers, validated against Fetch when the profile resolves; Harness attribution wins reserved names. */
   headers?: Record<string, string>
   /** Provider-neutral pi-ai reasoning level. */
   reasoning?: ModelThinkingLevel
@@ -3969,6 +3969,7 @@ export interface Config {
 - `@deepseek-ai/dsh-experimental-webworker-runtime`（[`packages/experimental/webworker-runtime/src/index.ts`](../packages/experimental/webworker-runtime/src/index.ts)）
 - `@deepseek-ai/dsh-home-paths`（[`packages/util/home-paths/src/index.ts`](../packages/util/home-paths/src/index.ts)）
 - `@deepseek-ai/dsh-hook-protocol`（[`packages/hooks/hook-protocol/src/index.ts`](../packages/hooks/hook-protocol/src/index.ts)）
+- `@deepseek-ai/dsh-http-proxy`（[`packages/util/http-proxy/src/index.ts`](../packages/util/http-proxy/src/index.ts)）
 - `@deepseek-ai/dsh-knowledge`（[`packages/knowledge/knowledge/src/index.ts`](../packages/knowledge/knowledge/src/index.ts)）
 - `@deepseek-ai/dsh-knowledge-gateway`（[`packages/knowledge/knowledge-gateway/src/index.ts`](../packages/knowledge/knowledge-gateway/src/index.ts)）
 - `@deepseek-ai/dsh-knowledge-source`（[`packages/knowledge/knowledge-source/src/index.ts`](../packages/knowledge/knowledge-source/src/index.ts)）

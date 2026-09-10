@@ -22,6 +22,9 @@
     },
     {
       "path": "../team-control-plane-http"
+    },
+    {
+      "path": "../../util/http-proxy"
     }
   ]
 }
