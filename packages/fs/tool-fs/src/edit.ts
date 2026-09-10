@@ -69,7 +69,7 @@ export function formatEditOutput(displayPath: string, replaceAll: boolean): stri
 }
 
 /**
- * Register the `edit` tool and its system-prompt guidance.
+ * Register the `edit` tool and its scope-aware system-prompt guidance.
  * @param ctx - the plugin context; registrations are effects scoped to it, and execution uses its `fs` service.
  * @param sandbox - the shared sandbox-escalation API (advertisement, mode stamping, denial mapping).
  */
@@ -77,7 +77,9 @@ export function applyEditTool(ctx: Context, sandbox: FsSandboxController): void 
   ctx.systemPrompt.section({
     name: 'tool:edit',
     order: FIRST_PARTY_SECTION_ORDER.TOOL_EDIT,
-    text: 'Use the edit tool for targeted changes to existing UTF-8 text files. It replaces literal old_string with new_string; by default old_string must appear exactly once. If old_string appears multiple times, provide a more specific old_string or set replace_all to true. Read the file first (the default fs-observation-policy requires it), unless you just created or edited it in this session.',
+    text: ({ scope }) => ctx.tools.get('edit', scope) === undefined
+      ? ''
+      : 'Use the edit tool for targeted changes to existing UTF-8 text files. It replaces literal old_string with new_string; by default old_string must appear exactly once. If old_string appears multiple times, provide a more specific old_string or set replace_all to true. Read the file first (the default fs-observation-policy requires it), unless you just created or edited it in this session.',
   })
 
   ctx.tools.register(defineTool({
