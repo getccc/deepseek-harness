@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-account-store` is where Team Edition keeps who a member is: one organization and the accounts inside it, each with a login name unique to that organization, a status, and the counters a lockout policy reads. It is a repository and nothing else — it records what happened and reports conflicts, and it makes no decision. Whether five failures mean a lockout, and what an encoded password hash contains, belong to the authentication provider that reads and writes through it. Mount this package for the vocabulary and the service contract; pair it with a backend such as [`account-store-sqlite`](../account-store-sqlite/README.md), which is what actually stores the rows.
+`dsh-account-store` is where Team Edition keeps who a member is: one organization and the accounts inside it, each with a login name unique to that organization, a status, and the counters a lockout policy reads. It is a repository and nothing else: it records what happened and reports conflicts, and makes no decision. Whether five failures mean a lockout, and what an encoded password hash contains, belong to the authentication provider that reads and writes through it. Mount it for the vocabulary and the service contract; pair it with a backend such as [`account-store-sqlite`](../account-store-sqlite/README.md).
 
 ## Table of Contents
 

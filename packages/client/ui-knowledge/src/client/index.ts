@@ -86,7 +86,7 @@ function registerUi(ctx: ClientContext): void {
 
   ctx.effect(() => (ctx.get('commandUi') as CommandUiContract).register({
     name: NS,
-    description: t('command.description'),
+    description: () => t('command.description'),
     available: () => true,
     ui: {
       kind: 'popupMultiSelect',

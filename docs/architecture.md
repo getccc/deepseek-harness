@@ -2,44 +2,6 @@
 
 English | [中文](architecture.zh.md)
 
-## Summary
-
-DeepSeek Harness starts a named profile as one reversible Cordis plugin tree. Application surfaces drive the same agent runtime; the runtime records model-visible work in the Session event log and reaches replaceable capabilities through providers. This page maps that composition, the turn flow, the durable state owner, and the extension points a maintainer uses instead of patching the loop.
-
-## Table of Contents
-
-- [System map](#system-map)
-- [Cordis](#cordis)
-- [Profiles and bundles](#profiles-and-bundles)
-- [Application launch](#application-launch)
-- [Core packages](#core-packages)
-- [Events](#events)
-- [Turn flow](#turn-flow)
-- [Session log](#session-log)
-- [Capability seams](#capability-seams)
-- [Where new behavior goes](#where-new-behavior-goes)
-
------
-
-<a id="system-map"></a>
-
-## System map
-
-The profile selects the application surface and providers, but each surface enters the same plugin-owned runtime. The Session event log is the durable center: the agent loop derives model history from it, while persistence, replay, UI, and telemetry consume it.
-
-```text
-profile + bundle patches -> dsh CLI -> Cordis plugin tree
-                                           |
-                  +------------------------+----------------------+
-                  |                        |                      |
-             app surface              agent runtime        capability seams
-          web/headless/sdk/acp    prompt -> LLM -> tools   fs/shell/... -> providers
-                  |                        |
-                  +----------> Session event log <---------+
-                                           |
-                              persistence / replay / UI / telemetry
-```
-
 Read this before changing anything under `packages/`. It assumes you know Cordis; if you do not, start with the [primer](cordis-primer.md) or the [tutorial](cordis-tutorial/index.md).
 
 We recommend using an agent to explore the codebase and understand its architecture.
@@ -88,7 +50,7 @@ Every supported Node application starts at the `dsh` CLI with a named profile. T
 
 Vendored CLIs, build-only and test-only executables, direct in-process plugin mounting, and the private browser WebWorker preview are not Harness application launchers. [`verify-application-entrypoints`](../scripts/verify-application-entrypoints.ts) keeps every package bin, executable source, and root demo in an explicit class and rejects a Node application path that bypasses `dsh`.
 
-The Python SDK follows the same application architecture. Its runtime wheel packages the normal `dsh` CLI as `deepseek-harness-sdk-runtime-<platform>-<arch>`, and the client launches `dsh --profile sdk` with an explicit Harness home by default. The minimal example selects the shipped `sdk-minimal` profile. Python exposes profile selection and ordered patch files rather than a complete Cordis tree; persistent external plugins are installed through `dsh plugin`. The removed private direct-config carrier has no compatibility bin or fallback parser. The packaged executable additionally serves as the Node of its own children: a spawn of `process.execPath` with an absolute script path runs that script as `node` would, because a single-file build has no separate Node to hand it to; that is a child-process carrier confined to the packaged build, not a launch path.
+The Python SDK follows the same application architecture. Its runtime wheel packages the normal `dsh` CLI as `deepseek-harness-sdk-runtime-<platform>-<arch>`, and the client launches `dsh --profile sdk` with an explicit Harness home by default. The minimal example selects the shipped `sdk-minimal` profile. Python exposes profile selection and ordered patch files rather than a complete Cordis tree; persistent external plugins are installed through `dsh plugin`. The removed private direct-config carrier has no compatibility bin or fallback parser.
 
 <a id="core-packages"></a>
 

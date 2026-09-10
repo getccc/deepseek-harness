@@ -1,19 +1,24 @@
 import { memo, useCallback, useMemo } from 'react'
 import { JsonBlock } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { ConversationLocationDataStore, ConversationTurnDataMap } from '@deepseek-ai/dsh-client-ui-conversation/client'
-import type { ChatNodeOwnerProps, ChatViewSlotProps } from '../contract/slots.ts'
+import type { ChatNodeOwnerProps, ChatViewSlotProps, RenderAssistantIdentity } from '../contract/slots.ts'
 import type { ChatNode } from '../contract/chat-nodes.ts'
 import { TURN_PROCESS_INDEPENDENT_KINDS } from '../contract/turn-process.ts'
 import { storedTurnProcessEntry } from '../stores.ts'
 import { useSearchableHidden } from './searchable-hidden.ts'
+import { turnActivityLead } from './turn-activity.ts'
+import { TurnActivityHeader } from './TurnActivityHeader.tsx'
 import css from './ChatView.module.css'
 
 interface ChatNodeSeatProps extends ChatNodeOwnerProps {
   readonly nodeKey: string
   readonly useChatNode: ChatViewSlotProps['useChatNode']
   readonly useChatNodeProcess: ChatViewSlotProps['useChatNodeProcess']
+  readonly useChat: ChatViewSlotProps['useChat']
   readonly historyIncomplete: boolean
   readonly compactTranscript: boolean
+  /** The identity header, rendered once per Turn by the seat of its leading activity row. */
+  readonly renderIdentity: RenderAssistantIdentity
   readonly useStore: ChatViewSlotProps['useStore']
   readonly actions: ChatViewSlotProps['actions']
   readonly renderSlot: ChatViewSlotProps['renderSlot']
@@ -36,9 +41,9 @@ function turnOf(node: ChatNode | undefined): number | undefined {
 
 /** Subscribe, apply Turn-process visibility, and dispatch one stable Context key. */
 export const ChatNodeSeat = memo(function ChatNodeSeat({
-  nodeKey, useChatNode, useChatNodeProcess, historyIncomplete, compactTranscript,
+  nodeKey, useChatNode, useChatNodeProcess, useChat, historyIncomplete, compactTranscript,
   cwd, openFile, inspectCall, forkAt,
-  loadImage, renderMessageImages, fileMentions, useStore, actions, renderSlot, t,
+  loadImage, renderMessageImages, renderIdentity, fileMentions, useStore, actions, renderSlot, t,
 }: ChatNodeSeatProps) {
   const node = useChatNode(nodeKey)
   const routedNode = node as ChatNode | undefined
@@ -79,6 +84,17 @@ export const ChatNodeSeat = memo(function ChatNodeSeat({
   const foldable = processWindowReady
     && (processMember || (ownsDisclosure
       && (processPresentation.hasExternalProcess || processSpec.inlineReasoning)))
+  // Only the Turn's leading seat renders the identity header. The selector
+  // yields the Turn for this seat alone (the resolved Turn is reference-stable),
+  // so a Turn's other seats do not re-render as the Turn grows.
+  const controlShown = processWindowReady
+    && (processPresentation.hasExternalProcess || processSpec.inlineReasoning)
+  const leadTurn = useChat((snapshot) => {
+    const location = (snapshot.nodes.get(nodeKey) as ChatNode | undefined)?.location
+    if (location?.kind !== 'turn' && location?.kind !== 'step') return undefined
+    const lead = turnActivityLead(snapshot.locations.getTurn(location.turn.turn), snapshot.nodes, controlShown)
+    return lead === nodeKey ? location.turn : undefined
+  })
   const turnProcess = useMemo(() => processSpec === undefined
     ? undefined
     : {
@@ -133,6 +149,14 @@ export const ChatNodeSeat = memo(function ChatNodeSeat({
       data-turn-process-hidden={processHidden || undefined}
       data-turn-process-answer={compactAnswer || undefined}
     >
+      {leadTurn !== undefined && (
+        <TurnActivityHeader
+          turn={leadTurn}
+          stepTime={routedNode.kind === 'assistant-step' ? routedNode.data.time : undefined}
+          renderIdentity={renderIdentity}
+          t={t}
+        />
+      )}
       {renderSlot('conversation.chat.node', routedOwner, {
         entryKey: routedNode.kind,
         hookContext: turnData,

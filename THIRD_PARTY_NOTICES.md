@@ -32,6 +32,7 @@ External packages installed for runtime use or distributed inside the prebuilt b
 | Package | License |
 | --- | --- |
 | [`@agentclientprotocol/sdk`](https://github.com/agentclientprotocol/typescript-sdk) | Apache-2.0 |
+| [`@ant-design/icons`](https://github.com/ant-design/ant-design-icons/tree/master/packages/icons-react) | MIT |
 | [`@anthropic-ai/claude-agent-sdk`](https://github.com/anthropics/claude-agent-sdk-typescript) | SEE LICENSE IN README.md |
 | [`@anthropic-ai/sdk`](https://github.com/anthropics/anthropic-sdk-typescript) | MIT |
 | [`@babel/code-frame`](https://github.com/babel/babel) | MIT |
@@ -60,6 +61,7 @@ External packages installed for runtime use or distributed inside the prebuilt b
 | [`@yarnpkg/parsers`](https://github.com/yarnpkg/berry) | BSD-2-Clause |
 | [`acorn`](https://github.com/acornjs/acorn) | MIT |
 | [`anser`](https://github.com/IonicaBizau/anser) | MIT |
+| [`antd`](https://github.com/ant-design/ant-design) | MIT |
 | [`buffer`](https://github.com/feross/buffer) | MIT |
 | [`chokidar`](https://github.com/paulmillr/chokidar) | MIT |
 | [`clsx`](https://github.com/lukeed/clsx) | MIT |

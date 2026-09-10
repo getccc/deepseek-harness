@@ -12,6 +12,8 @@ Two further facts stood between the row and that experience. The sidebar plugin 
 
 ## Decision
 
+**Superseded on 2026-09-10 by the [two-stage upstream merge](../process/2026-09-10-two-stage-upstream-merge.md):** the third-party sidebar and office previewer this note wires into left the deployment; upstream's Sidebar and file delivery own the row now.
+
 **A document the turn produced is a card.** `dsh-client-ui-deliverables` renders a `.md`, `.docx`, `.xlsx`, `.csv`, `.pptx`, or `.pdf` as a card — a tile naming the family by its extension, the file name, the path — stacked above the chip lane, which keeps every other file. `documentKind` decides by extension, and a turn that produced only documents shows no lane. The entry registers at `TURN_TAIL_PRIORITY`, `-10`, below the default and below the sidebar's row twin, so the cards are what a member sees.
 
 **The row learns tools from the plugins that own them.** `ctx.deliverables.recognize({ tool, path })` teaches the vocabulary one tool: `path` reads the produced path off one call's parsed arguments, and a successful call then lists it exactly as `write` does. The Definition reads the live recognizer set on every fold and is re-registered when the set changes, so a conversation already on screen folds again with the tool it just learned; the first-party set and an already-taught tool refuse a second teacher. `dsh-client-ui-office`, the package that already speaks for the office tools, teaches `univer_export` reading `output`.

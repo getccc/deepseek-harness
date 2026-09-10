@@ -28,15 +28,6 @@ import type {} from '@deepseek-ai/dsh-host-webserver'
 import type {} from '@deepseek-ai/dsh-shell-env'
 
 /** Stable Cordis plugin name. */
-/** Whether this process was launched through SSH, including a forwarded-port session. */
-function launchedThroughSsh(ctx: Context): boolean {
-  const environment = launchEnvironmentOf(ctx)
-  return ['SSH_CONNECTION', 'SSH_TTY'].some((name) => {
-    const value = environment.getFrom(name, ['process'])?.value
-    return value !== undefined && value !== ''
-  })
-}
-
 export const name = 'web-app'
 
 /** This dsh installation's root, from either this package's source or built entry. */

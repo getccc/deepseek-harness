@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-knowledge-weknora` provides `ctx.knowledgeSource` over a WeKnora deployment. It is the one place in a Control Plane that holds a knowledge credential and speaks a knowledge product's protocol: it calls two fixed endpoints, resolves the API key per operation, bounds what comes back, and maps every failure onto a closed reason. It knows nothing about who is asking — the governed gateway in front of it has already decided that. Mount it in the Control Plane only. Its contract is pinned against a live deployment's own OpenAPI document and responses, not against the upstream project's published Markdown, which describes an endpoint deployments do not serve.
+`dsh-knowledge-weknora` provides `ctx.knowledgeSource` over a WeKnora deployment. It is the one place in a Control Plane that holds a knowledge credential and speaks a knowledge product's protocol: it calls two fixed endpoints, resolves the API key per operation, bounds what comes back, and maps every failure onto a closed reason. It knows nothing about who is asking; the governed gateway in front of it has already decided that. Mount it in the Control Plane only. Its contract is pinned against a live deployment's own OpenAPI document and responses, not the upstream Markdown, which describes an endpoint deployments do not serve.
 
 ## Table of Contents
 

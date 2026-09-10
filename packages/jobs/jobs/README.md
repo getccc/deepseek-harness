@@ -77,6 +77,7 @@ This section explains the design decisions behind the contract and points at the
 | [`src/index.ts`](src/index.ts) | Plugin entry: the abstract `JobRegistry` service and its contract |
 | [`src/types.ts`](src/types.ts) | Shared vocabulary: `JobKindMap`, `JobStart`, `JobHooks`, `JobSnapshot`, listener types |
 | [`src/brand.ts`](src/brand.ts) | `JobId` branded identifier, importable without the agent dependency |
+| [`src/invariant.ts`](src/invariant.ts) | Invariant companion: validates snapshot identity, status, timestamps, and owner fields |
 
 ### Service operations
 

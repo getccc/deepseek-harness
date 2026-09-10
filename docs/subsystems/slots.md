@@ -140,6 +140,7 @@ root
 │     │     │  └─ tool.call.toolview
 │     │     │     ├─ tool.call.images
 │     │     │     └─ tool.view.cordis
+│     │     ├─ conversation.chat.assistant-identity
 │     │     ├─ conversation.message.images
 │     │     └─ conversation.trajectory.images
 │     ├─ conversation.session.header

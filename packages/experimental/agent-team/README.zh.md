@@ -121,6 +121,7 @@ Lead 可以停止 teammate 的当前轮次，而不会删除其排队的消息�
 | [`src/projection.ts`](src/projection.ts) | 解码并校验 Team 事件的严格回放投影 |
 | [`src/activity.ts`](src/activity.ts) | 一次性变更等待者与 dispose 释放 |
 | [`src/lifecycle.ts`](src/lifecycle.ts) | 共享准入截止与有界结算 |
+| [`src/invariant.ts`](src/invariant.ts) | 在 append 前回放候选事件的不变式伴生插件 |
 
 ### Team 身份与 roster
 

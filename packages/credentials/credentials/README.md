@@ -132,6 +132,7 @@ One doctrine and four consequences:
 |---|---|
 | [`src/index.ts`](src/index.ts) | Service Definition: the `credentialRef`/`credentialKey` brands, `ResolvedCredential`/`CredentialRecordInfo`, the abstract provider over both key spaces, contained fan-out |
 | [`src/types.ts`](src/types.ts) | Client-safe type surface: the `CredentialRef` and `CredentialKey` brands, the stored-record union, the `CredentialInfo` reference view, the `credentials/reference-updated` and `credentials/record-updated` declarations |
+| [`src/invariant.ts`](src/invariant.ts) | Invariant companion: `credentials/reference-updated` only fires while a credentials service is live |
 
 ### Client-safe types
 

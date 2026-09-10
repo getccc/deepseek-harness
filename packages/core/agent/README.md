@@ -100,6 +100,7 @@ The package is built on one separation: the public `Agent` surface and registry 
 | [`src/dispatch.ts`](src/dispatch.ts) | `agentEvents` fused dispatcher and `assembleContextFor(agent)` |
 | [`src/consumed-work.ts`](src/consumed-work.ts) | `foldConsumedWork(events)`: what the log's consumed work became |
 | [`src/model-selection.ts`](src/model-selection.ts) | `installModelSelection`: coupling one selection to assembly and routing |
+| [`src/invariant.ts`](src/invariant.ts) | Invariant companion: no-op `agent/status` transitions fail |
 
 ### Registry and lifecycle
 

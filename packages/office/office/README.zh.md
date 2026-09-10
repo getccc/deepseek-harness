@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-office` 是一个小选择的共享词汇：一次对话应生成哪种办公交付物——`word`、`excel`、`ppt`、`chart` 或 `none`。它拥有 `OfficeKind`、记录一次选择的 `office/kind` 会话事件、从日志恢复当前选择的折叠，以及从线上读回一个选择的校验器。它不带插件、不带提示词、不带投影：面向模型的工具（`dsh-tool-office`）与浏览器 Remote（`dsh-api-office-controller`）都在此词汇之上构建，而它刻意除会话事件外不含任何模块增强，因此一个命名 `OfficeChoice` 的生成 Remote 面绝不会把投影注册表拖进自身。
+`dsh-office` 是一个小选择的共享词汇表：一次对话应产出哪种办公交付物——`word`、`excel`、`ppt`、`chart` 或 `none`。它拥有 `OfficeKind`、记录选择的 `office/kind` Session 事件、从日志恢复当前选择的折叠，以及从协议中读回选择的校验器。它不携带插件、提示词或投影：面向模型的工具（`dsh-tool-office`）与浏览器 Remote（`dsh-api-office-controller`）建立在这套词汇表之上，而词汇表除 Session 事件外不做任何模块扩充，因此命名 `OfficeChoice` 的生成 Remote 面不会把投影注册表拖进来。
 
 ## 目录
 

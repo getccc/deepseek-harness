@@ -9,9 +9,9 @@ kind: "package-bundle"
 
 ## 概述
 
-`dsh-team` 是把本机 Web 表层变成 Team Runner 的那一层。它叠加在 [`dsh-base`](../base/README.zh.md) 与 [`dsh-web-app`](../web-app/README.zh.md) 之上，把工作空间与执行留在成员电脑。本层拥有 `3090` 端口、`/team/login` 本地账户登录、这台电脑持有的设备凭据，以及公司模型传输。公司模型默认使用 `built-in` 提供方路由，成员配置的 DeepSeek 密钥则继续服务 `deepseek-official`。`3080` 继续留给独立 `dsh web`。
+`dsh-team` 把本地 web 表面变成 Team Runner。它叠加在 [`dsh-base`](../base/README.zh.md) 与 [`dsh-web-app`](../web-app/README.zh.md) 之上，把工作区与执行留在成员的电脑上，并拥有端口 `3090`、`/team/login` 的本地账户登录、这台电脑持有的设备凭据，以及公司模型传输。公司模型默认走 `built-in` 提供方路由，成员自己配置的 DeepSeek 密钥仍服务 `deepseek-official`。
 
-它不会在未配置的情况下绑定：Account Client 行不指名任何 Control Plane，也不指名 Runner 版本，因此一个没人告诉它属于哪家公司的 Runner 会加载失败，而不是把公钥发给一个陌生人。
+它拒绝在未配置时绑定：account-client 行未命名 Control Plane 与 Runner 版本时，Runner 会加载失败，而不是把公钥发给陌生人。
 
 ## 目录
 

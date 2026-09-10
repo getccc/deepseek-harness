@@ -78,6 +78,7 @@ Decided up front per the [render-intent Agent Note](../../../.agents/notes/imple
 |---|---|
 | [`src/index.ts`](src/index.ts) | Plugin entry: tool registration, run lifecycle, recorder wiring |
 | [`src/types.ts`](src/types.ts) | The four log-only record event payloads and their `SessionEventMap` declaration |
+| [`src/invariant.ts`](src/invariant.ts) | Invariant companion: durable workflow-record protocol validation |
 
 </details>
 

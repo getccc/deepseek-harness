@@ -78,6 +78,7 @@ kind: "package-reference"
 |---|---|
 | [`src/index.ts`](src/index.ts) | 插件入口：工具注册、运行生命周期、记录器接线 |
 | [`src/types.ts`](src/types.ts) | 四个 log-only 记录事件 payload 及其 `SessionEventMap` 声明 |
+| [`src/invariant.ts`](src/invariant.ts) | 不变式伴生插件：持久工作流记录协议校验 |
 
 </details>
 

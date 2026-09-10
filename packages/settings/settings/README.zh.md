@@ -100,6 +100,7 @@ TypeScript 会按小写字母、数字与连字符文法检查字面量 namespac
 | [`src/index.ts`](src/index.ts) | Service Definition：namespace 校验、注册、解析、写队列、describe/脱敏、事件、`installSection` |
 | [`src/redact.ts`](src/redact.ts) | `redactSecrets` 遍历器：剥离 `role('secret')` 字段并枚举其 slot |
 | [`src/types.ts`](src/types.ts) | 客户端安全类型面：事件声明、`SettingsNamespace`、`SettingsUpdateSource` |
+| [`src/invariant.ts`](src/invariant.ts) | 不变式伴生插件：`settings/updated` 只对已注册 namespace、只在解析值变化时、且携带权威值触发 |
 
 ### 解析与写入路径
 

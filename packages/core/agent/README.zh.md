@@ -100,6 +100,7 @@ await handle.agent.whenIdle()
 | [`src/dispatch.ts`](src/dispatch.ts) | `agentEvents` 融合分发器与 `assembleContextFor(agent)` |
 | [`src/consumed-work.ts`](src/consumed-work.ts) | `foldConsumedWork(events)`：日志消费掉的工作最终怎样了 |
 | [`src/model-selection.ts`](src/model-selection.ts) | `installModelSelection`：把一个选择耦合到组装与路由 |
+| [`src/invariant.ts`](src/invariant.ts) | 不变式配套：无操作的 `agent/status` 转换会失败 |
 
 ### 注册表与生命周期
 

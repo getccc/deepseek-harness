@@ -99,6 +99,7 @@ flow 声明它写入的凭据记录、面向用户的标签以及它提供的登
 |---|---|
 | [`src/index.ts`](src/index.ts) | Service Definition：flow 注册表、每键单尝试生命周期、交互路由、提交确认 |
 | [`src/types.ts`](src/types.ts) | 跨进程安全的词汇：方法、notice、prompt、结果、entry |
+| [`src/invariant.ts`](src/invariant.ts) | 不变式伴生插件：`authorization/settled` 点名的键必已释放 |
 
 ### 生命周期
 

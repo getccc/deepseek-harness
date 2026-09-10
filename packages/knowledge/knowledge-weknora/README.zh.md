@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-knowledge-weknora` 在一个 WeKnora 部署之上提供 `ctx.knowledgeSource`。它是 Control Plane 中唯一持有知识凭据并说知识产品协议的地方：调用两个固定端点、逐操作解析 API Key、限制返回内容，并把每个失败映射为封闭理由。它完全不知道是谁在问——它前面的受治理网关已经做过判定。只在 Control Plane 挂载。其契约依据真实部署自身的 OpenAPI 文档与响应固定，而不是依据上游项目已发布的 markdown——后者描述了一个部署并不提供的端点。
+`dsh-knowledge-weknora` 在一个 WeKnora 部署之上提供 `ctx.knowledgeSource`。它是 Control Plane 中唯一持有知识凭据并讲知识产品协议的地方：调用两个固定端点，按操作解析 API 密钥，限定返回内容的规模，并把每个失败映射到封闭的原因。它对提问者一无所知；前面受治理的 gateway 已经做出了决定。只在 Control Plane 中挂载它。它的契约钉在一个真实部署自己的 OpenAPI 文档与响应上，而不是上游的 Markdown——后者描述了部署并不提供的端点。
 
 ## 目录
 

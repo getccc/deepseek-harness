@@ -36,7 +36,7 @@ export function ReasoningRow({ text, running, t }: { text: string; running: bool
       data-state={running ? 'running' : 'ok'}
       data-expanded={expanded || undefined}
     >
-      {running && <span className={a11yCss.visuallyHidden}>{t('row.running')}</span>}
+      {running && <span className={a11yCss.visuallyHidden}>{t('reasoning.running')}</span>}
       <DisclosureRow
         rowClassName={css.row}
         leadingClassName={css.leading}

@@ -2,44 +2,6 @@
 
 [English](architecture.md) | 中文
 
-## 摘要
-
-DeepSeek Harness 会把一个具名 profile 启动为一棵可逆的 Cordis 插件树。各应用界面驱动同一套 agent 运行时；运行时把模型可见的工作记录到 Session 事件日志中，并通过 provider 使用可替换能力。本文映射这种组装方式、轮次流程、持久状态所有者，以及维护者用来替代修改循环本身的扩展点。
-
-## 目录
-
-- [系统地图](#system-map)
-- [Cordis](#cordis)
-- [Profile 与组合包](#profiles-and-bundles)
-- [应用启动](#application-launch)
-- [核心包](#core-packages)
-- [事件](#events)
-- [轮次流程](#turn-flow)
-- [Session 日志](#session-log)
-- [能力 seam](#capability-seams)
-- [新行为的归属位置](#where-new-behavior-goes)
-
------
-
-<a id="system-map"></a>
-
-## 系统地图
-
-Profile 负责选择应用界面与 provider，但每种界面都会进入同一套由插件所有的运行时。Session 事件日志是持久中心：agent loop 从中推导模型历史，持久化、回放、UI 与遥测则消费它。
-
-```text
-profile + bundle patches -> dsh CLI -> Cordis plugin tree
-                                           |
-                  +------------------------+----------------------+
-                  |                        |                      |
-             app surface              agent runtime        capability seams
-          web/headless/sdk/acp    prompt -> LLM -> tools   fs/shell/... -> providers
-                  |                        |
-                  +----------> Session event log <---------+
-                                           |
-                              persistence / replay / UI / telemetry
-```
-
 改动 `packages/` 下的任何内容之前，请先阅读本文。本文假定你已了解 Cordis；如果尚未了解，请先阅读[入门](cordis-primer.zh.md)或[教程](cordis-tutorial/index.zh.md)。
 
 建议使用 agent（智能体）探索代码库并理解其架构。
@@ -88,7 +50,7 @@ dsh --profile web --dump-config
 
 Vendored CLI、仅用于构建和测试的可执行文件、进程内直接挂载插件以及私有浏览器 WebWorker 预览都不属于 Harness 应用启动器。[`verify-application-entrypoints`](../scripts/verify-application-entrypoints.ts)将每个包 bin、可执行源码与根 demo 归入显式类别，并拒绝任何绕过 `dsh` 的 Node 应用路径。
 
-Python SDK 遵循相同的应用架构。其运行时 wheel 把普通 `dsh` CLI 打包为 `deepseek-harness-sdk-runtime-<platform>-<arch>`，客户端默认以显式 Harness home 启动 `dsh --profile sdk`。极简示例选择随附的 `sdk-minimal` profile。Python 暴露 profile 选择与有序 patch 文件，而不是完整 Cordis 树；持久外部插件通过 `dsh plugin` 安装。已删除的私有直读配置载体没有兼容 bin 或回退 parser。打包可执行文件还充当它自己子进程的 Node：以绝对脚本路径 spawn `process.execPath` 时会像 `node` 一样运行该脚本，因为单文件构建没有另一个 Node 可以交给它；这是限于打包构建的子进程载体，不是启动路径。
+Python SDK 遵循相同的应用架构。其运行时 wheel 把普通 `dsh` CLI 打包为 `deepseek-harness-sdk-runtime-<platform>-<arch>`，客户端默认以显式 Harness home 启动 `dsh --profile sdk`。极简示例选择随附的 `sdk-minimal` profile。Python 暴露 profile 选择与有序 patch 文件，而不是完整 Cordis 树；持久外部插件通过 `dsh plugin` 安装。已删除的私有直读配置载体没有兼容 bin 或回退 parser。
 
 <a id="core-packages"></a>
 

@@ -12,6 +12,8 @@ Status: implemented
 
 ## 决策
 
+**已于 2026-09-10 被[分两阶段合并上游](../process/2026-09-10-two-stage-upstream-merge.zh.md)取代：**本记录接入的第三方 sidebar 与办公预览器已离开部署；该行现在由上游的 Sidebar 与文件交付负责。
+
 **本轮产出的文档是一张卡片。** `dsh-client-ui-deliverables` 把 `.md`、`.docx`、`.xlsx`、`.csv`、`.pptx` 或 `.pdf` 渲染为卡片——以扩展名标出类别的色块、文件名、路径——叠放在保留其余每个文件的标签行上方。`documentKind` 按扩展名决定，只产出文档的轮次不显示标签行。该条目以 `TURN_TAIL_PRIORITY` 即 `-10` 注册，低于默认序，也低于侧栏的同款行，因此成员看到的是卡片。
 
 **产出行向拥有工具的插件学习工具。** `ctx.deliverables.recognize({ tool, path })` 教会词表一个工具：`path` 从一次调用已解析的参数中读出产出路径，此后成功的调用就像 `write` 一样把它列出。Definition 在每次折叠时读取实时的识别器集合，集合一变化便重新注册，因此已在屏幕上的对话会带着刚学会的工具重新折叠；第一方集合与已教会的工具都拒绝第二位教师。`dsh-client-ui-office`——本就代表办公工具发言的包——教会它读取 `output` 的 `univer_export`。

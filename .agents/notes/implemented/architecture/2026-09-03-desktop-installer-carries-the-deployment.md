@@ -16,6 +16,8 @@ The product's own name and mark were the third, and the shipped defaults named D
 
 ## Decision
 
+**Superseded in part on 2026-09-10 by the [two-stage upstream merge](../process/2026-09-10-two-stage-upstream-merge.md):** the shipped plugin tree is empty since upstream's Sidebar replaced the third-party plugins; the installer mechanism below stands.
+
 **Every deployment-varying fact is a packaging environment variable.** The source tree names no company. `DSH_TEAM_CONTROL_PLANE_CA`, `DSH_TEAM_PLUGIN_TREE`, `DSH_TEAM_PRODUCT_NAME`, `DSH_TEAM_APP_ID`, `DSH_TEAM_APP_ICON`, and `DSH_TEAM_TRAY_ICON` join the origin and the Runner executable already there. Each is validated at packaging time, so a mistyped path fails the build rather than the installed application.
 
 **Staged files are located at runtime, never at packaging time.** The certificate is copied beside the Runner and its absolute path is composed from `process.resourcesPath` when the Runner starts. A path recorded during packaging would name the build machine.

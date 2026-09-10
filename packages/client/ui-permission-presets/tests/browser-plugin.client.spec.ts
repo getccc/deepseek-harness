@@ -92,11 +92,6 @@ async function bench() {
   }
 }
 
-/** The single-choice picker of one registration: both kinds load rows, only this one settles one. */
-function picker(decoration: CommandDecoration): Extract<CommandDecoration['ui'], { kind: 'popupSelect' }> {
-  if (decoration.ui.kind !== 'popupSelect') throw new Error('expected a single-choice picker')
-  return decoration.ui
-}
 
 describe('ui-permission browser plugin', () => {
   it('hangs the /permission popup decoration on the host command', async () => {

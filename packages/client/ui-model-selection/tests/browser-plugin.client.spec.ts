@@ -55,6 +55,10 @@ const GROUPS = [{
     },
   ],
 }, {
+  id: 'built-in',
+  name: 'Built-in Models',
+  models: [{ id: 'testModel', name: 'testModel' }],
+}, {
   id: 'external',
   name: 'External Provider',
   models: [{
@@ -183,11 +187,6 @@ async function bench(locale: 'zh' | 'en' = 'zh') {
 
 const projection = (id: string) => ({ sessionId: sid(id) })
 
-/** The single-choice picker of one registration: both kinds load rows, only this one settles one. */
-function picker(contribution: CommandContribution): Extract<CommandContribution['ui'], { kind: 'popupSelect' }> {
-  if (contribution.ui.kind !== 'popupSelect') throw new Error('expected a single-choice picker')
-  return contribution.ui
-}
 
 describe('ui-model-selection dual entry', () => {
   it('registers the /model contribution and the composer model seat', async () => {
@@ -204,7 +203,7 @@ describe('ui-model-selection dual entry', () => {
     b.mint('s1')
     const options = await b.popup().options(projection('s1'), new AbortController().signal)
     expect(options.map((o: SelectOption) => o.label)).toEqual([
-      'DeepSeek-V4-Flash', 'DeepSeek-V4-Pro', 'External Flash',
+      'DeepSeek-V4-Flash', 'DeepSeek-V4-Pro', 'testModel', 'External Flash',
     ])
     expect(options[0]).toMatchObject({
       active: true,
@@ -212,19 +211,9 @@ describe('ui-model-selection dual entry', () => {
     })
     expect(options[1]?.detail)
       .toBe('DeepSeek · 更强的自主编码、知识与复杂推理能力；适合复杂或质量优先的任务，但成本更高。')
-    expect(options[2]?.detail).toBe('External Provider · Provider-authored description.')
+    expect(options[3]?.detail).toBe('External Provider · Provider-authored description.')
     expect(options[1]?.active).toBeUndefined()
     expect(options[2]).toMatchObject({ detail: '内置模型' })
-  })
-
-  it('keeps built-in descriptions unchanged in English', async () => {
-    const b = await bench('en')
-    b.mint('s1')
-    const options = await b.contribution().ui.options(projection('s1'), new AbortController().signal)
-    expect(options[0]?.detail)
-      .toBe('DeepSeek · Fast, efficient, and economical; suited to focused, routine, or parallel tasks.')
-    expect(options[1]?.detail)
-      .toBe('DeepSeek · Stronger agentic coding, knowledge, and difficult reasoning; suited to complex or quality-critical tasks at higher cost.')
   })
 
   it('keeps built-in descriptions unchanged in English', async () => {

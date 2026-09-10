@@ -104,6 +104,7 @@ const handle = await ctx.agents.create({
 | [`src/tool-calls.ts`](src/tool-calls.ts) | 工具调度：独占屏障与有界并行池 |
 | [`src/runtime-context.ts`](src/runtime-context.ts) | 每步骤 runtime-context 快照处理 |
 | [`src/constants.ts`](src/constants.ts) | `DEFAULT_MAX_PARALLEL_TOOL_CALLS` |
+| [`src/invariant.ts`](src/invariant.ts) | 不变式配套：从会话日志重建请求 |
 
 ### 创建与拆除
 

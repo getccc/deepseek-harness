@@ -79,6 +79,7 @@ kind: "package-reference"
 |---|---|
 | [`src/index.ts`](src/index.ts) | `PermissionPresetService`：预设表、写入路径、设置命名空间、会话固定、子功能 |
 | [`src/types.ts`](src/types.ts) | `permissions` 投影键声明与选择器载荷类型 |
+| [`src/invariant.ts`](src/invariant.ts) | 不变式伴生插件：校验 `permission/preset` 指向可解析的预设 |
 
 ### 写入路径
 

@@ -79,6 +79,7 @@ The observable behavior is covered in [Use this package](#use-this-package); thi
 |---|---|
 | [`src/index.ts`](src/index.ts) | `PermissionPresetService`: preset table, write path, settings namespace, session pinning, children |
 | [`src/types.ts`](src/types.ts) | `permissions` projection-key declaration and select payload types |
+| [`src/invariant.ts`](src/invariant.ts) | Invariant companion validating that `permission/preset` names a resolvable preset |
 
 ### Write path
 

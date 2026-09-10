@@ -7,7 +7,7 @@ import type {
 } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type { SessionSeq } from '@deepseek-ai/dsh-session/types'
 import { Button, IconChevronDownOutline14, Modal } from '@deepseek-ai/dsh-client-ui-primitives'
-import type { ChatViewSlotProps, OpenFileOptions } from '../contract/slots.ts'
+import type { ChatViewSlotProps, OpenFileOptions, RenderAssistantIdentity } from '../contract/slots.ts'
 import type { ChatSnapshot } from '../contract/snapshot.ts'
 import { PendingSteeringBubble, PendingSubmissionBubble } from './MessageItem.tsx'
 import { ChatNodeSeat } from './ChatNodeSeat.tsx'
@@ -298,6 +298,10 @@ export function ChatView({
   const renderMessageImages = useCallback<RenderMessageImages>(
     owner => renderSlot('conversation.message.images', { ...owner, loadImage }),
     [loadImage, renderSlot],
+  )
+  const renderIdentity = useCallback<RenderAssistantIdentity>(
+    owner => renderSlot('conversation.chat.assistant-identity', owner),
+    [renderSlot],
   )
   const runningTurnStart = useMemo(() => runningTurnStartTime(timeline), [timeline])
 
@@ -785,6 +789,7 @@ export function ChatView({
             order={order}
             useChatNode={useChatNode}
             useChatNodeProcess={useChatNodeProcess}
+            useChat={useChat}
             historyIncomplete={hasMore}
             compactTranscript={compactTranscript}
             useStore={useStore}
@@ -795,6 +800,7 @@ export function ChatView({
             forkAt={forkAt}
             loadImage={loadImage}
             renderMessageImages={renderMessageImages}
+            renderIdentity={renderIdentity}
             fileMentions={fileMentions}
             renderSlot={renderSlot}
             t={t}

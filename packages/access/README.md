@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The `access/` group decides whether a principal may perform an action on a resource, holds the roles, grants, and governed resources that decision reads, and records what was decided. The evaluation is deliberately small — default deny, a role's grants admit, several roles union, a disabled resource is always refused — with no explicit deny, no role inheritance, and no expression language, so a refusal can be explained by naming the grants that produced it. Both halves are closed catalogs seeded from code: administrators compose roles out of registered permission pairs rather than inventing permission strings, and an audit record carries catalog words and short tokens rather than anyone's work.
+The `access/` group decides whether a principal may perform an action on a resource, holds the roles, grants, and governed resources that decision reads, and records what was decided. The evaluation is small — default deny, a role's grants admit, several roles union, a disabled resource is always refused — with no explicit deny, role inheritance, or expression language, so a refusal can be explained by naming the grants that produced it. Both halves are closed catalogs seeded from code: administrators compose roles from registered permission pairs, and an audit record carries catalog words, never anyone's work.
 
 ## Table of Contents
 

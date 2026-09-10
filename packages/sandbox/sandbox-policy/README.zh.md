@@ -85,6 +85,7 @@ kind: "package-reference"
 |---|---|
 | [`src/index.ts`](src/index.ts) | 插件入口：`SandboxPolicyService`、`Config` schema、策略解析与上下文贡献 |
 | [`src/session-mode.ts`](src/session-mode.ts) | `sandbox/mode` 事件、其 fold 与写入路径 |
+| [`src/invariant.ts`](src/invariant.ts) | 不变式伴生插件：拒绝超出封闭词汇的 `sandbox/mode` 值 |
 
 </details>
 

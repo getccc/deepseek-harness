@@ -23,7 +23,7 @@ describe('ReasoningRow', () => {
         renderMessageImages={renderMessageImages}
       />,
     )
-    expect(view.getByText('运行中')).toBeTruthy()
+    expect(view.getByText('小微正在思考')).toBeTruthy()
     expect(view.getByText('Newest reasoning tokens').parentElement?.getAttribute('data-follow-end'))
       .toBe('true')
 
@@ -47,7 +47,7 @@ describe('ReasoningRow', () => {
       />,
     )
     const settledSummary = view.getByText('Inspect the session')
-    expect(view.queryByText('运行中')).toBeNull()
+    expect(view.queryByText('小微正在思考')).toBeNull()
     expect(settledSummary.parentElement?.hasAttribute('data-follow-end')).toBe(false)
   })
 

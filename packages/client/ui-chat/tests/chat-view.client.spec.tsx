@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { useEffect } from 'react'
 import type {
-  AssistantMessageNode, ChatNode, ChatNodeOwnerProps, ChatNodeViewProps, ChatSnapshot,
+  AssistantIdentityOwnerProps, AssistantMessageNode, ChatNode, ChatNodeOwnerProps, ChatNodeViewProps, ChatSnapshot,
   ChatViewSlotProps, CommandNode, CompactionSummaryNode, ContextMessageNode, ConversationNode,
   LegacyConversationSlice, ModelRetryNode, RunningToolCall, SteeringMessageNode,
   ToolCallBlock, ToolResultNode, TurnErrorNode, TurnMaxTokensNode, UseChatNodeTurnData,
@@ -275,6 +275,9 @@ function makeHarness(
   }> = []
   const renderCommandSlot = ((_key: string, _owner: object, opts?: { fallback?: React.ReactNode }) =>
     opts?.fallback ?? null) as unknown as React.ComponentProps<typeof CommandNodeView>['renderSlot']
+  // The identity slot is a child of the Chat view itself; the view wraps it
+  // into the `renderIdentity` function the Turn's leading seat renders.
+  let identityRenderer: ((owner: AssistantIdentityOwnerProps) => React.ReactNode) | undefined
   const renderTurnTail = ((_key: string, _owner: object) => null) as unknown as
     React.ComponentProps<typeof TurnTailNodeView>['renderSlotChain']
   const renderTurnTailSlot = (() => null) as unknown as
@@ -285,6 +288,9 @@ function makeHarness(
     hookContext?: unknown
   }) => {
     if (nodeSlotOverride !== undefined) return nodeSlotOverride(key as never, owner as never, opts as never)
+    if (key === 'conversation.chat.assistant-identity') {
+      return identityRenderer === undefined ? null : identityRenderer(owner as AssistantIdentityOwnerProps)
+    }
     if (key !== 'conversation.chat.node') return opts?.fallback ?? null
     const nodeOwner = owner as RoutedChatNodeOwner
     const turnData = opts?.hookContext as
@@ -431,6 +437,9 @@ function makeHarness(
     setTranscriptView: (mode: TranscriptViewMode) => { transcriptView.set(mode) },
     setNodeRenderer: (renderer: React.ComponentProps<typeof ChatNodeSeat>['renderSlot']) => {
       nodeSlotOverride = renderer
+    },
+    setIdentityRenderer: (renderer: (owner: AssistantIdentityOwnerProps) => React.ReactNode) => {
+      identityRenderer = renderer
     },
   }
 }
@@ -1244,14 +1253,14 @@ describe('ChatView', () => {
     const view = render(<h.ChatView {...h.props} />)
     const disclosure = view.container.querySelector('details') as HTMLDetailsElement
     expect(disclosure.dataset.active).toBe('true')
-    expect(within(disclosure).getByRole('status').textContent).toBe('正在重试模型请求（1/2） · 1s')
+    expect(within(disclosure).getByRole('status').textContent).toBe('小微正在重试模型请求（1/2） · 1s')
 
     act(() => {
       h.setChat({ nodes: [user(1, 'try'), nextRetry] })
     })
     expect(within(disclosure).getAllByRole('status')).toHaveLength(1)
     expect(view.container.querySelector('details')).toBe(disclosure)
-    expect(within(disclosure).getByRole('status').textContent).toBe('正在重试模型请求（2/2） · 1s')
+    expect(within(disclosure).getByRole('status').textContent).toBe('小微正在重试模型请求（2/2） · 1s')
 
     act(() => {
       h.setChat({
@@ -1265,7 +1274,7 @@ describe('ChatView', () => {
       h.setSession({ running: false })
     })
     expect(disclosure.dataset.active).toBeUndefined()
-    expect(within(disclosure).getByRole('status').textContent).toBe('已重试模型请求（2/2） · 1s')
+    expect(within(disclosure).getByRole('status').textContent).toBe('小微重试了模型请求（2/2） · 1s')
 
     act(() => {
       h.setChat({ nodes: [user(1, 'try'), { ...retry(6), retryState: 'cancelled' }] })
@@ -1273,7 +1282,7 @@ describe('ChatView', () => {
     })
     const cancelledDisclosure = view.container.querySelector('details') as HTMLDetailsElement
     expect(cancelledDisclosure.dataset.active).toBeUndefined()
-    expect(within(cancelledDisclosure).getByRole('status').textContent).toContain('重试已取消')
+    expect(within(cancelledDisclosure).getByRole('status').textContent).toContain('小微取消了重试')
   })
 
   it('renders terminal turn failures inline with their durable message and optional code', () => {
@@ -1325,6 +1334,93 @@ describe('ChatView', () => {
     expect(branchButtons.map(button => button.getAttribute('aria-disabled'))).toEqual([null, null])
   })
 
+  /** Visible identity headers as `turn:status@host`, host being the flow kind that rendered it. */
+  function visibleIdentities(container: HTMLElement): string[] {
+    return [...container.querySelectorAll<HTMLElement>('[data-identity]')]
+      .filter(row => row.closest('[hidden]') === null)
+      .map(row => `${row.getAttribute('data-identity') ?? ''}@${row.closest('[data-chat-flow-kind]')?.getAttribute('data-chat-flow-kind') ?? ''}`)
+  }
+
+  /** An identity occupant that records which Turn it was asked to head, and whether it got a clock. */
+  const identityOccupant = (owner: AssistantIdentityOwnerProps): React.ReactNode => (
+    <span data-identity={`${String(owner.turn)}:${owner.status}`} data-clock={owner.clock ?? ''} />
+  )
+
+  it('opens a closed Turn with the identity header on the process control, folded or expanded', () => {
+    // The control is the top of the Turn's activity whenever it is shown, so
+    // the header stays with it; the first step, hidden or revealed, adds none.
+    const first = {
+      ...assistant(2, 'earlier reply', 1, 1),
+      blocks: [
+        { kind: 'reasoning' as const, text: 'inspect the repository' },
+        { kind: 'text' as const, text: 'earlier reply' },
+      ],
+    }
+    const second = assistant(5, 'final answer', 1, 2)
+    const h = makeHarness({
+      nodes: [
+        user(1, 'question'),
+        first,
+        toolResult(3, 'a'),
+        toolResult(4, 'b', 'subagent'),
+        second,
+      ],
+      turnTimings: new Map([[1, { startTime: 1_000, endTime: 5_000 }]]),
+      turnEnds: new Map([[1, 6]]),
+    })
+    h.setIdentityRenderer(identityOccupant)
+    const view = render(<h.ChatView {...h.props} />)
+    expect(visibleIdentities(view.container)).toEqual(['1:settled@turn-process'])
+    expect(view.container.querySelector('[data-identity]')?.getAttribute('data-clock')).not.toBe('')
+
+    fireEvent.click(view.getByRole('button', { name: '小微调用了 1 次工具 · 回复了 1 条消息 · 派出了 1 个 subagent' }))
+    expect(visibleIdentities(view.container)).toEqual(['1:settled@turn-process'])
+  })
+
+  it('opens a streaming Turn above the context injected for it, and adds nothing without an occupant', () => {
+    // The context rows are the first thing the reader sees of the reply, so
+    // the header sits above them rather than above the step that follows;
+    // the Turn's start is outside this window, and a context row has no clock
+    // of its own.
+    const h = makeHarness({
+      nodes: [user(1, 'question'), context(2, 'skill catalog', 1), context(3, 'workspace instructions', 1)],
+      partial: { turn: 1, step: 1, blocks: [{ kind: 'text', text: 'typing' }] },
+    })
+    const bare = render(<h.ChatView {...h.props} />)
+    expect(bare.container.querySelector('[data-identity]')).toBeNull()
+    bare.unmount()
+
+    h.setIdentityRenderer(identityOccupant)
+    const view = render(<h.ChatView {...h.props} />)
+    expect(visibleIdentities(view.container)).toEqual(['1:running@context'])
+    expect(view.container.querySelector('[data-identity]')?.getAttribute('data-clock')).toBe('')
+  })
+
+  it('opens a streaming Turn from its first step when nothing precedes it, with the step\'s own clock', () => {
+    const h = makeHarness({
+      nodes: [user(1, 'question')],
+      partial: { turn: 1, step: 1, blocks: [{ kind: 'text', text: 'typing' }] },
+    })
+    h.setIdentityRenderer(identityOccupant)
+    const view = render(<h.ChatView {...h.props} />)
+    expect(visibleIdentities(view.container)).toEqual(['1:running@assistant-step'])
+    expect(view.container.querySelector('[data-identity]')?.getAttribute('data-clock')).not.toBe('')
+  })
+
+  it('opens a closed Turn without a process from its answer, and heads a Turn of words alone with nothing', () => {
+    // A plain answer shows no process control, so the answer step is the
+    // first activity row; a Turn holding only the member's words has no
+    // activity yet to head.
+    const h = makeHarness({
+      nodes: [user(1, 'question'), assistant(2, 'answer', 1, 1), userInTurn(4, 'follow-up', 2)],
+      turnTimings: new Map([[1, { startTime: 1_000, endTime: 2_000 }]]),
+      turnEnds: new Map([[1, 3]]),
+    })
+    h.setIdentityRenderer(identityOccupant)
+    const view = render(<h.ChatView {...h.props} />)
+    expect(visibleIdentities(view.container)).toEqual(['1:settled@assistant-step'])
+  })
+
   it('folds Think and Tool rows before the final answer without unmounting them', () => {
     const first = {
       ...assistant(2, 'earlier reply', 1, 1),
@@ -1346,7 +1442,7 @@ describe('ChatView', () => {
       turnEnds: new Map([[1, 6]]),
     })
     const view = render(<h.ChatView {...h.props} />)
-    const toggle = view.getByRole('button', { name: '1 次工具调用 · 1 条消息 · 1 个 subagent' })
+    const toggle = view.getByRole('button', { name: '小微调用了 1 次工具 · 回复了 1 条消息 · 派出了 1 个 subagent' })
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
     expect(toggle.getAttribute('data-turn-process-tool-calls')).toBe('1')
     expect(toggle.getAttribute('data-turn-process-messages')).toBe('1')
@@ -1372,12 +1468,12 @@ describe('ChatView', () => {
     expect(members.map(member => member.getAttribute('hidden'))).toEqual([null, null, null])
 
     act(() => { h.set({ nodes: [user(1, 'question'), first] }) })
-    expect(view.getByRole('button', { name: '已思考' }).getAttribute('aria-expanded')).toBe('false')
+    expect(view.getByRole('button', { name: '小微思考了一会儿' }).getAttribute('aria-expanded')).toBe('false')
     expect(members[0]?.getAttribute('hidden')).toBeNull()
     act(() => { h.set({
       nodes: [user(1, 'question'), first, toolResult(3, 'a'), toolResult(4, 'b', 'subagent'), second],
     }) })
-    const renewedToggle = view.getByRole('button', { name: '1 次工具调用 · 1 条消息 · 1 个 subagent' })
+    const renewedToggle = view.getByRole('button', { name: '小微调用了 1 次工具 · 回复了 1 条消息 · 派出了 1 个 subagent' })
     expect(renewedToggle.getAttribute('aria-expanded')).toBe('true')
     expect(members[0]?.getAttribute('hidden')).toBeNull()
   })
@@ -1475,7 +1571,7 @@ describe('ChatView', () => {
       turnEnds: new Map([[1, 4]]),
     })
     const view = render(<h.ChatView {...h.props} />)
-    const toggle = view.getByRole('button', { name: '已思考' })
+    const toggle = view.getByRole('button', { name: '小微思考了一会儿' })
     const contextRow = view.container.querySelector<HTMLElement>('[data-chat-flow-kind="context"]')
 
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
@@ -1576,7 +1672,7 @@ describe('ChatView', () => {
     }
     const h = makeHarness({ nodes: [user(1, 'question'), final], turnEnds: new Map([[1, 4]]) })
     const view = render(<h.ChatView {...h.props} />)
-    const toggle = view.getByRole('button', { name: '已思考' })
+    const toggle = view.getByRole('button', { name: '小微思考了一会儿' })
     const reasoning = view.container.querySelector<HTMLElement>('[data-turn-process-inline]')
     expect(toggle.getAttribute('aria-expanded')).toBe('false')
     expect(reasoning?.getAttribute('hidden')).toBe('until-found')
@@ -2037,7 +2133,7 @@ describe('ChatView', () => {
         ],
       })
     })
-    expect(view.getByText('已停止')).toBeTruthy()
+    expect(view.getByText('小微停下了')).toBeTruthy()
     expect(view.container.querySelectorAll('h1')).toHaveLength(2)
   })
 
@@ -2796,8 +2892,8 @@ describe('ChatView', () => {
     })
     const xv = render(<executing.ChatView {...executing.props} />)
     expect(xv.container.querySelector('[data-state="running"]')).not.toBeNull()
-    expect(xv.getByText('执行中…')).toBeTruthy()
-    expect(xv.getByText('运行中')).toBeTruthy()
+    expect(xv.getByText('小微正在执行…')).toBeTruthy()
+    expect(xv.getByText('小微正在执行')).toBeTruthy()
 
     // Cross-window soft-fall (run page truncated): generic title, outcome preserved.
     const orphan = makeHarness({
@@ -2816,7 +2912,7 @@ describe('ChatView', () => {
     })
     const h = makeHarness({ nodes: [running] })
     const view = render(<h.ChatView {...h.props} />)
-    expect(view.getByText('正在压缩…')).toBeTruthy()
+    expect(view.getByText('小微正在压缩上下文…')).toBeTruthy()
     expect(view.container.querySelector('[data-state="running"]')).not.toBeNull()
 
     act(() => {
@@ -2832,7 +2928,7 @@ describe('ChatView', () => {
       })
     })
 
-    expect(view.queryByText('正在压缩…')).toBeNull()
+    expect(view.queryByText('小微正在压缩上下文…')).toBeNull()
     expect(view.queryByText('上下文已压缩')).toBeNull()
     expect(view.getByText('已压缩 16 条历史记录（约 11309 tokens）')).toBeTruthy()
     const row = view.getByRole('button', { name: /compact/ })

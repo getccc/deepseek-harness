@@ -5025,12 +5025,12 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface EpochHeader {\n    config: LlmCallConfig;\n    adapterDefaults?: LlmCallConfigAdapterDefaults;\n    tools?: ToolSchema[];\n}',
   },
   {
-    name: 'FeedbackCategory',
-    declaration: 'export type FeedbackCategory = \'task-result\' | \'instruction-following\' | \'product-interaction\' | \'service-stability\' | \'resource-cost\' | \'security-privacy-permission\' | \'other\';',
-  },
-  {
     name: 'FamilyId',
     declaration: 'export type FamilyId = Branded<\'CredentialFamilyId\'>;',
+  },
+  {
+    name: 'FeedbackCategory',
+    declaration: 'export type FeedbackCategory = \'task-result\' | \'instruction-following\' | \'product-interaction\' | \'service-stability\' | \'resource-cost\' | \'security-privacy-permission\' | \'other\';',
   },
   {
     name: 'FiberState',

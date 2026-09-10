@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-在 composer 中键入 `/` 命令会打开匹配的表面——已注册的弹窗、宿主命令的输入或直接执行——命令行绝不会被静默降级为普通提示词。业务包经 `ctx.commandUi` 贡献命令表面：popupSelect 贡献项（`/model`、`/permission`）、每次勾选都整组生效的 popupMultiSelect 贡献项（`/knowledge`）或 action（`/feedback`），既可注册为命令，也可装饰既有宿主命令，宿主保留其目录行与参数声明。空格与回车对照会话目录解析命令行：带 `input` 的宿主描述符是 `leadingInput`，注册了 `CommandUiSpec` 的按其种类派发，其余全部是 `execute`。
+在 composer 中键入 `/` 命令会打开匹配的表面——已注册的弹窗、宿主命令的输入或直接执行——命令行绝不会被静默降级为普通提示词。业务包经 `ctx.commandUi` 贡献表面：popupSelect 贡献项（`/model`、`/permission`）、每次勾选都整组生效的 popupMultiSelect 贡献项（`/knowledge`）或 action（`/feedback`），既可作为命令，也可作为宿主命令的装饰。空格与回车对照会话目录解析命令行：带 `input` 的宿主描述符是 `leadingInput`，注册了 `CommandUiSpec` 的按其种类派发，其余全部是 `execute`。
 
 ## 目录
 

@@ -103,6 +103,7 @@ When `ctx.sessionProjections` is composed, the package registers the `plan` unit
 | [`src/index.ts`](src/index.ts) | Plugin entry: `Config` schema, the `ctx.planMode` service, `plan:policy` section, `/plan` command, `exit_plan_mode` tool |
 | [`src/types.ts`](src/types.ts) | The `plan` projection-key declaration and `PlanProjection` wire value |
 | [`src/client.ts`](src/client.ts) | Client-namespace re-export of the types outlet |
+| [`src/invariant.ts`](src/invariant.ts) | Invariant companion: validates the `plan/mode` payload shape |
 
 </details>
 

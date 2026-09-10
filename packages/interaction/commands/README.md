@@ -82,6 +82,7 @@ The observable behavior is covered in [Use this package](#use-this-package); thi
 | [`src/index.ts`](src/index.ts) | `CommandRuntime` service: registration, scoping, dispatch, lifecycle events |
 | [`src/types.ts`](src/types.ts) | Command definition, descriptor, execution, and result types |
 | [`src/brand.ts`](src/brand.ts) | `CommandId` brand for lifecycle pairing ids |
+| [`src/invariant.ts`](src/invariant.ts) | Invariant companion pairing `command/run` with `command/done` per session log |
 
 ### Lifecycle events
 

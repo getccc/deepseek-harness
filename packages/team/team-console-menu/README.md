@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-team-console-menu` makes the administration console's navigation an organization's own data rather than a list inside the browser application. An entry says what it is called, where it goes, which page component renders it, and — the part that matters — which permission from the access-control catalog it needs. That last field is what a role's menu access is composed from, so giving a role a page is granting the permission the page declares, and navigation an administrator writes can never name authority this build does not govern. The package owns the vocabulary and the tree this build ships; pair it with a backend such as [`team-console-menu-sqlite`](../team-console-menu-sqlite/README.md).
+`dsh-team-console-menu` makes the administration console's navigation an organization's own data rather than a list inside the browser application. An entry says what it is called, where it goes, which page component renders it, and which permission from the access-control catalog it needs. That last field is what a role's menu access is composed from: giving a role a page grants the permission the page declares, and navigation an administrator writes can never name authority this build does not govern. The package owns the vocabulary and the tree this build ships; pair it with a backend such as [`team-console-menu-sqlite`](../team-console-menu-sqlite/README.md).
 
 ## Table of Contents
 

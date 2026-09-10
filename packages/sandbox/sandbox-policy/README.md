@@ -85,6 +85,7 @@ The `sandbox:policy` contribution states the mode's capability-neutral file-effe
 |---|---|
 | [`src/index.ts`](src/index.ts) | Plugin entry: `SandboxPolicyService`, `Config` schema, policy resolution and context contribution |
 | [`src/session-mode.ts`](src/session-mode.ts) | The `sandbox/mode` event, its fold, and the write path |
+| [`src/invariant.ts`](src/invariant.ts) | Invariant companion: rejects `sandbox/mode` values outside the closed vocabulary |
 
 </details>
 

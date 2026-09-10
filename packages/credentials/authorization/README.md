@@ -99,6 +99,7 @@ This section explains the design decisions behind the seam and points at the cod
 |---|---|
 | [`src/index.ts`](src/index.ts) | Service Definition: flow registry, one-attempt-per-key lifecycle, interaction routing, commit confirmation |
 | [`src/types.ts`](src/types.ts) | Wire-safe vocabulary: methods, notices, prompts, outcomes, entries |
+| [`src/invariant.ts`](src/invariant.ts) | Invariant companion: `authorization/settled` always names a released key |
 
 ### Lifecycle
 

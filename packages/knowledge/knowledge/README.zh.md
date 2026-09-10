@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-knowledge`（`ctx.knowledge`）是 Team Runner 用来获取已登录成员可访问的公司私有知识的能力接缝。它定义两个操作——读取已授权目录、在其中检索段落——外加命名知识库的 `KnowledgeRef`、记录会话可用哪些知识的 `knowledge/scope` 会话事件，以及封闭的 `KnowledgeFailureReason` 集合。它不持有地址、凭据、租户或上游标识符，也不发起任何网络调用：必须挂载提供方，而在 Team Edition 中该提供方转发给一个对每个操作做授权判定的 Control Plane。本包有意做窄——没有任何操作用于指名数据源或传入上游 id——因此持有该服务的插件仍然无法绕过别处做出的判定去访问知识源。
+`dsh-knowledge`（`ctx.knowledge`）是 Team Runner 向其索取已登录成员可触达的私有公司知识的接缝。它定义两个操作——读取经授权的目录、在其中搜索段落——外加 `KnowledgeRef`、`knowledge/scope` Session 事件与封闭的 `KnowledgeFailureReason` 集合。它不发起任何网络调用：由挂载的提供方发起，而在 Team Edition 中该提供方转发给对每个操作进行授权的 Control Plane。没有命名源或传递上游 id 的操作，因此持有该服务的插件仍然只能经由别处做出的决定触达知识源。
 
 ## 目录
 

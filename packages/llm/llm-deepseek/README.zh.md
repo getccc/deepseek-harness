@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`@deepseek-ai/dsh-llm-deepseek` 是 harness LLM 服务的 DeepSeek chat-completions 适配器：它拥有成员配置的 `deepseek-official` 提供方路由，并把 DeepSeek 的协议格式翻译为 harness 的流式分片协议。该路由只在其 API 密钥引用能解析出值时才注册，因此没有密钥的组合不会宣告任何 DeepSeek 模型，而密钥一旦存入，路由随即出现。没有 LLM HTTP 传输时，它直接调用已配置的提供方。挂载传输后，它还会拥有一个 `built-in` 路由，该路由的模型发现与 chat 调用使用传输；Team Runner 因此能把公司端点、凭据与模型授权留在 Control Plane，同时不替换成员自己的 DeepSeek 路由。它是 DeepSeek 的两个结构不同适配器之一：pi-ai 孪生通过库与更多提供方服务自己的路由名，两者可以并排挂载。端点、凭据、目录与 thinking 策略均按请求解析，因此有效的用户设置更改会在下一个请求生效，无需重启进程。
+`@deepseek-ai/dsh-llm-deepseek` 是 harness LLM 服务的 DeepSeek chat-completions 适配器：它拥有成员配置的 `deepseek-official` 路由，并把 DeepSeek 的协议格式翻译为 harness 的流式分片协议。该路由只在其 API 密钥引用能解析出值时才注册，因此没有密钥的组合不会公布任何 DeepSeek 模型。挂载了 LLM HTTP 传输时，它还拥有一条 `built-in` 路由，其模型发现与调用都经该传输，从而把公司端点、凭据与模型授权留在 Control Plane。端点、凭据、目录与 thinking 策略按请求解析，设置更改在下一个请求生效。
 
 ## 目录
 
