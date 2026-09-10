@@ -9,6 +9,7 @@ import type { SessionEvent, SessionHeader } from '@deepseek-ai/dsh-session'
 import { describe, expect, it, vi } from 'vitest'
 import { ApiSessionAgentController } from '../src/agent.ts'
 import { SessionCommandController } from '../src/commands.ts'
+import type { SessionRequestId } from '../src/types.ts'
 import { installSessionReadTestServices, testSessionPersistence } from './test-remote.ts'
 
 async function commandHarness(): Promise<{
@@ -80,6 +81,14 @@ describe('Session queue commands', () => {
         }],
       },
     })), 'attachment-error')
+    for (const content of [[], [{ type: 'text' as const, text: ' \t\n' }]]) {
+      await expectFailure(Promise.resolve().then(() => controller.updateQueue({
+        sessionId: agent.id,
+        itemId: queued.id,
+        action: { kind: 'edit', content },
+      })), 'bad-request')
+    }
+    expect(inbox.nextTurn[0]?.content).toEqual([{ type: 'text', text: 'queued' }])
     await expectFailure(Promise.resolve().then(() => controller.updateQueue({
       sessionId: SessionId('missing'), itemId: queued.id, action: { kind: 'remove' },
     })), 'queue-item-not-found')
@@ -258,6 +267,29 @@ describe('Session attachment authorization', () => {
     await expectFailure(controller.attachment({
       sessionId: SessionId('unreadable'), attachmentId: AttachmentId('att'),
     }), 'internal')
+    await ctx.fiber.dispose()
+  })
+
+  it('rejects prompts without non-whitespace text or an attachment before delivery', async () => {
+    const { ctx, controller, agent, steer } = await commandHarness()
+    const followup = agent.followup as ReturnType<typeof vi.fn>
+    const before = agent.session.events
+    const rejected = [
+      [],
+      [{ type: 'text' as const, text: '' }],
+      [{ type: 'text' as const, text: ' \t\n' }, { type: 'text' as const, text: '' }],
+    ]
+    for (const [index, content] of rejected.entries()) {
+      await expectFailure(controller.prompt({
+        requestId: `empty-${String(index)}` as SessionRequestId,
+        sessionId: agent.id,
+        mode: index === 1 ? 'steer' : 'queue',
+        content,
+      }), 'bad-request')
+    }
+    expect(followup).not.toHaveBeenCalled()
+    expect(steer).not.toHaveBeenCalled()
+    expect(agent.session.events).toBe(before)
     await ctx.fiber.dispose()
   })
 })
