@@ -415,6 +415,7 @@ flowchart TD
   pkg_atomic_write --> pkg_invariants
   pkg_brand --> pkg_invariants
   pkg_home_paths --> pkg_invariants
+  pkg_http_proxy --> pkg_invariants
   pkg_launch_environment --> pkg_invariants
   pkg_native_command --> pkg_invariants
   pkg_output_retention --> pkg_invariants
@@ -454,8 +455,6 @@ flowchart TD
   pkg_client_web --> pkg_invariants
   pkg_code_runtime --> pkg_invariants
   pkg_code_runtime_python --> pkg_invariants
-  pkg_e2b --> pkg_http_proxy
-  pkg_e2b --> pkg_invariants
   pkg_experimental_agent_team_profile --> pkg_invariants
   pkg_experimental_agent_team_web_profile --> pkg_invariants
   pkg_experimental_webworker_packer --> pkg_invariants
@@ -465,10 +464,7 @@ flowchart TD
   pkg_host_webserver --> pkg_invariants
   pkg_sandbox_windows_acl --> pkg_invariants
   pkg_storage --> pkg_invariants
-  pkg_subprocess --> pkg_http_proxy
-  pkg_subprocess --> pkg_invariants
   pkg_win32_process --> pkg_invariants
-  pkg_team_account_client --> pkg_invariants
   pkg_team_browser_session --> pkg_invariants
   pkg_team_console_menu --> pkg_invariants
   pkg_team_console_menu_sqlite --> pkg_invariants
@@ -485,10 +481,8 @@ flowchart TD
   pkg_client_modules --> pkg_invariants
   pkg_credentials --> pkg_brand
   pkg_credentials --> pkg_invariants
-  pkg_subprocess_e2b --> pkg_e2b
-  pkg_subprocess_e2b --> pkg_invariants
-  pkg_subprocess_e2b --> pkg_subprocess
-  pkg_subprocess_e2b --> pkg_timeout
+  pkg_e2b --> pkg_http_proxy
+  pkg_e2b --> pkg_invariants
   pkg_host_plugin_inventory --> pkg_brand
   pkg_host_plugin_inventory --> pkg_invariants
   pkg_host_plugin_inventory --> pkg_typert_protocol
@@ -501,9 +495,10 @@ flowchart TD
   pkg_storage_json --> pkg_storage
   pkg_storage_sqlite --> pkg_invariants
   pkg_storage_sqlite --> pkg_storage
-  pkg_subprocess_local --> pkg_invariants
-  pkg_subprocess_local --> pkg_subprocess
-  pkg_subprocess_local --> pkg_timeout
+  pkg_subprocess --> pkg_http_proxy
+  pkg_subprocess --> pkg_invariants
+  pkg_team_account_client --> pkg_http_proxy
+  pkg_team_account_client --> pkg_invariants
   pkg_team_admin_app --> pkg_host_webserver
   pkg_team_admin_app --> pkg_invariants
   pkg_team_shell --> pkg_host_webserver
@@ -526,9 +521,16 @@ flowchart TD
   pkg_credentials_local --> pkg_home_paths
   pkg_credentials_local --> pkg_invariants
   pkg_credentials_local --> pkg_launch_environment
+  pkg_subprocess_e2b --> pkg_e2b
+  pkg_subprocess_e2b --> pkg_invariants
+  pkg_subprocess_e2b --> pkg_subprocess
+  pkg_subprocess_e2b --> pkg_timeout
   pkg_experimental_inspector --> pkg_client_modules
   pkg_experimental_inspector --> pkg_host_webserver
   pkg_experimental_inspector --> pkg_invariants
+  pkg_subprocess_local --> pkg_invariants
+  pkg_subprocess_local --> pkg_subprocess
+  pkg_subprocess_local --> pkg_timeout
   pkg_session --> pkg_brand
   pkg_session --> pkg_invariants
   pkg_session --> pkg_llm
@@ -1889,11 +1891,11 @@ flowchart TD
 
 | 包 | 分组 | 依赖 |
 | --- | --- | --- |
-| [`http-proxy`](../packages/util/http-proxy) | `util` | — |
 | [`invariants`](../packages/runtime-diagnostics/invariants) | `runtime-diagnostics` | — |
 | [`atomic-write`](../packages/util/atomic-write) | `util` | [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`brand`](../packages/util/brand) | `util` | [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`home-paths`](../packages/util/home-paths) | `util` | [`invariants`](../packages/runtime-diagnostics/invariants) |
+| [`http-proxy`](../packages/util/http-proxy) | `util` | [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`launch-environment`](../packages/util/launch-environment) | `util` | [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`native-command`](../packages/util/native-command) | `util` | [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`output-retention`](../packages/util/output-retention) | `util` | [`invariants`](../packages/runtime-diagnostics/invariants) |
@@ -1933,7 +1935,6 @@ flowchart TD
 | [`client-web`](../packages/client/web) | `client` | [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`code-runtime`](../packages/code-runtime/code-runtime) | `code-runtime` | [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`code-runtime-python`](../packages/code-runtime/code-runtime-python) | `code-runtime` | [`invariants`](../packages/runtime-diagnostics/invariants) |
-| [`e2b`](../packages/e2b/e2b) | `e2b` | [`http-proxy`](../packages/util/http-proxy), [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`experimental-agent-team-profile`](../packages/experimental/agent-team-profile) | `experimental` | [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`experimental-agent-team-web-profile`](../packages/experimental/agent-team-web-profile) | `experimental` | [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`experimental-webworker-packer`](../packages/experimental/webworker-packer) | `experimental` | [`invariants`](../packages/runtime-diagnostics/invariants) |
@@ -1943,9 +1944,7 @@ flowchart TD
 | [`host-webserver`](../packages/host/webserver) | `host` | [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`sandbox-windows-acl`](../packages/sandbox/sandbox-windows-acl) | `sandbox` | [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`storage`](../packages/storage/storage) | `storage` | [`invariants`](../packages/runtime-diagnostics/invariants) |
-| [`subprocess`](../packages/subprocess/subprocess) | `subprocess` | [`http-proxy`](../packages/util/http-proxy), [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`win32-process`](../packages/subprocess/win32-process) | `subprocess` | [`invariants`](../packages/runtime-diagnostics/invariants) |
-| [`team-account-client`](../packages/team/team-account-client) | `team` | [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`team-browser-session`](../packages/team/team-browser-session) | `team` | [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`team-console-menu`](../packages/team/team-console-menu) | `team` | [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`team-console-menu-sqlite`](../packages/team/team-console-menu-sqlite) | `team` | [`invariants`](../packages/runtime-diagnostics/invariants) |
@@ -1959,13 +1958,14 @@ flowchart TD
 | [`attachment`](../packages/attachment/attachment) | `attachment` | [`brand`](../packages/util/brand), [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`client-modules`](../packages/client/modules) | `client` | [`host-webserver`](../packages/host/webserver), [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`credentials`](../packages/credentials/credentials) | `credentials` | [`brand`](../packages/util/brand), [`invariants`](../packages/runtime-diagnostics/invariants) |
-| [`subprocess-e2b`](../packages/e2b/subprocess-e2b) | `e2b` | [`e2b`](../packages/e2b/e2b), [`invariants`](../packages/runtime-diagnostics/invariants), [`subprocess`](../packages/subprocess/subprocess), [`timeout`](../packages/util/timeout) |
+| [`e2b`](../packages/e2b/e2b) | `e2b` | [`http-proxy`](../packages/util/http-proxy), [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`host-plugin-inventory`](../packages/host/plugin-inventory) | `host` | [`brand`](../packages/util/brand), [`invariants`](../packages/runtime-diagnostics/invariants), [`typert-protocol`](../packages/typert/protocol) |
 | [`anonymous-user-id`](../packages/identity/anonymous-user-id) | `identity` | [`brand`](../packages/util/brand), [`home-paths`](../packages/util/home-paths), [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`storage-domain`](../packages/storage/storage-domain) | `storage` | [`invariants`](../packages/runtime-diagnostics/invariants), [`storage`](../packages/storage/storage) |
 | [`storage-json`](../packages/storage/storage-json) | `storage` | [`invariants`](../packages/runtime-diagnostics/invariants), [`storage`](../packages/storage/storage) |
 | [`storage-sqlite`](../packages/storage/storage-sqlite) | `storage` | [`invariants`](../packages/runtime-diagnostics/invariants), [`storage`](../packages/storage/storage) |
-| [`subprocess-local`](../packages/subprocess/subprocess-local) | `subprocess` | [`invariants`](../packages/runtime-diagnostics/invariants), [`subprocess`](../packages/subprocess/subprocess), [`timeout`](../packages/util/timeout) |
+| [`subprocess`](../packages/subprocess/subprocess) | `subprocess` | [`http-proxy`](../packages/util/http-proxy), [`invariants`](../packages/runtime-diagnostics/invariants) |
+| [`team-account-client`](../packages/team/team-account-client) | `team` | [`http-proxy`](../packages/util/http-proxy), [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`team-admin-app`](../packages/team/team-admin-app) | `team` | [`host-webserver`](../packages/host/webserver), [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`team-shell`](../packages/team/team-shell) | `team` | [`host-webserver`](../packages/host/webserver), [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`typert-loader`](../packages/typert/loader) | `typert` | [`invariants`](../packages/runtime-diagnostics/invariants), [`typert-registry`](../packages/typert/registry) |
@@ -1973,7 +1973,9 @@ flowchart TD
 | [`attachment-local`](../packages/attachment/attachment-local) | `attachment` | [`attachment`](../packages/attachment/attachment), [`home-paths`](../packages/util/home-paths), [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`client-hmr`](../packages/client/hmr) | `client` | [`client-modules`](../packages/client/modules), [`host-webserver`](../packages/host/webserver), [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`credentials-local`](../packages/credentials/credentials-local) | `credentials` | [`atomic-write`](../packages/util/atomic-write), [`credentials`](../packages/credentials/credentials), [`home-paths`](../packages/util/home-paths), [`invariants`](../packages/runtime-diagnostics/invariants), [`launch-environment`](../packages/util/launch-environment) |
+| [`subprocess-e2b`](../packages/e2b/subprocess-e2b) | `e2b` | [`e2b`](../packages/e2b/e2b), [`invariants`](../packages/runtime-diagnostics/invariants), [`subprocess`](../packages/subprocess/subprocess), [`timeout`](../packages/util/timeout) |
 | [`experimental-inspector`](../packages/experimental/inspector) | `experimental` | [`client-modules`](../packages/client/modules), [`host-webserver`](../packages/host/webserver), [`invariants`](../packages/runtime-diagnostics/invariants) |
+| [`subprocess-local`](../packages/subprocess/subprocess-local) | `subprocess` | [`invariants`](../packages/runtime-diagnostics/invariants), [`subprocess`](../packages/subprocess/subprocess), [`timeout`](../packages/util/timeout) |
 | [`session`](../packages/core/session) | `core` | [`brand`](../packages/util/brand), [`invariants`](../packages/runtime-diagnostics/invariants), [`llm`](../packages/llm/llm), [`scope`](../packages/core/scope), [`typert-protocol`](../packages/typert/protocol) |
 | [`system-prompt`](../packages/core/system-prompt) | `core` | [`invariants`](../packages/runtime-diagnostics/invariants), [`llm`](../packages/llm/llm), [`scope`](../packages/core/scope) |
 | [`skill`](../packages/skill/skill) | `skill` | [`invariants`](../packages/runtime-diagnostics/invariants), [`llm`](../packages/llm/llm), [`scope`](../packages/core/scope) |
