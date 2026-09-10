@@ -138,4 +138,41 @@ describe('SessionObservationReader', () => {
     })
     await ctx.fiber.dispose()
   })
+
+  it('materializes live events only on first read and shares them across leases', async () => {
+    const ctx = new Context()
+    await ctx.plugin(SessionStore)
+    const session = ctx.sessions.create(SessionId('live-lazy-events'), { meta: { cwd: '/workspace' } })
+    session.append('turn/start', { turn: 1 })
+    const events = vi.spyOn(session, 'events', 'get')
+    const reader = new SessionObservationReader(ctx)
+
+    using observed = await reader.read(session.id, { projectionMode: 'none' })
+    using retained = observed.retain()
+    expect(observed.cursor).toBe(0)
+    expect(events).not.toHaveBeenCalled()
+
+    expect(retained.events).toBe(observed.events)
+    expect(observed.events.map(event => event.type)).toEqual(['turn/start'])
+    expect(events).toHaveBeenCalledOnce()
+    await ctx.fiber.dispose()
+  })
+
+  it('keeps a live cut fixed when the log grows before events are first read', async () => {
+    const ctx = new Context()
+    await ctx.plugin(SessionStore)
+    const session = ctx.sessions.create(SessionId('live-fixed-cut'), { meta: { cwd: '/workspace' } })
+    session.append('turn/start', { turn: 1 })
+    const reader = new SessionObservationReader(ctx)
+
+    using observed = await reader.read(session.id, { projectionMode: 'none' })
+    session.append('turn/end', { turn: 1, reason: { kind: 'completed' } })
+    using later = await reader.read(session.id, { projectionMode: 'none' })
+
+    expect(observed.cursor).toBe(0)
+    expect(observed.events.map(event => event.type)).toEqual(['turn/start'])
+    expect(later.cursor).toBe(1)
+    expect(later.events.map(event => event.type)).toEqual(['turn/start', 'turn/end'])
+    await ctx.fiber.dispose()
+  })
 })

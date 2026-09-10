@@ -16,7 +16,11 @@ export interface SessionObservation extends Disposable {
   readonly source: 'live' | 'prepared'
   /** Immutable Session identity metadata. */
   readonly header: SessionHeader
-  /** Immutable contiguous events at {@link cursor}. */
+  /**
+   * Immutable contiguous events at {@link cursor}. A live observation
+   * materializes this array on first read, so a consumer that reads only the
+   * header, cursor, or projections never copies the log.
+   */
   readonly events: readonly SessionEvent[]
   /** Last observed event seq, or -1 for an empty log. */
   readonly cursor: number
@@ -151,7 +155,10 @@ export class SessionObservationReader {
     session: Session,
     projectionMode: NonNullable<SessionObservationOptions['projectionMode']>,
   ): SessionObservation {
-    const events = Object.freeze([...session.events])
+    // The cut is the log length now. The log only appends, so the prefix
+    // below `seq` is the same array whenever a consumer first reads `events`.
+    const seq = session.seq
+    let materialized: readonly SessionEvent[] | undefined
     const projections = projectionMode === 'none'
       ? undefined
       : this.ctx.get('sessionProjections')?.snapshot(session)
@@ -160,8 +167,11 @@ export class SessionObservationReader {
       return {
         source: 'live',
         header: session.header,
-        events,
-        cursor: events.at(-1)?.seq ?? -1,
+        get events() {
+          materialized ??= session.seq === seq ? session.events : Object.freeze(session.events.slice(0, seq))
+          return materialized
+        },
+        cursor: seq - 1,
         ...projections === undefined ? {} : { projections },
         retain: () => {
           if (disposed) throw new Error(`session observation "${session.id}" is disposed`)
