@@ -24,10 +24,12 @@ Two supporting refactors: the webserver's built-in static dist serving became th
 - **`link:` entries for in-box bundles**: pnpm cannot version, install, or update a `link:` into the installation, it embeds a machine path in a user file, and it breaks when the installation moves. The two-anchor resolution plus healed symlink fallback gives the same guarantee ("bundles come from the installation") without ceremony.
 - **A pre-boot `context` module in the bundle manifest** for boot-time values (dist path, flag facts): rejected in favor of pure plugins — the glue is ordinary rows and app-owned startup services, so the composition stays fully dumpable and the manifest stays data-only. The launcher-provided host slots (`ctx.cmdlineArgs`, `ctx.appExit`, and the environment snapshot) are provided in `boot()`'s `prepare` hook, before any config-tree entry mounts.
 - **Transitive bundle auto-application**: only direct `dsh.profile.bundles` entries contribute layers; a meta-bundle wanting to re-export another bundle's patch must do so explicitly in its own patch file.
+- **Dynamic template inheritance or cloning a local profile**: recording a parent would require merge and upgrade rules for bundle membership, dependencies, and user patches, while copying local state would duplicate machine-specific choices. Template-based creation copies only installation-owned defaults once.
 
 ## Consequences
 
 - New composition surfaces (a TUI, provider packs) ship as ordinary npm packages installable per profile, without a repository row for every deployment shape.
+- Users can start an independent custom profile from any shipped application template without copying machine-local profile state.
 - `apps/cli` shrank to argv parsing, profile machinery consumption, and the pnpm forwarder; `AppCLIEntry` and the per-surface boot paths are gone.
 - The keyless web e2e scaffold boots the same bundle layers over the same empty-root shape as production, including the profiles module fallback, so composition drift between test and product fails loudly.
 - Under the pre-release stance, backends carry no compatibility behavior for old on-disk configuration; `$DSH_HOME/config.yaml` is ignored.
