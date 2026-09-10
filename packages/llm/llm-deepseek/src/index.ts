@@ -22,8 +22,9 @@ import type {} from '@deepseek-ai/dsh-fs'
 import type {} from '@deepseek-ai/dsh-llm-http-transport'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
 import { launchEnvironmentOf, type LaunchEnvironmentSnapshot } from '@deepseek-ai/dsh-launch-environment'
-import { deepEqualJson, installSettingsSection, settingsNamespace } from '@deepseek-ai/dsh-settings'
+import type {} from '@deepseek-ai/dsh-settings'
 import { MAX_TIMER_DELAY_MS } from '@deepseek-ai/dsh-timeout'
+import { deepEqualJson } from '@deepseek-ai/dsh-util-values'
 import { getOrCreateAnonymousUserId, type AnonymousUserId } from '@deepseek-ai/dsh-anonymous-user-id'
 import {
   DEFAULT_CONTEXT_WINDOW,
@@ -89,7 +90,7 @@ export type * from './types.ts'
 export const name = 'llm-deepseek'
 export const inject = ['llm']
 
-const NS = settingsNamespace('llm-deepseek')
+const NS = 'llm-deepseek'
 const DEFAULT_API_KEY_ENV = 'DEEPSEEK_API_KEY'
 /** The member-configured provider route this plugin owns. */
 const PROVIDER = 'deepseek-official'
@@ -569,16 +570,18 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     }, 'llm-deepseek: credentials seam detached')
   })
 
-  installSettingsSection(ctx, NS, Config, config, {
-    setSource: (source) => {
-      current = source
-    },
-    onChange: () => {
-      // A changed retry policy re-registers at once; a renamed reference is
-      // re-judged behind it.
-      ensureRegistrationFacts()
-      reevaluateInBackground()
-    },
+  ctx.inject(['settings'], (settingsCtx) => {
+    settingsCtx.settings.installSection(ctx, NS, Config, config, {
+      setSource: (source) => {
+        current = source
+      },
+      onChange: () => {
+        // A changed retry policy re-registers at once; a renamed reference is
+        // re-judged behind it.
+        ensureRegistrationFacts()
+        reevaluateInBackground()
+      },
+    })
   })
   // Loading completes only once the route set is known, so a request issued
   // right after the plugin's own await never lands in an unregistered window.

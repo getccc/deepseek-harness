@@ -161,9 +161,9 @@ describe('Python SDK dsh profile keyless smoke', () => {
       })
       expect(modelRequests[0]?.tools).toEqual(expect.any(Array))
       const tools = modelRequests[0]?.tools as { function?: { name?: string } }[]
+      const toolNames = tools.map(tool => tool.function?.name)
       expect(modelRequests[0]?.reasoning_effort).toBe('max')
       expect(modelRequests[0]?.max_tokens).toBe(1234)
-      const toolNames = tools.map(tool => tool.function?.name)
       expect(toolNames).toEqual(expect.arrayContaining(['read', 'write', 'edit', 'web_fetch', 'web_search']))
       expect(toolNames.includes('str_replace_editor')).toBe(editorEnabled)
       expect(toolNames).not.toContain('list_subagent_models')

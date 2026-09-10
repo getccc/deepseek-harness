@@ -1,7 +1,8 @@
 import type { Context } from '@deepseek-ai/cordis'
-import type { ConversationNodeDefinition } from '@deepseek-ai/dsh-client-ui-conversation/client'
+import type {
+  ContextMessageNode, ConversationNodeDefinition, SteeringMessageNode, UserMessageNode,
+} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import { isAppendSurfaceEvent, isReplacementSurfaceEvent } from '@deepseek-ai/dsh-session/surface'
-import type { ContextMessageNode, SteeringMessageNode, UserMessageNode } from '../contract/snapshot.ts'
 import type { InboxState } from './inbox.ts'
 import { chatNode } from './common.ts'
 import { contextForm, contextProvenance } from './event-projection.ts'
@@ -62,7 +63,8 @@ export const messageDefinition: ConversationNodeDefinition<MessageNode> = {
         form: contextForm(event.data.source),
       }
     }
-    const claimed = reader.previous<InboxState>('inbox-next-step')?.state.claimed.has(String(event.data.id)) === true
+    const claimed = reader.previous<InboxState>('inbox-next-step')
+      ?.state.currentClaimed.has(String(event.data.id)) === true
     return claimed
       ? {
         kind: 'steering',

@@ -5,7 +5,7 @@ import { AttachmentId } from '@deepseek-ai/dsh-attachment'
 import type { ISession } from '@deepseek-ai/dsh-api-session-controller/client'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import {
-  SlotTestRuntime, TestRemote, stubSettingsScope, usePinnedBrowserLanguages,
+  RemoteError, SlotTestRuntime, TestRemote, stubSettingsScope, usePinnedBrowserLanguages,
 } from '@deepseek-ai/dsh-client-test-runtime'
 import type { SessionBehaviorOverrides } from '@deepseek-ai/dsh-client-test-runtime'
 import type { ClientRemote } from '@deepseek-ai/dsh-api-remotes/client'
@@ -15,7 +15,7 @@ import {
 import {
   apply as applyChat, inject as injectChat, type ChatViewInjected, type DetailsInjected,
 } from '@deepseek-ai/dsh-client-ui-chat/client'
-import type { SessionId } from '@deepseek-ai/dsh-session/types'
+import { SessionSeq, type SessionId } from '@deepseek-ai/dsh-session/types'
 import { createChatStore } from '../src/client/stores.ts'
 
 usePinnedBrowserLanguages('zh-CN')
@@ -35,6 +35,7 @@ type ChatActions = ChatInstance['actions']
 function sessionFakeFor() {
   return {
     loadOlder: vi.fn<ISession['loadOlder']>(() => Promise.resolve()),
+    loadThrough: vi.fn<ISession['loadThrough']>(() => Promise.resolve()),
     readAttachment: vi.fn<ISession['readAttachment']>(() => Promise.resolve({
       ok: true,
       value: { attachment: ATTACHMENT, data: Uint8Array.of(1) },
@@ -92,6 +93,9 @@ describe('Chat inject API', () => {
     injected.loadOlder()
     expect(b.session.loadOlder).toHaveBeenCalledOnce()
 
+    void injected.loadThrough(SessionSeq(42))
+    expect(b.session.loadThrough).toHaveBeenCalledWith(42)
+
     injected.forkAt(17)
     await vi.waitFor(() => {
       expect(b.runtime.sessions.calls).toContainEqual({ method: 'open', args: [ROOT] })
@@ -119,16 +123,17 @@ describe('Chat inject API', () => {
     await b.runtime.dispose()
   })
 
-  it('resolves file paths against the Session cwd through the Workspace opener and preserves failures', async () => {
+  it('resolves file paths against the Session cwd and preserves failures', async () => {
     const b = await bench()
     const { injected } = b.chatViewApi(ROOT)
     await injected.openFile('src/a.ts')
-    // The Workspace service is the one door: the Host opener is never called directly.
-    expect(b.runtime.workspaces.calls).toContainEqual({ method: 'openPath', args: ['/proj/src/a.ts'] })
-    expect(b.openWorkspacePath).not.toHaveBeenCalled()
+    expect(b.openWorkspacePath).toHaveBeenCalledWith({ path: '/proj/src/a.ts' })
 
-    b.runtime.workspaces.stub('openPath', () => Promise.reject(new Error('xdg-open is not available')))
-    await expect(injected.openFile('src/b.ts')).rejects.toThrow('xdg-open is not available')
+    b.openWorkspacePath.mockResolvedValueOnce({
+      ok: false,
+      error: new RemoteError('gateway/internal', 'xdg-open is not available', {}),
+    })
+    await expect(injected.openFile('src/b.ts')).rejects.toThrow('path open failed: xdg-open is not available')
     await b.runtime.dispose()
   })
 

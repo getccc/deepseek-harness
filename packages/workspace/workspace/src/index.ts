@@ -125,11 +125,11 @@ export class WorkspaceRegistry extends Service {
     await this.recoverPendingMutation()
     this.validateStoredState(this.state)
     if (!this.state.initialized) {
-      const headers = await this.ctx.sessionPersistence.list()
+      const headers = await this.listStoredHeaders()
       await this.replaceHeaderIndex(headers)
       await this.bootstrap(headers)
     } else if (this.table.size > 0) {
-      await this.replaceHeaderIndex(await this.ctx.sessionPersistence.list())
+      await this.replaceHeaderIndex(await this.listStoredHeaders())
     }
 
     await this.indexLiveSessions()
@@ -151,7 +151,7 @@ export class WorkspaceRegistry extends Service {
    */
   // TODO: `title` lost its last production caller when the gateway's
   // create-by-name branch was deleted
-  // (.agents/notes/implemented/simplification/2026-07-31-one-route-to-add-a-workspace.md);
+  // (.agents/notes/archived/simplification/2026-07-31-one-route-to-add-a-workspace.md);
   // drop the parameter with its @param clause and the `create(path, title?)`
   // lines in this package's README pair.
   async create(path: string, title?: string): Promise<Workspace> {
@@ -262,7 +262,7 @@ export class WorkspaceRegistry extends Service {
   private async sessionKnown(id: SessionId): Promise<boolean> {
     if (this.ctx.get('sessions')?.get(id) !== undefined) return true
     if (this.headers.has(id)) return true
-    await this.indexHeaders(await this.ctx.sessionPersistence.list())
+    await this.indexHeaders(await this.listStoredHeaders())
     return this.headers.has(id)
   }
 
@@ -588,6 +588,12 @@ export class WorkspaceRegistry extends Service {
     }
   }
 
+  /** Every stored session's header, projected from the persistence snapshot listing. */
+  private async listStoredHeaders(): Promise<SessionHeader[]> {
+    const snapshots = await this.ctx.sessionPersistence.list()
+    return snapshots.map(snapshot => snapshot.header)
+  }
+
   private async indexLiveSessions(): Promise<void> {
     const sessions = this.ctx.get('sessions')
     if (sessions === undefined) return
@@ -620,7 +626,7 @@ export class WorkspaceRegistry extends Service {
     const cached = this.headers.get(id)
     if (cached !== undefined) return cached
 
-    const headers = await this.ctx.sessionPersistence.list()
+    const headers = await this.listStoredHeaders()
     await this.indexHeaders(headers)
     const header = this.headers.get(id)
     if (header === undefined) {

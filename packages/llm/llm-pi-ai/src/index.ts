@@ -60,7 +60,8 @@ import { launchEnvironmentOf } from '@deepseek-ai/dsh-launch-environment'
 import { assertUsableApiKey, LlmError, resolveImageAttachmentAccess } from '@deepseek-ai/dsh-llm'
 import type { AdapterRegistrationHandle, DirectoryRegistrationHandle, LlmConfigurableProvider } from '@deepseek-ai/dsh-llm'
 import type {} from '@deepseek-ai/dsh-fs'
-import { deepEqualJson, installSettingsSection, settingsNamespace } from '@deepseek-ai/dsh-settings'
+import type {} from '@deepseek-ai/dsh-settings'
+import { deepEqualJson } from '@deepseek-ai/dsh-util-values'
 import { PiAiAdapter } from './adapter.ts'
 import { authContextFrom, credentialStoreFrom } from './auth.ts'
 import { catalogProviderIds } from './catalog.ts'
@@ -89,7 +90,7 @@ export { supportedProtocols } from './provider.ts'
 export const name = 'llm-pi-ai'
 export const inject = ['llm']
 
-const NS = settingsNamespace('llm-pi-ai')
+const NS = 'llm-pi-ai'
 
 /**
  * The registry captures these per route; a change here must re-register.
@@ -122,7 +123,7 @@ function directoryEntries(
 ): LlmConfigurableProvider[] {
   const catalog = new Set(catalogProviderIds())
   const entries = new Map<string, LlmConfigurableProvider>()
-  const declare = (provider: string, displayName: string, error?: string): void => {
+  const declare = (provider: string, displayName: string): void => {
     entries.set(provider, {
       provider,
       displayName,
@@ -132,11 +133,10 @@ function directoryEntries(
       // narrowing a shipped provider's models stores a profile too, and that
       // route is still one pi-ai knows.
       declared: !catalog.has(provider),
-      ...error === undefined ? {} : { error },
     })
   }
   for (const provider of catalog) declare(provider, provider)
-  for (const [provider, profile] of profiles) declare(provider, profile.displayName, profile.catalogError)
+  for (const [provider, profile] of profiles) declare(provider, profile.displayName)
   return [...entries.values()]
 }
 
@@ -150,14 +150,16 @@ export function apply(ctx: Context, config: Config): void {
    * snapshot's identity — which is also what makes the adapter's own snapshot
    * stable across operations that observe no change.
    *
-   * Catalog diagnostics stay in the snapshot beside serviceable models, so
-   * stored configuration remains visible after an installed catalog changes.
-   * Scalar configuration errors still reject resolution.
+   * No fallback for an unserviceable snapshot lives here: the section schema
+   * resolves the whole profile set, so a write that could not be served is
+   * refused where it is written, and the settings seam keeps a namespace's
+   * last good value for a stored section that fails. Anything reaching this
+   * point has already resolved once.
    */
   const profiles = (): ReadonlyMap<string, ResolvedPiAiProviderProfile> => {
     const raw = current()
     if (raw === lastRaw && memoized !== undefined) return memoized
-    const next = resolveProfiles(raw.providers, 'deferred')
+    const next = resolveProfiles(raw.providers)
     lastRaw = raw
     memoized = next
     return next
@@ -291,46 +293,40 @@ export function apply(ctx: Context, config: Config): void {
   }
   ensureRegistrationFacts()
 
-  let registering = true
-  installSettingsSection(ctx, NS, Config, config, {
-    validate: (value) => {
-      // Stored catalog drift must not prevent registration of the repair UI.
-      if (registering) {
-        resolveProfiles(value.providers, 'deferred')
-      } else {
-        assertServiceable(value, current())
-      }
-    },
-    setSource: (source) => {
-      // The helper hands over the source only after registration accepted the
-      // stored section, so later validations judge changed providers strictly.
-      registering = false
-      current = source
-    },
-    onChange: () => {
-      // Named here rather than left to the settings watcher: `assertServiceable`
-      // cannot see the llm registry, so a profile claiming a route another
-      // adapter family owns is stored successfully and only fails at this swap.
-      // Without its own diagnostic that refusal reaches the operator as a
-      // generic "settings: watcher failed", naming neither the route nor why it
-      // is not serving. The previous routes keep serving either way.
-      try {
-        ensureRegistrationFacts()
-      } catch (error) {
-        ctx.logger.error('llm-pi-ai: keeping the previously registered routes after a refused update')
-        ctx.logger.error(error)
-      }
-      // The directory follows the profiles the registry accepted, so a route
-      // that failed to register is not advertised as configurable. A refused
-      // directory swap is contained here for the same reason the registry's
-      // is: the previous entries keep serving, and `directoryFacts` stays put
-      // so returning to a working configuration re-applies.
-      try {
-        ensureDirectory()
-      } catch (error) {
-        ctx.logger.error('llm-pi-ai: keeping the previous configurable-provider directory after a refused update')
-        ctx.logger.error(error)
-      }
-    },
+  ctx.inject(['settings'], (settingsCtx) => {
+    settingsCtx.settings.installSection(ctx, NS, Config, config, {
+      // Refuse an unserviceable section where it is written: without this a
+      // schema-valid profile the adapter cannot serve would be stored and then
+      // silently disable every route in this namespace.
+      validate: assertServiceable,
+      setSource: (source) => {
+        current = source
+      },
+      onChange: () => {
+        // Named here rather than left to the settings watcher: `assertServiceable`
+        // cannot see the llm registry, so a profile claiming a route another
+        // adapter family owns is stored successfully and only fails at this swap.
+        // Without its own diagnostic that refusal reaches the operator as a
+        // generic "settings: watcher failed", naming neither the route nor why it
+        // is not serving. The previous routes keep serving either way.
+        try {
+          ensureRegistrationFacts()
+        } catch (error) {
+          ctx.logger.error('llm-pi-ai: keeping the previously registered routes after a refused update')
+          ctx.logger.error(error)
+        }
+        // The directory follows the profiles the registry accepted, so a route
+        // that failed to register is not advertised as configurable. A refused
+        // directory swap is contained here for the same reason the registry's
+        // is: the previous entries keep serving, and `directoryFacts` stays put
+        // so returning to a working configuration re-applies.
+        try {
+          ensureDirectory()
+        } catch (error) {
+          ctx.logger.error('llm-pi-ai: keeping the previous configurable-provider directory after a refused update')
+          ctx.logger.error(error)
+        }
+      },
+    })
   })
 }

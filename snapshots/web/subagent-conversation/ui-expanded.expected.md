@@ -21,11 +21,11 @@
   - img
   - img
   - text: System prompt
-- text: Explain event sourcing in one sentence. {{clock}}
+- text: "Explain event sourcing in one sentence.Your parent agent id is \"session-{{uuid}}\". Before you finish, send your result to that agent with send_message({ agent_id: \"session-{{uuid}}\", message: \"<self-contained result>\" }). The parent shares your workspace but does not automatically receive your transcript, tool output, or reasoning. Send earlier messages as well when a finding changes what the parent should do next; sending a message does not end your turn. {{clock}}"
 - button "Copy":
   - img
-- button "Xiaowei thought for a while" [expanded]:
-  - text: Xiaowei thought for a while
+- button "Thought for a while" [expanded]:
+  - text: Thought for a while
   - img
 - button "Context injection @deepseek-ai/dsh-system-prompt":
   - img
@@ -44,11 +44,14 @@
   - img
 - button "Branch into a new conversation":
   - img
-- text: {{clock}} Ran for {{duration}} TTFT {{duration}} {{throughput}} tok/s Now give the same explanation to a human reader. {{clock}}
+- button "Ran for {{duration}}":
+  - img
+  - text: Ran for {{duration}}
+- text: {{clock}} Now give the same explanation to a human reader. {{clock}}
 - button "Copy":
   - img
-- button "Xiaowei thought for a while" [expanded]:
-  - text: Xiaowei thought for a while
+- button "Thought for a while" [expanded]:
+  - text: Thought for a while
   - img
 - button "Think The user is asking for a one-sentence description of event sourcing. This is a straightforward knowledge question that doesn't require any skill loading or tool calls.":
   - img
@@ -63,9 +66,14 @@
   - img
 - button "Branch into a new conversation":
   - img
-- text: {{clock}} Ran for {{duration}} TTFT {{duration}} {{throughput}} tok/s
+- button "Ran for {{duration}}":
+  - img
+  - text: Ran for {{duration}}
+- text: {{clock}}
 - textbox "Message or run a task... / commands, @ files or sessions"
 - button "Commands":
+  - img
+- button "Add attachment" [disabled]:
   - img
 - 'button "Access mode, current: Custom"': Custom
 - button "6% of context used"

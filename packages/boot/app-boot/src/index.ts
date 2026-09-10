@@ -18,7 +18,7 @@ import Group from '@deepseek-ai/cordis-plugin-group'
 import { dshHomePath, resolveDshHome } from '@deepseek-ai/dsh-home-paths'
 import { createLaunchEnvironmentSnapshot, type LaunchEnvironmentSnapshot } from '@deepseek-ai/dsh-launch-environment'
 import type {} from '@deepseek-ai/cordis-plugin-hmr'
-import { FIRST_PARTY_SECTION_ORDER } from '@deepseek-ai/dsh-system-prompt'
+import type {} from '@deepseek-ai/dsh-system-prompt'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
@@ -41,14 +41,10 @@ export {
   resolveBundleDir,
   resolveProfileDir,
   writeProfileManifest,
-  type DshBundleManifest,
-  type DshManifestSection,
-  type DshProfileManifest,
   type Profile,
   type ProfileLayer,
   type ProfileManifest,
   type ProfileModuleFallbackOptions,
-  type ProfilePatchReload,
   type ProfileTemplate,
   isPackagedExecutable,
 } from './profile.ts'
@@ -326,11 +322,11 @@ export function loadOverlayPatches(binName: string, file: string): PatchOptions[
   return parsePatchList(binName, file, content, 'overlay')
 }
 
-/** Resolve relative plugin paths in one patch file's `insert` rows without changing assertion names. */
+/** Convert inserted filesystem paths to file URLs, anchoring relative paths beside the patch; keep assertion names literal. */
 function anchorInsertedPluginNames(patches: PatchOptions[], file: string): PatchOptions[] {
   const base = dirname(resolve(file))
   const visit = (entry: EntryOptions): void => {
-    if (typeof entry.name === 'string' && (entry.name.startsWith('./') || entry.name.startsWith('../'))) {
+    if (typeof entry.name === 'string' && (isAbsolute(entry.name) || entry.name.startsWith('./') || entry.name.startsWith('../'))) {
       entry.name = pathToFileURL(resolve(base, entry.name)).href
     }
     if (entry.group && Array.isArray(entry.config)) entry.config.forEach(visit)
@@ -845,9 +841,10 @@ export const HARNESS_SOURCE_SECTION = 'harness:source'
  * explicitly distinguishing it from the task workspace and current working
  * directory. The self-referential `dsh-tool-cordis` toolset reads and edits this
  * checkout. Call once on the settled boot context ({@link boot}); the section
- * uses the shared first-party placement just after the harness identity opener
- * and before the deployment persona. A booted tree with no `systemPrompt` service has no prompt to
- * augment, so this is then a no-op that returns `undefined`. The section is
+ * uses the shared first-party placement after reusable instructions
+ * and before the Web surface and persona suffix. A booted tree with no
+ * `systemPrompt` service has no prompt to augment, so this is then a no-op
+ * that returns `undefined`. The section is
  * registered against the `systemPrompt` service's fiber, so a dev HMR reload of
  * that plugin drops it until the next boot.
  * @param ctx - the settled boot context whose global system prompt to augment.
@@ -859,7 +856,7 @@ export function addHarnessSourceSection(ctx: Context, sourceRoot: string): (() =
   if (systemPrompt === undefined) return undefined
   return systemPrompt.section({
     name: HARNESS_SOURCE_SECTION,
-    order: FIRST_PARTY_SECTION_ORDER.HARNESS_SOURCE,
+    order: systemPrompt.getSectionOrder('HARNESS_SOURCE'),
     text: `The DeepSeek Harness implementation checkout is at ${sourceRoot}. The checkout location and current working directory are separate values and may differ; never infer the working directory from this path. Use pwd to determine the current working directory. Use this checkout only to inspect or extend DSH itself.`,
   })
 }

@@ -9,7 +9,7 @@ import {
 // Type-only: the generated `ctx.remote.session` namespace the path opener calls.
 import type {} from '@deepseek-ai/dsh-api-session-controller/remote'
 import type { WorkspaceFollowFrame, WorkspaceFollowIncrement } from '../types.ts'
-import type { WorkspaceFollowSink, WorkspaceRemote } from './model.ts'
+import type { WorkspaceFollowSink } from './model.ts'
 import { ClientWorkspaceModel } from './model.ts'
 import { WorkspaceController, type WorkspacePathOpener } from './service.ts'
 
@@ -76,12 +76,12 @@ export interface WorkspaceStateStreamOptions {
 
 /**
  * Create the reconnecting Workspace state stream.
- * @param remote - generated Workspace namespace and Gateway stream factory.
+ * @param remote - Client Remote face carrying the Workspace namespace and the stream factory.
  * @param options - Workspace state destinations.
  * @returns an unstarted stream owned by the Client Workspace runtime.
  */
 export function createWorkspaceStateStream(
-  remote: WorkspaceStreamRemote,
+  remote: ClientRemote,
   options: WorkspaceStateStreamOptions,
 ): WorkspaceStateStream {
   const stream = remote.$stream<WorkspaceFollowFrame>({

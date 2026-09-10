@@ -98,7 +98,7 @@ kind: "package-reference"
 | [`src/index.ts`](src/index.ts) | 插件入口：`Config` 校验、两个 waterfall 监听器、共享替换辅助函数 |
 | [`src/notice.ts`](src/notice.ts) | 浏览器安全的通知格式化与识别，以 `./notice` 发布 |
 | [`src/types.ts`](src/types.ts) | `SpillPolicyExec`：策略读取所属会话 id 所需的最小结构化工具执行视图 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变式伴生插件（无运行时不变式；约定在 seam 处强制执行） |
+| — | 不发布运行时不变式伴生入口；约定在 seam 处强制执行。 |
 
 ### 故障模式
 
@@ -117,7 +117,6 @@ kind: "package-reference"
 - [dsh-spill-local](../spill-local/README.zh.md)——保存 spill 文本的本地后端。
 - [dsh-output-retention](../../util/output-retention/README.zh.md)——策略组合的预览机制（`TextRetainer`）。
 - [工具输出 spill 决策](../../../.agents/notes/implemented/architecture/2026-07-08-tool-output-spill-files.zh.md)——能力边界与设计依据。
-- [PTC dispatch-log spill 决策](../../../.agents/notes/implemented/feature/2026-07-26-ptc-dispatch-log-spill.zh.md)——为何持久日志副本同样设界。
 
 -----
 

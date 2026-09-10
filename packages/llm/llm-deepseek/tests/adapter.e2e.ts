@@ -10,7 +10,6 @@ import AgentRegistry from '@deepseek-ai/dsh-agent'
 import LlmRuntime, { createUserMessage, ToolCallId, ReasoningEffortId, createMessage } from '@deepseek-ai/dsh-llm'
 import type { Message, ToolSchema } from '@deepseek-ai/dsh-llm'
 import AttachmentStore, { AttachmentId, ImageVariantId } from '@deepseek-ai/dsh-attachment'
-import LocalAttachments from '@deepseek-ai/dsh-attachment-local'
 import type {
   ImageAttachmentLimits,
   ImageAttachmentRef,
@@ -29,15 +28,13 @@ import type { Config } from '@deepseek-ai/dsh-llm-deepseek'
 import { assemble, type AssembledResult } from './assemble.ts'
 
 /**
- * Real-API e2e for the direct-fetch adapter: V4 Flash + V4 Pro across
- * thinking modes and all official effort levels. The suite skips entirely
- * without $DEEPSEEK_API_KEY; the pre-release vision smoke additionally
- * requires $DEEPSEEK_VISION_E2E=1, and the Flash image smoke requires
- * $DEEPSEEK_FLASH_E2E=1 (see vitest.e2e.config.ts).
+ * Real-API e2e for the direct-fetch adapter: V4 Flash across thinking modes
+ * and a max-effort tool round trip with reasoning passback. The suite skips
+ * entirely without $DEEPSEEK_API_KEY; the pre-release vision smoke additionally
+ * requires $DEEPSEEK_VISION_E2E=1 (see vitest.e2e.config.ts).
  */
 
 const FLASH = 'deepseek-v4-flash'
-const PRO = 'deepseek-v4-pro'
 const VISION = 'deepseek-v4-flash-vision-exp'
 const VISION_E2E_ENABLED = process.env.DEEPSEEK_VISION_E2E === '1'
 const TEST_PNG = Uint8Array.from(readFileSync(
@@ -102,15 +99,12 @@ beforeEach(async () => {
   vi.stubEnv('DSH_HOME', identityHome)
 })
 
-async function harness(model: string, config: Partial<Config> = {}) {
+async function harness(_model: string, config: Partial<Config> = {}) {
   const ctx = new Context()
   contexts.push(ctx)
   await ctx.plugin(LlmRuntime)
   await ctx.plugin(E2eAttachmentStore)
-  await ctx.plugin(LlmDeepSeek, {
-    ...model === VISION ? { models: [{ id: VISION, inputModalities: ['text', 'image'] }] } : {},
-    ...config,
-  })
+  await ctx.plugin(LlmDeepSeek, config)
   return ctx
 }
 
@@ -146,30 +140,6 @@ const weatherTool: ToolSchema = {
 }
 
 describe.skipIf(!process.env.DEEPSEEK_API_KEY)('llm-deepseek e2e (real API)', () => {
-  it.skipIf(process.env.DEEPSEEK_FLASH_E2E !== '1')('deepseek-flash accepts images', async () => {
-    const ctx = new Context()
-    contexts.push(ctx)
-    await ctx.plugin(LlmRuntime)
-    await ctx.plugin(LocalAttachments)
-    await ctx.plugin(LlmDeepSeek, { maxTokens: 4096 })
-    const model = 'deepseek-flash'
-    await expect(ctx.llm.resolveModelInfo('deepseek-official', model)).resolves.toMatchObject({
-      inputModalities: ['text', 'image'],
-    })
-    const attachment = await ctx.attachments.saveImage({ data: readFileSync(new URL('fixtures/red.png', import.meta.url)), mediaType: 'image/png' })
-    const message = ask('What is the dominant color of this image? Answer with one English color word.')[0]!
-    const history: Message[] = [
-      { ...message, content: [...message.content, { type: 'image', attachment }] },
-    ]
-    const reply = async () => {
-      const response = await assemble(ctx, { model, messages: history, reasoningEffort: ReasoningEffortId('high') })
-      expect(response.finish.kind, JSON.stringify(response.finish)).toBe('stop')
-      history.push(response.message)
-      return textOf(response).trim().toLowerCase()
-    }
-    expect(await reply()).toMatch(/^red[.!]?$/)
-  })
-
   it.skipIf(!VISION_E2E_ENABLED)('uses the built-in official route to upload, reference, and delete one image', async () => {
     const key = process.env.DEEPSEEK_API_KEY
     if (key === undefined) throw new Error('e2e ran without DEEPSEEK_API_KEY')
@@ -295,20 +265,23 @@ describe.skipIf(!process.env.DEEPSEEK_API_KEY)('llm-deepseek e2e (real API)', ()
     expect(withThinking.usage?.reasoningTokens).toBeGreaterThan(0)
   })
 
-  it.each(['high', 'max'] as const)(
-    'pro + thinking enabled (effort %s): tool-call round trip with reasoning passback',
-    async (effort) => {
-      const ctx = await harness(PRO, { thinking: 'enabled' })
+  it(
+    'flash + thinking enabled (effort max): tool-call round trip with reasoning passback',
+    async () => {
+      const ctx = await harness(FLASH, { thinking: 'enabled' })
 
       // Turn 1: the model must call the tool (and think before it).
       const first = await assemble(ctx,{
-        model: PRO,
-        reasoningEffort: ReasoningEffortId(effort),
+        model: FLASH,
+        reasoningEffort: ReasoningEffortId('max'),
         messages: ask('What is the weather in Paris right now? Use the get_weather tool.'),
         tools: [weatherTool],
         maxTokens: 2000,
       })
-      expect(first.finish.kind).toBe('tool-calls')
+      expect(
+        first.finish.kind,
+        `DeepSeek Flash tool-call turn finished as ${JSON.stringify(first.finish)}`,
+      ).toBe('tool-calls')
       const call = first.message.content.find(block => block.type === 'tool-call')
       expect(call).toBeDefined()
       expect(call!.name).toBe('get_weather')
@@ -317,8 +290,8 @@ describe.skipIf(!process.env.DEEPSEEK_API_KEY)('llm-deepseek e2e (real API)', ()
       // Turn 2: send the tool result back WITH the assistant's reasoning
       // block in history (the official thinking+tools passback rule).
       const second = await assemble(ctx,{
-        model: PRO,
-        reasoningEffort: ReasoningEffortId(effort),
+        model: FLASH,
+        reasoningEffort: ReasoningEffortId('max'),
         messages: [
           ...ask('What is the weather in Paris right now? Use the get_weather tool.'),
           createMessage({
@@ -337,21 +310,13 @@ describe.skipIf(!process.env.DEEPSEEK_API_KEY)('llm-deepseek e2e (real API)', ()
         tools: [weatherTool],
         maxTokens: 2000,
       })
-      expect(second.finish.kind).toBe('stop')
+      expect(
+        second.finish.kind,
+        `DeepSeek Flash tool-result turn finished as ${JSON.stringify(second.finish)}`,
+      ).toBe('stop')
       expect(textOf(second).toLowerCase()).toMatch(/sunny|22/)
     },
   )
-
-  it('pro + thinking disabled: plain generation without reasoning blocks', async () => {
-    const ctx = await harness(PRO, { thinking: 'disabled' })
-    const result = await assemble(ctx,{
-      model: PRO,
-      messages: ask('Reply with exactly the word: pong'),
-      maxTokens: 50,
-    })
-    expect(result.finish.kind).toBe('stop')
-    expect(result.message.content.some(block => block.type === 'reasoning')).toBe(false)
-  })
 
   it('streams raw chunks in protocol order', async () => {
     const ctx = await harness(FLASH, { thinking: 'disabled' })

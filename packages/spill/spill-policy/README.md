@@ -98,7 +98,7 @@ The browser-safe `@deepseek-ai/dsh-spill-policy/notice` entry owns both `formatS
 | [`src/index.ts`](src/index.ts) | Plugin entry: `Config` validation, the two waterfall listeners, the shared replacement helper |
 | [`src/notice.ts`](src/notice.ts) | Browser-safe notice formatting and recognition, published as `./notice` |
 | [`src/types.ts`](src/types.ts) | `SpillPolicyExec`: the minimal structural view of a tool execution the policy reads for the owning session id |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion (no runtime invariant; contracts are enforced at the seam) |
+| — | No runtime invariant companion is published; this package exposes no independent event sequence or mutable data relation beyond contracts enforced at its owning seam. |
 
 ### Failure modes
 
@@ -117,7 +117,6 @@ Read these pages when the package-level contract is not enough.
 - [dsh-spill-local](../spill-local/README.md) — the local backend that stores the spilled text.
 - [dsh-output-retention](../../util/output-retention/README.md) — the preview mechanics (`TextRetainer`) the policy composes.
 - [Tool output spill decision](../../../.agents/notes/implemented/architecture/2026-07-08-tool-output-spill-files.md) — the capability boundary and design rationale.
-- [PTC dispatch-log spill decision](../../../.agents/notes/implemented/feature/2026-07-26-ptc-dispatch-log-spill.md) — why the durable log copy is bounded too.
 
 -----
 

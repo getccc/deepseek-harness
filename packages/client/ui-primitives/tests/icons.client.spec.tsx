@@ -3,7 +3,8 @@ import { cleanup, render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import * as primitives from '@deepseek-ai/dsh-client-ui-primitives'
 import {
-  IconApiOutline14, IconArchiveOutline20, IconFolderClose16, IconGoalOutline16, IconSendOutline16,
+  IconAlarmClockOutline16, IconApiOutline14, IconArchiveOutline20, IconFolderClose16,
+  IconGoalOutline16, IconSendOutline16,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 
 afterEach(cleanup)
@@ -45,6 +46,8 @@ describe('ic_ds_ icon set', () => {
     expect(folder.container.querySelector('svg')!.getAttribute('width')).toBe('16')
     const archive = render(<IconArchiveOutline20 />)
     expect(archive.container.querySelector('svg')!.getAttribute('width')).toBe('20')
+    const alarm = render(<IconAlarmClockOutline16 />)
+    expect(alarm.container.querySelector('svg')!.getAttribute('width')).toBe('16')
   })
 
   it('renders reusable goal glyphs without document-global ids', () => {

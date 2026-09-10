@@ -301,6 +301,7 @@ describe('terminalCardModel', () => {
 
 describe('chat row terminal body', () => {
   const ownerProps = (block: RunningToolCall | ToolResultNode): GenericToolCardProps => ({
+    loadImage: vi.fn(() => Promise.reject(new Error('not used'))),
     callId: 'c1', toolName: 'bash', block, openFile: vi.fn(), t,
   })
 
@@ -563,7 +564,10 @@ describe('DetailsPanel Output section', () => {
         useChat={bindSnapshotSelector({ getSnapshot: () => snapshot, subscribe: () => () => {} })}
         useTrajectory={useEmptyTrajectory}
         useInput={(() => { throw new Error('unused') })}
-        inputActions={{ setDraft: () => {}, addImages: () => true, removeImage: () => {}, pruneImages: () => {}, submit: () => {} }}
+        inputActions={{
+          setDraft: () => {}, addAttachments: () => true, removeAttachment: () => {},
+          pruneAttachments: () => {}, submit: () => {},
+        }}
         useProjection={(() => undefined)}
         useStore={bindSnapshotSelector(chat)}
         actions={chat.actions}
@@ -750,7 +754,10 @@ describe('DetailsPanel Output section', () => {
         useChat={bindSnapshotSelector({ getSnapshot: () => snap, subscribe: () => () => {} })}
         useTrajectory={useEmptyTrajectory}
         useInput={(() => { throw new Error('unused') })}
-        inputActions={{ setDraft: () => {}, addImages: () => true, removeImage: () => {}, pruneImages: () => {}, submit: () => {} }}
+        inputActions={{
+          setDraft: () => {}, addAttachments: () => true, removeAttachment: () => {},
+          pruneAttachments: () => {}, submit: () => {},
+        }}
         useProjection={(() => undefined)}
         useStore={bindSnapshotSelector(chat)}
         actions={chat.actions}
