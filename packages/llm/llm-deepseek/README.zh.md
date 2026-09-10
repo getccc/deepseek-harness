@@ -46,7 +46,7 @@ kind: "package-reference"
     filesApiTimeoutMs: 60000
 ```
 
-请求用 `provider: deepseek-official` 选择路由；模型 id 原样传到协议，因此新增 DeepSeek 模型无需重新注册。省略 `models` 时会公布适合专注任务、快速且经济的 `deepseek-v4-flash`，适合复杂或质量关键任务、能力更强且成本更高的 `deepseek-v4-pro`，以及支持图像的 `deepseek-v4-flash-vision-exp`；每个模型都有 1,000,000 token 上下文窗口。显式列表会替换这些默认值，未列出的模型 id 仍作为纯文本路由原样通过。包括模型发现工具在内的客户端可通过 `ctx.llm.listModels('deepseek-official')` 读取这些建议性条目。支持图片的条目可把 `imagePixelBudget` 设置为正整数或 `low`，也可以设置 `imageMaxBytes`。
+请求用 `provider: deepseek-official` 选择路由；模型 id 原样传到协议，因此新增 DeepSeek 模型无需重新注册。省略 `models` 时公布支持文本和图像的 `deepseek-flash` 和 `deepseek-v4-flash-vision-exp`，以及仅支持文本的 `deepseek-v4-flash` 和 `deepseek-v4-pro`，各自的上下文窗口均为 1,000,000 token。显式列表会替换这些默认值，未列出的模型 id 仍作为纯文本路由原样通过。包括模型发现工具在内的客户端可通过 `ctx.llm.listModels('deepseek-official')` 读取这些建议性条目。支持图片的条目可把 `imagePixelBudget` 设置为正整数或 `low`，也可以设置 `imageMaxBytes`。
 
 存在 `ctx.llmHttpTransport` 时，它的 `listModels()` 会提供 `built-in` 路由，每份经该路由选择的序列化请求都由其 `send()` 方法发送。`deepseek-official` 路由保留本机建议性列表与已配置 API 密钥，并在该密钥未配置期间缺席。Team 传输提供经过角色筛选的内置目录，并使用 Runner 当前设备访问 token 让这些调用通过 Control Plane 网关。在这条路由上，决定每个模型接受什么的是传输的目录而不是本机 `models` 列表：声明了 `image` 的条目接收图片，图片在 `maxInlineRequestImageBytes` 之内以 base64 内联序列化，而不走需要 Runner 并不持有的密钥的 Files API；没有声明的条目在任何内容离开 Runner 之前就拒绝图片。每次解析模型都会重读目录，因此管理员的修改会到达下一次请求，而最近一次列举结果为 token 计量器给图片定价。
 
@@ -58,7 +58,7 @@ kind: "package-reference"
 | `reasoningEffort` | `high` | 默认强度：`off`、`low`、`high` 或 `max` |
 | `maxTokens` | `256,000` | 单次请求输出上限；模型自身上限与显式请求值优先 |
 | `defaultContextWindow` | `1,000,000` | 无精确值模型的容量回退 |
-| `models` | V4 Flash + V4 Pro + V4 Flash Vision Exp | 供发现消费方查看的建议性目录 |
+| `models` | V41 Flash + V4 Flash + V4 Pro + V4 Flash Vision Exp | 供发现消费方查看的建议性目录 |
 | `streamIdleTimeoutMs` | `300,000` | 单次流读取未完成的最大提供方空闲时间 |
 | `maxRequestFilesBytes` | `128 MiB` | 按最旧优先卸载前保留的请求图片字节高水位 |
 | `maxInlineRequestImageBytes` | `20 MiB` | 独立的 base64 回退高水位 |
@@ -192,6 +192,7 @@ loop 保留的响应块会追加到下一个请求，并保留其更早的可复
 - **跳过插件新增的内容块类型**——核心文本与受支持图片块会被序列化，空工具输出以字面量 `(no output)` 过线。
 - **图片是仅输入的持久附件**——不支持直接外部 URL 与 assistant 图片输出；DeepSeek 输入通常使用 Files API，仅在单次请求恢复时使用内联 base64。
 - **挂载传输时只支持文本**——传输请求没有 DeepSeek Files API 上传操作，因此图片请求会在读取凭据或访问网络前被拒绝。
+- 默认目录预注册 `deepseek-flash` 及其文本和图片能力，不探测网关可用性；网关开放该 ID 前，随附的默认模型仍为 `deepseek-v4-flash`，请求可能以 `INVALID_REQUEST` 失败。配置 `DEEPSEEK_API_KEY` 和支持该 ID 的网关后，设置 `DEEPSEEK_FLASH_E2E=1` 可启用[本包 e2e 测试文件](tests/adapter.e2e.ts)中的 Chat Completions 协议验证。
 
 <a id="dev-note"></a>
 ### 开发备注

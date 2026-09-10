@@ -10,6 +10,7 @@ import AgentRegistry from '@deepseek-ai/dsh-agent'
 import LlmRuntime, { createUserMessage, ToolCallId, ReasoningEffortId, createMessage } from '@deepseek-ai/dsh-llm'
 import type { Message, ToolSchema } from '@deepseek-ai/dsh-llm'
 import AttachmentStore, { AttachmentId, ImageVariantId } from '@deepseek-ai/dsh-attachment'
+import LocalAttachments from '@deepseek-ai/dsh-attachment-local'
 import type {
   ImageAttachmentLimits,
   ImageAttachmentRef,
@@ -31,7 +32,8 @@ import { assemble, type AssembledResult } from './assemble.ts'
  * Real-API e2e for the direct-fetch adapter: V4 Flash + V4 Pro across
  * thinking modes and all official effort levels. The suite skips entirely
  * without $DEEPSEEK_API_KEY; the pre-release vision smoke additionally
- * requires $DEEPSEEK_VISION_E2E=1 (see vitest.e2e.config.ts).
+ * requires $DEEPSEEK_VISION_E2E=1, and the Flash image smoke requires
+ * $DEEPSEEK_FLASH_E2E=1 (see vitest.e2e.config.ts).
  */
 
 const FLASH = 'deepseek-v4-flash'
@@ -100,12 +102,15 @@ beforeEach(async () => {
   vi.stubEnv('DSH_HOME', identityHome)
 })
 
-async function harness(_model: string, config: Partial<Config> = {}) {
+async function harness(model: string, config: Partial<Config> = {}) {
   const ctx = new Context()
   contexts.push(ctx)
   await ctx.plugin(LlmRuntime)
   await ctx.plugin(E2eAttachmentStore)
-  await ctx.plugin(LlmDeepSeek, config)
+  await ctx.plugin(LlmDeepSeek, {
+    ...model === VISION ? { models: [{ id: VISION, inputModalities: ['text', 'image'] }] } : {},
+    ...config,
+  })
   return ctx
 }
 
@@ -141,6 +146,30 @@ const weatherTool: ToolSchema = {
 }
 
 describe.skipIf(!process.env.DEEPSEEK_API_KEY)('llm-deepseek e2e (real API)', () => {
+  it.skipIf(process.env.DEEPSEEK_FLASH_E2E !== '1')('deepseek-flash accepts images', async () => {
+    const ctx = new Context()
+    contexts.push(ctx)
+    await ctx.plugin(LlmRuntime)
+    await ctx.plugin(LocalAttachments)
+    await ctx.plugin(LlmDeepSeek, { maxTokens: 4096 })
+    const model = 'deepseek-flash'
+    await expect(ctx.llm.resolveModelInfo('deepseek-official', model)).resolves.toMatchObject({
+      inputModalities: ['text', 'image'],
+    })
+    const attachment = await ctx.attachments.saveImage({ data: readFileSync(new URL('fixtures/red.png', import.meta.url)), mediaType: 'image/png' })
+    const message = ask('What is the dominant color of this image? Answer with one English color word.')[0]!
+    const history: Message[] = [
+      { ...message, content: [...message.content, { type: 'image', attachment }] },
+    ]
+    const reply = async () => {
+      const response = await assemble(ctx, { model, messages: history, reasoningEffort: ReasoningEffortId('high') })
+      expect(response.finish.kind, JSON.stringify(response.finish)).toBe('stop')
+      history.push(response.message)
+      return textOf(response).trim().toLowerCase()
+    }
+    expect(await reply()).toMatch(/^red[.!]?$/)
+  })
+
   it.skipIf(!VISION_E2E_ENABLED)('uses the built-in official route to upload, reference, and delete one image', async () => {
     const key = process.env.DEEPSEEK_API_KEY
     if (key === undefined) throw new Error('e2e ran without DEEPSEEK_API_KEY')
