@@ -65,7 +65,6 @@ plugins:
 |---|---|
 | [`src/index.ts`](src/index.ts) | 服务本体：record、query，以及行到事件的映射 |
 | [`src/schema.ts`](src/schema.ts) | 表、约束、触发器与目录播种 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件注册 |
 
 -----
 
@@ -104,3 +103,5 @@ plugins:
 测试特意开第二条连接到同一个文件并写裸 SQL。被测的主张不是"服务不肯存 Prompt"，而是"数据库存不进 Prompt"；一个只走服务的测试，面对一份毫无约束的 Schema 也照样会通过。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：该后端必须保持的关系（事件指向本构建审计的动作、元数据指向已注册的键、token 列短而纯、任何行不得修改或删除）以外键、CHECK 约束和触发器声明给 SQLite，违规写入会被拒绝。

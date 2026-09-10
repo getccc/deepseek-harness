@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/simplification/2026-09-09-one-powerpoint-row-carries-the-company-template.md
-2026-09-09-one-powerpoint-row-carries-the-company-template.md: 19b25b83a00916aa9d0fbbf40605004af4ad2f4b
-2026-09-09-one-powerpoint-row-carries-the-company-template.zh.md: 9a27c4253e19912b71fbe22b6afab484a9304117
+2026-09-09-one-powerpoint-row-carries-the-company-template.md: 679ed0a03e15725c503eb25ed99d5606148ad108
+2026-09-09-one-powerpoint-row-carries-the-company-template.zh.md: 4d7e0ebdd4109265b75d57b9cdca3d7a4fc84e62

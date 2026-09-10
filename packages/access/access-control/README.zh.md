@@ -78,7 +78,6 @@ if (decision.allowed) {
 | [`src/permissions.ts`](src/permissions.ts) | 封闭的权限目录及其成员判定 |
 | [`src/brand.ts`](src/brand.ts) | 角色、用户组、资源与授权的身份 |
 | [`src/types.ts`](src/types.ts) | 实体、请求与决定的形状，仅类型 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴随插件的注册 |
 
 -----
 
@@ -117,3 +116,5 @@ if (decision.allowed) {
 准许结果上的 `scopes` 只携带请求所指名的那个资源。组装多 scope 断言是网关对自己那份已授权清单的循环；在此处加一个批量查询，会诱使调用方授权一次、行动多次。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包只声明抽象服务与静态权限目录，不挂载任何东西；真正重要的关系（决策只引用存储实际持有的授权）属于做出评估的 provider 及其测试。

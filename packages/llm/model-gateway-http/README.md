@@ -79,7 +79,6 @@ If settling throws, the response the member already received stands and the [rec
 | [`src/index.ts`](src/index.ts) | Discovery and invocation endpoints, the proxy, and the settlement decision |
 | [`src/usage.ts`](src/usage.ts) | Reading a provider's usage out of a response nobody buffers |
 | [`src/protocol.ts`](src/protocol.ts) | The paths and bodies both sides import |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -119,3 +118,5 @@ These are current constraints of the contract, not a task backlog.
 The tests run a real HTTP provider that records what arrived, because the two facts worth proving are about the bytes it receives — that the credential is attached and that the model field is the catalog's — and a mock would only report whatever the test told it to expect.
 
 </details>
+
+**Runtime invariant:** No companion is published: the endpoint verifies a token, asks the gateway, and streams a response; each relation worth checking (a token naming a live device, a plan naming a governed model, a settlement happening once) belongs to the seam that owns it and its tests.

@@ -28,7 +28,6 @@ The profile keeps `patchReload: live`, matching `web`, because it serves the sam
 |---|---|
 | `packages/bundle/team/cordis.patch.yml` | The layer: rows this bundle overrides |
 | `packages/bundle/team/src/index.ts` | Module identity; no runtime API |
-| `packages/bundle/team/src/invariant.ts` | Empty companion — a static patch carrier owns no mutable relation |
 | `packages/boot/app-boot/src/profile.ts` | The `team` entry in `PROFILE_TEMPLATES` |
 
 The bundle declares no dependency on the packages whose rows it overrides. `dsh-base` declares dependencies for the packages it *inserts*; a layer that only overrides existing rows by id inserts nothing, so its dependency closure stays empty. The layering relationship lives in the profile template's bundle list, which is the composer's own input.

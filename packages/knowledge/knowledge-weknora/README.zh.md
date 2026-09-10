@@ -132,3 +132,5 @@ WeKnora 以 `X-API-Key` 认证。**空间** Key 固定访问其所属空间；**
 WeKnora 仓库的 markdown 描述了一个接受 `knowledge_base_ids` 的顶层 `POST /knowledge-search`，而部署并不提供它；其搜索结果少列了部署实际返回的字段；它还把 `AppError` 呈现为平铺结构，而不是嵌套在 `error` 之下。这里的 fixture 依据部署自身的 OpenAPI 文档与响应固定。升级负责人重读该文档，而不是散文。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：该 provider 在调用之间不持有可变状态，也不发布事件流；返回的每个段落都来自请求指定的知识库，这一点在 `search` 内强制执行，并由本包的契约测试断言。

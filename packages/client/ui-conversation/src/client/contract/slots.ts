@@ -348,11 +348,8 @@ export type ConversationSlotProps =
   & PropsRenderSlots<
     | 'conversation.session' | 'conversation.session.header'
     | 'conversation.composer' | 'conversation.composer.bar'
-    | 'conversation.input.overlay'
-    | 'conversation.input.dock' | 'conversation.composer.dock'
-    | 'conversation.input.left' | 'conversation.input.right'
+    | 'conversation.input.dock'
     | 'conversation.hero.headline'
-    | 'conversation.hero.brand.mark'
     | 'conversation.hero.workspace'
     | 'conversation.hero.agentPreset'
   >

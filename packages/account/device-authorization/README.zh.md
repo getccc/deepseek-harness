@@ -82,7 +82,6 @@ Runner 与 Control Plane 在运行时从不共享代码，因此两侧都导入 
 | [`src/vocabulary.ts`](src/vocabulary.ts) | 平台与拒绝原因词表 |
 | [`src/brand.ts`](src/brand.ts) | 设备、Transaction 与 Family 身份 |
 | [`src/types.ts`](src/types.ts) | 请求、响应与实体结构，仅类型 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件注册 |
 
 -----
 
@@ -121,3 +120,5 @@ Runner 与 Control Plane 在运行时从不共享代码，因此两侧都导入 
 重放检测刻意连同正当持有者一起惩罚：一个被重放的 Refresh Token 意味着要么 Token 泄露了，要么 Runner 弄丢了它的记录，而这次交换中的任何东西都无法区分两者。把它软化成"忽略这次重放"，会让一个被窃 Token 在整个 Family 的生命周期内一直可用。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包只声明抽象服务、两个词表以及流程双方共同计算的纯推导；凭据指向已证明持有密钥的设备这一关系，属于运行该流程的 provider。

@@ -566,6 +566,26 @@ Source: [`packages/llm/llm-retry/src/types.ts:11`](../packages/llm/llm-retry/src
 
 Source: [`packages/api/session-controller/src/types.ts:40`](../packages/api/session-controller/src/types.ts)
 
+### `office/*`
+
+<a id="officekind--log-only"></a>
+
+#### `office/kind` — log-only
+
+```ts persistence-catalog
+/**
+ * Which office deliverable this Session should produce from this point on:
+ * whole-value replace, last one wins, and a log with none folds to `none`
+ * through {@link foldOfficeChoice}.
+ *
+ * Model-visible: the folded value decides the `office:kind` prompt section,
+ * so it is recorded here rather than resolved at assembly time.
+ */
+'office/kind': OfficeChoice
+```
+
+Source: [`packages/office/office/src/scope.ts:24`](../packages/office/office/src/scope.ts)
+
 ### `permission/*`
 
 <a id="permissionpreset--log-only"></a>

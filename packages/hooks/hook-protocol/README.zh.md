@@ -89,7 +89,6 @@ kind: "package-library"
 | [`src/events.ts`](src/events.ts) | `hook/*` 事件声明、追加辅助函数、stderr 摘要 |
 | [`src/detached.ts`](src/detached.ts) | 脱离运行的完全停稳跟踪 |
 | [`src/types.ts`](src/types.ts) | `HookOutput`、`MatcherGroup`、`CommandHook` 与 `hook/*` 载荷类型 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变式伴生插件：配对、轮次包裹、方言与时长检查 |
 
 </details>
 

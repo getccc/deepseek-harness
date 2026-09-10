@@ -45,6 +45,7 @@
   margin: 8px 0 10px;
   padding: 2px;
   border-radius: 50%;
+  corner-shape: round;
 }
 
 .avatar {
@@ -55,6 +56,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
+  corner-shape: round;
   background: linear-gradient(145deg, var(--dsw-alias-brand-primary), var(--dsw-alias-state-business-primary));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dsw-alias-label-primary-inverted) 24%, transparent);
   color: var(--dsw-alias-label-primary-inverted);

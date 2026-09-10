@@ -168,7 +168,7 @@ const themeUi = (over: Partial<PopupSelectUi> = {}): CommandUiSpec => ({
 
 const themeContribution = (over: Partial<CommandContribution> = {}): CommandContribution => ({
   name: 'theme',
-  description: () => 'client popup kind',
+  description: 'client popup kind',
   available: () => true,
   ui: themeUi(),
   ...over,
@@ -255,34 +255,6 @@ describe('candidates', () => {
     expect(names).toEqual(['theme'])
   })
 
-  it('localizes canonical built-in and contribution descriptions on every candidate request', async () => {
-    let locale = 'zh'
-    const commands: CommandDescriptor[] = [
-      { name: 'compact', description: 'Compact older conversation history' },
-      { name: 'goal', description: 'scoped goal override' },
-      { name: 'custom', description: 'plugin-authored copy' },
-    ]
-    const { command, source } = await bench({
-      commands: () => Promise.resolve({ commands }),
-      translate: (namespace, key) => `${locale}:${namespace}:${key}`,
-    })
-    command.register(themeContribution({ description: () => `${locale}:theme` }))
-
-    await expect(source.candidates(proj('s1'), req(''))).resolves.toEqual([
-      { name: 'compact', description: 'zh:command:description.compact' },
-      { name: 'goal', description: 'scoped goal override' },
-      { name: 'custom', description: 'plugin-authored copy' },
-      { name: 'theme', description: 'zh:theme' },
-    ])
-
-    locale = 'en'
-    await expect(source.candidates(proj('s1'), req(''))).resolves.toEqual([
-      { name: 'compact', description: 'en:command:description.compact' },
-      { name: 'goal', description: 'scoped goal override' },
-      { name: 'custom', description: 'plugin-authored copy' },
-      { name: 'theme', description: 'en:theme' },
-    ])
-  })
 
   it('a contribution/host name collision fails loud', async () => {
     const { command, source } = await bench()

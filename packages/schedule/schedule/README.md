@@ -94,7 +94,6 @@ The package rests on one separation and three commitments:
 | [`src/projection.ts`](src/projection.ts) | Optional seed-aware Session projection and strict checkpoint schema |
 | [`src/client.ts`](src/client.ts) | Browser-safe type-only `ScheduleRecord` export |
 | [`src/transaction.ts`](src/transaction.ts) | Agent-scoped serialization for reads and durable mutations |
-| [`src/invariant.ts`](src/invariant.ts) | `./invariant` companion applying replay policy to existing logs and candidate events |
 
 ### Durable state and replay
 

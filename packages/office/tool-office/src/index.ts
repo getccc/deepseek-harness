@@ -13,7 +13,6 @@
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import { z as zod, type ZodType } from 'zod'
-import { FIRST_PARTY_SECTION_ORDER } from '@deepseek-ai/dsh-system-prompt'
 import { DEFAULT_OFFICE_CHOICE, foldOfficeChoice, parseOfficeChoice, type OfficeChoice } from '@deepseek-ai/dsh-office'
 // Type-only: pulls the section-context `agent` merge and the projection registry.
 import type {} from '@deepseek-ai/dsh-agent'
@@ -91,10 +90,10 @@ export function apply(ctx: Context, config: Config): void {
     name: OFFICE_SECTION,
     // A deliverable-format instruction is deployment policy, like the Team
     // policy section it sits beside, not a tool description.
-    order: FIRST_PARTY_SECTION_ORDER.TEAM_POLICY + 50,
+    order: ctx.systemPrompt.getSectionOrder('TEAM_POLICY') + 50,
     text: (context) => {
       if (context.agent === undefined) return ''
-      return renderOfficeSection(foldOfficeChoice(context.agent.session.events), config.welinkinTemplatePath)
+      return renderOfficeSection(foldOfficeChoice(context.agent.session.snapshotEvents()), config.welinkinTemplatePath)
     },
   }), 'tool-office: kind prompt section')
 

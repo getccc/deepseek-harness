@@ -1,6 +1,6 @@
 # Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
-#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-07-25-web-input-machine-and-slash-pipeline.md
-2026-07-25-web-input-machine-and-slash-pipeline.md: abb0f63e8d0ffccfca8f046ab9d1035cb976ed57
-2026-07-25-web-input-machine-and-slash-pipeline.zh.md: 2938ccc1c38f94d367a211d4920e96ecc8fab58d
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-06-18-shared-persistence-write-coordinator.md
+2026-06-18-shared-persistence-write-coordinator.md: 5c324f2c0c2b951f664bcf92725a36c4975fd3a1
+2026-06-18-shared-persistence-write-coordinator.zh.md: 51ef76189cb9276214bf05bbd1dbd8e3755daa35

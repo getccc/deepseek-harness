@@ -96,7 +96,6 @@ kind: "package-reference"
 | [`src/index.ts`](src/index.ts) | 路由、三道证明、授权与审计记录 |
 | [`src/http.ts`](src/http.ts) | 读取有界的 JSON 请求体并以 JSON 答复 |
 | [`src/types.ts`](src/types.ts) | 控制台收到的内容，仅类型 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴随插件注册 |
 
 -----
 
@@ -137,3 +136,5 @@ kind: "package-reference"
 拒绝的测试比成功的测试更重要：三道证明被逐一去掉，并检查存储没有发生任何改变。`readJson` 在请求体超限时停止读取而不是销毁套接字——销毁会把响应一并带走，控制台看到的将是断开的连接而不是那次拒绝。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包不拥有自己的数据；它接受的每次写入都落到拥有该数据的账户、访问控制、设备或模型服务中，各服务自行检查其关系，被允许的写入与其审计行相伴由路由测试断言。

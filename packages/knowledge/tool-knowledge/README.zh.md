@@ -156,3 +156,5 @@ Private company knowledge is available through knowledge_search, limited for thi
 无。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包拥有一个工具注册、一个提示词分段和一个按 agent 的限制，工具注册表与提示词注册表已经保证它们成立；分段与工具一致（两者折叠同一份 Session 日志）由本包测试断言。

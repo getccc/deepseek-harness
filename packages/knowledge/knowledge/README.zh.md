@@ -114,3 +114,5 @@ kind: "package-reference"
 无。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：该 seam 不拥有注册表，也不观察自己的事件流；范围是对 Session 日志的折叠，`dsh-session` 已经保证其一致，而本能力依赖的所有授权关系都在 Control Plane 而非本进程中。

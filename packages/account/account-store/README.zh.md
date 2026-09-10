@@ -73,7 +73,6 @@ const user = await ctx.accountStore.createUser({
 | [`src/index.ts`](src/index.ts) | 抽象服务、它的失败类型，以及 `ctx.accountStore` 声明 |
 | [`src/brand.ts`](src/brand.ts) | `OrgId` 与 `UserId`：品牌化类型及其品牌函数 |
 | [`src/types.ts`](src/types.ts) | 实体形状，仅类型 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴随插件的注册 |
 
 ### 不变量归属
 
@@ -117,3 +116,5 @@ const user = await ctx.accountStore.createUser({
 方法保持同步的函数体并返回 `Promise.reject`，而不是写成 `async`，因为仓库的 lint 拒绝没有 `await` 的 `async` 函数。真正重要的是契约：调用方的 `.catch` 必须能看到每一种失败，因此任何方法都不得同步抛出。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包只声明抽象服务及其词汇，不挂载任何东西；实现该服务的 provider 拥有其行必须满足的持久关系并自行检查。

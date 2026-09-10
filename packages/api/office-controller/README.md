@@ -54,3 +54,5 @@ None of its own. Recording a choice changes the `office:kind` prompt section tha
 The self-contained wire type is deliberate: a generated Remote face that followed `OfficeChoice` into `@deepseek-ai/dsh-office` would pull the Session-event module augmentation into the analyzer and crash it.
 
 </details>
+
+**Runtime invariant:** No companion is published: the controller holds nothing between calls and owns no registry; that a recorded choice is a document kind this build knows is enforced inside `choose` by `parseOfficeChoice` and asserted by the package's tests.

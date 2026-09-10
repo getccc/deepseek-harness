@@ -222,12 +222,8 @@ export function apply(ctx: Context, config: Config = Config({})): void {
       'conversation.composer': { kind: 'chain', scope: 'session' },
       'conversation.composer.bar': { kind: 'single', scope: 'session-maybe' },
       'conversation.input.dock': { kind: 'list', scope: 'session' },
-      'conversation.composer.dock': { kind: 'list', scope: 'session' },
-      'conversation.input.left': { kind: 'list', scope: 'session' },
-      'conversation.input.right': { kind: 'list', scope: 'session' },
-      'conversation.hero.headline': { kind: 'single', scope: 'root' },
-      'conversation.hero.brand.mark': { kind: 'single', scope: 'root' },
       'conversation.hero.workspace': { kind: 'single', scope: 'root' },
+      'conversation.hero.headline': { kind: 'single', scope: 'root' },
       'conversation.hero.agentPreset': { kind: 'single', scope: 'root' },
     },
     inject: (sessionId: SessionId | undefined): ConversationInjected => ({

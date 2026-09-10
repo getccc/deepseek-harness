@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/llm/model-gateway-sqlite/README.md
-README.md: ca93e320fe0713b398417871e8599574922f4c73
-README.zh.md: 33de13fb973b4489ecd0209c97994f56223daa8e
+README.md: 27907a4cf0bb6de2a35e34476b5fb123322d29b1
+README.zh.md: 90ffc53ba44dfc8db97fd96182c4b030571ad534

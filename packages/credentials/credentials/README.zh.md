@@ -132,7 +132,6 @@ apiKeyEnv: DEEPSEEK_API_KEY
 |---|---|
 | [`src/index.ts`](src/index.ts) | Service Definition：`credentialRef`/`credentialKey` 品牌、`ResolvedCredential`/`CredentialRecordInfo`、覆盖两个键空间的抽象提供方、包含式扇出 |
 | [`src/types.ts`](src/types.ts) | 客户端安全类型面：`CredentialRef` 与 `CredentialKey` 品牌、存储记录联合类型、`CredentialInfo` 引用视图、`credentials/reference-updated` 与 `credentials/record-updated` 事件声明 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变式伴生插件：`credentials/reference-updated` 只在凭据服务存活时触发 |
 
 ### 客户端安全类型
 

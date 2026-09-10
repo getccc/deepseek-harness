@@ -48,14 +48,6 @@ describe('owningGroupKey', () => {
   })
 })
 
-describe('owningGroupKey', () => {
-  it('returns the owning Workspace id or the Ungrouped key', () => {
-    const workspaces = [workspace('first', ['owned'])]
-    expect(owningGroupKey(workspaces, sid('owned'))).toBe('first')
-    expect(owningGroupKey(workspaces, sid('loose'))).toBe(UNGROUPED_KEY)
-  })
-})
-
 describe('deriveGroups', () => {
   it('keeps Host Workspace and sessionIds order without Client recency sorting', () => {
     const sessions = list(summary('newer', 20), summary('older', 10))

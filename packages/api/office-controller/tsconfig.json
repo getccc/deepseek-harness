@@ -8,7 +8,6 @@
     { "path": "../../office/office" },
     { "path": "../../core/agent" },
     { "path": "../../core/session" },
-    { "path": "../../typert/protocol" },
-    { "path": "../../runtime-diagnostics/invariants" }
+    { "path": "../../typert/protocol" }
   ]
 }

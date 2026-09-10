@@ -64,7 +64,6 @@ kind: "package-reference"
 |---|---|
 | [`src/index.ts`](src/index.ts) | 提供方、其配置，以及锁定策略 |
 | [`src/hash.ts`](src/hash.ts) | 派生、编码形式、校验，以及重算判定 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴随插件的注册 |
 
 -----
 
@@ -103,3 +102,5 @@ kind: "package-reference"
 诱饵哈希每个进程只派生一次并复用。逐次尝试都派生会让每一次真实登录的成本翻倍，却换不来任何额外性质。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：该 provider 必须保持的关系都在一次调用与账户存储自身的行之间（失败递增计数，成功清零），存储是两者的权威；这里没有可供运行时检查读取的可变状态。

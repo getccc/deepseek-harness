@@ -100,7 +100,6 @@ This section explains the design decisions behind the service and points at the 
 | [`src/index.ts`](src/index.ts) | Service Definition: namespace validation, registration, resolution, write queue, describe/redaction, events, `installSection` |
 | [`src/redact.ts`](src/redact.ts) | `redactSecrets` walker: strip `role('secret')` fields and enumerate their slots |
 | [`src/types.ts`](src/types.ts) | Client-safe type surface: event declarations, `SettingsNamespace`, `SettingsUpdateSource` |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion: `settings/updated` fires only for a registered namespace, only on a resolved-value change, with the authoritative value |
 
 ### Resolution and write paths
 

@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-05-the-first-request-uses-the-model-the-composer-names.md
-2026-09-05-the-first-request-uses-the-model-the-composer-names.md: 3a18fba73520f6f46532253a529d336a985d888b
-2026-09-05-the-first-request-uses-the-model-the-composer-names.zh.md: 4a7411f5c558855e07b8813983b70f67efa53782
+2026-09-05-the-first-request-uses-the-model-the-composer-names.md: 2848027b4d5638daed206b6ff78fd76193dffb95
+2026-09-05-the-first-request-uses-the-model-the-composer-names.zh.md: fe2fc40965cf8b768a77897b577440522ddf288e

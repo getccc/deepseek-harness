@@ -73,7 +73,6 @@ The plugin prepends an `agent/pre-step` listener that delegates first and append
 | [`src/index.ts`](src/index.ts) | Plugin entry: pre-step listener, due scheduling, reading composition |
 | [`src/request-zone.ts`](src/request-zone.ts) | Browser-zone policy derivation from open-turn `user-rpc` sources |
 | [`src/timestamp.ts`](src/timestamp.ts) | `Intl.DateTimeFormat` creation and timestamp formatting |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion for the snapshot contract |
 
 ### Main flow
 

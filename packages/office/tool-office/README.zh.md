@@ -95,3 +95,5 @@ Produce the deliverable as interactive charts in the answer itself. Write one fe
 `office` 投影键在 `src/types.ts` 中声明，由编辑器芯片经 `./client` 导入，因此浏览器与此 Host 折叠共享同一个键与值。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：提示词分段与投影都是对 Session 日志的纯折叠；调用之间不持有任何状态，也不拥有注册表，投影注册的释放由 HMR 安全测试证明。

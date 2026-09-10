@@ -1,7 +1,7 @@
 /** Register the Chat Conversation target, renderers, stats, and details surface. */
 import type { Context } from '@deepseek-ai/cordis'
 import type { ImageAttachmentRef } from '@deepseek-ai/dsh-attachment'
-import type {} from '@deepseek-ai/dsh-api-workspace-controller/client'
+import type {} from '@deepseek-ai/dsh-api-remotes/client'
 import type { SessionBinding } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { BoundActions, ObservableSnapshot } from '@deepseek-ai/dsh-client-store'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
@@ -44,7 +44,7 @@ const CHAT_NODE_INJECT: ChatNodeTurnDataInjected = {
 /** Services required by the Chat target and its presentation registrations. */
 export const inject = [
   'slots', 'sessions', 'uiSession', 'uiConversation', 'layout', 'locale',
-  'settingsScope', 'workspaces',
+  'settingsScope', 'remote', 'remote.session',
 ]
 
 /**
@@ -100,8 +100,9 @@ export function apply(ctx: Context): void {
       locale: NS,
       children: {
         'conversation.chat.node': { kind: 'keyed', scope: 'session', inject: CHAT_NODE_INJECT },
-        'conversation.message.images': { kind: 'single', scope: 'session' },
+        // Declared for the identity-header occupant; the seat that renders it returns after the stage-2 merge.
         'conversation.chat.assistant-identity': { kind: 'single', scope: 'session' },
+        'conversation.message.images': { kind: 'single', scope: 'session' },
       },
       store: chatStore,
       inject: (sessionId: SessionId, actions: BoundActions<typeof chatStore>): ChatViewInjected => {
@@ -120,12 +121,12 @@ export function apply(ctx: Context): void {
             ctx.layout.openDetails()
           },
           fileMentions: (owner: TurnTailOwnerProps) => ctx.get('chatFileMentions')?.forClosing(owner),
-          // The one door every chat-side file open goes through: the
-          // Workspace service resolves it to the Host opener, and a plugin
-          // that shows files itself wraps that method once.
-          openFile: (path) => {
+          openFile: async (path) => {
             const cwd = ctx.sessions.list.getSnapshot().byId[sessionId]?.cwd
-            return ctx.workspaces.openPath(resolveWorkspacePath(cwd, path))
+            const result = await ctx.remote.session.openWorkspacePath({
+              path: resolveWorkspacePath(cwd, path),
+            })
+            if (!result.ok) throw new Error(`path open failed: ${result.error.message}`)
           },
           loadOlder: () => { void session.loadOlder() },
           loadThrough: seq => session.loadThrough(seq),

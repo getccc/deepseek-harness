@@ -59,16 +59,6 @@ Default file editing uses `read`, `write`, and `edit`. The optional `str_replace
         maxOutputChars: 16000
 ```
 
-Default file editing uses `read`, `write`, and `edit`. The optional `str_replace_editor` tool is selected independently by Web minimal and `sdk-minimal`. To add it to a base-backed profile, put this entry in the profile, home, or invocation patch:
-
-```yaml
-- insert:
-    - id: tool-str-replace-editor
-      name: '@deepseek-ai/dsh-tool-str-replace-editor'
-      config:
-        maxOutputChars: 16000
-```
-
 ### Shell tools per platform
 
 On macOS and Linux you get the bash shell tools; on Windows you get the PowerShell twins instead, so exactly one shell stack is available per machine. The safety behavior is identical on every platform. A Windows host that prefers the unconfined PowerShell executor can switch the shell rows in its profile patch — the switch must disable both PowerShell rows and re-enable both bash rows, otherwise the profile fails to load.

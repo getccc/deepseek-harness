@@ -60,7 +60,6 @@ An adapter parses a completion as it arrives, and holding one here would undo th
 | Path | Role |
 |---|---|
 | [`src/index.ts`](src/index.ts) | Catalog discovery, invocation transport, the token read, and the period |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -99,3 +98,5 @@ These are current constraints of the contract, not a task backlog.
 The tests assert what leaves the Runner by reading the recorded request, including that the wire carries no `http`, no endpoint, and no key. That assertion is the package's whole reason to exist, and it would pass vacuously against a mock that never saw a real request.
 
 </details>
+
+**Runtime invariant:** No companion is published: the transport reads an access token per call and posts a body; it holds no state, and that no credential and no address appear in what it sends is a property of the request it builds, which its tests read directly.

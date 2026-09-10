@@ -7,13 +7,48 @@ A service can be a core spine service, a swappable capability seam, or a bundle/
 
 ```mermaid
 flowchart LR
+  pkg_account_store["account-store"]
+  svc_accountStore["ctx.accountStore<br/>Team Edition organizations and member accounts"]
+  pkg_account_store_sqlite["account-store-sqlite"]
+  pkg_account_auth_password["account-auth-password"]
+  pkg_access_control_sqlite["access-control-sqlite"]
+  pkg_team_admin_api["team-admin-api"]
+  pkg_team_control_plane_http["team-control-plane-http"]
+  pkg_team_shell["team-shell"]
+  pkg_account_auth["account-auth"]
+  svc_accountAuth["ctx.accountAuth<br/>Proving a member is who they claim"]
+  pkg_access_control["access-control"]
+  svc_accessControl["ctx.accessControl<br/>Default-deny authorization over roles and grants"]
+  pkg_model_gateway_sqlite["model-gateway-sqlite"]
+  pkg_team_console_menu["team-console-menu"]
+  svc_consoleMenu["ctx.consoleMenu<br/>Organization-owned administration navigation"]
+  pkg_team_console_menu_sqlite["team-console-menu-sqlite"]
+  pkg_audit["audit"]
+  svc_audit["ctx.audit<br/>The append-only audit trail"]
+  pkg_audit_sqlite["audit-sqlite"]
+  pkg_quota["quota"]
+  svc_quota["ctx.quota<br/>The budget ledger for company model calls"]
+  pkg_quota_sqlite["quota-sqlite"]
+  pkg_model_gateway["model-gateway"]
+  svc_modelGateway["ctx.modelGateway<br/>The company model catalog and the decision in front of it"]
+  pkg_model_gateway_http["model-gateway-http"]
+  pkg_llm_http_transport["llm-http-transport"]
+  svc_llmHttpTransport["ctx.llmHttpTransport<br/>How a model request reaches a provider"]
+  pkg_llm_http_transport_team["llm-http-transport-team"]
+  pkg_llm_deepseek["llm-deepseek"]
+  pkg_device_authorization["device-authorization"]
+  svc_deviceAuthorization["ctx.deviceAuthorization<br/>Binding a successful authentication to one computer"]
+  pkg_device_authorization_sqlite["device-authorization-sqlite"]
+  pkg_team_account_client["team-account-client"]
+  svc_teamAccountClient["ctx.teamAccountClient<br/>The Runner side of the team account"]
+  pkg_team_local_login["team-local-login"]
+  pkg_team_local_handoff["team-local-handoff"]
   pkg_attachment["attachment"]
   svc_attachments["ctx.attachments<br/>Durable binary attachment storage"]
   pkg_attachment_local["attachment-local"]
   pkg_api_session_controller["api-session-controller"]
   pkg_tool_fs["tool-fs"]
   pkg_llm_pi_ai["llm-pi-ai"]
-  pkg_llm_deepseek["llm-deepseek"]
   pkg_client_file_upload["client-file-upload"]
   svc_fileUploads["ctx.fileUploads<br/>Agent-scoped staged file uploads"]
   pkg_llm["llm"]
@@ -187,6 +222,16 @@ flowchart LR
   svc_jobs["ctx.jobs<br/>Background job registry"]
   pkg_jobs_local["jobs-local"]
   pkg_tool_jobs["tool-jobs"]
+  pkg_knowledge["knowledge"]
+  svc_knowledge["ctx.knowledge<br/>Private knowledge seam"]
+  pkg_knowledge_team["knowledge-team"]
+  pkg_tool_knowledge["tool-knowledge"]
+  pkg_knowledge_gateway["knowledge-gateway"]
+  svc_knowledgeGateway["ctx.knowledgeGateway<br/>Governed knowledge gateway"]
+  pkg_knowledge_gateway_sqlite["knowledge-gateway-sqlite"]
+  pkg_knowledge_source["knowledge-source"]
+  svc_knowledgeSource["ctx.knowledgeSource<br/>Upstream knowledge source seam"]
+  pkg_knowledge_weknora["knowledge-weknora"]
   pkg_web["web"]
   svc_web["ctx.web<br/>Web access provider registry"]
   pkg_web_search_exa["web-search-exa"]
@@ -220,6 +265,12 @@ flowchart LR
   pkg_cordis_host_runner["cordis-host-runner"]
   svc_dynamicCordisRunner["ctx.dynamicCordisRunner<br/>Dynamic Cordis package host runner"]
   svc_cordisInspect["ctx.cordisInspect<br/>Dynamic Cordis inspect registry"]
+  pkg_access_control --> svc_accessControl
+  pkg_access_control_sqlite --> svc_accessControl
+  pkg_account_auth --> svc_accountAuth
+  pkg_account_auth_password --> svc_accountAuth
+  pkg_account_store --> svc_accountStore
+  pkg_account_store_sqlite --> svc_accountStore
   pkg_agent --> svc_agents
   pkg_agent_default_model --> svc_agentDefaultModel
   pkg_agent_loop --> svc_agentLoop
@@ -234,6 +285,8 @@ flowchart LR
   pkg_api_workspace_controller --> svc_workspaceController
   pkg_attachment --> svc_attachments
   pkg_attachment_local --> svc_attachments
+  pkg_audit --> svc_audit
+  pkg_audit_sqlite --> svc_audit
   pkg_authorization --> svc_authorization
   pkg_bash_local --> svc_shell
   pkg_bash_sandbox --> svc_shell
@@ -250,6 +303,8 @@ flowchart LR
   pkg_credentials --> svc_credentials
   pkg_credentials_local --> svc_credentials
   pkg_deepseek_llm_api_extensions --> svc_deepseekLlmApiExtensions
+  pkg_device_authorization --> svc_deviceAuthorization
+  pkg_device_authorization_sqlite --> svc_deviceAuthorization
   pkg_e2b --> svc_e2b
   pkg_experimental_agent_team --> svc_agentTeams
   pkg_experimental_code_runtime_python --> svc_codeRuntime
@@ -268,17 +323,29 @@ flowchart LR
   pkg_invariants --> svc_invariants
   pkg_jobs --> svc_jobs
   pkg_jobs_local --> svc_jobs
+  pkg_knowledge --> svc_knowledge
+  pkg_knowledge_gateway --> svc_knowledgeGateway
+  pkg_knowledge_gateway_sqlite --> svc_knowledgeGateway
+  pkg_knowledge_source --> svc_knowledgeSource
+  pkg_knowledge_team --> svc_knowledge
+  pkg_knowledge_weknora --> svc_knowledgeSource
   pkg_llm --> svc_llm
   pkg_llm_deepseek --> svc_llm
+  pkg_llm_http_transport --> svc_llmHttpTransport
+  pkg_llm_http_transport_team --> svc_llmHttpTransport
   pkg_llm_pi_ai --> svc_llm
   pkg_llm_replay --> svc_llm
   pkg_lsp --> svc_lsp
   pkg_lsp_stdio --> svc_lsp
   pkg_message_feedback --> svc_messageFeedback
+  pkg_model_gateway --> svc_modelGateway
+  pkg_model_gateway_sqlite --> svc_modelGateway
   pkg_permission_presets --> svc_permissionPresets
   pkg_plan_mode --> svc_planMode
   pkg_plugin_package_inventory_deepseek --> svc_deepseekLlmApiExtensions
   pkg_pwsh_local --> svc_shell
+  pkg_quota --> svc_quota
+  pkg_quota_sqlite --> svc_quota
   pkg_sandbox --> svc_sandbox
   pkg_sandbox_local --> svc_sandbox
   pkg_sandbox_policy --> svc_sandboxPolicy
@@ -320,6 +387,9 @@ flowchart LR
   pkg_subprocess_e2b --> svc_subprocess
   pkg_subprocess_local --> svc_subprocess
   pkg_system_prompt --> svc_systemPrompt
+  pkg_team_account_client --> svc_teamAccountClient
+  pkg_team_console_menu --> svc_consoleMenu
+  pkg_team_console_menu_sqlite --> svc_consoleMenu
   pkg_terminal --> svc_terminals
   pkg_terminal_bash --> svc_terminals
   pkg_token_meter --> svc_tokenMeter
@@ -337,6 +407,15 @@ flowchart LR
   pkg_workflow --> svc_workflowEngine
   pkg_workflow_worker_thread --> svc_workflowEngine
   pkg_workspace --> svc_workspaceRegistry
+  svc_accessControl --> pkg_model_gateway_sqlite
+  svc_accessControl --> pkg_team_admin_api
+  svc_accountAuth --> pkg_team_admin_api
+  svc_accountAuth --> pkg_team_control_plane_http
+  svc_accountStore --> pkg_access_control_sqlite
+  svc_accountStore --> pkg_account_auth_password
+  svc_accountStore --> pkg_team_admin_api
+  svc_accountStore --> pkg_team_control_plane_http
+  svc_accountStore --> pkg_team_shell
   svc_agentDefaultModel --> pkg_api_session_controller
   svc_agentDefaultModel --> pkg_headless
   svc_agentLoop --> pkg_base
@@ -353,15 +432,22 @@ flowchart LR
   svc_attachments --> pkg_llm_deepseek
   svc_attachments --> pkg_llm_pi_ai
   svc_attachments --> pkg_tool_fs
+  svc_audit --> pkg_team_admin_api
+  svc_audit --> pkg_team_control_plane_http
+  svc_audit --> pkg_team_shell
   svc_authorization --> pkg_llm_pi_ai
   svc_clientModules --> pkg_client_hmr
   svc_codeRuntime --> pkg_tools
   svc_compaction --> pkg_compaction_basic
+  svc_consoleMenu --> pkg_team_admin_api
   svc_cordisInspect --> pkg_tool_cordis
   svc_credentials --> pkg_api_settings_controller
   svc_credentials --> pkg_llm_deepseek
   svc_credentials --> pkg_llm_pi_ai
   svc_deepseekLlmApiExtensions --> pkg_llm_deepseek
+  svc_deviceAuthorization --> pkg_team_admin_api
+  svc_deviceAuthorization --> pkg_team_control_plane_http
+  svc_deviceAuthorization --> pkg_team_shell
   svc_directoryPicker --> pkg_api_workspace_controller
   svc_dynamicCordisRunner --> pkg_tool_cordis
   svc_e2b --> pkg_fs_e2b
@@ -377,9 +463,13 @@ flowchart LR
   svc_jobs --> pkg_tool_jobs
   svc_jobs --> pkg_tool_subagent
   svc_jobs --> pkg_tool_terminal
+  svc_knowledge --> pkg_tool_knowledge
   svc_llm --> pkg_agent_loop
   svc_llm --> pkg_compaction_basic
+  svc_llmHttpTransport --> pkg_llm_deepseek
   svc_lsp --> pkg_tool_lsp
+  svc_modelGateway --> pkg_model_gateway_http
+  svc_quota --> pkg_model_gateway_sqlite
   svc_sandbox --> pkg_bash_sandbox
   svc_sandbox --> pkg_terminal_bash
   svc_sandboxPolicy --> pkg_bash_sandbox
@@ -438,6 +528,8 @@ flowchart LR
   svc_systemPrompt --> pkg_tool_terminal
   svc_systemPrompt --> pkg_tool_web
   svc_systemPrompt --> pkg_tools
+  svc_teamAccountClient --> pkg_team_local_handoff
+  svc_teamAccountClient --> pkg_team_local_login
   svc_terminals --> pkg_tool_terminal
   svc_tokenMeter --> pkg_compaction_basic
   svc_toolResultPruner --> pkg_compaction_basic
@@ -468,6 +560,16 @@ flowchart LR
 
 | ctx key | Role | Owner | Implementations | Direct consumers | Companion plugins | Note |
 | --- | --- | --- | --- | --- | --- | --- |
+| `ctx.accountStore` | `seam` | [`account-store`](../packages/account/account-store) | [`account-store-sqlite`](../packages/account/account-store-sqlite) | [`account-auth-password`](../packages/account/account-auth-password), [`access-control-sqlite`](../packages/access/access-control-sqlite), [`team-admin-api`](../packages/team/team-admin-api), [`team-control-plane-http`](../packages/team/team-control-plane-http), [`team-shell`](../packages/team/team-shell) | - | Server-side only: the Control Plane composes it, no Runner mounts it. It also holds the organization policy revision every authorization cache keys on. |
+| `ctx.accountAuth` | `seam` | [`account-auth`](../packages/account/account-auth) | [`account-auth-password`](../packages/account/account-auth-password) | [`team-admin-api`](../packages/team/team-admin-api), [`team-control-plane-http`](../packages/team/team-control-plane-http) | - | Verification is separate from the store so a second method arrives as a provider. The password provider stores a self-describing hash and rehashes on a successful verify. |
+| `ctx.accessControl` | `seam` | [`access-control`](../packages/access/access-control) | [`access-control-sqlite`](../packages/access/access-control-sqlite) | [`team-admin-api`](../packages/team/team-admin-api), [`model-gateway-sqlite`](../packages/llm/model-gateway-sqlite) | - | No explicit deny, no inheritance, no expression language, so a decision is explained by naming the grants that admitted it. The administration API asks it before every administrative act, and the model gateway before every invocation. |
+| `ctx.consoleMenu` | `seam` | [`team-console-menu`](../packages/team/team-console-menu) | [`team-console-menu-sqlite`](../packages/team/team-console-menu-sqlite) | [`team-admin-api`](../packages/team/team-admin-api) | - | Entries declare navigation and one catalog permission but decide nothing. The administration API translates role menu selection into access-control grants and every destination authorizes its own requests again. |
+| `ctx.audit` | `seam` | [`audit`](../packages/access/audit) | [`audit-sqlite`](../packages/access/audit-sqlite) | [`team-admin-api`](../packages/team/team-admin-api), [`team-control-plane-http`](../packages/team/team-control-plane-http), [`team-shell`](../packages/team/team-shell) | - | Closed action and metadata catalogs, and a token rule on every caller-supplied string, so a record cannot hold a member's work. The surfaces a member acts through write the records, because they are what know which principal acted. |
+| `ctx.quota` | `seam` | [`quota`](../packages/access/quota) | [`quota-sqlite`](../packages/access/quota-sqlite) | [`model-gateway-sqlite`](../packages/llm/model-gateway-sqlite) | - | A reservation is the ceiling on what a request can cost and a settlement happens once, so a crash cannot spend without recording and a retry cannot charge twice. The model gateway is the consumer it is built for. |
+| `ctx.modelGateway` | `seam` | [`model-gateway`](../packages/llm/model-gateway) | [`model-gateway-sqlite`](../packages/llm/model-gateway-sqlite) | [`model-gateway-http`](../packages/llm/model-gateway-http) | - | A Runner names a model and gets back a call it could not have constructed: the endpoint, the upstream name, and the credential all come from the catalog. |
+| `ctx.llmHttpTransport` | `seam` | [`llm-http-transport`](../packages/llm/llm-http-transport) | [`llm-http-transport-team`](../packages/llm/llm-http-transport-team) | [`llm-deepseek`](../packages/llm/llm-deepseek) | - | A request names an operation from a closed list and a model, never a URL, so no caller decides where a credential goes. The DeepSeek adapter also delegates model discovery when the transport owns remote policy. |
+| `ctx.deviceAuthorization` | `seam` | [`device-authorization`](../packages/account/device-authorization) | [`device-authorization-sqlite`](../packages/account/device-authorization-sqlite) | [`team-admin-api`](../packages/team/team-admin-api), [`team-control-plane-http`](../packages/team/team-control-plane-http), [`team-shell`](../packages/team/team-shell) | - | The default Runner flow authenticates an account and approves a transaction; PKCE and a device signature prove that the redeeming computer holds the key. An optional browser handoff can supply the approval instead. |
+| `ctx.teamAccountClient` | `seam` | [`team-account-client`](../packages/team/team-account-client) | - | [`team-local-login`](../packages/team/team-local-login), [`team-local-handoff`](../packages/team/team-local-handoff) | - | Holds the device key and the credential on the member computer and calls the Control Plane over HTTPS. No company provider credential ever reaches it. |
 | `ctx.attachments` | `seam` | [`attachment`](../packages/attachment/attachment) | [`attachment-local`](../packages/attachment/attachment-local) | [`api-session-controller`](../packages/api/session-controller), [`tool-fs`](../packages/fs/tool-fs), [`llm-pi-ai`](../packages/llm/llm-pi-ai), [`llm-deepseek`](../packages/llm/llm-deepseek) | - | The host commits accepted images before session events; provider adapters resolve authorized durable references into provider-native content. |
 | `ctx.fileUploads` | `core` | [`client-file-upload`](../packages/client/file-upload) | - | [`api-session-controller`](../packages/api/session-controller) | - | Owns streaming intake, durable storage, and staged receipt lifetime; the Session controller binds receipts to accepted submissions. |
 | `ctx.llm` | `seam` | [`llm`](../packages/llm/llm) | [`llm-deepseek`](../packages/llm/llm-deepseek), [`llm-pi-ai`](../packages/llm/llm-pi-ai), [`llm-replay`](../packages/test-support/llm-replay) | [`agent-loop`](../packages/core/agent-loop), [`compaction-basic`](../packages/compaction/compaction-basic) | - | Adapters register provider implementations; the loop and compaction call the provider-neutral stream service. |
@@ -528,6 +630,9 @@ flowchart LR
 | `ctx.agentTeams` | `core` | [`experimental-agent-team`](../packages/experimental/agent-team) | - | [`experimental-tool-agent-team`](../packages/experimental/tool-agent-team), [`experimental-client-ui-agent-team`](../packages/experimental/client-ui-agent-team) | - | Owns the implicit-root roster, durable peer mailbox, shared task DAG, continuable-child lifecycle, and generated Team Remote methods; tool-agent-team contributes model controls and client-ui-agent-team mounts the browser contribution. |
 | `ctx.inspector` | `core` | `inspector` | - | - | - | Owns the Worker-hosted CDP target and the transport-independent Host and Client observation and Cordis-tree query API. |
 | `ctx.jobs` | `seam` | [`jobs`](../packages/jobs/jobs) | [`jobs-local`](../packages/jobs/jobs-local) | [`tool-bash`](../packages/shell/tool-bash), [`tool-terminal`](../packages/terminal/tool-terminal), [`tool-subagent`](../packages/subagent/tool-subagent), [`tool-jobs`](../packages/jobs/tool-jobs) | - | Producers (background bash, PTY sends, and subagent delegations) register running work; tool-jobs is the model-facing controller that reads, lists, and kills it; jobs-local is the process-local registry. |
+| `ctx.knowledge` | `seam` | [`knowledge`](../packages/knowledge/knowledge) | [`knowledge-team`](../packages/knowledge/knowledge-team) | [`tool-knowledge`](../packages/knowledge/tool-knowledge) | - | The directory and passage-search operations a governed deployment authorizes; knowledge-team reaches the Control Plane that authorizes them, and tool-knowledge is what a model sees of the result. |
+| `ctx.knowledgeGateway` | `seam` | [`knowledge-gateway`](../packages/knowledge/knowledge-gateway) | [`knowledge-gateway-sqlite`](../packages/knowledge/knowledge-gateway-sqlite) | - | - | Stands between a member's Runner and a knowledge source: an administrator curates the durable catalog through it, and every member-facing directory and search is authorized per knowledge base by it. |
+| `ctx.knowledgeSource` | `seam` | [`knowledge-source`](../packages/knowledge/knowledge-source) | [`knowledge-weknora`](../packages/knowledge/knowledge-weknora) | - | - | The Control Plane half: a provider speaks one knowledge product's protocol and holds its credential, while the governed gateway in front of it decides who may search what. |
 | `ctx.web` | `seam` | [`web`](../packages/web/web) | [`web-search-exa`](../packages/web/web-search-exa), [`web-search-perplexity`](../packages/web/web-search-perplexity), [`web-search-deepseek`](../packages/web/web-search-deepseek), [`web-fetch-http`](../packages/web/web-fetch-http) | [`tool-web`](../packages/web/tool-web) | - | Search and fetch providers register into one ctx.web seam; tool-web owns the stable model-facing names. |
 | `ctx.spillStore` | `seam` | [`spill`](../packages/spill/spill) | [`spill-local`](../packages/spill/spill-local) | [`spill-policy`](../packages/spill/spill-policy) | - | The backend saves oversized tool text and returns a model-facing locator plus retrieval hint; spill-policy is the tools/post-execute consumer that decides when to spill. |
 | `ctx.directoryPicker` | `seam` | [`host-directory-picker`](../packages/host/directory-picker) | [`host-directory-picker-native`](../packages/host/directory-picker-native), [`host-directory-picker-browse`](../packages/host/directory-picker-browse) | [`api-workspace-controller`](../packages/api/workspace-controller) | - | Discriminated interaction capability: the native backend opens one OS chooser on the host display, the browse backend serves listing/creation primitives for the in-app browser; dual-face backends fill ui-workspace directory-flow slots from their browser halves (no wire advertisement). |

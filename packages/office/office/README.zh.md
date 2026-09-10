@@ -45,3 +45,5 @@ kind: "package-reference"
 `office/kind` 事件在 `scope.ts` 中增强 `SessionEventMap`；投影增强位于 `dsh-tool-office` 而非此处，因此 Remote 控制器可以命名 `OfficeChoice` 而不导入投影注册表。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：提示词分段与投影都是对 Session 日志的纯折叠；记录的选择是本构建认识的类型，这一点由 `choose` 内的 `parseOfficeChoice` 强制执行，并由本包测试断言。

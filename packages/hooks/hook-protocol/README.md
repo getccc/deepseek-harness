@@ -89,7 +89,6 @@ The [hook-protocol-lib Agent Note](../../../.agents/notes/archived/feature/2026-
 | [`src/events.ts`](src/events.ts) | `hook/*` event declaration, append helpers, stderr summary |
 | [`src/detached.ts`](src/detached.ts) | Detached-run quiescence tracking |
 | [`src/types.ts`](src/types.ts) | `HookOutput`, `MatcherGroup`, `CommandHook`, and the `hook/*` payload types |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion: pairing, turn enclosure, dialect, and duration checks |
 
 </details>
 

@@ -71,7 +71,6 @@ kind: "package-reference"
 |---|---|
 | [`src/index.ts`](src/index.ts) | `ApprovalService`：请求分发、策略折叠与写入路径、运行时上下文贡献 |
 | [`src/types.ts`](src/types.ts) | `ApprovalRequestId` brand 与结果类型 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变式伴生插件：在未结束的轮次内配对 `approval/asked` 与 `approval/decided` |
 
 ### 分发
 

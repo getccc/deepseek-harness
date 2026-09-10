@@ -16,7 +16,7 @@ Status: implemented
 
 **该分节不命名任何品牌。** 回退分支过去让模型去寻找“Welinkin PowerPoint 模版技能”，但目录条目由部署自己命名——放置好的树携带 `amec-ppt` 与携带 `welinkin-ppt` 一样自然——因此分节只请求一个 PowerPoint 模版技能，并把该文件称为公司模版。这把那条笔记已经拥有的规则再推进一步：分节只陈述配置所知道的事，而技能的名字不在其内。
 
-**本次构建不认识的类型不施加任何格式。** `foldOfficeChoice` 让每个已记录的值经过 `parseOfficeChoice`——其契约本就覆盖已存储的日志——投影的 `apply` 也以同样方式读取。在旧构建下选择了 `welinkin-ppt` 的会话折叠为 `none`：成员重新选择，而提示词分节与芯片都不会拿到一个自己没有分支可处理的值。把退役类型映射到 `ppt` 会是一层兼容垫片，而在 `SESSION_FORMAT_VERSION` 为 `0` 期间[预发布立场](../../../../AGENTS.md#pre-release-stance-foundation-over-blast-radius)排除了这种做法。
+**本次构建不认识的类型不施加任何格式。** `foldOfficeChoice` 让每个已记录的值经过 `parseOfficeChoice`——其契约本就覆盖已存储的日志——投影的 `apply` 也以同样方式读取。在旧构建下选择了 `welinkin-ppt` 的会话折叠为 `none`：成员重新选择，而提示词分节与芯片都不会拿到一个自己没有分支可处理的值。把退役类型映射到 `ppt` 会是一层兼容垫片，而在 `SESSION_FORMAT_VERSION` 为 `0` 期间[预发布立场](../../../../AGENTS.md#pre-stable-apis-and-released-session-data)排除了这种做法。
 
 **每一行携带自己的图标。** `IconDocumentOutline16`、`IconSpreadsheetOutline16`、`IconSlidesOutline16` 与 `IconChartOutline16` 作为在本仓库绘制的图标加入 primitives 图标集——图标集其余部分所出自的 figma 源不含办公类型的标记。它们是统一 1.15px 粗细的圆角矩形描边，因此这四个与提取自 figma 的图标并置时读作同一族；芯片在它本就拥有的显示顺序旁把类型映射到图标。
 

@@ -77,7 +77,6 @@ The console renders in more than one language, so an entry the product ships car
 | [`src/types.ts`](src/types.ts) | The record, the create and update inputs, and the shipped-entry shape |
 | [`src/catalog.ts`](src/catalog.ts) | The navigation this build ships |
 | [`src/brand.ts`](src/brand.ts) | The branded menu identity |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -116,3 +115,5 @@ These are current constraints of this seam, not a task backlog.
 Adding a page to the console means adding it here — a shipped entry with its key, copy key, route, component path, and permission — and adding the component to the browser application's own registry. The key is what re-seeding matches on, so it must never be reused for a different page.
 
 </details>
+
+**Runtime invariant:** No companion is published: the package declares an abstract service, a shipped catalog, and one pure check over the permission catalog; an organization's stored tree against the entries this build ships belongs to the provider that seeds it and its tests.

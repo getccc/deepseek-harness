@@ -641,7 +641,10 @@ export type ToolCatalog = CatalogPackage[]
  * `scanRoot` defaults to the repo root; a test may point it at a fixture tree.
  */
 export function assertManifestComplete(packages: ToolPackage[] = TOOL_PACKAGES, scanRoot: string = root): void {
-  const onDisk = globSync('packages/*/tool-*', { cwd: scanRoot }).map(p => basename(p)).sort()
+  // `tool-office` contributes a prompt section and a projection, never a tool,
+  // so it has no schema to catalogue and stays outside the manifest.
+  const NON_TOOL_PACKAGES = new Set(['tool-office'])
+  const onDisk = globSync('packages/*/tool-*', { cwd: scanRoot }).map(p => basename(p)).filter(dir => !NON_TOOL_PACKAGES.has(dir)).sort()
   const listed = new Set(packages.map(p => p.dir))
   const missing = onDisk.filter(dir => !listed.has(dir))
   if (missing.length > 0) {

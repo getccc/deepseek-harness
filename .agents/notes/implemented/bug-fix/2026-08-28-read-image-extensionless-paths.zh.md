@@ -10,7 +10,7 @@ Status: implemented
 
 ## 决定
 
-`read_image` 把文件扩展名视为媒体类型声明。PNG、JPEG、WebP 与 GIF 扩展名选择各自声明的类型；其他非空扩展名在文件系统 I/O 前被拒绝，附件存储的完整解码会拒绝与字节不匹配的声明。对于无扩展名路径，工具通过 `ctx.fs` 在既有 `maxImageBytes` 和更严格的 `maxMessageImageBytes` 上限内读取文件，再由工具内部的 `sniffImageMediaType` 辅助函数识别四种受支持的文件签名。识别结果经过同一套部署媒体类型策略和 `saveImage` 准入，后者的完整解码保持权威。这把[最小 read_image 工具 Agent Note](../feature/2026-08-10-minimal-read-image-tool.zh.md)中对嗅探的拒绝收窄到带扩展名的路径。
+`read_image` 把文件扩展名视为媒体类型声明。PNG、JPEG、WebP 与 GIF 扩展名选择各自声明的类型；其他非空扩展名在文件系统 I/O 前被拒绝，附件存储的完整解码会拒绝与字节不匹配的声明。对于无扩展名路径，工具通过 `ctx.fs` 在既有 `maxImageBytes` 和更严格的 `maxMessageImageBytes` 上限内读取文件，再由工具内部的 `sniffImageMediaType` 辅助函数识别四种受支持的文件签名。识别结果经过同一套部署媒体类型策略和 `saveImage` 准入，后者的完整解码保持权威。这把[最小 read_image 工具 Agent Note](../../archived/feature/2026-08-10-minimal-read-image-tool.md)中对嗅探的拒绝收窄到带扩展名的路径。
 
 挂载的 `ctx.fs` 后端是 `read_image` 路径授权的完整依据。扩展名和文件签名只决定工具是否接受后端返回的字节。该后端可读的每个合法无扩展名图片都能进入当前会话，包括规范化附件对象；工具不证明 Session 引用，附件服务也不提供反向路径查找。
 

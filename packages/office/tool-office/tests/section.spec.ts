@@ -46,7 +46,8 @@ describe('renderOfficeSection', () => {
 
 /** A minimal Host context capturing the section and projection an apply registers. */
 function fakeCtx() {
-  const sections: { name: string; order: number; text: (c: { agent?: { session: { events: SessionEvent[] } } }) => string }[] = []
+  type SectionAgent = { session: { snapshotEvents: () => SessionEvent[] } }
+  const sections: { name: string; order: number; text: (c: { agent?: SectionAgent }) => string }[] = []
   const projections: {
     key: string
     init: () => unknown
@@ -55,7 +56,7 @@ function fakeCtx() {
   }[] = []
   const ctx = {
     effect: (fn: () => unknown) => { fn(); return () => {} },
-    systemPrompt: { section: (s: unknown) => { sections.push(s as never); return () => {} } },
+    systemPrompt: { section: (s: unknown) => { sections.push(s as never); return () => {} }, getSectionOrder: () => 600 },
     inject: (_deps: string[], cb: (c: unknown) => void) => {
       cb({ sessionProjections: { register: (d: unknown) => { projections.push(d as never); return () => {} } } })
     },
@@ -74,7 +75,7 @@ describe('apply', () => {
     expect(section.text({})).toBe('')
     // A recorded ppt choice reaches the model with the template path.
     const events = [{ type: 'office/kind', data: { version: 1, kind: 'ppt' } }] as unknown as SessionEvent[]
-    expect(section.text({ agent: { session: { events } } })).toContain('/opt/welinkin/welinkin-ppt.pptx')
+    expect(section.text({ agent: { session: { snapshotEvents: () => events } } })).toContain('/opt/welinkin/welinkin-ppt.pptx')
 
     const projection = projections[0]!
     expect(projection.key).toBe('office')
@@ -91,14 +92,14 @@ describe('apply', () => {
     const { ctx, sections } = fakeCtx()
     apply(ctx, {})
     const events = [{ type: 'office/kind', data: { version: 1, kind: 'ppt' } }] as unknown as SessionEvent[]
-    expect(sections[0]!.text({ agent: { session: { events } } })).toMatch(/PowerPoint template skill/)
+    expect(sections[0]!.text({ agent: { session: { snapshotEvents: () => events } } })).toMatch(/PowerPoint template skill/)
   })
 
   it('reads a retired kind out of both the section and the projection', () => {
     const { ctx, sections, projections } = fakeCtx()
     apply(ctx, {})
     const retired = { type: 'office/kind', data: { version: 1, kind: 'welinkin-ppt' } } as unknown as SessionEvent
-    expect(sections[0]!.text({ agent: { session: { events: [retired] } } })).toBe('')
+    expect(sections[0]!.text({ agent: { session: { snapshotEvents: () => [retired] } } })).toBe('')
     expect(projections[0]!.apply({ version: 1, kind: 'word' }, retired)).toEqual(DEFAULT_OFFICE_CHOICE)
   })
 })

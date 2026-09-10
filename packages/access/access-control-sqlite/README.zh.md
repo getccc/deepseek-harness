@@ -59,7 +59,6 @@ kind: "package-reference"
 |---|---|
 | [`src/index.ts`](src/index.ts) | 提供方、求值，以及递增修订号的那些变更 |
 | [`src/schema.ts`](src/schema.ts) | DDL、行形状、目录播种，以及版本强制 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴随插件的注册 |
 
 -----
 
@@ -99,3 +98,5 @@ kind: "package-reference"
 `node:sqlite` 无需依赖，且已经是 session persistence、session query、storage 和账户存储的后端。面向多实例部署的 PostgreSQL 后端，是同一个 Service Definition 之后的第二个 provider，而不是对此处的改动。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：该后端必须保持的持久关系（授权指向本构建治理的权限、绑定指向存在的角色、资源在组织与类型内唯一）以外键和唯一索引声明给 SQLite，违规写入会被直接拒绝，不留给运行时检查。

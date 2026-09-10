@@ -57,7 +57,6 @@ plugins:
 |---|---|
 | [`src/index.ts`](src/index.ts) | reserve、settle、reconcile，以及推导出的账面状况 |
 | [`src/schema.ts`](src/schema.ts) | 表、约束与 pragma 守卫 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件注册 |
 
 -----
 
@@ -96,3 +95,5 @@ plugins:
 测试开第二条连接写裸 SQL，理由与审计存储的测试相同：被测的主张不是"服务不肯结算两次"，而是"数据库不肯"。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：该账本必须保持的关系（每次预留至多一次结算、预留为正、token 计数非负）以主键与 CHECK 约束声明给 SQLite，违规写入会被拒绝。

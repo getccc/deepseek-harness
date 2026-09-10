@@ -25,7 +25,6 @@ import {
 } from '@deepseek-ai/dsh-knowledge'
 import type { Session } from '@deepseek-ai/dsh-session'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
-import { FIRST_PARTY_SECTION_ORDER } from '@deepseek-ai/dsh-system-prompt'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import zod, { type ZodType } from 'zod'
 import type {} from '@deepseek-ai/dsh-session-projection'
@@ -158,7 +157,7 @@ export function apply(ctx: Context, config: Config): void {
       const agent = ctx.agents.currentInitiator()
       const scope = agent === undefined
         ? { version: 1, mode: 'off' } as KnowledgeScope
-        : foldKnowledgeScope(agent.session.events)
+        : foldKnowledgeScope(agent.session.snapshotEvents())
       const selection = selectionOf(scope)
       if (selection === undefined) {
         // The tool is hidden while a Session is off, so reaching here means a
@@ -177,10 +176,10 @@ export function apply(ctx: Context, config: Config): void {
 
   ctx.effect(() => ctx.systemPrompt.section({
     name: KNOWLEDGE_SCOPE_SECTION,
-    order: FIRST_PARTY_SECTION_ORDER.KNOWLEDGE_SCOPE,
+    order: ctx.systemPrompt.getSectionOrder('KNOWLEDGE_SCOPE'),
     text: (context) => {
       if (context.agent === undefined) return ''
-      return renderScopeSection(foldKnowledgeScope(context.agent.session.events))
+      return renderScopeSection(foldKnowledgeScope(context.agent.session.snapshotEvents()))
     },
   }), 'tool-knowledge: scope prompt section')
 
@@ -231,7 +230,7 @@ function installVisibility(ctx: Context): void {
 
   /** Bring one agent's visibility in line with its Session's scope. */
   const settle = (agent: Agent): void => {
-    const off = foldKnowledgeScope(agent.session.events).mode === 'off'
+    const off = foldKnowledgeScope(agent.session.snapshotEvents()).mode === 'off'
     const current = lifted.get(agent.session)
     if (off === (current !== undefined)) return
     if (current === undefined) {

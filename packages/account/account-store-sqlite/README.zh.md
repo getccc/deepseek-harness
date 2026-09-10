@@ -61,7 +61,6 @@ kind: "package-reference"
 |---|---|
 | [`src/index.ts`](src/index.ts) | 存储实现及其插件配置 |
 | [`src/schema.ts`](src/schema.ts) | DDL、行形状，以及版本与 application id 的强制 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴随插件的注册 |
 
 -----
 
@@ -100,3 +99,5 @@ kind: "package-reference"
 `node:sqlite` 无需依赖，且已经是 session persistence、session query 和 storage 的后端，因此本包没有给仓库新增任何驱动。面向多实例部署的 PostgreSQL 后端，是同一个 Service Definition 之后的第二个 provider，而不是对此处的改动。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：该后端必须保持的持久关系（登录名在组织内唯一、账户属于存在的组织）以唯一索引和外键声明给 SQLite，数据库会拒绝违规写入。

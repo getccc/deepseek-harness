@@ -49,9 +49,6 @@
     },
     {
       "path": "../../knowledge/tool-knowledge"
-    },
-    {
-      "path": "../../runtime-diagnostics/invariants"
     }
   ]
 }

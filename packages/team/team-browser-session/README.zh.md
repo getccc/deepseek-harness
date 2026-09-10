@@ -72,7 +72,6 @@ cookie 携带随机字节，存储持有它们的 SHA-256。被窃取的 cookie 
 | 路径 | 角色 |
 |---|---|
 | [`src/index.ts`](src/index.ts) | cookie、令牌、CSRF 派生与同源判定 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴随插件注册 |
 
 -----
 
@@ -110,3 +109,5 @@ cookie 携带随机字节，存储持有它们的 SHA-256。被窃取的 cookie 
 `sameOrigin` 对 `Origin: null` 做了正反两面的测试，因为这条规则的价值完全在于它拒绝了什么：没有同源 Fetch Metadata 的不透明上下文必须失败，否则那个头什么也没换来。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包是对一次请求和一次存储查询的纯函数；它不挂载任何东西、不持有状态，cookie 解析到存储持有其 hash 的会话且 CSRF 值由 token 推导，这些由测试直接观察。

@@ -290,8 +290,7 @@ function Loaded({ injected, renderSlot }: { injected: ModelsSectionFace; renderS
   // step: whether the user already has a provider to talk to.
   const anyUsable = state.rows.some(providerUsable)
   const configured = state.rows.filter(row => row.configured)
-  const configurable = state.rows.filter(row => state.namespaces.has(row.entry.settingsNs))
-  const addable = configurable.filter(row => !row.configured)
+  const addable = state.rows.filter(row => !row.configured && row.entry.settingsNs !== '')
   const addTarget = adding ? editing : undefined
   const addNamespace = addTarget === undefined ? undefined : state.namespaces.get(addTarget.settingsNs)
   // The draft's directory row, for the card extension seat. A refresh can drop
@@ -323,15 +322,11 @@ function Loaded({ injected, renderSlot }: { injected: ModelsSectionFace; renderS
           const namespace = state.namespaces.get(target.settingsNs)
           /* v8 ignore next -- the join marks a row configured only when its namespace resolved */
           if (namespace === undefined) return null
-          const error = row.entry.error === undefined
-            ? null
-            : <p role="alert" className={styles['error']}>{row.entry.error}</p>
           if (needsSetup(row, anyUsable) && !dismissedSetup.has(row.entry.provider)) {
             // First-run posture: the provider exists but has no key — the
             // setup card IS its presence on the page, until the user closes it.
             return (
               <li key={row.entry.provider} className={styles['setupCard']}>
-                {error}
                 {renderProviderEditor({
                   target,
                   namespace,
@@ -421,7 +416,6 @@ function Loaded({ injected, renderSlot }: { injected: ModelsSectionFace; renderS
                     : null}
                 </span>
               </div>
-              {error}
               {renderSlot(
                 'settings.models.provider-card',
                 { provider: row.entry, configured: row.configured, keyConfigured: keyConfiguredOf(row) },
@@ -510,41 +504,37 @@ function Loaded({ injected, renderSlot }: { injected: ModelsSectionFace; renderS
               // and equal-width so they read as siblings and line up with the
               // rows above, rather than two pills of different lengths.
               <div className={styles['addActions']}>
-                {configurable.length > 0 && (
-                  <button
-                    type="button"
-                    className={styles['addButton']}
-                    disabled={addable.length === 0 || !state.writable}
-                    onClick={() => {
-                      const first = addable[0]
-                      /* v8 ignore next -- the button is disabled while nothing is addable */
-                      if (first === undefined) return
-                      setSavedTarget(undefined)
-                      setDeclaring(false)
-                      setAdding(true)
-                      setEditing(targetOf(first))
-                    }}
-                  >
-                    <IconPlusOutline16 size={14} />
-                    {t('add')}
-                  </button>
-                )}
-                {state.namespaces.has('llm-pi-ai') && (
-                  <button
-                    type="button"
-                    className={styles['addButton']}
-                    disabled={protocols.length === 0 || !state.writable}
-                    onClick={() => {
-                      setSavedTarget(undefined)
-                      setAdding(false)
-                      setEditing(undefined)
-                      setDeclaring(true)
-                    }}
-                  >
-                    <IconPlusOutline16 size={14} />
-                    {t('customAdd')}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className={styles['addButton']}
+                  disabled={addable.length === 0 || !state.writable}
+                  onClick={() => {
+                    const first = addable[0]
+                    /* v8 ignore next -- the button is disabled while nothing is addable */
+                    if (first === undefined) return
+                    setSavedTarget(undefined)
+                    setDeclaring(false)
+                    setAdding(true)
+                    setEditing(targetOf(first))
+                  }}
+                >
+                  <IconPlusOutline16 size={14} />
+                  {t('add')}
+                </button>
+                <button
+                  type="button"
+                  className={styles['addButton']}
+                  disabled={protocols.length === 0 || !state.writable}
+                  onClick={() => {
+                    setSavedTarget(undefined)
+                    setAdding(false)
+                    setEditing(undefined)
+                    setDeclaring(true)
+                  }}
+                >
+                  <IconPlusOutline16 size={14} />
+                  {t('customAdd')}
+                </button>
               </div>
             )}
       </div>

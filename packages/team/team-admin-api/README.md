@@ -96,7 +96,6 @@ An account's failed-attempt count and lock deadline are the authentication provi
 | [`src/index.ts`](src/index.ts) | The routes, the three proofs, authorization, and the audit record |
 | [`src/http.ts`](src/http.ts) | Reading a bounded JSON body and answering with one |
 | [`src/types.ts`](src/types.ts) | What the console receives, types only |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -137,3 +136,5 @@ These are current constraints of the contract, not a task backlog.
 The refusal tests matter more than the success tests: each of the three proofs is dropped in turn and the store is checked to have changed nothing. `readJson` stops reading an oversized body rather than destroying the socket — destroying it takes the response with it, and the console sees a dropped connection instead of the refusal.
 
 </details>
+
+**Runtime invariant:** No companion is published: this package owns no data of its own; every write it accepts lands in the account, access-control, device, or model service that owns it, each of which checks its own relations, and an allowed write beside its audit row is asserted by the route tests.

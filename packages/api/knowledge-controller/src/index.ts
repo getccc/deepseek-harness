@@ -21,11 +21,24 @@ import {
 } from '@deepseek-ai/dsh-knowledge'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import { SessionId } from '@deepseek-ai/dsh-session'
-import { Remote, TypertRemoteFailure, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
+import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { z } from 'zod'
 import type { KnowledgeChoice, KnowledgeScopeView } from './types.ts'
 
 export type * from './types.ts'
+
+declare module '@deepseek-ai/dsh-typert-protocol' {
+  interface RemoteErrorDetailsMap {
+    /** A `selected` choice named no knowledge base. */
+    'knowledge/empty-selection': {}
+    /** The reference is not a knowledge base this member may use. */
+    'knowledge/not-available': { readonly knowledgeRef: string }
+    /** Private knowledge could not be read from the Control Plane. */
+    'knowledge/unavailable': { readonly reason: string }
+    /** The addressed Session is not open in this process. */
+    'knowledge/session-not-open': {}
+  }
+}
 
 const sessionRequestSchema = z.object({ sessionId: z.string().min(1) })
 
@@ -45,11 +58,7 @@ const chooseRequestSchema = z.object({
 function parseRequest<T>(method: string, schema: z.ZodType<T>, value: unknown): T {
   const parsed = schema.safeParse(value)
   if (parsed.success) return parsed.data
-  throw new TypertRemoteFailure({
-    code: 'bad-request',
-    message: `invalid payload for ${method}`,
-    details: { issues: parsed.error.issues },
-  })
+  throw new RemoteError('gateway/bad-request', `invalid payload for ${method}`, { issues: parsed.error.issues })
 }
 
 /** Host service backing the generated `ctx.remote.knowledge` namespace. */
@@ -69,7 +78,7 @@ export class KnowledgeController extends TypertRemoteService {
    * administrator switched off should leave it.
    * @param sessionId - the Session whose scope is being read.
    * @returns the authorized choices, the current scope, and any stale selection.
-   * @throws TypertRemoteFailure when the Session is unknown or knowledge cannot be reached.
+   * @throws RemoteError when the Session is unknown or knowledge cannot be reached.
    */
   @Remote('scope')
   async scope(sessionId: string): Promise<KnowledgeScopeView> {
@@ -99,7 +108,7 @@ export class KnowledgeController extends TypertRemoteService {
    * @param mode - `off`, `all`, or `selected`.
    * @param knowledgeRefs - the chosen references, required and non-empty for `selected`.
    * @returns the Session's scope as it now stands.
-   * @throws TypertRemoteFailure when the request is invalid, the Session is unknown, or a reference is not currently authorized.
+   * @throws RemoteError when the request is invalid, the Session is unknown, or a reference is not currently authorized.
    */
   @Remote('choose')
   async choose(sessionId: string, mode: string, knowledgeRefs?: string[]): Promise<KnowledgeScopeView> {
@@ -119,21 +128,13 @@ export class KnowledgeController extends TypertRemoteService {
   ): Promise<KnowledgeScope> {
     if (mode !== 'selected') return { version: 1, mode }
     if (refs.length === 0) {
-      throw new TypertRemoteFailure({
-        code: 'bad-request',
-        message: 'a knowledge selection names at least one knowledge base',
-        details: {},
-      })
+      throw new RemoteError('knowledge/empty-selection', 'a knowledge selection names at least one knowledge base', {})
     }
     const authorized = new Map((await this.directory()).map(choice => [choice.knowledgeRef, choice.displayName]))
     const bases = refs.map((ref) => {
       const displayName = authorized.get(ref)
       if (!isKnowledgeRef(ref) || displayName === undefined) {
-        throw new TypertRemoteFailure({
-          code: 'bad-request',
-          message: 'that knowledge base is not available to this member',
-          details: { knowledgeRef: ref },
-        })
+        throw new RemoteError('knowledge/not-available', 'that knowledge base is not available to this member', { knowledgeRef: ref })
       }
       return { ref: KnowledgeRef(ref), displayName }
     })
@@ -152,28 +153,20 @@ export class KnowledgeController extends TypertRemoteService {
       // The closed reason travels so a picker can say "sign in again" or "the
       // Control Plane is unreachable" rather than showing an empty list, which
       // would read as "you have access to nothing".
-      throw new TypertRemoteFailure({
-        code: 'unavailable',
-        message: 'private knowledge could not be read',
-        details: { reason: error instanceof KnowledgeError ? error.reason : 'control-plane-unreachable' },
-      })
+      throw new RemoteError('knowledge/unavailable', 'private knowledge could not be read', { reason: error instanceof KnowledgeError ? error.reason : 'control-plane-unreachable' })
     }
   }
 
   /** One Session's folded scope, or the refusal that it is not open here. */
   private scopeOf(sessionId: string): KnowledgeScope {
-    return foldKnowledgeScope(this.agentOf(sessionId).session.events)
+    return foldKnowledgeScope(this.agentOf(sessionId).session.snapshotEvents())
   }
 
   /** The live agent driving one Session. */
   private agentOf(sessionId: string): Agent {
     const agent = this.ctx.agents.get(SessionId(sessionId))
     if (agent === undefined) {
-      throw new TypertRemoteFailure({
-        code: 'not-found',
-        message: 'that conversation is not open',
-        details: {},
-      })
+      throw new RemoteError('knowledge/session-not-open', 'that conversation is not open', {})
     }
     return agent
   }

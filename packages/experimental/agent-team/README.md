@@ -121,7 +121,6 @@ The [Agent Teams Agent Note](../../../.agents/notes/implemented/feature/2026-08-
 | [`src/projection.ts`](src/projection.ts) | Strict replay projection that decodes and validates Team events |
 | [`src/activity.ts`](src/activity.ts) | One-shot change waiters and disposal release |
 | [`src/lifecycle.ts`](src/lifecycle.ts) | Shared admission cutoff and bounded settlement |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion that replays candidate events before append |
 
 ### Team identity and roster
 

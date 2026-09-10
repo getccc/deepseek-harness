@@ -65,7 +65,6 @@ The organization is named by id and not joined to: accounts live in the account 
 |---|---|
 | [`src/index.ts`](src/index.ts) | The store implementation and its plugin config |
 | [`src/schema.ts`](src/schema.ts) | DDL, row shapes, and version/application-id enforcement |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -104,3 +103,5 @@ These are current constraints of this backend, not a task backlog.
 `node:sqlite` needs no dependency and is already the backend for the account store, access control, and audit in the same composition, so this package adds no driver to the repository. The store deliberately has no opinion about which organization exists: seeding takes the organization as an argument, and that argument comes from the one plugin whose config names it.
 
 </details>
+
+**Runtime invariant:** No companion is published: the durable relations this backend must hold (one row per shipped entry inside an organization, and a child naming an entry that exists) are declared to SQLite as a unique index and a foreign key, so the database rejects a violating write.

@@ -21,13 +21,13 @@ Archived: 2026-09-04
 
 `ApiProxyDefaults` 携带 `defaultModelSelection()` 与 `saveDefaultModelSelection()` 闭包，因此 `createApiProxy` 不依赖 Settings seam。`ApiProxyService` 将它们分别接到 `ctx.agentDefaultModel.currentSelection()` 与 `ctx.agentDefaultModel.saveSelection()`。
 
-`selectionFor(agent)` 每次读取时都解析各层：先取进程内的会话选择，其次取会话最新记录的 `request/header`，最后取当前 Agent 默认值。`session.prompt` 会先把处于最后一层的会话绑定到模型目录给出的默认模型（[首个请求使用 composer 显示的模型](../bug-fix/2026-09-05-the-first-request-uses-the-model-the-composer-names.zh.md)）。已有请求日志的会话持续绑定到日志中持久化的选择。空白会话即使创建于偏好保存之前，也会观察到当前默认值；这与 New Session 界面可能复用空白会话的行为一致。
+`selectionFor(agent)` 每次读取时都解析各层：先取进程内的会话选择，其次取会话最新记录的 `request/header`，最后取当前 Agent 默认值。已有请求日志的会话持续绑定到日志中持久化的选择。空白会话即使创建于偏好保存之前，也会观察到当前默认值；这与 New Session 界面可能复用空白会话的行为一致。
 
 已存选择不要求属于目录。某条提供方路由可能服务其仅供参考的目录未列出的模型。因此，`session.models` 会在已公布分组之外单独报告已存选择，并另行报告适配器是否服务其提供方。
 
 ## 影响
 
-`session/modelCatalog` 在目录列出当前 Agent 默认值时报告它，否则报告目录列出的第一个模型。模型切换成功后，`settings.yaml` 中会存有一个 `agent-default-model:` 分节。Settings 页面不暴露该 namespace；模型选择器是它的编辑器。
+`session/modelCatalog` 报告当前 Agent 默认值。模型切换成功后，`settings.yaml` 中会存有一个 `agent-default-model:` 分节。Settings 页面不暴露该 namespace；模型选择器是它的编辑器。
 
 ## 无法发送消息的会话
 

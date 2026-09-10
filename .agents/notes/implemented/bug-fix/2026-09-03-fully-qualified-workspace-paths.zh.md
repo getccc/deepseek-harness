@@ -14,7 +14,7 @@ Workspace 路径身份必须在不依赖进程状态的情况下指向唯一目�
 
 `WorkspaceRegistry.create()` 和 `resolveByPath()` 会在调用 `realpath` 前拒绝不是完全限定形式的路径。POSIX 要求绝对路径。Windows 要求 `win32.isAbsolute(path)`，且解析出的根既不是 `\\` 也不是 `/`；该规则接受驱动器限定路径与 UNC 路径，同时无需维护第二套路径语法即可拒绝当前驱动器根拼写和驱动器相对拼写。
 
-规范路径继续作为注册表身份。默认标题使用最终路径段；该路径段为空时，则使用 `node:path` 解析出的根。该规则细化了[接纳 basename 相同 Workspace](2026-07-31-same-basename-workspace-adoption.zh.md)拥有的显示规则，但不会要求标题唯一。
+规范路径继续作为注册表身份。默认标题使用最终路径段；该路径段为空时，则使用 `node:path` 解析出的根。该规则细化了[接纳 basename 相同 Workspace](../../archived/bug-fix/2026-07-31-same-basename-workspace-adoption.md)拥有的显示规则，但不会要求标题唯一。
 
 浏览器安全的 `resolveWorkspacePath()` 会先根据 Workspace 拼写选择分隔符，再移除尾部分隔符。使用反斜杠的驱动器与 UNC 路径保留 `\\`，使用正斜杠的驱动器路径保留 `/`，与驱动器根连接时始终保留冒号后的分隔符。
 

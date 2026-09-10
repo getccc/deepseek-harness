@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/access/quota-sqlite/README.md
-README.md: 571bf8f226dd7539b9e5836529a3fae22b99cd1f
-README.zh.md: ea55440a3c3afcc707a58f7e9c5b81075586cc6c
+README.md: 8a63314c910189815b93226160f21dc12a29388c
+README.zh.md: cdb9fefee21ccd6652676c65dd9bc1adc4d78f31

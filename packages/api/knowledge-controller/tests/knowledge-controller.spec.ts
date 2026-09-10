@@ -48,6 +48,7 @@ async function mount(open = true): Promise<Mounted> {
     append: (type: string, data: unknown) => {
       state.events.push({ type, data })
     },
+    snapshotEvents: () => state.events,
   }
   ctx.provide('agents', { get: () => open ? { session } : undefined })
   await ctx.plugin(KnowledgeController).await()
@@ -90,7 +91,7 @@ describe('what a picker reads', () => {
   it('refuses a conversation that is not open here', async () => {
     const mounted = await mount(false)
     await expect(mounted.controller.scope('session-1')).rejects.toMatchObject({
-      failure: { code: 'not-found' },
+      code: 'knowledge/session-not-open',
     })
   })
 
@@ -98,7 +99,7 @@ describe('what a picker reads', () => {
     const mounted = await mount()
     mounted.directory = new KnowledgeError('unauthenticated')
     await expect(mounted.controller.scope('session-1')).rejects.toMatchObject({
-      failure: { code: 'unavailable', details: { reason: 'unauthenticated' } },
+      code: 'knowledge/unavailable', details: { reason: 'unauthenticated' },
     })
   })
 
@@ -106,7 +107,7 @@ describe('what a picker reads', () => {
     const mounted = await mount()
     mounted.directory = new Error('the disk is on fire')
     await expect(mounted.controller.scope('session-1')).rejects.toMatchObject({
-      failure: { code: 'unavailable', details: { reason: 'control-plane-unreachable' } },
+      code: 'knowledge/unavailable', details: { reason: 'control-plane-unreachable' },
     })
   })
 })
@@ -145,14 +146,14 @@ describe('what a picker records', () => {
     const mounted = await mount()
     mounted.directory = [entry(REF_A, '临港知识库')]
     await expect(mounted.controller.choose('session-1', 'selected', [REF_A, REF_B]))
-      .rejects.toMatchObject({ failure: { code: 'bad-request', details: { knowledgeRef: REF_B } } })
+      .rejects.toMatchObject({ code: 'knowledge/not-available', details: { knowledgeRef: REF_B } })
     expect(mounted.events).toEqual([])
   })
 
   it('refuses a reference that is not one at all', async () => {
     const mounted = await mount()
     await expect(mounted.controller.choose('session-1', 'selected', ['not-a-reference']))
-      .rejects.toMatchObject({ failure: { code: 'bad-request' } })
+      .rejects.toMatchObject({ code: 'knowledge/not-available' })
     expect(mounted.events).toEqual([])
   })
 
@@ -162,7 +163,7 @@ describe('what a picker records', () => {
   ])('refuses %s', async (_label, mode, refs) => {
     const mounted = await mount()
     await expect(mounted.controller.choose('session-1', mode, refs))
-      .rejects.toMatchObject({ failure: { code: 'bad-request' } })
+      .rejects.toMatchObject({ code: 'knowledge/empty-selection' })
     expect(mounted.events).toEqual([])
   })
 
@@ -173,13 +174,13 @@ describe('what a picker records', () => {
     const mounted = await mount()
     const sessionId = label === 'an empty session id' ? '' : 'session-1'
     await expect(mounted.controller.choose(sessionId, mode, refs))
-      .rejects.toMatchObject({ failure: { code: 'bad-request' } })
+      .rejects.toMatchObject({ code: 'gateway/bad-request' })
   })
 
   it('refuses to record in a conversation that is not open here', async () => {
     const mounted = await mount(false)
     await expect(mounted.controller.choose('session-1', 'all'))
-      .rejects.toMatchObject({ failure: { code: 'not-found' } })
+      .rejects.toMatchObject({ code: 'knowledge/session-not-open' })
     expect(mounted.events).toEqual([])
   })
 })

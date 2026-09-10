@@ -277,6 +277,51 @@ function findExportedTypeDecl(world: World, ctx: FileCtx, name: string, seen = n
   return null
 }
 
+/** Find `const NAME = { ... }` (optionally `as const`) declared at the top level of a file. */
+function findObjectConst(ctx: FileCtx, name: string): ts.ObjectLiteralExpression | undefined {
+  for (const stmt of ctx.sf.statements) {
+    if (!ts.isVariableStatement(stmt)) continue
+    for (const decl of stmt.declarationList.declarations) {
+      if (!ts.isIdentifier(decl.name) || decl.name.text !== name || decl.initializer === undefined) continue
+      let init: ts.Expression = decl.initializer
+      while (ts.isAsExpression(init) || ts.isSatisfiesExpression(init) || ts.isParenthesizedExpression(init)) init = init.expression
+      return ts.isObjectLiteralExpression(init) ? init : undefined
+    }
+  }
+  return undefined
+}
+
+/** Resolve a spread identifier to the object literal it names: local, package-relative, or workspace-package export. */
+function resolveSpreadObject(world: World, ctx: FileCtx, name: string, depth = 0): ts.ObjectLiteralExpression | undefined {
+  if (depth > 8) return undefined
+  const local = findObjectConst(ctx, name)
+  if (local) return local
+  const imp = ctx.imports.get(name)
+  if (imp !== undefined) {
+    if (imp.specifier.startsWith('.')) {
+      if (!imp.specifier.endsWith('.ts')) return undefined
+      return resolveSpreadObject(world, loadRelative(world, ctx, imp.specifier), imp.imported, depth + 1)
+    }
+    const dir = world.pkgDirByName.get(imp.specifier)
+    if (dir === undefined) return undefined
+    const entryRel = `${dir}/src/index.ts`
+    const entry = loadFile(resolve(world.scanRoot, entryRel), entryRel, world.cache)
+    return resolveSpreadObject(world, entry, imp.imported, depth + 1)
+  }
+  // Re-export chain: `export { name } from './module.ts'`.
+  for (const stmt of ctx.sf.statements) {
+    if (!ts.isExportDeclaration(stmt) || stmt.exportClause === undefined || !ts.isNamedExports(stmt.exportClause)) continue
+    if (stmt.moduleSpecifier === undefined || !ts.isStringLiteral(stmt.moduleSpecifier)) continue
+    for (const el of stmt.exportClause.elements) {
+      if (el.name.text !== name) continue
+      const spec = stmt.moduleSpecifier.text
+      if (!spec.startsWith('.') || !spec.endsWith('.ts')) return undefined
+      return resolveSpreadObject(world, loadRelative(world, ctx, spec), (el.propertyName ?? el.name).text, depth + 1)
+    }
+  }
+  return undefined
+}
+
 /** Resolve a referenced type NAME to its declaration: declared locally, via a
  * package-relative import, or via a workspace-package import (entry file +
  * re-export chains). `'unknown'` = external or otherwise out of reach. */
@@ -420,6 +465,7 @@ function unwrapExpr(expr: ts.Expression): ts.Expression {
  * compositions (primitives, unions, dynamic-key dicts) contribute no paths.
  */
 function walkSchemaExpr(
+  world: World,
   ctx: FileCtx,
   expr: ts.Expression,
   where: string,
@@ -462,6 +508,23 @@ function walkSchemaExpr(
           const key = ts.isStringLiteral(prop.name) ? prop.name.text : prop.name.getText(ctx.sf)
           keys.push(key)
           if (ts.isPropertyAssignment(prop)) collectValuePaths(prop.initializer, key)
+        } else if (ts.isSpreadAssignment(prop) && ts.isIdentifier(prop.expression)) {
+          // `...sharedFields`: a const object literal declared in this file or
+          // exported by a workspace package contributes its keys verbatim.
+          const spread = resolveSpreadObject(world, ctx, prop.expression.text)
+          if (spread === undefined) {
+            violations.push(`${where}: schema object spread '${prop.getText(ctx.sf)}' does not resolve to an object literal.`)
+            continue
+          }
+          for (const inner of spread.properties) {
+            if (!ts.isPropertyAssignment(inner)) {
+              violations.push(`${where}: spread object property '${inner.getText(spread.getSourceFile())}' is not a plain key.`)
+              continue
+            }
+            const key = ts.isStringLiteral(inner.name) ? inner.name.text : inner.name.getText(spread.getSourceFile())
+            keys.push(key)
+            collectValuePaths(inner.initializer, key)
+          }
         } else {
           violations.push(`${where}: schema object property '${prop.getText(ctx.sf)}' is not a plain key.`)
         }
@@ -719,7 +782,7 @@ export function collectConfigCatalog(scanRoot: string = root): CatalogEntry[] {
     // Statically walk the runtime schema (when one exists) for the subset check.
     const schemaExpr = findSchemaExpr(ctx, pluginClass)
     if (schemaExpr) {
-      const { keys, composes } = walkSchemaExpr(ctx, unwrapExpr(schemaExpr), `${pkg} (${entryRel})`, violations)
+      const { keys, composes } = walkSchemaExpr(world, ctx, unwrapExpr(schemaExpr), `${pkg} (${entryRel})`, violations)
       entry.schemaKeys = keys
       entry.schemaComposes = composes
     } else {

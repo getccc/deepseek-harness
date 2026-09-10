@@ -28,7 +28,6 @@ Team Edition 需要自己的 `dsh` 表层：公司账户、RBAC、模型与知�
 |---|---|
 | `packages/bundle/team/cordis.patch.yml` | 本层：本 bundle 覆盖的配置行 |
 | `packages/bundle/team/src/index.ts` | 模块身份；无运行时 API |
-| `packages/bundle/team/src/invariant.ts` | 空伴随插件——静态 patch 载体不拥有可变关系 |
 | `packages/boot/app-boot/src/profile.ts` | `PROFILE_TEMPLATES` 中的 `team` 条目 |
 
 本 bundle 不为它所覆盖配置行对应的包声明依赖。`dsh-base` 为它所**插入**的包声明依赖；一个只按 id 覆盖既有行的层不插入任何东西，因此其依赖闭包为空。分层关系存在于 profile 模板的 bundle 列表中，那正是组合器自身的输入。

@@ -225,7 +225,7 @@ describe('run_code sub-calls through the real chat machinery', () => {
     view.getByText('notes/demo.txt').click()
     expect(b.layout.openDetails).not.toHaveBeenCalled()
     await vi.waitFor(() => {
-      expect(b.runtime.workspaces.calls).toContainEqual({ method: 'openPath', args: ['notes/demo.txt'] })
+      expect(b.openWorkspacePath).toHaveBeenCalledWith({ path: 'notes/demo.txt' })
     })
     view.getByText('List notes').click()
     expect(b.layout.openDetails).not.toHaveBeenCalled()

@@ -73,7 +73,6 @@ The store holds the encoded hash but never parses, compares, or derives anything
 | [`src/index.ts`](src/index.ts) | The abstract service, its failures, and the `ctx.accountStore` declaration |
 | [`src/brand.ts`](src/brand.ts) | `OrgId` and `UserId`: the branded types and their brand functions |
 | [`src/types.ts`](src/types.ts) | Entity shapes, types only |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 ### Invariant ownership
 
@@ -117,3 +116,5 @@ These are current constraints of the contract, not a task backlog.
 Methods keep synchronous bodies and return `Promise.reject` rather than being `async`, because the repository lint refuses an `async` function with no `await`. The contract is what matters: a caller's `.catch` must see every failure, so no method may throw synchronously.
 
 </details>
+
+**Runtime invariant:** No companion is published: the package declares an abstract service and its vocabulary and mounts nothing; the provider that implements the service owns the durable relations its rows must satisfy and checks them.

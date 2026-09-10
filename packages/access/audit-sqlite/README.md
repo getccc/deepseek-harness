@@ -65,7 +65,6 @@ An action or key this build no longer knows stays in its catalog table, so the e
 |---|---|
 | [`src/index.ts`](src/index.ts) | The service: record, query, and the row-to-event mapping |
 | [`src/schema.ts`](src/schema.ts) | Tables, constraints, triggers, and catalog seeding |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -104,3 +103,5 @@ These are current constraints of the contract, not a task backlog.
 The tests open a second connection to the same file and write raw SQL on purpose. The claim under test is not that the service declines to store a prompt, but that the database does; a test that only went through the service would pass against a schema with no constraints at all.
 
 </details>
+
+**Runtime invariant:** No companion is published: what this backend must hold (an event naming an audited action, metadata naming a registered key, short plain token columns, and no row ever amended or removed) is declared to SQLite as foreign keys, CHECK constraints, and triggers, so a violating write is refused.

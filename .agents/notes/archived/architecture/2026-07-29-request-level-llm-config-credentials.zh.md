@@ -13,7 +13,7 @@ Archived: 2026-09-04
 
 ## 决策
 
-**按请求解析，而非重建 fiber。**适配器改为接收一个 options thunk（外加按流调用的凭据解析器），不再持有冻结的构造期事实，每个操作解析一次——即 Pi 的模式，连同其经测试固定的语义：跨越一次变更的两个请求看到两份配置，一个请求恰好解析一次，进行中的流保持其起始事实。这删掉了重建式设计所需的整套切换机制（`DUPLICATE_ADAPTER` 顺序问题、`NO_ADAPTER` 窗口、延迟激活状态机），并把密钥缺失变成*请求时*可据以处理的失败（`MISSING_CREDENTIAL` 点名每个配置入口），而不是加载失败；后来的[成员路由休眠决策](../bug-fix/2026-09-03-member-deepseek-route-dormant-without-a-key.zh.md)让 `llm-deepseek` 的注册跟随同一引用，因此引用解析不出值时路由缺席，存入密钥的那次提交上路由随即出现，同样无需重启。唯一在注册期捕获的事实——`ctx.llm` 注册表在 `registerAdapter` 时快照的重试策略（外加 pi-ai 的路由*集合*）——在其变化时于一个同步区段内原地重新注册同一适配器实例。
+**按请求解析，而非重建 fiber。**适配器改为接收一个 options thunk（外加按流调用的凭据解析器），不再持有冻结的构造期事实，每个操作解析一次——即 Pi 的模式，连同其经测试固定的语义：跨越一次变更的两个请求看到两份配置，一个请求恰好解析一次，进行中的流保持其起始事实。这删掉了重建式设计所需的整套切换机制（`DUPLICATE_ADAPTER` 顺序问题、`NO_ADAPTER` 窗口、延迟激活状态机），并把密钥缺失变成*请求时*可据以处理的失败（`MISSING_CREDENTIAL` 点名每个配置入口），同时路由保持注册、catalog 保持可浏览。唯一在注册期捕获的事实——`ctx.llm` 注册表在 `registerAdapter` 时快照的重试策略（外加 pi-ai 的路由*集合*）——在其变化时于一个同步区段内原地重新注册同一适配器实例。
 
 **机密是引用，值藏在 `ctx.credentials` 背后。**配置（两个面）携带 `apiKeyEnv: DEEPSEEK_API_KEY`；三包凭据 seam 按操作解析它。`credentials-local` 把活跃进程环境（只读、优先——启动时覆盖是操作者意图，必须*可见地*只读，因此被遮蔽的写入直接拒绝而不是表面成功）叠加在提供方管理的文档之上（可写、重载时整体替换快照使删除的条目绝不滞留——来自 Claude Code 增量重放（additive reapply）的教训）。该文档当时是 dotenv 形式的 `$DSH_HOME/.env`；[凭据文档拆分](2026-08-04-credentials-yaml-and-user-environment-layer.zh.md)后来把它移到 `$DSH_HOME/.credentials.yaml`，并让旧路径转为用户的环境层。适配器通过 seam 解析该引用；仅在未挂载 seam 时，才通过各环境层解析。
 

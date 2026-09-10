@@ -114,3 +114,5 @@ These limits define when the seam is incomplete on its own. They are current pac
 None.
 
 </details>
+
+**Runtime invariant:** No companion is published: the seam owns no registry and observes no stream of its own; scope is a fold over the Session log, which `dsh-session` already holds to, and every authorization relationship this capability depends on lives in the Control Plane rather than in this process.

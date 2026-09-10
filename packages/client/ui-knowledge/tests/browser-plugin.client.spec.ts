@@ -122,8 +122,7 @@ describe('what the plugin installs', () => {
   it('mounts the knowledge namespace, the picker, and the chip, and gives all three back', async () => {
     const b = await bench()
     expect(b.mounts()).toBe(1)
-    expect(b.contribution()).toMatchObject({ name: 'knowledge' })
-    expect(b.contribution()?.description()).toBe('选择本次对话可检索的知识库')
+    expect(b.contribution()).toMatchObject({ name: 'knowledge', description: '选择本次对话可检索的知识库' })
     const seat = b.slots.entries('conversation.input.left')[0]!
     expect(seat).toMatchObject({ locale: 'knowledge', options: { id: 'knowledge', order: 100 } })
     expect(seat.component).toBe(KnowledgeSelect)

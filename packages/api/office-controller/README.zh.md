@@ -54,3 +54,5 @@ kind: "package-reference"
 自包含线型是刻意的：若生成的 Remote 面顺着 `OfficeChoice` 进入 `@deepseek-ai/dsh-office`，会把会话事件的模块增强拉进分析器并使其崩溃。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：controller 在调用之间不持有任何状态，也不拥有注册表；记录的选择是本构建认识的文档类型，这一点由 `choose` 内的 `parseOfficeChoice` 强制执行，并由本包测试断言。

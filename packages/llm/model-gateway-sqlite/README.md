@@ -56,7 +56,6 @@ A model nobody may discover is refused as `unknown-model` before anything else r
 |---|---|
 | [`src/index.ts`](src/index.ts) | The catalog operations and the three decisions |
 | [`src/schema.ts`](src/schema.ts) | The table, its constraints, and the pragma guards |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -96,3 +95,5 @@ These are current constraints of the contract, not a task backlog.
 The tests run against real access-control and quota compositions rather than stubs. What is worth testing is the order of the three decisions and what each refuses, and a stub would only replay whatever the test told it to.
 
 </details>
+
+**Runtime invariant:** No companion is published: what the catalog must hold (one row per stable ref within an organization, a positive output ceiling, and a status the word list governs) is declared to SQLite as a primary key and CHECK constraints, so a violating write is refused.

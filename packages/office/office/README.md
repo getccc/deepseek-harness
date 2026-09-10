@@ -45,3 +45,5 @@ Import the vocabulary to record or read a Session's office choice:
 The `office/kind` event augments `SessionEventMap` in `scope.ts`; the projection augmentation lives in `dsh-tool-office`, not here, so the Remote controller can name `OfficeChoice` without importing a projection registry.
 
 </details>
+
+**Runtime invariant:** No companion is published: the prompt section and projection are pure folds of the Session log; that a recorded choice is a kind this build knows is enforced inside `choose` by `parseOfficeChoice` and asserted by the package's tests.

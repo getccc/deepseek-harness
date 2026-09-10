@@ -66,7 +66,6 @@ A patch replaces the targeted row's whole `config`, so the `webserver` and `web-
 |---|---|
 | [`cordis.patch.yml`](cordis.patch.yml) | The layer itself: the rows this bundle overrides |
 | [`src/index.ts`](src/index.ts) | Module identity only; the bundle exposes no runtime API |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 ### Invariant ownership
 
@@ -112,3 +111,5 @@ These are current constraints of this layer, not a task backlog.
 The profile keeps `patchReload: live`, matching `web`, because it serves the same browser surface. A background service that recomposes on a user patch edit is the same behavior the web profile already ships; revisit only if service-managed deployments need the startup-only variant.
 
 </details>
+
+**Runtime invariant:** No companion is published: the package is a static patch-list carrier that mounts no service, emits no events, and owns no mutable relation; the webserver row it overrides carries its own bind invariants in `dsh-host-webserver`.

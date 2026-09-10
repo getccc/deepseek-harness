@@ -102,7 +102,6 @@ domain.table('workspaces').update(id, (r) => ({ ...r, path: newPath }))
 | [`src/domain.ts`](src/domain.ts) | 已打开领域的运行时：写入链、表与全局句柄、关闭 |
 | [`src/events.ts`](src/events.ts) | `domain/changed` 事件词汇 |
 | [`src/error.ts`](src/error.ts) | `DomainError` 代码 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变式伴生插件：每条 `domain/changed` 与内存状态一致 |
 
 ### 不变式
 

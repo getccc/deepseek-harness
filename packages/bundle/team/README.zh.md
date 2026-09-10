@@ -66,7 +66,6 @@ patch 会替换目标行的整个 `config`，因此这里的 `webserver` 与 `we
 |---|---|
 | [`cordis.patch.yml`](cordis.patch.yml) | 本层自身：本 bundle 覆盖的配置行 |
 | [`src/index.ts`](src/index.ts) | 仅提供模块身份；本 bundle 不暴露运行时 API |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴随插件的注册 |
 
 ### 不变量归属
 
@@ -112,3 +111,5 @@ patch 会替换目标行的整个 `config`，因此这里的 `webserver` 与 `we
 该 profile 保持 `patchReload: live`，与 `web` 一致，因为它服务的是同一个浏览器表层。后台服务在用户编辑 patch 时重新组合，这与 web profile 已有的行为相同；只有当服务托管的部署需要仅启动时应用的变体时，才需要重新考虑。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包是静态 patch 列表的载体，不挂载服务、不发出事件、不拥有可变关系；它覆盖的 webserver 行在 `dsh-host-webserver` 中自带绑定不变量。

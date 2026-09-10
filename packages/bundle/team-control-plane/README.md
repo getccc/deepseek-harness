@@ -74,7 +74,6 @@ That absence is a composition fact rather than a runtime one, so tests hold it i
 |---|---|
 | [`cordis.patch.yml`](cordis.patch.yml) | The complete tree this profile boots |
 | [`src/index.ts`](src/index.ts) | Module identity only; the bundle exposes no runtime API |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 ### Invariant ownership
 
@@ -118,3 +117,5 @@ These are current constraints of this bundle, not a task backlog.
 The forbidden-package list in the composition test is written out entry by entry rather than matched by prefix, so that adding a capability package forces a deliberate decision here instead of silently matching a pattern or silently escaping one.
 
 </details>
+
+**Runtime invariant:** No companion is published: the package is a static patch-list carrier that mounts no service, emits no events, and owns no mutable relation; the absence of local execution capability is a composition fact asserted by its tests.

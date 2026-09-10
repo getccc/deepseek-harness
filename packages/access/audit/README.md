@@ -78,7 +78,6 @@ Registering a key states that some subsystem records it; declaring it on an acti
 | [`src/vocabulary.ts`](src/vocabulary.ts) | The outcome and refusal-reason word lists |
 | [`src/validate.ts`](src/validate.ts) | The record check and the failures it names |
 | [`src/types.ts`](src/types.ts) | Record, event, and query shapes, types only |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -117,3 +116,5 @@ These are current constraints of the contract, not a task backlog.
 Adding an action means adding its entry and, if it carries a new fact, a metadata key with a kind. Both are read by a store's schema seeding, so a new entry reaches an existing database on the next start without a schema version bump; retiring one leaves its rows referencing a catalog row that stays behind.
 
 </details>
+
+**Runtime invariant:** No companion is published: the package declares an abstract service and two static catalogs and mounts nothing; a stored record carrying only what its action declares is checked where the record is written, by the provider's schema and tests.

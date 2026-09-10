@@ -98,7 +98,6 @@ ctx.systemPrompt.variable('cwd', ({ agent }) => agent?.session.header.cwd)
 | 文件 | 职责 |
 |---|---|
 | [`src/index.ts`](src/index.ts) | 插件入口：`SystemPrompt` 服务、配置、组装流水线、`renderPrompt` |
-| [`src/invariant.ts`](src/invariant.ts) | 不变式配套 |
 
 ### 组装与渲染
 
@@ -152,7 +151,7 @@ You are an AI agent powered by DeepSeek Harness.
 
 #### 模型看到什么
 
-对于已交付工具，模型会收到[生成工具 schema](../../../docs/tool-catalog.zh.md#deepseek-aidsh-tools)中对每个 agent 可见的子集；限制与组装拦截完成后，按配置或字典序排列。扩展可以通过同一注册表贡献其他定义。段与 schema 提供方是独立的组装输入。限制不会移除段落注册：工具指导插件通过 `text({ scope })` 与 `ctx.tools.get(name, scope)` 返回空文本或选择适用片段。任意静态段落不会被自动改写。
+对于已交付工具，模型会收到[生成工具 schema](../../../docs/tool-catalog.zh.md#deepseek-aidsh-tools)中对每个 agent 可见的子集；限制与组装拦截完成后，按配置或字典序排列。扩展可以通过同一注册表贡献其他定义。段与 schema 提供方是独立的组装输入，因此工具限制不会移除独立注册的引导。
 
 #### Token 影响
 

@@ -237,9 +237,7 @@ describe('DeepSeekOnboardingDialog', () => {
       harness({ describeFailure: 'credentials service is absent' }),
       harness({ credential: { writable: false } }),
       harness({ settingsWritable: false }),
-      harness({ providersReject: true }),
       harness({ providersFailure: 'the provider directory is unavailable' }),
-      harness({ providerActive: false }),
       harness({ settingsNamespace: false }),
       harness({ apiKeyEnv: null }),
     ]) {

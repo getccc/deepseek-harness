@@ -63,7 +63,6 @@ It forgets the credential and keeps the device key, the workspaces, and the sess
 | [`src/index.ts`](src/index.ts) | The service: begin, complete, state, accessToken, signOut |
 | [`src/storage.ts`](src/storage.ts) | Where the device key and the credential live |
 | [`src/types.ts`](src/types.ts) | What the Runner keeps, types only |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -102,3 +101,5 @@ These are current constraints of the contract, not a task backlog.
 The tests run against a real Control Plane composition rather than a stubbed one. The calls this client makes are only correct if the other side accepts them, and the signatures it produces are only correct if a key it generated itself verifies against a digest the Control Plane stored.
 
 </details>
+
+**Runtime invariant:** No companion is published: the package holds two credential records and calls the Control Plane; a credential naming a device that proved possession of its key is established by the Control Plane, not here, and this side has no authoritative stream to check.

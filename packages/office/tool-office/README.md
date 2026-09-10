@@ -95,3 +95,5 @@ Prefix-stable while the choice is unchanged. Choosing a kind, changing it, or cl
 The `office` projection key is declared in `src/types.ts`, imported by the composer chip through `./client`, so the browser and this Host fold share one key and value.
 
 </details>
+
+**Runtime invariant:** No companion is published: the prompt section and projection are pure folds of the Session log; nothing is held between calls and no registry is owned, and the projection registration's disposal is proven by the HMR-safety test.

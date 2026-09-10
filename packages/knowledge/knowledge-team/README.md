@@ -103,3 +103,5 @@ These limits define when the provider is incomplete on its own. They are current
 None.
 
 </details>
+
+**Runtime invariant:** No companion is published: the provider holds nothing between calls and publishes no event stream; that no knowledge credential or address exists in this process to leak is an absence, which the package's tests assert by inspecting the requests it actually sends.

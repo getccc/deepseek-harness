@@ -77,7 +77,6 @@ Control Plane 在启动时调用一次 `seedShipped(orgId)`。该调用幂等，
 | [`src/types.ts`](src/types.ts) | 记录、创建与更新输入，以及随附菜单的字段 |
 | [`src/catalog.ts`](src/catalog.ts) | 本构建随附的导航 |
 | [`src/brand.ts`](src/brand.ts) | 带 brand 的菜单标识 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件注册 |
 
 -----
 
@@ -116,3 +115,5 @@ Control Plane 在启动时调用一次 `seedShipped(orgId)`。该调用幂等，
 给控制台增加一个页面意味着在这里增加它——一条带 key、copy key、路由、组件路径与权限的随附菜单——并把该组件加入浏览器应用自己的注册表。key 是重新播种时的匹配依据，因此绝不能被另一个页面复用。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包只声明抽象服务、随附目录和一次对权限目录的纯检查；组织存储的树与本构建随附条目的对应关系，属于播种它的 provider 及其测试。

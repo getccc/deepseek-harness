@@ -73,7 +73,6 @@ kind: "package-reference"
 | [`src/index.ts`](src/index.ts) | 插件入口：pre-step 监听器、到期调度、读数组合 |
 | [`src/request-zone.ts`](src/request-zone.ts) | 从开放轮次 `user-rpc` 来源派生浏览器时区策略 |
 | [`src/timestamp.ts`](src/timestamp.ts) | `Intl.DateTimeFormat` 创建与时间戳格式化 |
-| [`src/invariant.ts`](src/invariant.ts) | 快照约定的不变式伴生插件 |
 
 ### 主要流程
 

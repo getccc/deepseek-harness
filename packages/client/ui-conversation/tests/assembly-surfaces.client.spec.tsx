@@ -137,7 +137,7 @@ describe('resident composer', () => {
 
     await runtime.sessions.add({
       id: SID,
-      summary: { title: 'S', displayTitle: 'S', cwd: '/proj', blank: true },
+      summary: { title: 'S', displayTitle: 'S', cwd: '/proj', blank: true, pristine: true },
       snapshot: { blank: true },
     })
 

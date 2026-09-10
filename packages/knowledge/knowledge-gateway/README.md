@@ -103,3 +103,5 @@ These limits define when the seam is incomplete on its own. They are current pac
 None.
 
 </details>
+
+**Runtime invariant:** No companion is published: the seam owns no registry and publishes no event stream; that a searched knowledge base was authorized for the principal that searched it lives in the provider, which is the party that authorized it.

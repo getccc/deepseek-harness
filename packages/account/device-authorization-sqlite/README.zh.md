@@ -62,7 +62,6 @@ plugins:
 |---|---|
 | [`src/index.ts`](src/index.ts) | 状态机：start、confirm、redeem、refresh、verify、revoke |
 | [`src/schema.ts`](src/schema.ts) | 表、约束与 pragma 守卫 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件注册 |
 
 -----
 
@@ -101,3 +100,5 @@ plugins:
 测试驱动的是一对真实的 Ed25519 密钥，而不是一个桩签名器。被测的性质是：只有持有成员比对过的那份摘要背后私钥的一方，才能走完这套流程；而一个桩签名器对此什么也证明不了。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：该后端必须保持的关系（组织内每个密钥一行设备、code hash 在事务间唯一、token hash 在 family 间唯一、已确认的事务指向账户）以唯一索引和 CHECK 约束声明给 SQLite。

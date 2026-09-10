@@ -8,7 +8,7 @@ Status: implemented
 
 一位 Team Runner 成员打开空白对话，在 composer 的模型 seat 里看到 `Welinkin Model · High`，发出消息后，这一轮却以 `API 密钥无效` 失败，seat 也变成了 `built-in/test-Qwen`。请求发给了一个成员看不到、也没有选过的模型。
 
-同一个部署默认值有两个读取方，而它们的答案不一致。自[默认模型跟随选择器](../feature/2026-08-07-default-model-follows-the-picker.zh.md)起，每次被接受的 `session.selectModel` 都把所选模型写入整机共享的 `agent-default-model` 设置节，于是某台机器上一旦有人选过 `test-Qwen`，之后每个空白 Session、之后在这台机器上登录的每位成员都会被继续指向它。公司路由只列出当前登录成员的角色所授权的模型，当目录不再列出已存默认值时，composer 会显示目录列出的第一个模型。但 `session.prompt` 直接从 `ctx.agentDefaultModel` 读取已存默认值并把请求发到那里；Control Plane 以 `403 unknown-model` 拒绝这个未授权的模型，adapter 将其归类为 `AUTH`，客户端则把它表述为密钥无效。
+同一个部署默认值有两个读取方，而它们的答案不一致。自[默认模型跟随选择器](../../archived/feature/2026-08-07-default-model-follows-the-picker.md)起，每次被接受的 `session.selectModel` 都把所选模型写入整机共享的 `agent-default-model` 设置节，于是某台机器上一旦有人选过 `test-Qwen`，之后每个空白 Session、之后在这台机器上登录的每位成员都会被继续指向它。公司路由只列出当前登录成员的角色所授权的模型，当目录不再列出已存默认值时，composer 会显示目录列出的第一个模型。但 `session.prompt` 直接从 `ctx.agentDefaultModel` 读取已存默认值并把请求发到那里；Control Plane 以 `403 unknown-model` 拒绝这个未授权的模型，adapter 将其归类为 `AUTH`，客户端则把它表述为密钥无效。
 
 ## 决定
 
@@ -20,7 +20,7 @@ Status: implemented
 
 ## 考虑过的替代方案
 
-**让客户端在首次 prompt 之前通过 `selectModel` 提交被替换后的默认值。** 已拒绝：[默认模型跟随选择器](../feature/2026-08-07-default-model-follows-the-picker.zh.md)这项决定指明 `session.prompt` 是执行边界，客户端的固定操作会与它先于的 prompt 竞速，而且其他每个客户端都得做同样的固定。它还会通过 `saveSelection` 把替换结果保存为整机默认值，把按成员划分的目录事实变成整机偏好。
+**让客户端在首次 prompt 之前通过 `selectModel` 提交被替换后的默认值。** 已拒绝：[默认模型跟随选择器](../../archived/feature/2026-08-07-default-model-follows-the-picker.md)这项决定指明 `session.prompt` 是执行边界，客户端的固定操作会与它先于的 prompt 竞速，而且其他每个客户端都得做同样的固定。它还会通过 `saveSelection` 把替换结果保存为整机默认值，把按成员划分的目录事实变成整机偏好。
 
 **把这个绑定记录为 `model/selection` 事件。** 已拒绝：该事件记录的是有人为这个 Session 做出的选择，并会成为投影中的 `pending`，composer 随后会把它呈现为成员自己的选择。这个绑定是 Session 的回退值，不是选择；`request/header` 已经记录了实际使用的模型。
 

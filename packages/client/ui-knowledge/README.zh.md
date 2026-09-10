@@ -97,3 +97,5 @@ kind: "package-reference"
 无。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：一个命令贡献与一个 composer 座位，其释放由 HMR 安全测试证明；两者都通过 Host 读取 Session 的知识范围，不发出 cordis 事件，也不拥有跨插件可变状态。
