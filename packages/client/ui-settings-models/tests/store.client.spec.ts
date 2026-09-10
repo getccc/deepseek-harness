@@ -3,7 +3,17 @@ import { describe, expect, it } from 'vitest'
 import type { RpcResponse } from '@deepseek-ai/dsh-api-remotes/client'
 import { SettingsDescribeMirror } from '@deepseek-ai/dsh-client-ui-settings/src/client/settings-mirror.ts'
 import { settingsSchema } from './settings-schema.client.ts'
-import { messageOf, ModelsSettingsStore } from '../src/client/store.ts'
+import { joinProviderDirectory, messageOf, ModelsSettingsStore } from '../src/client/store.ts'
+
+it.each([false, true])('retains configuration diagnostics when the route is active: %s', (active) => {
+  expect(joinProviderDirectory(active ? [{ id: 'openai', name: 'openai' }] : [], [{
+    provider: 'openai', displayName: 'openai', settingsNs: 'llm-pi-ai', settingsPath: ['providers', 'openai'],
+    error: 'catalog unavailable',
+  }])).toEqual([{
+    provider: 'openai', displayName: 'openai', settingsNs: 'llm-pi-ai', settingsPath: ['providers', 'openai'],
+    active, error: 'catalog unavailable',
+  }])
+})
 
 let nextRpc = 0
 function ok<T>(value: T): RpcResponse<T> {
