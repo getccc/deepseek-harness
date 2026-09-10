@@ -120,7 +120,7 @@ function assertImageBodyCapacity(ctx: Context, maxRequestBodyBytes: number): voi
 }
 
 /** Services required before providing Connection. */
-export const inject = ['webServer', 'credentials']
+export const inject = ['credentials']
 
 /** Browser authentication, request limits, and connection recovery configuration. */
 export interface ConnectionConfig {
@@ -149,9 +149,9 @@ export const Config: z<ConnectionConfig> = z.object({
 })
 
 /**
- * Mounts the API gateway under the browser transport prefix. Every request on
- * the prefix passes the Host/Origin browser-trust fence and persistent browser
- * authentication before dispatch.
+ * Provides carrier-neutral RPC and Fetch registries. When `webServer` is
+ * present, the plugin also mounts the `/api` browser transport with Host/Origin
+ * checks and persistent browser authentication.
  * @param ctx - Host plugin context.
  * @param config - resolved plugin config (schema defaults applied).
  */
@@ -167,41 +167,44 @@ export async function apply(ctx: Context, config?: ConnectionConfig): Promise<vo
   assertImageBodyCapacity(ctx, maxRequestBodyBytes)
   const browserAuth = await BrowserAuth.create(ctx.root, ctx.credentials, cookieMaxAgeDays)
   const connection = new HostConnectionService(ctx, trustedHosts, browserAuth)
-  ctx.on('webserver/index-inject', (table) => {
-    table.push({ kind: 'global', name: '__DSH_CONNECTION_RECOVERY__', value: recovery })
+  ctx.inject(['webServer'], (webCtx) => {
+    assertImageBodyCapacity(webCtx, maxRequestBodyBytes)
+    webCtx.on('webserver/index-inject', (table) => {
+      table.push({ kind: 'global', name: '__DSH_CONNECTION_RECOVERY__', value: recovery })
+    })
+    const fetchHandler = connection.createSharedFetchHandler(API_PATH)
+    const route: WebRoute = {
+      kind: 'prefix',
+      path: API_PATH,
+      handler: async (req, res) => {
+        const rejection = connection.requestRejection(req)
+        if (rejection !== undefined) {
+          res.writeHead(rejection)
+          res.end(rejection === 401 ? 'unauthorized' : 'forbidden')
+          return
+        }
+        await bridge(req, res, fetchHandler, maxRequestBodyBytes)
+      },
+    }
+    webCtx.effect(() => webCtx.webServer.register(route), 'client-connection: /api route')
+    // Navigation-only, and deliberately outside the /api prefix: it carries no
+    // RPC, reads no request body, and reaches no Host capability, so the browser
+    // trust fence that guards /api has nothing to guard here. What protects it is
+    // the cookie's own SameSite=Strict — see BrowserAuth.lock.
+    const lockRoute: WebRoute = {
+      kind: 'exact',
+      path: LOCK_PATH,
+      handler: (req, res) => {
+        if (req.method !== 'GET' && req.method !== 'HEAD') {
+          res.writeHead(405, { 'cache-control': 'no-store', 'content-type': 'text/plain; charset=utf-8' })
+          res.end('method not allowed\n')
+          return
+        }
+        browserAuth.lock(req, res)
+      },
+    }
+    webCtx.effect(() => webCtx.webServer.register(lockRoute), 'client-connection: lock route')
   })
-  const fetchHandler = connection.createSharedFetchHandler(API_PATH)
-  const route: WebRoute = {
-    kind: 'prefix',
-    path: API_PATH,
-    handler: async (req, res) => {
-      const rejection = connection.requestRejection(req)
-      if (rejection !== undefined) {
-        res.writeHead(rejection)
-        res.end(rejection === 401 ? 'unauthorized' : 'forbidden')
-        return
-      }
-      await bridge(req, res, fetchHandler, maxRequestBodyBytes)
-    },
-  }
-  ctx.effect(() => ctx.webServer.register(route), 'client-connection: /api route')
-  // Navigation-only, and deliberately outside the /api prefix: it carries no
-  // RPC, reads no request body, and reaches no Host capability, so the browser
-  // trust fence that guards /api has nothing to guard here. What protects it is
-  // the cookie's own SameSite=Strict — see BrowserAuth.lock.
-  const lockRoute: WebRoute = {
-    kind: 'exact',
-    path: LOCK_PATH,
-    handler: (req, res) => {
-      if (req.method !== 'GET' && req.method !== 'HEAD') {
-        res.writeHead(405, { 'cache-control': 'no-store', 'content-type': 'text/plain; charset=utf-8' })
-        res.end('method not allowed\n')
-        return
-      }
-      browserAuth.lock(req, res)
-    },
-  }
-  ctx.effect(() => ctx.webServer.register(lockRoute), 'client-connection: lock route')
   // Published for local navigation endpoints that must hand a browser the same
   // session this package checks — the team handoff is the current one.
   ctx.provide('browserSession', browserAuth)

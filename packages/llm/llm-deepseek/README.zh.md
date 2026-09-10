@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`@deepseek-ai/dsh-llm-deepseek` 是 harness LLM 服务的 DeepSeek chat-completions 适配器：它拥有成员配置的 `deepseek-official` 提供方路由，并把 DeepSeek 的协议格式翻译为 harness 的流式分片协议。该路由只在其 API 密钥引用能解析出值时才注册，因此没有密钥的组合不会宣告任何 DeepSeek 模型，而密钥一旦存入，路由随即出现。没有 LLM HTTP 传输时，它直接调用已配置的提供方。挂载传输后，它还会拥有一个 `built-in` 路由，该路由的模型发现与 chat 调用使用传输；Team Runner 因此能把公司端点、凭据与模型授权留在 Control Plane，同时不替换成员自己的 DeepSeek 路由。它是 DeepSeek 的两个结构不同适配器之一：pi-ai 孪生通过库与更多提供方服务自己的路由名，两者可以并排挂载。
+`@deepseek-ai/dsh-llm-deepseek` 是 harness LLM 服务的 DeepSeek chat-completions 适配器：它拥有成员配置的 `deepseek-official` 提供方路由，并把 DeepSeek 的协议格式翻译为 harness 的流式分片协议。该路由只在其 API 密钥引用能解析出值时才注册，因此没有密钥的组合不会宣告任何 DeepSeek 模型，而密钥一旦存入，路由随即出现。没有 LLM HTTP 传输时，它直接调用已配置的提供方。挂载传输后，它还会拥有一个 `built-in` 路由，该路由的模型发现与 chat 调用使用传输；Team Runner 因此能把公司端点、凭据与模型授权留在 Control Plane，同时不替换成员自己的 DeepSeek 路由。它是 DeepSeek 的两个结构不同适配器之一：pi-ai 孪生通过库与更多提供方服务自己的路由名，两者可以并排挂载。端点、凭据、目录与 thinking 策略均按请求解析，因此有效的用户设置更改会在下一个请求生效，无需重启进程。
 
 ## 目录
 
@@ -46,7 +46,7 @@ kind: "package-reference"
     filesApiTimeoutMs: 60000
 ```
 
-请求用 `provider: deepseek-official` 选择路由；模型 id 原样传到协议，因此新增 DeepSeek 模型无需重新注册。省略 `models` 时公布支持文本和图像的 `deepseek-flash` 和 `deepseek-v4-flash-vision-exp`，以及仅支持文本的 `deepseek-v4-flash` 和 `deepseek-v4-pro`，各自的上下文窗口均为 1,000,000 token。显式列表会替换这些默认值，未列出的模型 id 仍作为纯文本路由原样通过。包括模型发现工具在内的客户端可通过 `ctx.llm.listModels('deepseek-official')` 读取这些建议性条目。支持图片的条目可把 `imagePixelBudget` 设置为正整数或 `low`，也可以设置 `imageMaxBytes`。
+请求用 `provider: deepseek-official` 选择路由；模型 id 原样传到协议，因此新增 DeepSeek 模型无需重新注册。省略 `models` 时公布支持文本和图像的 `deepseek-flash` 和 `deepseek-v4-flash-vision-exp`，以及仅支持文本的 `deepseek-v4-flash` 和 `deepseek-v4-pro`，各自的上下文窗口均为 1,000,000 token。显式列表会替换这些默认值，未列出的模型 id 仍作为纯文本路由原样通过。包括模型发现工具在内的客户端可通过 `ctx.llm.listModels('deepseek-official')` 读取这些建议性条目。支持图片的条目可把 `imagePixelBudget` 设置为正整数或 `low`，也可以设置 `imageMaxBytes`。当端点把 `messages` 中任意位置最新的 `system` 消息读作完整的有效系统提示词时，条目可以声明 `systemPromptUpdate: in-history`；适配器会在已解析模型与已准备调用上报告该模式，agent loop（智能体循环）随后把变化后的提示词追加到已缓存历史之后，而不是改写开头的 system 消息（[决策规则](../../core/agent-loop/README.zh.md#understand-the-implementation)）。默认的 `deepseek-flash` 条目声明该模式；其他模型需通过 `models` 显式声明，`in-history` 以外的任何值都会在加载时以 `llm-deepseek: catalog model "<id>" systemPromptUpdate must be "in-history" when present` 失败。
 
 存在 `ctx.llmHttpTransport` 时，它的 `listModels()` 会提供 `built-in` 路由，每份经该路由选择的序列化请求都由其 `send()` 方法发送。`deepseek-official` 路由保留本机建议性列表与已配置 API 密钥，并在该密钥未配置期间缺席。Team 传输提供经过角色筛选的内置目录，并使用 Runner 当前设备访问 token 让这些调用通过 Control Plane 网关。在这条路由上，决定每个模型接受什么的是传输的目录而不是本机 `models` 列表：声明了 `image` 的条目接收图片，图片在 `maxInlineRequestImageBytes` 之内以 base64 内联序列化，而不走需要 Runner 并不持有的密钥的 Files API；没有声明的条目在任何内容离开 Runner 之前就拒绝图片。每次解析模型都会重读目录，因此管理员的修改会到达下一次请求，而最近一次列举结果为 token 计量器给图片定价。
 
@@ -162,7 +162,7 @@ Files 模式通过 `maxRequestFilesBytes` 与 `maxImagesPerRequest` 限制保留
 
 #### KV Cache 影响
 
-未改变的已组装前缀有资格获得 DeepSeek 缓存复用，本适配器会在用量中报告。确定性的请求图片字节并不会让完整前缀不可变化：执行世界路径变化会改写历史描述符文本，刷新上传会替换 `file_id`，Files 到 base64 的回退也会改变图片表示。这些变化以及模型路由、提示词、schema、历史或图片预算变化，都可能从首个受影响 token 起阻止复用；推理回传在每个推理轮次上追加内容。
+未改变的已组装前缀有资格获得 DeepSeek 缓存复用，本适配器会在用量中报告。确定性的请求图片字节并不会让完整前缀不可变化：执行世界路径变化会改写历史描述符文本，刷新上传会替换 `file_id`，Files 到 base64 的回退也会改变图片表示。这些变化以及模型路由、提示词、schema、历史或图片预算变化，都可能从首个受影响 token 起阻止复用；推理回传在每个推理轮次上追加内容。在声明了 `systemPromptUpdate: in-history` 的目录条目上，同一请求序列延续期间的系统提示词变化会追加到已缓存历史之后，因此直到该历史末尾的前缀仍可复用；工具 schema 变化仍会从第一个改变的 token 起阻止复用。
 
 ### DeepSeek 响应
 
@@ -192,7 +192,7 @@ loop 保留的响应块会追加到下一个请求，并保留其更早的可复
 - **跳过插件新增的内容块类型**——核心文本与受支持图片块会被序列化，空工具输出以字面量 `(no output)` 过线。
 - **图片是仅输入的持久附件**——不支持直接外部 URL 与 assistant 图片输出；DeepSeek 输入通常使用 Files API，仅在单次请求恢复时使用内联 base64。
 - **挂载传输时只支持文本**——传输请求没有 DeepSeek Files API 上传操作，因此图片请求会在读取凭据或访问网络前被拒绝。
-- 默认目录预注册 `deepseek-flash` 及其文本和图片能力，不探测网关可用性；网关开放该 ID 前，随附的默认模型仍为 `deepseek-v4-flash`，请求可能以 `INVALID_REQUEST` 失败。配置 `DEEPSEEK_API_KEY` 和支持该 ID 的网关后，设置 `DEEPSEEK_FLASH_E2E=1` 可启用[本包 e2e 测试文件](tests/adapter.e2e.ts)中的 Chat Completions 协议验证。
+- 默认目录预注册 `deepseek-flash` 及其文本、图片和历史内更新能力，不探测网关可用性。网关开放该 ID 前，请求可能以 `INVALID_REQUEST` 失败。配置 `DEEPSEEK_API_KEY` 和支持该 ID 的网关后，设置 `DEEPSEEK_FLASH_E2E=1` 可启用[本包 e2e 测试文件](tests/adapter.e2e.ts)中的 Chat Completions 协议验证。
 
 <a id="dev-note"></a>
 ### 开发备注

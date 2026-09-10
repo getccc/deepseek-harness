@@ -67,7 +67,10 @@
   padding-left: 8px;
 }
 
-/* Folder + label + chevron — transparent at rest; fill only on hover / open. */
+/* Folder + label + chevron — transparent at rest; fill only on hover / open.
+   Overflow-driven degradation, no breakpoint: the label shrinks with an
+   ellipsis down to nothing, so folder and chevron always sit snug against
+   whatever text remains — full text, ellipsized text, or none. */
 .workspace {
   display: inline-flex;
   align-items: center;
@@ -102,6 +105,7 @@
 }
 
 .workspaceLabel {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
