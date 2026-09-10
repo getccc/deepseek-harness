@@ -424,7 +424,7 @@ export function InputBar({
               onKeyDown={workspaceTrigger ? onWorkspaceKeyDown : undefined}
               style={hint === null ? undefined : { '--dsh-composer-hint': JSON.stringify(hint) } as CSSProperties}
             />
-            {empty && !claimActive && (
+            {draft === '' && attachments.length === 0 && !claimActive && (
               <div aria-hidden className={css.placeholder} data-composer-placeholder>
                 {placeholderText}
               </div>
