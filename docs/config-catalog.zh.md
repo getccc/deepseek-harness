@@ -3345,6 +3345,13 @@ export interface Config {
    * naming a path.
    */
   welinkinTemplatePath?: string
+  /**
+   * Name of the session-catalog skill every `ppt` deliverable starts by
+   * loading. Set when the installation ships a skill that owns the template
+   * workflow; it outranks {@link welinkinTemplatePath}, because the skill
+   * names the template itself. Absent when no such skill is installed.
+   */
+  pptSkill?: string
 }
 ```
 
