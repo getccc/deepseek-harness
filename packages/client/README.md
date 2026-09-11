@@ -43,6 +43,7 @@ The kernel packages boot and serve the page; the UI feature packages present it.
 | [`ui-layout/`](ui-layout/README.md) | Arranges the main application regions | — |
 | [`ui-sidebar/`](ui-sidebar/README.md) | Presents workspace and session navigation | — |
 | [`resources/`](resources/README.md) | Unified resource model: protocol providers behind the `useResource` session standard hook | `ctx.resources` |
+| [`ui-sidebar-documentpreview-office/`](ui-sidebar-documentpreview-office/README.md) | Right-Sidebar Word, Excel, and PowerPoint document renderers (Team composition) | — |
 | [`ui-sidebar-files/`](ui-sidebar-files/README.md) | Right-Sidebar workspace file tree tab type | — |
 | [`ui-workspace/`](ui-workspace/README.md) | Provides workspace selection and creation surfaces | — |
 | [`ui-conversation/`](ui-conversation/README.md) | Presents the active conversation and its input surface | — |

@@ -41,7 +41,7 @@ kind: "package-reference"
 <a id="known-limitations-and-deferred-work"></a>
 
 - **选择只存在于一次对话** —— 没有被记住的默认值，因此每个新对话都以未选择任何办公格式开始。
-- **产出的文档不会以卡片呈现** —— 办公工具写出的 `.docx`、`.xlsx` 或 `.pptx` 只能从工作区打开；文件交付接缝随下一次上游合并回归。
+- **交付由模型完成** —— `.docx`、`.xlsx` 或 `.pptx` 只有经办公分节所要求的 `present` 工具才会进入交付物行与 Sidebar；未经该调用写出的文件仍可从文件树打开。
 
 <a id="dev-note"></a>
 ### 开发备注

@@ -46,6 +46,7 @@
     "@deepseek-ai/dsh-api-office-controller": "workspace:^",
     "@deepseek-ai/dsh-client-ui-knowledge": "workspace:^",
     "@deepseek-ai/dsh-client-ui-office": "workspace:^",
+    "@deepseek-ai/dsh-client-ui-sidebar-documentpreview-office": "workspace:^",
     "@deepseek-ai/dsh-knowledge-team": "workspace:^",
     "@deepseek-ai/dsh-llm-http-transport-team": "workspace:^",
     "@deepseek-ai/dsh-office": "workspace:^",

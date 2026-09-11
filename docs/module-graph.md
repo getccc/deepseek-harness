@@ -200,6 +200,7 @@ flowchart TD
     pkg_client_ui_settings_plugins["client-ui-settings-plugins"]
     pkg_client_ui_sidebar["client-ui-sidebar"]
     pkg_client_ui_sidebar_documentpreview["client-ui-sidebar-documentpreview"]
+    pkg_client_ui_sidebar_documentpreview_office["client-ui-sidebar-documentpreview-office"]
     pkg_client_ui_sidebar_files["client-ui-sidebar-files"]
     pkg_client_ui_sidebar_right["client-ui-sidebar-right"]
     pkg_client_ui_skill["client-ui-skill"]
@@ -430,6 +431,12 @@ flowchart TD
   pkg_scope --> pkg_invariants
   pkg_web --> pkg_llm
   pkg_attachment --> pkg_brand
+  pkg_client_ui_sidebar_documentpreview_office --> pkg_client_locale
+  pkg_client_ui_sidebar_documentpreview_office --> pkg_client_ui_primitives
+  pkg_client_ui_sidebar_documentpreview_office --> pkg_client_ui_renderer
+  pkg_client_ui_sidebar_documentpreview_office --> pkg_client_ui_sidebar_documentpreview
+  pkg_client_ui_sidebar_documentpreview_office --> pkg_client_ui_sidebar_right
+  pkg_client_ui_sidebar_documentpreview_office --> pkg_client_ui_slots
   pkg_credentials --> pkg_invariants
   pkg_e2b --> pkg_http_proxy
   pkg_experimental_code_runtime_python --> pkg_code_runtime
@@ -1437,6 +1444,7 @@ flowchart TD
 | [`scope`](../packages/core/scope) | `core` | [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`web`](../packages/web/web) | `web` | [`llm`](../packages/llm/llm) |
 | [`attachment`](../packages/attachment/attachment) | `attachment` | [`brand`](../packages/util/brand) |
+| [`client-ui-sidebar-documentpreview-office`](../packages/client/ui-sidebar-documentpreview-office) | `client` | [`client-locale`](../packages/client/locale), [`client-ui-primitives`](../packages/client/ui-primitives), [`client-ui-renderer`](../packages/client/ui-renderer), [`client-ui-sidebar-documentpreview`](../packages/client/ui-sidebar-documentpreview), [`client-ui-sidebar-right`](../packages/client/ui-sidebar-right), [`client-ui-slots`](../packages/client/ui-slots) |
 | [`credentials`](../packages/credentials/credentials) | `credentials` | [`invariants`](../packages/runtime-diagnostics/invariants) |
 | [`e2b`](../packages/e2b/e2b) | `e2b` | [`http-proxy`](../packages/util/http-proxy) |
 | [`experimental-code-runtime-python`](../packages/experimental/code-runtime-python) | `experimental` | [`code-runtime`](../packages/code-runtime/code-runtime), [`timeout`](../packages/util/timeout), [`util-values`](../packages/util/values) |

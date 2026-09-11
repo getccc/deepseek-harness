@@ -1,0 +1,55 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--dsw-alias-border-l2);
+}
+
+.tab {
+  font-family: var(--dsw-font);
+  padding: 2px 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.tab.active {
+  color: var(--dsw-alias-label-primary);
+  border-color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.scroll {
+  overflow: auto;
+}
+
+.table {
+  border-collapse: collapse;
+  font-family: var(--dsw-font);
+  font-size: var(--dsh-content-font-size-secondary);
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-primary);
+}
+
+.table td {
+  padding: 2px 8px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  white-space: pre;
+}
+
+.empty,
+.notice {
+  margin: 16px;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 13px;
+}

@@ -1,0 +1,20 @@
+.body {
+  min-height: 100%;
+  background: var(--dsw-alias-bg-layer-2);
+}
+
+.pages {
+  padding: 16px;
+}
+
+/* docx-preview centers each page in its wrapper; keep the page white on the
+   grey stage the way the application it was written in shows it. */
+.pages :global(.docx-wrapper) {
+  background: transparent;
+  padding: 0;
+}
+
+.pages :global(.docx-wrapper > section.docx) {
+  margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}

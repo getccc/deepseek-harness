@@ -95,6 +95,7 @@
     { "path": "./packages/client/ui-message-feedback" },
     { "path": "./packages/client/ui-knowledge" },
     { "path": "./packages/client/ui-office" },
+    { "path": "./packages/client/ui-sidebar-documentpreview-office" },
     { "path": "./packages/client/ui-model-selection" },
     { "path": "./packages/client/ui-agent-preset" },
     { "path": "./packages/client/ui-permission-presets" },

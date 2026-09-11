@@ -41,7 +41,7 @@ Each choice changes the `office:kind` system-prompt section that `dsh-tool-offic
 <a id="known-limitations-and-deferred-work"></a>
 
 - **The choice lives in one conversation** — there is no remembered default, so every new conversation starts with no office format chosen.
-- **Produced documents are not surfaced as cards** — a `.docx`, `.xlsx`, or `.pptx` the office tools write stays reachable from the workspace only; the file delivery seam returns with the next upstream merge.
+- **Delivery is the model's call** — a `.docx`, `.xlsx`, or `.pptx` reaches the deliverables row and the Sidebar only through the `present` tool the office section asks for; a file written without that call stays reachable from the file tree.
 
 <a id="dev-note"></a>
 ### Dev Note

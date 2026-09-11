@@ -34,6 +34,8 @@
       "@deepseek-ai/dsh-api-office-controller/types": ["./packages/api/office-controller/src/types.ts"],
       "@deepseek-ai/dsh-client-ui-knowledge": ["./packages/client/ui-knowledge/src"],
       "@deepseek-ai/dsh-client-ui-office": ["./packages/client/ui-office/src"],
+      "@deepseek-ai/dsh-client-ui-sidebar-documentpreview-office": ["./packages/client/ui-sidebar-documentpreview-office/src"],
+      "@deepseek-ai/dsh-client-ui-sidebar-documentpreview-office/client": ["./packages/client/ui-sidebar-documentpreview-office/src/client/index.ts"],
       "@deepseek-ai/cordis": ["./vendor/cordis/src"],
       "@deepseek-ai/cosmokit": ["./vendor/cosmokit/src"],
       "@deepseek-ai/schemastery": ["./vendor/schemastery/src"],

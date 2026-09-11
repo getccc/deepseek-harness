@@ -43,6 +43,7 @@ kind: "package-group"
 | [`ui-layout/`](ui-layout/README.zh.md) | 排列应用的主要区域 | — |
 | [`ui-sidebar/`](ui-sidebar/README.zh.md) | 展示工作区与会话导航 | — |
 | [`resources/`](resources/README.zh.md) | 统一资源模型：`useResource` 会话标准 hook 背后的协议提供者 | `ctx.resources` |
+| [`ui-sidebar-documentpreview-office/`](ui-sidebar-documentpreview-office/README.zh.md) | 右侧 Sidebar 的 Word、Excel 与 PowerPoint 文档渲染器（Team 组合） | — |
 | [`ui-sidebar-files/`](ui-sidebar-files/README.zh.md) | 右侧 Sidebar 的工作区文件树 tab 类型 | — |
 | [`ui-workspace/`](ui-workspace/README.zh.md) | 提供工作区选择与创建界面 | — |
 | [`ui-conversation/`](ui-conversation/README.zh.md) | 展示当前对话及其输入界面 | — |
