@@ -18,7 +18,7 @@ async function mount(open = true): Promise<Mounted> {
   const ctx = new Context()
   const events: { type: string; data: unknown }[] = []
   ctx.provide('typert', { register: () => () => {} })
-  const session = { events, append: (type: string, data: unknown) => { events.push({ type, data }) } }
+  const session = { events, snapshotEvents: () => events, append: (type: string, data: unknown) => { events.push({ type, data }) } }
   ctx.provide('agents', { get: () => open ? { session } : undefined })
   await ctx.plugin(OfficeController).await()
   return { controller: ctx.get('officeController') as OfficeController, events }
@@ -44,19 +44,19 @@ describe('office Remote', () => {
 
   it('refuses a kind this build does not know', async () => {
     const { controller, events } = await mount()
-    await expect(controller.choose('s1', 'pdf')).rejects.toMatchObject({ failure: { code: 'bad-request' } })
+    await expect(controller.choose('s1', 'pdf')).rejects.toMatchObject({ code: 'office/invalid-kind' })
     expect(events).toEqual([])
   })
 
   it('refuses a blank request payload', async () => {
     const { controller } = await mount()
-    await expect(controller.choose('', 'ppt')).rejects.toMatchObject({ failure: { code: 'bad-request' } })
-    await expect(controller.scope('')).rejects.toMatchObject({ failure: { code: 'bad-request' } })
+    await expect(controller.choose('', 'ppt')).rejects.toMatchObject({ code: 'gateway/bad-request' })
+    await expect(controller.scope('')).rejects.toMatchObject({ code: 'gateway/bad-request' })
   })
 
   it('refuses a conversation that is not open here', async () => {
     const { controller } = await mount(false)
-    await expect(controller.scope('s1')).rejects.toMatchObject({ failure: { code: 'not-found' } })
-    await expect(controller.choose('s1', 'ppt')).rejects.toMatchObject({ failure: { code: 'not-found' } })
+    await expect(controller.scope('s1')).rejects.toMatchObject({ code: 'office/session-not-open' })
+    await expect(controller.choose('s1', 'ppt')).rejects.toMatchObject({ code: 'office/session-not-open' })
   })
 })

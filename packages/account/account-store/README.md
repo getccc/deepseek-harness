@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-account-store` is where Team Edition keeps who a member is: one organization and the accounts inside it, each with a login name unique to that organization, a status, and the counters a lockout policy reads. It is a repository and nothing else — it records what happened and reports conflicts, and it makes no decision. Whether five failures mean a lockout, and what an encoded password hash contains, belong to the authentication provider that reads and writes through it. Mount this package for the vocabulary and the service contract; pair it with a backend such as [`account-store-sqlite`](../account-store-sqlite/README.md), which is what actually stores the rows.
+`dsh-account-store` is where Team Edition keeps who a member is: one organization and the accounts inside it, each with a login name unique to that organization, a status, and the counters a lockout policy reads. It is a repository and nothing else: it records what happened and reports conflicts, and makes no decision. Whether five failures mean a lockout, and what an encoded password hash contains, belong to the authentication provider that reads and writes through it. Mount it for the vocabulary and the service contract; pair it with a backend such as [`account-store-sqlite`](../account-store-sqlite/README.md).
 
 ## Table of Contents
 
@@ -73,7 +73,6 @@ The store holds the encoded hash but never parses, compares, or derives anything
 | [`src/index.ts`](src/index.ts) | The abstract service, its failures, and the `ctx.accountStore` declaration |
 | [`src/brand.ts`](src/brand.ts) | `OrgId` and `UserId`: the branded types and their brand functions |
 | [`src/types.ts`](src/types.ts) | Entity shapes, types only |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 ### Invariant ownership
 
@@ -117,3 +116,5 @@ These are current constraints of the contract, not a task backlog.
 Methods keep synchronous bodies and return `Promise.reject` rather than being `async`, because the repository lint refuses an `async` function with no `await`. The contract is what matters: a caller's `.catch` must see every failure, so no method may throw synchronously.
 
 </details>
+
+**Runtime invariant:** No companion is published: the package declares an abstract service and its vocabulary and mounts nothing; the provider that implements the service owns the durable relations its rows must satisfy and checks them.

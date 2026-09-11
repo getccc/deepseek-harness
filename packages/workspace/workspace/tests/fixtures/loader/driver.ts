@@ -16,7 +16,7 @@
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { boot, resolveConfigPath } from '@deepseek-ai/dsh-app-boot'
-import { SessionId } from '@deepseek-ai/dsh-session'
+import { SESSION_FORMAT_VERSION, SessionId, SessionSeq } from '@deepseek-ai/dsh-session'
 
 const configPath = process.argv[2]
 if (configPath === undefined) throw new Error('workspace driver requires a config path')
@@ -41,8 +41,8 @@ async function survey(ctx: BootContext): Promise<Group[]> {
     title: workspace.title,
     path: workspace.path,
     sessionIds: headers
-      .filter(header => header.cwd === workspace.path)
-      .map(header => String(header.id))
+      .filter(snapshot => snapshot.header.cwd === workspace.path)
+      .map(snapshot => String(snapshot.header.id))
       .sort(),
   }))
 }
@@ -58,10 +58,19 @@ try {
   await first.workspaceRegistry.create(beta)
 
   for (const [index, cwd] of [alpha, beta].entries()) {
-    const session = first.sessions.create(SessionId(`loader-session-${String(index)}`), { meta: { cwd } })
-    // Materialize so the header — and its cwd — reaches storage; the registry
-    // rebuilds entirely from headers, never from its own prior cache.
-    await first.sessionPersistence.ensureMaterialized(session)
+    // Create the stored session through persistence so the header — and its
+    // cwd — reaches storage; the registry rebuilds entirely from headers,
+    // never from its own prior cache.
+    const handle = await first.sessionPersistence.create({
+      version: SESSION_FORMAT_VERSION,
+      id: SessionId(`loader-session-${String(index)}`),
+      createdAt: Date.now(),
+      cwd,
+      isSeeded: false,
+    })
+    // An unmaterialized session leaves no file; one event publishes the header.
+    await handle.append([{ type: 'turn/start', seq: SessionSeq(0), time: 1, data: { turn: 1 } }])
+    await handle.close()
   }
 
   created = await survey(first)

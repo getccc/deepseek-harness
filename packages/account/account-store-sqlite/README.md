@@ -61,7 +61,6 @@ Only the login-name index becomes a seam error. Any other failure — a missing 
 |---|---|
 | [`src/index.ts`](src/index.ts) | The store implementation and its plugin config |
 | [`src/schema.ts`](src/schema.ts) | DDL, row shapes, and version/application-id enforcement |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -100,3 +99,5 @@ These are current constraints of this backend, not a task backlog.
 `node:sqlite` needs no dependency and is already the backend for session persistence, session query, and storage, so this package adds no driver to the repository. A PostgreSQL backend for multi-instance deployments is a second provider behind the same Service Definition, not a change here.
 
 </details>
+
+**Runtime invariant:** No companion is published: the durable relations this backend must hold (a login name unique inside its organization, an account belonging to an existing organization) are declared to SQLite as a unique index and a foreign key, so the database rejects a violating write.

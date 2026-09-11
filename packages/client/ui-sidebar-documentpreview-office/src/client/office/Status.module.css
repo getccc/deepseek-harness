@@ -1,0 +1,25 @@
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 13px;
+  font-family: var(--dsw-font-family, sans-serif);
+  white-space: normal;
+}
+
+.failed {
+  flex-wrap: wrap;
+}
+
+.icon {
+  display: inline-flex;
+  animation: office-spin 1s linear infinite;
+}
+
+@keyframes office-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

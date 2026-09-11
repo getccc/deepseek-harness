@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-knowledge` (`ctx.knowledge`) is the seam a Team Runner asks for the private company knowledge its signed-in member may reach. It defines two operations — read the authorized directory, search it for passages — plus the `KnowledgeRef` that names a knowledge base, the `knowledge/scope` Session event that records which knowledge a Session may use, and the closed `KnowledgeFailureReason` set. It holds no address, credential, tenant, or upstream identifier, and it makes no network call: a provider must be mounted, and in Team Edition that provider forwards to a Control Plane that authorizes every operation. The package is deliberately narrow — there is no operation for naming a source or passing an upstream id — so a plugin holding this service still cannot reach a knowledge source except through a decision made elsewhere.
+`dsh-knowledge` (`ctx.knowledge`) is the seam a Team Runner asks for the private company knowledge its signed-in member may reach. It defines two operations — read the authorized directory, search it for passages — plus the `KnowledgeRef`, the `knowledge/scope` Session event, and the closed `KnowledgeFailureReason` set. It makes no network call: a mounted provider does, and in Team Edition that provider forwards to a Control Plane that authorizes every operation. With no operation naming a source or passing an upstream id, a plugin holding this service still cannot reach a knowledge source except through a decision made elsewhere.
 
 ## Table of Contents
 
@@ -114,3 +114,5 @@ These limits define when the seam is incomplete on its own. They are current pac
 None.
 
 </details>
+
+**Runtime invariant:** No companion is published: the seam owns no registry and observes no stream of its own; scope is a fold over the Session log, which `dsh-session` already holds to, and every authorization relationship this capability depends on lives in the Control Plane rather than in this process.

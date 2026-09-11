@@ -57,7 +57,6 @@ kind: "package-reference"
 | [`src/index.ts`](src/index.ts) | 路由、三道证明与审计记录 |
 | [`src/pages.ts`](src/pages.ts) | 确认页，以及说明为何无法继续的那个页面 |
 | [`src/paths.ts`](src/paths.ts) | 本包指名的两个地址 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴随插件注册 |
 
 -----
 
@@ -95,3 +94,5 @@ kind: "package-reference"
 测试直接通过账户存储打开一个浏览器会话，而不是去登录，因为登录属于管理 API，而本包不应为了可测试而依赖它。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包注册的 HTTP 路由读取会话、询问访问控制并调用 seam；会话指向活跃账户、授权允许动作、审计记录只含目录词汇，这些关系各属于对应的 seam。

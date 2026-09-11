@@ -63,7 +63,6 @@ const response = await ctx.llmHttpTransport.send({
 | [`src/index.ts`](src/index.ts) | 抽象服务、它的失败，以及 `ctx.llmHttpTransport` |
 | [`src/vocabulary.ts`](src/vocabulary.ts) | 封闭操作列表 |
 | [`src/types.ts`](src/types.ts) | Transport 承载什么、交回什么，仅类型 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件注册 |
 
 -----
 
@@ -101,3 +100,5 @@ Transport 不改变 Adapter 构造的字节，因此它自身没有请求前缀�
 `TransportRequest` 里没有 URL，这是设计而不是遗漏。加上它会让每一个 Transport 都变成"调用方决定凭据去往何处"的地方。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包只声明抽象服务与一个封闭的操作列表，不挂载任何东西；请求只到达其传输所选 provider 这一关系，属于实际挂载的传输。

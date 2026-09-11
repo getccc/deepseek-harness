@@ -94,7 +94,7 @@ async function harness(script: ScriptEntry[]): Promise<Harness> {
   await ctx.plugin(AgentLoop, { agents: [] })
   const adapter = new ScriptedAdapter(script)
   ctx.llm.registerAdapter(['mock'], adapter)
-  const agent = ctx.agentLoop.create(SessionId(`goal-session-${Math.random()}`), {
+  const agent = await ctx.agentLoop.create(SessionId(`goal-session-${Math.random()}`), {
     provider: 'mock',
     model: 'mock',
   })
@@ -197,7 +197,7 @@ describe('same-session goal driving', () => {
     })
     expect(test.adapter.requests).toHaveLength(2)
     const rounds: number[] = []
-    for (const event of test.agent.session.events) {
+    for (const event of test.agent.session.snapshotEvents()) {
       // Round zero is a durable goal state change; positive rounds are the
       // admitted continuation prompts this test counts.
       if (event.type === 'user/message' && event.data.source.kind === 'goal' && event.data.source.round > 0) {
@@ -207,7 +207,7 @@ describe('same-session goal driving', () => {
     expect(rounds).toEqual([1, 2])
     expect(requestText(test.adapter.requests[0]!)).toContain('Round: 1/2')
     expect(requestText(test.adapter.requests[1]!)).toContain('Round: 2/2')
-    expect(test.agent.session.events.flatMap(event =>
+    expect(test.agent.session.snapshotEvents().flatMap(event =>
       event.type === 'request/header' ? [event.data.reason] : [])).toEqual(['initial', 'series'])
   })
 
@@ -219,7 +219,7 @@ describe('same-session goal driving', () => {
     await ctx.plugin(AgentLoop, { agents: [] })
     const adapter = new ScriptedAdapter([textResponse('after resume')])
     ctx.llm.registerAdapter(['mock'], adapter)
-    const agent = ctx.agentLoop.create(SessionId('goal-session-hot-load'), { provider: 'mock', model: 'mock' })
+    const agent = await ctx.agentLoop.create(SessionId('goal-session-hot-load'), { provider: 'mock', model: 'mock' })
     const created = ctx.goals.create(agent, { objective: 'wait for a human', maxGoalRounds: 1 })
 
     await ctx.plugin(goalSession)
@@ -262,7 +262,7 @@ describe('same-session goal driving', () => {
       message: 'Goal round was rejected before entering its step.',
     })
     expect(test.adapter.requests).toHaveLength(0)
-    expect(test.agent.session.events.some(event => event.type === 'turn/start')).toBe(true)
+    expect(test.agent.session.snapshotEvents().some(event => event.type === 'turn/start')).toBe(true)
   })
 
   it('does not reserve again when a stopped-goal observer queues cancel-scoped work', async () => {
@@ -299,7 +299,7 @@ describe('same-session goal driving', () => {
     expect(test.adapter.requests).toHaveLength(0)
     // No admitted continuation round reached the model; goal state changes are
     // represented by their own durable event.
-    expect(test.agent.session.events.some(event => event.type === 'user/message'
+    expect(test.agent.session.snapshotEvents().some(event => event.type === 'user/message'
       && event.data.source.kind === 'goal' && event.data.source.round > 0)).toBe(false)
   })
 
@@ -377,7 +377,7 @@ describe('same-session goal driving', () => {
 
     expect(goal).toMatchObject({ phase: 'paused', roundsStarted: 1 })
     expect(test.adapter.requests).toHaveLength(1)
-    const turnEndKinds = test.agent.session.events.flatMap(event =>
+    const turnEndKinds = test.agent.session.snapshotEvents().flatMap(event =>
       event.type === 'turn/end' ? [event.data.reason.kind] : [])
     expect(turnEndKinds).toContain('completed')
     expect(turnEndKinds).not.toContain('aborted')
@@ -394,7 +394,7 @@ describe('same-session goal driving', () => {
     expect(requestText(test.adapter.requests[0]!)).toContain('human goes first')
     expect(requestText(test.adapter.requests[0]!)).not.toContain('<goal_round>')
     expect(requestText(test.adapter.requests[1]!)).toContain('<goal_round>')
-    expect(test.agent.session.events.flatMap(event =>
+    expect(test.agent.session.snapshotEvents().flatMap(event =>
       event.type === 'request/header' ? [event.data.reason] : [])).toEqual(['initial', 'series'])
   })
 
@@ -431,7 +431,7 @@ describe('same-session goal driving', () => {
     const goal = await waitForGoal(test.ctx, test.agent, current => current?.phase === 'blocked')
 
     expect(goal).toMatchObject({ revision: 3, objective: 'new objective', roundsStarted: 1 })
-    const admitted = test.agent.session.events.find(event => event.type === 'user/message'
+    const admitted = test.agent.session.snapshotEvents().find(event => event.type === 'user/message'
       && event.data.source.kind === 'goal' && event.data.source.round > 0)
     expect(admitted?.type === 'user/message' && admitted.data.source.kind === 'goal'
       ? admitted.data.source.revision
@@ -817,7 +817,7 @@ describe('same-session goal driving', () => {
     await test.agent.whenIdle()
 
     expect(test.adapter.requests).toHaveLength(0)
-    expect(test.agent.session.events.some(event => event.type === 'turn/start')).toBe(true)
+    expect(test.agent.session.snapshotEvents().some(event => event.type === 'turn/start')).toBe(true)
   })
 
   it('leaves round-zero goal context to the ordinary pre-step chain', async () => {
@@ -991,7 +991,7 @@ describe('same-session goal driving', () => {
     })
     handle.agent.followup(createUserMessage({ content: [{ type: 'text', text: 'one ordinary turn' }], source: { kind: 'user' } }))
     await handle.agent.whenIdle()
-    const closed = handle.agent.session.events.findLast(event => event.type === 'turn/end')
+    const closed = handle.agent.session.snapshotEvents().findLast(event => event.type === 'turn/end')
     if (closed?.type !== 'turn/end') throw new Error('expected a closed turn')
     await handle.dispose()
     const warn = vi.spyOn(test.ctx.logger, 'warn')
@@ -1096,7 +1096,7 @@ describe('same-session goal driving', () => {
 
     expect(test.ctx.goals.get(test.agent)).toMatchObject({ phase: 'active', roundsStarted: 0 })
     expect(test.adapter.requests).toHaveLength(0)
-    expect(test.agent.session.events.some(event => event.type === 'turn/start')).toBe(true)
+    expect(test.agent.session.snapshotEvents().some(event => event.type === 'turn/start')).toBe(true)
   })
 
   it('ignores session events without an exact owning agent and retires disposed agent state', async () => {

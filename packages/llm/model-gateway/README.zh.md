@@ -85,7 +85,6 @@ await ctx.modelGateway.settle(plan.reservationId, { kind: 'reported', inputToken
 | [`src/body.ts`](src/body.ts) | 请求体上行之前网关覆盖了什么 |
 | [`src/vocabulary.ts`](src/vocabulary.ts) | 状态与拒绝原因词表 |
 | [`src/types.ts`](src/types.ts) | 目录记录、请求与调用计划的结构，仅类型 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件注册 |
 
 -----
 
@@ -125,3 +124,5 @@ await ctx.modelGateway.settle(plan.reservationId, { kind: 'reported', inputToken
 Runner 发送的是它自己的 LLM Adapter 构造的请求体。在 Control Plane 里重新实现每个 Provider 的请求格式，等于多出第二个需要维护正确性的 Adapter，而两者最终会漂移；覆盖那些决定*哪个模型*和*多少输出*的字段，是让授权真正有意义的最小干预。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包只声明抽象服务、两个词表和一次纯粹的请求体改写；调用只到达目录指定的模型与端点这一关系，属于做出决策的 provider 及其测试。

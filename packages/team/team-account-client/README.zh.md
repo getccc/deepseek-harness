@@ -63,7 +63,6 @@ plugins:
 | [`src/index.ts`](src/index.ts) | 服务本体：begin、complete、state、accessToken、signOut |
 | [`src/storage.ts`](src/storage.ts) | 设备密钥与凭据存放在哪里 |
 | [`src/types.ts`](src/types.ts) | Runner 所保管的内容，仅类型 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件注册 |
 
 -----
 
@@ -102,3 +101,5 @@ plugins:
 测试是对着一个真实的 Control Plane 组合而不是一个桩来跑的。这个客户端发起的调用只有在另一侧接受时才是正确的，它产生的签名也只有在它自己生成的钥匙能对上 Control Plane 所存摘要时才是正确的。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包持有两条凭据记录并调用 Control Plane；凭据指向已证明持有密钥的设备这一关系由 Control Plane 建立而非本地，本侧没有可供检查的权威事件流。

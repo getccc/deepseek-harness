@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-knowledge-source` (`ctx.knowledgeSource`) is the seam a governed knowledge gateway speaks to an upstream knowledge product through. It has two operations — list what a source holds, search an explicit set of its knowledge bases — and both are in upstream terms: upstream ids, not `KnowledgeRef`s, because mapping between the two is the catalog's job. It mounts in the Control Plane alone and never in a Runner. Import it to write a provider for a knowledge product, or to consume one from a gateway. The seam has no operation that takes a URL, a caller-chosen header, or an arbitrary upstream path, so a gateway in front of it cannot be talked into an operation the permission catalog does not govern.
+`dsh-knowledge-source` (`ctx.knowledgeSource`) is the seam a governed knowledge gateway speaks to an upstream knowledge product through. Its two operations — list what a source holds, search an explicit set of its knowledge bases — are in upstream terms: upstream ids, not `KnowledgeRef`s, because mapping between the two is the catalog's job. It mounts in the Control Plane alone, never in a Runner. No operation takes a URL, a caller-chosen header, or an arbitrary upstream path, so a gateway in front of it cannot be talked into an operation the permission catalog does not govern.
 
 ## Table of Contents
 
@@ -103,3 +103,5 @@ These limits define when the seam is incomplete on its own. They are current pac
 None.
 
 </details>
+
+**Runtime invariant:** No companion is published: the seam owns no registry and publishes no event stream; a provider's own bounds are enforced on each call, and authorization of a searched knowledge base belongs to the gateway, which is the party that authorized it.

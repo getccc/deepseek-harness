@@ -55,7 +55,6 @@ state 把一次 Callback 绑到本进程服务过的那个配对页，正是这�
 | [`src/index.ts`](src/index.ts) | 三条路由、导航检查与 state |
 | [`src/paths.ts`](src/paths.ts) | 三个固定地址 |
 | [`src/pages.ts`](src/pages.ts) | 配对页与故障页 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件注册 |
 
 -----
 
@@ -94,3 +93,5 @@ state 把一次 Callback 绑到本进程服务过的那个配对页，正是这�
 测试使用 `node:http` 而不是 `fetch`，因为 `fetch` 会用自己的值覆盖 `Sec-Fetch-Mode`：用它的测试永远无法呈现一次真实导航所呈现的东西，而这些端点恰恰就是按那个头来回答的。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包注册三条导航路由；回调只针对本进程签发的状态被接受且只接受一次，这完全发生在单个请求处理器内，测试直接观察它。

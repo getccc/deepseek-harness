@@ -6,7 +6,7 @@ Status: implemented
 
 ## Problem
 
-一名没有自己 DeepSeek 密钥的成员登录 Team Runner 后打开模型菜单，会在公司的「内置模型」之上看到一个列着三个模型的 `DeepSeek` 分组。这三个模型没有一个能服务请求：`llm-deepseek` 在加载时无论凭据引用是否有值都注册 `deepseek-official`，只有请求本身才会发现密钥缺失并以 `MISSING_CREDENTIAL` 失败。[按请求解析配置的决策](../architecture/2026-07-29-request-level-llm-config-credentials.zh.md)选择这一姿态是为了让密钥缺失永远不会导致插件加载失败，随后的[路由拆分](2026-09-01-separate-company-and-member-model-routes.zh.md)又把公司目录放到了自己的路由下——于是成员路由继续宣告着无密钥成员可以选中、会失败、且看不懂原因的模型。
+一名没有自己 DeepSeek 密钥的成员登录 Team Runner 后打开模型菜单，会在公司的「内置模型」之上看到一个列着三个模型的 `DeepSeek` 分组。这三个模型没有一个能服务请求：`llm-deepseek` 在加载时无论凭据引用是否有值都注册 `deepseek-official`，只有请求本身才会发现密钥缺失并以 `MISSING_CREDENTIAL` 失败。[按请求解析配置的决策](../../archived/architecture/2026-07-29-request-level-llm-config-credentials.md)选择这一姿态是为了让密钥缺失永远不会导致插件加载失败，随后的[路由拆分](2026-09-01-separate-company-and-member-model-routes.zh.md)又把公司目录放到了自己的路由下——于是成员路由继续宣告着无密钥成员可以选中、会失败、且看不懂原因的模型。
 
 独立 Web 应用出于另一个原因保持着同样的姿态：它的首次运行密钥提示把未注册的已声明 `deepseek-official` 路由读作「未激活」，并把未激活当成部署故障，直接结束引导而不渲染。一个只有密钥存在才注册的路由，会因此把用来存入密钥的那个提示本身藏起来。
 
@@ -18,7 +18,7 @@ Status: implemented
 
 **休眠的已声明路由让请求失败时附带指引。** `NO_ADAPTER` 保留其 code 与 `no adapter registered for provider "…"` 前缀；当可配置提供方目录声明了该路由时，消息会点名激活它的设置分节，并说明 web Models 页会同时写入分节与凭据。没有密钥的 headless 运行因此仍能知道该做什么——这原本是 `MISSING_CREDENTIAL` 告诉它的。
 
-**首次运行就绪判断把休眠的官方路由读作无密钥姿态，而非故障。** `onboardingReadiness` 不再有 `provider-inactive` 这一原因：由已声明行的凭据描述符决定。未配置且可写的凭据照旧触发提示；凭据已配置而注册表尚未拾取路由则是进行中的注册，读作 `loading`，`llm/adapters-updated` 刷新会把它变成 provider-ready。[首次运行凭据设置决策](../feature/2026-07-30-deepseek-onboarding-credential-setup.zh.md)记录了修订后的「不渲染即结束该步骤」的状态列表。
+**首次运行就绪判断把休眠的官方路由读作无密钥姿态，而非故障。** `onboardingReadiness` 不再有 `provider-inactive` 这一原因：由已声明行的凭据描述符决定。未配置且可写的凭据照旧触发提示；凭据已配置而注册表尚未拾取路由则是进行中的注册，读作 `loading`，`llm/adapters-updated` 刷新会把它变成 provider-ready。[首次运行凭据设置决策](../../archived/feature/2026-07-30-deepseek-onboarding-credential-setup.md)记录了修订后的「不渲染即结束该步骤」的状态列表。
 
 ## Consequences
 

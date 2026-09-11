@@ -85,7 +85,6 @@ A Runner asking for more output than the model is configured to produce gets the
 | [`src/body.ts`](src/body.ts) | What the gateway overwrites before a body goes upstream |
 | [`src/vocabulary.ts`](src/vocabulary.ts) | The status and refusal word lists |
 | [`src/types.ts`](src/types.ts) | Catalog entry, request, and call-plan shapes, types only |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -125,3 +124,5 @@ These are current constraints of the contract, not a task backlog.
 The Runner sends the body its own LLM adapter built. Reimplementing every provider's request format in the Control Plane would be a second adapter to keep correct, and the two would drift; overwriting the fields that decide *which model* and *how much output* is the smallest intervention that makes the authorization mean something.
 
 </details>
+
+**Runtime invariant:** No companion is published: the package declares an abstract service, two word lists, and one pure body rewrite; a call reaching only the model and endpoint the catalog names belongs to the provider that makes the decision and its tests.

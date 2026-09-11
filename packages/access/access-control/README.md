@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-access-control` is the one question every company-resource entry and every administrative operation asks: may this principal perform this action on this resource? The evaluation it specifies is deliberately small — default deny, a role's grants admit, several roles union, a disabled resource is always refused — with no explicit deny, no role inheritance, and no expression language, so a decision can be explained by naming the grants that produced it. The package also owns the permission catalog, seeded from code and closed: an administrator composes roles out of registered `(resourceType, action)` pairs and cannot invent a permission string. Pair it with a backend such as [`access-control-sqlite`](../access-control-sqlite/README.md).
+`dsh-access-control` is the one question every company-resource entry and every administrative operation asks: may this principal perform this action on this resource? The evaluation is small — default deny, a role's grants admit, several roles union, a disabled resource is always refused — with no explicit deny, role inheritance, or expression language, so a decision can be explained by naming the grants that produced it. It also owns the closed permission catalog seeded from code: an administrator composes roles from registered `(resourceType, action)` pairs and cannot invent a permission string. Pair it with a backend such as [`access-control-sqlite`](../access-control-sqlite/README.md).
 
 ## Table of Contents
 
@@ -78,7 +78,6 @@ With allow-only grants, a decision is the union of what the principal's roles ca
 | [`src/permissions.ts`](src/permissions.ts) | The closed permission catalog and its membership test |
 | [`src/brand.ts`](src/brand.ts) | Role, group, resource, and grant identities |
 | [`src/types.ts`](src/types.ts) | Entity, request, and decision shapes, types only |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -117,3 +116,5 @@ These are current constraints of the contract, not a task backlog.
 `scopes` on an allow carries only the resource the request named. Assembling a multi-scope assertion is a gateway's loop over its own authorized list; adding a bulk query here would invite callers to authorize once and act many times.
 
 </details>
+
+**Runtime invariant:** No companion is published: the package declares an abstract service and a static permission catalog and mounts nothing; the relation that matters, a decision naming only grants the store actually holds, belongs to the provider that evaluates it and its tests.

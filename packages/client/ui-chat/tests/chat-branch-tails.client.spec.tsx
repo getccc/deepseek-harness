@@ -2,8 +2,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { bindSnapshotSelector } from '@deepseek-ai/dsh-client-test-runtime'
-import { makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
+import { bindSnapshotSelector, makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
 import { zh as commonZh } from '@deepseek-ai/dsh-client-locale/src/locales/zh.ts'
 import type {
   ChatConversationViewNode, ConversationNode,
@@ -17,18 +16,10 @@ import {
   UserMessageNodeView,
 } from '../src/client/chat/MessageItem.tsx'
 import { AssistantMarkdown, type AssistantMarkdownProps } from '../src/client/chat/AssistantMarkdown.tsx'
-import { StatsLine } from '../src/client/chat/StatsLine.tsx'
+import { StatsPills } from '../src/client/chat/StatsPills.tsx'
 import { zh } from '../src/client/locale.ts'
 import { chatSnapshotFixture } from './chat-snapshot-fixture.client.ts'
 
-/** jsdom has no ResizeObserver; StatsLine watches its row for ellipsis truncation through one. */
-class ResizeObserverStub {
-  observe(): void {}
-  unobserve(): void {}
-  disconnect(): void {}
-}
-
-beforeEach(() => { vi.stubGlobal('ResizeObserver', ResizeObserverStub) })
 afterEach(() => {
   cleanup()
   vi.useRealTimers()
@@ -38,6 +29,12 @@ afterEach(() => {
 const t: ChatNodeViewProps['t'] = makeTranslate(zh, commonZh)
 const renderMessageImages: AssistantMarkdownProps['renderMessageImages'] = () => null
 const RETRY_ID = 'retry-fixture' as Extract<ConversationNode, { kind: 'model-retry' }>['retryId']
+
+// Recency scans the whole transcript; a detached fixture is its own latest row.
+const useDetachedChat: ChatNodeViewProps['useChat'] = bindSnapshotSelector({
+  subscribe: () => () => {},
+  getSnapshot: () => ({ order: [], nodes: new Map() }),
+} as never)
 
 interface MessageItemProps {
   readonly node: ConversationNode
@@ -67,7 +64,7 @@ function MessageItem({ node, t: translate, referenceLabels, skillNames }: Messag
         }
         : node,
   }
-  const props = { node: viewNode, t: translate, renderMessageImages } as ChatNodeViewProps
+  const props = { node: viewNode, t: translate, renderMessageImages, useChat: useDetachedChat } as ChatNodeViewProps
   switch (node.kind) {
     case 'user':
     case 'steering':
@@ -722,7 +719,7 @@ describe('MessageItem arms', () => {
     // reach it, and the row marker must not claim a form that did not render.
     const cases = [
       { form: 'snapshot', source: { kind: 'plugin', form: 'snapshot', sections: 'not-a-list' }, label: 'plugin' },
-      { form: 'relay', source: { kind: 'subagent-report', form: 'relay' }, label: 'subagent-report' },
+      { form: 'relay', source: { kind: 'agent-message', form: 'relay' }, label: 'agent-message' },
       { form: 'recall', source: { kind: 'session-reference', form: 'recall', references: [{ label: 'x' }] }, label: 'session-reference' },
     ] as const
     for (const { form, source, label } of cases) {
@@ -762,13 +759,13 @@ describe('MessageItem arms', () => {
         kind: 'context',
         seq: 3,
         content: [{ type: 'text', text: 'child report body' }],
-        source: { kind: 'subagent-report', form: 'relay', senderSessionId: 'child-7' },
-        provenance: { role: 'inject', label: 'subagent-report' },
+        source: { kind: 'agent-message', form: 'relay', senderSessionId: 'child-7' },
+        provenance: { role: 'inject', label: 'agent-message' },
         form: 'relay',
       } as never}
       />,
     )
-    fireEvent.click(view.getByRole('button', { name: /^上下文注入\s*subagent-report$/ }))
+    fireEvent.click(view.getByRole('button', { name: /^上下文注入\s*agent-message$/ }))
     expect(view.container.querySelector('[data-context-relay-sender]')?.textContent).toBe('来自会话 child-7')
     expect(view.container.querySelector('[data-context-text]')?.textContent).toBe('child report body')
   })
@@ -1037,7 +1034,7 @@ describe('small branch tails', () => {
     expect(view.getByText('one-liner')).toBeTruthy()
   })
 
-  it('StatsLine omits the cache-hit segment when no input accounting exists at all', () => {
+  it('StatsPills omits the cache-hit segment when no input accounting exists at all', () => {
     // Cache hit is null only when all three prompt buckets are zero (pure
     // output accounting) — any billed input makes it a real 0%.
     const nodes = [{
@@ -1046,7 +1043,7 @@ describe('small branch tails', () => {
     const snap = chatSnapshotFixture({ nodes })
     const source = { getSnapshot: () => snap, subscribe: () => () => {} }
     const view = render(
-      <StatsLine
+      <StatsPills
         t={t}
         useChat={bindSnapshotSelector(source)}
         useProjection={(key: string) => key === 'tokenUsage'
@@ -1054,6 +1051,44 @@ describe('small branch tails', () => {
           : undefined}
       />,
     )
-    expect(view.container.textContent).toBe('1 轮 · 1 步| 输入 0 tok · 输出 10 tok')
+    // The untimed counts pill renders static, so the usage pill is the only button.
+    const [usagePill] = [...view.getAllByRole('button')] as [HTMLElement]
+    expect(view.getByText('1 轮 1 步').closest('button')).toBeNull()
+    expect(usagePill.textContent).toBe('10 tok')
+    // Pure output accounting still reaches the usage pill's click-open dialog rows.
+    fireEvent.click(usagePill)
+    const dialog = view.getByRole('dialog')
+    expect(dialog.textContent).toContain('输出10 tok')
+    expect(dialog.textContent).not.toContain('缓存命中')
+  })
+})
+
+describe('user file attachments', () => {
+  it('renders one card per durable file block with its name and compact size', () => {
+    const view = render(
+      <MessageItem
+        t={t}
+        node={{
+          kind: 'user',
+          seq: 1,
+          time: 1_000,
+          content: [
+            { type: 'file', attachment: { attachmentId: 'sha256:cd', name: 'notes.pdf', bytes: 3 * 1024 * 1024 + 200 * 1024 } },
+            { type: 'file', attachment: { attachmentId: 'sha256:ef', name: 'tiny.txt', bytes: 12 } },
+            { type: 'file', attachment: { attachmentId: 'sha256:aa', name: 'mid.csv', bytes: 500 * 1024 } },
+            { type: 'text', text: 'summarize these' },
+          ] as never,
+          source: null,
+        }}
+      />,
+    )
+    expect(view.getByTitle('notes.pdf').textContent).toContain('3.2MB')
+    expect(view.getByTitle('tiny.txt').textContent).toContain('12B')
+    expect(view.getByTitle('mid.csv').textContent).toContain('500KB')
+    const icons = ['notes.pdf', 'tiny.txt', 'mid.csv'].map(name =>
+      view.getByTitle(name).querySelector('svg')?.innerHTML,
+    )
+    expect(new Set(icons).size).toBe(icons.length)
+    expect(view.getByText('summarize these')).toBeTruthy()
   })
 })

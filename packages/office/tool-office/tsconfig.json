@@ -10,7 +10,6 @@
     { "path": "../../core/agent" },
     { "path": "../../core/session" },
     { "path": "../../core/system-prompt" },
-    { "path": "../../session/session-projection" },
-    { "path": "../../runtime-diagnostics/invariants" }
+    { "path": "../../session/session-projection" }
   ]
 }

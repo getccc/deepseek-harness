@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-knowledge-gateway` (`ctx.knowledgeGateway`) is the Control Plane service standing between a member's Runner and a knowledge source — the only party that decides which knowledge bases a principal may reach. It serves two audiences from one owner: an administrator reads and curates the durable catalog, and a Runner reads an authorized directory and searches it. Both go through here because the catalog and the authorization decision have to agree; a directory showing a knowledge base a search would refuse is worse than either alone. Import it to write a gateway provider, or to consume one from an HTTP adapter or an administration route.
+`dsh-knowledge-gateway` (`ctx.knowledgeGateway`) is the Control Plane service between a member's Runner and a knowledge source — the only party that decides which knowledge bases a principal may reach. It serves two audiences from one owner: an administrator reads and curates the durable catalog, and a Runner reads an authorized directory and searches it. Both go through here because the catalog and the authorization decision have to agree; a directory showing a knowledge base a search would refuse is worse than either alone. Import it to write a gateway provider or to consume one.
 
 ## Table of Contents
 
@@ -103,3 +103,5 @@ These limits define when the seam is incomplete on its own. They are current pac
 None.
 
 </details>
+
+**Runtime invariant:** No companion is published: the seam owns no registry and publishes no event stream; that a searched knowledge base was authorized for the principal that searched it lives in the provider, which is the party that authorized it.

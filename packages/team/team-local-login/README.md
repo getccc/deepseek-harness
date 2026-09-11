@@ -75,7 +75,6 @@ Every turn in the transcript then opens with a header from the same figure — h
 | [`src/paths.ts`](src/paths.ts) | Fixed local paths |
 | [`src/client/`](src/client/) | Localized member launcher, account menu, and hero greeting |
 | [`src/xiaowei-avatar.ts`](src/xiaowei-avatar.ts) | 小微's whole figure, inlined for the hero and the reply row |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -112,3 +111,5 @@ Nothing here joins a model request, so there is no cache effect.
 Route tests pin the clean local entry, same-origin form requirement, generic authentication refusal, session issuance, authenticated identity response, and sign-out ordering. Browser tests pin the localized account launcher and its Settings and sign-out actions. The account client tests drive the password flow against a real Control Plane endpoint and device-authorization provider.
 
 </details>
+
+**Runtime invariant:** No companion is published: route tests directly prove the package's request-local relations, and no independent mutable relationship remains to inspect.

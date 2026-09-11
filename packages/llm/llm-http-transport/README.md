@@ -63,7 +63,6 @@ The response body is a stream. A model response is long, and a transport that bu
 | [`src/index.ts`](src/index.ts) | The abstract service, its failure, and `ctx.llmHttpTransport` |
 | [`src/vocabulary.ts`](src/vocabulary.ts) | The closed operation list |
 | [`src/types.ts`](src/types.ts) | What a transport carries and hands back, types only |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -101,3 +100,5 @@ These are current constraints of the contract, not a task backlog.
 There is no URL in a `TransportRequest` and that is the design, not an omission. Adding one would make every transport a place where a caller decides where a credential goes.
 
 </details>
+
+**Runtime invariant:** No companion is published: the package declares an abstract service and one closed operation list and mounts nothing; a request reaching only the provider its transport chose belongs to whichever transport is mounted.

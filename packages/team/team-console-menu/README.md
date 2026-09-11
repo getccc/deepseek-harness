@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-team-console-menu` makes the administration console's navigation an organization's own data rather than a list inside the browser application. An entry says what it is called, where it goes, which page component renders it, and — the part that matters — which permission from the access-control catalog it needs. That last field is what a role's menu access is composed from, so giving a role a page is granting the permission the page declares, and navigation an administrator writes can never name authority this build does not govern. The package owns the vocabulary and the tree this build ships; pair it with a backend such as [`team-console-menu-sqlite`](../team-console-menu-sqlite/README.md).
+`dsh-team-console-menu` makes the administration console's navigation an organization's own data rather than a list inside the browser application. An entry says what it is called, where it goes, which page component renders it, and which permission from the access-control catalog it needs. That last field is what a role's menu access is composed from: giving a role a page grants the permission the page declares, and navigation an administrator writes can never name authority this build does not govern. The package owns the vocabulary and the tree this build ships; pair it with a backend such as [`team-console-menu-sqlite`](../team-console-menu-sqlite/README.md).
 
 ## Table of Contents
 
@@ -77,7 +77,6 @@ The console renders in more than one language, so an entry the product ships car
 | [`src/types.ts`](src/types.ts) | The record, the create and update inputs, and the shipped-entry shape |
 | [`src/catalog.ts`](src/catalog.ts) | The navigation this build ships |
 | [`src/brand.ts`](src/brand.ts) | The branded menu identity |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -116,3 +115,5 @@ These are current constraints of this seam, not a task backlog.
 Adding a page to the console means adding it here — a shipped entry with its key, copy key, route, component path, and permission — and adding the component to the browser application's own registry. The key is what re-seeding matches on, so it must never be reused for a different page.
 
 </details>
+
+**Runtime invariant:** No companion is published: the package declares an abstract service, a shipped catalog, and one pure check over the permission catalog; an organization's stored tree against the entries this build ships belongs to the provider that seeds it and its tests.

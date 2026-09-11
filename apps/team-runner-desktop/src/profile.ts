@@ -23,12 +23,7 @@ export const RUNNER_BUNDLES = [
  * office previewer registers its `.docx`, `.xlsx`, and `.pptx` viewers with
  * the sidebar's service, so it follows the sidebar.
  */
-export const SHIPPED_PLUGIN_BUNDLES = [
-  'dsh-univer-office',
-  'dsh-better-sidebar',
-  '@huanlin/dsh-plugin-better-sidebar-plugin-office',
-  '@dsh-external/dsh-echarts',
-] as const
+export const SHIPPED_PLUGIN_BUNDLES = [] as const
 
 /**
  * Render the deployment-owned profile manifest.

@@ -75,7 +75,6 @@ HTML 表单由回环地址上的 Runner 提供。提交后，Runner 开启一个
 | [`src/paths.ts`](src/paths.ts) | 固定本地路径 |
 | [`src/client/`](src/client/) | 本地化成员入口、账户菜单与欢迎标题 |
 | [`src/xiaowei-avatar.ts`](src/xiaowei-avatar.ts) | 小微的全身形象，内联供欢迎标题与回复署名行使用 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件注册 |
 
 -----
 
@@ -112,3 +111,5 @@ HTML 表单由回环地址上的 Runner 提供。提交后，Runner 开启一个
 路由测试固定了干净的本地入口、同源表单要求、通用认证拒绝、Session 签发、已认证身份响应与退出顺序。浏览器测试固定了本地化账户入口及其设置和退出动作。账户客户端测试则对着真实 Control Plane 端点和设备认证 Provider 驱动密码流程。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：路由测试直接证明本包的请求局部关系，没有剩余的独立可变关系可供检查。

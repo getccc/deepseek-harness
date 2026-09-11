@@ -138,3 +138,10 @@
 
     - id: client-ui-office
       name: '@deepseek-ai/dsh-client-ui-office'
+
+    # Word, Excel, and PowerPoint previews for the right Sidebar's document
+    # tab. Registered as external renderers of the shipped preview registry,
+    # so removing this row hands those suffixes back to the builtin fallback
+    # (or to an upstream renderer, once one ships).
+    - id: client-ui-sidebar-documentpreview-office
+      name: '@deepseek-ai/dsh-client-ui-sidebar-documentpreview-office'

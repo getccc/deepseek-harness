@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The `knowledge/` group gives the harness private company knowledge — an authorized directory and passage search over it — through one provider-neutral service (`ctx.knowledge`). It exists because company knowledge is governed: which knowledge bases a member may search is a role decision an administrator makes, it can change between one question and the next, and the credential that reaches the knowledge source must not sit in a member's process. The seam therefore names product operations only, and in Team Edition a Runner-side provider forwards each one to a Control Plane that authorizes it against the current account, device, and grants. This group owns the vocabulary: the `KnowledgeRef` that names a knowledge base across renames, the `knowledge/scope` Session event that records which knowledge a Session may use, and the closed failure set. It owns no upstream client, no storage, and no model-facing tool.
+The `knowledge/` group gives the harness private company knowledge through one provider-neutral service (`ctx.knowledge`). Company knowledge is governed: which knowledge bases a member may search is a role decision an administrator makes, it can change between questions, and the credential that reaches the knowledge source must not sit in a member's process. The seam therefore names product operations only; in Team Edition a Runner-side provider forwards each one to a Control Plane that authorizes it. The group owns the vocabulary — `KnowledgeRef`, the `knowledge/scope` Session event, the closed failure set — and no client, storage, or tool.
 
 ## Table of Contents
 

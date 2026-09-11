@@ -105,6 +105,12 @@ async state(): Promise<TeamAccountState>
 /**
  * An access token that will still be valid when it arrives, refreshing first
  * when the stored one is close enough to lapsing to lose the race.
+ *
+ * Concurrent callers share one refresh. The Control Plane spends a refresh
+ * token on its first presentation and reads a second presentation as a
+ * replay that revokes the whole family, so the model catalog and the
+ * knowledge search waking together must not each exchange the token they
+ * both read.
  * @returns the access token to present to a company-resource entry.
  * @throws {NotBoundError} when this computer holds no credential.
  * @throws {ControlPlaneRefusedError} when the refresh was refused, including after a replay revoked the family.

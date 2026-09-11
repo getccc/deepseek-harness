@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-team-console-menu` 让管理控制台的导航成为组织自己的数据，而不是浏览器应用里的一份列表。一条菜单说明它叫什么、通向哪里、由哪个页面组件渲染，以及最关键的一点：它需要访问控制目录中的哪一项权限。角色的"菜单权限"正是由这最后一个字段组合而成——把一个页面授予某个角色，就是授予该页面所声明的权限——因此管理员写出的导航永远无法命名本构建不治理的权限。本包拥有该词汇表以及本构建随附的那棵树；请与 [`team-console-menu-sqlite`](../team-console-menu-sqlite/README.zh.md) 这样的后端搭配使用。
+`dsh-team-console-menu` 把管理控制台的导航变成组织自己的数据，而不是浏览器应用内的一份列表。一个条目说明它叫什么、去往哪里、由哪个页面组件渲染，以及它需要访问控制目录中的哪个权限。最后这个字段正是角色菜单访问权的组成来源：给角色一个页面就是授予该页面声明的权限，管理员编写的导航永远不可能命名这个构建不治理的权威。本包拥有词汇表与本构建随附的树；请与 [`team-console-menu-sqlite`](../team-console-menu-sqlite/README.zh.md) 这样的后端搭配使用。
 
 ## 目录
 
@@ -77,7 +77,6 @@ Control Plane 在启动时调用一次 `seedShipped(orgId)`。该调用幂等，
 | [`src/types.ts`](src/types.ts) | 记录、创建与更新输入，以及随附菜单的字段 |
 | [`src/catalog.ts`](src/catalog.ts) | 本构建随附的导航 |
 | [`src/brand.ts`](src/brand.ts) | 带 brand 的菜单标识 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件注册 |
 
 -----
 
@@ -116,3 +115,5 @@ Control Plane 在启动时调用一次 `seedShipped(orgId)`。该调用幂等，
 给控制台增加一个页面意味着在这里增加它——一条带 key、copy key、路由、组件路径与权限的随附菜单——并把该组件加入浏览器应用自己的注册表。key 是重新播种时的匹配依据，因此绝不能被另一个页面复用。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包只声明抽象服务、随附目录和一次对权限目录的纯检查；组织存储的树与本构建随附条目的对应关系，属于播种它的 provider 及其测试。

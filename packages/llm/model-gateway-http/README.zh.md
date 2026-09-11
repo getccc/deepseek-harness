@@ -79,7 +79,6 @@ plugins:
 | [`src/index.ts`](src/index.ts) | 发现与调用端点、代理及结算判定 |
 | [`src/usage.ts`](src/usage.ts) | 从一个没人缓冲的响应中读出 Provider 的 Usage |
 | [`src/protocol.ts`](src/protocol.ts) | 两侧共同导入的路径与请求体定义 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件注册 |
 
 -----
 
@@ -119,3 +118,5 @@ plugins:
 测试跑的是一个记录收到内容的真实 HTTP Provider，因为值得证明的两个事实都关于它收到的字节——凭据被附上了、model 字段是目录的那个——而一个 mock 只会报告测试告诉它要期待的东西。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：该端点验证 token、询问 gateway 并流式返回响应；每个值得检查的关系（token 指向在线设备、计划指向受治理的模型、结算恰好一次）都属于拥有它的 seam 及其测试。

@@ -80,7 +80,6 @@ await ctx.quota.settle(held.id, { kind: 'reported', inputTokens: 1_200, outputTo
 | [`src/vocabulary.ts`](src/vocabulary.ts) | 拒绝原因与结算类型词表 |
 | [`src/brand.ts`](src/brand.ts) | 每次结算据以幂等的那个 Reservation 身份 |
 | [`src/types.ts`](src/types.ts) | 请求、预留、结算与用量的结构，仅类型 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件注册 |
 
 -----
 
@@ -119,3 +118,5 @@ await ctx.quota.settle(held.id, { kind: 'reported', inputTokens: 1_200, outputTo
 `released` 不是"估算为零"。它是"什么也没花"这个陈述，把两者合并会丢掉账单对账所需要的那个区别——这也正是过期的 Reservation 被结算而不是被释放的原因。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包只声明抽象服务与两个静态词表，不挂载任何东西；每次预留一次结算且不超出持有量这一关系，属于持有账本的 provider 及其测试。

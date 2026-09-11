@@ -1,0 +1,128 @@
+/* A pinned toolbar over the stage; the section takes the shared body's whole
+   height so the stage, not the shared body, scrolls the deck. */
+.body {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  height: 100%;
+  font-family: var(--dsw-font-family, sans-serif);
+  white-space: normal;
+}
+
+.toolbar {
+  display: flex;
+  flex: none;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1);
+}
+
+.position {
+  min-width: 64px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* Rail and deck under the toolbar. Neither child reports a tall intrinsic
+   height: the rail leaves the flow, and the deck scrolls inside a fixed box. */
+.stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* The rail's width: 8px inset either side, a 12px number, a 6px gap, and the
+   100px preview PptxRail.tsx draws. */
+.rail {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 134px;
+  padding: 10px 8px;
+  overflow: hidden auto;
+  background: var(--dsw-alias-bg-layer-1);
+  border-right: 1px solid var(--dsw-alias-border-l1);
+}
+
+.thumb {
+  display: flex;
+  flex: none;
+  gap: 6px;
+  align-items: flex-start;
+  padding: 0;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.thumbIndex {
+  flex: none;
+  width: 12px;
+  padding-top: 2px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The preview mounts inside this frame; it holds the slide's proportions while
+   the preview is unmounted, so the rail does not jump as previews come and go. */
+.thumbFrame {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 3px;
+}
+
+.thumb:hover .thumbFrame {
+  border-color: var(--dsw-alias-label-tertiary);
+}
+
+.thumbActive .thumbIndex {
+  color: var(--dsw-alias-brand-primary);
+}
+
+.thumbActive .thumbFrame {
+  border-color: var(--dsw-alias-brand-primary);
+  box-shadow: 0 0 0 1px var(--dsw-alias-brand-primary);
+}
+
+/* The deck owns the inset around the slides. It cannot sit on the scroller:
+   the renderer sizes each slide to the scroller's clientWidth, which counts
+   padding, so padding there would push every slide past the right edge. */
+.deck {
+  position: relative;
+  box-sizing: border-box;
+  height: 100%;
+  padding: 14px;
+  overflow: hidden;
+  background: var(--dsw-alias-bg-layer-1);
+}
+
+/* Set while the rail is mounted; the rail is out of flow and covers this. */
+.deckInset {
+  margin-left: 134px;
+}
+
+.host {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  background: var(--dsw-alias-bg-layer-1);
+}

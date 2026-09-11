@@ -55,7 +55,6 @@ The application is built with relative asset URLs so the same files mount under 
 | Path | Role |
 |---|---|
 | [`src/index.ts`](src/index.ts) | The route, the dist location, and the base element |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -93,3 +92,5 @@ These are current constraints of the contract, not a task backlog.
 The dist path is resolved through `createRequire`, so the package finds the built application wherever the workspace or an install put it. A missing build is a 404 rather than a load failure, because the row must not stop a Control Plane from starting.
 
 </details>
+
+**Runtime invariant:** No companion is published: the package reads files out of one directory and holds no state; a request never leaving that directory is a property of one path comparison, which its tests observe directly.

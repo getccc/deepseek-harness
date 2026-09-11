@@ -20,7 +20,7 @@ this.drilled = action === 'drill'
 if (!this.execute(outcome, hit.span)) this.drilled = false
 ```
 
-声明仍然排在 `reduce({ type: 'close' })` 之后,因为后者的清理会把它清掉。撤回依然精确,原因是被拒绝的编辑不做任何变更,因而不会驱动重入的 `track()`:`insertText` 在碰到编辑器之前就没通过 `draftRev` CAS,`$replaceDetectSpanWithText` 也在 `$setSelection` 之前就从 `selectSpan` 返回 `false`。[breadcrumb 决策](../feature/2026-08-27-web-at-mention-discovery-and-row-content.zh.md)所声明的可观察保证不变——header 绝不会指向一个无人进入过的目录——而两种下钻手势现在都以 drill 的身份抵达 `header` 与 `candidates`。
+声明仍然排在 `reduce({ type: 'close' })` 之后,因为后者的清理会把它清掉。撤回依然精确,原因是被拒绝的编辑不做任何变更,因而不会驱动重入的 `track()`:`insertText` 在碰到编辑器之前就没通过 `draftRev` CAS,`$replaceDetectSpanWithText` 也在 `$setSelection` 之前就从 `selectSpan` 返回 `false`。[breadcrumb 决策](../../archived/feature/2026-08-27-web-at-mention-discovery-and-row-content.md)所声明的可观察保证不变——header 绝不会指向一个无人进入过的目录——而两种下钻手势现在都以 drill 的身份抵达 `header` 与 `candidates`。
 
 ## Alternatives considered
 

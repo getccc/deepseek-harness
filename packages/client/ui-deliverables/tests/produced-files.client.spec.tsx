@@ -6,14 +6,14 @@
  * (HMR safety) against the real SlotRegistry.
  */
 import { Context } from '@deepseek-ai/cordis'
-import { act, cleanup, fireEvent, render, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { SessionLiveEventEntry } from '@deepseek-ai/dsh-api-session-controller/client'
+import type { SessionLiveEventEntry, SessionListState } from '@deepseek-ai/dsh-api-session-controller/client'
 import {
   ConversationNodeAssembler, UiConversation,
 } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {
-  ConversationLocationDataStore, ConversationMatch, ConversationNodeDefinition,
+  ConversationLocationDataSource, ConversationLocationDataStore, ConversationMatch, ConversationNodeDefinition,
   ConversationStartMatch, ConversationTimelineSnapshot, ConversationTurnDataMap, ConversationViewDefinition,
   ConversationViewNode, TurnLocation,
 } from '@deepseek-ai/dsh-client-ui-conversation/client'
@@ -21,38 +21,57 @@ import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import { apply as applyLocale, inject as localeInject } from '@deepseek-ai/dsh-client-locale/client'
 import type { ChatFileMentions, TurnTailOwnerProps } from '@deepseek-ai/dsh-client-ui-chat/client'
 import { makeTranslate, stubSettingsScope } from '@deepseek-ai/dsh-client-test-runtime'
+import { Deliverables, selectDeliverables, type DeliverablesInjected } from '../src/client/Deliverables.tsx'
+import { PresentedOpenController } from '../src/client/present-open.ts'
+import { ProducedFiles } from '../src/client/ProducedFiles.tsx'
 import {
-  fitProducedFiles, ProducedFiles, type ProducedFilesInjected, type ProducedFilesProps,
-} from '../src/client/ProducedFiles.tsx'
-import {
-  basename, createDeliverablesDefinition, documentKind, extensionOf, producedFileMentions, producedForClosing,
-  selectProducedFiles, type DeliverablesTurnData, type ProducedFileRecognizer, type ProducedFileRecognizers,
+  basename, deliverablesDefinition, presentedForClosing, producedFileMentions, producedForClosing, selectProducedFiles,
+  type DeliverablesTurnData,
 } from '../src/client/turn-deliverables.ts'
-import { apply, inject, TURN_TAIL_PRIORITY, type DeliverablesService } from '../src/client/index.ts'
-import { apply as applyInvariant } from '../src/invariant.ts'
+import { apply, inject } from '../src/client/index.ts'
 import { en, zh } from '../src/client/locales.ts'
+import { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 
-const originalClientWidth = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth')
+function openProps(controller = new PresentedOpenController()) {
+  controller.host.set({ name: 'desktop', available: true, fileManager: 'finder' })
+  const sessions: SessionListState = { ids: [], byId: {}, current: undefined, phase: 'ready', subagentsByParent: {}, jobsBySession: {}, currentAddress: undefined }
+  return {
+    useSessions: <T,>(select: (state: SessionListState) => T): T => select(sessions),
+    reloadPresentedHost: vi.fn(() => controller.loadHost()),
+    usePresentedHost: <T,>(select: (state: ReturnType<typeof controller.host.getSnapshot>) => T): T =>
+      select(controller.host.getSnapshot()),
+    openPresented: vi.fn((...args: Parameters<PresentedOpenController['open']>) => controller.open(...args)),
+    usePresentedOpen: <T,>(select: (state: ReturnType<typeof controller.state.getSnapshot>) => T): T =>
+      select(controller.state.getSnapshot()),
+  }
+}
 
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
-  if (originalClientWidth === undefined) {
-    delete (HTMLElement.prototype as { clientWidth?: number }).clientWidth
-  } else {
-    Object.defineProperty(HTMLElement.prototype, 'clientWidth', originalClientWidth)
-  }
 })
 
 class TestTurnDataStore implements ConversationLocationDataStore<ConversationTurnDataMap> {
   private readonly values = new Map<string, unknown>()
+  private readonly sources = new Map<string, ConversationLocationDataSource<unknown>>()
 
   get<Key extends Extract<keyof ConversationTurnDataMap, string>>(
     key: Key,
   ): Readonly<ConversationTurnDataMap[Key]> | undefined {
     return this.values.get(key) as Readonly<ConversationTurnDataMap[Key]> | undefined
+  }
+
+  source<Key extends Extract<keyof ConversationTurnDataMap, string>>(
+    key: Key,
+  ): ConversationLocationDataSource<Readonly<ConversationTurnDataMap[Key]> | undefined> {
+    let source = this.sources.get(key)
+    if (source === undefined) {
+      source = { getSnapshot: () => this.get(key), subscribe: () => () => {} }
+      this.sources.set(key, source)
+    }
+    return source as ConversationLocationDataSource<Readonly<ConversationTurnDataMap[Key]> | undefined>
   }
 
   set<Key extends Extract<keyof ConversationTurnDataMap, string>>(
@@ -86,12 +105,8 @@ interface TimelineSnapshot {
   readonly timeline: ConversationTimelineSnapshot
 }
 
-/** The Definition as the plugin registers it before any plugin taught it a tool. */
-const deliverablesDefinition = createDeliverablesDefinition(new Map())
-
 class TestEventDefinitions {
-  constructor(private readonly definition: ConversationNodeDefinition = deliverablesDefinition) {}
-  entries(): readonly ConversationNodeDefinition[] { return [this.definition] }
+  entries(): readonly ConversationNodeDefinition[] { return [deliverablesDefinition] }
   fallbackEntry(): ConversationNodeDefinition | undefined { return undefined }
 }
 
@@ -166,17 +181,10 @@ function result(seq: number, callId: string, isError = false, turn = 1): Session
   })
 }
 
-function assembler(
-  entries: readonly SessionLiveEventEntry[],
-  hasMore = false,
-  recognizers?: ProducedFileRecognizers,
-): ConversationNodeAssembler {
-  const definitions = recognizers === undefined
-    ? new TestEventDefinitions()
-    : new TestEventDefinitions(createDeliverablesDefinition(recognizers))
-  const value = new ConversationNodeAssembler(definitions, new TestViewDefinitions())
+function assembler(entries: readonly SessionLiveEventEntry[], hasMore = false): ConversationNodeAssembler {
+  const value = new ConversationNodeAssembler(new TestEventDefinitions(), new TestViewDefinitions())
   value.replaceWindow(entries, hasMore)
-  value.flush()
+  value.activateTarget('test')
   return value
 }
 
@@ -308,31 +316,6 @@ describe('produced-file Turn data', () => {
     expect(producedForClosing(deliverablesOf(value))).toEqual([])
   })
 
-  it('folds the tools other plugins teach it, with the same blank-path test', () => {
-    const univerExport: ProducedFileRecognizer = {
-      tool: 'univer_export',
-      path: args => typeof args.output === 'string' ? args.output : null,
-    }
-    const recognizers = new Map([[univerExport.tool, univerExport]])
-    const value = assembler([
-      at(1, 'turn/start', { turn: 1 }),
-      call(2, 'deck', 'univer_export', {
-        file: 'build/training.univer', unitId: 'u-1', output: 'build/training.pptx',
-      }),
-      result(3, 'deck'),
-      call(4, 'blank', 'univer_export', { file: 'build/training.univer', unitId: 'u-1', output: '  ' }),
-      result(5, 'blank'),
-      call(6, 'no-output', 'univer_export', { file: 'build/training.univer', unitId: 'u-1' }),
-      result(7, 'no-output'),
-      call(8, 'failed', 'univer_export', { file: 'build/x.univer', unitId: 'u-2', output: 'build/x.docx' }),
-      result(9, 'failed', true),
-      call(10, 'untaught', 'univer_screenshot', { file: 'build/training.univer', output: 'shot.png' }),
-      result(11, 'untaught'),
-    ], false, recognizers)
-
-    expect(producedForClosing(deliverablesOf(value))).toEqual(['build/training.pptx'])
-  })
-
   it('ignores editor views, unsupported tools, failures, interruptions, malformed calls, and orphan results', () => {
     const replacement = result(25, 'replacement')
     const value = assembler([
@@ -402,6 +385,10 @@ describe('produced-file Turn data', () => {
     ))
       .toThrow('deliverables start requires turn/start')
     expect(deliverablesDefinition.update(context, unrelated)).toBe(state)
+    for (const files of [[], [null, { path: '' }]]) {
+      const declaration = matched(at(3, 'deliverables/presented', { turn: 1, callId: 'present', files }), 'update')
+      expect(deliverablesDefinition.update(context, declaration)).toBe(state)
+    }
   })
 
   it('replays a tail page once prepend supplies its missing Turn start', () => {
@@ -428,6 +415,9 @@ describe('produced-file Turn data', () => {
     value.append(call(4, 'second', 'edit', {
       file_path: 'second.txt', old_string: 'before', new_string: 'after',
     }))
+    value.flush()
+    expect(deliverablesOf(value)).toBe(first)
+
     value.append(result(5, 'second'))
     value.flush()
     expect(producedForClosing(deliverablesOf(value))).toEqual(['first.txt', 'second.txt'])
@@ -436,194 +426,56 @@ describe('produced-file Turn data', () => {
 
 describe('ProducedFiles row', () => {
   const t = makeTranslate(zh)
-  const capability = (
-    canOpenPath: boolean | undefined,
-    isLoopback = true,
-  ): Pick<ProducedFilesProps, 'isLoopback' | 'ensureWorkspacePathOpen' | 'useWorkspacePathOpen'> => {
-    return {
-      isLoopback,
-      ensureWorkspacePathOpen: () => {},
-      useWorkspacePathOpen: selector => selector(canOpenPath),
-    }
-  }
 
-  it('selects the largest prefix using the exact remainder width', () => {
-    expect(fitProducedFiles(230, 8, [70, 60, 60], [55, 55, 55, 55])).toBe(2)
-    expect(fitProducedFiles(145, 8, [70, 60, 60], [55, 55, 55, 55])).toBe(1)
-    expect(fitProducedFiles(300, 8, [70, 60, 60], [55, 55, 55, 55])).toBe(3)
-    // A zero-width lane is a pre-layout test/hidden state, not evidence that
-    // every chip overflowed; keep the bounded initial prefix until measured.
-    expect(fitProducedFiles(0, 8, [70, 60], [60, 50, undefined])).toBe(2)
-    expect(fitProducedFiles(128, 8, [60, 60], [70, 50, undefined])).toBe(2)
-    // Candidate-specific suffix widths matter at the 10 -> 9 digit boundary.
-    expect(fitProducedFiles(126, 8, [60], [70, 50])).toBe(1)
-    expect(fitProducedFiles(20, 8, [60], [70, 50])).toBe(0)
-  })
-
-  it('keeps one measured line, updates on resize, and opens a file or the workspace folder', () => {
-    const paths = ['deep/a.html', 'b.css', 'c.ts', 'd.ts', 'e.ts', 'f.ts', 'g.ts']
+  it('renders the bounded chips and opens the file it was clicked for', () => {
+    const paths = ['deep/a.html', 'b.css', 'c.ts', 'd.ts', 'e.ts', 'f.ts', 'g.ts', 'h.ts']
     const openFile = vi.fn<(path: string) => void>()
-    let available = 226
-    let resize: ResizeObserverCallback | undefined
-    const disconnect = vi.fn()
-    const observeNode = vi.fn<(target: Element) => void>()
-    vi.stubGlobal('ResizeObserver', class {
-      constructor(callback: ResizeObserverCallback) { resize = callback }
-      observe(target: Element): void {
-        expect(target).toBeInstanceOf(Element)
-        observeNode(target)
-      }
-      disconnect(): void { disconnect() }
-    })
-    Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
-      configurable: true,
-      get(this: HTMLElement) { return this.hasAttribute('data-produced-files-row') ? available : 0 },
-    })
-    const rect = (width: number): DOMRect => ({
-      x: 0, y: 0, width, height: 22, top: 0, right: width, bottom: 22, left: 0,
-      toJSON: () => ({}),
-    })
-    const bounds = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect')
-      .mockImplementation(function getProbeRect(this: HTMLElement) {
-        if (this.closest('[aria-hidden="true"]') === null) return rect(0)
-        if (this.tagName !== 'BUTTON') return rect(60)
-        return rect(this.textContent === 'a.html' || this.textContent === 'b.css' ? 50 : 100)
-      })
 
-    const view = render(
-      <ProducedFiles matched={paths} openFile={openFile} {...capability(true)} t={t} />,
-    )
-    expect(view.getByText('产物')).toBeTruthy()
+    const view = render(<ProducedFiles matched={paths} openFile={openFile} t={t} />)
+    expect(view.getByText('本轮文件改动')).toBeTruthy()
     const row = view.container.querySelector('[data-produced-files-row]')
     if (!(row instanceof HTMLElement)) throw new Error('produced row missing')
-    // The third probe is 100px: two chips plus the remainder fit, three do not.
-    expect(within(row).getAllByRole('button')).toHaveLength(2)
-    expect(within(row).getByText('+ 5 个文件')).toBeTruthy()
+    expect(within(row).getAllByRole('button')).toHaveLength(6)
+    expect(within(row).getByText('+ 2 个文件')).toBeTruthy()
     const chip = view.getByRole('button', { name: '打开 deep/a.html' })
     expect(chip.textContent).toBe('a.html')
     expect(chip.getAttribute('title')).toBe('deep/a.html')
     expect(view.queryByRole('button', { name: '打开 g.ts' })).toBeNull()
     fireEvent.click(chip)
+    // The row hands over the path it was given; where it opens is the
+    // Sidebar's decision, not this row's.
     expect(openFile).toHaveBeenCalledWith('deep/a.html')
-
-    const showFolder = view.getByRole('button', { name: '在文件夹中显示' })
-    fireEvent.click(showFolder)
-    expect(openFile).toHaveBeenLastCalledWith('.')
-
-    available = 150
-    act(() => { resize?.([], {} as ResizeObserver) })
-    expect(within(row).getAllByRole('button')).toHaveLength(1)
-    expect(within(row).getByText('+ 6 个文件')).toBeTruthy()
-
-    // A missing/unsupported computed gap falls back to zero rather than NaN.
-    vi.stubGlobal('getComputedStyle', () => ({ columnGap: '', gap: '' } as CSSStyleDeclaration))
-    available = 165
-    act(() => { resize?.([], {} as ResizeObserver) })
-    expect(within(row).getAllByRole('button')).toHaveLength(2)
-
-    // Ref callbacks leave nulls in the probe arrays when the candidate set
-    // shrinks; the replacement observer must skip those stale slots.
-    observeNode.mockClear()
-    view.rerender(
-      <ProducedFiles matched={paths.slice(0, 1)} openFile={openFile} {...capability(true)} t={t} />,
-    )
-    expect(within(row).getAllByRole('button')).toHaveLength(1)
-    expect(observeNode).toHaveBeenCalledTimes(3)
-
-    view.unmount()
-    expect(disconnect).toHaveBeenCalledTimes(2)
-    bounds.mockRestore()
   })
 
-  it('keeps the folder action absent without overflow or a local native opener', () => {
+  it('renders a remainder counter after every chip but the last when every file fits', () => {
+    const view = render(<ProducedFiles matched={['a.md', 'b.md', 'c.md']} openFile={() => {}} t={t} />)
+    const row = view.container.querySelector('[data-produced-files-row]')
+    if (!(row instanceof HTMLElement)) throw new Error('produced row missing')
+    expect(within(row).getAllByRole('button')).toHaveLength(3)
+    // One counter per chip that could be the last visible one; the final chip hides nothing.
+    expect([...row.querySelectorAll('[data-shown]')].map(node => node.getAttribute('data-shown'))).toEqual(['1', '2'])
+  })
+
+  it('offers no folder action, because a directory has no preview to open', () => {
     const openFile = vi.fn<(path: string) => void>()
-    const view = render(
-      <ProducedFiles matched={['a.ts']} openFile={openFile} {...capability(true)} t={t} />,
-    )
-    const overflowing = ['a.ts', 'b.ts', 'c.ts', 'd.ts', 'e.ts', 'f.ts', 'g.ts']
+    const overflowing = ['a.md', 'b.md', 'c.md', 'd.md', 'e.md', 'f.md', 'g.md']
+    const view = render(<ProducedFiles matched={overflowing} openFile={openFile} t={t} />)
     expect(view.queryByRole('button', { name: '在文件夹中显示' })).toBeNull()
-    for (const unavailable of [capability(false), capability(true, false), capability(undefined)]) {
-      view.rerender(<ProducedFiles matched={overflowing} openFile={openFile} {...unavailable} t={t} />)
-      expect(view.queryByRole('button', { name: '在文件夹中显示' })).toBeNull()
-    }
+    // Nothing in the row reaches the local machine any more.
+    expect(openFile).not.toHaveBeenCalled()
   })
 
   it('uses singular English copy when exactly one file is hidden', () => {
     const view = render(
       <ProducedFiles
-        matched={['a.ts', 'b.ts', 'c.ts', 'd.ts', 'e.ts', 'f.ts', 'g.ts']}
+        matched={['a.md', 'b.md', 'c.md', 'd.md', 'e.md', 'f.md', 'g.md']}
         openFile={() => {}}
-        {...capability(false)}
         t={makeTranslate(en)}
       />,
     )
     const row = view.container.querySelector('[data-produced-files-row]')
     if (!(row instanceof HTMLElement)) throw new Error('produced row missing')
     expect(within(row).getByText('+ 1 file')).toBeTruthy()
-  })
-})
-
-describe('document cards', () => {
-  const t = makeTranslate(zh)
-
-  it('names the document family by extension and nothing else', () => {
-    expect(extensionOf('docs/报告.DOCX')).toBe('docx')
-    expect(extensionOf('Makefile')).toBe('')
-    expect(extensionOf('.env')).toBe('')
-    expect(documentKind('docs/report.docx')).toBe('word')
-    expect(documentKind('out\\data.xlsx')).toBe('sheet')
-    expect(documentKind('deck.pptx')).toBe('slides')
-    expect(documentKind('README.md')).toBe('text')
-    expect(documentKind('manual.pdf')).toBe('pdf')
-    expect(documentKind('src/app.ts')).toBeUndefined()
-    expect(documentKind('site/index.html')).toBeUndefined()
-  })
-
-  it('renders a card per document and keeps the rest as chips', () => {
-    const openFile = vi.fn<(path: string) => void>()
-    const ensureWorkspacePathOpen = vi.fn()
-    const view = render(
-      <ProducedFiles
-        matched={['docs/report.docx', 'out/data.xlsx', 'deck.pptx', 'src/app.ts']}
-        openFile={openFile}
-        isLoopback
-        ensureWorkspacePathOpen={ensureWorkspacePathOpen}
-        useWorkspacePathOpen={selector => selector(true)}
-        t={t}
-      />,
-    )
-    const cards = view.container.querySelector('[data-produced-documents]')
-    if (!(cards instanceof HTMLElement)) throw new Error('document cards missing')
-    expect(within(cards).getAllByRole('button')).toHaveLength(3)
-    const report = within(cards).getByRole('button', { name: '打开 docs/report.docx' })
-    expect(report.getAttribute('title')).toBe('docs/report.docx')
-    expect(report.textContent).toBe('DOCXreport.docxdocs/report.docx')
-    expect(within(cards).getByRole('button', { name: '打开 deck.pptx' }).textContent).toContain('PPTX')
-    fireEvent.click(report)
-    expect(openFile).toHaveBeenCalledWith('docs/report.docx')
-    // The one non-document file keeps its chip in the measured lane.
-    const row = view.container.querySelector('[data-produced-files-row]')
-    if (!(row instanceof HTMLElement)) throw new Error('produced row missing')
-    expect(within(row).getByRole('button', { name: '打开 src/app.ts' })).toBeTruthy()
-    expect(ensureWorkspacePathOpen).toHaveBeenCalled()
-  })
-
-  it('shows neither the lane nor its folder action for a documents-only turn', () => {
-    const ensureWorkspacePathOpen = vi.fn()
-    const view = render(
-      <ProducedFiles
-        matched={['notes.md', 'manual.pdf']}
-        openFile={() => {}}
-        isLoopback
-        ensureWorkspacePathOpen={ensureWorkspacePathOpen}
-        useWorkspacePathOpen={selector => selector(true)}
-        t={t}
-      />,
-    )
-    expect(view.queryByText('产物')).toBeNull()
-    expect(view.container.querySelector('[data-produced-files-row]')).toBeNull()
-    expect(view.queryByRole('button', { name: '在文件夹中显示' })).toBeNull()
-    expect(ensureWorkspacePathOpen).not.toHaveBeenCalled()
   })
 })
 
@@ -654,19 +506,6 @@ describe('producedFileMentions resolver', () => {
   })
 })
 
-describe('package shells', () => {
-  it('the invariant companion registers ownership', async () => {
-    const registered: string[] = []
-    const ctx = new Context()
-    ctx.provide('invariants')
-    ctx.set('invariants', {
-      register: (pkg: string) => { registered.push(pkg); return () => {} },
-    } as never)
-    const dispose = await applyInvariant(ctx)
-    expect(registered).toEqual(['@deepseek-ai/dsh-client-ui-deliverables'])
-    expect(dispose).toBeTypeOf('function')
-  })
-})
 
 describe('plugin registration', () => {
   it('registers the tail entry and fiber disposal removes it', async () => {
@@ -676,18 +515,17 @@ describe('plugin registration', () => {
     // The owning view's child declaration, stood up by a bench root entry.
     ctx.slots.register({
       name: 'root',
-      children: { 'conversation.chat.turnTail': { kind: 'chain', scope: 'session' } },
+      children: { 'conversation.chat.turnTail': { kind: 'chain', scope: 'session' }, 'tool.call.toolview': { kind: 'keyed', scope: 'session' } },
     } as never, () => null)
-    const generation = { getSnapshot: () => undefined, subscribe: () => () => {} }
-    ctx.provide('connection', {
-      isLoopback: false,
-      generation,
-    } as never)
     // ui-theme's Appearance row binds a durable scope through these two.
     const session = {
       canOpenWorkspacePath: () => Promise.resolve({ ok: true as const, value: true }),
     }
-    ctx.provide('remote', { $on: () => () => {}, session } as never)
+    ctx.provide('remote', {
+      $on: () => () => {},
+      $host: { home: undefined, isLoopback: false },
+      session,
+    } as never)
     ctx.provide('remote.session', session as never)
     ctx.provide('settingsScope', { bind: () => stubSettingsScope().scope } as never)
     await ctx.plugin({ inject: localeInject, apply: applyLocale }).await()
@@ -696,21 +534,8 @@ describe('plugin registration', () => {
     await fiber.await()
     const [entry] = ctx.slots.entries('conversation.chat.turnTail')
     expect(entry).toBeDefined()
-    // Below the default rank, and below a plugin's row twin, so the cards win
-    // the chain while every open still leaves through the Workspace opener.
-    expect(entry?.options).toMatchObject({ priority: TURN_TAIL_PRIORITY })
-    expect(entry?.registrant).toBe('@deepseek-ai/dsh-client-ui-deliverables')
-    expect(TURN_TAIL_PRIORITY).toBeLessThan(-1)
-    const injected = entry?.inject?.() as unknown as ProducedFilesInjected
-    expect(injected.isLoopback).toBe(false)
-    expect(typeof injected.ensureWorkspacePathOpen).toBe('function')
-    expect(injected.hooks.workspacePathOpen.getSnapshot()).toBeUndefined()
-    ctx.emit('connection/reset')
-    injected.ensureWorkspacePathOpen()
-    await vi.waitFor(() => {
-      expect(injected.hooks.workspacePathOpen.getSnapshot()).toBe(true)
-    })
-    injected.ensureWorkspacePathOpen()
+    expect(ctx.slots.entries('tool.call.toolview')).toHaveLength(1)
+    expect(entry?.inject).toBeDefined()
 
     // The prose face is live while the plugin is: a produced turn yields a
     // resolver whose matches open through the owner-supplied opener.
@@ -721,122 +546,190 @@ describe('plugin registration', () => {
       (path) => { opened.push(path) },
     )
     const service = (ctx as unknown as { get(name: string): ChatFileMentions | undefined }).get('chatFileMentions')
-    const mentions = service?.forClosing(owner)
+    const mentions = service?.forClosing(owner, SessionId('viewed-session'))
     mentions?.resolve('report.html')?.open()
     expect(opened).toEqual(['site/report.html'])
+    const fetcher = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
+    vi.stubGlobal('fetch', fetcher)
+    const delivered = tailOwner({ produced: [], presented: [{ path: 'report.docx', seq: 2, index: 0 }] }, 3)
+    service?.forClosing(delivered, SessionId('child-session'))?.resolve('report.docx')?.open()
+    expect(fetcher).toHaveBeenCalledWith('/api/present.open?sessionId=child-session&seq=2&index=0', { method: 'POST', signal: expect.any(AbortSignal) as AbortSignal })
+    const face = entry!.inject!(SessionId('child-session') as never) as unknown as DeliverablesInjected
+    fetcher.mockResolvedValueOnce(Response.json({ name: 'desktop', available: true, fileManager: 'finder' }))
+    await face.reloadPresentedHost()
+    expect(face.hooks.presentedHost.getSnapshot()).toMatchObject({ name: 'desktop' })
+    ctx.emit('connection/reset')
+    expect(face.hooks.presentedHost.getSnapshot()).toBeNull()
+    await face.openPresented(SessionId('child-session'), 2, 0)
+    expect(face.hooks.presentedOpen.getSnapshot()['/api/present.open?sessionId=child-session&seq=2&index=0']).toBe('opened')
     // A turn that produced nothing yields no vocabulary at all.
-    expect(service?.forClosing(tailOwner(undefined, 2))).toBeUndefined()
+    expect(service?.forClosing(tailOwner(undefined, 2), SessionId('viewed-session'))).toBeUndefined()
 
+    fetcher.mockResolvedValueOnce(Response.json({ name: 'last-host', available: true, fileManager: 'finder' }))
+    await face.reloadPresentedHost()
     await fiber.dispose()
+    const reset = vi.fn()
+    const unsubscribe = face.hooks.presentedHost.subscribe(reset)
+    ctx.emit('connection/reset')
+    expect(reset).not.toHaveBeenCalled()
+    unsubscribe()
     expect(ctx.slots.entries('conversation.chat.turnTail')).toHaveLength(0)
+    expect(ctx.slots.entries('tool.call.toolview')).toHaveLength(0)
     // Fiber teardown retracts the service: the consumer's ctx.get sees the off state.
     expect((ctx as unknown as { get(name: string): unknown }).get('chatFileMentions')).toBeUndefined()
-    expect((ctx as unknown as { get(name: string): unknown }).get('deliverables')).toBeUndefined()
-    expect(ctx.uiConversation.events.entries()).toHaveLength(0)
   })
+})
 
-  it('lets another plugin teach the vocabulary a tool, and forgets it with that plugin', async () => {
-    const ctx = new Context()
-    await ctx.plugin(SlotRegistry).await()
-    new UiConversation(ctx, { binding: () => undefined } as never)
-    ctx.slots.register({
-      name: 'root',
-      children: { 'conversation.chat.turnTail': { kind: 'chain', scope: 'session' } },
-    } as never, () => null)
-    ctx.provide('connection', {
-      isLoopback: true,
-      generation: { getSnapshot: () => undefined, subscribe: () => () => {} },
-    } as never)
-    const session = { canOpenWorkspacePath: () => Promise.resolve({ ok: true as const, value: true }) }
-    ctx.provide('remote', { $on: () => () => {}, session } as never)
-    ctx.provide('remote.session', session as never)
-    ctx.provide('settingsScope', { bind: () => stubSettingsScope().scope } as never)
-    await ctx.plugin({ inject: localeInject, apply: applyLocale }).await()
-    const fiber = ctx.plugin({ inject: [...inject], apply })
-    await fiber.await()
-    const service = (ctx as unknown as { get(name: string): DeliverablesService | undefined }).get('deliverables')
-    if (service === undefined) throw new Error('deliverables service missing')
-    const definitions = (): readonly ConversationNodeDefinition[] => ctx.uiConversation.events.entries()
-    const before = definitions()[0]
-    expect(before?.kind).toBe('deliverables')
 
-    // Teaching a tool re-registers the Definition, so a live assembly folds again.
-    const univerExport: ProducedFileRecognizer = {
-      tool: 'univer_export',
-      path: args => typeof args.output === 'string' ? args.output : null,
-    }
-    const forget = service.recognize(univerExport)
-    expect(definitions()).toHaveLength(1)
-    expect(definitions()[0]).not.toBe(before)
-    const taught = definitions()[0] as ConversationNodeDefinition
-    const folded = new ConversationNodeAssembler(
-      { entries: () => [taught], fallbackEntry: () => undefined },
-      new TestViewDefinitions(),
-    )
-    folded.replaceWindow([
+describe('presented files', () => {
+  const file = (path = 'report.docx') => ({ path })
+
+  it('replays deliveries without mutation calls, preserves indices, and isolates turns', () => {
+    const value = assembler([
       at(1, 'turn/start', { turn: 1 }),
-      call(2, 'deck', 'univer_export', { file: 'a.univer', unitId: 'u', output: 'build/deck.pptx' }),
-      result(3, 'deck'),
-    ], false)
-    folded.flush()
-    expect(producedForClosing(deliverablesOf(folded))).toEqual(['build/deck.pptx'])
-
-    // A tool is taught once: the first-party set and a taught tool both refuse a second teacher.
-    expect(() => service.recognize(univerExport)).toThrow('tool "univer_export" is already recognized')
-    expect(() => service.recognize({ tool: 'write', path: () => null })).toThrow('tool "write" is already recognized')
-
-    forget()
-    await vi.waitFor(() => { expect(definitions()[0]).not.toBe(taught) })
-    expect(() => service.recognize(univerExport)).not.toThrow()
-    await fiber.dispose()
-    expect(definitions()).toHaveLength(0)
+      at(2, 'deliverables/presented', { turn: 1, callId: 'nested', files: [null, { ...file(), description: 'Final report' }] }),
+      at(3, 'deliverables/presented', { turn: 1, callId: 'again', files: [{ ...file(), description: 'Updated report' }] }),
+      at(4, 'turn/end', { turn: 1 }),
+      at(5, 'turn/start', { turn: 2 }),
+    ])
+    const first = presentedForClosing(tailOwner(deliverablesOf(value), 3))
+    expect(first).toMatchObject([{ path: 'report.docx', seq: 2, index: 1, description: 'Final report' }])
+    expect(presentedForClosing(tailOwner(deliverablesOf(value), 4)))
+      .toMatchObject([{ path: 'report.docx', seq: 3, description: 'Updated report' }])
+    expect(selectDeliverables(tailOwner(deliverablesOf(value, 2), 9))).toBeNull()
   })
 
-  it('queries the workspace opener lazily and replaces stale results after reconnect', async () => {
-    const ctx = new Context()
-    await ctx.plugin(SlotRegistry).await()
-    new UiConversation(ctx, { binding: () => undefined } as never)
-    ctx.slots.register({
-      name: 'root',
-      children: { 'conversation.chat.turnTail': { kind: 'chain', scope: 'session' } },
-    } as never, () => null)
-    ctx.provide('connection', {
-      isLoopback: true,
-      generation: { getSnapshot: () => undefined, subscribe: () => () => {} },
-    } as never)
-    const first = Promise.withResolvers<{ ok: true; value: boolean }>()
-    const second = Promise.withResolvers<{ ok: true; value: boolean }>()
-    const staleFailure = Promise.withResolvers<{ ok: true; value: boolean }>()
-    const capability = vi.fn()
-      .mockReturnValueOnce(first.promise)
-      .mockReturnValueOnce(second.promise)
-      .mockReturnValueOnce(staleFailure.promise)
-      .mockRejectedValueOnce(new Error('offline'))
-    const session = { canOpenWorkspacePath: capability }
-    ctx.provide('remote', { $on: () => () => {}, session } as never)
-    ctx.provide('remote.session', session as never)
-    ctx.provide('settingsScope', { bind: () => stubSettingsScope().scope } as never)
-    await ctx.plugin({ inject: localeInject, apply: applyLocale }).await()
-    const fiber = ctx.plugin({ inject: [...inject], apply })
-    await fiber.await()
-    const entry = ctx.slots.entries('conversation.chat.turnTail')[0]
-    const injected = entry?.inject?.() as unknown as ProducedFilesInjected
-
-    injected.ensureWorkspacePathOpen()
-    injected.ensureWorkspacePathOpen()
-    expect(capability).toHaveBeenCalledOnce()
-    ctx.emit('connection/reset')
-    expect(capability).toHaveBeenCalledTimes(2)
-    first.resolve({ ok: true, value: false })
-    await Promise.resolve()
-    expect(injected.hooks.workspacePathOpen.getSnapshot()).toBeUndefined()
-    second.resolve({ ok: true, value: true })
-    await vi.waitFor(() => { expect(injected.hooks.workspacePathOpen.getSnapshot()).toBe(true) })
-
-    ctx.emit('connection/reset')
-    ctx.emit('connection/reset')
-    staleFailure.reject(new Error('stale offline'))
-    await vi.waitFor(() => { expect(injected.hooks.workspacePathOpen.getSnapshot()).toBe(false) })
-    await fiber.dispose()
+  it('uses the viewed fork Session in every open action and expands all delivered files', () => {
+    const value = assembler([
+      at(1, 'turn/start', { turn: 1 }),
+      at(2, 'deliverables/presented', { turn: 1, callId: 'nested', files: Array.from({ length: 8 }, (_, i) => file(`report-${i}.docx`)) }),
+    ])
+    const preview = vi.fn()
+    const owner = tailOwner(deliverablesOf(value), 3, preview)
+    const matched = selectDeliverables(owner)!
+    const props = openProps()
+    props.openPresented.mockResolvedValue(undefined)
+    const view = render(<Deliverables {...props} matched={matched} openFile={owner.openFile} sessionId={SessionId('child-session')} t={makeTranslate(en)} />)
+    expect(view.container.querySelectorAll('[data-presented-file]')).toHaveLength(4)
+    const expand = view.getByRole('button', { name: 'Show all 8 delivered files' })
+    expect(expand.getAttribute('aria-expanded')).toBe('false')
+    fireEvent.click(expand)
+    expect(view.container.querySelectorAll('[data-presented-file]')).toHaveLength(8)
+    expect(view.getByRole('button', { name: 'Collapse delivered files' }).getAttribute('aria-expanded')).toBe('true')
+    expect(view.queryByRole('link')).toBeNull()
+    fireEvent.click(view.getByRole('button', { name: 'Preview report-0.docx in sidebar' }))
+    fireEvent.click(view.getByRole('button', { name: 'Open report-0.docx in sidebar' }))
+    expect(preview).toHaveBeenCalledTimes(2)
+    expect(preview).toHaveBeenLastCalledWith('report-0.docx')
+    fireEvent.click(view.getByRole('button', { name: 'More file actions for report-0.docx' }))
+    fireEvent.click(view.getByRole('menuitem', { name: 'Open in default app' }))
+    expect(props.openPresented).toHaveBeenCalledWith('child-session', 2, 0, 'open')
+    fireEvent.click(view.getByRole('button', { name: 'Collapse delivered files' }))
+    expect(view.container.querySelectorAll('[data-presented-file]')).toHaveLength(4)
+    expect(view.queryByText('Files changed')).toBeNull()
   })
+})
+
+
+it.each([null, [], 'invalid'])('declines non-object delivery data: %j', (data) => {
+  expect(deliverablesDefinition.match(at(1, 'deliverables/presented', data).event)).toBeNull()
+})
+
+it.each([{}, { turn: '1', callId: 'bad', files: [] },
+  { turn: 1.5, callId: 'bad', files: [] }, { turn: 0, callId: 'bad', files: [] },
+  { turn: 1, files: [] }, { turn: 1, callId: '', files: [] }, { turn: 1, callId: 'bad', files: null },
+])('ignores malformed delivery data and keeps the existing produced row: %j', (data) => {
+  const value = assembler([
+    at(1, 'turn/start', { turn: 1 }),
+    call(2, 'write-a', 'write', { file_path: 'a.txt', content: 'a' }),
+    result(3, 'write-a'),
+    at(4, 'deliverables/presented', data),
+  ])
+  const owner = tailOwner(deliverablesOf(value), 5)
+  const matched = selectDeliverables(owner)!
+  const view = render(<Deliverables {...openProps()} matched={matched} openFile={owner.openFile} sessionId={SessionId('session')} t={makeTranslate(en)} />)
+  expect(view.getByText('Files changed')).toBeTruthy()
+  expect(view.queryByText('Deliverables')).toBeNull()
+})
+
+it('shows descriptions and falls back to file metadata without hiding extensionless deliveries', () => {
+  const view = render(<Deliverables {...openProps()} matched={{ produced: [], presented: [
+    { path: 'out/report.txt', description: 'Quarterly summary', seq: 2, index: 0 },
+    { path: 'LICENSE', seq: 2, index: 1 },
+  ] }} openFile={() => {}} sessionId={SessionId('session')} t={makeTranslate(en)} />)
+  expect(view.getByText('Quarterly summary')).toBeTruthy()
+  expect(view.getByText('File')).toBeTruthy()
+  expect(view.getByTitle('out/report.txt')).toBeTruthy()
+  expect(view.getByText('report.txt')).toBeTruthy()
+})
+
+it('marks delivery cards that directly follow the produced-files row', () => {
+  const shared = { ...openProps(), openFile: () => {}, sessionId: SessionId('session'), t: makeTranslate(en) }
+  const presented = [{ path: 'report.txt', seq: 2, index: 0 }]
+  const view = render(<Deliverables {...shared} matched={{ produced: ['source.ts'], presented }} />)
+  expect(view.getByText('Files changed')).toBeTruthy()
+  expect(view.container.querySelector('[data-presented-files-row]')?.parentElement
+    ?.getAttribute('data-after-produced-files')).toBe('true')
+})
+
+it('distinguishes PDF, Word, Markdown, and code files with compact decorative card icons', () => {
+  const paths = ['report.pdf', 'report.docx', 'README.md', 'index.tsx']
+  const view = render(<Deliverables {...openProps()} matched={{ produced: [], presented:
+    paths.map((path, index) => ({ path, seq: 2, index })),
+  }} openFile={() => {}} sessionId={SessionId('session')} t={makeTranslate(en)} />)
+  const icons = [...view.container.querySelectorAll('[data-presented-file]')].map((card) => {
+    const icon = card.querySelector('svg')!
+    expect(icon.getAttribute('aria-hidden')).toBe('true')
+    expect(icon.getAttribute('width')).toBe('20')
+    return icon.innerHTML
+  })
+  expect(new Set(icons).size).toBe(paths.length)
+})
+
+it('lets one delivered file span the complete row without an expansion control', () => {
+  const view = render(<Deliverables {...openProps()} matched={{ produced: [], presented: [
+    { path: 'report.pdf', seq: 2, index: 0 },
+  ] }} openFile={() => {}} sessionId={SessionId('session')} t={makeTranslate(en)} />)
+  expect(view.container.querySelector('[data-presented-files-row]')?.getAttribute('data-single')).toBe('true')
+  expect(view.queryByRole('button', { name: /delivered files/ })).toBeNull()
+})
+
+
+it.each(['opening', 'opened', 'error'] as const)('shows the %s state and permits retries after failure', (phase) => {
+  const controller = new PresentedOpenController()
+  controller.state.set({ '/api/present.open?sessionId=session&seq=2&index=0': phase })
+  const props = openProps(controller)
+  const view = render(<Deliverables {...props} matched={{ produced: [], presented: [
+    { path: 'report.txt', seq: 2, index: 0 },
+  ] }} openFile={() => {}} sessionId={SessionId('session')} t={makeTranslate(en)} />)
+  expect(view.getByText(en[`presented.${phase}`])).toBeTruthy()
+  expect((view.getByRole('button', { name: 'More file actions for report.txt' }) as HTMLButtonElement).disabled).toBe(phase === 'opening')
+})
+
+
+it('explains a missing desktop and retries failed Host metadata', () => {
+  const controller = new PresentedOpenController()
+  const props = openProps(controller)
+  const matched = { produced: [], presented: [{ path: 'file.txt', seq: 2, index: 0 }] }
+  controller.host.set('error')
+  const view = render(<Deliverables {...props} matched={matched} openFile={() => {}} sessionId={SessionId('session')} t={makeTranslate(en)} />)
+  props.reloadPresentedHost.mockResolvedValue(undefined)
+  fireEvent.click(view.getByRole('button', { name: 'Retry' }))
+  expect(props.reloadPresentedHost).toHaveBeenCalledOnce()
+  controller.host.set({ name: 'server', available: false, fileManager: null })
+  view.rerender(<Deliverables {...props} matched={matched} openFile={() => {}} sessionId={SessionId('session')} t={makeTranslate(en)} />)
+  expect(view.getByText(en['presented.unavailable'])).toBeTruthy()
+})
+
+
+it('loads desktop information only when delivery cards appear', () => {
+  const controller = new PresentedOpenController()
+  const props = openProps(controller)
+  controller.host.set(null)
+  props.reloadPresentedHost.mockResolvedValue(undefined)
+  const shared = { ...props, openFile: () => {}, sessionId: SessionId('session'), t: makeTranslate(en) }
+  const view = render(<Deliverables {...shared} matched={{ produced: ['source.ts'], presented: [] }} />)
+  expect(props.reloadPresentedHost).not.toHaveBeenCalled()
+  view.rerender(<Deliverables {...shared} matched={{ produced: [], presented: [{ path: 'report.txt', seq: 2, index: 0 }] }} />)
+  expect(props.reloadPresentedHost).toHaveBeenCalledOnce()
 })

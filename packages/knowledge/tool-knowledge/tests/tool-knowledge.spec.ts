@@ -51,7 +51,7 @@ interface Mounted {
   /** The scoped context the agent owns, for visibility assertions. */
   agentCtx: Context
   /** The agent whose Session log the tool and the section fold. */
-  agent: { session: { id: string; events: unknown[] }; ctx: Context }
+  agent: { session: { id: string; events: unknown[]; snapshotEvents: () => unknown[] }; ctx: Context }
   /** That Session's log, mutable so a test can record a scope change. */
   events: unknown[]
   /** The agent scope's key, for reading tool visibility. */
@@ -82,7 +82,7 @@ async function mountTool(
     },
     calls: [],
     agentCtx: ctx,
-    agent: { session: { id: 'session-1', events: [] }, ctx },
+    agent: { session: { id: 'session-1', events: [], snapshotEvents: () => [] }, ctx },
     events: [],
     scopeKey: { agent: 'unset' },
     noAgent: false,
@@ -102,7 +102,7 @@ async function mountTool(
   const scoped = await new Promise<ReturnType<typeof createScope>>((resolve) => {
     ctx.inject(['tools'], (inner) => { resolve(createScope(inner, key)) })
   })
-  const agent = { session: { id: 'session-1', events }, ctx: scoped.ctx }
+  const agent = { session: { id: 'session-1', events, snapshotEvents: () => events }, ctx: scoped.ctx }
   state.agentCtx = scoped.ctx
   state.agent = agent
   state.events = events

@@ -34,9 +34,6 @@
     },
     {
       "path": "../../account/account-store"
-    },
-    {
-      "path": "../../runtime-diagnostics/invariants"
     }
   ]
 }

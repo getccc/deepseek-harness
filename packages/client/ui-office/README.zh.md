@@ -23,7 +23,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-在 Team 浏览器组合中挂载；它在编辑器左区安置一个控件，并挂载它调用的 `office` Remote 命名空间。它还教会产出文件行识别办公工具的 `univer_export`——其 `output` 指明写出的文档——因此交回 `.docx`、`.xlsx` 或 `.pptx` 的轮次会以一张打开它的卡片收尾。它无需配置。Host 不折叠任何办公选择的构建不渲染任何内容。
+在 Team 浏览器组合中挂载；它在编辑器左区安置一个控件，并挂载它调用的 `office` Remote 命名空间。它无需配置。Host 不折叠任何办公选择的构建不渲染任何内容。
 
 -----
 
@@ -41,7 +41,7 @@ kind: "package-reference"
 <a id="known-limitations-and-deferred-work"></a>
 
 - **选择只存在于一次对话** —— 没有被记住的默认值，因此每个新对话都以未选择任何办公格式开始。
-- **只教会了 `univer_export`** —— 模型用 shell 命令或自己的脚本写出的文档不会列为卡片；它仍可从工作区打开。
+- **交付由模型完成** —— `.docx`、`.xlsx` 或 `.pptx` 只有经办公分节所要求的 `present` 工具才会进入交付物行与 Sidebar；未经该调用写出的文件仍可从文件树打开。
 
 <a id="dev-note"></a>
 ### 开发备注
@@ -52,3 +52,5 @@ kind: "package-reference"
 芯片从一个本地常量列出四种类型，而非导入词汇的 `OFFICE_KINDS`，因为客户端 bundle 不得跨插件导入运行时值；类型仍来自 `@deepseek-ai/dsh-office`。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：一个 composer 座位，其释放由 HMR 安全测试证明；它通过 Host 读取 Session 的办公文档选择，不发出 cordis 事件，也不拥有跨插件可变状态。

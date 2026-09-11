@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-knowledge-source`（`ctx.knowledgeSource`）是受治理的知识网关用来与上游知识产品对话的接缝。它有两个操作——列出数据源持有的内容、检索其中一个显式的知识库集合——而且两者都以上游术语表达：用上游 id 而非 `KnowledgeRef`，因为两者之间的映射是目录的职责。它只挂载在 Control Plane，绝不挂载在 Runner。为某个知识产品编写提供方、或从网关消费提供方时引入它。本接缝没有任何操作接受 URL、调用方自选请求头或任意上游路径，因此它前面的网关无法被诱导去执行权限目录未治理的操作。
+`dsh-knowledge-source`（`ctx.knowledgeSource`）是受治理的知识 gateway 与上游知识产品对话所经的接缝。它的两个操作——列出一个源持有什么、在其知识库的显式集合中搜索——都以上游的术语表达：用上游 id 而非 `KnowledgeRef`，因为两者之间的映射是目录的职责。它只挂载在 Control Plane，绝不在 Runner 中。没有任何操作接受 URL、调用方自选的 header 或任意上游路径，因此前面的 gateway 不可能被诱导执行权限目录未治理的操作。
 
 ## 目录
 
@@ -103,3 +103,5 @@ Control Plane 组合挂载一个提供方，由它注册本服务；受治理网
 无。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：该 seam 不拥有注册表，也不发布事件流；provider 自身的边界在每次调用时强制执行，被检索知识库的授权属于做出授权的 gateway。

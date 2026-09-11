@@ -20,7 +20,7 @@ this.drilled = action === 'drill'
 if (!this.execute(outcome, hit.span)) this.drilled = false
 ```
 
-The claim still follows `reduce({ type: 'close' })`, whose teardown clears it. Withdrawal remains exact because a refused edit mutates nothing and so drives no re-entrant `track()`: `insertText` fails its `draftRev` CAS before touching the editor, and `$replaceDetectSpanWithText` returns `false` from `selectSpan` ahead of `$setSelection`. The observable guarantee the [breadcrumb decision](../feature/2026-08-27-web-at-mention-discovery-and-row-content.md) states is unchanged — a header never names a directory nobody descended into — and both descent gestures now reach `header` and `candidates` as a drill.
+The claim still follows `reduce({ type: 'close' })`, whose teardown clears it. Withdrawal remains exact because a refused edit mutates nothing and so drives no re-entrant `track()`: `insertText` fails its `draftRev` CAS before touching the editor, and `$replaceDetectSpanWithText` returns `false` from `selectSpan` ahead of `$setSelection`. The observable guarantee the [breadcrumb decision](../../archived/feature/2026-08-27-web-at-mention-discovery-and-row-content.md) states is unchanged — a header never names a directory nobody descended into — and both descent gestures now reach `header` and `candidates` as a drill.
 
 ## Alternatives considered
 

@@ -61,7 +61,7 @@ export class InputTriggerController {
     createSnapshotStore<ReadonlyMap<string, readonly InputTriggerCrumb[]>>(new Map())
   /**
    * Aggregated hot reference lexicon, grouped by trigger (plain-text-reference decision;
-   * see .agents/notes/implemented/architecture/2026-07-25-web-input-machine-and-slash-pipeline.md):
+   * see .agents/notes/archived/architecture/2026-07-25-web-input-machine-and-slash-pipeline.md):
    * sources implementing the lexicon hook are polled with the session
    * projection; undefined answers (roll not hot yet) are skipped; multiple
    * sources on one trigger concatenate in registration order. A snapshot
@@ -240,14 +240,19 @@ export class InputTriggerController {
       }
       case 'enter': {
         if (state.highlight === null) return 'pass'
+        // Refinement keeps the previous rows and highlight visible while the
+        // next fetch is pending; Enter then neither picks the stale row nor
+        // falls through to submit — an explicit no-op until the group is ready.
+        const group = state.groups.find(g => g.source === state.highlight?.source)
+        if (group === undefined || group.status !== 'ready') return 'consumed'
         this.pick(state.highlight.source, state.highlight.index)
         return 'pick-highlighted'
       }
       case 'tab': {
         if (state.highlight === null) return 'pass'
         const group = state.groups.find(g => g.source === state.highlight?.source)
-        // A highlight over a group that is not ready is consumed: no stale row
-        // settles, and Tab does not move focus away from the composer.
+        // Pending refinement keeps the stale highlight visible: consume the
+        // gesture rather than pick a stale row or let Tab move focus away.
         if (group === undefined || group.status !== 'ready') return 'consumed'
         const item = group.items[state.highlight.index]
         if (item === undefined) return 'pass'
@@ -357,6 +362,16 @@ export class InputTriggerController {
     if (this.disposed) return
     this.stopFetch()
     this.reduce({ type: 'close' })
+  }
+
+  /** Re-fetch the currently open menu without changing its hit or visible rows. */
+  refreshOpenMenu(): void {
+    if (this.disposed || !this.menu.getSnapshot().open || this.hit === null) return
+    const launched = this.launcher.getSnapshot()
+    const roster = this.deps.roster.sources(this.hit.trigger)
+      .filter(source => launched === null || source.name === launched)
+    if (roster.length === 0) return
+    this.fetchCandidates(this.hit, roster)
   }
 
   /** Scope teardown: close and abort (the service deletes the map entry). */

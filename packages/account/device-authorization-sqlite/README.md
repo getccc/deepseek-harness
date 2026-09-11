@@ -62,7 +62,6 @@ Readers check only the credential family, so `revokeDevice` revokes the device *
 |---|---|
 | [`src/index.ts`](src/index.ts) | The state machine: start, confirm, redeem, refresh, verify, revoke |
 | [`src/schema.ts`](src/schema.ts) | Tables, constraints, and the pragma guards |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -101,3 +100,5 @@ These are current constraints of the contract, not a task backlog.
 The tests drive a real Ed25519 key pair rather than a stub signer. The property under test is that only the holder of the private key behind the digest a member compared can finish the flow, and a stub signer would prove nothing about it.
 
 </details>
+
+**Runtime invariant:** No companion is published: what this backend must hold (one device row per key within an organization, a code hash unique across transactions, a token hash unique across families, and a confirmed transaction naming an account) is declared to SQLite as unique indexes and CHECK constraints.

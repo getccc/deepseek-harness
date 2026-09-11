@@ -72,7 +72,6 @@ A member reaches the device-confirmation page by following a link from the pairi
 | Path | Role |
 |---|---|
 | [`src/index.ts`](src/index.ts) | The cookie, the token, the CSRF derivation, and the same-origin decision |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -110,3 +109,5 @@ These are current constraints of the contract, not a task backlog.
 `sameOrigin` is tested against `Origin: null` from both sides, because the value of the rule is entirely in what it refuses: an opaque context without same-origin Fetch Metadata must fail, or the header buys nothing.
 
 </details>
+
+**Runtime invariant:** No companion is published: the package is pure functions over one request and one store lookup; it mounts nothing, holds no state, and a cookie resolving to the session whose hash the store holds, with a CSRF value derived from the token, is observed directly by its tests.

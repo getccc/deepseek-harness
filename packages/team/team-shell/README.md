@@ -57,7 +57,6 @@ The redirect carries `next`, so a member following a pairing link lands on the p
 | [`src/index.ts`](src/index.ts) | The route, the three proofs, and the audit record |
 | [`src/pages.ts`](src/pages.ts) | The confirmation page and the page that says why something cannot continue |
 | [`src/paths.ts`](src/paths.ts) | The two addresses this package names |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -95,3 +94,5 @@ These are current constraints of the contract, not a task backlog.
 The tests open a browser session directly through the account store rather than signing in, because signing in belongs to the administration API and this package must not depend on it to be tested.
 
 </details>
+
+**Runtime invariant:** No companion is published: the package registers HTTP routes that read a session, ask access control, and call a seam; a session naming an active account, a grant admitting an action, and an audit record carrying only catalog words each belong to one of those seams.

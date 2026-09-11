@@ -10,9 +10,8 @@ import { afterEach, expect, it } from 'vitest'
 import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import { canonicalPath, writableRoots } from '@deepseek-ai/dsh-sandbox'
 import { SessionId } from '@deepseek-ai/dsh-session'
-import { settingsNamespace } from '@deepseek-ai/dsh-settings'
-// Empty type imports carry the tools/sandboxPolicy/approval Context merges.
-import type {} from '@deepseek-ai/dsh-tools'
+// These imports carry the tools/sandboxPolicy/approval Context merges.
+import { RUN_CODE_NAME } from '@deepseek-ai/dsh-tools'
 import type {} from '@deepseek-ai/dsh-sandbox-policy'
 import type {} from '@deepseek-ai/dsh-user-approval'
 import type {} from '@deepseek-ai/dsh-permission-presets'
@@ -46,6 +45,7 @@ const EXPECTED_TOOLS = [
   'job_list',
   'job_output',
   'list_agents',
+  'present',
   'ralph',
   'read',
   'read_image',
@@ -85,34 +85,14 @@ it('assembles the shipped Web transport, catalog, guidance, and defaults', async
   expect(index.headers.get('content-encoding')).toBe('gzip')
   expect(index.headers.get('vary')).toContain('Accept-Encoding')
   await index.body?.cancel()
-  expect(ctx.llm.providerRetryPolicy('deepseek-official')).toMatchInlineSnapshot(`
-    {
-      "initialDelayMs": 500,
-      "jitterRatio": 0.1,
-      "maxDelayMs": 10000,
-      "maxRetries": 5,
-      "mode": "normal",
-      "retryableCodes": [
-        "EMPTY_RESPONSE",
-        "RATE_LIMIT",
-        "SERVER",
-        "TIMEOUT",
-        "TRANSPORT",
-      ],
-    }
-  `)
-  await ctx.settings.update(settingsNamespace('llm-deepseek'), {
+  // Keyless composition: the member DeepSeek route stays dormant until a key
+  // resolves, so no adapter serves it and no retry policy can be read.
+  expect(() => ctx.llm.providerRetryPolicy('deepseek-official')).toThrow(/no adapter registered for provider "deepseek-official"/)
+  await ctx.settings.update('llm-deepseek', {
     retryPolicy: { mode: 'always', maxRetries: 5 },
   })
-  expect(ctx.llm.providerRetryPolicy('deepseek-official')).toMatchInlineSnapshot(`
-    {
-      "initialDelayMs": 500,
-      "jitterRatio": 0.1,
-      "maxDelayMs": 10000,
-      "mode": "always",
-    }
-  `)
-  await ctx.settings.update(settingsNamespace('llm-pi-ai'), {
+  expect(() => ctx.llm.providerRetryPolicy('deepseek-official')).toThrow(/no adapter registered for provider "deepseek-official"/)
+  await ctx.settings.update('llm-pi-ai', {
     providers: {
       openai: {},
       anthropic: { retryPolicy: { mode: 'always' } },
@@ -189,6 +169,24 @@ it('assembles the shipped Web transport, catalog, guidance, and defaults', async
     })
   } finally {
     await commandHandle.dispose()
+  }
+}, 120_000)
+
+it('ships PTC with run_code but without the general workflow SDK binding', async () => {
+  scaffold = await launchWebScaffold({ deepSeekMissingCredential: true })
+  const ctx = scaffold.ctx
+  const handle = await ctx.agents.create({
+    sessionId: SessionId('shipped-ptc-composition'),
+    setup: agentCtx => ctx.agentPresets.mount(agentCtx, 'ptc').then(() => undefined),
+  })
+  try {
+    const assembly = await ctx.systemPrompt.assemble({ scope: handle.agent })
+    expect(assembly.tools.map(tool => tool.name)).toEqual([RUN_CODE_NAME])
+    const sdk = assembly.sections.find(section => section.name === 'tools:sdk')?.text ?? ''
+    expect(sdk).toContain('  ralph: {')
+    expect(sdk).not.toContain('  workflow: {')
+  } finally {
+    await handle.dispose()
   }
 }, 120_000)
 

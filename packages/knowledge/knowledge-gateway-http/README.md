@@ -114,3 +114,5 @@ These limits define when the adapter is incomplete on its own. They are current 
 None.
 
 </details>
+
+**Runtime invariant:** No companion is published: the adapter holds no state between requests and publishes no event stream; that a request cannot name its own principal is structural, since the body has no field for one and the identity comes from the verified token.

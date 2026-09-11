@@ -18,15 +18,10 @@
       "types": "./lib/types/index.d.ts",
       "default": "./lib/index.js"
     },
-    "./invariant": {
-      "types": "./lib/types/invariant.d.ts",
-      "default": "./lib/invariant.js"
-    },
     "./package.json": "./package.json"
   },
   "files": [
     "lib/index.js",
-    "lib/invariant.js",
     "lib/types/**/*.d.ts"
   ],
   "license": "MIT",
@@ -44,7 +39,6 @@
     "@deepseek-ai/cordis": "workspace:^",
     "@deepseek-ai/dsh-account-auth": "workspace:^",
     "@deepseek-ai/dsh-host-webserver": "workspace:^",
-    "@deepseek-ai/dsh-invariants": "workspace:^",
     "@deepseek-ai/dsh-knowledge": "workspace:^",
     "@deepseek-ai/dsh-knowledge-gateway": "workspace:^"
   },
@@ -52,7 +46,6 @@
     "@deepseek-ai/cordis": "workspace:^",
     "@deepseek-ai/dsh-account-auth": "workspace:^",
     "@deepseek-ai/dsh-host-webserver": "workspace:^",
-    "@deepseek-ai/dsh-invariants": "workspace:^",
     "@deepseek-ai/dsh-knowledge": "workspace:^",
     "@deepseek-ai/dsh-knowledge-gateway": "workspace:^",
     "@deepseek-ai/dsh-knowledge-gateway-sqlite": "workspace:^",

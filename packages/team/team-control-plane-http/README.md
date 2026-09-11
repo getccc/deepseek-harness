@@ -54,7 +54,6 @@ A refusal carries the seam's word. Anything else answers 500 with `{"error":"int
 |---|---|
 | [`src/index.ts`](src/index.ts) | The four routes, account authentication, body parsing, and refusal mapping |
 | [`src/protocol.ts`](src/protocol.ts) | The paths and the protocol version both sides import |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -93,3 +92,5 @@ These are current constraints of the contract, not a task backlog.
 The endpoints are exercised against a real device-authorization composition rather than a stub, because what is worth testing is that a body arriving over HTTP reaches the seam in the shape the seam requires.
 
 </details>
+
+**Runtime invariant:** No companion is published: the package registers three HTTP routes that parse a body and hand it to the device-authorization seam; every relation worth checking (a code spent once, a signature that verifies, a family revoked on replay) belongs to that seam and its store.

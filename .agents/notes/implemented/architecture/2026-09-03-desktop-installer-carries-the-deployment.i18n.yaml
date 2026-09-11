@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-03-desktop-installer-carries-the-deployment.md
-2026-09-03-desktop-installer-carries-the-deployment.md: 2862cb40dcdc5fab798f16dcff423083c41ab7f6
-2026-09-03-desktop-installer-carries-the-deployment.zh.md: 9a11802cadf9bd286d0d75b3bf73897c47ddcf72
+2026-09-03-desktop-installer-carries-the-deployment.md: 76415828bfe86f3d3752648a7af4ff3b2dc6a05f
+2026-09-03-desktop-installer-carries-the-deployment.zh.md: 56802aadefcf1dff8b54f23e91afa9e6dacca4ea

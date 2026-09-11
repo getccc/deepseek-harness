@@ -23,19 +23,11 @@ function readVersion(): string {
   return typeof manifest.version === 'string' ? manifest.version : '0.0.0'
 }
 
-// A child of the packaged executable that spawned `process.execPath` with its
-// own script is served here, before the launcher grammar: argv becomes what
-// `node <script>` gives, and Node's own main-module path runs it.
-const carried = isPackagedExecutable() ? carriedScript(process.argv.slice(2), existsSync) : undefined
-if (carried !== undefined) {
-  process.argv.splice(1, 1)
-  const { runMain } = createRequire(import.meta.url)('node:module') as { runMain: () => void }
-  runMain()
-} else {
-  await launch()
-}
-
-async function launch(): Promise<void> {
+/**
+ * Run the public dsh command-line interface.
+ * @returns a promise that settles when the selected command mode finishes.
+ */
+export async function runCli(): Promise<void> {
   const invocation = parseDshArgs(process.argv.slice(2), readVersion())
 
   switch (invocation.mode) {
@@ -44,6 +36,7 @@ async function launch(): Promise<void> {
       await runProfile({
         environment: loadLayeredEnv('dsh'),
         profile: invocation.profile,
+        fromDefaultProfile: invocation.fromDefaultProfile,
         patchFiles: invocation.patches,
         args: invocation.args,
       })
@@ -56,11 +49,30 @@ async function launch(): Promise<void> {
     }
     case 'dump-config': {
       const { runDumpConfig } = await import('./dump-config.ts')
-      runDumpConfig(invocation.profile, invocation.defaultOnly, invocation.patches)
+      runDumpConfig(
+        invocation.profile,
+        invocation.defaultOnly,
+        invocation.patches,
+        invocation.fromDefaultProfile,
+      )
       break
     }
     default:
       invocation satisfies never
       throw new Error(`dsh: unhandled invocation mode ${JSON.stringify(invocation)}`)
+  }
+}
+
+if (import.meta.main) {
+  // A child of the packaged executable that spawned `process.execPath` with its
+  // own script is served here, before the launcher grammar: argv becomes what
+  // `node <script>` gives, and Node's own main-module path runs it.
+  const carried = isPackagedExecutable() ? carriedScript(process.argv.slice(2), existsSync) : undefined
+  if (carried !== undefined) {
+    process.argv.splice(1, 1)
+    const { runMain } = createRequire(import.meta.url)('node:module') as { runMain: () => void }
+    runMain()
+  } else {
+    await runCli()
   }
 }

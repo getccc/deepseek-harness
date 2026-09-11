@@ -65,7 +65,6 @@ kind: "package-reference"
 |---|---|
 | [`src/index.ts`](src/index.ts) | Store 实现及其插件配置 |
 | [`src/schema.ts`](src/schema.ts) | DDL、行结构，以及版本与 application id 的强制检查 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件注册 |
 
 -----
 
@@ -104,3 +103,5 @@ kind: "package-reference"
 `node:sqlite` 无需任何依赖，而且同一组合中的账户存储、访问控制与审计已经在用它，因此本包没有给仓库引入任何驱动。这个 Store 刻意对"存在哪个组织"不持立场：播种把组织作为参数传入，而这个参数来自唯一在配置中命名了它的那个插件。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：该后端必须保持的持久关系（组织内每个随附条目一行、子项指向存在的条目）以唯一索引和外键声明给 SQLite，数据库会拒绝违规写入。

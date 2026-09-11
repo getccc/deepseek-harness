@@ -108,3 +108,5 @@ These limits define when the provider is incomplete on its own. They are current
 None.
 
 </details>
+
+**Runtime invariant:** No companion is published: the provider publishes no event stream; that every returned passage came from a knowledge base this request authorized is enforced inside `search` and asserted by the package's tests.

@@ -1,0 +1,5 @@
+# The office renderers ship only in the Team composition; this overlay mounts
+# them over the shipped web composition so the scenario can open documents.
+- insert:
+    - id: client-ui-sidebar-documentpreview-office
+      name: '@deepseek-ai/dsh-client-ui-sidebar-documentpreview-office'

@@ -74,7 +74,6 @@ dsh --profile team-control-plane
 |---|---|
 | [`cordis.patch.yml`](cordis.patch.yml) | 该 profile 启动的完整配置树 |
 | [`src/index.ts`](src/index.ts) | 仅提供模块身份；本 bundle 不暴露运行时 API |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴随插件的注册 |
 
 ### 不变量归属
 
@@ -118,3 +117,5 @@ dsh --profile team-control-plane
 组合测试中的禁用包清单是逐条写出的，而不是按前缀匹配，这样新增能力包时必须在此处做出明确决定，而不是悄悄匹配上某个模式，或悄悄逃过它。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包是静态 patch 列表的载体，不挂载服务、不发出事件、不拥有可变关系；不具备本地执行能力是组合事实，由其测试断言。

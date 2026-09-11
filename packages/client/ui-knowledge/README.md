@@ -97,3 +97,5 @@ These limits define the current picker. They are current package constraints, no
 None.
 
 </details>
+
+**Runtime invariant:** No companion is published: a command contribution and a composer seat whose disposal is proven by the HMR-safety spec both read the Session's knowledge scope through the Host, emit no cordis events, and own no cross-plugin mutable state.

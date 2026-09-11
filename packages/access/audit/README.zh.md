@@ -78,7 +78,6 @@ const denials = await ctx.audit.query({ orgId, outcome: 'denied', limit: 50 })
 | [`src/vocabulary.ts`](src/vocabulary.ts) | Outcome 与拒绝原因词表 |
 | [`src/validate.ts`](src/validate.ts) | 记录检查及其指出的失败 |
 | [`src/types.ts`](src/types.ts) | Record、Event 与 Query 的结构，仅类型 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件注册 |
 
 -----
 
@@ -117,3 +116,5 @@ const denials = await ctx.audit.query({ orgId, outcome: 'denied', limit: 50 })
 新增一项动作意味着新增它的条目，若它携带一项新事实，还要新增一个带种类的 Metadata Key。两者都会被存储的 Schema 播种读取，因此新条目会在下一次启动时到达已有数据库，不需要提升 Schema 版本；退役一项则会让它的行继续引用一条留在原地的目录行。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包只声明抽象服务与两个静态目录，不挂载任何东西；记录只携带其动作声明的字段这一关系，在写入处由 provider 的 schema 与测试检查。

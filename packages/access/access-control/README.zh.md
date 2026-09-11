@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-access-control` 是每一个公司资源入口和每一次管理操作都要问的那一个问题：这个主体可以对这个资源执行这个动作吗？它所规定的求值刻意做得很小——默认拒绝、角色的授权准入、多个角色取并集、被停用的资源一律拒绝——没有显式 Deny、没有角色继承、没有表达式语言，因此一个决定可以通过点名产生它的那些授权来解释。本包还拥有权限目录，由代码播种且封闭：管理员用已注册的 `(resourceType, action)` 组合拼装角色，无法凭空造出权限字符串。请搭配一个后端使用，例如 [`access-control-sqlite`](../access-control-sqlite/README.zh.md)。
+`dsh-access-control` 是每个公司资源入口与每项管理操作都要问的那一个问题：这个主体能否对这个资源执行这个操作？它规定的评估刻意保持很小——默认拒绝，角色的授权准入，多个角色取并集，被禁用的资源一律拒绝——没有显式拒绝、角色继承或表达式语言，因此一个决定可以通过列出产生它的授权来解释。本包还拥有从代码播种的封闭权限目录：管理员用已注册的 `(resourceType, action)` 对组合角色，不能凭空发明权限字符串。请与 [`access-control-sqlite`](../access-control-sqlite/README.zh.md) 这样的后端搭配使用。
 
 ## 目录
 
@@ -78,7 +78,6 @@ if (decision.allowed) {
 | [`src/permissions.ts`](src/permissions.ts) | 封闭的权限目录及其成员判定 |
 | [`src/brand.ts`](src/brand.ts) | 角色、用户组、资源与授权的身份 |
 | [`src/types.ts`](src/types.ts) | 实体、请求与决定的形状，仅类型 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴随插件的注册 |
 
 -----
 
@@ -117,3 +116,5 @@ if (decision.allowed) {
 准许结果上的 `scopes` 只携带请求所指名的那个资源。组装多 scope 断言是网关对自己那份已授权清单的循环；在此处加一个批量查询，会诱使调用方授权一次、行动多次。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包只声明抽象服务与静态权限目录，不挂载任何东西；真正重要的关系（决策只引用存储实际持有的授权）属于做出评估的 provider 及其测试。

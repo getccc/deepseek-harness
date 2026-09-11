@@ -25,9 +25,6 @@ import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
-// Type-only: pulls the deliverables plugin's Context merge (ctx.deliverables).
-import type {} from '@deepseek-ai/dsh-client-ui-deliverables/client'
-import { UNIVER_EXPORT_RECOGNIZER } from './deliverables.ts'
 import { OfficeSelect, type OfficeSelectInjected } from './OfficeSelect.tsx'
 import { en, zh, type OfficeKey } from './locales.ts'
 
@@ -44,7 +41,7 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
 const NS = 'office'
 
 /** Required services: the chip's slot registry, locale, the Remote mount, and the produced-files vocabulary. */
-export const inject = ['deliverables', 'locale', 'remote', 'slots']
+export const inject = ['locale', 'remote', 'slots']
 
 /**
  * Client plugin body: mount the office Remote namespace, teach the
@@ -53,7 +50,6 @@ export const inject = ['deliverables', 'locale', 'remote', 'slots']
  */
 export function apply(ctx: ClientContext): void {
   ctx.effect(() => ctx.remote.$mount(officeRemote), 'ui-office: office Remote namespace')
-  ctx.effect(() => ctx.deliverables.recognize(UNIVER_EXPORT_RECOGNIZER), 'ui-office: univer_export deliverable')
   ctx.inject(['locale', 'remote.office', 'slots'], registerUi)
 }
 

@@ -16,6 +16,8 @@ Status: implemented
 
 ## 决定
 
+**已于 2026-09-10 被[分两阶段合并上游](../process/2026-09-10-two-stage-upstream-merge.zh.md)部分取代：**自上游 Sidebar 取代第三方插件后，随附插件树为空；下文的安装程序机制仍然有效。
+
 **每一项随部署变化的事实都是打包环境变量。** 源码树不写任何一家公司。`DSH_TEAM_CONTROL_PLANE_CA`、`DSH_TEAM_PLUGIN_TREE`、`DSH_TEAM_PRODUCT_NAME`、`DSH_TEAM_APP_ID`、`DSH_TEAM_APP_ICON` 与 `DSH_TEAM_TRAY_ICON` 加入已有的源与 Runner 可执行文件。每一项都在打包时校验，因此写错的路径让构建失败，而不是让安装后的应用失败。
 
 **置入的文件在运行时定位，绝不在打包时定位。** 证书被复制到 Runner 旁，其绝对路径在 Runner 启动时由 `process.resourcesPath` 组成。打包期间记录的路径写的是构建机器。

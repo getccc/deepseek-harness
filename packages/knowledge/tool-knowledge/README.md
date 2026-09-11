@@ -156,3 +156,5 @@ These limits define when the package is incomplete on its own. They are current 
 None.
 
 </details>
+
+**Runtime invariant:** No companion is published: this package owns one tool registration, one prompt section, and a per-agent restriction, all of which the tools registry and the prompt registry already hold to; that the section and the tool agree, because both fold the same Session log, is asserted by the package's tests.

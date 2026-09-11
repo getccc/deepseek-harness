@@ -74,7 +74,6 @@ A launchd *agent*, a systemd *user* unit, and a Windows *scheduled task* — nev
 | [`src/version.ts`](src/version.ts) | Comparing dotted numeric versions |
 | [`src/service.ts`](src/service.ts) | The three service definitions an installer writes |
 | [`src/types.ts`](src/types.ts) | What a decision reads and answers, types only |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -113,3 +112,5 @@ These are current constraints of the contract, not a task backlog.
 The tests drive a real Ed25519 release key and edit signed manifests field by field, because the property under test is not that a good manifest is accepted but that an edited one is not. The Windows document quotes an argument for the command line and then escapes the quotes for XML; a test asserting the unescaped form is asserting a broken document.
 
 </details>
+
+**Runtime invariant:** No companion is published: the package is a pure decision over a manifest and what this computer is; it mounts nothing, holds no state, and a release installed only when its signature verifies is a property of one function, which its tests observe directly.

@@ -82,7 +82,6 @@ A code with no vowels cannot spell a word the eye completes instead of reading, 
 | [`src/vocabulary.ts`](src/vocabulary.ts) | The platform and refusal word lists |
 | [`src/brand.ts`](src/brand.ts) | Device, transaction, and family identities |
 | [`src/types.ts`](src/types.ts) | Request, response, and entity shapes, types only |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -121,3 +120,5 @@ These are current constraints of the contract, not a task backlog.
 Reuse detection deliberately punishes the rightful holder along with a thief: a replayed refresh token means either the token leaked or the Runner lost track of it, and nothing in the exchange can tell those apart. Softening it to "ignore the replay" would make a stolen token usable for as long as the family lives.
 
 </details>
+
+**Runtime invariant:** No companion is published: the package declares an abstract service, two word lists, and pure derivations both sides of the flow compute; a credential naming a device that proved possession of its key belongs to the provider that runs the flow.

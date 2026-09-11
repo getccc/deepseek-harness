@@ -73,7 +73,6 @@ The plugin prepends an `agent/pre-step` listener that delegates first and append
 | [`src/index.ts`](src/index.ts) | Plugin entry: pre-step listener, due scheduling, reading composition |
 | [`src/request-zone.ts`](src/request-zone.ts) | Browser-zone policy derivation from open-turn `user-rpc` sources |
 | [`src/timestamp.ts`](src/timestamp.ts) | `Intl.DateTimeFormat` creation and timestamp formatting |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion for the snapshot contract |
 
 ### Main flow
 
@@ -88,7 +87,6 @@ When an injection is due, the plugin samples the wall clock, derives the browser
 
 Read these pages when the package-level contract is not enough. They move from the design decision to the composition that mounts the plugin and the exhaustive configuration.
 
-- [Durable per-step time-context decision record](../../../.agents/notes/implemented/feature/2026-07-16-durable-per-step-time-context.md) — design rationale for the durable reading.
 - [Schedule user guide](../../../docs/user/guide/schedule.md) — the official configuration path for mounting this plugin.
 - [Context group map](../README.md) — sibling request-context packages.
 - [Generated configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-time-context) — every accepted config field and its source declaration.

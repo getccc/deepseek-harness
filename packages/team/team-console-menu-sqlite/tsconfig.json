@@ -10,7 +10,6 @@
   "references": [
     { "path": "../../../vendor/cordis" },
     { "path": "../../../vendor/schemastery" },
-    { "path": "../../runtime-diagnostics/invariants" },
     { "path": "../../account/account-store" },
     { "path": "../team-console-menu" }
   ]

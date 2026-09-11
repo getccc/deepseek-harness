@@ -9,9 +9,9 @@ kind: "package-bundle"
 
 ## 概述
 
-`dsh-team` 是把本机 Web 表层变成 Team Runner 的那一层。它叠加在 [`dsh-base`](../base/README.zh.md) 与 [`dsh-web-app`](../web-app/README.zh.md) 之上，把工作空间与执行留在成员电脑。本层拥有 `3090` 端口、`/team/login` 本地账户登录、这台电脑持有的设备凭据，以及公司模型传输。公司模型默认使用 `built-in` 提供方路由，成员配置的 DeepSeek 密钥则继续服务 `deepseek-official`。`3080` 继续留给独立 `dsh web`。
+`dsh-team` 把本地 web 表面变成 Team Runner。它叠加在 [`dsh-base`](../base/README.zh.md) 与 [`dsh-web-app`](../web-app/README.zh.md) 之上，把工作区与执行留在成员的电脑上，并拥有端口 `3090`、`/team/login` 的本地账户登录、这台电脑持有的设备凭据，以及公司模型传输。公司模型默认走 `built-in` 提供方路由，成员自己配置的 DeepSeek 密钥仍服务 `deepseek-official`。
 
-它不会在未配置的情况下绑定：Account Client 行不指名任何 Control Plane，也不指名 Runner 版本，因此一个没人告诉它属于哪家公司的 Runner 会加载失败，而不是把公钥发给一个陌生人。
+它拒绝在未配置时绑定：account-client 行未命名 Control Plane 与 Runner 版本时，Runner 会加载失败，而不是把公钥发给陌生人。
 
 ## 目录
 
@@ -66,7 +66,6 @@ patch 会替换目标行的整个 `config`，因此这里的 `webserver` 与 `we
 |---|---|
 | [`cordis.patch.yml`](cordis.patch.yml) | 本层自身：本 bundle 覆盖的配置行 |
 | [`src/index.ts`](src/index.ts) | 仅提供模块身份；本 bundle 不暴露运行时 API |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴随插件的注册 |
 
 ### 不变量归属
 
@@ -112,3 +111,5 @@ patch 会替换目标行的整个 `config`，因此这里的 `webserver` 与 `we
 该 profile 保持 `patchReload: live`，与 `web` 一致，因为它服务的是同一个浏览器表层。后台服务在用户编辑 patch 时重新组合，这与 web profile 已有的行为相同；只有当服务托管的部署需要仅启动时应用的变体时，才需要重新考虑。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包是静态 patch 列表的载体，不挂载服务、不发出事件、不拥有可变关系；它覆盖的 webserver 行在 `dsh-host-webserver` 中自带绑定不变量。

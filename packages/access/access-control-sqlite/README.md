@@ -59,7 +59,6 @@ It lives with the organization in the account store, so one counter serves every
 |---|---|
 | [`src/index.ts`](src/index.ts) | The provider, the evaluation, and the mutations that advance the revision |
 | [`src/schema.ts`](src/schema.ts) | DDL, row shapes, catalog seeding, and version enforcement |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -99,3 +98,5 @@ These are current constraints of this backend, not a task backlog.
 `node:sqlite` needs no dependency and is already the backend for session persistence, session query, storage, and the account store. A PostgreSQL backend for multi-instance deployments is a second provider behind the same Service Definition, not a change here.
 
 </details>
+
+**Runtime invariant:** No companion is published: the durable relations this backend must hold (a grant naming a governed permission, a binding naming an existing role, a resource unique within its organization and type) are declared to SQLite as foreign keys and unique indexes, so a violating write is refused rather than admitted for a runtime check to find.

@@ -57,7 +57,6 @@ An expired reservation is settled at its full amount with `kind: 'estimated'` an
 |---|---|
 | [`src/index.ts`](src/index.ts) | Reserve, settle, reconcile, and the derived standing |
 | [`src/schema.ts`](src/schema.ts) | Tables, constraints, and the pragma guards |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -96,3 +95,5 @@ These are current constraints of the contract, not a task backlog.
 The tests open a second connection and write raw SQL for the same reason the audit store's do: the claim is not that the service declines to settle twice, but that the database does.
 
 </details>
+
+**Runtime invariant:** No companion is published: what this ledger must hold (at most one settlement per reservation, a positive reservation, and non-negative token counts) is declared to SQLite as a primary key and CHECK constraints, so a violating write is refused.

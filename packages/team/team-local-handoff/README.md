@@ -55,7 +55,6 @@ The state ties a callback to the pairing page this process served, which is what
 | [`src/index.ts`](src/index.ts) | The three routes, the navigation check, and the state |
 | [`src/paths.ts`](src/paths.ts) | The three fixed addresses |
 | [`src/pages.ts`](src/pages.ts) | The pairing page and the problem page |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -94,3 +93,5 @@ These are current constraints of the contract, not a task backlog.
 The tests use `node:http` rather than `fetch`, because `fetch` overrides `Sec-Fetch-Mode` with its own value: a test using it could never present what a real navigation presents, and these endpoints answer on exactly that header.
 
 </details>
+
+**Runtime invariant:** No companion is published: the package registers three navigation routes; a callback accepted only against the state this process minted, and only once, lives entirely inside a single request handler, where its tests observe it directly.

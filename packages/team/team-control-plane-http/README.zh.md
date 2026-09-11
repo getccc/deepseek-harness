@@ -54,7 +54,6 @@ plugins:
 |---|---|
 | [`src/index.ts`](src/index.ts) | 四条路由、账户认证、请求体解析与拒绝映射 |
 | [`src/protocol.ts`](src/protocol.ts) | 两侧共同导入的路径与协议版本 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件注册 |
 
 -----
 
@@ -93,3 +92,5 @@ plugins:
 这些端点是对着一个真实的设备授权组合而不是桩来测试的，因为值得测的是：一个经 HTTP 到达的请求体，能以接缝所要求的形态抵达接缝。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包注册三条 HTTP 路由，解析请求体后交给设备授权 seam；每个值得检查的关系（code 只用一次、签名可验证、重放即吊销 family）都属于该 seam 及其存储。

@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The `office/` group lets a member say, from the composer, which office deliverable a conversation should produce — a Word document, an Excel workbook, a PowerPoint, or interactive charts — and folds that choice into a prompt section the model reads. It exists because "make me a deck" and "make me a spreadsheet" are the same request until the member names the format, and the format is a per-conversation decision that must survive a resume, a fork, and a second browser. The group owns the vocabulary: the `OfficeKind` a conversation may pick, the `office/kind` Session event that records it, and the fold that recovers it. It owns no document engine — producing the file is the univer office tools' job, and drawing a chart is the web surface's; this group only names the target and, for a PowerPoint, points at the shipped company template.
+The `office/` group lets a member say which office deliverable a conversation should produce — a Word document, an Excel workbook, a PowerPoint, or interactive charts — and folds that choice into a prompt section the model reads. The choice must survive a resume, a fork, and a second browser. The group owns the vocabulary — the `OfficeKind`, the `office/kind` Session event, and the fold that recovers it — and no document engine: producing the file is the office tools' job; this group names the target and, for a PowerPoint, the shipped company template.
 
 ## Table of Contents
 

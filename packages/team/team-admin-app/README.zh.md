@@ -55,7 +55,6 @@ kind: "package-reference"
 | 路径 | 角色 |
 |---|---|
 | [`src/index.ts`](src/index.ts) | 路由、dist 位置与 base 元素 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴随插件注册 |
 
 -----
 
@@ -93,3 +92,5 @@ kind: "package-reference"
 dist 路径通过 `createRequire` 解析，因此无论工作区还是一次安装把构建好的应用放在哪里，本包都能找到。缺少构建产物表现为 404 而不是加载失败，因为这一行不应该让 Control Plane 起不来。
 
 </details>
+
+**运行时不变量：**不发布伴随文件：本包只从一个目录读取文件，不持有状态；请求不会离开该目录是一次路径比较的属性，测试直接观察它。

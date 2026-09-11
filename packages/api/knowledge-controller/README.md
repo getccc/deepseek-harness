@@ -98,3 +98,5 @@ These limits define when the controller is incomplete on its own. They are curre
 None.
 
 </details>
+
+**Runtime invariant:** No companion is published: the controller holds nothing between calls and owns no registry; that a recorded scope names only knowledge bases the member could search when they chose is enforced inside `choose` against a directory read in the same call, and asserted by the package's tests.

@@ -80,7 +80,6 @@ The seam does not know what a month is. A deployment names its periods and asks 
 | [`src/vocabulary.ts`](src/vocabulary.ts) | The refusal and settlement word lists |
 | [`src/brand.ts`](src/brand.ts) | The reservation identity every settlement is idempotent on |
 | [`src/types.ts`](src/types.ts) | Request, reservation, settlement, and usage shapes, types only |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -119,3 +118,5 @@ These are current constraints of the contract, not a task backlog.
 `released` is not an estimate of zero. It is the statement that nothing was spent, and collapsing the two would lose the distinction an invoice reconciliation needs — which is also why an expired reservation is settled rather than released.
 
 </details>
+
+**Runtime invariant:** No companion is published: the package declares an abstract service and two static word lists and mounts nothing; one settlement per reservation, never more than it held, belongs to the provider that keeps the ledger and its tests.

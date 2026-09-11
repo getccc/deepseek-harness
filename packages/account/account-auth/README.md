@@ -68,7 +68,6 @@ That also means the surface above must not add the distinction back: one message
 | Path | Role |
 |---|---|
 | [`src/index.ts`](src/index.ts) | The abstract service, the outcome union, the secret policy, and `WeakSecretError` |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -107,3 +106,5 @@ These are current constraints of the contract, not a task backlog.
 The outcome union is the enforcement point, not documentation: there is no reason field for a caller to leak, so the enumeration property survives a careless UI.
 
 </details>
+
+**Runtime invariant:** No companion is published: the package declares an abstract service and mounts nothing; a failed attempt leaving sign-in state consistent with what the account store recorded belongs to the provider that performs the attempt and its tests.

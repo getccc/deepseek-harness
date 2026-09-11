@@ -64,7 +64,6 @@ The store counts; this provider decides. A wrong secret increments the store's c
 |---|---|
 | [`src/index.ts`](src/index.ts) | The provider, its config, and the lockout policy |
 | [`src/hash.ts`](src/hash.ts) | Derivation, the encoded form, verification, and the rehash test |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion registration |
 
 -----
 
@@ -103,3 +102,5 @@ These are current constraints of this provider, not a task backlog.
 The decoy hash is derived once per process and reused. Deriving it per attempt would double the cost of every real sign-in for no extra property.
 
 </details>
+
+**Runtime invariant:** No companion is published: every relation this provider must hold is between a call and the account store's own rows (a failure increments the counter, a success clears it), and the store is the authority for both; there is no mutable state here for a runtime check to read.
