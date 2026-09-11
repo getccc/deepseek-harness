@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-tool-office` 是模型所见的一次对话办公选择的全部：一个命名要生成文档类型的提示词分节，以及——对 PowerPoint——据以构建的公司模版路径。它不注册工具：模型用环境的脚本写出文件，并用 `present` 声明它，从而列入交付物行与 Sidebar。该分节是 `office/kind` 会话日志的折叠，而编辑器芯片把同一折叠作为 `office` 投影读取，因此选择器与模型绝不冲突。未作选择的会话没有该分节。
+`dsh-tool-office` 是模型所见的一次对话办公选择的全部：一个命名要生成文档类型的提示词分节，对 PowerPoint 还命名据以构建的技能或公司模版。它不注册工具：模型用 Team 部署安装的 univer 办公工具构建文档、导出文件，并用 `present` 声明它，从而列入交付物行与 Sidebar。该分节折叠 `office/kind` 会话日志，而编辑器芯片把同一折叠作为 `office` 投影读取，因此选择器与模型绝不冲突。
 
 ## 目录
 
@@ -28,12 +28,14 @@ kind: "package-reference"
 ```yaml
 - name: '@deepseek-ai/dsh-tool-office'
   config:
+    pptSkill: amec-ppt
     welinkinTemplatePath: /absolute/path/to/company-template.pptx
 ```
 
 | 字段 | 默认 | 含义 |
 |---|---|---|
-| `welinkinTemplatePath` | — | 每个 `ppt` 交付物据以构建的 PowerPoint 模版；缺省则改为让模型去会话技能目录加载模版技能 |
+| `pptSkill` | — | 每个 `ppt` 交付物一开始就要加载的会话目录技能；它掌管模版流程，优先于下面的路径 |
+| `welinkinTemplatePath` | — | 未配置技能时每个 `ppt` 交付物据以构建的 PowerPoint 模版；缺省则改为让模型去会话技能目录加载模版技能 |
 
 无 `office/kind` 事件的日志折叠为 `none`，因此新会话没有分节。成员通过编辑器芯片选择，该选择被记录；分节随后命名该格式。
 
@@ -46,24 +48,30 @@ kind: "package-reference"
 
 #### 模型所见
 
-一个分节 `office:kind`，其文本由会话折叠后的办公选择决定。选择为 `none` 时它整段缺席。每种类型命名要生成的格式；`ppt` 另外携带已配置的模版路径以导入并保留，或在未配置模版时携带从会话技能目录加载模版技能并导入其所指模版的指令；该分节绝不断言模版不存在，也不自行给出配色或品牌名。`chart` 要求每张图表一个 SVG 文件，从 Sidebar 打开。每种产出文件的类型都以同一条交付规则收尾：文件只经 `present` 工具抵达读者，绝不靠写出路径。
+一个分节 `office:kind`，其文本由会话折叠后的办公选择决定。选择为 `none` 时它整段缺席。每种文档类型命名要用 univer 办公工具生成的格式；`ppt` 另外携带要先加载的已配置技能，或已配置的模版路径以导入并保留，或在两者都未配置时携带从会话技能目录加载模版技能并导入其所指模版的指令；该分节绝不断言模版不存在，也不自行给出配色或品牌名。`chart` 要求每张图表一个 SVG 文件，从 Sidebar 打开。每种产出文件的类型都以同一条交付规则收尾：文件只经 `present` 工具抵达读者，绝不靠写出路径。
 
 ##### 选择 Word 或 Excel 类型时
 
 ```markdown
-Produce the deliverable as a Word document (.docx): write the file under the working directory with a script or command available here (python-docx, docx for Node, or a converter such as pandoc), then declare it with the present tool so the reader receives it. Mentioning the path in the reply does not deliver the file; only the present call does.
+Produce the deliverable as a Word document (.docx) with the univer office tools: create or import a .docx Unit, write and lay the document out there, export the finished file under the working directory, then declare it with the present tool so the reader receives it. Mentioning the path in the reply does not deliver the file; only the present call does.
 ```
 
-##### 选择 PowerPoint 类型时
+##### 选择 PowerPoint 类型且配置了技能时
 
 ```markdown
-Produce the deliverable as a PowerPoint presentation (.pptx) built from the company template at <the configured template path>: copy the template into the working directory and edit the copy with a script available here (python-pptx or pptxgenjs), keep its slide masters, layouts, fonts, and brand colours, and replace only the content. Declare the finished file with the present tool. Mentioning the path in the reply does not deliver the file; only the present call does.
+Produce the deliverable as a PowerPoint presentation (.pptx) built from the company template. Before anything else, load the skill named <the configured skill> with the skill tool and follow it: it names the template to import as the starting Unit with the univer office tools and the layouts, colours, and type sizes to keep. Then export the finished file under the working directory, then declare it with the present tool so the reader receives it. Mentioning the path in the reply does not deliver the file; only the present call does.
 ```
 
-##### 选择 PowerPoint 类型且未配置模版时
+##### 选择 PowerPoint 类型且只配置了模版路径时
 
 ```markdown
-Produce the deliverable as a PowerPoint presentation (.pptx) built from the company template. No template path is configured here, so find the template through the session skill catalog: if it lists a PowerPoint template skill, load that skill first, copy the template it names into the working directory, and edit the copy with a script available here (python-pptx or pptxgenjs), keeping its slide masters, layouts, fonts, and brand colours and replacing only the content. If the catalog lists no such skill, say that the company template is not reachable before building a plain .pptx. Declare the finished file with the present tool. Mentioning the path in the reply does not deliver the file; only the present call does.
+Produce the deliverable as a PowerPoint presentation (.pptx) built from the company template at <the configured template path>: import it with the univer office tools as the starting Unit, keep its slide masters, layouts, fonts, and brand colours, and replace only the content. Then export the finished file under the working directory, then declare it with the present tool so the reader receives it. Mentioning the path in the reply does not deliver the file; only the present call does.
+```
+
+##### 选择 PowerPoint 类型且两者都未配置时
+
+```markdown
+Produce the deliverable as a PowerPoint presentation (.pptx) built from the company template, using the univer office tools. No template path is configured here, so find the template through the session skill catalog: if it lists a PowerPoint template skill, load that skill first and import the template it names as the starting Unit, keeping its slide masters, layouts, fonts, and brand colours and replacing only the content. If the catalog lists no such skill, say that the company template is not reachable before building a plain .pptx. Then export the finished file under the working directory, then declare it with the present tool so the reader receives it. Mentioning the path in the reply does not deliver the file; only the present call does.
 ```
 
 ##### 选择可视化类型时
@@ -74,7 +82,7 @@ Produce the deliverable as charts the reader can open from the Sidebar: render e
 
 #### Token effect
 
-选择为 `none` 时没有任何内容。否则是一段简短固定的段落；`ppt` 段落还携带模版路径，且不随对话增长。
+选择为 `none` 时没有任何内容。否则是一段简短固定的段落；`ppt` 段落还携带技能名或模版路径，且不随对话增长。
 
 #### KV Cache effect
 
@@ -84,7 +92,8 @@ Produce the deliverable as charts the reader can open from the Sidebar: render e
 
 <a id="known-limitations-and-deferred-work"></a>
 
-- **分节是指示，不是强制** —— 生成所命名的格式是模型用环境所提供脚本完成的工作，模型仍可能另作选择；分节是引导，而非门禁。
+- **分节是指示，不是强制** —— 生成所命名的格式是模型用部署所安装的 univer 办公工具完成的工作，模型仍可能另作选择；分节是引导，而非门禁。
+- **univer 办公工具是部署依赖** —— 分节点名的工具由安装进 Team profile 的 `dsh-univer-office` 注册；没有该插件的 profile 得到的是其模型无法执行的指令。
 - **图表是静态的** —— 图表类型要求的是从 Sidebar 打开的 SVG 文件，而不是已退役的第三方插件渲染的交互式 ECharts 围栏。
 
 <a id="dev-note"></a>

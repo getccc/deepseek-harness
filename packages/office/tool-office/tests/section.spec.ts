@@ -12,15 +12,32 @@ describe('renderOfficeSection', () => {
     expect(renderOfficeSection({ version: 1, kind: 'none' })).toBe('')
   })
 
-  it('names each ordinary office format', () => {
-    expect(renderOfficeSection({ version: 1, kind: 'word' })).toMatch(/Word document \(\.docx\)/)
-    expect(renderOfficeSection({ version: 1, kind: 'excel' })).toMatch(/Excel workbook \(\.xlsx\)/)
+  it('builds each ordinary office format with the univer office tools', () => {
+    const word = renderOfficeSection({ version: 1, kind: 'word' })
+    expect(word).toMatch(/Word document \(\.docx\) with the univer office tools/)
+    expect(word).toMatch(/create or import a \.docx Unit/)
+    const excel = renderOfficeSection({ version: 1, kind: 'excel' })
+    expect(excel).toMatch(/Excel workbook \(\.xlsx\) with the univer office tools/)
+    expect(excel).toMatch(/real cell values and formulas/)
+    for (const text of [word, excel]) {
+      expect(text).toMatch(/export the finished file under the working directory, then declare it with the present tool/)
+    }
   })
 
   it('builds every deck from the configured template, with no second PowerPoint kind to pick', () => {
-    const text = renderOfficeSection({ version: 1, kind: 'ppt' }, '/opt/welinkin/welinkin-ppt.pptx')
+    const text = renderOfficeSection({ version: 1, kind: 'ppt' }, { welinkinTemplatePath: '/opt/welinkin/welinkin-ppt.pptx' })
     expect(text).toContain('/opt/welinkin/welinkin-ppt.pptx')
+    expect(text).toMatch(/import it with the univer office tools as the starting Unit/)
     expect(text).toMatch(/keep its slide masters, layouts, fonts, and brand colours/)
+    expect(text).not.toMatch(/skill tool/)
+  })
+
+  it('starts every deck from the configured skill, which outranks the template path', () => {
+    const text = renderOfficeSection({ version: 1, kind: 'ppt' }, { pptSkill: 'amec-ppt', welinkinTemplatePath: '/opt/welinkin/welinkin-ppt.pptx' })
+    expect(text).toMatch(/Before anything else, load the skill named amec-ppt with the skill tool and follow it/)
+    expect(text).toMatch(/univer office tools/)
+    expect(text).not.toContain('/opt/welinkin/welinkin-ppt.pptx')
+    expect(text).toMatch(/only the present call does\.$/)
   })
 
   it('asks for SVG chart files declared through the present tool for the chart kind', () => {
@@ -32,15 +49,16 @@ describe('renderOfficeSection', () => {
 
   it('ends every file-producing kind with the present-tool delivery rule', () => {
     for (const kind of ['word', 'excel', 'ppt', 'chart'] as const) {
-      const text = renderOfficeSection({ version: 1, kind }, kind === 'ppt' ? '/opt/welinkin/welinkin-ppt.pptx' : undefined)
+      const text = renderOfficeSection({ version: 1, kind }, kind === 'ppt' ? { welinkinTemplatePath: '/opt/welinkin/welinkin-ppt.pptx' } : {})
       expect(text).toMatch(/present tool/)
       expect(text).toMatch(/only the present call does\.$/)
     }
     expect(renderOfficeSection({ version: 1, kind: 'ppt' })).toMatch(/only the present call does\.$/)
   })
 
-  it('sends the model to a template skill when no template path is configured', () => {
+  it('sends the model to a template skill when neither a skill nor a template path is configured', () => {
     const text = renderOfficeSection({ version: 1, kind: 'ppt' })
+    expect(text).toMatch(/using the univer office tools/)
     expect(text).toMatch(/No template path is configured here/)
     expect(text).toMatch(/PowerPoint template skill, load that skill first/)
     expect(text).toMatch(/keeping its slide masters, layouts, fonts, and brand colours/)
@@ -102,6 +120,13 @@ describe('apply', () => {
     apply(ctx, {})
     const events = [{ type: 'office/kind', data: { version: 1, kind: 'ppt' } }] as unknown as SessionEvent[]
     expect(sections[0]!.text({ agent: { session: { snapshotEvents: () => events } } })).toMatch(/PowerPoint template skill/)
+  })
+
+  it('names the configured skill for every deck', () => {
+    const { ctx, sections } = fakeCtx()
+    apply(ctx, { pptSkill: 'amec-ppt' })
+    const events = [{ type: 'office/kind', data: { version: 1, kind: 'ppt' } }] as unknown as SessionEvent[]
+    expect(sections[0]!.text({ agent: { session: { snapshotEvents: () => events } } })).toMatch(/load the skill named amec-ppt/)
   })
 
   it('reads a retired kind out of both the section and the projection', () => {

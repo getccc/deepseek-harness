@@ -10,6 +10,8 @@ Status: implemented
 
 ## 决策
 
+本决策中点名工具的那一半已被[办公交付物回到 univer 工具](2026-09-11-office-deliverables-return-to-the-univer-tools.zh.md)取代；下面的交付规则照旧。
+
 分节命名格式与交付方式，而不是产出它的工具。Word、Excel 与 PowerPoint 类型要求在工作目录下用环境提供的脚本写出文件（python-docx、openpyxl、python-pptx、它们的 Node 对应物或转换器），PowerPoint 类型仍从公司模板开始——复制模板并编辑副本，而每种产出文件的类型都以同一句收尾：写出路径不等于交付文件，只有 `present` 调用才算。图表类型要求每张图表一个 SVG 文件，以同样方式声明，因为 Sidebar 预览图片，而再没有什么会渲染 `echarts` 围栏。
 
 ## 考虑过的替代方案

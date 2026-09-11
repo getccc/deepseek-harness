@@ -10,6 +10,8 @@ The office prompt section told the model to build every document with "the unive
 
 ## Decision
 
+The tool-naming half of this decision is superseded by [office deliverables return to the univer tools](2026-09-11-office-deliverables-return-to-the-univer-tools.md); the delivery rule below stands.
+
 The section names the format and the delivery, not a tool that produces it. Word, Excel, and PowerPoint kinds ask for a file written under the working directory with whatever scripts the environment offers (python-docx, openpyxl, python-pptx, their Node counterparts, or a converter), the PowerPoint kinds still start from the company template by copying it and editing the copy, and every file-producing kind ends with the same sentence: mentioning the path does not deliver the file; only the `present` call does. The chart kind asks for one SVG file per chart, declared the same way, because the Sidebar previews images and nothing renders an `echarts` fence any more.
 
 ## Alternatives considered
