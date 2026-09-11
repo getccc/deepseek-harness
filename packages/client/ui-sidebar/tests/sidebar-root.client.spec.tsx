@@ -105,7 +105,7 @@ describe('SidebarRoot shell', () => {
     expect(b.toggleSidebar).toHaveBeenCalledOnce()
   })
 
-  it('renders generic brand fallbacks when no package fills the slots', () => {
+  it('renders the product name alone when no package fills the brand slots', () => {
     vi.stubEnv('DSH_CLIENT_COMMIT_HASH', '0123456')
     vi.stubEnv('DSH_CLIENT_GIT_DIRTY', 'true')
     vi.stubEnv('DSH_CLIENT_VERSION', '1.2.3-rc.4')
@@ -119,42 +119,9 @@ describe('SidebarRoot shell', () => {
         options?.fallback ?? null) as SidebarRootComponentProps['renderSlot']}
     />)
 
-    expect(screen.getByText('Welinkin Work')).toBeTruthy()
-    expect(screen.getByText('1.2.3-rc.4-0123456-dirty')).toBeTruthy()
+    const [brand] = screen.getAllByRole('button', { name: 'New session' })
+    expect(brand?.textContent).toBe('Welinkin Work')
     expect(container.querySelector('img')).not.toBeNull()
-  })
-
-  it.each([
-    [{ DSH_CLIENT_VERSION: '1.2.3' }, '1.2.3'],
-    [{ DSH_CLIENT_COMMIT_HASH: 'abcdef0', DSH_CLIENT_VERSION: '1.2.3' }, '1.2.3-abcdef0'],
-  ])('omits unavailable build-version suffixes from %j', (environment, expected) => {
-    for (const [name, value] of Object.entries(environment)) vi.stubEnv(name, value)
-    render(<SidebarRoot
-      collapsed={false} width={300}
-      useSessions={neverHook} useSessionPendingInteraction={useSessionPendingInteraction}
-      usePanelInfo={usePanelInfo} selectPanel={() => {}} usePanels={selector => selector([])}
-      useResource={useResource} useWorkspaces={neverHook}
-      startSession={vi.fn()} toggleSidebar={vi.fn()} t={t}
-      renderSlot={((_key: string, _owner: unknown, options?: { fallback?: ReactNode }) =>
-        options?.fallback ?? null) as SidebarRootComponentProps['renderSlot']}
-    />)
-
-    expect(screen.getByText('Welinkin Work')).toBeTruthy()
-    expect(screen.getByText(expected)).toBeTruthy()
-  })
-
-  it('retains the local-build fallback without complete build metadata', () => {
-    render(<SidebarRoot
-      collapsed={false} width={300}
-      useSessions={neverHook} useSessionPendingInteraction={useSessionPendingInteraction}
-      usePanelInfo={usePanelInfo} selectPanel={() => {}} usePanels={selector => selector([])}
-      useResource={useResource} useWorkspaces={neverHook}
-      startSession={vi.fn()} toggleSidebar={vi.fn()} t={t}
-      renderSlot={((_key: string, _owner: unknown, options?: { fallback?: ReactNode }) =>
-        options?.fallback ?? null) as SidebarRootComponentProps['renderSlot']}
-    />)
-
-    expect(screen.getByText('Welinkin Work')).toBeTruthy()
   })
 
   it('hands the region its wide flag and clamps expandSidebar to the collapsed state', () => {
