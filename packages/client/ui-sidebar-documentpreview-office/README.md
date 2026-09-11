@@ -34,13 +34,14 @@ Mount it beside `dsh-client-ui-sidebar-documentpreview` in a browser composition
 <details>
 <summary>Implementation internals — click to expand</summary>
 
-The plugin owns no tab, file read, or toolbar. The document owner reads the file's complete bytes and seats the body whose registration claims the suffix; each body renders those bytes into a container it owns and clears on unmount, with a loading line before and a retry line after a failure. Word goes through `docx-preview`, which lays out pages as HTML with images inlined as data URLs; the body scales the pages to the pane's width until the reader moves the zoom slider or Alt + wheel, and a fit-width button returns to following the pane. Excel goes through SheetJS: the workbook is parsed once, one worksheet renders at a time as a grid with Excel's column letters, row numbers, column widths, and merged cells, and a sheet beyond 2,000 rows or 200 columns is cut there and says so. PowerPoint goes through `pptx-renderer`, which draws the deck as one scrolling list fitted to the stage under the recommended zip limits, with previous and next controls and, on a stage at least 380 px wide, a rail of slide previews drawn as they come into view; the viewer is destroyed with the tab.
+The plugin owns no tab, file read, or toolbar. The document owner reads the file's complete bytes and seats the body whose registration claims the suffix; each body renders those bytes into a container it owns and clears on unmount, with a loading line before and a retry line after a failure. Word goes through `docx-preview`, which lays out pages as HTML with images inlined as data URLs; the body scales the pages to the pane's width until the reader moves the zoom slider or Alt + wheel, and a fit-width button returns to following the pane. Excel goes through SheetJS and Univer: SheetJS parses the workbook, the body folds it into a Univer workbook snapshot (cells with their types, formulas, and formatted text; merges; column widths, row heights, and hidden rows and columns), and Univer's sheets preset draws it as a spreadsheet with its own worksheet tabs, gridlines, and formula bar in the document's language; the instance is disposed with the tab. PowerPoint goes through `pptx-renderer`, which draws the deck as one scrolling list fitted to the stage under the recommended zip limits, with previous and next controls and, on a stage at least 380 px wide, a rail of slide previews drawn as they come into view; the viewer is destroyed with the tab.
 
 | File | Role |
 |---|---|
 | [`src/client/index.ts`](src/client/index.ts) | Registers the dictionary, the three renderer definitions, and the keyed bodies |
 | [`src/client/office/DocxBody.tsx`](src/client/office/DocxBody.tsx) | Word pages through `docx-preview` |
-| [`src/client/office/SheetBody.tsx`](src/client/office/SheetBody.tsx) | Workbook parsing, worksheet tabs, and the bounded table |
+| [`src/client/office/SheetBody.tsx`](src/client/office/SheetBody.tsx) | Workbook parsing and the Univer instance's lifetime |
+| [`src/client/office/xlsx-to-univer.ts`](src/client/office/xlsx-to-univer.ts) | The SheetJS workbook folded into a Univer workbook snapshot |
 | [`src/client/office/PptxBody.tsx`](src/client/office/PptxBody.tsx) | Slide list through `pptx-renderer` with navigation and refit, destroyed with the tab |
 | [`src/client/office/PptxRail.tsx`](src/client/office/PptxRail.tsx) | Slide previews drawn while near the rail's viewport |
 | [`src/client/office/Status.tsx`](src/client/office/Status.tsx) | Loading, failure with retry, and unsupported-content lines |
@@ -63,10 +64,10 @@ None; file bytes travel over the Remote and assemble no model request.
 <a id="known-limitations-and-deferred-work"></a>
 
 - **Reading only** — the bodies present a document; editing stays with the desktop application the file card opens.
-- **Excel shows values** — formulas render as their cached results; column widths, merges, hidden columns, and number formats are honoured, while fonts, fills, borders, frozen panes, and charts are not drawn, and a worksheet beyond 2,000 rows or 200 columns is cut at that bound with a notice.
+- **Excel is read-only and carries no styles** — Univer opens the workbook with its editing chrome, but nothing writes back to the file; cell fonts, fills, and borders are not folded into the snapshot, so cells keep their values, formulas, number formats, merges, and sizes only.
 - **PowerPoint fidelity is the renderer's** — SmartArt and EMF fallbacks that need PDF.js are not bundled, so those elements render as the library's placeholders.
 - **Legacy binary formats** — `.doc` and `.ppt` are not claimed; `.xls` is read by SheetJS.
-- **One bundle, loaded at boot** — the three renderers and their libraries ship in one client bundle of about 3.5 MB that the Team composition loads with the page.
+- **One bundle, loaded at boot** — the three renderers and their libraries, Univer's sheets preset included, ship in one client bundle of about 21 MB that the Team composition loads with the page.
 
 <a id="dev-note"></a>
 ### Dev Note
@@ -74,7 +75,7 @@ None; file bytes travel over the Remote and assemble no model request.
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-The renderer libraries (`docx-preview`, `xlsx`, `@aiden0z/pptx-renderer` with its `echarts` and `jszip`) are inlined into `lib/client.js` by the shared client bundle preset; their Apache-2.0 notices reach `THIRD_PARTY_NOTICES.md` through `gen-third-party-notices`. `SheetBody` keeps the parsed workbook in component state and folds only the selected sheet, so switching sheets never re-reads the bytes. The PowerPoint body copies the bytes into a standalone `ArrayBuffer` before opening, because the viewer takes ownership of the buffer it receives; the renderer sizes each slide to its scroller's `clientWidth`, so the stage, not the scroller, carries the inset around the deck. Each body takes the shared document body's whole height and reports its own scroller through `scrollportRef`, which keeps the Word zoom bar and the PowerPoint toolbar pinned while the pages or slides scroll.
+The renderer libraries (`docx-preview`, `xlsx`, `@univerjs/presets` with its sheets preset, `@aiden0z/pptx-renderer` with its `echarts` and `jszip`) are inlined into `lib/client.js` by the shared client bundle preset; their Apache-2.0 notices reach `THIRD_PARTY_NOTICES.md` through `gen-third-party-notices`. The sheets preset's stylesheet is inlined as text by a resolver in `tsdown.config.ts`, because the preset's own inline loader reads stylesheets relative to the importer, and mounted by an effect in `apply`, so it leaves with the plugin; Univer reads the document's language from `<html lang>`, which the locale runtime keeps current. The PowerPoint body copies the bytes into a standalone `ArrayBuffer` before opening, because the viewer takes ownership of the buffer it receives; the renderer sizes each slide to its scroller's `clientWidth`, so the stage, not the scroller, carries the inset around the deck. Each body takes the shared document body's whole height and reports its own scroller through `scrollportRef`, which keeps the Word zoom bar and the PowerPoint toolbar pinned while the pages or slides scroll.
 
 </details>
 

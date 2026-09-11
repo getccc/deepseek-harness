@@ -1,119 +1,28 @@
-/* The grid scrolls on its own so the row and column headers can stick to the
-   pane's edges; the section takes the shared body's whole height. */
+/* Univer sizes its canvas to the host, so the section takes the shared body's
+   whole height and the host fills it; the overlay covers the host while the
+   workbook loads or after it fails. */
 .body {
-  display: flex;
-  flex-direction: column;
+  position: relative;
   box-sizing: border-box;
   height: 100%;
+  overflow: hidden;
   font-family: var(--dsw-font-family, sans-serif);
   white-space: normal;
-}
-
-.tabs {
-  display: flex;
-  flex: none;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--dsw-alias-border-l2);
-}
-
-.tab {
-  padding: 2px 10px;
-  color: var(--dsw-alias-label-secondary);
-  font-size: 12px;
-  font-family: inherit;
-  background: transparent;
-  border: 1px solid var(--dsw-alias-border-l2);
-  border-radius: 12px;
-  cursor: pointer;
-}
-
-.tab.active {
-  color: var(--dsw-alias-label-primary);
-  background: var(--dsw-alias-interactive-bg-hover);
-  border-color: var(--dsw-alias-label-primary);
-}
-
-.scroll {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: auto;
-  background: var(--dsw-alias-bg-layer-1);
-}
-
-/* Separate borders keep the sticky headers whole; each cell draws its own
-   right and bottom gridline, so the sheet reads as Excel's grid. Fixed layout
-   makes the colgroup widths the column widths. */
-.table {
-  border-spacing: 0;
-  border-collapse: separate;
-  table-layout: fixed;
-  color: var(--dsw-alias-label-primary);
-  font-size: var(--dsh-content-font-size-secondary);
-  font-family: inherit;
-  font-variant-numeric: tabular-nums;
   background: var(--dsw-alias-bg-base);
 }
 
-.rowHeaderColumn {
-  width: 44px;
+.host,
+.mount {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
 }
 
-.header,
-.cell {
-  box-sizing: border-box;
-  height: 22px;
-  padding: 1px 4px;
-  overflow: hidden;
-  line-height: 20px;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  border-right: 1px solid var(--dsw-alias-border-l2);
-  border-bottom: 1px solid var(--dsw-alias-border-l2);
-}
-
-.header {
-  position: sticky;
-  color: var(--dsw-alias-label-secondary);
-  font-weight: 400;
-  text-align: center;
-  background: var(--dsw-alias-bg-layer-2);
-}
-
-.columnHeader {
-  top: 0;
+.overlay {
+  position: absolute;
+  inset: 0;
   z-index: 2;
-}
-
-.rowHeader {
-  left: 0;
-  z-index: 1;
-}
-
-.corner {
-  top: 0;
-  left: 0;
-  z-index: 3;
-}
-
-.cell {
-  text-align: left;
-}
-
-.numeric {
-  text-align: right;
-}
-
-.empty,
-.notice {
-  flex: none;
-  margin: 16px;
-  color: var(--dsw-alias-label-secondary);
-  font-size: 13px;
-}
-
-.notice {
-  margin: 8px 12px;
-  font-size: 12px;
+  display: flex;
+  background: var(--dsw-alias-bg-layer-1);
 }

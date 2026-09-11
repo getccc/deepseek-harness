@@ -1,4 +1,5 @@
-/** Office metadata, keyed bodies, dictionary, and disposal registration. */
+// @vitest-environment jsdom
+/** Office metadata, keyed bodies, dictionary, stylesheet, and disposal registration. */
 import { Context } from '@deepseek-ai/cordis'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { DocumentPreviewDefinition } from '@deepseek-ai/dsh-client-ui-sidebar-documentpreview/client'
@@ -59,6 +60,8 @@ describe('office registration', () => {
     const fiber = ctx.plugin({ apply })
     dispose = async () => { await fiber.dispose() }
     await fiber.await()
+    const stylesheet = document.head.querySelector('style[data-plugin-css="@deepseek-ai/dsh-client-ui-sidebar-documentpreview-office/univer-sheets.css"]')
+    expect(stylesheet?.textContent).toEqual(expect.any(String))
     expect([...definitions.keys()]).toEqual([DOCX_BODY_ID, SHEET_BODY_ID, PPTX_BODY_ID])
     expect(definitions.get(SHEET_BODY_ID)?.title()).toBe(en['title.xlsx'])
     expect(dictionaries.get('sidebarOffice')).toEqual({ zh, en })
@@ -68,6 +71,7 @@ describe('office registration', () => {
       [{ name: 'sidebar.right.tab.document', key: PPTX_BODY_ID, locale: 'sidebarOffice' }, PptxBody],
     ])
     await dispose()
+    expect(document.head.querySelector('style[data-plugin-css]')).toBeNull()
     expect(definitions.size).toBe(0)
     expect(bodies.size).toBe(0)
     expect(dictionaries.size).toBe(0)

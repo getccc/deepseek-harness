@@ -1,8 +1,8 @@
 /**
  * Office documents opened from Files render in the right Sidebar through the
  * Team-only renderers, mounted here over the shipped web composition by an
- * overlay: Word pages through docx-preview and an Excel workbook as a table
- * with worksheet tabs.
+ * overlay: Word pages through docx-preview and an Excel workbook as a Univer
+ * spreadsheet with its worksheet tabs.
  */
 import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -81,9 +81,11 @@ describe.skipIf(MODE === 'record')('web e2e: office documents in the Sidebar', (
 
     await openFile('totals.xlsx')
     const sheet = preview.locator('[data-office-preview="xlsx"]')
-    await sheet.getByRole('cell', { name: 'OFFICE_XLSX_CELL' }).waitFor({ timeout: 15_000 })
-    await sheet.getByRole('tab', { name: 'Notes' }).click()
-    await sheet.getByRole('cell', { name: 'OFFICE_XLSX_SECOND' }).waitFor({ timeout: 5_000 })
+    // Univer paints the cells on a canvas; the worksheet tabs are the DOM it exposes.
+    await sheet.locator('canvas').first().waitFor({ timeout: 15_000 })
+    await sheet.getByText('Totals', { exact: true }).waitFor({ timeout: 5_000 })
+    await sheet.getByText('Notes', { exact: true }).click()
+    expect(await sheet.locator('[data-document-loading]').count()).toBe(0)
     expect(tripwire.pageErrors).toEqual([])
   }, 90_000)
 })

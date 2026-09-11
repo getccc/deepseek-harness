@@ -20,13 +20,17 @@ import { DocxBody } from './office/DocxBody.tsx'
 import { PptxBody } from './office/PptxBody.tsx'
 import { SheetBody } from './office/SheetBody.tsx'
 import { en, zh, type OfficePreviewKey } from './locales.ts'
+// The sheets preset's stylesheet as text; the build inlines the file from the package.
+import univerSheetsStyles from '@univerjs/preset-sheets-core/lib/index.css?inline'
 
 export type { OfficePreviewKey } from './locales.ts'
 export type { OfficeBodyProps } from './office/body.ts'
-export { SHEET_DISPLAY_LIMITS, sheetGrid } from './office/SheetBody.tsx'
 
 /** Dictionary namespace owned by this plugin. */
 const NS = 'sidebarOffice'
+
+/** This plugin's package name, which tags the stylesheet it mounts. */
+const PLUGIN_ID = '@deepseek-ai/dsh-client-ui-sidebar-documentpreview-office'
 
 /** Word implementation identity, shared by metadata and the keyed slot. */
 export const DOCX_BODY_ID = '@deepseek-ai/dsh-client-ui-sidebar-documentpreview-office/docx'
@@ -67,6 +71,18 @@ export const inject = ['locale', 'slots', 'documentPreviews']
 export function apply(ctx: Context): void {
   const t = ctx.locale.bind(NS)
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'document-office: dictionaries')
+  // Univer draws the spreadsheet into DOM its stylesheet lays out; the sheet
+  // lives exactly as long as the plugin, like the theme's global sheets.
+  if (typeof document !== 'undefined') {
+    ctx.effect(() => {
+      const tag = document.createElement('style')
+      tag.dataset.plugin = PLUGIN_ID
+      tag.dataset.pluginCss = `${PLUGIN_ID}/univer-sheets.css`
+      tag.textContent = univerSheetsStyles
+      document.head.appendChild(tag)
+      return () => { tag.remove() }
+    }, 'document-office: univer sheets stylesheet')
+  }
   const bodies = [[DOCX_BODY_ID, DocxBody], [SHEET_BODY_ID, SheetBody], [PPTX_BODY_ID, PptxBody]] as const
   for (const definition of officeBodyDefinitions(t)) {
     ctx.effect(() => ctx.documentPreviews.register(definition), `document-office: ${definition.id} metadata`)

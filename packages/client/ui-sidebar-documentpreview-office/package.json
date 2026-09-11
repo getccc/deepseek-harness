@@ -68,6 +68,9 @@
   ],
   "dependencies": {
     "@aiden0z/pptx-renderer": "^1.2.4",
+    "@univerjs/core": "0.25.1",
+    "@univerjs/preset-sheets-core": "0.25.1",
+    "@univerjs/presets": "0.25.1",
     "clsx": "^2.1.1",
     "docx-preview": "^0.4.0",
     "xlsx": "^0.18.5"

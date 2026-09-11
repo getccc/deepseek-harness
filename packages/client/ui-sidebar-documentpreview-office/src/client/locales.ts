@@ -16,9 +16,6 @@ export const zh = {
   'pptx.position': '{current} / {total}',
   'pptx.rail': '幻灯片缩略图',
   'pptx.slide': '第 {index} 页',
-  'sheet.tabs': '工作表',
-  'sheet.empty': '这张工作表没有内容。',
-  'sheet.truncated': '仅显示前 {rows} 行、前 {columns} 列。',
 } satisfies Record<string, string>
 
 /** Office renderer dictionary keys. */
@@ -42,9 +39,6 @@ export const en = {
   'pptx.position': '{current} / {total}',
   'pptx.rail': 'Slide thumbnails',
   'pptx.slide': 'Slide {index}',
-  'sheet.tabs': 'Worksheets',
-  'sheet.empty': 'This worksheet is empty.',
-  'sheet.truncated': 'Showing the first {rows} rows and {columns} columns.',
 } satisfies Record<OfficePreviewKey, string>
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
