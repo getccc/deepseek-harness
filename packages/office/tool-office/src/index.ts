@@ -106,7 +106,9 @@ export function renderOfficeSection(choice: OfficeChoice, route: PowerPointRoute
         ? `Produce the deliverable as a PowerPoint presentation (.pptx) built from the company template, using the univer office tools. No template path is configured here, so find the template through the session skill catalog: if it lists a PowerPoint template skill, load that skill first and import the template it names as the starting Unit, keeping its slide masters, layouts, fonts, and brand colours and replacing only the content. If the catalog lists no such skill, say that the company template is not reachable before building a plain .pptx. Then ${EXPORT}${DELIVERY}`
         : `Produce the deliverable as a PowerPoint presentation (.pptx) built from the company template at ${route.welinkinTemplatePath}: import it with the univer office tools as the starting Unit, keep its slide masters, layouts, fonts, and brand colours, and replace only the content. Then ${EXPORT}${DELIVERY}`
     case 'chart':
-      return `Produce the deliverable as charts the reader can open from the Sidebar: render each chart to its own SVG file under the working directory with a script available here (matplotlib, plotly's static export, or hand-written SVG for simple charts), with the data embedded, axis labels, and a legend, then declare every file with the present tool. Keep the explanation in prose; do not paste chart markup or data tables into the reply.${DELIVERY}`
+      // The fences are drawn by the ECharts plugin the Team deployment installs;
+      // nothing is written to disk, so the delivery rule does not apply.
+      return 'Produce the deliverable as interactive charts in the answer itself. Write one fenced code block per chart whose info string is exactly `echarts`, holding nothing but a strict-JSON Apache ECharts option: double-quoted keys and strings, no comments, no trailing commas, and no JavaScript functions, expressions, `renderItem`, or event handlers. String formatters such as "{value}%" are supported. Keep the explanation in prose outside the fence.'
   }
 }
 

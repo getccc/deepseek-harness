@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-11-office-deliverables-return-to-the-univer-tools.md
-2026-09-11-office-deliverables-return-to-the-univer-tools.md: e339ef963866815fc317e386c7fded95ef8809b1
-2026-09-11-office-deliverables-return-to-the-univer-tools.zh.md: 531c2e263928d178fcdb26d957656cabc253e0e9
+2026-09-11-office-deliverables-return-to-the-univer-tools.md: 211aa59fcfdad7ebe2d393d86ff3e31ef5af4f34
+2026-09-11-office-deliverables-return-to-the-univer-tools.zh.md: 6dd1804b51e1a0a8333ea64edaaaf91c9aa9d3a4

@@ -48,7 +48,7 @@ A log with no `office/kind` event folds to `none`, so a fresh Session gets no se
 
 #### What the model sees
 
-One section, `office:kind`, whose text is chosen by the Session's folded office choice. It is absent entirely while the choice is `none`. Each document kind names the format to produce with the univer office tools; `ppt` additionally carries the configured skill to load first, or the configured template path to import and preserve, or, when neither is configured, the instruction to load a template skill from the session catalog and import the template it names; the section never asserts that no template exists, and it names neither a palette nor a brand of its own. `chart` asks for one SVG file per chart, opened from the Sidebar. Every file-producing kind ends with the same delivery rule: the file reaches the reader only through the `present` tool, never by naming its path.
+One section, `office:kind`, whose text is chosen by the Session's folded office choice. It is absent entirely while the choice is `none`. Each document kind names the format to produce with the univer office tools; `ppt` additionally carries the configured skill to load first, or the configured template path to import and preserve, or, when neither is configured, the instruction to load a template skill from the session catalog and import the template it names; the section never asserts that no template exists, and it names neither a palette nor a brand of its own. `chart` asks for one strict-JSON `echarts` fence per chart in the answer, which the ECharts plugin the Team deployment installs draws in place. Every file-producing kind ends with the same delivery rule: the file reaches the reader only through the `present` tool, never by naming its path.
 
 ##### With the Word or Excel kind chosen
 
@@ -77,7 +77,7 @@ Produce the deliverable as a PowerPoint presentation (.pptx) built from the comp
 ##### With the visualization kind chosen
 
 ```markdown
-Produce the deliverable as charts the reader can open from the Sidebar: render each chart to its own SVG file under the working directory with a script available here (matplotlib, plotly's static export, or hand-written SVG for simple charts), with the data embedded, axis labels, and a legend, then declare every file with the present tool. Keep the explanation in prose; do not paste chart markup or data tables into the reply. Mentioning the path in the reply does not deliver the file; only the present call does.
+Produce the deliverable as interactive charts in the answer itself. Write one fenced code block per chart whose info string is exactly `echarts`, holding nothing but a strict-JSON Apache ECharts option: double-quoted keys and strings, no comments, no trailing commas, and no JavaScript functions, expressions, `renderItem`, or event handlers. String formatters such as "{value}%" are supported. Keep the explanation in prose outside the fence.
 ```
 
 #### Token effect
@@ -94,7 +94,7 @@ Prefix-stable while the choice is unchanged. Choosing a kind, changing it, or cl
 
 - **The section instructs; it does not enforce** — producing the named format is the model's work with the univer office tools the deployment installs, and a model may still choose otherwise; the section is guidance, not a gate.
 - **The univer office tools are a deployment dependency** — the section names tools that `dsh-univer-office`, installed into the Team profile, registers; a profile without that plugin gets instructions its model cannot follow.
-- **Charts are static** — the chart kind asks for SVG files opened from the Sidebar, not the interactive ECharts fences the retired third-party plugin rendered.
+- **Charts need the ECharts plugin** — the chart kind asks for `echarts` fences that `@dsh-external/dsh-echarts`, installed into the Team profile, renders; a profile without it shows the fence as code.
 
 <a id="dev-note"></a>
 ### Dev Note

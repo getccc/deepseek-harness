@@ -40,15 +40,15 @@ describe('renderOfficeSection', () => {
     expect(text).toMatch(/only the present call does\.$/)
   })
 
-  it('asks for SVG chart files declared through the present tool for the chart kind', () => {
+  it('asks for strict-JSON echarts fences in the answer for the chart kind', () => {
     const text = renderOfficeSection({ version: 1, kind: 'chart' })
-    expect(text).toMatch(/SVG file under the working directory/)
-    expect(text).toMatch(/declare every file with the present tool/)
-    expect(text).not.toMatch(/echarts/)
+    expect(text).toMatch(/info string is exactly `echarts`/)
+    expect(text).toMatch(/strict-JSON Apache ECharts option/)
+    expect(text).not.toMatch(/present tool/)
   })
 
   it('ends every file-producing kind with the present-tool delivery rule', () => {
-    for (const kind of ['word', 'excel', 'ppt', 'chart'] as const) {
+    for (const kind of ['word', 'excel', 'ppt'] as const) {
       const text = renderOfficeSection({ version: 1, kind }, kind === 'ppt' ? { welinkinTemplatePath: '/opt/welinkin/welinkin-ppt.pptx' } : {})
       expect(text).toMatch(/present tool/)
       expect(text).toMatch(/only the present call does\.$/)

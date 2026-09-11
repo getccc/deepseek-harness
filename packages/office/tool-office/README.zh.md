@@ -48,7 +48,7 @@ kind: "package-reference"
 
 #### 模型所见
 
-一个分节 `office:kind`，其文本由会话折叠后的办公选择决定。选择为 `none` 时它整段缺席。每种文档类型命名要用 univer 办公工具生成的格式；`ppt` 另外携带要先加载的已配置技能，或已配置的模版路径以导入并保留，或在两者都未配置时携带从会话技能目录加载模版技能并导入其所指模版的指令；该分节绝不断言模版不存在，也不自行给出配色或品牌名。`chart` 要求每张图表一个 SVG 文件，从 Sidebar 打开。每种产出文件的类型都以同一条交付规则收尾：文件只经 `present` 工具抵达读者，绝不靠写出路径。
+一个分节 `office:kind`，其文本由会话折叠后的办公选择决定。选择为 `none` 时它整段缺席。每种文档类型命名要用 univer 办公工具生成的格式；`ppt` 另外携带要先加载的已配置技能，或已配置的模版路径以导入并保留，或在两者都未配置时携带从会话技能目录加载模版技能并导入其所指模版的指令；该分节绝不断言模版不存在，也不自行给出配色或品牌名。`chart` 要求回答里每张图表一个严格 JSON 的 `echarts` 围栏，由 Team 部署安装的 ECharts 插件就地绘制。每种产出文件的类型都以同一条交付规则收尾：文件只经 `present` 工具抵达读者，绝不靠写出路径。
 
 ##### 选择 Word 或 Excel 类型时
 
@@ -77,7 +77,7 @@ Produce the deliverable as a PowerPoint presentation (.pptx) built from the comp
 ##### 选择可视化类型时
 
 ```markdown
-Produce the deliverable as charts the reader can open from the Sidebar: render each chart to its own SVG file under the working directory with a script available here (matplotlib, plotly's static export, or hand-written SVG for simple charts), with the data embedded, axis labels, and a legend, then declare every file with the present tool. Keep the explanation in prose; do not paste chart markup or data tables into the reply. Mentioning the path in the reply does not deliver the file; only the present call does.
+Produce the deliverable as interactive charts in the answer itself. Write one fenced code block per chart whose info string is exactly `echarts`, holding nothing but a strict-JSON Apache ECharts option: double-quoted keys and strings, no comments, no trailing commas, and no JavaScript functions, expressions, `renderItem`, or event handlers. String formatters such as "{value}%" are supported. Keep the explanation in prose outside the fence.
 ```
 
 #### Token effect
@@ -94,7 +94,7 @@ Produce the deliverable as charts the reader can open from the Sidebar: render e
 
 - **分节是指示，不是强制** —— 生成所命名的格式是模型用部署所安装的 univer 办公工具完成的工作，模型仍可能另作选择；分节是引导，而非门禁。
 - **univer 办公工具是部署依赖** —— 分节点名的工具由安装进 Team profile 的 `dsh-univer-office` 注册；没有该插件的 profile 得到的是其模型无法执行的指令。
-- **图表是静态的** —— 图表类型要求的是从 Sidebar 打开的 SVG 文件，而不是已退役的第三方插件渲染的交互式 ECharts 围栏。
+- **图表需要 ECharts 插件** —— 图表类型要求的 `echarts` 围栏由安装进 Team profile 的 `@dsh-external/dsh-echarts` 渲染；没有它的 profile 只会把围栏显示为代码。
 
 <a id="dev-note"></a>
 ### 开发备注
