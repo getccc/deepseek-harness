@@ -66,7 +66,11 @@ function worksheetSnapshot(sheet: WorkSheet, name: string, id: string): Partial<
   }
 }
 
-/** A cell's typed value and formula; text keeps the formatted form Excel showed. */
+/**
+ * A cell's typed value and formula; text keeps the formatted form Excel showed.
+ * @param cell - one SheetJS cell.
+ * @returns the cell's Univer value type and value, plus its formula when it has one.
+ */
 export function cellSnapshot(cell: CellObject): ICellData {
   const out: ICellData = {}
   switch (cell.t) {
@@ -90,7 +94,11 @@ export function cellSnapshot(cell: CellObject): ICellData {
   return out
 }
 
-/** Column widths and hidden columns, sparse by index; a width comes from px when the file gives them, else from characters. */
+/**
+ * Column widths and hidden columns, sparse by index; a width comes from px when the file gives them, else from characters.
+ * @param columns - the sheet's `!cols` entries, when it has any.
+ * @returns column data keyed by column index.
+ */
 export function columnSnapshots(columns: readonly ColInfo[] | undefined): Record<number, Partial<IColumnData>> {
   const out: Record<number, Partial<IColumnData>> = {}
   columns?.forEach((info, index) => {
@@ -100,7 +108,11 @@ export function columnSnapshots(columns: readonly ColInfo[] | undefined): Record
   return out
 }
 
-/** Row heights and hidden rows, sparse by index. */
+/**
+ * Row heights and hidden rows, sparse by index.
+ * @param rows - the sheet's `!rows` entries, when it has any.
+ * @returns row data keyed by row index.
+ */
 export function rowSnapshots(rows: readonly RowInfo[] | undefined): Record<number, Partial<IRowData>> {
   const out: Record<number, Partial<IRowData>> = {}
   rows?.forEach((info, index) => {
