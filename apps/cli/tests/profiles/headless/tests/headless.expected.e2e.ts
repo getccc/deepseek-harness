@@ -328,7 +328,7 @@ describe('headless stream-json snapshots', () => {
     await expectHeadlessStream(normalized, streamExpected)
   }, LOADER_SMOKE_TEST_TIMEOUT_MS)
 
-  it('logs actionable missing-credential guidance through the one-shot app', async () => {
+  it('logs the dormant-route guidance for a missing credential through the one-shot app', async () => {
     const streamExpected = join(credentialsScenarioDir, 'stream-json.expected.jsonl')
     let runCwd = ''
     const result = await runLoaderSmoke({
@@ -349,21 +349,21 @@ describe('headless stream-json snapshots', () => {
     })
 
     // The failure reaches the caller through the stream, not stderr; the
-    // recorded transcript below pins the guidance text itself, which names
-    // both places a credential can come from and nothing else.
+    // recorded transcript below pins the guidance text itself.
     expect(result.stderr).toBe('')
     const normalized = normalizeHeadlessStream(result.stdout, runCwd)
     if (refreshing) await writeFile(streamExpected, normalized)
     await expectHeadlessStream(normalized, streamExpected)
-    // The durable failure leads with the credential store — the path that
-    // keeps the secret out of configuration files — then names the launching
-    // environment, and stops there: configuration carries the reference, so
-    // there is no literal-key escape hatch left to offer.
+    // Without a resolvable key the member DeepSeek route stays unregistered,
+    // so the request fails as a dormant declared route: the durable failure
+    // names the settings section that activates the route and the page that
+    // writes its configuration and credential, never a credential-store miss.
+    expect(normalized).toContain('NO_ADAPTER')
     expect(normalized).toContain(
-      'store DEEPSEEK_API_KEY through the credentials service (the web Models page writes it),',
+      'settings section declares it and registers the route once its configuration and credential are in place'
+        + ' (the web Models page writes both)',
     )
-    expect(normalized).toContain('or export DEEPSEEK_API_KEY in the launching environment')
-    expect(normalized).not.toContain('as a last resort')
+    expect(normalized).not.toContain('MISSING_CREDENTIAL')
   }, LOADER_SMOKE_TEST_TIMEOUT_MS)
 
   it('logs actionable invalid-credential guidance through the one-shot app', async () => {
