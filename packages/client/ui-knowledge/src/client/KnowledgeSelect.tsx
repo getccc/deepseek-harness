@@ -10,7 +10,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 // Type-only: pulls the `knowledge` SessionProjectionMap merge for useProjection.
 import type {} from '@deepseek-ai/dsh-tool-knowledge/client'
 import type { KnowledgeChoice } from '@deepseek-ai/dsh-api-knowledge-controller/types'
-import { ALL_ROW_ID, chipLabel, chosenRows } from './scope.ts'
+import { ALL_ROW_ID, chipLabel, chosenRows, scopeNames } from './scope.ts'
 import css from './KnowledgeSelect.module.css'
 
 /** What this control needs from the plugin that registered it. */
@@ -80,7 +80,7 @@ export function KnowledgeSelect({ useProjection, choices, apply, t }: KnowledgeS
         <button
           type="button"
           className={clsx(css.trigger, scope.mode !== 'off' && css.triggerChosen)}
-          aria-label={t('chip.aria', { state: label })}
+          aria-label={t('chip.aria', { state: scopeNames(scope, t) })}
           title={t('chip.title')}
           onClick={show}
         >

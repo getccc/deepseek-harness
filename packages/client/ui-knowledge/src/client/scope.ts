@@ -84,12 +84,27 @@ export function choiceOf(options: readonly SelectOption[]): KnowledgeChoiceReque
 }
 
 /**
- * The composer chip's line for one Session's scope.
+ * The composer chip's visible line for one Session's scope.
+ *
+ * Several chosen bases read as a count: their joined names outgrow the
+ * composer row and wrap the model and send controls onto a second line.
+ * {@link scopeNames} keeps every name for the chip's accessible name.
  * @param scope - the Session's folded knowledge scope.
  * @param t - the `knowledge` namespace translator.
  * @returns the chip's text.
  */
 export function chipLabel(scope: KnowledgeScope, t: TranslateNS<'knowledge'>): string {
+  if (scope.mode === 'selected' && scope.bases.length > 1) return t('chip.count', { count: scope.bases.length })
+  return scopeNames(scope, t)
+}
+
+/**
+ * The full text of one Session's scope: the bare noun, the whole-set name, or every chosen base by name.
+ * @param scope - the Session's folded knowledge scope.
+ * @param t - the `knowledge` namespace translator.
+ * @returns the scope's full text.
+ */
+export function scopeNames(scope: KnowledgeScope, t: TranslateNS<'knowledge'>): string {
   switch (scope.mode) {
     case 'off':
       // The bare noun: a control that says "off" spends the composer's width

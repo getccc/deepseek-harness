@@ -61,6 +61,16 @@ describe('KnowledgeSelect', () => {
     expect(trigger().className).not.toContain('triggerChosen')
   })
 
+  it('counts several chosen bases on its face while its accessible name lists every one', () => {
+    setup({
+      version: 1,
+      mode: 'selected',
+      bases: [{ ref: REF_A, displayName: '临港知识库' }, { ref: REF_B, displayName: '南昌知识库' }],
+    })
+    expect(trigger().textContent).toBe('2 个知识库')
+    expect(trigger().getAttribute('aria-label')).toBe('知识库：临港知识库、南昌知识库')
+  })
+
   it('offers the whole-set row and the authorized directory, marking what is chosen', async () => {
     setup({ version: 1, mode: 'selected', bases: [{ ref: REF_B, displayName: '南昌知识库' }] })
     await act(async () => { fireEvent.click(trigger()) })

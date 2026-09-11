@@ -14,7 +14,7 @@ import type { KnowledgeRef, KnowledgeScope } from '@deepseek-ai/dsh-knowledge'
 import { makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
 import { zh as commonZh } from '@deepseek-ai/dsh-client-locale/src/locales/zh.ts'
 import { zh } from '../src/client/locales.ts'
-import { ALL_ROW_ID, chipLabel, choiceOf, chosenRows, optionsOf, toggleScope } from '../src/client/scope.ts'
+import { ALL_ROW_ID, chipLabel, choiceOf, chosenRows, optionsOf, scopeNames, toggleScope } from '../src/client/scope.ts'
 
 const REF_A = 'weknora:prod:690c0727' as KnowledgeRef
 const REF_B = 'weknora:prod:08f25606' as KnowledgeRef
@@ -101,12 +101,20 @@ describe('what the chip says', () => {
     expect(chipLabel(scope, t)).toBe(expected)
   })
 
-  it('names every chosen knowledge base, as the prompt does', () => {
-    expect(chipLabel({
+  it('names a single chosen knowledge base', () => {
+    expect(chipLabel({ version: 1, mode: 'selected', bases: [{ ref: REF_A, displayName: '临港知识库' }] }, t))
+      .toBe('临港知识库')
+  })
+
+  it('counts several chosen knowledge bases, while the full text still names each one', () => {
+    // Joined names outgrow the composer row; the accessible name keeps them.
+    const both: KnowledgeScope = {
       version: 1,
       mode: 'selected',
       bases: [{ ref: REF_A, displayName: '临港知识库' }, { ref: REF_B, displayName: '南昌知识库' }],
-    }, t)).toBe('临港知识库、南昌知识库')
+    }
+    expect(chipLabel(both, t)).toBe('2 个知识库')
+    expect(scopeNames(both, t)).toBe('临港知识库、南昌知识库')
   })
 })
 

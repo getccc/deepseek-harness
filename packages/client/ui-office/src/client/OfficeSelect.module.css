@@ -47,6 +47,16 @@
   text-overflow: ellipsis;
 }
 
+/* Narrow composer: the chip collapses to icon + chevron at the sibling
+   permission chip's 460px cut, against the same anonymous container
+   (ui-conversation InputBar .row). The tint still marks a chosen kind, and
+   the trigger's aria-label still names it. */
+@container (max-width: 460px) {
+  .label {
+    display: none;
+  }
+}
+
 .chevron {
   display: inline-flex;
   flex: none;
