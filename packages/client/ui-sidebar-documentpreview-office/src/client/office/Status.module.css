@@ -5,6 +5,8 @@
   margin: 16px;
   color: var(--dsw-alias-label-secondary);
   font-size: 13px;
+  font-family: var(--dsw-font-family, sans-serif);
+  white-space: normal;
 }
 
 .failed {

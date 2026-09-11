@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-11-office-previews-for-the-upstream-sidebar.md
-2026-09-11-office-previews-for-the-upstream-sidebar.md: 4af692ad91d3edd8fc6143a02ae6851854aa0e92
-2026-09-11-office-previews-for-the-upstream-sidebar.zh.md: 8f9c8aaf76e64ed3cca5a54b7856a5b40bb57e10
+2026-09-11-office-previews-for-the-upstream-sidebar.md: 43b4188be18b7067db2964d5266bf3ea286b5d45
+2026-09-11-office-previews-for-the-upstream-sidebar.zh.md: c1714878cba7f9885303274e24cf4cabfcb44aea

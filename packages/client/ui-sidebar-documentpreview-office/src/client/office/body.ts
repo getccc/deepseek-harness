@@ -1,4 +1,4 @@
-/** What every office body shares: its props, its load states, and the bytes it renders. */
+/** What every office body shares: its props, its load states, the bytes it renders, and size observation. */
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { DocumentPreviewProps } from '@deepseek-ai/dsh-client-ui-sidebar-documentpreview/client'
 import type {} from '../locales.ts'
@@ -30,4 +30,18 @@ export function bytesOf(props: DocumentPreviewProps): Uint8Array<ArrayBuffer> | 
  */
 export function bufferOf(data: Uint8Array<ArrayBuffer>): ArrayBuffer {
   return data.slice().buffer
+}
+
+/**
+ * Run `onResize` whenever the element's box changes, where the browser reports
+ * resizes; a browser without ResizeObserver keeps the layout measured at mount.
+ * @param target - element whose box is watched.
+ * @param onResize - called after each size change.
+ * @returns disposer that stops watching.
+ */
+export function observeResize(target: Element, onResize: () => void): () => void {
+  if (typeof ResizeObserver === 'undefined') return () => {}
+  const observer = new ResizeObserver(onResize)
+  observer.observe(target)
+  return () => { observer.disconnect() }
 }

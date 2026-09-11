@@ -1,20 +1,89 @@
+/* The pages scroll on their own while the zoom bar stays pinned to the pane's
+   bottom edge, so the section takes the shared body's whole height. */
 .body {
-  min-height: 100%;
-  background: var(--dsw-alias-bg-layer-2);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  height: 100%;
+  font-family: var(--dsw-font-family, sans-serif);
+  white-space: normal;
 }
 
+.viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  background: var(--dsw-alias-bg-layer-1);
+}
+
+/* CSS zoom scales the pages as a block, so the scroll extent follows the zoom. */
 .pages {
-  padding: 16px;
+  padding: 0 16px 16px;
 }
 
-/* docx-preview centers each page in its wrapper; keep the page white on the
-   grey stage the way the application it was written in shows it. */
+.pages[hidden] {
+  display: none;
+}
+
+/* docx-preview paints a flat grey ground behind the pages; the pane's own
+   layer colour keeps the viewer part of the panel in both themes. */
 .pages :global(.docx-wrapper) {
+  padding: 20px 0 0;
   background: transparent;
-  padding: 0;
 }
 
+/* Each page as a sheet on a desk, the way Word shows it: a hairline edge and
+   a soft lift instead of pages butted against a coloured field. */
 .pages :global(.docx-wrapper > section.docx) {
-  margin-bottom: 16px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  margin-bottom: 20px;
+  border: 1px solid var(--dsw-alias-border-l1);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 12%);
+}
+
+.zoomBar {
+  display: flex;
+  flex: none;
+  gap: 8px;
+  align-items: center;
+  min-height: 34px;
+  padding: 4px 10px;
+  background: var(--dsw-alias-bg-layer-1);
+  border-top: 1px solid var(--dsw-alias-border-l1);
+}
+
+.zoomHint,
+.zoomValue {
+  flex: none;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+}
+
+.zoomValue {
+  width: 36px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.zoomRange {
+  flex: 1 1 auto;
+  min-width: 72px;
+  accent-color: var(--dsw-alias-brand-primary);
+  cursor: pointer;
+}
+
+.fitWidth {
+  flex: none;
+  padding: 2px 8px;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11px;
+  font-family: inherit;
+  background: transparent;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.fitWidth:hover {
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-interactive-bg-hover);
 }

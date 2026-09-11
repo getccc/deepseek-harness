@@ -9,11 +9,16 @@ import { DocxBody } from '../src/client/office/DocxBody.tsx'
 import { PptxBody } from '../src/client/office/PptxBody.tsx'
 import { SheetBody } from '../src/client/office/SheetBody.tsx'
 import { en, zh } from '../src/client/locales.ts'
+import { apply as hostApply } from '../src/index.ts'
 
 let dispose: (() => Promise<void>) | undefined
 afterEach(async () => { await dispose?.(); dispose = undefined })
 
 describe('office registration', () => {
+  it('has no host-side behavior', () => {
+    expect(() => { hostApply() }).not.toThrow()
+  })
+
   it('claims the office suffixes as external complete-byte renderers without wrap', () => {
     const t = vi.fn((key: string) => `localized ${key}`)
     const definitions = officeBodyDefinitions(t)

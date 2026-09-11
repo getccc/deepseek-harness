@@ -34,14 +34,15 @@ kind: "package-reference"
 <details>
 <summary>实现内部——点击展开</summary>
 
-插件不拥有 tab、文件读取或工具栏。文档所有者读取文件的完整字节，并安置注册声明了该后缀的文档体；每个文档体把字节渲染进自己拥有并在卸载时清空的容器，渲染前显示加载行，失败后显示带重试的提示行。Word 经 `docx-preview` 排成 HTML 页面，图片内联为 data URL。Excel 经 SheetJS：工作簿只解析一次，每次渲染一张工作表为文本表格，超过 2,000 行或 200 列的工作表在此截断并给出说明。PowerPoint 经 `pptx-renderer`，在推荐的 zip 上限内把幻灯片绘制为 HTML 与 SVG，并随 tab 一起销毁。
+插件不拥有 tab、文件读取或工具栏。文档所有者读取文件的完整字节，并安置注册声明了该后缀的文档体；每个文档体把字节渲染进自己拥有并在卸载时清空的容器，渲染前显示加载行，失败后显示带重试的提示行。Word 经 `docx-preview` 排成 HTML 页面，图片内联为 data URL；文档体把页面缩放到栏宽，直到读者拖动缩放滑块或使用 Alt + 滚轮，"适应宽度"按钮则恢复跟随栏宽。Excel 经 SheetJS：工作簿只解析一次，每次渲染一张工作表为带 Excel 列字母、行号、列宽与合并单元格的网格，超过 2,000 行或 200 列的工作表在此截断并给出说明。PowerPoint 经 `pptx-renderer`，在推荐的 zip 上限内把整套幻灯片绘制为按舞台宽度缩放的单一滚动列表，带上一页/下一页控件，舞台宽度不小于 380 px 时在左侧显示随滚动进入视野才绘制的幻灯片缩略图栏；查看器随 tab 一起销毁。
 
 | 文件 | 职责 |
 |---|---|
 | [`src/client/index.ts`](src/client/index.ts) | 注册词典、三个渲染器定义与按键文档体 |
 | [`src/client/office/DocxBody.tsx`](src/client/office/DocxBody.tsx) | 经 `docx-preview` 渲染 Word 页面 |
 | [`src/client/office/SheetBody.tsx`](src/client/office/SheetBody.tsx) | 工作簿解析、工作表 tab 与有界表格 |
-| [`src/client/office/PptxBody.tsx`](src/client/office/PptxBody.tsx) | 经 `pptx-renderer` 渲染幻灯片列表，随 tab 销毁 |
+| [`src/client/office/PptxBody.tsx`](src/client/office/PptxBody.tsx) | 经 `pptx-renderer` 渲染幻灯片列表，含导航与重新适配，随 tab 销毁 |
+| [`src/client/office/PptxRail.tsx`](src/client/office/PptxRail.tsx) | 进入缩略图栏视野时才绘制的幻灯片缩略图 |
 | [`src/client/office/Status.tsx`](src/client/office/Status.tsx) | 加载、带重试的失败与不支持内容的提示行 |
 
 </details>
@@ -62,7 +63,7 @@ kind: "package-reference"
 <a id="known-limitations-and-deferred-work"></a>
 
 - **只读** —— 文档体只呈现文档；编辑仍由文件卡片打开的桌面应用完成。
-- **Excel 显示的是值** —— 公式渲染为其缓存结果，单元格格式与图表不绘制，超过 2,000 行或 200 列的工作表在该上限处截断并给出说明。
+- **Excel 显示的是值** —— 公式渲染为其缓存结果；列宽、合并单元格、隐藏列与数字格式会体现，字体、填充、边框、冻结窗格与图表不绘制，超过 2,000 行或 200 列的工作表在该上限处截断并给出说明。
 - **PowerPoint 的还原度取决于渲染库** —— 需要 PDF.js 的 SmartArt 与 EMF 回退没有打包，这些元素以库的占位形式呈现。
 - **旧版二进制格式** —— 不声明 `.doc` 与 `.ppt`；`.xls` 由 SheetJS 读取。
 - **单个 bundle，随启动加载** —— 三个渲染器及其库打进约 3.5 MB 的一个客户端 bundle，Team 组合随页面一起加载。
@@ -73,7 +74,7 @@ kind: "package-reference"
 <details>
 <summary>维护者工作上下文——点击展开</summary>
 
-渲染库（`docx-preview`、`xlsx`、`@aiden0z/pptx-renderer` 及其 `echarts` 与 `jszip`）由共享的客户端 bundle 预设内联进 `lib/client.js`；它们的 Apache-2.0 声明经 `gen-third-party-notices` 进入 `THIRD_PARTY_NOTICES.md`。`SheetBody` 把解析后的工作簿放在组件状态里，只折叠当前选中的工作表，因此切换工作表不会重新读取字节。PowerPoint 文档体在打开前把字节复制为独立的 `ArrayBuffer`，因为查看器会接管它收到的缓冲区。
+渲染库（`docx-preview`、`xlsx`、`@aiden0z/pptx-renderer` 及其 `echarts` 与 `jszip`）由共享的客户端 bundle 预设内联进 `lib/client.js`；它们的 Apache-2.0 声明经 `gen-third-party-notices` 进入 `THIRD_PARTY_NOTICES.md`。`SheetBody` 把解析后的工作簿放在组件状态里，只折叠当前选中的工作表，因此切换工作表不会重新读取字节。PowerPoint 文档体在打开前把字节复制为独立的 `ArrayBuffer`，因为查看器会接管它收到的缓冲区；渲染库按滚动容器的 `clientWidth` 给每张幻灯片定尺寸，所以幻灯片周围的留白放在舞台上而不是滚动容器上。每个文档体占满共享文档体的整个高度，并通过 `scrollportRef` 上报自己的滚动容器，这样 Word 的缩放条与 PowerPoint 的工具栏在页面或幻灯片滚动时保持固定。
 
 </details>
 
