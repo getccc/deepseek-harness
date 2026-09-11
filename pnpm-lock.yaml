@@ -3357,10 +3357,6 @@ importers:
         version: 18.3.1
 
   packages/client/ui-knowledge:
-    dependencies:
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:^
@@ -3413,6 +3409,9 @@ importers:
       '@types/react':
         specifier: ~18.3.1
         version: 18.3.31
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -3583,10 +3582,6 @@ importers:
         version: 18.3.1(react@18.3.1)
 
   packages/client/ui-office:
-    dependencies:
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:^
@@ -3633,6 +3628,9 @@ importers:
       '@types/react':
         specifier: ~18.3.1
         version: 18.3.31
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -4329,29 +4327,10 @@ importers:
         version: 18.3.1(react@18.3.1)
 
   packages/client/ui-sidebar-documentpreview-office:
-    dependencies:
+    devDependencies:
       '@aiden0z/pptx-renderer':
         specifier: ^1.2.4
         version: 1.2.4(pdfjs-dist@6.3.289)
-      '@univerjs/core':
-        specifier: 0.25.1
-        version: 0.25.1(react@18.3.1)(rxjs@7.8.2)
-      '@univerjs/preset-sheets-core':
-        specifier: 0.25.1
-        version: 0.25.1(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
-      '@univerjs/presets':
-        specifier: 0.25.1
-        version: 0.25.1(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
-      docx-preview:
-        specifier: ^0.4.0
-        version: 0.4.0
-      xlsx:
-        specifier: ^0.18.5
-        version: 0.18.5
-    devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:^
         version: link:../../../vendor/cordis
@@ -4379,12 +4358,30 @@ importers:
       '@types/react':
         specifier: ~18.3.1
         version: 18.3.31
+      '@univerjs/core':
+        specifier: 0.25.1
+        version: 0.25.1(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/preset-sheets-core':
+        specifier: 0.25.1
+        version: 0.25.1(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      '@univerjs/presets':
+        specifier: 0.25.1
+        version: 0.25.1(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(rxjs@7.8.2)
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      docx-preview:
+        specifier: ^0.4.0
+        version: 0.4.0
       jszip:
         specifier: ^3.10.1
         version: 3.10.1
       react:
         specifier: ^18.2.0
         version: 18.3.1
+      xlsx:
+        specifier: ^0.18.5
+        version: 0.18.5
 
   packages/client/ui-sidebar-files:
     devDependencies:
@@ -10862,12 +10859,6 @@ importers:
 
   packages/team/team-local-login:
     dependencies:
-      '@deepseek-ai/dsh-client-connection':
-        specifier: workspace:^
-        version: link:../../client/connection
-      '@deepseek-ai/dsh-team-account-client':
-        specifier: workspace:^
-        version: link:../team-account-client
       '@deepseek-ai/schemastery':
         specifier: link:../../../vendor/schemastery
         version: link:../../../vendor/schemastery
@@ -10878,6 +10869,9 @@ importers:
       '@deepseek-ai/dsh-api-session-controller':
         specifier: workspace:^
         version: link:../../api/session-controller
+      '@deepseek-ai/dsh-client-connection':
+        specifier: workspace:^
+        version: link:../../client/connection
       '@deepseek-ai/dsh-client-locale':
         specifier: workspace:^
         version: link:../../client/locale
@@ -10905,6 +10899,9 @@ importers:
       '@deepseek-ai/dsh-host-webserver':
         specifier: workspace:^
         version: link:../../host/webserver
+      '@deepseek-ai/dsh-team-account-client':
+        specifier: workspace:^
+        version: link:../team-account-client
       '@testing-library/react':
         specifier: ^16.1.0
         version: 16.3.2(@testing-library/dom@10.4.1)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
