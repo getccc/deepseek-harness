@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team-shell",
   "description": "The Control Plane's device-confirmation page: what a member compares before a computer is bound to their account",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

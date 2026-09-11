@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team",
   "description": "The dsh Team Edition bundle: the shared local Runner surface over dsh-web-app, on a loopback port separate from dsh web",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

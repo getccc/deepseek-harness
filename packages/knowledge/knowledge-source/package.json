@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-knowledge-source",
   "description": "Abstract upstream knowledge-source seam (ctx.knowledgeSource) for the DeepSeek Harness Control Plane \u2014 listing a source's knowledge bases and searching an explicit set of them, in DSH terms",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

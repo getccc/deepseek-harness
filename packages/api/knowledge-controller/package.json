@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-api-knowledge-controller",
   "description": "Team-only Host Remote for private knowledge \u2014 the authorized directory a browser reads and the Session scope choice it records",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

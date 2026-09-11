@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team-update",
   "description": "Deciding whether an offered release may be installed: manifest signature, version monotonicity, upgrade path, and platform artifact",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

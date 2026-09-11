@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-model-gateway-http",
   "description": "The Control Plane's company model endpoint: authorize, attach the credential, stream the provider's answer, and settle from what it reported",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

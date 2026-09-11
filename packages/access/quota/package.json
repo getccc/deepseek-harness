@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-quota",
   "description": "Quota Service Definition: hold a claim on an organization budget before an upstream call, and settle it once for what actually happened",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

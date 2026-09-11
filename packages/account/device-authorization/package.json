@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-device-authorization",
   "description": "Device-authorization Service Definition: pairing-code binding, PKCE and device-signature redemption, and refresh-token families with reuse detection",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

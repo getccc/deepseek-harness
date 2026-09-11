@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-tool-knowledge",
   "description": "Model-facing private-knowledge search for the DeepSeek Harness \u2014 the knowledge_search tool, the Session scope prompt section, and scope-driven tool visibility",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

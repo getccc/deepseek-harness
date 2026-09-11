@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-knowledge-gateway",
   "description": "Governed knowledge gateway seam (ctx.knowledgeGateway) for the DeepSeek Harness Control Plane \u2014 the durable catalog an administrator reads, and the authorized directory and search a Runner reaches",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

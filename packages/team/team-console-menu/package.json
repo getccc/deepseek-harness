@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team-console-menu",
   "description": "Console-menu Service Definition: the administration console's navigation tree, the permission each entry names, and the shipped catalog an organization starts from",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

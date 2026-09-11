@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team-control-plane",
   "description": "The dsh Team Edition Control Plane bundle: a standalone server tree that deliberately mounts no Agent, filesystem, shell, or code-execution capability",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

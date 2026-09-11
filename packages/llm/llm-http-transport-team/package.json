@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-llm-http-transport-team",
   "description": "The team transport: a company model request going out through the Control Plane, with no address and no credential of its own",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

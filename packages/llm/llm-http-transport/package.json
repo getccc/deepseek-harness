@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-llm-http-transport",
   "description": "Provider HTTP transport Service Definition: how a model request reaches a provider, separated from what the request says",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

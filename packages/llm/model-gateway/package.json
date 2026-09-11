@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-model-gateway",
   "description": "The company model gateway: the catalog of models an organization serves, and the decision that turns a model name into an approved upstream call",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

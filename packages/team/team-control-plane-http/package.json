@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team-control-plane-http",
   "description": "The Control Plane's Runner-facing binding endpoints: open a transaction, redeem an authorization code, exchange a refresh token",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

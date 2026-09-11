@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team-local-login",
   "description": "The Team Runner's local member sign-in and application-entry endpoints",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

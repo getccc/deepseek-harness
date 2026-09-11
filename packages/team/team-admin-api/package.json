@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team-admin-api",
   "description": "The administration console's browser API: JSON over the Control Plane session, with the same authorization and audit path a form post took",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-knowledge",
   "description": "Abstract private-knowledge capability seam (ctx.knowledge) for the DeepSeek Harness \u2014 stable knowledge references, the authorized directory and passage-search vocabulary, the Session knowledge scope, and the closed failure taxonomy",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-knowledge-gateway-sqlite",
   "description": "SQLite-backed governed knowledge gateway for the DeepSeek Harness Control Plane \u2014 durable catalog, synchronization against an upstream source, per-resource authorization, and audit",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

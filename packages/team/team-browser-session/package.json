@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team-browser-session",
   "description": "The Control Plane browser session: an opaque cookie token, its stored hash, the CSRF value derived from it, and the same-origin decision",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

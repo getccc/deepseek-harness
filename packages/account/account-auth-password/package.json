@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-account-auth-password",
   "description": "Password authentication over the account store: scrypt derivation with self-describing parameters, rehash-on-verify, and the lockout policy",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

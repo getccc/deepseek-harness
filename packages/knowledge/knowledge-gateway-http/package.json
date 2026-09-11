@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-knowledge-gateway-http",
   "description": "Runner-facing knowledge endpoints for the DeepSeek Harness Control Plane \u2014 device-token verification, protocol-version negotiation, strict request parsing, and closed refusal mapping",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },

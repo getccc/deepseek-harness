@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-knowledge-weknora",
   "description": "WeKnora knowledge-source provider for the DeepSeek Harness Control Plane \u2014 the fixed list and hybrid-search endpoints, per-operation credential resolution, and closed failure mapping",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.5-rc.2",
   "publishConfig": {
     "access": "public"
   },
