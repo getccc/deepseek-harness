@@ -57,21 +57,21 @@ describe('ic_ds_ icon set', () => {
   })
 })
 
-describe('WelinkinLogo', () => {
-  it('renders the inlined mark at the native ratio', () => {
-    const { container } = render(<primitives.WelinkinLogo />)
+describe('WeWorkLogo', () => {
+  it('renders the inlined logo at the native ratio', () => {
+    const { container } = render(<primitives.WeWorkLogo />)
     const img = container.querySelector('img')!
     expect(img.getAttribute('width')).toBe('24')
-    expect(Number(img.getAttribute('height'))).toBeCloseTo(19.22, 1)
-    expect(img.getAttribute('src')).toMatch(/^data:image\/png;base64,/)
+    expect(Number(img.getAttribute('height'))).toBeCloseTo(20.81, 1)
+    expect(img.getAttribute('src')).toMatch(/^data:image\/webp;base64,/)
     expect(img.getAttribute('alt')).toBe('')
   })
 
   it('scales to a caller-supplied width and forwards its placement class', () => {
-    const { container } = render(<primitives.WelinkinLogo size={34} className="hero" />)
+    const { container } = render(<primitives.WeWorkLogo size={34} className="hero" />)
     const img = container.querySelector('img')!
     expect(img.getAttribute('width')).toBe('34')
-    expect(Number(img.getAttribute('height'))).toBeCloseTo(27.23, 1)
+    expect(Number(img.getAttribute('height'))).toBeCloseTo(29.48, 1)
     expect(img.getAttribute('class')).toBe('hero')
   })
 })

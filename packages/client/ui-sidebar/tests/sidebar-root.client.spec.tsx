@@ -120,7 +120,7 @@ describe('SidebarRoot shell', () => {
     />)
 
     const [brand] = screen.getAllByRole('button', { name: 'New session' })
-    expect(brand?.textContent).toBe('Welinkin Work')
+    expect(brand?.textContent).toBe('WeWork')
     expect(container.querySelector('img')).not.toBeNull()
   })
 

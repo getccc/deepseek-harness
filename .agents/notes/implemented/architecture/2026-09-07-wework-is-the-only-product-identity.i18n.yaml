@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-07-wework-is-the-only-product-identity.md
+2026-09-07-wework-is-the-only-product-identity.md: 801e0acf1a9e6e1a0fb16c61c000dce8b6042079
+2026-09-07-wework-is-the-only-product-identity.zh.md: 139de2fa8fb8f7472c2b1a0a6dee15cbf4d6c301

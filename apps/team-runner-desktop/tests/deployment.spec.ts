@@ -54,8 +54,8 @@ describe('desktop deployment facts', () => {
   })
 
   it('accepts fully qualified Windows deployment paths', () => {
-    const controlPlaneCa = String.raw`C:\Program Files\Welinkin Work\resources\runner\control-plane-ca.crt`
-    const welinkinTemplatePath = String.raw`C:\Program Files\Welinkin Work\resources\runner\WELINKIN-PPT.pptx`
+    const controlPlaneCa = String.raw`C:\Program Files\WeWork\resources\runner\control-plane-ca.crt`
+    const welinkinTemplatePath = String.raw`C:\Program Files\WeWork\resources\runner\WELINKIN-PPT.pptx`
     expect(resolveDeployment({ ...facts, controlPlaneCa, welinkinTemplatePath })).toMatchObject({
       controlPlaneCa,
       welinkinTemplatePath,

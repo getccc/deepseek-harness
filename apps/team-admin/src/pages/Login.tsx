@@ -4,10 +4,10 @@ import { useState, type ReactNode } from 'react'
 import { Button, Card, Form, Input } from 'antd'
 import { api, ApiError, holdCsrf, type WireSession } from '../api.ts'
 import { useLocale } from '../locale.tsx'
-import { WELINKIN_LOGO_HEIGHT, WELINKIN_LOGO_SOURCE, WELINKIN_LOGO_WIDTH } from '../brand.ts'
+import { WEWORK_LOGO_HEIGHT, WEWORK_LOGO_SOURCE, WEWORK_LOGO_WIDTH } from '../brand.ts'
 
 /** Width the lockup draws the mark at, in px; the Runner's page draws the same. */
-const MARK_WIDTH = 40
+const MARK_WIDTH = 56
 
 /** What the form collects. */
 interface Credentials {
@@ -76,9 +76,9 @@ export function Login({ onSignedIn }: { readonly onSignedIn: (session: WireSessi
         <div className="auth-brand">
           <span className="auth-brand-mark" aria-hidden="true">
             <img
-              src={WELINKIN_LOGO_SOURCE}
+              src={WEWORK_LOGO_SOURCE}
               width={MARK_WIDTH}
-              height={(MARK_WIDTH * WELINKIN_LOGO_HEIGHT) / WELINKIN_LOGO_WIDTH}
+              height={(MARK_WIDTH * WEWORK_LOGO_HEIGHT) / WEWORK_LOGO_WIDTH}
               alt=""
             />
           </span>

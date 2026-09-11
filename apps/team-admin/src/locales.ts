@@ -12,7 +12,7 @@
 
 /** Simplified Chinese dictionary (the key-set source of truth). */
 export const zh = {
-  'app.title': 'Welinkin Work控制台',
+  'app.title': 'WeWork控制台',
   'app.subtitle': '企业版管理',
   'lang.label': '语言',
 
@@ -34,7 +34,7 @@ export const zh = {
   'shell.closeAll': '全部关闭',
   'shell.refresh': '刷新',
 
-  'login.product': 'Welinkin Work',
+  'login.product': 'WeWork',
   'login.heading': '欢迎回来',
   'login.kicker': '登录以管理你的组织，并把这个账户连接到本地 Runner。',
   'login.member': '成员',
@@ -353,7 +353,7 @@ export const zh = {
 
 /** English dictionary; every key of {@link zh}. */
 export const en: Record<keyof typeof zh, string> = {
-  'app.title': 'Welinkin Work Console',
+  'app.title': 'WeWork Console',
   'app.subtitle': 'Team Edition administration',
   'lang.label': 'Language',
 
@@ -376,7 +376,7 @@ export const en: Record<keyof typeof zh, string> = {
   'shell.closeAll': 'Close all',
   'shell.refresh': 'Refresh',
 
-  'login.product': 'Welinkin Work',
+  'login.product': 'WeWork',
   'login.heading': 'Welcome back',
   'login.kicker': 'Sign in to manage your organization and connect this account to a local Runner.',
   'login.member': 'Member',

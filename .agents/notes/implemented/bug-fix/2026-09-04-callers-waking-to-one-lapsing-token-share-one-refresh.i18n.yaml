@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-04-callers-waking-to-one-lapsing-token-share-one-refresh.md
-2026-09-04-callers-waking-to-one-lapsing-token-share-one-refresh.md: dce8a790fed2e1d2f02aeb5d2604e68beb999a22
-2026-09-04-callers-waking-to-one-lapsing-token-share-one-refresh.zh.md: e4faf07c97de5c6004cf0238f87f365fb10e0fdc
+2026-09-04-callers-waking-to-one-lapsing-token-share-one-refresh.md: 6d0cb345d7a361ba38d3db7e66cbf5fee355bc9c
+2026-09-04-callers-waking-to-one-lapsing-token-share-one-refresh.zh.md: f07f1951ed3dc9ea97126e868c427a928cb342fa

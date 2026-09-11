@@ -19,7 +19,7 @@
 import { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
 import {
-  WelinkinLogo, IconNewChatOutline16, IconPanelLeftOutline16, Tooltip,
+  WeWorkLogo, IconNewChatOutline16, IconPanelLeftOutline16, Tooltip,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type {
@@ -29,6 +29,9 @@ import css from './SidebarRoot.module.css'
 
 /** Wide-content unmount delay; matches the 150ms wide-content fade-out. */
 const COLLAPSE_SETTLE_MS = 150
+
+/** Brand mark width in the expanded row and the collapsed rail, in px. */
+const BRAND_MARK_SIZE = 32
 
 /**
  * How long the column's scrollbars stay drawn after the pointer leaves it.
@@ -177,7 +180,7 @@ export function SidebarRoot({
           >
             <span className={css.brandIdentity} aria-hidden="true">
               <span className={css.brandMark}>
-                {renderSlot('sidebar.brand.mark', { size: 24 }, { fallback: <WelinkinLogo size={24} /> })}
+                {renderSlot('sidebar.brand.mark', { size: BRAND_MARK_SIZE }, { fallback: <WeWorkLogo size={BRAND_MARK_SIZE} /> })}
               </span>
               <span className={css.brandName}>
                 {renderSlot('sidebar.brand.name', {}, {
@@ -198,7 +201,7 @@ export function SidebarRoot({
           >
             {!wide && (
               <span className={css.railMark} aria-hidden="true">
-                {renderSlot('sidebar.brand.mark', { size: 24 }, { fallback: <WelinkinLogo size={24} /> })}
+                {renderSlot('sidebar.brand.mark', { size: BRAND_MARK_SIZE }, { fallback: <WeWorkLogo size={BRAND_MARK_SIZE} /> })}
               </span>
             )}
             {/* Rail icons render at 18 (figma rail spec); expanded keeps the glyph-native sizes. */}

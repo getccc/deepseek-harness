@@ -30,7 +30,7 @@ export const en = {
   'collapse': 'Collapse',
   'expand': 'Expand',
   'back': 'Back',
-  'brand.localBuild': 'Welinkin Work',
+  'brand.localBuild': 'WeWork',
   'unknown': 'Unknown',
   'none': 'None',
   'truncated': 'Truncated',

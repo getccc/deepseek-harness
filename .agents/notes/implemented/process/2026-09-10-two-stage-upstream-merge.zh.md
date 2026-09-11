@@ -14,7 +14,7 @@ Status: implemented
 
 Team 安装程序随附的第三方 sidebar、办公预览器、Univer 与 ECharts 插件被弃用，改用上游的 Sidebar 与文件交付：`apps/team-runner-desktop/src/profile.ts` 中的 `SHIPPED_PLUGIN_BUNDLES` 为空，成员电脑上的 Team profile manifest 只列出 Runner 自带的 bundle。本线不为历史会话日志提供迁移路径：合并前记录的会话重新创建，而不做转换。
 
-由 fork 拥有的行为重新安放到上游结构上，而不是保留一份分叉副本：助手身份头部成为上游 `ChatNodeSeat` 中的一个 `useChat` 选择器，在轮次的首行渲染 `TurnActivityHeader`，首行由上游按轮次的过程呈现算出，而不再私自复制那套布局；浏览器锁定路由与 `browserSession` 位于 `client-connection` 中上游的 `webServer` 注入之内；`PopupMultiSelectSpec` 加入上游的 `PopupSelectSpec` 与 `ActionSpec` 联合类型；设置启动器 slot 包住上游的触发器与连接指示器；Welinkin 标记与名称是 Sidebar 的回退品牌，hero 标题 slot 取代了鱼；小微文案保留在上游的 locale 键上，`reasoning.running` 是推理行读取的唯一 fork 键。
+由 fork 拥有的行为重新安放到上游结构上，而不是保留一份分叉副本：助手身份头部成为上游 `ChatNodeSeat` 中的一个 `useChat` 选择器，在轮次的首行渲染 `TurnActivityHeader`，首行由上游按轮次的过程呈现算出，而不再私自复制那套布局；浏览器锁定路由与 `browserSession` 位于 `client-connection` 中上游的 `webServer` 注入之内；`PopupMultiSelectSpec` 加入上游的 `PopupSelectSpec` 与 `ActionSpec` 联合类型；设置启动器 slot 包住上游的触发器与连接指示器；WeWork 标志与名称是 Sidebar 的回退品牌，hero 标题 slot 取代了鱼；小微文案保留在上游的 locale 键上，`reasoning.running` 是推理行读取的唯一 fork 键。
 
 沿途满足的仓库规则：不断言任何关系的不变量伴随插件被移除并在 README 写明原因，而不是空着发布；`gen-config-catalog` 解析 `...spread` 对象字段，使 Control Plane 配置包得以生成；`gen-tsconfig-paths` 拥有 `tsconfig.base.json`，其中四个名称与目录不同的包使用手写条目；`gen-persistence-catalog` 拥有 `known-event-types.ts`，此前它缺少 fork 的 `office/kind` 事件。
 
