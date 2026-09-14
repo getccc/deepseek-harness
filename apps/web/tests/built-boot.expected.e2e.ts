@@ -65,7 +65,7 @@ it('boots the built plugin graph and renders a fixture session end to end', asyn
     expect(document.querySelector('svg[viewBox="26 0 156 24"]')).not.toBeNull()
     expect(screen.queryByText('WeWork')).toBeNull()
   } else {
-    expect(document.querySelector('img[src^="data:image/png;base64,"]')).not.toBeNull()
+    expect(document.querySelector('img[src^="data:image/webp;base64,"]')).not.toBeNull()
     screen.getByText('WeWork')
   }
   // The compact layout dropped group session counts; the fixture workspace
