@@ -229,7 +229,7 @@ describe('WebhookRuntime', () => {
       set: () => {},
     } as never)
     ctx.provide('agentPresets', {
-      resolve: async (id: string) => ({ id }),
+      resolveFor: async (_workspace: string, id: string) => ({ id }),
       standingKeyFor: async () => ({}),
       mount: async (_agentCtx: unknown, id: string) => ({ id }),
     } as never)

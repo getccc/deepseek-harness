@@ -126,18 +126,22 @@ function mount(
     composerBlock?: { reason: string }
     /** Mutable view ledger used by registration-order regressions. */
     viewTabs?: ViewTab[]
+    /** List the selected session as a chat session: no cwd, no workspace. */
+    kind?: 'chat'
   } = {},
 ) {
   const root = sid('root')
   const parent = sid('parent')
-  const rootRow = { id: root, displayTitle: 'Root', running: false, blank: false, updatedAt: 1 }
+  const rootRow = { id: root, displayTitle: 'Root', kind: 'work' as const, running: false, blank: false, updatedAt: 1 }
   const parentRow = {
-    id: parent, displayTitle: 'Parent', parentId: root, origin: 'subagent' as const,
+    id: parent, displayTitle: 'Parent', kind: 'work' as const, parentId: root, origin: 'subagent' as const,
     running: false, blank: false, updatedAt: 2,
   }
   const childRow = {
     id: SID, displayTitle: 'Child', parentId: options.nestedSubagent === true ? parent : root,
-    cwd: '/projects/one', running: false, blank: options.summaryBlank ?? false, updatedAt: 3,
+    kind: options.kind ?? 'work' as const,
+    ...(options.kind === 'chat' ? {} : { cwd: '/projects/one' }),
+    running: false, blank: options.summaryBlank ?? false, updatedAt: 3,
     ...(options.summaryOrigin === undefined ? {} : { origin: options.summaryOrigin }),
   }
   const listed = options.omitSummaryRow !== true
@@ -398,6 +402,27 @@ describe('ConversationRoot resident composer', () => {
     expect(box.getAttribute('data-placeholder')).not.toBe('select a model first')
     const modelSeat = b.seatOwners.filter(call => call.key === 'conversation.input.model').at(-1)?.owner
     expect(modelSeat).toEqual({ locked: true })
+  })
+
+  it('chat session hero: no workspace row, a live composer with the chat placeholder, and the bar told its kind', () => {
+    // Same no-workspace list state as the case above; the only difference is
+    // the row's kind. A chat session has no folder to choose, so nothing
+    // about the hero waits on one.
+    const b = mount(sessionSnapshotOf({ blank: true }), [], undefined, { kind: 'chat', summaryBlank: true })
+    expect(b.view.getByText('今天有什么计划？')).toBeTruthy()
+    expect(b.view.queryByRole('button', { name: '选择工作区' })).toBeNull()
+    expect(b.slotCalls).not.toContain('conversation.hero.workspace')
+    expect(b.slotCalls).not.toContain('conversation.hero.agentPreset')
+    const box = b.view.getByRole('textbox')
+    expect(box.getAttribute('aria-disabled')).not.toBe('true')
+    expect(box.getAttribute('aria-haspopup')).toBeNull()
+    expect(box.getAttribute('data-placeholder')).toBe('和小微聊点什么…')
+    fireEvent.keyDown(box, { key: 'Enter' })
+    expect(b.sink).toHaveBeenCalledWith('ordinary draft', [], 'queue', expect.any(AbortSignal))
+    // The bar received the kind and dropped the plan seat; the model seat stays.
+    expect(b.seatOwners.some(call => call.key === 'conversation.input.plan')).toBe(false)
+    const modelSeat = b.seatOwners.filter(call => call.key === 'conversation.input.model').at(-1)?.owner
+    expect(modelSeat).toEqual({ locked: false })
   })
 
   it('keeps composer text in the machine, mirrors to the Conversation store, and submits through the sink', () => {

@@ -71,18 +71,23 @@ export class SessionCommandController {
   /**
    * @param ctx - Host context carrying Agent, model, attachment, title, and Workspace services.
    * @param agents - sole owner of create, resume, and Session-local model selection.
-   * @param defaultCwd - project directory used when create names neither a Workspace nor a cwd.
    */
   constructor(
     private readonly ctx: Context,
     private readonly agents: ApiSessionAgentController,
-    private readonly defaultCwd: string,
   ) {}
 
   /**
    * Create or idempotently adopt one ordinary Session.
+   *
+   * The location decides the composition: a Workspace or cwd composes the
+   * named preset or the roster's default, and no location composes the
+   * named preset or the roster's `chatDefault`, whose sessions record no
+   * cwd. The roster refuses a preset declared for the other kind of
+   * location, and a deployment composing no roster requires a location.
    * @param request - requested identity, location, and Agent preset.
-   * @returns the Session identity and resolved preset when configured.
+   * @returns the Session identity, the resolved preset when configured, and
+   * the cwd the Session owns when it owns one.
    */
   async create(request: SessionCreateRequest): Promise<SessionCreateValue> {
     if (request.workspaceId !== undefined && request.cwd !== undefined) {
@@ -98,7 +103,14 @@ export class SessionCommandController {
         })
       }
     }
-    const cwd = workspace?.path ?? request.cwd ?? this.defaultCwd
+    const cwd = workspace?.path ?? request.cwd
+    if (cwd === undefined && this.ctx.get('agentPresets') === undefined) {
+      throw new RemoteError(
+        'session/location-required',
+        'session.create names neither a workspaceId nor a cwd, and this deployment composes no agent preset that runs without one',
+        { sessionId },
+      )
+    }
     let adopted: Agent
     try {
       adopted = await this.agents.ensureSession(
@@ -121,8 +133,12 @@ export class SessionCommandController {
         )
       }
     }
-    const agentPreset = this.agents.presetForSession(adopted.session)
-    return { sessionId, ...(agentPreset === undefined ? {} : { agentPreset }) }
+    const composed = this.agents.presetForSession(adopted.session)
+    return {
+      sessionId,
+      ...(composed === undefined ? {} : { agentPreset: composed }),
+      ...(cwd === undefined ? {} : { cwd }),
+    }
   }
 
   /**
@@ -255,7 +271,7 @@ export class SessionCommandController {
       )
     }
     const childId = brandString<SessionId>(`session-${randomUUID()}`)
-    const composition = await this.agents.composeAgent(this.agents.presetForObservation(source))
+    const composition = await this.agents.composeAgent(this.agents.presetForObservation(source), source.header.cwd)
     try {
       const { provider, model } = this.ctx.agentDefaultModel.currentSelection()
       await this.ctx.agents.create({
@@ -529,7 +545,7 @@ export class SessionCommandController {
     if (error instanceof ApiSessionCwdConflict) {
       throw new RemoteError('session/conflict', error.message, {
         sessionId: error.sessionId,
-        requestedCwd: error.requestedCwd,
+        ...(error.requestedCwd === undefined ? {} : { requestedCwd: error.requestedCwd }),
         ...(error.existingCwd === undefined ? {} : { existingCwd: error.existingCwd }),
       })
     }

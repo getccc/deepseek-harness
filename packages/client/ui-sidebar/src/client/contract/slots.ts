@@ -1,11 +1,13 @@
 /**
  * Sidebar slot contract: the registrant-side props composition for the
  * layout-owned `sidebar` slot, plus the holes this shell declares. The shell
- * owns column geometry, the brand row, New Session, and global panel rows;
- * everything between the workspace section header and the list bottom is the
- * `sidebar.workspaces` registrant's (ui-workspace), and the foot is the
- * `sidebar.settings` registrant's (ui-settings), followed by optional footer
- * actions in `sidebar.footer.action`.
+ * owns column geometry, the brand row, the New chat and New work task
+ * entries, global panel rows, and the one scrolling region column; the
+ * Workspace tree in that column is the `sidebar.workspaces` registrant's
+ * (ui-workspace), the Recent list below it is the `sidebar.recent`
+ * registrant's (ui-workspace), and the foot is the `sidebar.settings`
+ * registrant's (ui-settings), followed by optional footer actions in
+ * `sidebar.footer.action`.
  */
 import type { InjectFace, PropsLocale, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ObservableSnapshot } from '@deepseek-ai/dsh-client-store'
@@ -37,6 +39,12 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
      * registers the browser.
      */
     'sidebar.workspaces': { kind: 'single'; scope: 'root'; owner: SidebarSectionOwnerProps }
+    /**
+     * The Recent list below the Workspace tree, inside the same shell-owned
+     * scrolling region column. Declared by this package's 'sidebar' entry;
+     * ui-workspace registers the list. Same owner share as the tree.
+     */
+    'sidebar.recent': { kind: 'single'; scope: 'root'; owner: SidebarSectionOwnerProps }
     /**
      * The settings seat at the sidebar foot. Declared by this package's
      * 'sidebar' entry; ui-settings registers its trigger row + modal panel.
@@ -82,11 +90,12 @@ export interface SidebarPanelMetadata {
 }
 
 /**
- * Owner share of the browser hole — the only facts crossing the shell/region
- * boundary. Business data and actions arrive through the region's own inject.
+ * Owner share of the browser and Recent holes — the only facts crossing the
+ * shell/region boundary. Business data and actions arrive through each
+ * region's own inject.
  */
 export interface SidebarSectionOwnerProps {
-  /** Shell fold-state output: wide renders the full browser, rail the icon column. */
+  /** Shell fold-state output: wide renders the full section, rail the icon column (or nothing). */
   wide: boolean
   /** Rail icons request expansion; the browser rides the wide flip for focus. */
   expandSidebar: () => void
@@ -118,6 +127,11 @@ export type SidebarRootInjected = {
    * recent Workspace, or clear into the New Session pure view when none exist.
    */
   startSession: (workspaceId?: WorkspaceId) => void
+  /**
+   * Start a chat: reuse the pristine chat Session or create one that names
+   * no location, then open it.
+   */
+  startChat: () => void
   /** Toggle the sidebar column through the layout service. */
   toggleSidebar: () => void
   /** Select the global panel addressed by a sidebar row. */
@@ -138,6 +152,7 @@ export type SidebarRootComponentProps =
     | 'sidebar.brand.name'
     | 'sidebar.panellist'
     | 'sidebar.workspaces'
+    | 'sidebar.recent'
     | 'sidebar.settings'
     | 'sidebar.footer.action'
   >

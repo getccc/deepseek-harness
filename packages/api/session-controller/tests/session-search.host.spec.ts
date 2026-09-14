@@ -104,7 +104,7 @@ describe('session.search', () => {
     await ctx.fiber.dispose()
   })
 
-  it('searches only list-visible ids and current conversation-message events', async () => {
+  it('searches every listed id, cwd-less ones included, and only current conversation-message events', async () => {
     const ctx = await baseContext()
     const live = ctx.sessions.create(sid('live'), { meta: header('live', '/live') })
     live.append('user/message', createUserMessage({
@@ -112,9 +112,9 @@ describe('session.search', () => {
       source: { kind: 'user' },
     }), { surfaceOp: 'append' })
     const cold = header('cold', '/cold')
-    const legacy = header('legacy', null)
+    const unlocated = header('unlocated', null)
     ctx.provide('sessionPersistence', testSessionPersistence(ctx, {
-      list: () => Promise.resolve([cold, legacy]),
+      list: () => Promise.resolve([cold, unlocated]),
     }) as never)
 
     const searchSessions = vi.fn((
@@ -123,16 +123,16 @@ describe('session.search', () => {
     ) => Promise.resolve({
       items: [
         {
-          header: legacy,
+          header: unlocated,
           live: false,
           persisted: true,
           bestMatch: {
-            sessionId: legacy.id,
+            sessionId: unlocated.id,
             seq: 3,
             type: 'user/message' as const,
             time: 190,
             surface: 'current' as const,
-            snippet: 'must remain hidden',
+            snippet: 'a matching answer without a workspace',
           },
         },
         {
@@ -159,7 +159,10 @@ describe('session.search', () => {
     expect(response).toEqual({
       ok: true,
       value: {
-        items: [{ sessionId: 'cold', snippet: 'the matching answer' }],
+        items: [
+          { sessionId: 'unlocated', snippet: 'a matching answer without a workspace' },
+          { sessionId: 'cold', snippet: 'the matching answer' },
+        ],
         hasMore: false,
       },
     })

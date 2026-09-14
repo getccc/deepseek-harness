@@ -32,6 +32,7 @@ const NS = 'sidebar'
 
 interface WorkspaceNavigation {
   startSession(workspaceId?: Parameters<SidebarRootInjected['startSession']>[0]): void
+  startChat(): void
 }
 
 /** Services required by the sidebar plugin. */
@@ -61,9 +62,11 @@ export function apply(ctx: ClientContext): void {
   ctx.effect(() => ctx.locale.subscribe(syncPanels), 'ui-sidebar: panel labels')
 
   const injectProps = (): SidebarRootInjected => ({
-    // The shell's New Session button rides the Workspace UI's shared action
-    // (current Session Workspace, then recent Workspace).
+    // The shell's New work task entry and brand row ride the Workspace UI's
+    // shared action (current Session Workspace, then recent Workspace); New
+    // chat rides its chat action.
     startSession: (workspaceId) => { workspaceNavigation.startSession(workspaceId) },
+    startChat: () => { workspaceNavigation.startChat() },
     toggleSidebar: () => { ctx.layout.toggleSidebar() },
     selectPanel: (id) => { ctx.layout.selectPanel(id) },
     hooks: { panels },
@@ -76,6 +79,7 @@ export function apply(ctx: ClientContext): void {
       'sidebar.brand.name': { kind: 'single', scope: 'root' },
       'sidebar.panellist': { kind: 'list', scope: 'root' },
       'sidebar.workspaces': { kind: 'single', scope: 'root' },
+      'sidebar.recent': { kind: 'single', scope: 'root' },
       'sidebar.settings': { kind: 'single', scope: 'root' },
       'sidebar.footer.action': { kind: 'list', scope: 'root' },
     },

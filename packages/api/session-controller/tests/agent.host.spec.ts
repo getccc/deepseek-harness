@@ -75,14 +75,16 @@ function unpublishedAgent(ctx: Context, meta: SessionHeader): Agent {
 }
 
 describe('ApiSession identity failures', () => {
-  it('describes cwd conflicts with and without a recorded cwd', () => {
+  it('describes cwd conflicts with and without a recorded or requested cwd', () => {
     expect(new ApiSessionCwdConflict(SessionId('missing-cwd'), '/wanted', undefined).message)
       .toContain('records no cwd')
     expect(new ApiSessionCwdConflict(SessionId('wrong-cwd'), '/wanted', '/existing').message)
       .toContain('belongs to "/existing"')
+    expect(new ApiSessionCwdConflict(SessionId('located'), undefined, '/existing').message)
+      .toContain('cannot be adopted without a cwd')
   })
 
-  it('maps absent and cwd-less point observations to not found', async () => {
+  it('maps an absent point observation to not found and inspects a cwd-less one', async () => {
     const ctx = new Context()
     roots.push(ctx)
     await ctx.plugin(SessionStore)
@@ -103,21 +105,14 @@ describe('ApiSession identity failures', () => {
     expect(inspect).not.toHaveBeenCalled()
     disposeMissing()
 
+    // A Session composed without a workspace records no cwd and is as
+    // inspectable as any other.
     const listed = header('cwd-less-catalog', null)
-    const disposeListed = providePersistence(ctx, {
+    providePersistence(ctx, {
       list: () => Promise.resolve([listed]),
       inspect: () => Promise.resolve({ meta: listed, events: [] }),
     })
-    await expect(inspectApiSession(ctx, listed.id)).rejects.toBeInstanceOf(ApiSessionNotFound)
-    disposeListed()
-
-    const catalog = header('cwd-less-inspect')
-    const inspected = header('cwd-less-inspect', null)
-    providePersistence(ctx, {
-      list: () => Promise.resolve([catalog]),
-      inspect: () => Promise.resolve({ meta: inspected, events: [] }),
-    })
-    await expect(inspectApiSession(ctx, catalog.id)).rejects.toBeInstanceOf(ApiSessionNotFound)
+    await expect(inspectApiSession(ctx, listed.id)).resolves.toMatchObject({ meta: listed, events: [] })
   })
 
   it('forwards an explicit inspection signal', async () => {
@@ -139,7 +134,7 @@ describe('ApiSession identity failures', () => {
 })
 
 describe('ApiSession Agent lookup and recovery', () => {
-  it('resumes directly from a retained observation and rejects an invalid observed header', async () => {
+  it('resumes directly from a retained observation, a cwd-less header included', async () => {
     const { ctx, agents } = await harness()
     const meta = header('observed-resume')
     const resumed = unpublishedAgent(ctx, meta)
@@ -160,13 +155,12 @@ describe('ApiSession Agent lookup and recovery', () => {
     await expect(agents.resolveObservedAgent(observed)).resolves.toEqual({ agent: resumed })
     expect(resume).toHaveBeenCalledWith(expect.objectContaining({ resumeSessionId: meta.id }))
 
-    const invalid = {
-      ...observed,
-      header: header('observed-without-cwd', null),
-    } as SessionObservation
-    await expect(agents.resolveObservedAgent(invalid)).resolves.toMatchObject({
-      error: { code: 'session/not-found' },
-    })
+    // A Session composed without a workspace resumes like any other.
+    const unlocated = header('observed-without-cwd', null)
+    resume.mockResolvedValueOnce({ agent: unpublishedAgent(ctx, unlocated), dispose: () => Promise.resolve() })
+    await expect(agents.resolveObservedAgent({ ...observed, header: unlocated }))
+      .resolves.toMatchObject({ agent: { id: unlocated.id } })
+    expect(resume).toHaveBeenLastCalledWith(expect.objectContaining({ resumeSessionId: unlocated.id }))
   })
 
   it('projects live Agent contexts and maps missing cold identities through Typert lookup failures', async () => {
@@ -389,7 +383,7 @@ describe('ApiSession create or adoption', () => {
       inspect: () => Promise.resolve({ meta, events }),
     })
     ctx.provide('agentPresets', {
-      resolve: (id?: string) => Promise.resolve({ id: id ?? 'minimal' }),
+      resolveFor: (_workspace: string, id?: string) => Promise.resolve({ id: id ?? 'minimal' }),
       mount: () => Promise.resolve(),
     } as never)
     const resumed = {
@@ -421,7 +415,7 @@ describe('ApiSession create or adoption', () => {
       inspect: () => Promise.resolve({ meta: childMeta, events: [] }),
     })
     child.ctx.provide('agentPresets', {
-      resolve: () => {
+      resolveFor: () => {
         child.ctx.sessions.create(childMeta.id, {
           meta: { ...childMeta, parentSession: SessionId('parent'), origin: 'subagent' },
         })

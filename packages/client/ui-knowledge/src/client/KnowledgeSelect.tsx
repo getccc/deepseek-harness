@@ -34,15 +34,17 @@ export type KnowledgeSelectProps =
  * here: the picker opened by `/knowledge` writes the same Session event, so
  * whichever surface a member used, both show the same choice a moment later.
  * @param props - the composer zone's runtime share, the account-side face, and the locale seat.
- * @returns the control, or null in a build whose Host folds no knowledge scope.
+ * @returns the control, or null in a build whose Host folds no knowledge scope
+ * or for a chat Session, whose tool-less preset has no search to scope.
  */
-export function KnowledgeSelect({ useProjection, choices, apply, t }: KnowledgeSelectProps) {
+export function KnowledgeSelect({ sessionId, useSessions, useProjection, choices, apply, t }: KnowledgeSelectProps) {
   const scope = useProjection('knowledge')
+  const kind = useSessions(s => s.byId[sessionId]?.kind)
   const [open, setOpen] = useState(false)
   const [rows, setRows] = useState<readonly KnowledgeChoice[]>([])
   const [failed, setFailed] = useState(false)
 
-  if (scope === undefined) return null
+  if (scope === undefined || kind === 'chat') return null
 
   const chosen = chosenRows(scope)
   const label = chipLabel(scope, t)

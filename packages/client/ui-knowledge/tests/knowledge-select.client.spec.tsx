@@ -22,16 +22,23 @@ const REF_B = 'weknora:prod:08f25606' as KnowledgeRef
 // The framework-injected t seat, stubbed over the zh dictionaries (the default locale).
 const t: KnowledgeSelectProps['t'] = makeTranslate(zh, commonZh)
 
-/** Render the control over one projected scope. */
-function setup(scope: KnowledgeScope | undefined, apply = vi.fn().mockResolvedValue(undefined)) {
+/** Render the control over one projected scope, for a session of one kind (work unless said). */
+function setup(
+  scope: KnowledgeScope | undefined,
+  apply = vi.fn().mockResolvedValue(undefined),
+  kind: 'work' | 'chat' = 'work',
+) {
   const store = createSnapshotStore<{ value: KnowledgeScope | undefined }>({ value: scope })
   const useProjection = (_key: string, selector?: (v: unknown) => unknown) =>
     bindSnapshotSelector(store)(s => (selector ?? (v => v))(s.value))
+  const sessions = createSnapshotStore({ byId: { s1: { kind } } })
   const choices = vi.fn().mockResolvedValue([
     { knowledgeRef: REF_A, displayName: '临港知识库', description: '' },
     { knowledgeRef: REF_B, displayName: '南昌知识库', description: '' },
   ])
-  const props = { useProjection, choices, apply, t } as unknown as KnowledgeSelectProps
+  const props = {
+    sessionId: 's1', useSessions: bindSnapshotSelector(sessions), useProjection, choices, apply, t,
+  } as unknown as KnowledgeSelectProps
   return { store, choices, apply, view: render(<KnowledgeSelect {...props} />) }
 }
 
@@ -41,6 +48,13 @@ const trigger = (): HTMLElement => screen.getByTitle('本次对话可检索的�
 describe('KnowledgeSelect', () => {
   it('renders nothing where the Host folds no knowledge scope', () => {
     expect(setup(undefined).view.container.innerHTML).toBe('')
+  })
+
+  it('renders nothing for a chat session, whatever the Host folds', () => {
+    // The kind is the session row's word: a chat session runs no search tool,
+    // so a scope the Host still projects has nothing to govern.
+    const chat = setup({ version: 1, mode: 'all' }, undefined, 'chat')
+    expect(chat.view.container.innerHTML).toBe('')
   })
 
   it('says the bare noun while nothing is chosen, and stays untinted', () => {

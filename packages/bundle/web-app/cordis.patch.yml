@@ -479,3 +479,4 @@
       name: '@deepseek-ai/dsh-agent-presets'
       config:
         default: standard
+        chatDefault: chat

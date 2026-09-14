@@ -1,15 +1,23 @@
 /**
  * `workspace` namespace dictionaries: the browsing region (section header,
- * search, tree rows, dialogs) and the pick/add flow. Runtime failure
- * messages (wire error strings) pass through untranslated by policy.
+ * search, tree rows, dialogs), the Recent list, and the pick/add flow.
+ * Runtime failure messages (wire error strings) pass through untranslated by
+ * policy.
  */
 
 /** Simplified Chinese dictionary (the key-set source of truth). */
 export const zh = {
   'group.ungrouped': '未分组',
   'session.new': '新会话',
+  'session.blank.chat': '新对话',
   'section.workspaces': '工作区',
   'section.sessions': '会话',
+  'section.recent': '最近',
+  'recent.filter.label': '筛选',
+  'recent.filter.chat': '聊天',
+  'recent.filter.work': '工作',
+  'recent.filter.all': '全部',
+  'recent.empty': '暂无对话',
   'viewOptions.label': '视图选项',
   'groupBy.label': '分组方式',
   'groupBy.workspace': '按工作区',
@@ -78,8 +86,15 @@ export type WorkspaceKey = keyof typeof zh
 export const en = {
   'group.ungrouped': 'Ungrouped',
   'session.new': 'New Session',
+  'session.blank.chat': 'New chat',
   'section.workspaces': 'Workspaces',
   'section.sessions': 'Sessions',
+  'section.recent': 'Recent',
+  'recent.filter.label': 'Filter',
+  'recent.filter.chat': 'Chat',
+  'recent.filter.work': 'Work',
+  'recent.filter.all': 'All',
+  'recent.empty': 'No conversations yet',
   'viewOptions.label': 'View options',
   'groupBy.label': 'Group by',
   'groupBy.workspace': 'WorkSpace',

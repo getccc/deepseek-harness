@@ -232,6 +232,9 @@ export class TestSessions implements ISessions {
     const summary: SessionSummary = {
       id,
       displayTitle: fixture.id,
+      // The host projection derives the kind from cwd presence; a fixture
+      // stating `kind` outright overrides the derivation.
+      kind: fixture.summary?.cwd === undefined ? 'chat' : 'work',
       running: false,
       blank: false,
       updatedAt: this.records.size + 1,

@@ -123,7 +123,8 @@ export async function createWebhookSession(
 ): Promise<void> {
   const resolved = resolveRequest(ctx, request)
   ctx.permissionPresets.resolve(resolved.permissionPreset)
-  const preset = await ctx.agentPresets.resolve(resolved.agentPreset)
+  // A webhook Session always owns the rule's workspace, so a preset composed for Sessions without one is refused here.
+  const preset = await ctx.agentPresets.resolveFor('required', resolved.agentPreset)
   await ctx.agentPresets.standingKeyFor(preset.id)
   signal.throwIfAborted()
 

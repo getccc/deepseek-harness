@@ -26,25 +26,44 @@ function declarations(selector: string): Map<string, string> | undefined {
 }
 
 describe('SidebarRoot.module.css', () => {
-  it('shares and cancels the wide shell trailing padding structurally', () => {
+  it('scrolls the region column as one and counts the themed scrollbar inside the shell trailing inset', () => {
     const root = declarations('.root')
+    const region = declarations('.regionArea')
     expect(root?.get('--dsh-sidebar-inline-padding')).toBe('12px')
     expect(root?.get('padding')).toBe('6px var(--dsh-sidebar-inline-padding)')
-    expect(declarations('.regionArea')?.get('margin-left')).toBe('-4px')
-    expect(declarations('.regionArea')?.get('padding-left')).toBe('4px')
-    expect(declarations('.regionArea')?.get('margin-right')).toBe(
-      'calc(-1 * var(--dsh-sidebar-inline-padding))',
+    expect(region?.get('overflow-y')).toBe('auto')
+    expect(region?.get('scrollbar-gutter')).toBe('stable')
+    expect(region?.get('--dsh-sidebar-scrollbar-offset')).toBe('2px')
+    expect(region?.get('margin-left')).toBe('-4px')
+    expect(region?.get('padding-left')).toBe('4px')
+    expect(region?.get('margin-right')).toBe(
+      'calc(var(--dsh-sidebar-scrollbar-offset) - var(--dsh-sidebar-inline-padding))',
     )
+    expect(region?.get('padding-right')).toBe([
+      'calc(',
+      'var(--dsh-sidebar-inline-padding)',
+      '- var(--dsh-scrollbar-width)',
+      '- var(--dsh-sidebar-scrollbar-offset)',
+      ')',
+    ].join(' '))
+    expect(declarations('.regionArea::-webkit-scrollbar')).toBeUndefined()
+    expect(declarations('.regionFrame')?.get('position')).toBe('relative')
+    expect(declarations('.regionArea::after')?.get('height')).toBe('16px')
+    expect(declarations('.regionFade')?.get('height')).toBe('24px')
+    expect(declarations('.regionFade')?.get('pointer-events')).toBe('none')
     expect(declarations('.collapsed .regionArea')?.get('margin-left')).toBe('0')
     expect(declarations('.collapsed .regionArea')?.get('padding-left')).toBe('0')
     expect(declarations('.collapsed .regionArea')?.get('margin-right')).toBe('0')
+    expect(declarations('.collapsed .regionArea')?.get('padding-right')).toBe('0')
+    expect(declarations('.collapsed .regionArea')?.get('scrollbar-gutter')).toBe('auto')
+    expect(declarations('.collapsed .regionFade')?.get('display')).toBe('none')
   })
 
-  it('moves the four upper controls while the settings seat only fades', () => {
+  it('moves the upper controls while the settings seat only fades', () => {
     const animation = 'rail-in 150ms var(--ds-ease-in-out) backwards'
     for (const selector of [
       '.railIn .iconButton',
-      '.railIn .newSession',
+      '.railIn .panelList',
       '.railIn .regionArea',
     ]) {
       expect(declarations(selector)?.get('animation')).toBe(animation)
@@ -60,8 +79,10 @@ describe('SidebarRoot.module.css', () => {
 
   it('gives shell rail controls the same base anchor for their shared translation', () => {
     expect(declarations('.collapsed .logoRow')?.get('justify-content')).toBe('flex-start')
-    expect(declarations('.collapsed .newSession')?.get('align-self')).toBe('flex-start')
-    expect(declarations('.collapsed .newSession')?.get('width')).toBe('36px')
+    expect(declarations('.collapsed .panelRow')?.get('width')).toBe('36px')
+    expect(declarations('.collapsed .panelRow')?.get('height')).toBe('36px')
+    expect(declarations('.collapsed .panelRow')?.get('justify-content')).toBe('center')
+    expect(declarations('.newSession')).toBeUndefined()
   })
 
   it('keeps the slotted brand row as tall as the 32px brand mark', () => {

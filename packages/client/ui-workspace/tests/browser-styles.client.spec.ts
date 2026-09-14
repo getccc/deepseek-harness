@@ -1,7 +1,8 @@
 /**
  * WorkspaceBrowser spacing contract, asserted against the CSS text on disk:
- * row fills share the shell's trailing inset, the stable scrollbar counts
- * inside it, and flat, grouped, and search views keep their intended rhythm.
+ * the region takes its natural height inside the shell's scrolling column
+ * (ui-sidebar owns the clip, gutter, and fade), and flat, grouped, and
+ * search views keep their intended rhythm.
  */
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -38,35 +39,16 @@ describe('WorkspaceBrowser.module.css list', () => {
   const listArea = declarations('.listArea')
   const list = declarations('.list')
 
-  it('is the scrolling region', () => {
+  it('takes its natural height and leaves scrolling, the gutter, and the fade to the shell', () => {
+    expect(root?.get('flex')).toBe('none')
+    expect(root?.get('padding-right')).toBeUndefined()
+    expect(listArea?.get('overflow')).toBe('visible')
     expect(list).toBeDefined()
-    expect(list!.get('overflow-y')).toBe('auto')
-  })
-
-  it('counts the themed scrollbar inside the shell trailing inset', () => {
-    expect(root?.get('--dsh-session-list-edge-inset')).toBe('var(--dsh-sidebar-inline-padding)')
-    expect(root?.get('--dsh-session-list-scrollbar-width')).toBe('8px')
-    expect(root?.get('--dsh-session-list-scrollbar-offset')).toBe('2px')
-    expect(root?.get('padding-right')).toBe('var(--dsh-session-list-edge-inset)')
-    expect(listArea?.get('margin-left')).toBe('-4px')
-    expect(listArea?.get('padding-left')).toBe('4px')
-    expect(listArea?.get('margin-right')).toBe('calc(-1 * var(--dsh-session-list-edge-inset))')
-    expect(declarations('.fade')?.get('right')).toBe('var(--dsh-session-list-edge-inset)')
-    expect(list?.get('margin-right')).toBe('var(--dsh-session-list-scrollbar-offset)')
-    expect(list?.get('margin-left')).toBe('-4px')
-    expect(list?.get('padding-left')).toBe('4px')
-    expect(list?.get('padding-right')).toBe([
-      'calc(',
-      'var(--dsh-session-list-edge-inset)',
-      '- var(--dsh-session-list-scrollbar-width)',
-      '- var(--dsh-session-list-scrollbar-offset)',
-      ')',
-    ].join(' '))
+    expect(list!.get('flex')).toBe('none')
+    expect(list!.get('overflow-y')).toBeUndefined()
+    expect(list!.get('scrollbar-gutter')).toBeUndefined()
+    expect(declarations('.fade')).toBeUndefined()
     expect(declarations('.list::-webkit-scrollbar')).toBeUndefined()
-  })
-
-  it('reserves the scrollbar whether or not the list overflows', () => {
-    expect(list!.get('scrollbar-gutter')).toBe('stable')
   })
 
   it('keeps 2px between rows and 4px between workspace groups', () => {
@@ -96,8 +78,7 @@ describe('WorkspaceBrowser.module.css list', () => {
     }
   })
 
-  it('keeps the compact fade, overflow control, search field, and row heights', () => {
-    expect(declarations('.fade')?.get('height')).toBe('24px')
+  it('keeps the overflow control, search field, and row heights', () => {
     expect(declarations('.sessionOverflowButton')?.get('height')).toBe('28px')
     expect(declarations('.searchExpanded')?.get('height')).toBe('30px')
     expect(rowDeclarations('.projectRow')?.get('height')).toBe('34px')

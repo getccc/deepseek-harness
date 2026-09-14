@@ -31,20 +31,23 @@ function roster(ids: readonly string[]): unknown {
     trust: 'system',
     path: `/presets/${id}/agent.cordis.yml`,
   })
+  const resolve = (id?: string): Promise<object> => {
+    const wanted = id ?? ids[0] ?? ''
+    if (!ids.includes(wanted)) {
+      return Promise.reject(new RemoteError(
+        'agent-preset/not-found',
+        `agent-presets: preset "${wanted}" not found (available: ${ids.join(', ') || 'none'})`,
+        { agentPreset: wanted, available: ids },
+      ))
+    }
+    return Promise.resolve(presetOf(wanted))
+  }
   return {
     defaultId: ids[0],
-    resolve: (id?: string) => {
-      const wanted = id ?? ids[0] ?? ''
-      if (!ids.includes(wanted)) {
-        return Promise.reject(new RemoteError(
-          'agent-preset/not-found',
-          `agent-presets: preset "${wanted}" not found (available: ${ids.join(', ') || 'none'})`,
-          { agentPreset: wanted, available: ids },
-        ))
-      }
-      return Promise.resolve(presetOf(wanted))
-    },
+    resolve,
     mount: (_ctx: Context, id?: string) => Promise.resolve(presetOf(id ?? ids[0] ?? '')),
+    // Every fake preset needs a workspace, so the location adds nothing here.
+    resolveFor: (_workspace: string, id?: string) => resolve(id),
   }
 }
 
@@ -81,7 +84,7 @@ async function harness(presets?: readonly string[]) {
     cwd,
   })
   if (presets !== undefined) ctx.sessionProjections.register(agentPresetProjectionDefinition)
-  return { ctx, remote }
+  return { ctx, remote, cwd }
 }
 
 describe('session.create Agent preset identity', () => {
@@ -161,10 +164,11 @@ describe('session.create Agent preset identity', () => {
   })
 
   it('explains why a preset-less Session cannot be adopted under one', async () => {
-    const { remote } = await harness()
-    await remote.create({ sessionId: SessionId('s7') })
+    // A rosterless deployment composes no Session without a location.
+    const { remote, cwd } = await harness()
+    await remote.create({ sessionId: SessionId('s7'), cwd })
 
-    const response = await remote.create({ sessionId: SessionId('s7'), agentPreset: 'standard' })
+    const response = await remote.create({ sessionId: SessionId('s7'), cwd, agentPreset: 'standard' })
 
     expect(response).toMatchObject({
       ok: false,

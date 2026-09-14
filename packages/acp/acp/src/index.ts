@@ -308,6 +308,8 @@ export function apply(ctx: Context, config: AcpConfig): void {
             || ctx.sessions.get(header.id) !== undefined
             || header.origin === 'subagent'
             || header.parentSession !== undefined
+            // An ACP session is resumed at a cwd the client names, so a
+            // Session created without one (a Web chat) is not resumable here.
             || header.cwd === undefined
             || !isAbsolute(header.cwd)
         ) return undefined

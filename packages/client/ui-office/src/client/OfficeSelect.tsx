@@ -56,14 +56,16 @@ function kindKey(kind: Exclude<OfficeKind, 'none'>): OfficeKey {
  * than held here, so a reload or a second browser shows the same choice.
  * Clicking the chosen kind again clears it back to no imposed format.
  * @param props - the composer zone's runtime share, the account-side face, and the locale seat.
- * @returns the control, or null in a build whose Host folds no office choice.
+ * @returns the control, or null in a build whose Host folds no office choice
+ * or for a chat Session, whose tool-less preset produces no document.
  */
-export function OfficeSelect({ useProjection, apply, t }: OfficeSelectProps) {
+export function OfficeSelect({ sessionId, useSessions, useProjection, apply, t }: OfficeSelectProps) {
   const choice = useProjection('office')
+  const kind = useSessions(s => s.byId[sessionId]?.kind)
   const [open, setOpen] = useState(false)
   const [failed, setFailed] = useState(false)
 
-  if (choice === undefined) return null
+  if (choice === undefined || kind === 'chat') return null
 
   const chosen = choice.kind !== 'none'
   const label = chosen ? t(kindKey(choice.kind)) : t('chip.label')

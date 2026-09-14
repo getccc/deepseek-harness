@@ -1,21 +1,22 @@
 import { describe, expect, it } from 'vitest'
-import type { SessionListState, SessionSummary } from '@deepseek-ai/dsh-api-session-controller/client'
+import type { SessionKind, SessionListState, SessionSummary } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { WorkspaceId, WorkspaceView } from '@deepseek-ai/dsh-api-workspace-controller/client'
 import type { SessionPendingInteractionBase } from '@deepseek-ai/dsh-client-ui-session/client'
 import type { ScheduleId, ScheduleRecord } from '@deepseek-ai/dsh-schedule/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import {
-  deriveFlat, deriveGroups, deriveSearchResults, owningGroupKey, workspaceLabel,
+  deriveFlat, deriveGroups, deriveRecent, deriveSearchResults, owningGroupKey, workspaceLabel,
   UNGROUPED_KEY,
 } from '../src/client/tree.ts'
 import { createWorkspaceViewStore } from '../src/client/stores.ts'
 
 const sid = (id: string) => id as SessionId
 const wid = (id: string) => id as WorkspaceId
-const summary = (id: string, updatedAt: number, cwd?: string): SessionSummary => ({
-  id: sid(id), displayTitle: id, running: false, blank: false,
+const summary = (id: string, updatedAt: number, cwd?: string, kind: SessionKind = 'work'): SessionSummary => ({
+  id: sid(id), displayTitle: id, kind, running: false, blank: false,
   updatedAt, ...(cwd === undefined ? {} : { cwd }),
 })
+const chat = (id: string, updatedAt: number): SessionSummary => summary(id, updatedAt, undefined, 'chat')
 const list = (...items: SessionSummary[]): SessionListState => ({
   ids: items.map(item => item.id),
   byId: Object.fromEntries(items.map(item => [item.id, item])),
@@ -337,6 +338,58 @@ describe('deriveFlat', () => {
     const kept = summary('kept', 1)
     const gone = summary('gone', 2)
     expect(deriveFlat(list(kept, gone), archived('gone'), noAttention).map(row => row.id)).toEqual([kept.id])
+  })
+})
+
+describe('deriveRecent', () => {
+  it('admits rows by kind, newest-first with the id tiebreak, and every kind under all', () => {
+    const sessions = list(
+      summary('work-old', 1, '/projects/a'), chat('chat-new', 4), summary('work-new', 3, '/projects/b'),
+      chat('chat-tie-b', 2), chat('chat-tie-a', 2),
+    )
+    expect(deriveRecent(sessions, noArchive, noAttention, 'chat').map(row => [row.id, row.kind])).toEqual([
+      [sid('chat-new'), 'chat'], [sid('chat-tie-a'), 'chat'], [sid('chat-tie-b'), 'chat'],
+    ])
+    expect(deriveRecent(sessions, noArchive, noAttention, 'work').map(row => row.id)).toEqual([
+      sid('work-new'), sid('work-old'),
+    ])
+    expect(deriveRecent(sessions, noArchive, noAttention, 'all').map(row => row.id)).toEqual([
+      sid('chat-new'), sid('work-new'), sid('chat-tie-a'), sid('chat-tie-b'), sid('work-old'),
+    ])
+    // The flat list is the work projection of the same derivation.
+    expect(deriveFlat(sessions, noArchive, noAttention)).toEqual(deriveRecent(sessions, noArchive, noAttention, 'work'))
+  })
+
+  it('shows only the current blank chat and hides archived and subagent rows', () => {
+    const currentBlank = { ...chat('current-blank', 9), blank: true }
+    const staleBlank = { ...chat('stale-blank', 8), blank: true }
+    const gone = chat('gone', 7)
+    const subagent = { ...chat('subagent', 6), parentId: sid('kept'), origin: 'subagent' as const }
+    const kept = chat('kept', 5)
+    const sessions = { ...list(kept, currentBlank, staleBlank, gone, subagent), current: currentBlank.id }
+    const rows = deriveRecent(sessions, archived('gone'), noAttention, 'chat')
+    expect(rows.map(row => [row.id, row.blank, row.title])).toEqual([
+      [currentBlank.id, true, ''], [kept.id, false, 'kept'],
+    ])
+    expect(rows[1]).toMatchObject({ runningSubagentCount: 0 })
+  })
+})
+
+describe('chat sessions outside the Workspace tree', () => {
+  it('never enter Ungrouped or the flat list, while search still matches them', () => {
+    const work = summary('loose-work', 1, '/other')
+    const conversation = chat('conversation', 2)
+    conversation.displayTitle = 'Needle conversation'
+    const sessions = list(work, conversation)
+    const groups = deriveGroups(sessions, [], noArchive, noAttention, view([UNGROUPED_KEY]))
+    expect(groups.map(group => group.key)).toEqual([UNGROUPED_KEY])
+    expect(groups[0]!.sessions.map(row => row.id)).toEqual([work.id])
+    expect(deriveFlat(sessions, noArchive, noAttention).map(row => row.id)).toEqual([work.id])
+    // A chat-only list surfaces no Ungrouped bucket at all.
+    expect(deriveGroups(list(conversation), [], noArchive, noAttention, view([UNGROUPED_KEY]))).toEqual([])
+    expect(deriveSearchResults(
+      sessions, [], 'needle', noArchive, noAttention, { items: [], hasMore: false }, 10,
+    ).items.map(item => item.id)).toEqual([conversation.id])
   })
 })
 

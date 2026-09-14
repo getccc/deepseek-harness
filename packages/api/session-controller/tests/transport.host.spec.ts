@@ -548,35 +548,23 @@ describe('SessionHistoryController', () => {
     expect(inspect).not.toHaveBeenCalled()
   })
 
-  it('rejects incomplete cold metadata before serving a source', async () => {
-    const first = await setup()
-    const sessionId = SessionId('incomplete')
+  it('serves a cold source whose header records no cwd', async () => {
+    // A Session composed without a workspace is a complete source: its
+    // header simply carries no cwd.
+    const bench = await setup()
+    const sessionId = SessionId('unlocated')
     const address = { kind: 'session' as const, sessionId }
-    const firstHeader: SessionHeader = { version: SESSION_FORMAT_VERSION, id: sessionId, createdAt: 1, isSeeded: false }
-    first.ctx.provide('sessionPersistence', testSessionPersistence(first.ctx, {
-      list: () => Promise.resolve([firstHeader]),
+    const header: SessionHeader = { version: SESSION_FORMAT_VERSION, id: sessionId, createdAt: 1, isSeeded: false }
+    bench.ctx.provide('sessionPersistence', testSessionPersistence(bench.ctx, {
+      list: () => Promise.resolve([header]),
       inspect: () => Promise.resolve({
-        meta: firstHeader,
+        meta: header,
         inheritedEventCount: SessionLogOffset(0),
         events: [],
       }),
     }) as never)
-    await expect(first.transport.page({ address, throughSeq: -1 }, signal()))
-      .rejects.toMatchObject({ code: 'session/not-found' })
-
-    const second = await setup()
-    const listed: SessionHeader = { version: SESSION_FORMAT_VERSION, id: sessionId, createdAt: 1, cwd: '/workspace', isSeeded: false }
-    const inspected: SessionHeader = { version: SESSION_FORMAT_VERSION, id: sessionId, createdAt: 1, isSeeded: false }
-    second.ctx.provide('sessionPersistence', testSessionPersistence(second.ctx, {
-      list: () => Promise.resolve([listed]),
-      inspect: () => Promise.resolve({
-        meta: inspected,
-        inheritedEventCount: SessionLogOffset(0),
-        events: [],
-      }),
-    }) as never)
-    await expect(second.transport.page({ address, throughSeq: -1 }, signal()))
-      .rejects.toMatchObject({ code: 'session/not-found' })
+    await expect(bench.transport.page({ address, throughSeq: -1 }, signal()))
+      .resolves.toEqual({ records: [], hasMore: false })
   })
 
   it('serves cold ordinary history and validates every durable subagent descriptor state', async () => {

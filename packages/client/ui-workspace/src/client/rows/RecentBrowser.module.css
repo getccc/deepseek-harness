@@ -1,0 +1,78 @@
+/* Recent section: natural height below the Workspace browser inside the
+   shell's scrolling region column (SidebarRoot.module.css .regionArea owns
+   the scroll clip, the scrollbar gutter, and the bottom fade). The header
+   mirrors the browser's section header geometry so both titles align. */
+.root {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  margin-top: 8px;
+  animation: wide-in 200ms var(--ds-ease-in-out);
+}
+
+@keyframes wide-in {
+  from { opacity: 0; }
+}
+
+.sectionHeader {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+  padding-left: 4px;
+  margin: 2px -4px 4px 0;
+  box-sizing: border-box;
+  border-radius: 12px;
+  overflow: hidden;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.sectionLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  line-height: 20px;
+}
+
+.iconButton {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  corner-shape: round;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.iconButton:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.list {
+  flex: none;
+}
+
+.list > * + * {
+  margin-top: 2px;
+}
+
+.empty {
+  padding: 16px 12px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 13px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root {
+    animation: none;
+  }
+}

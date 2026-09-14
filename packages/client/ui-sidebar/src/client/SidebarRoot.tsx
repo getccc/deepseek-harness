@@ -1,25 +1,27 @@
 /**
- * Sidebar shell: column geometry and global panel navigation.
- * Collapse is a slide plus crossfade:
+ * Sidebar shell: column geometry, the New chat and New work task entries,
+ * and global panel navigation. Collapse is a slide plus crossfade:
  * content freezes at its expanded width (inline style) and fades out in place
  * while the sliding column (AppFrame grid tracks) clips it — nothing reflows
  * mid-slide. At settle the wide-only content unmounts and the upper
  * controls enter the 56px rail from the same horizontal offset (one icon each,
  * same top-down order) on one fade that ends with the slide. The bottom-pinned
- * settings control only fades. The workspace/session browsing region between
- * global panel rows and the foot is the `sidebar.workspaces` registrant's,
- * and the foot holds `sidebar.settings` plus `sidebar.footer.action`; the shell
- * hands them the wide flag (plus an expand request callback for the browser).
+ * settings control only fades. The region column between global panel rows
+ * and the foot is the shell's one scroll region: it stacks the
+ * `sidebar.workspaces` registrant's Workspace tree over the `sidebar.recent`
+ * registrant's Recent list, and the foot holds `sidebar.settings` plus
+ * `sidebar.footer.action`; the shell hands them the wide flag (plus an
+ * expand request callback for the two regions).
  *
- * The column also owns whether the scroll regions nested in it draw a
- * scrollbar at all: the shell tracks the pointer and rebinds ui-theme's
- * scrollbar indirection away while it is elsewhere, so a list the user is not
- * pointing at carries no bar.
+ * The column also owns whether its scroll region draws a scrollbar at all:
+ * the shell tracks the pointer and rebinds ui-theme's scrollbar indirection
+ * away while it is elsewhere, so a list the user is not pointing at carries
+ * no bar.
  */
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import clsx from 'clsx'
 import {
-  WeWorkLogo, IconNewChatOutline16, IconPanelLeftOutline16, Tooltip,
+  WeWorkLogo, IconFolderOpenOutline16, IconNewChatOutline16, IconPanelLeftOutline16, Tooltip,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type {
@@ -74,6 +76,33 @@ function PanelRow({ id, label, wide, usePanelInfo, selectPanel, renderSlot }: Pa
 }
 
 /**
+ * One shell action entry in the panel-row style: icon plus label wide, icon
+ * with a tooltip on the rail. `name` is the accessible name and tooltip;
+ * `label` is the visible wide text.
+ */
+function ActionRow({ name, label, icon, wide, onClick }: {
+  name: string
+  label: string
+  icon: ReactNode
+  wide: boolean
+  onClick: () => void
+}) {
+  return (
+    <Tooltip label={name} delayMs={500} disabled={wide}>
+      <button
+        type="button"
+        className={css.panelRow}
+        aria-label={name}
+        onClick={onClick}
+      >
+        <span className={css.panelGlyph} aria-hidden="true">{icon}</span>
+        {wide && <span className={clsx(css.panelTitle, css.wide)}>{label}</span>}
+      </button>
+    </Tooltip>
+  )
+}
+
+/**
  * Render the sidebar column shell.
  * @param props - composed slot props (runtime share + injected callbacks, contract/slots.ts).
  * @returns the sidebar element tree.
@@ -82,6 +111,7 @@ export function SidebarRoot({
   collapsed,
   width,
   startSession,
+  startChat,
   toggleSidebar,
   selectPanel,
   usePanels,
@@ -99,6 +129,7 @@ export function SidebarRoot({
     return () => { window.clearTimeout(timer) }
   }, [collapsed])
   const wide = !collapsed || !settled
+  const expandSidebar = (): void => { if (collapsed) toggleSidebar() }
 
   // Freeze the content at its expanded width while it fades out (collapsed
   // && wide): the sliding column then clips it instead of reflowing it. The
@@ -169,13 +200,13 @@ export function SidebarRoot({
       onPointerLeave={() => { armLinger() }}
     >
       <div className={css.logoRow}>
-        {/* Expanded, the brand doubles as a New Session shortcut; the
+        {/* Expanded, the brand doubles as a New work task shortcut; the
             collapsed rail's logo is the expand toggle below instead. */}
         {wide && (
           <button
             type="button"
             className={clsx(css.brand, css.wide)}
-            aria-label={t('session.new.label')}
+            aria-label={t('work.new.label')}
             onClick={() => { startSession() }}
           >
             <span className={css.brandIdentity} aria-hidden="true">
@@ -210,18 +241,24 @@ export function SidebarRoot({
         </Tooltip>
       </div>
 
-      {/* Expanded, the button carries its own label — tooltip only on the rail. */}
-      <Tooltip label={t('session.new.label')} delayMs={500} disabled={wide}>
-        <button
-          type="button"
-          className={css.newSession}
-          aria-label={t('session.new.label')}
+      {/* The two ways to start: a chat (no Workspace), or a work task in the
+          current or recent Workspace. Same row style as the panel rows. */}
+      <div className={css.panelList}>
+        <ActionRow
+          name={t('chat.new.label')}
+          label={t('chat.new')}
+          icon={<IconNewChatOutline16 size={wide ? 16 : 18} />}
+          wide={wide}
+          onClick={() => { startChat() }}
+        />
+        <ActionRow
+          name={t('work.new.label')}
+          label={t('work.new')}
+          icon={<IconFolderOpenOutline16 size={wide ? 16 : 18} />}
+          wide={wide}
           onClick={() => { startSession() }}
-        >
-          <IconNewChatOutline16 size={wide ? 14 : 18} />
-          {wide && <span className={clsx(css.newSessionLabel, css.wide)}>{t('session.new')}</span>}
-        </button>
-      </Tooltip>
+        />
+      </div>
 
       {panels.length > 0 && (
         <nav className={css.panelList} aria-label={t('panels.label')}>
@@ -239,13 +276,17 @@ export function SidebarRoot({
         </nav>
       )}
 
-      {/* The browsing region fills the column between the controls and the
-          foot in both states; its rail icon column rides the same slot. */}
-      <div className={css.regionArea}>
-        {renderSlot('sidebar.workspaces', {
-          wide,
-          expandSidebar: () => { if (collapsed) toggleSidebar() },
-        })}
+      {/* The region column fills the space between the controls and the
+          foot in both states and is the one scroll region: the Workspace
+          tree, then the Recent list; the tree's rail icon column rides the
+          same seat. The fade overlay sits outside the scroll clip so it stays
+          pinned to the visible bottom. */}
+      <div className={css.regionFrame}>
+        <div className={css.regionArea}>
+          {renderSlot('sidebar.workspaces', { wide, expandSidebar })}
+          {renderSlot('sidebar.recent', { wide, expandSidebar })}
+        </div>
+        <span className={css.regionFade} aria-hidden="true" />
       </div>
 
       {/* Footer actions stack above Settings in both sidebar widths. */}

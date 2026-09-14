@@ -218,11 +218,14 @@ export const SESSION_SEARCH_SNIPPET_MAX_CODE_POINTS = 240
 declare module '@deepseek-ai/dsh-typert-protocol' {
   interface RemoteErrorDetailsMap {
     'session/model-unavailable': { readonly provider: string; readonly model: string }
+    /** Explicit-id adoption under a cwd the stored Session does not own; a missing side is a Session without one. */
     'session/conflict': {
       readonly sessionId: SessionId
-      readonly requestedCwd: string
+      readonly requestedCwd?: string
       readonly existingCwd?: string
     }
+    /** Creation named no Workspace or cwd in a deployment that composes no preset for such a Session. */
+    'session/location-required': { readonly sessionId: SessionId }
     'session/agent-busy': { readonly reason: string }
     'session/invalid-time-zone': { readonly value: string }
     'session/workspace-attach-failed': { readonly sessionId: SessionId; readonly workspaceId: string }
@@ -303,6 +306,8 @@ export interface SessionCreateRequest {
 export interface SessionCreateValue {
   readonly sessionId: SessionId
   readonly agentPreset?: string
+  /** Working directory the Session owns; absent for a Session composed without one. */
+  readonly cwd?: string
 }
 
 /** Session model-selection request. */

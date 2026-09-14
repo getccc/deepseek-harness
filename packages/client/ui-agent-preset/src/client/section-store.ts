@@ -18,6 +18,7 @@ import type { Context as ClientContext } from '@deepseek-ai/cordis'
 // Type-only: pulls the ctx.remote merge into this program.
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
 import { createSnapshotStore, type SnapshotStore } from '@deepseek-ai/dsh-client-store'
+import type { PresetWorkspace } from '@deepseek-ai/dsh-agent-presets/types'
 import { beginRosterRead, writeDefaultPreset } from './settings-store.ts'
 
 /** Ids a preset directory may be named, mirroring the host's own rule. */
@@ -33,8 +34,17 @@ export interface PresetRow {
   description?: string
   /** Whether the preset ships with the deployment or was authored locally. */
   trust: 'system' | 'user'
-  /** Whether a session that names no preset gets this one. */
+  /**
+   * Whether a session that names no preset gets this one: among `required`
+   * rows the user-settable default, among `none` rows the chat default.
+   */
   isDefault: boolean
+  /**
+   * Whether sessions on this preset own a working directory. Only a
+   * `required` row can be made the default from this page; a `none` row
+   * composes chat sessions and carries a badge saying so.
+   */
+  workspace: PresetWorkspace
   /**
    * Why the preset cannot compose a session, absent when it can. A broken
    * row renders marked and unselectable — its directory still occupies the

@@ -640,7 +640,8 @@ describe('remaining branches', () => {
 
   it('create passes cwd and a preallocated id, folds transport throws, and deduplicates the echo', async () => {
     const api = new FakeApiClient()
-    api.onCreate = () => Promise.resolve(ok({ sessionId: S1 }))
+    // The host echoes the cwd it resolved; the placeholder row reads that echo.
+    api.onCreate = payload => Promise.resolve(ok({ sessionId: S1, ...(payload as { cwd?: string }).cwd === undefined ? {} : { cwd: '/tmp/w' } }))
     const manager = new SessionManager(fakeRemote(api))
     await manager.create({ cwd: '/tmp/w', sessionId: S1 })
     expect(api.callsOf('session.create')).toEqual([{ cwd: '/tmp/w', sessionId: S1 }])

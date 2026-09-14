@@ -40,6 +40,7 @@ function summary(id: string, overrides: Partial<SessionSummary> = {}): SessionSu
   return {
     id: sid(id),
     displayTitle: id,
+    kind: 'work',
     running: false,
     blank: false,
     updatedAt: 0,
@@ -433,6 +434,74 @@ describe('UiWorkspaceService', () => {
     await vi.waitFor(() => {
       expect(warning).toHaveBeenCalledWith('new session failed:', expect.any(Error))
     })
+  })
+
+  it('starts a chat by reusing the pristine unarchived chat Session, else creating one without a location', async () => {
+    const b = bench({ workspaces: workspaceState([]) })
+    const pristineChat = summary('pristine-chat', { kind: 'chat', blank: true, pristine: true })
+    const configuredChat = summary('configured-chat', { kind: 'chat', blank: true })
+    const archivedChat = summary('archived-chat', { kind: 'chat', blank: true, pristine: true })
+    const pristineWork = summary('pristine-work', { blank: true, pristine: true, cwd: '/w/alpha' })
+    b.workspaces.list.set(workspaceState([], [archivedChat.id]))
+    b.sessions.list.set(sessionState([configuredChat, archivedChat, pristineWork, pristineChat]))
+
+    b.uiWorkspace.startChat()
+    await vi.waitFor(() => {
+      expect(b.sessions.open).toHaveBeenCalledWith(pristineChat.id)
+    })
+    expect(b.sessions.create).not.toHaveBeenCalled()
+    expect(b.selectPanel).toHaveBeenCalledWith(null)
+
+    // A configured chat, an archived one, and a pristine work Session are
+    // not a new chat: creation names no location.
+    b.sessions.list.set(sessionState([configuredChat, archivedChat, pristineWork]))
+    b.sessions.create.mockResolvedValue(sid('fresh-chat'))
+    b.uiWorkspace.startChat()
+    await vi.waitFor(() => {
+      expect(b.sessions.open).toHaveBeenLastCalledWith(sid('fresh-chat'))
+    })
+    expect(b.sessions.create).toHaveBeenCalledExactlyOnceWith({})
+  })
+
+  it('coalesces concurrent chat creation and never lands a superseded or disposed chat open', async () => {
+    const b = bench()
+    const creation = Promise.withResolvers<SessionId>()
+    b.sessions.create.mockImplementation(() => creation.promise)
+    b.uiWorkspace.startChat()
+    b.uiWorkspace.startChat()
+    expect(b.sessions.create).toHaveBeenCalledTimes(1)
+    b.layout.selectPanel('panel-a' as MainPanelId)
+    creation.resolve(sid('late-chat'))
+    // The settled attempt clears the single-flight slot: the next start creates again.
+    b.sessions.create.mockResolvedValue(sid('second-chat'))
+    await vi.waitFor(() => { expect(b.sessions.create).toHaveBeenCalledTimes(1) })
+    await flush()
+    b.uiWorkspace.startChat()
+    await vi.waitFor(() => {
+      expect(b.sessions.open).toHaveBeenCalledWith(sid('second-chat'))
+    })
+    expect(b.sessions.create).toHaveBeenCalledTimes(2)
+    expect(b.sessions.open).toHaveBeenCalledExactlyOnceWith(sid('second-chat'))
+
+    const disposed = bench()
+    const pending = Promise.withResolvers<SessionId>()
+    disposed.sessions.create.mockImplementation(() => pending.promise)
+    disposed.uiWorkspace.startChat()
+    await disposed.ctx.fiber.dispose()
+    pending.resolve(sid('after-dispose'))
+    await flush()
+    expect(disposed.sessions.open).not.toHaveBeenCalled()
+  })
+
+  it('reports a failed chat start', async () => {
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const b = bench()
+    b.sessions.create.mockRejectedValueOnce(new Error('create failed'))
+    b.uiWorkspace.startChat()
+    await vi.waitFor(() => {
+      expect(warning).toHaveBeenCalledWith('new chat failed:', expect.any(Error))
+    })
+    expect(b.sessions.open).not.toHaveBeenCalled()
   })
 
   it('opens the recent Workspace after both baselines arrive', async () => {

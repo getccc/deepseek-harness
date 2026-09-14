@@ -186,6 +186,13 @@ export interface Config {
 export interface Config {
   /** Preset id mounted when a caller names none. Missing at mount time fails loud. */
   default: string
+  /**
+   * Preset id composed for a session created without a Workspace or cwd
+   * when the caller names none; it must declare `workspace: none`. Absent
+   * means the deployment composes no such session unless the caller names
+   * the preset itself.
+   */
+  chatDefault?: string
   /** Scanned roots in precedence order; an earlier root wins a duplicate id. */
   roots: PresetRoot[]
   /**
@@ -219,7 +226,7 @@ export interface PresetRoot {
 export type PresetTrust = 'system' | 'user'
 ```
 
-来源：[`packages/preset/agent-presets/src/preset.ts:52`](../packages/preset/agent-presets/src/preset.ts)
+来源：[`packages/preset/agent-presets/src/preset.ts:56`](../packages/preset/agent-presets/src/preset.ts)
 
 <a id="deepseek-aidsh-agent-tool-presentation"></a>
 
@@ -3432,6 +3439,29 @@ export interface Config {
 ```
 
 来源：[`packages/workflow/tool-ralph/src/index.ts:21`](../packages/workflow/tool-ralph/src/index.ts)
+
+<a id="deepseek-aidsh-tool-restriction"></a>
+
+## `@deepseek-ai/dsh-tool-restriction`
+
+需要：`tools`
+
+```ts config-catalog
+/**
+ * Plugin config: the mask, as `ctx.tools.restrict()` takes it. The schema
+ * requires at least one list — a row naming neither fails validation — and
+ * an absent list is never read as an empty one: `allow: []` masks every
+ * global tool. Both lists together intersect.
+ */
+export interface Config {
+  /** Global tool names that stay visible; every other global tool is removed. `[]` removes them all. */
+  allow?: string[]
+  /** Global tool names removed from visibility. */
+  deny?: string[]
+}
+```
+
+来源：[`packages/guard/tool-restriction/src/index.ts:34`](../packages/guard/tool-restriction/src/index.ts)
 
 <a id="deepseek-aidsh-tool-session-query"></a>
 

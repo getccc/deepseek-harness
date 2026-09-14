@@ -32,11 +32,11 @@
 /* Scrollbars in the column are a pointer affordance: the shell adds this
    class whenever the pointer is not inside (SidebarRoot.tsx owns the linger),
    and rebinding ui-theme's indirection pair to `transparent` takes the thumb
-   out of every scroll region nested under it — the workspace browser's
-   session list. `transparent` rather than `display: none` on the bar:
-   the reservation (`scrollbar-gutter: stable` on the list) stays in force, so
-   revealing the thumb never reflows a row. Rebinding contract and the two
-   rendering paths it reaches: ui-theme's README. */
+   out of every scroll region nested under it — the region column below.
+   `transparent` rather than `display: none` on the bar: the reservation
+   (`scrollbar-gutter: stable` on .regionArea) stays in force, so revealing
+   the thumb never reflows a row. Rebinding contract and the two rendering
+   paths it reaches: ui-theme's README. */
 .root.quietBars {
   --dsh-scrollbar-thumb: transparent;
   --dsh-scrollbar-thumb-hover: transparent;
@@ -64,7 +64,6 @@
    horizontally fixed. Only a live collapse gets .railIn; a cold collapsed
    render stays static. */
 .railIn .iconButton,
-.railIn .newSession,
 .railIn .panelList,
 .railIn .regionArea {
   animation: rail-in 150ms var(--ds-ease-in-out) backwards;
@@ -212,58 +211,6 @@
   color: var(--dsw-alias-label-primary);
 }
 
-/* New Session: 38px bar, 12px radius (figma 133:7634 geometry, squared-off
-   corners); collapsed it renders as the rail's plain icon control. */
-.newSession {
-  flex: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 38px;
-  padding: 8px 16px;
-  margin: 0 2px 8px;
-  box-sizing: border-box;
-  border: 0.5px solid var(--dsw-alias-border-l3);
-  border-radius: 12px;
-  background: var(--dsw-alias-button-elevated-fill);
-  color: var(--dsw-alias-label-primary);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 22px;
-  cursor: pointer;
-  overflow: hidden;
-}
-
-.newSession:hover {
-  background: var(--dsw-alias-button-floating-hover);
-}
-
-.collapsed .newSession {
-  align-self: flex-start;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  margin: 0 0 12px;
-  gap: 0;
-  border-color: transparent;
-  background: transparent;
-}
-
-.collapsed .newSession:hover {
-  background: var(--dsw-alias-interactive-bg-hover);
-}
-
-.newSessionLabel {
-  max-width: 200px;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.collapsed .newSessionLabel {
-  max-width: 0;
-}
-
 .panelList {
   flex: none;
   display: flex;
@@ -332,24 +279,69 @@
   color: var(--dsw-alias-label-primary);
 }
 
-/* Region seat: always mounted so the foot never moves. Its trailing margin
-   cancels the wide shell inset so the nested scrollbar can sit at the sidebar
-   edge; the browser restores that inset inside its own rows. */
+/* Region column: the one scroll region for the two browsing sections
+   (sidebar.workspaces, then sidebar.recent), always mounted so the foot never
+   moves. Its trailing margin cancels the wide shell inset so the scrollbar
+   sits 2px in from the sidebar edge; the stable gutter (ui-theme's
+   --dsh-scrollbar-width) plus the remaining padding restore that inset for
+   the rows, with or without overflow, so revealing the thumb never moves a
+   row. The frame keeps the bottom fade outside the scroll clip. */
+.regionFrame {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .regionArea {
+  --dsh-sidebar-scrollbar-offset: 2px;
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
   margin-left: -4px;
-  margin-right: calc(-1 * var(--dsh-sidebar-inline-padding));
+  margin-right: calc(var(--dsh-sidebar-scrollbar-offset) - var(--dsh-sidebar-inline-padding));
   padding-left: 4px;
-  overflow: hidden;
+  padding-right: calc(
+    var(--dsh-sidebar-inline-padding)
+    - var(--dsh-scrollbar-width)
+    - var(--dsh-sidebar-scrollbar-offset)
+  );
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+/* Clears the bottom fade: at scroll end the last row sits above the
+   gradient instead of under it. */
+.regionArea::after {
+  content: '';
+  flex: none;
+  height: 16px;
+}
+
+/* Bottom fade: compact overlay pinned to the region's visible bottom,
+   transparent -> sidebar fill so it tracks the theme. */
+.regionFade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 24px;
+  background: linear-gradient(to bottom, transparent, var(--dsw-specific-sidebar-fill));
+  pointer-events: none;
 }
 
 .collapsed .regionArea {
   margin-left: 0;
   margin-right: 0;
   padding-left: 0;
+  padding-right: 0;
+  scrollbar-gutter: auto;
+}
+
+.collapsed .regionFade {
+  display: none;
 }
 
 /* Footer seats: additive actions stack above Settings. Each occupant owns its
@@ -386,7 +378,6 @@
   .wide,
   .fading > *,
   .railIn .iconButton,
-  .railIn .newSession,
   .railIn .panelList,
   .railIn .footArea,
   .railIn .regionArea {

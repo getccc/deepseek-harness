@@ -27,7 +27,8 @@ export class SessionSkillCatalog extends TypertRemoteService {
 
   /**
    * List the user-invocable skills visible to one Session composition.
-   * @param request - Session identity whose cwd and preset select the catalog view.
+   * @param request - Session identity whose cwd and preset select the catalog
+   * view; a Session without a cwd sees only the skills no project root supplies.
    * @param signal - caller lifetime carried by the Remote transport; admitted catalog reads retain their existing completion semantics.
    * @returns user-invocable skill metadata without loading skill bodies.
    * @throws RemoteError when the Session cannot be inspected or no registry can serve it.
@@ -56,10 +57,6 @@ export class SessionSkillCatalog extends TypertRemoteService {
         {},
       )
     }
-    if (cwd === undefined) {
-      throw new RemoteError('gateway/internal', `session "${sessionId}" has no project cwd`, {})
-    }
-
     const live = this.ctx.agents.get(sessionId)
     const presets = this.ctx.get('agentPresets')
     const scoped = live === undefined ? undefined : presets?.serviceFor(live, 'skills')

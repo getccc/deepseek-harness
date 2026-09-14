@@ -22,9 +22,10 @@ import css from './Rows.module.css'
 /** The standard locale seat, prop-passed from the browser root. */
 type RowTranslate = WorkspaceBrowserProps['t']
 
-/** Row display title: blank rows show the localized New Session label. */
+/** Row display title: blank rows show the localized placeholder of their kind (New chat / New Session). */
 function displayTitle(node: SessionNode, t: RowTranslate): string {
-  return node.blank ? t('session.new') : node.title
+  if (!node.blank) return node.title
+  return node.kind === 'chat' ? t('session.blank.chat') : t('session.new')
 }
 
 /** Localized compact relative time ("刚刚"/"5分钟" in zh, "now"/"5min" in en). */

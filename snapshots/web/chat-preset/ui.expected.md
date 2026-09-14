@@ -1,0 +1,48 @@
+- banner:
+  - navigation "Session hierarchy":
+    - button "Reply exactly CHAT_PRESET_REQUEST_OK and" [disabled]
+  - img
+  - text: Chat mode
+  - button "More actions":
+    - img
+  - button "Open right sidebar":
+    - img
+  - tablist:
+    - tab "Chat" [selected]
+    - tab "Trajectory"
+- button "System prompt":
+  - img
+  - img
+  - text: System prompt
+- text: Reply exactly CHAT_PRESET_REQUEST_OK and stop. {{clock}}
+- button "Copy":
+  - img
+- paragraph: CHAT_PRESET_REQUEST_OK
+- button "Copy":
+  - img
+- button "Good response":
+  - img
+- button "Bad response":
+  - img
+- button "Branch into a new conversation":
+  - img
+- button "Ran for {{duration}}":
+  - img
+  - text: Ran for {{duration}}
+- text: {{clock}}
+- textbox "Message or run a task, / commands, @ files or sessions"
+- button "Commands":
+  - img
+- button "Add attachment":
+  - img
+- button "Select model, current DeepSeek-V4-Flash":
+  - text: DeepSeek-V4-Flash
+  - img
+- button "0% of context used"
+- button "Send message" [disabled]
+- button "1 turns 1 steps · {{throughput}} tok/s":
+  - img
+  - text: 1 turns 1 steps{{throughput}} tok/s
+- button "14 tok · Cache hit 0%":
+  - img
+  - text: 14 tokCache hit 0%

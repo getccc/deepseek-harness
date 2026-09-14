@@ -547,7 +547,8 @@ export class SessionManager {
    * Contract session.create; on success merge into summaries immediately (no
    * wait for the next refresh). A created session is blank by definition
    * (entity birth precedes the first message).
-   * @param opts - target workspace or working directory, plus an optional caller-owned id.
+   * @param opts - target workspace or working directory, plus an optional
+   * caller-owned id; naming neither creates a Session without a workspace.
    * @returns the create result.
   */
   async create(
@@ -563,9 +564,12 @@ export class SessionManager {
       : { ...(opts.cwd === undefined ? {} : { cwd: opts.cwd }), ...shared }
     const result = await this.remote.session.create(payload)
     if (result.ok) {
+      // The host echoes the cwd it resolved (a Workspace's path, or none for
+      // a Session created without a location), so the placeholder row already
+      // states which kind of Session this is.
       this.recordMutation({ kind: 'upsert', summary: {
         sessionId: result.value.sessionId, updatedAt: Date.now(), running: false, blank: true, pristine: true,
-        ...(opts.cwd !== undefined ? { cwd: opts.cwd } : {}),
+        ...(result.value.cwd !== undefined ? { cwd: result.value.cwd } : {}),
       } })
     } else {
       const publishedSessionId = workspaceAttachSessionId(result.error)

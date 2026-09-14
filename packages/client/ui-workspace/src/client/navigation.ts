@@ -5,6 +5,7 @@ import type { ClientRemote, DirectoryListing, RemoteFailure } from '@deepseek-ai
 import type {
   ISessions,
   SessionListState,
+  SessionSummary,
 } from '@deepseek-ai/dsh-api-session-controller/client'
 import type {
   IWorkspaces, WorkspaceId, WorkspaceView,
@@ -43,6 +44,12 @@ export interface UiWorkspace {
    * @param workspaceId - explicit target; absent inherits the current or most recent Workspace.
    */
   startSession(workspaceId?: WorkspaceId): void
+  /**
+   * Start a chat and navigate to its Session: reuse the listed pristine,
+   * unarchived chat Session, otherwise create one by naming no location.
+   * A later navigation supersedes the open; creation failures are logged.
+   */
+  startChat(): void
   /**
    * Archive a Session and clear it when it is the current selection.
    * @param sessionId - Session to archive.
@@ -89,6 +96,7 @@ export class DirectoryBrowseError extends Error {
 /** Implements Workspace archive and directory UI operations. */
 class UiWorkspaceService extends Service implements UiWorkspace {
   private readonly connecting = new Map<WorkspaceId, Promise<SessionId>>()
+  private chatting: Promise<SessionId> | undefined
   private readonly lifetime = new AbortController()
 
   /**
@@ -116,22 +124,49 @@ class UiWorkspaceService extends Service implements UiWorkspace {
     const inflight = this.connecting.get(workspaceId)
     if (inflight !== undefined) return inflight
 
-    const archived = this.workspaces.list.getSnapshot().archivedSessionIds
-    const sessions = this.sessions.list.getSnapshot()
-    for (const id of sessions.ids) {
-      const summary = sessions.byId[id]
-      // Pristine, not merely blank: a conversation where someone already chose
-      // a model or the knowledge to search is one they set up, and handing it
-      // back — to them or to whoever signs in next — is not a new conversation.
-      if (summary !== undefined && summary.pristine === true && summary.cwd === workspace.path
-        && workspace.sessionIds.includes(summary.id)
-        && !archived.includes(summary.id)) return summary.id
-    }
+    const reusable = this.pristineSession(summary =>
+      summary.cwd === workspace.path && workspace.sessionIds.includes(summary.id))
+    if (reusable !== undefined) return reusable
 
     const attempt = this.sessions.create({ workspaceId })
       .finally(() => { this.connecting.delete(workspaceId) })
     this.connecting.set(workspaceId, attempt)
     return attempt
+  }
+
+  /**
+   * The first listed pristine, unarchived Session the predicate accepts.
+   * Pristine, not merely blank: a conversation where someone already chose a
+   * model or the knowledge to search is one they set up, and handing it back
+   * to them or to whoever signs in next is not a new conversation.
+   */
+  private pristineSession(accept: (summary: SessionSummary) => boolean): SessionId | undefined {
+    const archived = this.workspaces.list.getSnapshot().archivedSessionIds
+    const sessions = this.sessions.list.getSnapshot()
+    for (const id of sessions.ids) {
+      const summary = sessions.byId[id]
+      if (summary !== undefined && summary.pristine === true
+        && !archived.includes(summary.id) && accept(summary)) return summary.id
+    }
+    return undefined
+  }
+
+  /** Resolve the reusable or newly created chat Session, coalescing concurrent creation. */
+  private connectChat(): Promise<SessionId> {
+    if (this.chatting !== undefined) return this.chatting
+    const reusable = this.pristineSession(summary => summary.kind === 'chat')
+    if (reusable !== undefined) return Promise.resolve(reusable)
+    const attempt = this.sessions.create({})
+      .finally(() => { this.chatting = undefined })
+    this.chatting = attempt
+    return attempt
+  }
+
+  /** Open the chat Session unless a later navigation supersedes the request. */
+  private async openChat(): Promise<void> {
+    const navigation = AbortSignal.any([this.ctx.layout.beginNavigation(), this.lifetime.signal])
+    const sessionId = await this.connectChat()
+    if (!navigation.aborted) this.openSession(sessionId)
   }
 
   openSession(sessionId: SessionId): void {
@@ -172,6 +207,12 @@ class UiWorkspaceService extends Service implements UiWorkspace {
     }
     void this.openWorkspace(target).catch(
       (reason: unknown) => { console.warn('new session failed:', reason) },
+    )
+  }
+
+  startChat(): void {
+    void this.openChat().catch(
+      (reason: unknown) => { console.warn('new chat failed:', reason) },
     )
   }
 

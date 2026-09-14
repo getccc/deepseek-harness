@@ -1,8 +1,10 @@
 /** Client-safe payloads and event declarations owned by the agent-preset domain. */
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { PresetTrust } from './preset.ts'
+import type { PresetWorkspace } from './metadata.ts'
 
 export type { PresetTrust } from './preset.ts'
+export type { PresetWorkspace } from './metadata.ts'
 
 /**
  * One roster row as a client reads it. Path-free: a preset is addressed by id
@@ -13,8 +15,14 @@ export interface AgentPresetRow {
   readonly id: string
   /** Trust of the root this preset was discovered under. */
   readonly trust: PresetTrust
-  /** Whether a session naming no preset composes this one. */
+  /**
+   * Whether a session naming no preset composes this one: among
+   * `required`-workspace presets the user-settable default, among `none`
+   * presets the deployment's `chatDefault`.
+   */
   readonly isDefault: boolean
+  /** Whether sessions on this preset own a working directory. */
+  readonly workspace: PresetWorkspace
   /** Display name the preset published. */
   readonly name?: string
   /** One sentence on what this preset is for. */
@@ -41,6 +49,16 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
     'agent-preset/read-only': { readonly agentPreset: string; readonly reason: string }
     /** The session's conversation has started, so its composition is fixed. */
     'agent-preset/locked': { readonly sessionId: SessionId; readonly agentPreset: string }
+    /**
+     * The preset's workspace requirement disagrees with the session's: a
+     * `none` preset was named for a session with a cwd, or a `required` one
+     * for a session without.
+     */
+    'agent-preset/workspace-mismatch': {
+      readonly agentPreset: string
+      readonly workspace: PresetWorkspace
+      readonly sessionId?: SessionId
+    }
   }
 }
 

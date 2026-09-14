@@ -478,6 +478,13 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         throws: ['when no configured root supplies that id.'],
       },
       {
+        signature: 'async resolveFor(workspace: PresetWorkspace, id?: string): Promise<AgentPreset>',
+        description: 'Resolve the preset one session location composes: the named preset, or the location\'s default — defaultId for a session that owns a cwd, chatDefaultId for one that owns none — refusing a preset whose declared workspace requirement disagrees with the location. This is where a misconfigured default fails: a `chatDefault` that declares no `workspace: none`, or a user default that does, is refused at the first session it would compose.',
+        parameters: [{ name: 'workspace', description: '`required` when the session owns a cwd, `none` otherwise.' }, { name: 'id', description: 'the preset id, or `undefined` for the location\'s default.' }],
+        returns: 'the resolved preset.',
+        throws: ['{RemoteError} `agent-preset/not-found` when no root supplies the preset or no `chatDefault` is configured, `agent-preset/workspace-mismatch` when the preset\'s requirement disagrees with the location.'],
+      },
+      {
         signature: 'async mount(agentCtx: Context, id?: string): Promise<AgentPreset>',
         description: 'Compose one agent from a preset: ensure the preset\'s standing mount, then parent the agent\'s scope key to it so the mount\'s registrations and listeners cover this agent.\n\nCall from the agent factory\'s `setup(agentCtx)`; a rejection there rolls the agent creation back, so a broken preset never yields a half-composed session.',
         parameters: [{ name: 'agentCtx', description: 'the agent\'s scope context.' }, { name: 'id', description: 'the preset id, or `undefined` for {@link defaultId}.' }],
@@ -555,7 +562,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Compose a blank session\'s agent from a different preset and record it.',
         parameters: [{ name: 'agent', description: 'the session\'s live agent, resolved from the wire identity.' }, { name: 'agentPreset', description: 'the preset to compose the agent from instead.' }],
         returns: 'the preset id that was recorded.',
-        throws: ['{RemoteError} with `gateway/bad-request`, `agent-preset/locked`, `agent-preset/not-found`, or `agent-preset/invalid` when refused.'],
+        throws: ['{RemoteError} with `gateway/bad-request`, `agent-preset/locked`, `agent-preset/not-found`, `agent-preset/workspace-mismatch`, or `agent-preset/invalid` when refused.'],
       },
       {
         signature: 'async standingKeyFor(id?: string): Promise<ScopeKey>',
@@ -2576,7 +2583,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
       {
         signature: '@Remote async list(request: SkillListRequest, signal: AbortSignal): Promise<SkillListValue>',
         description: 'List the user-invocable skills visible to one Session composition.',
-        parameters: [{ name: 'request', description: 'Session identity whose cwd and preset select the catalog view.' }, { name: 'signal', description: 'caller lifetime carried by the Remote transport; admitted catalog reads retain their existing completion semantics.' }],
+        parameters: [{ name: 'request', description: 'Session identity whose cwd and preset select the catalog view; a Session without a cwd sees only the skills no project root supplies.' }, { name: 'signal', description: 'caller lifetime carried by the Remote transport; admitted catalog reads retain their existing completion semantics.' }],
         returns: 'user-invocable skill metadata without loading skill bodies.',
         throws: ['RemoteError when the Session cannot be inspected or no registry can serve it.'],
       },
@@ -4310,7 +4317,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AgentPreset',
-    declaration: 'export interface AgentPreset {\n    readonly id: string;\n    readonly trust: PresetTrust;\n    readonly path: string;\n    readonly name?: string;\n    readonly description?: string;\n    readonly order?: number;\n    readonly broken?: string;\n}',
+    declaration: 'export interface AgentPreset {\n    readonly id: string;\n    readonly trust: PresetTrust;\n    readonly path: string;\n    readonly name?: string;\n    readonly description?: string;\n    readonly order?: number;\n    readonly workspace: PresetWorkspace;\n    readonly broken?: string;\n}',
   },
   {
     name: 'AgentPresetComposition',
@@ -4334,7 +4341,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AgentPresetRow',
-    declaration: 'export interface AgentPresetRow {\n    readonly id: string;\n    readonly trust: PresetTrust;\n    readonly isDefault: boolean;\n    readonly name?: string;\n    readonly description?: string;\n    readonly broken?: string;\n}',
+    declaration: 'export interface AgentPresetRow {\n    readonly id: string;\n    readonly trust: PresetTrust;\n    readonly isDefault: boolean;\n    readonly workspace: PresetWorkspace;\n    readonly name?: string;\n    readonly description?: string;\n    readonly broken?: string;\n}',
   },
   {
     name: 'AgentResolver',
@@ -5737,6 +5744,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type PresetTrust = \'system\' | \'user\';',
   },
   {
+    name: 'PresetWorkspace',
+    declaration: 'export type PresetWorkspace = \'required\' | \'none\';',
+  },
+  {
     name: 'PreStepDecision',
     declaration: 'export type PreStepDecision = {\n    kind: \'reject\';\n} | {\n    kind: \'enter\';\n    messages: UserMessage[];\n    startsRequestSeries?: true;\n};',
   },
@@ -6098,7 +6109,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'SessionCreateValue',
-    declaration: 'export interface SessionCreateValue {\n    readonly sessionId: SessionId;\n    readonly agentPreset?: string;\n}',
+    declaration: 'export interface SessionCreateValue {\n    readonly sessionId: SessionId;\n    readonly agentPreset?: string;\n    readonly cwd?: string;\n}',
   },
   {
     name: 'SessionEvent',

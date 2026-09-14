@@ -61,6 +61,16 @@
       - 'button "复制: 创造模式"':
         - img
         - text: 复制
+    - listitem:
+      - 'button "无工作区: 聊天模式" [disabled]':
+        - text: 聊天模式 无工作区 内置 无工作区、无工具的快速对话：只有小微的身份提示和上下文压缩，首个 token 不等待任何目录扫描或工具目录。
+        - code: chat
+      - 'button "查看: 聊天模式"':
+        - img
+        - text: 查看
+      - 'button "复制: 聊天模式"':
+        - img
+        - text: 复制
   - heading "自定义" [level=3]
   - list:
     - listitem:

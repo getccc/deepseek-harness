@@ -317,14 +317,17 @@ export async function scanRoot(root: PresetRoot, harnessBase: string): Promise<A
     const directory = join(dir, name)
     if (!await isDirectory(directory)) continue
     const path = join(directory, COMPOSITION_FILE)
-    const broken = await isFile(path)
+    const health = await isFile(path)
       ? await compositionProblem(path, harnessBase)
       : `the composition file ${COMPOSITION_FILE} is missing — the directory still occupies the id; delete it or restore the file`
-    // Display text only, and never fatal: a preset with unreadable metadata
-    // still mounts, it just shows its id.
-    const metadata = await readPresetMetadata(directory)
+    // Unreadable display text is never fatal — the preset shows its id — but
+    // a workspace declaration that cannot be read breaks the preset: the
+    // composition would otherwise mount for sessions it was declared against.
+    const { metadata, problem } = await readPresetMetadata(directory)
+    const broken = health ?? problem
     found.push({
       id: name, trust: root.trust, path, ...metadata,
+      workspace: metadata.workspace ?? 'required',
       ...broken === undefined ? {} : { broken },
     })
   }

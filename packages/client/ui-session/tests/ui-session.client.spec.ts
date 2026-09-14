@@ -117,6 +117,7 @@ function createSessionsBench(_ctx: Context): SessionsBench {
         draft.byId[id] = {
           id,
           displayTitle: id,
+          kind: 'work',
           running: false,
           blank: false,
           updatedAt: 1,

@@ -340,7 +340,7 @@ describe('dsh web keyless CLI smoke', () => {
         }
       })
       await page.goto(readyUrl)
-      await page.getByRole('button', { name: 'New session', exact: true }).first().waitFor({ timeout: 30_000 })
+      await page.getByRole('button', { name: 'New work task', exact: true }).first().waitFor({ timeout: 30_000 })
       const batchPaths = [...new Set(pluginScripts)].sort()
       expect(batchPaths).toHaveLength(2)
       expect(batchPaths).toContainEqual(expect.stringMatching(
@@ -440,7 +440,7 @@ describe('dsh web keyless CLI smoke', () => {
     )
     try {
       const baseUrl = await waitForReadyLine(child)
-      const created = await remoteRpc<{ sessionId: string }>(baseUrl, 'session/create', { request: {} })
+      const created = await remoteRpc<{ sessionId: string }>(baseUrl, 'session/create', { request: { cwd: workspace } })
       await remoteRpc<{ accepted: true }>(baseUrl, 'session/prompt', { request: {
         requestId: randomUUID(),
         sessionId: created.sessionId,
@@ -554,7 +554,7 @@ describe('dsh web keyless CLI smoke', () => {
     )
     try {
       const baseUrl = await waitForReadyLine(child)
-      const created = await remoteRpc<{ sessionId: string }>(baseUrl, 'session/create', { request: {} })
+      const created = await remoteRpc<{ sessionId: string }>(baseUrl, 'session/create', { request: { cwd: workspace } })
       await remoteRpc<{ accepted: true }>(baseUrl, 'session/prompt', { request: {
         requestId: randomUUID(),
         sessionId: created.sessionId,
@@ -641,7 +641,7 @@ describe('dsh web keyless CLI smoke', () => {
     )
     try {
       const baseUrl = await waitForReadyLine(child)
-      const created = await remoteRpc<{ sessionId: string }>(baseUrl, 'session/create', { request: {} })
+      const created = await remoteRpc<{ sessionId: string }>(baseUrl, 'session/create', { request: { cwd: workspace } })
       await remoteRpc<{ accepted: true }>(baseUrl, 'session/prompt', { request: {
         requestId: randomUUID(),
         sessionId: created.sessionId,

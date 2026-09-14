@@ -851,12 +851,16 @@ describe('createFixtureApi', () => {
     await consuming
     if (!created.result.ok) throw new Error('create failed')
     const createdId = created.result.value.sessionId
+    // Naming no location composes a Session that owns no cwd (the chat
+    // composition): neither the value nor the summary carries one.
+    expect(created.result.value).toEqual({ sessionId: createdId })
     expect(seen).toHaveLength(1)
-    const added = seen[0]
+    const added = seen[0] as unknown as { args: [Record<string, unknown>] }
     expect(added).toMatchObject({
       event: 'api-session/added',
-      args: [{ sessionId: createdId, blank: true, cwd: '/tmp/fixture' }],
+      args: [{ sessionId: createdId, blank: true, pristine: true }],
     })
+    expect(added.args[0]).not.toHaveProperty('cwd')
     const list = await api.sessions.list(req({}))
     if (!list.result.ok) throw new Error('list failed')
     expect(list.result.value.items.some(s => s.sessionId === createdId)).toBe(true)
@@ -1385,7 +1389,10 @@ describe('createFixtureApi', () => {
       workspaceId: made.result.value.workspace.workspaceId,
       sessionId: preallocated,
     }))
-    expect(created.result).toEqual({ ok: true, value: { sessionId: preallocated } })
+    // The value echoes the cwd the Session owns (the Workspace path).
+    expect(created.result).toEqual({
+      ok: true, value: { sessionId: preallocated, cwd: made.result.value.workspace.path },
+    })
     expect((await workspaceFrames).at(-1)).toMatchObject({
       type: 'upsert', workspace: { sessionIds: [preallocated] },
     })
@@ -1403,7 +1410,9 @@ describe('createFixtureApi', () => {
       workspaceId: made.result.value.workspace.workspaceId,
       sessionId: preallocated,
     }))
-    expect(retried.result).toEqual({ ok: true, value: { sessionId: preallocated } })
+    expect(retried.result).toEqual({
+      ok: true, value: { sessionId: preallocated, cwd: made.result.value.workspace.path },
+    })
     const listed = await api.sessions.list(req({}))
     if (!listed.result.ok) throw new Error('session list failed')
     expect(listed.result.value.items.filter(item => item.sessionId === preallocated)).toHaveLength(1)
@@ -1439,13 +1448,29 @@ describe('createFixtureApi', () => {
     if (existing === undefined) throw new Error('fixture Session missing')
     delete existing.cwd
 
-    const conflict = await api.sessions.create(req({ sessionId: existing.sessionId }))
+    const conflict = await api.sessions.create(req({ sessionId: existing.sessionId, cwd: '/tmp/fixture' }))
     expect(conflict.result).toEqual({
       ok: false,
       error: {
         code: 'session/conflict',
         message: `session ${existing.sessionId} already uses no cwd`,
         details: { sessionId: existing.sessionId, requestedCwd: '/tmp/fixture' },
+      },
+    })
+    // Naming no location matches the recorded absence: adoption succeeds and echoes no cwd.
+    const adopted = await api.sessions.create(req({ sessionId: existing.sessionId }))
+    expect(adopted.result).toEqual({ ok: true, value: { sessionId: existing.sessionId } })
+  })
+
+  it('refuses to adopt a Session that owns a cwd for a create naming none', async () => {
+    const api = createFixtureApi()
+    const conflict = await api.sessions.create(req({ sessionId: sid('fx-alpha') }))
+    expect(conflict.result).toEqual({
+      ok: false,
+      error: {
+        code: 'session/conflict',
+        message: 'session fx-alpha already uses /tmp/fixture',
+        details: { sessionId: sid('fx-alpha'), existingCwd: '/tmp/fixture' },
       },
     })
   })

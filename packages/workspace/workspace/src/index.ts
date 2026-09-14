@@ -571,10 +571,10 @@ export class WorkspaceRegistry extends Service {
   private async indexHeader(header: SessionHeader): Promise<void> {
     this.headers.set(header.id, header)
     this.sessionPaths.delete(header.id)
-    if (header.cwd === undefined) {
-      this.invalidSessionPaths.set(header.id, 'header has no cwd')
-      return
-    }
+    // A header without a cwd is a Session composed without a Workspace, not
+    // an invalid path: no Workspace can index it, so there is nothing to
+    // report when none does.
+    if (header.cwd === undefined) return
     try {
       const path = await realpathNormalize(header.cwd)
       if (!(await stat(path)).isDirectory()) {

@@ -23,8 +23,8 @@ const READY: AgentPresetSectionState = {
   authorable: true,
   hasDocument: true,
   rows: [
-    { id: 'standard', trust: 'system', isDefault: true, name: '标准模式', description: '完整的编码 agent。' },
-    { id: 'mine', trust: 'user', isDefault: false },
+    { id: 'standard', trust: 'system', workspace: 'required', isDefault: true, name: '标准模式', description: '完整的编码 agent。' },
+    { id: 'mine', trust: 'user', workspace: 'required', isDefault: false },
   ],
   copy: null,
   view: null,
@@ -117,9 +117,37 @@ describe('the preset list', () => {
   })
 
   it('shows no group heading for a set nobody has', () => {
-    renderSection({ rows: [{ id: 'standard', trust: 'system', isDefault: true }] })
+    renderSection({ rows: [{ id: 'standard', trust: 'system', workspace: 'required', isDefault: true }] })
 
     expect(screen.queryByRole('heading', { name: en.customGroup })).toBeNull()
+  })
+
+  it('badges a workspace-less preset, offers it no default, and calls its default marker the chat default', () => {
+    const actions = renderSection({
+      rows: [
+        { id: 'standard', trust: 'system', workspace: 'required', isDefault: true },
+        { id: 'chat', trust: 'system', workspace: 'none', isDefault: true },
+        { id: 'my-chat', trust: 'user', workspace: 'none', isDefault: false },
+      ],
+    })
+
+    // Two defaults, one per kind: the workspace default keeps its own marker,
+    // the chat default is the deployment's and says so.
+    expect(within(rowFor('standard')).getByText(en.inUse)).toBeTruthy()
+    expect(within(rowFor('standard')).queryByText(en.noWorkspace)).toBeNull()
+    const chat = rowFor('chat')
+    expect(within(chat).getByText(en.noWorkspace)).toBeTruthy()
+    expect(within(chat).getByText(en.chatDefault)).toBeTruthy()
+    expect(within(chat).queryByText(en.inUse)).toBeNull()
+
+    // A chat preset composes workspace-less sessions, so the settings default
+    // (what a new workspace session gets) is never its to take: the card
+    // body says why instead of offering the pick, and a click reaches nothing.
+    const body = within(rowFor('my-chat')).getByRole('button', { name: `${en.noWorkspace}: my-chat` })
+    expect(body.getAttribute('aria-disabled')).toBe('true')
+    expect(body).toHaveProperty('disabled', false)
+    fireEvent.click(body)
+    expect(actions.makeDefault).not.toHaveBeenCalled()
   })
 
   it('leads with the two ways a preset is created', () => {
@@ -175,9 +203,9 @@ describe('the preset list', () => {
   it('marks a broken custom preset: unselectable, uncopyable, still deletable', () => {
     const actions = renderSection({
       rows: [
-        { id: 'standard', trust: 'system', isDefault: true },
+        { id: 'standard', trust: 'system', workspace: 'required', isDefault: true },
         {
-          id: 'ghost', trust: 'user', isDefault: false, name: '幽灵预设', description: '我自己写的',
+          id: 'ghost', trust: 'user', workspace: 'required', isDefault: false, name: '幽灵预设', description: '我自己写的',
           broken: 'the composition file agent.cordis.yml is missing',
         },
       ],
@@ -213,7 +241,7 @@ describe('the preset list', () => {
 
   it('withholds the viewer on a broken shipped preset', () => {
     renderSection({
-      rows: [{ id: 'standard', trust: 'system', isDefault: false, name: '标准模式', broken: 'the composition is not valid YAML' }],
+      rows: [{ id: 'standard', trust: 'system', workspace: 'required', isDefault: false, name: '标准模式', broken: 'the composition is not valid YAML' }],
     })
 
     // There is no readable composition to offer; the reason on the card is
@@ -256,7 +284,7 @@ describe('the preset list', () => {
 
   it('starts a creator-mode draft session and leaves settings', () => {
     const actions = renderSection({
-      rows: [...READY.rows, { id: 'cordis', trust: 'system', isDefault: false, name: '创造模式' }],
+      rows: [...READY.rows, { id: 'cordis', trust: 'system', workspace: 'required', isDefault: false, name: '创造模式' }],
     })
 
     fireEvent.click(screen.getByRole('button', { name: en.creatorDraft }))
@@ -270,8 +298,8 @@ describe('the preset list', () => {
   it('keeps the empty custom group on screen: heading plus the creator entry', () => {
     renderSection({
       rows: [
-        { id: 'standard', trust: 'system', isDefault: true, name: '标准模式' },
-        { id: 'cordis', trust: 'system', isDefault: false, name: '创造模式' },
+        { id: 'standard', trust: 'system', workspace: 'required', isDefault: true, name: '标准模式' },
+        { id: 'cordis', trust: 'system', workspace: 'required', isDefault: false, name: '创造模式' },
       ],
     })
 
@@ -287,14 +315,14 @@ describe('the preset list', () => {
     cleanup()
 
     renderSection({
-      rows: [...READY.rows, { id: 'cordis', trust: 'system', isDefault: false, name: '创造模式' }],
+      rows: [...READY.rows, { id: 'cordis', trust: 'system', workspace: 'required', isDefault: false, name: '创造模式' }],
     }, { creator: false })
     expect(screen.queryByRole('button', { name: en.creatorDraft })).toBeNull()
     cleanup()
 
     const actions = renderSection({
       authorable: false,
-      rows: [...READY.rows, { id: 'cordis', trust: 'system', isDefault: false, name: '创造模式' }],
+      rows: [...READY.rows, { id: 'cordis', trust: 'system', workspace: 'required', isDefault: false, name: '创造模式' }],
     })
     const disabled = screen.getByRole('button', { name: en.creatorDraft })
     expect(disabled).toHaveProperty('disabled', true)
@@ -493,7 +521,7 @@ describe('a long card description', () => {
     clamp(true)
     vi.useFakeTimers()
     try {
-      renderSection({ rows: [{ id: 'zh', trust: 'user', isDefault: false, name: '中文助手', description: LONG }] })
+      renderSection({ rows: [{ id: 'zh', trust: 'user', workspace: 'required', isDefault: false, name: '中文助手', description: LONG }] })
 
       fireEvent.mouseEnter(within(rowFor('zh')).getByText(LONG))
       act(() => { vi.advanceTimersByTime(400) })
@@ -508,7 +536,7 @@ describe('a long card description', () => {
     clamp(false)
     vi.useFakeTimers()
     try {
-      renderSection({ rows: [{ id: 'zh', trust: 'user', isDefault: false, name: '中文助手', description: '短描述。' }] })
+      renderSection({ rows: [{ id: 'zh', trust: 'user', workspace: 'required', isDefault: false, name: '中文助手', description: '短描述。' }] })
 
       fireEvent.mouseEnter(within(rowFor('zh')).getByText('短描述。'))
       act(() => { vi.advanceTimersByTime(400) })
@@ -525,7 +553,7 @@ describe('a long card description', () => {
     clamp(true)
 
     expect(() => {
-      renderSection({ rows: [{ id: 'zh', trust: 'user', isDefault: false, description: LONG }] })
+      renderSection({ rows: [{ id: 'zh', trust: 'user', workspace: 'required', isDefault: false, description: LONG }] })
     }).not.toThrow()
     // The first measurement does not depend on the observer.
     expect(within(rowFor('zh')).getByText(LONG).getAttribute('title')).toBe('')

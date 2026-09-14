@@ -1,0 +1,4 @@
+name: 聊天模式
+description: 无工作区、无工具的快速对话：只有小微的身份提示和上下文压缩，首个 token 不等待任何目录扫描或工具目录。
+order: 5
+workspace: none

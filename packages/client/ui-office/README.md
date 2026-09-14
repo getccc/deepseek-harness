@@ -23,7 +23,7 @@ English | [中文](README.zh.md)
 <a id="use-this-package"></a>
 ## Use this package
 
-Mount it in a Team browser composition; it seats a control in the composer's left zone and mounts the `office` Remote namespace it calls. It needs no configuration. A build whose Host folds no office choice renders nothing. On a composer row narrower than 460px the chip shows only its icon, as the permission control does; its accessible name still states the chosen kind.
+Mount it in a Team browser composition; it seats a control in the composer's left zone and mounts the `office` Remote namespace it calls. It needs no configuration. A build whose Host folds no office choice renders nothing, and so does a chat Session (read as `kind` through the standard-kit `useSessions`), whose tool-less preset produces no document. On a composer row narrower than 460px the chip shows only its icon, as the permission control does; its accessible name still states the chosen kind.
 
 -----
 

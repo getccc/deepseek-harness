@@ -548,6 +548,23 @@ async compositionInventory(): Promise<AgentPresetComposition[]>
 async resolve(id?: string): Promise<AgentPreset>
 
 /**
+ * Resolve the preset one session location composes: the named preset, or
+ * the location's default — {@link defaultId} for a session that owns a
+ * cwd, {@link chatDefaultId} for one that owns none — refusing a preset
+ * whose declared workspace requirement disagrees with the location. This
+ * is where a misconfigured default fails: a `chatDefault` that declares no
+ * `workspace: none`, or a user default that does, is refused at the first
+ * session it would compose.
+ * @param workspace - `required` when the session owns a cwd, `none` otherwise.
+ * @param id - the preset id, or `undefined` for the location's default.
+ * @returns the resolved preset.
+ * @throws {RemoteError} `agent-preset/not-found` when no root supplies the
+ * preset or no `chatDefault` is configured, `agent-preset/workspace-mismatch`
+ * when the preset's requirement disagrees with the location.
+ */
+async resolveFor(workspace: PresetWorkspace, id?: string): Promise<AgentPreset>
+
+/**
  * Compose one agent from a preset: ensure the preset's standing mount, then
  * parent the agent's scope key to it so the mount's registrations and
  * listeners cover this agent.
@@ -711,7 +728,8 @@ async recompose(agentCtx: Context, id: string): Promise<AgentPreset>
  * @param agentPreset - the preset to compose the agent from instead.
  * @returns the preset id that was recorded.
  * @throws {RemoteError} with `gateway/bad-request`, `agent-preset/locked`,
- * `agent-preset/not-found`, or `agent-preset/invalid` when refused.
+ * `agent-preset/not-found`, `agent-preset/workspace-mismatch`, or
+ * `agent-preset/invalid` when refused.
  */
 @Remote('select') async select(agent: Agent, agentPreset: string): Promise<string>
 

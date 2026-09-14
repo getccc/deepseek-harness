@@ -30,7 +30,7 @@ import { apply as hostApply } from '../src/index.ts'
 const ROSTER_ONE = {
   ok: true as const,
   value: {
-    presets: [{ id: 'standard', trust: 'system', isDefault: true }],
+    presets: [{ id: 'standard', trust: 'system', workspace: 'required', isDefault: true }],
     authorable: true,
   },
 }
@@ -40,8 +40,8 @@ const ROSTER_AUTHORED = {
   ok: true as const,
   value: {
     presets: [
-      { id: 'standard', trust: 'system', isDefault: true },
-      { id: 'mine', trust: 'user', isDefault: false },
+      { id: 'standard', trust: 'system', workspace: 'required', isDefault: true },
+      { id: 'mine', trust: 'user', workspace: 'required', isDefault: false },
     ],
     authorable: true,
   },
@@ -52,8 +52,8 @@ const ROSTER_MOVED = {
   ok: true as const,
   value: {
     presets: [
-      { id: 'standard', trust: 'system', isDefault: false },
-      { id: 'minimal', trust: 'system', isDefault: true },
+      { id: 'standard', trust: 'system', workspace: 'required', isDefault: false },
+      { id: 'minimal', trust: 'system', workspace: 'required', isDefault: true },
     ],
     authorable: true,
   },
@@ -217,7 +217,7 @@ describe('ui-agent-preset apply', () => {
 
     await section.makeDefault('standard')
     expect(section.hooks.agentPresetSection.getSnapshot().rows)
-      .toEqual([{ id: 'standard', trust: 'system', isDefault: true }])
+      .toEqual([{ id: 'standard', trust: 'system', workspace: 'required', isDefault: true }])
   })
 
   it('routes the section actions to one controller', async () => {
@@ -479,7 +479,7 @@ describe('ui-agent-preset apply', () => {
 
     await label.load()
 
-    expect(label.hooks.agentPresets.getSnapshot().options).toEqual([{ id: 'standard', trust: 'system' }])
+    expect(label.hooks.agentPresets.getSnapshot().options).toEqual([{ id: 'standard', trust: 'system', workspace: 'required' }])
   })
 
   it('stages the creator preset and starts a session from the section', async () => {
@@ -569,7 +569,7 @@ describe('ui-agent-preset apply', () => {
 
 describe('AgentPresetSeatController reconciliation', () => {
   it('uses the deployment default without a Session and clears it for an uncomposed Session', async () => {
-    const state: { current?: { id: SessionId; blank: boolean } } = {}
+    const state: { current?: { id: SessionId; blank: boolean; kind: 'work' } } = {}
     const controller = new AgentPresetSeatController({
       remote: {
         agentPresets: {
@@ -582,7 +582,7 @@ describe('AgentPresetSeatController reconciliation', () => {
     await controller.apply()
     expect(controller.store.getSnapshot().current).toBe('standard')
 
-    state.current = { id: SessionId('uncomposed'), blank: true }
+    state.current = { id: SessionId('uncomposed'), blank: true, kind: 'work' as const }
     await controller.apply()
     expect(controller.store.getSnapshot().current).toBe('')
   })
@@ -593,7 +593,7 @@ describe('AgentPresetSeatController reconciliation', () => {
     })
     const controller = new AgentPresetSeatController({
       remote: { agentPresets: { select } },
-    } as never, () => ({ id: SessionId('uncomposed'), blank: true }))
+    } as never, () => ({ id: SessionId('uncomposed'), blank: true, kind: 'work' as const }))
 
     await controller.select('minimal')
 
@@ -617,7 +617,7 @@ describe('AgentPresetSeatController reconciliation', () => {
           }),
         },
       },
-    } as never, () => ({ id: SessionId('uncomposed'), blank: true }))
+    } as never, () => ({ id: SessionId('uncomposed'), blank: true, kind: 'work' as const }))
 
     // The surface reporting this names the preset itself, so carrying the
     // roster's own "preset X failed to mount" frame would say it twice.

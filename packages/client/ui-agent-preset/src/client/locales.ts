@@ -8,9 +8,10 @@ export type AgentPresetSettingsKey =
   | 'presetPtcName' | 'presetPtcDescription'
   | 'presetMinimalName' | 'presetMinimalDescription'
   | 'presetCordisName' | 'presetCordisDescription'
+  | 'presetChatName' | 'presetChatDescription'
   | 'duplicate' | 'duplicateUnavailable' | 'delete' | 'presetId' | 'presetIdPlaceholder' | 'copyOf'
   | 'displayName' | 'displayNamePlaceholder'
-  | 'inUse' | 'noDescription' | 'builtInGroup' | 'customGroup'
+  | 'inUse' | 'noWorkspace' | 'chatDefault' | 'noDescription' | 'builtInGroup' | 'customGroup'
   | 'brokenBadge' | 'brokenNoCopy' | 'switchRefused'
   | 'composition' | 'cancel' | 'close' | 'retry'
   | 'copyTitle' | 'copyIntro' | 'create' | 'creating' | 'creatorDraft'
@@ -43,6 +44,9 @@ export const en: Record<AgentPresetSettingsKey, string> = {
   presetCordisName: 'Creator mode',
   presetCordisDescription:
     'Built for creating custom agent presets, with all Standard mode capabilities plus runtime inspection, plugin experiments, and preset-authoring guidance.',
+  presetChatName: 'Chat mode',
+  presetChatDescription:
+    'Fast conversation without a workspace or tools: only the assistant persona and context compaction, so the first token waits for no directory scan or tool catalog.',
   duplicate: 'Duplicate',
   duplicateUnavailable: 'This deployment has no writable preset directory',
   delete: 'Delete',
@@ -51,6 +55,8 @@ export const en: Record<AgentPresetSettingsKey, string> = {
   displayName: 'Name',
   displayNamePlaceholder: 'Shown in the picker; defaults to the identifier',
   inUse: 'In use',
+  noWorkspace: 'No workspace',
+  chatDefault: 'Chat default',
   builtInGroup: 'Built-in',
   customGroup: 'Custom',
   noDescription: 'No description.',
@@ -101,6 +107,8 @@ export const zh: Record<AgentPresetSettingsKey, string> = {
   presetMinimalDescription: '仅提供持久 shell 的单工具编码 Agent。',
   presetCordisName: '创造模式',
   presetCordisDescription: '用于创建自定义 Agent preset：具备标准模式的全部能力，并提供运行时检查、插件实验和 preset 创作指导。',
+  presetChatName: '聊天模式',
+  presetChatDescription: '无工作区、无工具的快速对话：只有小微的身份提示和上下文压缩，首个 token 不等待任何目录扫描或工具目录。',
   duplicate: '复制',
   duplicateUnavailable: '此部署未配置可写的预设目录',
   delete: '删除',
@@ -109,6 +117,8 @@ export const zh: Record<AgentPresetSettingsKey, string> = {
   displayName: '名称',
   displayNamePlaceholder: '选择器中显示的名字，缺省用标识符',
   inUse: '当前使用',
+  noWorkspace: '无工作区',
+  chatDefault: '聊天默认',
   builtInGroup: '内置',
   customGroup: '自定义',
   noDescription: '暂无描述。',

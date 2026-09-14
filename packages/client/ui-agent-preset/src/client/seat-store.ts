@@ -59,7 +59,7 @@ export class AgentPresetSeatController {
     /** The session the hero is about to hand over to, when there is one. */
     private readonly currentSession: () => Pick<
       SessionSummary,
-      'id' | 'blank' | 'projectionValues'
+      'id' | 'kind' | 'blank' | 'projectionValues'
     > | undefined,
   ) {}
 
@@ -77,11 +77,14 @@ export class AgentPresetSeatController {
       this.set({ error: roster.error })
       return
     }
-    const { presets } = roster.value
-    this.fallback = presets.find(preset => preset.isDefault)?.id ?? presets[0]?.id ?? ''
+    // The chip composes a workspace session, so only workspace presets are a
+    // choice: a `none` preset composes chat sessions, and the host refuses a
+    // switch across kinds. The default among them is the settings default.
+    const offered = roster.value.presets.filter(preset => preset.workspace === 'required')
+    this.fallback = offered.find(preset => preset.isDefault)?.id ?? offered[0]?.id ?? ''
     const session = this.currentSession()
     this.set({
-      options: presetOptions(presets),
+      options: presetOptions(offered),
       // Staged pick first, then the composition the current session
       // already carries, then the deployment default. The middle term is
       // what keeps a late-landing load from regressing the display after
@@ -150,9 +153,12 @@ export class AgentPresetSeatController {
       return
     }
     if (session === undefined) return
-    // A started session's history was produced under its own composition; the
-    // host refuses the swap, so the stage is no longer meaningful.
-    if (!session.blank || presetOf(session) === staged) {
+    // A chat session runs a workspace-less preset and the stage is a workspace
+    // one; the host refuses the switch across kinds, so the stage is dropped
+    // rather than offered to a session that can never take it. A started
+    // session's history was produced under its own composition; the host
+    // refuses that swap too, so the stage is no longer meaningful.
+    if (session.kind === 'chat' || !session.blank || presetOf(session) === staged) {
       this.staged = undefined
       return
     }

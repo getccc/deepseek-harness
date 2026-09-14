@@ -100,7 +100,7 @@ async function commandHarness(
   } as unknown as ApiSessionAgentController
   return {
     ctx,
-    controller: new SessionCommandController(ctx, agents, '/workspace'),
+    controller: new SessionCommandController(ctx, agents),
     agent,
     inbox,
     steer,
@@ -316,7 +316,7 @@ async function persistedController(
   installSessionReadTestServices(ctx)
   ctx.provide('attachments', { readImage } as never)
   const agents = { resolveAgent: vi.fn() } as unknown as ApiSessionAgentController
-  return { ctx, controller: new SessionCommandController(ctx, agents, '/workspace'), sessionId }
+  return { ctx, controller: new SessionCommandController(ctx, agents), sessionId }
 }
 
 describe('Session attachment authorization', () => {
@@ -395,7 +395,6 @@ describe('Session attachment authorization', () => {
     const noPersistenceController = new SessionCommandController(
       noPersistence,
       { resolveAgent: vi.fn() } as unknown as ApiSessionAgentController,
-      '/workspace',
     )
     await expectFailure(noPersistenceController.attachment({
       sessionId: SessionId('missing'), attachmentId: AttachmentId('att'),
@@ -408,11 +407,7 @@ describe('Session attachment authorization', () => {
       inspect: vi.fn(),
     }) as never)
     installSessionReadTestServices(missing)
-    const missingController = new SessionCommandController(
-      missing,
-      { resolveAgent: vi.fn() } as unknown as ApiSessionAgentController,
-      '/workspace',
-    )
+    const missingController = new SessionCommandController(missing, { resolveAgent: vi.fn() } as unknown as ApiSessionAgentController)
     await expectFailure(missingController.attachment({
       sessionId: SessionId('missing'), attachmentId: 'att' as never,
     }), 'session/not-found')
@@ -439,11 +434,7 @@ describe('Session attachment authorization', () => {
     await ctx.plugin(SessionStore)
     installSessionReadTestServices(ctx)
     vi.spyOn(ctx.sessionQuery, 'observeSession').mockRejectedValue(new Error('storage offline'))
-    const controller = new SessionCommandController(
-      ctx,
-      { resolveAgent: vi.fn() } as unknown as ApiSessionAgentController,
-      '/workspace',
-    )
+    const controller = new SessionCommandController(ctx, { resolveAgent: vi.fn() } as unknown as ApiSessionAgentController)
 
     await expectFailure(controller.attachment({
       sessionId: SessionId('unreadable'), attachmentId: AttachmentId('att'),

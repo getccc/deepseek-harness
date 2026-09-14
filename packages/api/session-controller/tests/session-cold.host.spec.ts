@@ -170,7 +170,9 @@ describe('sessions.list cold merge', () => {
       parentSessionId: 'session-parent',
       origin: 'subagent',
     })
-    expect(byId['missing-cwd']).toBeUndefined()
+    // A Session composed without a workspace is listed without a cwd, not hidden.
+    expect(byId['missing-cwd']).toMatchObject({ blank: false, updatedAt: 800 })
+    expect(byId['missing-cwd']).not.toHaveProperty('cwd')
     // A cold seeded header never consults the cache: its cut is not 0, so a
     // cut-0 lookup would alias a different projection identity.
     expect(byId['seeded-cold']).toMatchObject({ blank: false, updatedAt: 450 })

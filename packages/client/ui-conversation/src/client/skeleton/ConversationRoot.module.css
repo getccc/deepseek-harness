@@ -450,6 +450,14 @@
   z-index: 1;
 }
 
+/* Chat hero: no workspace row between the headline and the card, so the stack
+   gap alone sets their distance. 24px here plus the hero chrome's 12px stack
+   gap keeps the card a settled 36px under the headline instead of the 20px
+   the workspace-row gap would leave. */
+.composerHeroChat {
+  gap: 24px;
+}
+
 .heroWorkspaceRow {
   display: flex;
   align-items: center;

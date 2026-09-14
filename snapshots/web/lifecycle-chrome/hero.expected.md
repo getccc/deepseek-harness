@@ -1,9 +1,8 @@
-- button "New session"
+- button "New work task"
 - button "Collapse sidebar":
   - img
-- button "New session":
-  - img
-  - text: New Session
+- button "New chat"
+- button "New work task"
 - text: Workspaces
 - button "Search sessions":
   - img
@@ -17,6 +16,10 @@
     - img
     - text: workspace
   - treeitem "New Session" [selected]
+- text: Recent
+- button "Filter":
+  - img
+- tree "Recent": No conversations yet
 - button "Settings":
   - img
   - text: Settings

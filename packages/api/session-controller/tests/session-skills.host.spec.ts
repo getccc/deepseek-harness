@@ -190,22 +190,29 @@ describe('SessionSkillCatalog', () => {
     await expect(failed).rejects.toThrow('skill registry is absent')
   })
 
-  it('rejects observations without projections or a project cwd', async () => {
+  it('rejects an observation without projections', async () => {
     const ctx = await context()
     const sessionId = SessionId('incomplete-skills')
     const withoutProjections = { ...observation(sessionId, { cwd: '/project' }), projections: undefined }
-    const observeSession = vi.fn()
-      .mockResolvedValueOnce(withoutProjections)
-      .mockResolvedValueOnce(observation(sessionId))
-    ctx.provide('sessionQuery', { observeSession } as never)
+    ctx.provide('sessionQuery', { observeSession: () => Promise.resolve(withoutProjections) } as never)
     const catalog = new SessionSkillCatalog(ctx)
 
     const unprojected = catalog.list({ sessionId }, new AbortController().signal)
     await expect(unprojected).rejects.toMatchObject({ code: 'gateway/internal' })
     await expect(unprojected).rejects.toThrow('projected Session observation')
-    const cwdless = catalog.list({ sessionId }, new AbortController().signal)
-    await expect(cwdless).rejects.toMatchObject({ code: 'gateway/internal' })
-    await expect(cwdless).rejects.toThrow('has no project cwd')
+  })
+
+  it('lists a cwd-less Session against no project root', async () => {
+    const ctx = await context()
+    const sessionId = SessionId('unlocated-skills')
+    ctx.provide('sessionQuery', { observeSession: () => Promise.resolve(observation(sessionId)) } as never)
+    const list = vi.fn(() => Promise.resolve([]))
+    ctx.provide('skills', { list } as never)
+    const catalog = new SessionSkillCatalog(ctx)
+
+    await expect(catalog.list({ sessionId }, new AbortController().signal)).resolves.toEqual({ skills: [] })
+    // No cwd means no project root: only skills the deployment supplies globally.
+    expect(list).toHaveBeenCalledWith({ cwd: undefined, scope: undefined })
   })
 
   it('classifies a provider listing failure', async () => {

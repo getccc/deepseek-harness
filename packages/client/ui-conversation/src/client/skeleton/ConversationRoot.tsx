@@ -144,6 +144,11 @@ export function ConversationRoot({
   const inputState = useInput(s => s)
   const cwd = useSessions(s => sessionId === undefined ? undefined : s.byId[sessionId]?.cwd)
   const summaryBlank = useSessions(s => sessionId === undefined ? undefined : s.byId[sessionId]?.blank)
+  // The one home for "is this a chat session": the list row's kind, never a
+  // cwd re-derivation. A chat session runs the tool-less chat preset without
+  // a workspace, so its hero has no workspace row to wait on.
+  const kind = useSessions(s => sessionId === undefined ? undefined : s.byId[sessionId]?.kind)
+  const chat = kind === 'chat'
   const workspaces = useWorkspaces(s => s)
   // A plugin this package cannot import (ui-model-selection) says this session cannot
   // send; its reason is already localized by whoever raised it.
@@ -290,7 +295,11 @@ export function ConversationRoot({
           ? undefined
           : workspaceLabel(cwd)))
 
-  const heroWorkspaceRow = (
+  // A chat session's hero has no workspace row: no chip to pick a folder, no
+  // picker, and no agent-preset chip (the host refuses a workspace preset for
+  // a session without one). Built only for a workspace session so neither
+  // slot is even dispatched for a chat one.
+  const heroWorkspaceRow = chat ? null : (
     <div className={css.heroWorkspaceRow}>
       <WorkspaceChip
         buttonRef={pickerAnchor}
@@ -318,16 +327,18 @@ export function ConversationRoot({
 
   // The placeholder chip ("Choose workspace") and the Workspace-trigger input travel
   // together: no workspace picked yet (cold start, no session at all), or a
-  // blank session whose workspace vanished (deleted from the sidebar). The
+  // blank session whose workspace vanished (deleted from the sidebar). A chat
+  // session has no workspace to choose, so its hero composer is live. The
   // bar is ONE session-maybe slot rendered unconditionally — inert is a prop,
   // not a different tree, so the textarea DOM survives the transition.
-  const inert = sessionId === undefined || (hero && chipTitle === undefined)
+  const inert = sessionId === undefined || (hero && !chat && chipTitle === undefined)
   // A raised block is the same inert posture with the blocker's own reason:
   // one disabled textarea, never a second tree. The no-workspace state wins
   // when both hold — picking a workspace is the earlier prerequisite.
   const blocked = !inert && composerBlock !== undefined
   const inputBar = renderSlot('conversation.composer.bar', {
     variant: hero ? 'hero' : 'composer',
+    ...(kind === undefined ? {} : { kind }),
     ...(inert
       ? {
         disabled: true,
@@ -340,11 +351,13 @@ export function ConversationRoot({
         // block keeps the model seat live because choosing a model is how the
         // user clears it.
         ? { blocked: composerBlock, placeholder: composerBlock.reason }
-        : hero ? { placeholder: t('placeholder.hero') } : {}),
+        : hero ? { placeholder: t(chat ? 'placeholder.chat' : 'placeholder.hero') } : {}),
   })
 
+  // Without the workspace row the chat hero's stack tightens so the card
+  // keeps a settled distance from the headline.
   const composerBar = (
-    <div className={clsx(css.composerStack, hero && css.composerHero)}>
+    <div className={clsx(css.composerStack, hero && css.composerHero, hero && chat && css.composerHeroChat)}>
       {hero && <HeroShell t={t} renderSlot={renderSlot} />}
       {hero && heroWorkspaceRow}
       {zone !== undefined && renderSlot('conversation.input.dock', zone)}

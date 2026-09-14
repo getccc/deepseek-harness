@@ -3141,7 +3141,10 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
           details: { workspaceId: request.workspaceId },
         })
       }
-      const cwd = workspace?.path ?? request.cwd ?? '/tmp/fixture'
+      // Mirrors the host: a Workspace's path, an explicit cwd, or none, in
+      // which case the Session owns no directory (the chat composition).
+      const cwd = workspace?.path ?? request.cwd
+      const cwdEcho = cwd === undefined ? {} : { cwd }
       const requestedId = request.sessionId
       const attachWorkspace = (sessionId: SessionId): void => {
         /* v8 ignore next -- callers enter only when a target Workspace exists. */
@@ -3165,18 +3168,22 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
             return sessionErr({
               code: 'session/conflict',
               message: `session ${requestedId} already uses ${existing.cwd ?? 'no cwd'}`,
-              details: { sessionId: requestedId, requestedCwd: cwd, ...existing.cwd === undefined ? {} : { existingCwd: existing.cwd } },
+              details: {
+                sessionId: requestedId,
+                ...(cwd === undefined ? {} : { requestedCwd: cwd }),
+                ...(existing.cwd === undefined ? {} : { existingCwd: existing.cwd }),
+              },
             })
           }
           if (workspace !== undefined && !workspace.sessionIds.includes(requestedId)) {
             if (options.failWorkspaceAttach) return attachFailure(requestedId, workspace.workspaceId)
             attachWorkspace(requestedId)
           }
-          return sessionOk({ sessionId: requestedId })
+          return sessionOk({ sessionId: requestedId, ...cwdEcho })
         }
       }
       const created: FixtureSessionSummary = {
-        sessionId: requestedId ?? sid(`fx-${nextSession++}`), updatedAt: Date.now(), running: false, blank: true, pristine: true, cwd,
+        sessionId: requestedId ?? sid(`fx-${nextSession++}`), updatedAt: Date.now(), running: false, blank: true, pristine: true, ...cwdEcho,
       }
       sessions.push(created)
       modelSelections.set(created.sessionId, { provider: 'deepseek-official', model: 'deepseek-v4-flash' })
@@ -3195,7 +3202,7 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
         if (workspace !== undefined) attachWorkspace(created.sessionId)
       }
       if (options.dropSessionCreateResponse) throw new Error('fixture: dropped session.create response after publication')
-      return sessionOk({ sessionId: created.sessionId })
+      return sessionOk({ sessionId: created.sessionId, ...cwdEcho })
     },
     rename: (request) => {
       const missing = requireRemoteSession(request)

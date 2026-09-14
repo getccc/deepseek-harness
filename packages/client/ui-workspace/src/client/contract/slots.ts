@@ -1,23 +1,26 @@
 /**
- * ui-workspace contracts. Two registrations share this package:
+ * ui-workspace contracts. Three registrations share this package:
  *
  * - WorkspaceBrowser fills the sidebar shell's `sidebar.workspaces` hole —
  *   the whole browsing region (section header, search, grouped/flat session
  *   list, workspace dialogs). It registers this package's viewing store and
  *   consumes the shell's two-fact owner share (wide / expandSidebar).
+ * - RecentBrowser fills the shell's `sidebar.recent` hole below the tree —
+ *   the Recent list (section header with the kind filter, newest-first
+ *   rows). It shares the same viewing store handle and owner share.
  * - WorkspacePicker fills the conversation empty-state hole (menu + error
  *   dialog shared with the browser).
  *
- * Each registration also declares one **directory-flow hole** (`single`
- * kind): the slot a composed picker package's client half fills with its
- * picking interaction — a renderless native-chooser driver or an in-app
- * browsing dialog. ui-workspace owns the trigger (the "Add workspace…"
- * entry, present only while the hole is occupied) and the adoption
- * semantics (`createWorkspace({ path })`, the retryable error dialog,
- * Choose again); the occupant owns everything between `open` and the picked path,
- * including creating a new directory to hand back. That occupant-owned
- * creation is why adding a workspace has a single route: an unoccupied hole
- * leaves the surface with no add affordance at all.
+ * The browser and picker registrations each declare one **directory-flow
+ * hole** (`single` kind): the slot a composed picker package's client half
+ * fills with its picking interaction — a renderless native-chooser driver or
+ * an in-app browsing dialog. ui-workspace owns the trigger (the "Add
+ * workspace…" entry, present only while the hole is occupied) and the
+ * adoption semantics (`createWorkspace({ path })`, the retryable error
+ * dialog, Choose again); the occupant owns everything between `open` and
+ * the picked path, including creating a new directory to hand back. That
+ * occupant-owned creation is why adding a workspace has a single route: an
+ * unoccupied hole leaves the surface with no add affordance at all.
  * Two holes exist because the two menu surfaces are independent slot entries
  * and a hole has exactly one declaring entry — they carry the same owner
  * contract and the same occupant.
@@ -151,6 +154,23 @@ export type WorkspaceBrowserProps =
   & PropsStore<ReturnType<typeof createWorkspaceViewStore>>
   & Omit<WorkspaceBrowserInjected, 'hooks'>
   & PropsHooks<WorkspaceBrowserInjected['hooks']>
+  & PropsLocale<'workspace'>
+
+/**
+ * Recent-list injected share: the Session row actions the browser also
+ * drives, with the same semantics. A type alias supplies the implicit index
+ * signature required by the registry.
+ */
+export type RecentBrowserInjected = Pick<
+  WorkspaceBrowserInjected,
+  'open' | 'renameSession' | 'forkSession' | 'archiveSession'
+>
+
+/** Full Recent-list props: shell owner share + the shared viewing store + row actions + the locale seat. */
+export type RecentBrowserProps =
+  PropsRuntime<'sidebar.recent'>
+  & PropsStore<ReturnType<typeof createWorkspaceViewStore>>
+  & RecentBrowserInjected
   & PropsLocale<'workspace'>
 
 /**

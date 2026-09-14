@@ -3,7 +3,9 @@
  * wrong degrades to "this preset has no display text" rather than to a
  * preset that cannot be discovered or mounted. It also cannot carry identity
  * — `id` is the directory and `trust` is the root, so neither is readable
- * from the file a user can write.
+ * from the file a user can write. The `workspace` declaration is the one
+ * capability fact the file carries, and a value outside its vocabulary is
+ * reported rather than degraded.
  */
 
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises'
@@ -31,13 +33,13 @@ describe('reading display metadata', () => {
   it('reads a name and a description', async () => {
     const dir = await presetDir('name: 标准模式\ndescription: 完整的编码 agent。\n')
 
-    expect(await readPresetMetadata(dir)).toEqual({ name: '标准模式', description: '完整的编码 agent。' })
+    expect(await readPresetMetadata(dir)).toEqual({ metadata: { name: '标准模式', description: '完整的编码 agent。' } })
   })
 
   it('treats an absent file as no metadata', async () => {
     // The common case: every preset authored by duplicating another starts
     // without one, and a picker simply falls back to the id.
-    expect(await readPresetMetadata(await presetDir())).toEqual({})
+    expect(await readPresetMetadata(await presetDir())).toEqual({ metadata: {} })
   })
 
   it('treats malformed YAML as no metadata', async () => {
@@ -45,7 +47,7 @@ describe('reading display metadata', () => {
 
     // Display text is not worth failing discovery over — the composition
     // beside it still mounts.
-    expect(await readPresetMetadata(dir)).toEqual({})
+    expect(await readPresetMetadata(dir)).toEqual({ metadata: {} })
   })
 
   it.each([
@@ -53,36 +55,51 @@ describe('reading display metadata', () => {
     ['a scalar', 'just a string\n'],
     ['an empty document', ''],
   ])('treats %s as no metadata', async (_label, content) => {
-    expect(await readPresetMetadata(await presetDir(content))).toEqual({})
+    expect(await readPresetMetadata(await presetDir(content))).toEqual({ metadata: {} })
   })
 
   it('ignores fields that are not text', async () => {
     const dir = await presetDir('name: 42\ndescription:\n  nested: true\n')
 
-    expect(await readPresetMetadata(dir)).toEqual({})
+    expect(await readPresetMetadata(dir)).toEqual({ metadata: {} })
   })
 
   it('ignores blank text rather than showing an empty name', async () => {
     const dir = await presetDir('name: "   "\ndescription: ""\n')
 
-    expect(await readPresetMetadata(dir)).toEqual({})
+    expect(await readPresetMetadata(dir)).toEqual({ metadata: {} })
   })
 
   it('trims surrounding whitespace', async () => {
     const dir = await presetDir('name: "  极简模式  "\n')
 
-    expect(await readPresetMetadata(dir)).toEqual({ name: '极简模式' })
+    expect(await readPresetMetadata(dir)).toEqual({ metadata: { name: '极简模式' } })
   })
 
   it('reads a declared order', async () => {
     const dir = await presetDir('name: 标准模式\norder: 1\n')
 
-    expect(await readPresetMetadata(dir)).toEqual({ name: '标准模式', order: 1 })
+    expect(await readPresetMetadata(dir)).toEqual({ metadata: { name: '标准模式', order: 1 } })
   })
 
   it('ignores an order that is not a finite number', async () => {
-    expect(await readPresetMetadata(await presetDir('order: first\n'))).toEqual({})
-    expect(await readPresetMetadata(await presetDir('order: .inf\n'))).toEqual({})
+    expect(await readPresetMetadata(await presetDir('order: first\n'))).toEqual({ metadata: {} })
+    expect(await readPresetMetadata(await presetDir('order: .inf\n'))).toEqual({ metadata: {} })
+  })
+
+  it('reads a declared workspace requirement', async () => {
+    const dir = await presetDir('name: 聊天模式\nworkspace: none\n')
+
+    expect(await readPresetMetadata(dir)).toEqual({ metadata: { name: '聊天模式', workspace: 'none' } })
+    expect(await readPresetMetadata(await presetDir('workspace: required\n')))
+      .toEqual({ metadata: { workspace: 'required' } })
+  })
+
+  it('reports a workspace value outside the vocabulary instead of defaulting it', async () => {
+    const read = await readPresetMetadata(await presetDir('name: 聊天模式\nworkspace: no\n'))
+
+    expect(read.metadata).toEqual({})
+    expect(read.problem).toBe('preset.yml declares workspace "no"; a preset declares required or none, or omits the key for required')
   })
 
   it('cannot carry identity or trust', async () => {
@@ -90,7 +107,7 @@ describe('reading display metadata', () => {
 
     // A locally authored preset writing `trust: system` must not become a
     // shipped one; identity comes from the directory and the root it sits in.
-    expect(await readPresetMetadata(dir)).toEqual({ name: 'mine' })
+    expect(await readPresetMetadata(dir)).toEqual({ metadata: { name: 'mine' } })
   })
 })
 
@@ -99,11 +116,15 @@ describe('rendering display metadata', () => {
     const rendered = renderPresetMetadata({ name: '创造模式', description: '可以改自己的组装。' })
     const dir = await presetDir(rendered)
 
-    expect(await readPresetMetadata(dir)).toEqual({ name: '创造模式', description: '可以改自己的组装。' })
+    expect(await readPresetMetadata(dir)).toEqual({ metadata: { name: '创造模式', description: '可以改自己的组装。' } })
   })
 
   it('stores a declared order', () => {
     expect(renderPresetMetadata({ name: '标准模式', order: 1 })).toBe('name: 标准模式\norder: 1\n')
+  })
+
+  it('stores a declared workspace requirement', () => {
+    expect(renderPresetMetadata({ workspace: 'none' })).toBe('workspace: none\n')
   })
 
   it('omits an absent field rather than writing it blank', () => {

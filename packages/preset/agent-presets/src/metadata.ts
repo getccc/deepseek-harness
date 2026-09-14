@@ -1,5 +1,7 @@
 /**
- * A preset's display metadata: the name and description a picker shows.
+ * A preset's metadata: the name and description a picker shows, and the one
+ * fact about its sessions the composition cannot state, whether they own a
+ * working directory.
  *
  * It lives in its own file because the composition is a top-level list of
  * plugin rows — YAML cannot carry sibling keys beside it, and faking a
@@ -7,13 +9,17 @@
  * also keeps the composition exactly what its name says: a Cordis file the
  * loader owns and the cordis preset can author.
  *
- * The file carries display text ONLY. `id` is the directory name and `trust`
- * comes from the root a preset was discovered under, so neither is writable
- * here — otherwise a locally authored preset could claim to be a shipped one.
+ * `id` is the directory name and `trust` comes from the root a preset was
+ * discovered under, so neither is writable here — otherwise a locally
+ * authored preset could claim to be a shipped one.
  *
- * Every read failure degrades to no metadata. A preset whose display text is
- * missing, malformed, or unreadable still mounts: presentation is not a
- * capability, and a broken name must never become an agent that cannot start.
+ * Every read failure degrades to no metadata. A preset whose file is missing,
+ * malformed, or unreadable still mounts as a `required`-workspace preset:
+ * presentation is not a capability, and a broken name must never become an
+ * agent that cannot start. A `workspace` value outside the vocabulary is the
+ * one exception, reported as a problem discovery marks the preset broken
+ * with: a declaration that was made and cannot be read must not silently
+ * become the default.
  * @module @deepseek-ai/dsh-agent-presets/metadata
  */
 
@@ -24,7 +30,13 @@ import yaml from 'js-yaml'
 /** The optional display-metadata file beside a preset's composition. */
 export const METADATA_FILE = 'preset.yml'
 
-/** Display text a preset may publish about itself. */
+/** Whether sessions on a preset own a working directory. */
+export type PresetWorkspace = 'required' | 'none'
+
+/** Every `workspace` value a preset may declare. */
+export const PRESET_WORKSPACES: readonly PresetWorkspace[] = ['required', 'none']
+
+/** Display text and workspace requirement a preset may publish about itself. */
 export interface PresetMetadata {
   /** Human-facing name; falls back to the preset id when absent. */
   readonly name?: string
@@ -36,6 +48,21 @@ export interface PresetMetadata {
    * can read in capability order while authored ones stay alphabetical.
    */
   readonly order?: number
+  /**
+   * Whether a session on this preset owns a working directory. `required`,
+   * the value an absent key means, composes only sessions created inside a
+   * Workspace or at an explicit cwd; `none` composes only sessions created
+   * without either, whose header records no cwd.
+   */
+  readonly workspace?: PresetWorkspace
+}
+
+/** One metadata file as discovery reads it. */
+export interface PresetMetadataRead {
+  /** The metadata the preset published, possibly empty. */
+  readonly metadata: PresetMetadata
+  /** A declared `workspace` outside {@link PRESET_WORKSPACES}; the preset must not compose until it is fixed. */
+  readonly problem?: string
 }
 
 /** A non-empty trimmed string, or undefined for anything else. */
@@ -46,21 +73,22 @@ function text(value: unknown): string | undefined {
 }
 
 /**
- * Read one preset directory's display metadata.
+ * Read one preset directory's metadata.
  *
  * Absent, unparsable, and wrongly-shaped files are all the same answer —
  * empty metadata — because the caller renders a picker, not a diagnostic.
  * @param directory - the preset directory.
- * @returns the display text the preset published, possibly empty.
+ * @returns the metadata the preset published, possibly empty, beside the
+ * problem an unreadable `workspace` declaration raises.
  */
-export async function readPresetMetadata(directory: string): Promise<PresetMetadata> {
+export async function readPresetMetadata(directory: string): Promise<PresetMetadataRead> {
   let raw: string
   try {
     raw = await readFile(join(directory, METADATA_FILE), 'utf8')
   } catch {
     // Absent is the common case: metadata is optional and most presets,
     // including every one authored by duplicating another, carry none.
-    return {}
+    return { metadata: {} }
   }
   let parsed: unknown
   try {
@@ -68,19 +96,30 @@ export async function readPresetMetadata(directory: string): Promise<PresetMetad
   } catch {
     // Malformed display text is not worth failing discovery over; the picker
     // falls back to the id, and the composition still mounts.
-    return {}
+    return { metadata: {} }
   }
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return {}
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return { metadata: {} }
   const record = parsed as Record<string, unknown>
   const name = text(record.name)
   const description = text(record.description)
   const order = typeof record.order === 'number' && Number.isFinite(record.order)
     ? record.order
     : undefined
+  const workspace = record.workspace
+  if (workspace !== undefined && !PRESET_WORKSPACES.includes(workspace as PresetWorkspace)) {
+    return {
+      metadata: {},
+      problem: `${METADATA_FILE} declares workspace ${JSON.stringify(workspace)}; `
+        + `a preset declares ${PRESET_WORKSPACES.join(' or ')}, or omits the key for required`,
+    }
+  }
   return {
-    ...name === undefined ? {} : { name },
-    ...description === undefined ? {} : { description },
-    ...order === undefined ? {} : { order },
+    metadata: {
+      ...name === undefined ? {} : { name },
+      ...description === undefined ? {} : { description },
+      ...order === undefined ? {} : { order },
+      ...workspace === undefined ? {} : { workspace: workspace as PresetWorkspace },
+    },
   }
 }
 
@@ -95,11 +134,14 @@ export async function readPresetMetadata(directory: string): Promise<PresetMetad
 export function renderPresetMetadata(metadata: PresetMetadata): string | undefined {
   const name = text(metadata.name)
   const description = text(metadata.description)
-  const { order } = metadata
-  if (name === undefined && description === undefined && order === undefined) return undefined
+  const { order, workspace } = metadata
+  if (name === undefined && description === undefined && order === undefined && workspace === undefined) {
+    return undefined
+  }
   return yaml.dump({
     ...name === undefined ? {} : { name },
     ...description === undefined ? {} : { description },
     ...order === undefined ? {} : { order },
+    ...workspace === undefined ? {} : { workspace },
   }, { lineWidth: -1 })
 }

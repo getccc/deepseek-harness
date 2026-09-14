@@ -30,6 +30,7 @@ import { bindScopeParent, createScope, scopeOf, type Scope, type ScopeKey, type 
 // Type-only: resolves the `agent/created` lifecycle event this service watches.
 import type {} from '@deepseek-ai/dsh-agent'
 import type { Agent } from '@deepseek-ai/dsh-agent'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { AgentPresetDocument, AgentPresetRoster } from './types.ts'
 import type {} from '@deepseek-ai/dsh-session-projection'
 // Type-only: resolves the registry notification emitted after scope reparenting.
@@ -44,6 +45,7 @@ import {
   fileComposition, mountedCompositionRows,
   type AgentPresetComposition,
 } from './composition-inventory.ts'
+import type { PresetWorkspace } from './metadata.ts'
 import type { AgentPreset, Config, PresetRoot } from './preset.ts'
 import { agentPresetProjectionDefinition } from './session.ts'
 export type * from './types.ts'
@@ -53,6 +55,18 @@ export type {
 
 /** Settings namespace carrying the user's chosen default preset. */
 export const SETTINGS_NAMESPACE = 'agent-presets'
+
+/** Refuse a preset whose declared workspace requirement disagrees with a session's location. */
+function assertWorkspace(preset: AgentPreset, workspace: PresetWorkspace, sessionId?: SessionId): void {
+  if (preset.workspace === workspace) return
+  throw new RemoteError(
+    'agent-preset/workspace-mismatch',
+    workspace === 'none'
+      ? `agent-presets: preset "${preset.id}" needs a workspace and cannot compose a session created without one`
+      : `agent-presets: preset "${preset.id}" composes only sessions without a workspace`,
+    { agentPreset: preset.id, workspace: preset.workspace, ...sessionId === undefined ? {} : { sessionId } },
+  )
+}
 
 /** Refuse an empty preset id before invoking a domain operation. */
 function validatePresetId(value: string, field: 'agentPreset' | 'from'): void {
@@ -74,7 +88,8 @@ export const AgentPresetSettingsSchema: z<AgentPresetSettings> = z.object({
 
 export { COMPOSITION_FILE, discoverPresets, scanRoot, SHIPPED_PRESET_ROOT } from './discovery.ts'
 export {
-  METADATA_FILE, readPresetMetadata, renderPresetMetadata, type PresetMetadata,
+  METADATA_FILE, PRESET_WORKSPACES, readPresetMetadata, renderPresetMetadata,
+  type PresetMetadata, type PresetMetadataRead, type PresetWorkspace,
 } from './metadata.ts'
 export {
   inactiveRows, leakedServices, livePresetMounts, mountPreset, serviceForAgent, standingMountFor,
@@ -103,6 +118,7 @@ export class AgentPresets extends TypertRemoteService {
   /** Runtime schema for the preset roster. */
   static Config = z.object({
     default: z.string().required(),
+    chatDefault: z.string(),
     roots: z.array(z.object({
       path: z.string().required(),
       trust: z.union(['system', 'user'] as const).default('user'),
@@ -242,6 +258,26 @@ export class AgentPresets extends TypertRemoteService {
   }
 
   /**
+   * The preset id composed for a session created without a Workspace or cwd
+   * when a caller names none, or undefined when the deployment configures
+   * no `chatDefault`.
+   */
+  get chatDefaultId(): string | undefined {
+    return this.config.chatDefault
+  }
+
+  /**
+   * Whether one preset is the default of its workspace kind: the settings
+   * default among `required` presets, the configured `chatDefault` among
+   * `none` presets.
+   */
+  private isDefault(preset: AgentPreset, defaultId: string): boolean {
+    return preset.workspace === 'none'
+      ? preset.id === this.config.chatDefault
+      : preset.id === defaultId
+  }
+
+  /**
    * Every preset the configured roots currently supply.
    * @returns the presets, first-root-wins per id.
    */
@@ -264,7 +300,8 @@ export class AgentPresets extends TypertRemoteService {
       presets: (await this.list()).map(preset => ({
         id: preset.id,
         trust: preset.trust,
-        isDefault: preset.id === defaultId,
+        isDefault: this.isDefault(preset, defaultId),
+        workspace: preset.workspace,
         ...preset.name === undefined ? {} : { name: preset.name },
         ...preset.description === undefined ? {} : { description: preset.description },
         ...preset.broken === undefined ? {} : { broken: preset.broken },
@@ -307,7 +344,7 @@ export class AgentPresets extends TypertRemoteService {
         id: preset.id,
         trust: preset.trust,
         ...preset.name === undefined ? {} : { name: preset.name },
-        isDefault: preset.id === defaultId,
+        isDefault: this.isDefault(preset, defaultId),
       }
       // Before the broken verdict: a mounted preset whose file was since
       // deleted or corrupted still runs its standing composition. Newest
@@ -353,6 +390,35 @@ export class AgentPresets extends TypertRemoteService {
       )
     }
     return found
+  }
+
+  /**
+   * Resolve the preset one session location composes: the named preset, or
+   * the location's default — {@link defaultId} for a session that owns a
+   * cwd, {@link chatDefaultId} for one that owns none — refusing a preset
+   * whose declared workspace requirement disagrees with the location. This
+   * is where a misconfigured default fails: a `chatDefault` that declares no
+   * `workspace: none`, or a user default that does, is refused at the first
+   * session it would compose.
+   * @param workspace - `required` when the session owns a cwd, `none` otherwise.
+   * @param id - the preset id, or `undefined` for the location's default.
+   * @returns the resolved preset.
+   * @throws {RemoteError} `agent-preset/not-found` when no root supplies the
+   * preset or no `chatDefault` is configured, `agent-preset/workspace-mismatch`
+   * when the preset's requirement disagrees with the location.
+   */
+  async resolveFor(workspace: PresetWorkspace, id?: string): Promise<AgentPreset> {
+    const wanted = id ?? (workspace === 'none' ? this.chatDefaultId : undefined)
+    if (workspace === 'none' && wanted === undefined) {
+      throw new RemoteError(
+        'agent-preset/not-found',
+        'agent-presets: no preset composes a session without a workspace; name one or configure `chatDefault`',
+        { agentPreset: '', available: (await this.list()).filter(preset => preset.workspace === 'none').map(preset => preset.id) },
+      )
+    }
+    const preset = await this.resolve(wanted)
+    assertWorkspace(preset, workspace)
+    return preset
   }
 
   /**
@@ -689,7 +755,8 @@ export class AgentPresets extends TypertRemoteService {
    * @param agentPreset - the preset to compose the agent from instead.
    * @returns the preset id that was recorded.
    * @throws {RemoteError} with `gateway/bad-request`, `agent-preset/locked`,
-   * `agent-preset/not-found`, or `agent-preset/invalid` when refused.
+   * `agent-preset/not-found`, `agent-preset/workspace-mismatch`, or
+   * `agent-preset/invalid` when refused.
    */
   @Remote('select')
   async select(agent: Agent, agentPreset: string): Promise<string> {
@@ -720,6 +787,14 @@ export class AgentPresets extends TypertRemoteService {
         { sessionId: agent.id, agentPreset },
       )
     }
+    // A session's location is fixed at creation, so a switch across the
+    // workspace kinds is refused here rather than composing an agent that
+    // interpolates `{{cwd}}` for a session without one, or the reverse.
+    assertWorkspace(
+      await this.resolve(agentPreset),
+      agent.session.header.cwd === undefined ? 'none' : 'required',
+      agent.id,
+    )
     const preset = await this.recompose(agent.ctx, agentPreset)
     // Recorded only after the swap committed: the log states what the agent
     // runs, and a rejected mount leaves the previous composition.

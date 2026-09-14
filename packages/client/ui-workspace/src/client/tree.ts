@@ -1,10 +1,11 @@
 /**
- * Derives the workspace browser tree from Host Workspace order and membership.
- * Unassigned Sessions trail under Ungrouped; only the selected blank Session
- * remains visible.
+ * Derives the workspace browser tree from Host Workspace order and membership,
+ * plus the Recent list's kind-filtered rows. Unassigned work Sessions trail
+ * under Ungrouped; chat Sessions belong to the Recent list alone; only the
+ * selected blank Session remains visible.
  */
 import {
-  type SessionListState, type SessionSearchResultItem, type SessionSummary,
+  type SessionKind, type SessionListState, type SessionSearchResultItem, type SessionSummary,
 } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { WorkspaceId, WorkspaceView } from '@deepseek-ai/dsh-api-workspace-controller/client'
 import type {
@@ -38,9 +39,14 @@ export function owningGroupKey(
 export type SessionPendingInteractionStatus = 'approval' | 'plan-review' | 'question'
 type SessionPendingInteractions = ReadonlyMap<SessionId, SessionPendingInteractionBase>
 
-/** One top-level session row in a group or the flat list. */
+/** Session kinds the Recent list shows: one kind, or every kind. */
+export type RecentFilter = SessionKind | 'all'
+
+/** One top-level session row in a group, the flat list, or the Recent list. */
 export interface SessionNode {
   id: SessionId
+  /** Which kind of Session the row is; a blank row's placeholder label follows it. */
+  kind: SessionKind
   /** Stored display title; the renderer substitutes the localized New Session label for blank rows. */
   title: string
   /** The provisional blank session (renderer shows the localized New Session title). */
@@ -148,6 +154,11 @@ function sessionVisible(session: SessionSummary, current: SessionId | undefined,
     && (!session.blank || session.id === current)
 }
 
+/** Whether a Session's kind is among those a Recent filter admits. */
+function matchesKind(session: SessionSummary, filter: RecentFilter): boolean {
+  return filter === 'all' || session.kind === filter
+}
+
 /**
  * A blank session is the selected Workspace's provisional New Session row;
  * its canonical title never enters search (blank rows are query-excluded)
@@ -199,9 +210,10 @@ function orderedUngrouped(members: readonly SessionSummary[], stored: readonly s
 
 /**
  * Group Sessions by Host Workspace: one group per entity in stable Host
- * order, with members resolved from sessionIds in their stored order. Sessions
- * outside every Workspace trail in the browser-local Ungrouped order, which
- * falls back to recency before that order is initialized.
+ * order, with members resolved from sessionIds in their stored order. Work
+ * Sessions outside every Workspace trail in the browser-local Ungrouped
+ * order, which falls back to recency before that order is initialized; chat
+ * Sessions belong to the Recent list and never to a group.
  */
 function groupByWorkspace(
   list: SessionListState,
@@ -228,7 +240,7 @@ function groupByWorkspace(
   const stray = list.ids
     .map(id => list.byId[id])
     .filter((s): s is SessionSummary =>
-      s !== undefined && !accounted.has(s.id) && sessionVisible(s, list.current, archived))
+      s !== undefined && !accounted.has(s.id) && matchesKind(s, 'work') && sessionVisible(s, list.current, archived))
   if (stray.length > 0) {
     groups.push(buildGroup(
       UNGROUPED_KEY,
@@ -263,6 +275,7 @@ function sessionNode(
   const pendingInteraction = visiblePendingKind(pendingInteractions.get(s.id)?.kind)
   return {
     id: s.id,
+    kind: s.kind,
     title: sessionTitle(s),
     blank: s.blank,
     running: s.running,
@@ -323,10 +336,38 @@ export function deriveGroups(
 }
 
 /**
- * Derive the flat session list ("In one list" mode): every session — fork
+ * Derive the Recent list: every visible session of the admitted kinds — fork
  * children included — as a top-level row, strictly newest-first. No grouping,
  * no parent/child adjacency. Content search lives outside this derivation
  * (see {@link deriveSearchResults}).
+ * @param list - sessions list snapshot.
+ * @param archivedSessionIds - registry-global archive set.
+ * @param pendingInteractions - pending UI interactions by Session.
+ * @param filter - the Session kinds admitted.
+ * @returns rows in render order.
+ */
+export function deriveRecent(
+  list: SessionListState,
+  archivedSessionIds: readonly SessionId[],
+  pendingInteractions: SessionPendingInteractions,
+  filter: RecentFilter,
+): SessionNode[] {
+  const archived = new Set(archivedSessionIds)
+  const descendants = indexSubagentDescendants(list.byId)
+  const rows: SessionSummary[] = []
+  for (const id of list.ids) {
+    const s = list.byId[id]
+    if (s === undefined || !matchesKind(s, filter) || !sessionVisible(s, list.current, archived)) continue
+    rows.push(s)
+  }
+  rows.sort(byRecency)
+  return rows.map(session => sessionNode(session, descendants, pendingInteractions))
+}
+
+/**
+ * Derive the flat session list ("In one list" mode): every work session —
+ * fork children included — as a top-level row, strictly newest-first. Chat
+ * sessions belong to the Recent list ({@link deriveRecent}) and are excluded.
  * @param list - sessions list snapshot.
  * @param archivedSessionIds - registry-global archive set.
  * @param pendingInteractions - pending UI interactions by Session.
@@ -337,16 +378,7 @@ export function deriveFlat(
   archivedSessionIds: readonly SessionId[],
   pendingInteractions: SessionPendingInteractions,
 ): SessionNode[] {
-  const archived = new Set(archivedSessionIds)
-  const descendants = indexSubagentDescendants(list.byId)
-  const rows: SessionSummary[] = []
-  for (const id of list.ids) {
-    const s = list.byId[id]
-    if (s === undefined || !sessionVisible(s, list.current, archived)) continue
-    rows.push(s)
-  }
-  rows.sort(byRecency)
-  return rows.map(session => sessionNode(session, descendants, pendingInteractions))
+  return deriveRecent(list, archivedSessionIds, pendingInteractions, 'work')
 }
 
 /**

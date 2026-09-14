@@ -12,7 +12,7 @@ import { RemoteError } from '@deepseek-ai/dsh-client-test-runtime'
 import { AgentPresetSectionController, draftBlocker } from '../src/client/section-store.ts'
 import type { CopyDraft, PresetRow } from '../src/client/section-store.ts'
 
-interface FakePreset { trust: 'system' | 'user'; content: string; name?: string }
+interface FakePreset { trust: 'system' | 'user'; content: string; name?: string; workspace?: 'required' | 'none' }
 interface Recorded { method: string; payload: unknown }
 
 interface FakeOptions {
@@ -66,7 +66,7 @@ function fakeCtx(
           if (options.failList !== undefined) return remoteFail(options.failList)
           return remoteOk({
             presets: [...presets].map(([id, preset]) => ({
-              id, trust: preset.trust, isDefault: id === defaultId.id,
+              id, trust: preset.trust, workspace: preset.workspace ?? 'required', isDefault: id === defaultId.id,
               ...preset.name === undefined ? {} : { name: preset.name },
             })),
             authorable: options.authorable ?? true,
@@ -189,7 +189,7 @@ describe('loading the roster', () => {
     expect(state.authorable).toBe(true)
     expect(state.hasDocument).toBe(false)
     expect(state.rows.map((row: PresetRow) => row.id)).toEqual(['standard', 'mine'])
-    expect(state.rows[0]).toMatchObject({ trust: 'system', isDefault: true, name: '标准模式' })
+    expect(state.rows[0]).toMatchObject({ trust: 'system', workspace: 'required', isDefault: true, name: '标准模式' })
   })
 
   it('reports an empty roster as unavailable, not as an error', async () => {
@@ -325,8 +325,8 @@ describe('the copy dialog', () => {
 
 describe('the copy blocker', () => {
   const rows: PresetRow[] = [
-    { id: 'standard', trust: 'system', isDefault: true },
-    { id: 'mine', trust: 'user', isDefault: false },
+    { id: 'standard', trust: 'system', workspace: 'required', isDefault: true },
+    { id: 'mine', trust: 'user', workspace: 'required', isDefault: false },
   ]
   const draft = (id: string): CopyDraft =>
     ({ from: 'standard', fromTitle: '标准模式', id, name: '', saving: false, error: null })

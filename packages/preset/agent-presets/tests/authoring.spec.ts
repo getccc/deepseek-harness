@@ -119,6 +119,16 @@ describe('copying a preset', () => {
       .toMatchObject({ description: '只做检索。' })
   })
 
+  it('keeps the source workspace requirement, so a copy of a chat preset composes chat sessions', async () => {
+    await seedPreset(userRoot, 'talk', { metadata: 'name: 聊天\nworkspace: none\n' })
+
+    await ctx.agentPresets.copy('talk', 'my-talk')
+
+    expect(await readFile(join(userRoot, 'my-talk', METADATA_FILE), 'utf8')).toBe('workspace: none\n')
+    expect((await ctx.agentPresets.list()).find(preset => preset.id === 'my-talk'))
+      .toMatchObject({ workspace: 'none' })
+  })
+
   it('stores the display name the author supplied', async () => {
     await ctx.agentPresets.copy('standard', 'mine', '我的模式')
 
@@ -174,6 +184,7 @@ describe('copying a preset', () => {
       id: 'gone',
       trust: 'user' as const,
       path: join(userRoot, 'gone', COMPOSITION_FILE),
+      workspace: 'required' as const,
     }
 
     // The source vanished between resolve and copy: the half-made target is

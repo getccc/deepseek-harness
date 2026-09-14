@@ -27,13 +27,15 @@ Use `dsh-agent-presets` to give each session the tools, prompt sections, and ski
 
 Mount this package in a composition that should give each agent session its own tools, prompt sections, and skills from a preset file. Every session names a preset — explicitly or through the configured default — and is composed from it; without the package, sessions fall back to whatever the host composition mounts.
 
-The shipped Web `standard`, `ptc`, and `cordis` presets include [explicit file delivery](../../client/ui-deliverables/README.md#explicit-deliveries). The `minimal` preset keeps its fixed two-tool training configuration.
+The shipped Web `standard`, `ptc`, and `cordis` presets include [explicit file delivery](../../client/ui-deliverables/README.md#explicit-deliveries). The `minimal` preset keeps its fixed two-tool training configuration. The `chat` preset composes a session that owns no working directory: a persona, context compaction, and a [tool restriction](../../guard/tool-restriction/README.md) row that masks every global tool.
 
 ### What a preset gives a session
 
 A session composed from a preset runs the plugins that preset's `agent.cordis.yml` names: its tools, prompt sections, and skills. Sessions joined to the same preset share one installed composition, and each session's state stays separate. A child agent (subagent) joins its parent's composition, so it sees the same tools and prompt sections as the agent that spawned it.
 
 The presets you can choose from come from two places: the presets shipped inside this package under `presets/`, and your own presets under `<dshHome>/.agent-presets`. The picker shows each preset's display name and description; a preset whose composition cannot load is listed with the reason rather than hidden, so you can see what to fix or delete.
+
+A preset's `preset.yml` also declares whether its sessions own a working directory: `workspace: required` (what an absent key means) composes only sessions created inside a Workspace or at an explicit cwd, and `workspace: none` composes only sessions created without either, whose header records no cwd. The session location selects the default preset of its kind and refuses a preset declared for the other kind with `agent-preset/workspace-mismatch`, at creation and at a blank session's switch alike. A `workspace` value outside the vocabulary marks the preset broken rather than defaulting it.
 
 ### Minimal configuration
 
@@ -50,7 +52,8 @@ The plugin needs a `default` preset id and scans `roots` for presets:
 
 | Field | Default | Meaning |
 |---|---|---|
-| `default` | required | Preset id composed when a session names none |
+| `default` | required | Preset id composed when a session with a working directory names none; it must declare `workspace: required` |
+| `chatDefault` | absent | Preset id composed when a session without a Workspace or cwd names none; it must declare `workspace: none`. Absent means such a session must name its preset |
 | `roots` | `[]` | Scanned directories in precedence order; each supplies `path` (a leading `~` expands) and `trust` (defaults to `user`) |
 | `includeShippedRoot` | `true` | Prepend the package's bundled presets as a `system` root before every configured root |
 | `includeUserRoot` | `true` | Append `<dshHome>/.agent-presets` as a `user` root, after every configured root |
@@ -68,7 +71,7 @@ agent-presets:
   default: minimal
 ```
 
-The value is read when a session is created, so a changed default affects only sessions created afterwards; running sessions stay on the preset they were composed from. Clearing the user field re-inherits the composition default.
+The value is read when a session is created, so a changed default affects only sessions created afterwards; running sessions stay on the preset they were composed from. Clearing the user field re-inherits the composition default. The user default governs sessions with a working directory only; `chatDefault` is deployment configuration with no user layer, and either default declared for the wrong kind of session fails at the first session it would compose.
 
 ### Authoring presets
 
@@ -111,7 +114,7 @@ This section explains the design behind the roster and the standing mount; obser
 | [`src/preset.ts`](src/preset.ts) | Vocabulary: preset id rule, `AgentPreset` and `PresetRoot`, error types |
 | [`src/mount.ts`](src/mount.ts) | Subtree mounting, host base-URL handling, mount audit, `write()` suppression |
 | [`src/authoring.ts`](src/authoring.ts) | Copy/delete/read of locally authored presets, permission tightening |
-| [`src/metadata.ts`](src/metadata.ts) | `preset.yml` display metadata |
+| [`src/metadata.ts`](src/metadata.ts) | `preset.yml` display metadata and the `workspace` requirement |
 | [`src/session.ts`](src/session.ts) | `agent-preset/selected` event and the `agentPreset` Session projection |
 | [`src/types.ts`](src/types.ts) | Client-safe wire payloads and cordis event declaration |
 | [`src/invariant.ts`](src/invariant.ts) | Invariant companion: post-mount service-leak recheck, unjoined-agent failure |
@@ -130,7 +133,7 @@ A directly-plugged subtree is absent from `ctx.loader.entries()`, so no boot aud
 
 ### Authoring mechanics
 
-A copy dereferences symlinks so it is self-contained, re-tightens the tree to owner-only (`0o600` files keeping their owner-execute bit, `0o700` directories), and creates the root on first copy. The copied `preset.yml` is rewritten: the source's description is kept for the author to edit, its name and roster `order` dropped, so the roster keeps distinguishing the copy from its source. Removal refuses presets that ship with the deployment and clears a user default that named the preset just deleted.
+A copy dereferences symlinks so it is self-contained, re-tightens the tree to owner-only (`0o600` files keeping their owner-execute bit, `0o700` directories), and creates the root on first copy. The copied `preset.yml` is rewritten: the source's description and `workspace` requirement are kept, its name and roster `order` dropped, so the roster keeps distinguishing the copy from its source. Removal refuses presets that ship with the deployment and clears a user default that named the preset just deleted.
 
 ### The session record
 

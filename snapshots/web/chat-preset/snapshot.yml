@@ -1,0 +1,8 @@
+version: 1
+scenario: chat-preset
+profile: web
+composition: web-chat
+recording: authored
+header:
+  class: web-chat
+  pin: true

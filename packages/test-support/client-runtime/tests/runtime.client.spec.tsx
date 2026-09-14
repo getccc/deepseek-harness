@@ -107,6 +107,19 @@ describe('sessions', () => {
     await runtime.dispose()
   })
 
+  it('derives a fixture summary\'s kind from its cwd the way the host projection does', async () => {
+    const runtime = await runtimeWithFrame()
+    await runtime.sessions.add({ id: 'chat' })
+    await runtime.sessions.add({ id: 'work', summary: { cwd: '/workspace' } })
+    await runtime.sessions.add({ id: 'stated', summary: { kind: 'work' } })
+    const { byId } = runtime.sessions.list.getSnapshot()
+    expect(byId['chat' as never]?.kind).toBe('chat')
+    expect(byId['work' as never]?.kind).toBe('work')
+    // A fixture stating `kind` outright overrides the derivation.
+    expect(byId['stated' as never]?.kind).toBe('work')
+    await runtime.dispose()
+  })
+
   it('add with current:false keeps the selection; unknown ids fail loud on the mutators', async () => {
     const runtime = await runtimeWithFrame()
     await runtime.sessions.add({ id: 's1' })

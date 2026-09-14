@@ -1,5 +1,5 @@
 ---
-description: "Sidebar shell plugin for the dsh web client: brand row, New Session action, collapse control, scroll-aware region seat, and bottom-pinned Settings seat."
+description: "Sidebar shell plugin for the dsh web client: brand row, New chat and New work task entries, collapse control, scroll-aware region seats, and bottom-pinned Settings seat."
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The dsh web client sidebar lets users recognize the active build, start a new session, collapse navigation to a 56px rail, browse Workspaces and Sessions, and open Settings. It preserves a bottom-pinned Settings entry and hides idle scrollbars without moving browser rows. New Session uses an explicitly selected Workspace, then the current Session's Workspace, then the most recently active Workspace; if none exists, it opens a blank New Session page. Deployments can replace the brand mark or name while retaining the navigation controls and rail geometry.
+The dsh web client sidebar lets users recognize the active build, start a new chat or work task, collapse navigation to a 56px rail, browse Workspaces, Sessions, and recent conversations, and open Settings. It keeps a bottom-pinned Settings entry and hides idle scrollbars without moving browser rows. New chat opens a Session without a Workspace; New work task uses an explicitly selected Workspace, then the current Session's Workspace, then the most recently active one, and with none it opens a blank New Session page. Deployments can replace the brand mark or name while retaining the navigation controls and rail geometry.
 
 ## Table of Contents
 
@@ -25,11 +25,11 @@ The dsh web client sidebar lets users recognize the active build, start a new se
 <a id="use-this-package"></a>
 ## Use this package
 
-The sidebar is the navigation shell: users see the brand, start new sessions, collapse the rail, and reach Settings. Feature plugins fill its seats — ui-workspace fills `sidebar.workspaces`, ui-settings registers the trigger row and settings panel at `sidebar.settings`.
+The sidebar is the navigation shell: users see the brand, start new chats and work tasks, collapse the rail, and reach Settings. Feature plugins fill its seats — ui-workspace fills `sidebar.workspaces` and `sidebar.recent`, ui-settings registers the trigger row and settings panel at `sidebar.settings`. The shell owns one scroll region for both browsing seats, so the Workspace tree and the Recent list scroll as one column.
 
-### Brand and New Session
+### Brand, New chat, and New work task
 
-The expanded brand row renders `sidebar.brand.mark` and `sidebar.brand.name` as independent single slots; the collapsed rail renders the same mark slot. Without occupants, the shell uses the WeWork logo and a localized local-build label. New Session targets the explicit Workspace used by a scoped action, otherwise the current Session's Workspace, otherwise the most recently active Workspace; when none exists it clears into the blank New Session page.
+The expanded brand row renders `sidebar.brand.mark` and `sidebar.brand.name` as independent single slots; the collapsed rail renders the same mark slot. Without occupants, the shell uses the WeWork logo and a localized local-build label. Two entries follow the brand row in the panel-row style: **New chat** starts a conversation without a Workspace through `uiWorkspace.startChat()`, and **New work task** targets the explicit Workspace used by a scoped action, otherwise the current Session's Workspace, otherwise the most recently active Workspace, and when none exists clears into the blank New Session page; the brand row itself keeps the work-task action.
 
 ### Global panel entries
 

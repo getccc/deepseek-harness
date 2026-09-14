@@ -1,0 +1,50 @@
+# The `chat` agent preset: a tool-less conversation with no working directory.
+#
+# Sessions on this preset are created without a Workspace or cwd
+# (`preset.yml` declares `workspace: none`), so nothing here may interpolate
+# `{{cwd}}`, mount a filesystem or shell row, or scan a project directory. What
+# makes the first token fast is what is absent: no tool schemas in the request,
+# no skill discovery, no AGENTS.md read, no runtime-context snapshot of a
+# directory. The persona row shadows the deployment persona, suffix included,
+# because the Web deployment's suffix names the working directory.
+
+# Runtime-context snapshots describe the file sandbox and approval policy,
+# which govern tools this agent does not have, so they are suppressed too.
+- id: persona
+  name: '@deepseek-ai/dsh-persona'
+  config:
+    prefix: >-
+      You are 小微 (Xiaowei), the WeWork assistant, powered by the {{model}} model. You are chatting without a workspace: answer directly from your own knowledge and the conversation, and say so when a question needs files, commands, or the web.
+    includeRuntimeContext: false
+
+# Nothing is registered into the tool catalog, and the host-plane tools every
+# scope inherits are masked so a deployment adding one later does not put it
+# into chat sessions. The empty allow list is the masking.
+- id: tool-restriction
+  name: '@deepseek-ai/dsh-tool-restriction'
+  config:
+    allow: []
+
+# Same compaction group as the standard preset: a long chat still has to fit
+# the model's context, and the pruner is the service `compaction-basic`
+# resolves through `ctx.get`, so it shares the realm even with no tool
+# results to prune.
+- id: compaction
+  name: cordis:group
+  group: true
+  isolate:
+    compaction: true
+    toolResultPruner: true
+  config:
+    - id: compaction-basic
+      name: '@deepseek-ai/dsh-compaction-basic'
+
+    - id: command-compact
+      name: '@deepseek-ai/dsh-command-compact'
+
+    - id: tool-result-pruner
+      name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+      config:
+        thresholdChars: 8192
+        headChars: 4096
+        tailChars: 1024

@@ -2,12 +2,14 @@
  * The workspace/session browsing region filling the sidebar shell's
  * `sidebar.workspaces` hole: section header (title + view options + add
  * workspace), search, the grouped tree or flat list, and the workspace
- * dialogs. Wide state renders the full browser; rail state renders the two
- * region icons (search / add workspace) as 36px controls on the shell's shared
- * rail entry path, each requesting expansion through the owner share. Adding
- * is the header button's one action, so it raises the directory flow with no
- * menu in between; the flow and its error dialog live in WorkspacePicker
- * (same package — direct composition, no slot between them).
+ * dialogs. The region takes its natural height: the shell's region column
+ * scrolls it together with the Recent list below. Wide state renders the
+ * full browser; rail state renders the two region icons (search / add
+ * workspace) as 36px controls on the shell's shared rail entry path, each
+ * requesting expansion through the owner share. Adding is the header
+ * button's one action, so it raises the directory flow with no menu in
+ * between; the flow and its error dialog live in WorkspacePicker (same
+ * package — direct composition, no slot between them).
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import clsx from 'clsx'
@@ -26,6 +28,7 @@ import {
   deriveFlat, deriveGroups, deriveSearchResults, owningGroupKey, UNGROUPED_KEY,
 } from '../tree.ts'
 import { ProjectRowItem, SearchResultItem, SessionNodeItem } from './Rows.tsx'
+import { SessionRenameDialog, type SessionRenameTarget } from './SessionRenameDialog.tsx'
 import { FLAT_SESSION_ORDER_KEY } from '../stores.ts'
 import { WorkspacePickFlow } from '../WorkspacePicker.tsx'
 import css from './WorkspaceBrowser.module.css'
@@ -612,7 +615,6 @@ function SessionTree({
           )
         })}
       </div>
-      <span className={css.fade} />
     </div>
   )
 }
@@ -743,7 +745,6 @@ function FlatList({
           )
         })}
       </div>
-      <span className={css.fade} />
     </div>
   )
 }
@@ -826,7 +827,6 @@ function SearchResults({
           </div>
         )}
       </div>
-      <span className={css.fade} />
     </div>
   )
 }
@@ -1042,37 +1042,11 @@ export function WorkspaceBrowser({
     })
   }
 
-  // Session rename dialog (same browser-owned pattern as workspace rename;
-  // sessions have no client-side name-conflict rule — the host normalizes).
-  // Unlike workspace rename, an unchanged title is NOT blocked: confirming
-  // the current automatic title is the gesture that pins it.
-  const [sessionRenameTarget, setSessionRenameTarget] = useState<{ sessionId: SessionNode['id']; currentTitle: string } | null>(null)
-  const [sessionRenameDraft, setSessionRenameDraft] = useState('')
-  const [sessionRenaming, setSessionRenaming] = useState(false)
-  const [sessionRenameError, setSessionRenameError] = useState<string | null>(null)
-  const sessionRenameTrimmed = sessionRenameDraft.trim()
-  const sessionRenameBlocked = sessionRenaming || sessionRenameTrimmed === '' || sessionRenameTarget === null
-  const closeSessionRename = () => {
-    if (sessionRenaming) return
-    setSessionRenameTarget(null)
-    setSessionRenameError(null)
-  }
-  const confirmSessionRename = () => {
-    if (sessionRenameBlocked) return
-    setSessionRenaming(true)
-    setSessionRenameError(null)
-    renameSession(sessionRenameTarget.sessionId, sessionRenameTrimmed).then(() => {
-      setSessionRenaming(false)
-      setSessionRenameTarget(null)
-    }).catch((reason: unknown) => {
-      setSessionRenaming(false)
-      setSessionRenameError(reason instanceof Error ? reason.message : String(reason))
-    })
-  }
+  // Session rename dialog: browser-owned so it outlives row unmounts during
+  // collapse; the dialog itself owns the draft and the title-pinning rule.
+  const [sessionRenameTarget, setSessionRenameTarget] = useState<SessionRenameTarget | null>(null)
   const onSessionRename = (sessionId: SessionNode['id'], currentTitle: string) => {
     setSessionRenameTarget({ sessionId, currentTitle })
-    setSessionRenameDraft(currentTitle)
-    setSessionRenameError(null)
   }
 
   // Archive is dialog-free: not destructive (the log and the accounting slot
@@ -1251,8 +1225,8 @@ export function WorkspaceBrowser({
         </Tooltip>
       </div>}
 
-      {/* Always-mounted seat keeps the region's flex slot while the list
-          itself is wide-only. */}
+      {/* Always-mounted seat keeps the region's place in the shell's scroll
+          column while the list itself is wide-only. */}
       <div className={css.listArea}>
         {wide && (normalizedQuery !== ''
           ? (
@@ -1361,37 +1335,13 @@ export function WorkspaceBrowser({
         {renameError !== null && <div className={css.renameError} role="alert">{renameError}</div>}
       </Modal>
 
-      <Modal
-        open={sessionRenameTarget !== null}
-        onClose={closeSessionRename}
-        closeLabel={t('close')}
-        title={t('rename.session.title')}
-        footer={(
-          <>
-            <Button variant="outline" disabled={sessionRenaming} onClick={closeSessionRename}>{t('cancel')}</Button>
-            <Button variant="primary" disabled={sessionRenameBlocked} onClick={confirmSessionRename}>{t('rename')}</Button>
-          </>
-        )}
-      >
-        <input
-          className={css.renameInput}
-          value={sessionRenameDraft}
-          aria-label={t('field.sessionName')}
-          autoFocus
-          disabled={sessionRenaming}
-          onFocus={(e) => { e.target.select() }}
-          onChange={(e) => { setSessionRenameDraft(e.target.value); setSessionRenameError(null) }}
-          onCompositionStart={() => { composingRef.current = true }}
-          onCompositionEnd={() => { composingRef.current = false }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !composingRef.current) {
-              e.preventDefault()
-              confirmSessionRename()
-            }
-          }}
-        />
-        {sessionRenameError !== null && <div className={css.renameError} role="alert">{sessionRenameError}</div>}
-      </Modal>
+      <SessionRenameDialog
+        key={sessionRenameTarget?.sessionId ?? ''}
+        target={sessionRenameTarget}
+        onClose={() => { setSessionRenameTarget(null) }}
+        renameSession={renameSession}
+        t={t}
+      />
       <Modal
         open={deleteTarget !== null}
         onClose={closeDelete}

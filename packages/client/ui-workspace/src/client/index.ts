@@ -1,12 +1,14 @@
 /**
- * Workspace plugin, browser half. Two registrations: WorkspaceBrowser fills
- * the sidebar shell's `sidebar.workspaces` hole (the whole browsing region),
- * and WorkspacePicker fills the conversation hero's picker hole
- * (`conversation.hero.workspace` — both hero forms). Both read real Host
- * Workspaces through the global useWorkspaces hook, and each declares its
- * own `single` directory-flow child hole for the composed picker package's
- * client half (see the contract module doc). Export discipline:
- * packages/client/AGENTS.md.
+ * Workspace plugin, browser half. Three registrations: WorkspaceBrowser
+ * fills the sidebar shell's `sidebar.workspaces` hole (the whole browsing
+ * region), RecentBrowser fills its `sidebar.recent` hole (the Recent list
+ * below the tree, sharing the browser's viewing store handle), and
+ * WorkspacePicker fills the conversation hero's picker hole
+ * (`conversation.hero.workspace` — both hero forms). All read real Host
+ * Workspaces through the global useWorkspaces hook; the browser and picker
+ * each declare their own `single` directory-flow child hole for the composed
+ * picker package's client half (see the contract module doc). Export
+ * discipline: packages/client/AGENTS.md.
  */
 import type { Context } from '@deepseek-ai/cordis'
 import type { RemoteHostFacts } from '@deepseek-ai/dsh-api-remotes/client'
@@ -23,9 +25,10 @@ import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 // Type-only: pulls the Session root standard-hook merge.
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
-import type { WorkspaceBrowserInjected, WorkspacePickerInjected } from './contract/slots.ts'
+import type { RecentBrowserInjected, WorkspaceBrowserInjected, WorkspacePickerInjected } from './contract/slots.ts'
 import { UiWorkspaceService } from './navigation.ts'
 import { createWorkspaceViewStore } from './stores.ts'
+import { RecentBrowser } from './rows/RecentBrowser.tsx'
 import { WorkspaceBrowser } from './rows/WorkspaceBrowser.tsx'
 import { WorkspacePicker } from './WorkspacePicker.tsx'
 import { en, zh, type WorkspaceKey } from './locales.ts'
@@ -33,6 +36,7 @@ import { en, zh, type WorkspaceKey } from './locales.ts'
 export type { UiWorkspace } from './navigation.ts'
 export type {
   DirectoryFlowOwnerProps, DirectoryFlowSlotName, DirectoryPickingHooks, DirectoryPickingInjected,
+  RecentBrowserInjected, RecentBrowserProps,
   WorkspaceBrowserInjected, WorkspaceBrowserProps, WorkspacePickerInjected, WorkspacePickerProps,
 } from './contract/slots.ts'
 export type { WorkspaceKey } from './locales.ts'
@@ -96,16 +100,9 @@ export function apply(ctx: Context): void {
     subscribe: listener => ctx.on('connection/reset', listener),
   }
   const pickerFlowSource = flowSource('conversation.hero.workspace.directoryFlow')
-  const openSession: WorkspaceBrowserInjected['open'] = (sessionId) => {
-    uiWorkspace.openSession(sessionId)
-  }
-  const browserInjected = (): WorkspaceBrowserInjected => ({
-    // Explicit group actions keep their target; unscoped New Session inherits
-    // the current Session Workspace before the recent-Workspace fallback.
-    startSession: (workspaceId) => { uiWorkspace.startSession(workspaceId) },
-    open: openSession,
-    searchSessions,
-    searchResultLimit: sessions.searchResultLimit,
+  // Session row actions, shared by the browser's rows and the Recent list.
+  const rowActions: RecentBrowserInjected = {
+    open: (sessionId) => { uiWorkspace.openSession(sessionId) },
     renameSession: async (sessionId, title) => {
       // Row → session-face hop: rename is a per-session verb (ISession), not
       // a list-service verb; the binding resolves any listed session.
@@ -120,12 +117,20 @@ export function apply(ctx: Context): void {
           // Fork or child-rename failure keeps the current selection.
         })
     },
+    archiveSession: async (sessionId) => { await uiWorkspace.archiveSession(sessionId) },
+  }
+  const browserInjected = (): WorkspaceBrowserInjected => ({
+    // Explicit group actions keep their target; unscoped New Session inherits
+    // the current Session Workspace before the recent-Workspace fallback.
+    startSession: (workspaceId) => { uiWorkspace.startSession(workspaceId) },
+    ...rowActions,
+    searchSessions,
+    searchResultLimit: sessions.searchResultLimit,
     renameWorkspace: async (workspaceId, title) => { await workspaces.rename(workspaceId, title) },
     deleteWorkspace: async (workspaceId) => { await workspaces.delete(workspaceId) },
     insertWorkspaceBefore: async (workspaceId, beforeWorkspaceId) => {
       await workspaces.insertBefore(workspaceId, beforeWorkspaceId)
     },
-    archiveSession: async (sessionId) => { await uiWorkspace.archiveSession(sessionId) },
     insertSessionBefore: async (workspaceId, sessionId, beforeSessionId) => {
       await workspaces.insertSessionBefore(workspaceId, sessionId, beforeSessionId)
     },
@@ -136,17 +141,29 @@ export function apply(ctx: Context): void {
     createWorkspace: input => workspaces.create(input),
     hooks: { directoryFlow: pickerFlowSource },
   })
+  // One viewing store handle serves the browser and the Recent list: the
+  // renderer keeps one instance per handle, so both read the same view state.
+  const viewStore = createWorkspaceViewStore()
   // Each registration declares its directory-flow child in the same call;
   // slot injection follows both the owner and declaration HMR lifetimes.
   ctx.slots.inject('sidebar.workspaces', () => ctx.slots.register(
     {
       name: 'sidebar.workspaces',
       children: { 'sidebar.workspaces.directoryFlow': { kind: 'single', scope: 'root' } },
-      store: createWorkspaceViewStore(),
+      store: viewStore,
       inject: browserInjected,
       locale: NS,
     },
     WorkspaceBrowser,
+  ))
+  ctx.slots.inject('sidebar.recent', () => ctx.slots.register(
+    {
+      name: 'sidebar.recent',
+      store: viewStore,
+      inject: () => rowActions,
+      locale: NS,
+    },
+    RecentBrowser,
   ))
   ctx.slots.inject('conversation.hero.workspace', () => ctx.slots.register(
     {

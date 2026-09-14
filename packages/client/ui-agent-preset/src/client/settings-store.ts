@@ -10,7 +10,7 @@ import type { Context as ClientContext } from '@deepseek-ai/cordis'
 // Type-only: pulls the ctx.remote merge into this program.
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
 import { createSnapshotStore, type SnapshotStore } from '@deepseek-ai/dsh-client-store'
-import type { AgentPresetRoster } from '@deepseek-ai/dsh-agent-presets/types'
+import type { AgentPresetRoster, PresetWorkspace } from '@deepseek-ai/dsh-agent-presets/types'
 
 /** The agent-preset settings namespace on the host wire. */
 export const AGENT_PRESET_SETTINGS_NS = 'agent-presets'
@@ -43,6 +43,12 @@ export interface AgentPresetOption {
   id: string
   /** Whether the preset ships with the deployment or was authored locally. */
   trust: 'system' | 'user'
+  /**
+   * Whether sessions on this preset own a working directory. The hero chip
+   * offers only `required` presets: a `none` preset composes chat sessions,
+   * which the host refuses to switch across kinds.
+   */
+  workspace: PresetWorkspace
   /** Display name the preset published, absent when it published none. */
   name?: string
   /** One sentence on what the preset is for. */
@@ -112,11 +118,19 @@ export async function beginRosterRead<S extends { status: string; error: string 
  * @returns one option per selectable preset, in roster order.
  */
 export function presetOptions(
-  presets: readonly { id: string; trust: 'system' | 'user'; name?: string; description?: string; broken?: string }[],
+  presets: readonly {
+    id: string
+    trust: 'system' | 'user'
+    workspace: PresetWorkspace
+    name?: string
+    description?: string
+    broken?: string
+  }[],
 ): AgentPresetOption[] {
   return presets.filter(preset => preset.broken === undefined).map(preset => ({
     id: preset.id,
     trust: preset.trust,
+    workspace: preset.workspace,
     ...preset.name === undefined ? {} : { name: preset.name },
     ...preset.description === undefined ? {} : { description: preset.description },
   }))

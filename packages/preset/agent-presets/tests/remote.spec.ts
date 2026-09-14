@@ -88,12 +88,28 @@ async function harness(
   return ctx
 }
 
-async function agentOn(ctx: Context, id: string, presetId?: string): Promise<Agent> {
+/** A session that owns a working directory, as every Workspace session does; `cwd: null` creates one without. */
+async function agentOn(ctx: Context, id: string, presetId?: string, cwd: string | null = '/tmp/dsh-preset-remote'): Promise<Agent> {
   const handle = await ctx.agents.create({
     sessionId: SessionId(id),
+    ...cwd === null ? {} : { meta: { cwd } },
     setup: async (agentCtx: Context) => void await ctx.agentPresets.mount(agentCtx, presetId),
   })
   return handle.agent
+}
+
+/**
+ * A locally authored preset whose sessions own no working directory. Its one
+ * row is the fixture contributor by absolute path, so the preset both passes
+ * health and mounts in this harness.
+ */
+async function chatPreset(userRoot: string, id = 'talk'): Promise<void> {
+  await mkdir(join(userRoot, id), { recursive: true })
+  await writeFile(
+    join(userRoot, id, COMPOSITION_FILE),
+    `- id: talk\n  name: ${JSON.stringify(join(FIXTURES, 'plugins', 'contribute.js'))}\n  config:\n    tool: ${id}\n`,
+  )
+  await writeFile(join(userRoot, id, METADATA_FILE), 'name: 聊天\nworkspace: none\n')
 }
 
 /** The recorded preset a restart replays, which is what a switch must move. */
@@ -118,13 +134,38 @@ describe('the roster a client reads', () => {
 
     expect(roster.authorable).toBe(true)
     expect(roster.presets).toEqual([
-      { id: 'minimal', trust: 'system', isDefault: true },
-      { id: 'standard', trust: 'system', isDefault: false },
-      { id: 'documented', trust: 'user', isDefault: false, name: '我的模式', description: '只做检索。' },
+      { id: 'minimal', trust: 'system', isDefault: true, workspace: 'required' },
+      { id: 'standard', trust: 'system', isDefault: false, workspace: 'required' },
+      { id: 'documented', trust: 'user', isDefault: false, workspace: 'required', name: '我的模式', description: '只做检索。' },
     ])
     // No row carries the composition's location: a preset is addressed by id
     // everywhere off the Host.
     expect(roster.presets.every(row => !('path' in row))).toBe(true)
+  })
+
+  it('marks the chatDefault as the default among presets that need no workspace', async () => {
+    const userRoot = await mkdtemp(join(tmpdir(), 'dsh-preset-remote-'))
+    roots.push(userRoot)
+    await chatPreset(userRoot, 'talk')
+    await chatPreset(userRoot, 'other-talk')
+    const ctx = await harness({
+      default: 'standard',
+      chatDefault: 'talk',
+      roots: [{ path: join(FIXTURES, 'system'), trust: 'system' }, { path: userRoot, trust: 'user' }],
+      includeShippedRoot: false,
+      includeUserRoot: false,
+    })
+
+    const roster = await ctx.agentPresets.remoteExportList()
+
+    // One default per workspace kind: the settings default marks a
+    // `required` preset, the configured chatDefault a `none` one.
+    expect(roster.presets.map(row => [row.id, row.workspace, row.isDefault])).toEqual([
+      ['minimal', 'required', false],
+      ['standard', 'required', true],
+      ['other-talk', 'none', false],
+      ['talk', 'none', true],
+    ])
   })
 
   it('keeps a broken preset on the roster with its reason', async () => {
@@ -153,6 +194,75 @@ describe('the roster a client reads', () => {
     // Composing no presets is a valid deployment: every session then shares
     // the host composition, and nothing can be written either.
     expect(roster).toEqual({ presets: [], authorable: false })
+  })
+})
+
+describe('resolving the preset a session location composes', () => {
+  async function located(chatDefault?: string): Promise<Context> {
+    const userRoot = await mkdtemp(join(tmpdir(), 'dsh-preset-remote-'))
+    roots.push(userRoot)
+    await chatPreset(userRoot)
+    return await harness({
+      default: 'standard',
+      ...chatDefault === undefined ? {} : { chatDefault },
+      roots: [{ path: join(FIXTURES, 'system'), trust: 'system' }, { path: userRoot, trust: 'user' }],
+      includeShippedRoot: false,
+      includeUserRoot: false,
+    })
+  }
+
+  it('answers each location with its own default', async () => {
+    const ctx = await located('talk')
+
+    expect((await ctx.agentPresets.resolveFor('required')).id).toBe('standard')
+    expect((await ctx.agentPresets.resolveFor('none')).id).toBe('talk')
+    expect((await ctx.agentPresets.resolveFor('none', 'talk')).id).toBe('talk')
+    expect((await ctx.agentPresets.resolveFor('required', 'minimal')).id).toBe('minimal')
+  })
+
+  it('refuses a preset whose workspace requirement disagrees with the location', async () => {
+    const ctx = await located('talk')
+
+    await expect(ctx.agentPresets.resolveFor('none', 'standard')).rejects.toMatchObject({
+      code: 'agent-preset/workspace-mismatch',
+      details: { agentPreset: 'standard', workspace: 'required' },
+    })
+    await expect(ctx.agentPresets.resolveFor('required', 'talk')).rejects.toMatchObject({
+      code: 'agent-preset/workspace-mismatch',
+      details: { agentPreset: 'talk', workspace: 'none' },
+    })
+  })
+
+  it('refuses a misconfigured default at the first session it would compose', async () => {
+    // A chatDefault that needs a workspace, and a default that needs none.
+    const userRoot = await mkdtemp(join(tmpdir(), 'dsh-preset-remote-'))
+    roots.push(userRoot)
+    await chatPreset(userRoot)
+    const ctx = await harness({
+      default: 'talk',
+      chatDefault: 'standard',
+      roots: [{ path: join(FIXTURES, 'system'), trust: 'system' }, { path: userRoot, trust: 'user' }],
+      includeShippedRoot: false,
+      includeUserRoot: false,
+    })
+
+    await expect(ctx.agentPresets.resolveFor('none')).rejects.toMatchObject({
+      code: 'agent-preset/workspace-mismatch',
+      details: { agentPreset: 'standard', workspace: 'required' },
+    })
+    await expect(ctx.agentPresets.resolveFor('required')).rejects.toMatchObject({
+      code: 'agent-preset/workspace-mismatch',
+      details: { agentPreset: 'talk', workspace: 'none' },
+    })
+  })
+
+  it('names the presets that could serve a session without a workspace when none is configured', async () => {
+    const ctx = await located()
+
+    await expect(ctx.agentPresets.resolveFor('none')).rejects.toMatchObject({
+      code: 'agent-preset/not-found',
+      details: { agentPreset: '', available: ['talk'] },
+    })
   })
 })
 
@@ -392,6 +502,34 @@ describe('switching one session\'s composition', () => {
     // One winner, and the log agrees with it: the last committed switch.
     expect(recordedPreset(agent)).toEqual({ agentPreset: 'standard' })
     expect(ctx.agentPresets.composedPreset(agent.ctx)).toBe('standard')
+  })
+
+  it('refuses a switch across workspace kinds', async () => {
+    const userRoot = await mkdtemp(join(tmpdir(), 'dsh-preset-remote-'))
+    roots.push(userRoot)
+    await chatPreset(userRoot)
+    const ctx = await harness({
+      default: 'standard',
+      chatDefault: 'talk',
+      roots: [{ path: join(FIXTURES, 'system'), trust: 'system' }, { path: userRoot, trust: 'user' }],
+      includeShippedRoot: false,
+      includeUserRoot: false,
+    })
+    const located = await agentOn(ctx, 'sel-located', 'standard')
+    const unlocated = await agentOn(ctx, 'sel-unlocated', 'talk', null)
+
+    await expect(ctx.agentPresets.select(located, 'talk')).rejects.toMatchObject({
+      code: 'agent-preset/workspace-mismatch',
+      details: { agentPreset: 'talk', workspace: 'none', sessionId: 'sel-located' },
+    })
+    await expect(ctx.agentPresets.select(unlocated, 'minimal')).rejects.toMatchObject({
+      code: 'agent-preset/workspace-mismatch',
+      details: { agentPreset: 'minimal', workspace: 'required', sessionId: 'sel-unlocated' },
+    })
+    // Neither refusal moved the composition or wrote to the log.
+    expect(ctx.agentPresets.composedPreset(located.ctx)).toBe('standard')
+    expect(ctx.agentPresets.composedPreset(unlocated.ctx)).toBe('talk')
+    expect(recordedPreset(located)).toBeUndefined()
   })
 
   it('refuses once the conversation has started', async () => {

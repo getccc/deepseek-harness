@@ -45,10 +45,13 @@ export const InputBar = memo(function InputBar({
   retryFileUpload,
   toggleCommandMenu, stop, command, t,
   renderSlot, useBusyEnter, useFileUploads, useNotices, useLexicon, useMenuLauncher,
-  useProjection, sessionId, variant, disabled: inert = false, blocked,
+  useProjection, sessionId, variant, kind, disabled: inert = false, blocked,
   workspacePickerOpen = false, onRequestWorkspace,
   placeholder, accessory,
 }: InputBarProps) {
+  // Owner-declared: a chat session runs a tool-less preset, so the access
+  // and plan controls have nothing to govern and stay out of the row.
+  const chat = kind === 'chat'
   const input = useInput(s => s)
   const notice = useNotices(s => s)
   const busyEnter = useBusyEnter(s => s)
@@ -366,8 +369,9 @@ export const InputBar = memo(function InputBar({
 
   // The Access seat: the projection-fed permission chip (renders nothing
   // while the permissions key is absent — permission-less host or Draft —
-  // or while the command face is absent with the session).
-  const accessSelect: ReactNode = command === undefined
+  // or while the command face is absent with the session, or for a chat
+  // session, whose preset gates no tool behind permissions).
+  const accessSelect: ReactNode = command === undefined || chat
     ? null
     : <PermissionSelect key={sessionId} value={permissions} locked={locked} command={command} t={t} />
 
@@ -513,10 +517,17 @@ export const InputBar = memo(function InputBar({
               hidden
               onChange={onPickFiles}
             />
-            <div className={css.modes}>
-              {accessSelect}
-              {sessionId === undefined ? null : renderSlot('conversation.input.plan', { locked })}
-            </div>
+            {/* The mode chips (access, plan) belong to workspace sessions; a
+                chat session leaves the whole group out rather than an empty
+                flex box that would still claim the tool row's gap. */}
+            {chat
+              ? null
+              : (
+                <div className={css.modes}>
+                  {accessSelect}
+                  {sessionId === undefined ? null : renderSlot('conversation.input.plan', { locked })}
+                </div>
+              )}
             {input === undefined || sessionId === undefined
               ? null
               : renderSlot('conversation.input.left', {})}

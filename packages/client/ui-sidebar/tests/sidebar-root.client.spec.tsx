@@ -35,8 +35,10 @@ const useSessionPendingInteraction: SidebarRootComponentProps['useSessionPending
 
 function mountShell({ collapsed = false, width = 300 }: { collapsed?: boolean; width?: number } = {}) {
   const startSession = vi.fn()
+  const startChat = vi.fn()
   const toggleSidebar = vi.fn()
   let regionOwner: SidebarSectionOwnerProps | undefined
+  let recentOwner: SidebarSectionOwnerProps | undefined
   let settingsOwner: SidebarSettingsOwnerProps | undefined
   let footerActionOwner: SidebarFooterActionOwnerProps | undefined
   const brandMark = <span data-testid="custom-brand-mark">M</span>
@@ -48,13 +50,17 @@ function mountShell({ collapsed = false, width = 300 }: { collapsed?: boolean; w
       useSessions={neverHook} useSessionPendingInteraction={useSessionPendingInteraction}
       usePanelInfo={usePanelInfo} selectPanel={() => {}} usePanels={selector => selector([])}
       useResource={useResource} useWorkspaces={neverHook}
-      startSession={startSession} toggleSidebar={toggleSidebar} t={t}
+      startSession={startSession} startChat={startChat} toggleSidebar={toggleSidebar} t={t}
       renderSlot={((
         key: string,
         owner: SidebarFooterActionOwnerProps | SidebarSectionOwnerProps | SidebarSettingsOwnerProps,
       ) => {
         if (key === 'sidebar.brand.mark') return brandMark
         if (key === 'sidebar.brand.name') return brandName
+        if (key === 'sidebar.recent') {
+          recentOwner = owner as SidebarSectionOwnerProps
+          return <div data-testid="recent" data-wide={owner.wide} />
+        }
         if (key === 'sidebar.settings') {
           settingsOwner = owner
           return <div data-testid="settings-seat" data-wide={owner.wide} />
@@ -71,10 +77,15 @@ function mountShell({ collapsed = false, width = 300 }: { collapsed?: boolean; w
   const view = render(root())
   return {
     startSession,
+    startChat,
     toggleSidebar,
     regionOwner: () => {
       if (regionOwner === undefined) throw new Error('region owner not rendered')
       return regionOwner
+    },
+    recentOwner: () => {
+      if (recentOwner === undefined) throw new Error('recent owner not rendered')
+      return recentOwner
     },
     settingsOwner: () => {
       if (settingsOwner === undefined) throw new Error('settings owner not rendered')
@@ -92,14 +103,22 @@ function mountShell({ collapsed = false, width = 300 }: { collapsed?: boolean; w
 }
 
 describe('SidebarRoot shell', () => {
-  it('routes New Session (capsule + wordmark) and the column toggle', () => {
+  it('routes New chat, New work task (row + wordmark), and the column toggle', () => {
     const b = mountShell()
     expect(screen.getByTestId('custom-brand-mark')).toBeTruthy()
     expect(screen.getByTestId('custom-brand-name')).toBeTruthy()
-    // Expanded, both the wordmark and the capsule start a session.
-    const starters = screen.getAllByRole('button', { name: 'New session' })
+    // Expanded, both the wordmark and the work row start a work Session.
+    const starters = screen.getAllByRole('button', { name: 'New work task' })
     expect(starters).toHaveLength(2)
     for (const button of starters) fireEvent.click(button)
+    expect(b.startSession).toHaveBeenCalledTimes(2)
+    expect(b.startChat).not.toHaveBeenCalled()
+    // The chat row is listed first and starts a chat.
+    const chat = screen.getByRole('button', { name: 'New chat' })
+    expect(chat.textContent).toBe('New chat')
+    expect(chat.compareDocumentPosition(starters[1]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    fireEvent.click(chat)
+    expect(b.startChat).toHaveBeenCalledOnce()
     expect(b.startSession).toHaveBeenCalledTimes(2)
     fireEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
     expect(b.toggleSidebar).toHaveBeenCalledOnce()
@@ -114,19 +133,27 @@ describe('SidebarRoot shell', () => {
       useSessions={neverHook} useSessionPendingInteraction={useSessionPendingInteraction}
       usePanelInfo={usePanelInfo} selectPanel={() => {}} usePanels={selector => selector([])}
       useResource={useResource} useWorkspaces={neverHook}
-      startSession={vi.fn()} toggleSidebar={vi.fn()} t={t}
+      startSession={vi.fn()} startChat={vi.fn()} toggleSidebar={vi.fn()} t={t}
       renderSlot={((_key: string, _owner: unknown, options?: { fallback?: ReactNode }) =>
         options?.fallback ?? null) as SidebarRootComponentProps['renderSlot']}
     />)
 
-    const [brand] = screen.getAllByRole('button', { name: 'New session' })
+    const [brand] = screen.getAllByRole('button', { name: 'New work task' })
     expect(brand?.textContent).toBe('WeWork')
     expect(container.querySelector('img')).not.toBeNull()
   })
 
-  it('hands the region its wide flag and clamps expandSidebar to the collapsed state', () => {
+  it('hands both regions their wide flag and clamps expandSidebar to the collapsed state', () => {
     const b = mountShell()
     expect(b.regionOwner().wide).toBe(true)
+    // The Recent list rides the same owner share below the tree.
+    expect(b.recentOwner().wide).toBe(true)
+    const region = screen.getByTestId('region')
+    const recent = screen.getByTestId('recent')
+    expect(region.parentElement).toBe(recent.parentElement)
+    expect(region.compareDocumentPosition(recent) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    b.recentOwner().expandSidebar()
+    expect(b.toggleSidebar).not.toHaveBeenCalled()
     // The settings seat rides the same wide flag (ui-settings renders the row).
     expect(b.settingsOwner().wide).toBe(true)
     expect(b.footerActionOwner().wide).toBe(true)
@@ -144,10 +171,15 @@ describe('SidebarRoot shell', () => {
     vi.advanceTimersByTime(200)
     b.rerender({})
     expect(b.regionOwner().wide).toBe(false)
+    expect(b.recentOwner().wide).toBe(false)
     expect(b.footerActionOwner().wide).toBe(false)
     expect(screen.getByTestId('region')).toBeTruthy()
+    // Rail entries keep only their accessible names.
+    expect(screen.getByRole('button', { name: 'New chat' }).textContent).toBe('')
     b.regionOwner().expandSidebar()
     expect(b.toggleSidebar).toHaveBeenCalledOnce()
+    b.recentOwner().expandSidebar()
+    expect(b.toggleSidebar).toHaveBeenCalledTimes(2)
   })
 
   it('renders statically collapsed on a cold start (no crossfade classes)', () => {

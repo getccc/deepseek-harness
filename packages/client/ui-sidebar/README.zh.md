@@ -1,5 +1,5 @@
 ---
-description: "dsh Web 客户端的侧边栏外壳插件：品牌行、New Session 操作、折叠控件、可感知滚动的区域席位与底部固定的 Settings 席位。"
+description: "dsh Web 客户端的侧边栏外壳插件：品牌行、新对话与新工作任务入口、折叠控件、可感知滚动的区域席位与底部固定的 Settings 席位。"
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-dsh Web 客户端的侧边栏让用户识别当前构建、启动新会话、将导航折叠为 56px 轨道、浏览 Workspace 与 Session，以及打开 Settings。它会将 Settings 入口固定在底部，并在隐藏空闲滚动条时避免浏览器行发生位移。New Session 优先使用显式选择的 Workspace，其次使用当前 Session 所属的 Workspace，再其次使用最近活跃的 Workspace；如果都不存在，则打开空白的 New Session 页面。部署可以替换品牌标记或名称，同时保留导航控件和轨道几何。
+dsh Web 客户端的侧边栏让用户识别当前构建、开始新对话或新工作任务、将导航折叠为 56px 轨道、浏览 Workspace、Session 与最近对话，以及打开 Settings。它把 Settings 入口固定在底部，并在隐藏空闲滚动条时避免浏览器行发生位移。新对话打开一个没有 Workspace 的 Session；新工作任务优先使用显式选择的 Workspace，其次使用当前 Session 所属的 Workspace，再其次使用最近活跃的那个，都没有时则打开空白的 New Session 页面。部署可以替换品牌标记或名称，同时保留导航控件和轨道几何。
 
 ## 目录
 
@@ -25,11 +25,11 @@ dsh Web 客户端的侧边栏让用户识别当前构建、启动新会话、将
 <a id="use-this-package"></a>
 ## 使用本包
 
-侧边栏是导航外壳：用户看到品牌、启动新会话、折叠轨道并到达 Settings。功能插件填充它的席位——ui-workspace 填充 `sidebar.workspaces`，ui-settings 在 `sidebar.settings` 注册触发行与设置面板。
+侧边栏是导航外壳：用户看到品牌、开始新对话与新工作任务、折叠轨道并到达 Settings。功能插件填充它的席位——ui-workspace 填充 `sidebar.workspaces` 与 `sidebar.recent`，ui-settings 在 `sidebar.settings` 注册触发行与设置面板。外壳为两个浏览席位拥有同一个滚动区域，因此 Workspace 树与最近列表作为一列一起滚动。
 
-### 品牌与 New Session
+### 品牌、新对话与新工作任务
 
-展开的品牌行把 `sidebar.brand.mark` 与 `sidebar.brand.name` 渲染为两个独立的 single slot；收起轨道则渲染同一个 mark slot。没有占位者时，外壳使用 WeWork 标志和本地化的本地构建标签。New Session 优先使用作用域操作明确指定的 Workspace，否则使用当前 Session 所属 Workspace，再否则使用最近活跃 Workspace；一个 Workspace 都没有时则清空选择，进入空白 New Session 页面。
+展开的品牌行把 `sidebar.brand.mark` 与 `sidebar.brand.name` 渲染为两个独立的 single slot；收起轨道则渲染同一个 mark slot。没有占位者时，外壳使用 WeWork 标志和本地化的本地构建标签。品牌行之后以面板行样式排着两个入口：**新对话**通过 `uiWorkspace.startChat()` 开始一个没有 Workspace 的对话，**新工作任务**优先使用作用域操作明确指定的 Workspace，否则使用当前 Session 所属 Workspace，再否则使用最近活跃 Workspace，一个 Workspace 都没有时则清空选择，进入空白 New Session 页面；品牌行本身保留工作任务动作。
 
 ### 全局面板入口
 

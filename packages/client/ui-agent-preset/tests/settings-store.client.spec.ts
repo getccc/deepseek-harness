@@ -22,13 +22,13 @@ function derivedController(ctx: ClientContext) {
 }
 import { AgentPresetSeatController } from '../src/client/seat-store.ts'
 
-type SeatSession = Pick<SessionSummary, 'id' | 'blank' | 'projectionValues'>
+type SeatSession = Pick<SessionSummary, 'id' | 'kind' | 'blank' | 'projectionValues'>
 
 interface Recorded { ns: string; ops: unknown }
 
 /** A roster Remote answering a fixed set of rows, or refusing. */
 function fakeRoster(
-  presets: { id: string; trust: 'system' | 'user'; isDefault: boolean }[],
+  presets: { id: string; trust: 'system' | 'user'; workspace: 'required' | 'none'; isDefault: boolean }[],
   options: { failList?: string; failListCode?: RemoteErrorCode; settings?: object } = {},
 ): ClientContext {
   return {
@@ -50,7 +50,7 @@ function fakeRoster(
 
 /** A context whose roster and settings write outcome the test controls. */
 function fakeApi(
-  presets: { id: string; trust: 'system' | 'user'; isDefault: boolean }[],
+  presets: { id: string; trust: 'system' | 'user'; workspace: 'required' | 'none'; isDefault: boolean }[],
   options: {
     writes?: Recorded[]
     failWrite?: string
@@ -79,8 +79,8 @@ function fakeApi(
 describe('the agent-preset roster store', () => {
   it('derives the display options from one roster call', async () => {
     const controller = derivedController(fakeApi([
-      { id: 'standard', trust: 'system', isDefault: true },
-      { id: 'mine', trust: 'user', isDefault: false },
+      { id: 'standard', trust: 'system', workspace: 'required', isDefault: true },
+      { id: 'mine', trust: 'user', workspace: 'required', isDefault: false },
     ]))
 
     await controller.load()
@@ -88,15 +88,15 @@ describe('the agent-preset roster store', () => {
     const state = controller.store.getSnapshot()
     expect(state.status).toBe('ready')
     expect(state.options).toEqual([
-      { id: 'standard', trust: 'system' },
-      { id: 'mine', trust: 'user' },
+      { id: 'standard', trust: 'system', workspace: 'required' },
+      { id: 'mine', trust: 'user', workspace: 'required' },
     ])
   })
 
   it('offers no broken preset: the pickers choose the NEXT session\'s composition', async () => {
     const controller = derivedController(fakeApi([
-      { id: 'standard', trust: 'system', isDefault: true },
-      { id: 'damaged', trust: 'user', isDefault: false, broken: 'the composition is not valid YAML' },
+      { id: 'standard', trust: 'system', workspace: 'required', isDefault: true },
+      { id: 'damaged', trust: 'user', workspace: 'required', isDefault: false, broken: 'the composition is not valid YAML' },
     ] as never))
 
     await controller.load()
@@ -109,7 +109,7 @@ describe('the agent-preset roster store', () => {
 
   it('carries the display metadata a preset published', async () => {
     const controller = derivedController(fakeApi([
-      { id: 'standard', trust: 'system', isDefault: true, name: '标准模式', description: '完整的编码 agent。' },
+      { id: 'standard', trust: 'system', workspace: 'required', isDefault: true, name: '标准模式', description: '完整的编码 agent。' },
     ] as never))
 
     await controller.load()
@@ -117,7 +117,7 @@ describe('the agent-preset roster store', () => {
     // Surfaces beyond this row read the same options; the id alone never said
     // what a preset does.
     expect(controller.store.getSnapshot().options).toEqual([
-      { id: 'standard', trust: 'system', name: '标准模式', description: '完整的编码 agent。' },
+      { id: 'standard', trust: 'system', workspace: 'required', name: '标准模式', description: '完整的编码 agent。' },
     ])
   })
 
@@ -146,8 +146,8 @@ describe('the agent-preset roster store', () => {
   it('writeDefaultPreset writes only the default field, into the agent-presets namespace', async () => {
     const writes: Recorded[] = []
     const ctx = fakeApi([
-      { id: 'standard', trust: 'system', isDefault: true },
-      { id: 'minimal', trust: 'system', isDefault: false },
+      { id: 'standard', trust: 'system', workspace: 'required', isDefault: true },
+      { id: 'minimal', trust: 'system', workspace: 'required', isDefault: false },
     ], { writes })
 
     expect(await writeDefaultPreset(ctx, 'minimal')).toBeUndefined()
@@ -160,7 +160,7 @@ describe('the agent-preset roster store', () => {
 
   it('writeDefaultPreset surfaces the refusal message when the write fails', async () => {
     const ctx = fakeApi([
-      { id: 'standard', trust: 'system', isDefault: true },
+      { id: 'standard', trust: 'system', workspace: 'required', isDefault: true },
     ], { failWrite: 'read-only settings' })
 
     expect(await writeDefaultPreset(ctx, 'minimal')).toBe('read-only settings')
@@ -179,7 +179,7 @@ describe('the agent-preset roster store', () => {
   it('ignores a load while one is already in flight', async () => {
     const writes: Recorded[] = []
     const controller = derivedController(fakeApi(
-      [{ id: 'standard', trust: 'system', isDefault: true }], { writes }))
+      [{ id: 'standard', trust: 'system', workspace: 'required', isDefault: true }], { writes }))
 
     await Promise.all([controller.load(), controller.load()])
 
@@ -191,7 +191,7 @@ describe('the agent-preset roster store', () => {
 describe('the new-session chip controller', () => {
   /** A chip over a current session the test can move. */
   function chip(
-    presets: { id: string; trust: 'system' | 'user'; isDefault: boolean }[],
+    presets: { id: string; trust: 'system' | 'user'; workspace: 'required' | 'none'; isDefault: boolean }[],
     current: SeatSession | undefined | (() => SeatSession | undefined),
     options: {
       writes?: Recorded[]
@@ -231,9 +231,9 @@ describe('the new-session chip controller', () => {
     )
   }
 
-  const ROSTER: { id: string; trust: 'system' | 'user'; isDefault: boolean }[] = [
-    { id: 'standard', trust: 'system', isDefault: true },
-    { id: 'minimal', trust: 'system', isDefault: false },
+  const ROSTER: { id: string; trust: 'system' | 'user'; workspace: 'required' | 'none'; isDefault: boolean }[] = [
+    { id: 'standard', trust: 'system', workspace: 'required', isDefault: true },
+    { id: 'minimal', trust: 'system', workspace: 'required', isDefault: false },
   ]
 
   it('opens on the deployment default', async () => {
@@ -245,13 +245,29 @@ describe('the new-session chip controller', () => {
     // decided yet — the default is the honest opening value.
     expect(controller.store.getSnapshot().current).toBe('standard')
     expect(controller.store.getSnapshot().options).toEqual([
-      { id: 'standard', trust: 'system' },
-      { id: 'minimal', trust: 'system' },
+      { id: 'standard', trust: 'system', workspace: 'required' },
+      { id: 'minimal', trust: 'system', workspace: 'required' },
     ])
   })
 
+  it('offers only workspace presets and opens on the default among them', async () => {
+    const controller = chip([
+      { id: 'chat', trust: 'system', workspace: 'none', isDefault: true },
+      { id: 'standard', trust: 'system', workspace: 'required', isDefault: false },
+      { id: 'minimal', trust: 'system', workspace: 'required', isDefault: true },
+    ], undefined)
+
+    await controller.load()
+
+    // A chat preset composes workspace-less sessions; the host would refuse
+    // it for the workspace session this chip starts, so it is never a choice,
+    // and its own default marker never becomes the chip's opening value.
+    expect(controller.store.getSnapshot().options.map(option => option.id)).toEqual(['standard', 'minimal'])
+    expect(controller.store.getSnapshot().current).toBe('minimal')
+  })
+
   it('shows the first preset when the roster marks none default', async () => {
-    const controller = chip([{ id: 'minimal', trust: 'system', isDefault: false }], undefined)
+    const controller = chip([{ id: 'minimal', trust: 'system', workspace: 'required', isDefault: false }], undefined)
 
     await controller.load()
 
@@ -262,13 +278,13 @@ describe('the new-session chip controller', () => {
 
   it('carries the display metadata into the menu rows', async () => {
     const controller = chip([
-      { id: 'standard', trust: 'system', isDefault: true, name: '标准模式', description: '完整的编码 agent。' },
+      { id: 'standard', trust: 'system', workspace: 'required', isDefault: true, name: '标准模式', description: '完整的编码 agent。' },
     ] as never, undefined)
 
     await controller.load()
 
     expect(controller.store.getSnapshot().options).toEqual([
-      { id: 'standard', trust: 'system', name: '标准模式', description: '完整的编码 agent。' },
+      { id: 'standard', trust: 'system', workspace: 'required', name: '标准模式', description: '完整的编码 agent。' },
     ])
   })
 
@@ -308,14 +324,14 @@ describe('the new-session chip controller', () => {
   it('replaces the default display when an existing blank session arrives after roster load', async () => {
     const state: { current?: SeatSession } = {}
     const controller = chip([
-      { id: 'standard', trust: 'system', isDefault: false },
-      { id: 'minimal', trust: 'system', isDefault: true },
+      { id: 'standard', trust: 'system', workspace: 'required', isDefault: false },
+      { id: 'minimal', trust: 'system', workspace: 'required', isDefault: true },
     ], () => state.current)
     await controller.load()
     expect(controller.store.getSnapshot().current).toBe('minimal')
 
     state.current = {
-      id: 's1' as SessionId,
+      id: 's1' as SessionId, kind: 'work',
       blank: true,
       projectionValues: { agentPreset: 'standard' },
     }
@@ -326,8 +342,8 @@ describe('the new-session chip controller', () => {
 
   it('applies the stage to the blank session the flow lands on', async () => {
     const writes: Recorded[] = []
-    const current = {
-      id: 's1' as SessionId,
+    const current: SeatSession = {
+      id: 's1' as SessionId, kind: 'work',
       blank: true,
       projectionValues: { agentPreset: 'standard' },
     }
@@ -342,7 +358,7 @@ describe('the new-session chip controller', () => {
   it('spends the stage exactly once', async () => {
     const writes: Recorded[] = []
     const controller = chip(ROSTER, {
-      id: 's1' as SessionId,
+      id: 's1' as SessionId, kind: 'work',
       blank: true,
       projectionValues: { agentPreset: 'standard' },
     }, { writes })
@@ -360,7 +376,7 @@ describe('the new-session chip controller', () => {
   it('drops the stage against a session that already started', async () => {
     const writes: Recorded[] = []
     const controller = chip(ROSTER, {
-      id: 's1' as SessionId,
+      id: 's1' as SessionId, kind: 'work',
       blank: false,
       projectionValues: { agentPreset: 'standard' },
     }, { writes })
@@ -372,10 +388,28 @@ describe('the new-session chip controller', () => {
     expect(writes).toEqual([])
   })
 
+  it('drops the stage against a chat session', async () => {
+    const writes: Recorded[] = []
+    const controller = chip(ROSTER, {
+      id: 's1' as SessionId, kind: 'chat',
+      blank: true,
+      projectionValues: { agentPreset: 'chat' },
+    }, { writes })
+    await controller.load()
+
+    await controller.select('minimal')
+    await controller.apply()
+
+    // A workspace preset can never land on a workspace-less session: the host
+    // refuses the switch across kinds, so the chip never asks, and a later
+    // list movement finds nothing staged.
+    expect(writes).toEqual([])
+  })
+
   it('drops the stage when the session already runs it', async () => {
     const writes: Recorded[] = []
     const controller = chip(ROSTER, {
-      id: 's1' as SessionId,
+      id: 's1' as SessionId, kind: 'work',
       blank: true,
       projectionValues: { agentPreset: 'minimal' },
     }, { writes })
@@ -390,7 +424,7 @@ describe('the new-session chip controller', () => {
     const controller = chip(
       ROSTER,
       {
-        id: 's1' as SessionId,
+        id: 's1' as SessionId, kind: 'work',
         blank: true,
         projectionValues: { agentPreset: 'standard' },
       },
@@ -408,7 +442,7 @@ describe('the new-session chip controller', () => {
   it('ignores a pick while a switch is in flight', async () => {
     const writes: Recorded[] = []
     const controller = chip(ROSTER, {
-      id: 's1' as SessionId,
+      id: 's1' as SessionId, kind: 'work',
       blank: true,
       projectionValues: { agentPreset: 'standard' },
     }, { writes })

@@ -27,13 +27,15 @@ kind: "package-reference"
 
 在需要让每个 agent 会话从 preset 文件获得自己的工具、提示词段落与 skill 的组装中挂载本包。每个会话都会命名一个 preset——显式指定或通过配置的默认值——并据此组装；没有本包时，会话只能回退到宿主组装挂载的内容。
 
-随附 Web 的 `standard`、`ptc` 与 `cordis` preset 包含[显式文件交付](../../client/ui-deliverables/README.zh.md#explicit-deliveries)。`minimal` preset 保留固定的双工具训练配置。
+随附 Web 的 `standard`、`ptc` 与 `cordis` preset 包含[显式文件交付](../../client/ui-deliverables/README.zh.md#explicit-deliveries)。`minimal` preset 保留固定的双工具训练配置。`chat` preset 组装一个不拥有工作目录的会话：一个 persona、上下文压缩，以及一行遮蔽全部全局工具的[工具限制](../../guard/tool-restriction/README.zh.md)。
 
 ### preset 给会话带来什么
 
 从 preset 组装的会话会运行该 preset `agent.cordis.yml` 所列插件：它的工具、提示词段落与 skill。加入同一 preset 的会话共享一份已安装的组装，且各会话的状态彼此隔离。子 agent（subagent）会加入其父方的组装，因此它看到的工具与提示词段落和创建它的 agent 相同。
 
 可选的 preset 来自两处：本包 `presets/` 下随包交付的 preset，以及你自己放在 `<dshHome>/.agent-presets` 下的 preset。选择器会展示每个 preset 的显示名与描述；组装无法加载的 preset 会连同原因一起列出而不是被隐藏，因此你能看到该修什么或删什么。
+
+preset 的 `preset.yml` 还声明其会话是否拥有工作目录：`workspace: required`（缺省即此值）只组装在 Workspace 内或显式 cwd 处创建的会话，`workspace: none` 只组装两者皆无创建的会话，其 header 不记录 cwd。会话位置选择同类的默认 preset，并以 `agent-preset/workspace-mismatch` 拒绝为另一类声明的 preset，创建时与空会话切换时皆然。词汇之外的 `workspace` 值把 preset 标为 broken 而不是默认掉。
 
 ### 最小配置
 
@@ -50,7 +52,8 @@ kind: "package-reference"
 
 | 字段 | 默认值 | 含义 |
 |---|---|---|
-| `default` | 必填 | 会话未指定时组装的 preset id |
+| `default` | 必填 | 拥有工作目录的会话未命名 preset 时组装的 preset id；它必须声明 `workspace: required` |
+| `chatDefault` | 无 | 没有 Workspace 或 cwd 的会话未命名 preset 时组装的 preset id；它必须声明 `workspace: none`。缺省表示这类会话必须自行命名 preset |
 | `roots` | `[]` | 按优先级排列的扫描目录；每项提供 `path`（开头的 `~` 会展开）与 `trust`（默认为 `user`） |
 | `includeShippedRoot` | `true` | 在全部已配置根目录之前，前置本包随附的 preset 作为 `system` 根目录 |
 | `includeUserRoot` | `true` | 在全部已配置根目录之后追加 `<dshHome>/.agent-presets` 作为 `user` 根目录 |
@@ -68,7 +71,7 @@ agent-presets:
   default: minimal
 ```
 
-该值在会话创建时读取，因此更改默认值只影响此后创建的会话；运行中的会话仍停留在它们当初据以组装的 preset 上。清空用户字段即重新继承组装默认值。
+该值在会话创建时读取，因此更改默认值只影响此后创建的会话；运行中的会话仍停留在它们当初据以组装的 preset 上。清空用户字段即重新继承组装默认值。用户默认值只管辖拥有工作目录的会话；`chatDefault` 是没有用户层的部署配置，两者任一为错误类别的会话声明，都会在它将组合的第一个会话处失败。
 
 ### 创作 preset
 
@@ -111,7 +114,7 @@ agent-presets:
 | [`src/preset.ts`](src/preset.ts) | 词汇体系：preset id 规则、`AgentPreset` 与 `PresetRoot`、错误类型 |
 | [`src/mount.ts`](src/mount.ts) | 子树挂载、宿主 base-URL 处理、挂载审计、`write()` 抑制 |
 | [`src/authoring.ts`](src/authoring.ts) | 本地创作 preset 的复制/删除/读取、权限收紧 |
-| [`src/metadata.ts`](src/metadata.ts) | `preset.yml` 展示元数据 |
+| [`src/metadata.ts`](src/metadata.ts) | `preset.yml` 展示元数据与 `workspace` 要求 |
 | [`src/session.ts`](src/session.ts) | `agent-preset/selected` 事件与 `agentPreset` Session 投影 |
 | [`src/types.ts`](src/types.ts) | client-safe 的线上载荷与 cordis 事件声明 |
 | [`src/invariant.ts`](src/invariant.ts) | 不变式伴生插件：挂载后的服务泄漏复查、未加入 agent 的失败 |
@@ -130,7 +133,7 @@ agent-presets:
 
 ### 创作机制
 
-复制会解引用符号链接以保证自包含，把目录树收紧为仅属主可用（文件 `0o600` 并保留属主执行位，目录 `0o700`），并在首次复制时创建根目录。复制出的 `preset.yml` 会被重写：保留来源的描述供作者编辑，丢弃其名称与 roster `order`，从而让名单始终能区分副本与来源。删除拒绝随部署提供的 preset，并清除指向刚删除 preset 的用户默认值。
+复制会解引用符号链接以保证自包含，把目录树收紧为仅属主可用（文件 `0o600` 并保留属主执行位，目录 `0o700`），并在首次复制时创建根目录。复制出的 `preset.yml` 会被重写：保留来源的描述与 `workspace` 要求，丢弃其名称与 roster `order`，从而让名单始终能区分副本与来源。删除拒绝随部署提供的 preset，并清除指向刚删除 preset 的用户默认值。
 
 ### 会话记录
 

@@ -61,6 +61,10 @@ interface BenchOptions {
   /** Hot text-ref lexicon (injects a minimal slash stub exposing only lexicon()). */
   lexicon?: ReadonlyMap<'/' | '@', readonly string[]>
   permissions?: { options: { value: string; name: string; description?: string }[]; currentValue: string }
+  /** The `contextPressure` projection value (absent = the context meter renders nothing). */
+  contextPressure?: { pressureTokens: number; projectedTokens: number; contextWindow: number }
+  /** The owner-declared session kind; absent mirrors a bar that predates a session. */
+  kind?: 'work' | 'chat'
   /** The `imageLimits` projection value (absent = no attachment service). */
   imageLimits?: {
     maxImageBytes: number
@@ -183,7 +187,8 @@ function bench(over?: BenchOptions) {
         ? over?.permissions
         : key === 'plan' ? over?.plan
           : key === 'goal' ? over?.goal
-            : key === 'imageLimits' ? over?.imageLimits : undefined)),
+            : key === 'contextPressure' ? over?.contextPressure
+              : key === 'imageLimits' ? over?.imageLimits : undefined)),
     useInput: bindSnapshotSelector(shell.state),
     inputActions: shell.actions,
     keyboard: shell,
@@ -206,6 +211,7 @@ function bench(over?: BenchOptions) {
     t: over?.t ?? makeTranslate(zh, commonZh),
     renderSlot,
     variant: over?.variant ?? 'composer',
+    ...(over?.kind !== undefined ? { kind: over.kind } : {}),
     ...(over?.inert === true ? { disabled: true } : {}),
     ...(over?.blocked !== undefined ? { blocked: over.blocked } : {}),
     ...(over?.workspacePickerOpen !== undefined ? { workspacePickerOpen: over.workspacePickerOpen } : {}),
@@ -1688,5 +1694,32 @@ describe('command launcher chrome and control seats', () => {
     cleanup()
     const live = bench({ running: true, permissions })
     expect((live.view.getByLabelText(/^访问模式/) as HTMLButtonElement).disabled).toBe(false)
+  })
+
+  it('a chat session drops the Access chip and the plan seat; the launcher, both zones, the model seat, and the context meter stay', () => {
+    const permissions = { options: [{ value: 'workspace-write', name: 'workspace-write' }], currentValue: 'workspace-write' }
+    const contextPressure = { pressureTokens: 32_000, projectedTokens: 6_000, contextWindow: 128_000 }
+    const entries = {
+      planEntry: <i data-testid="plan-entry" />,
+      modelEntry: <i data-testid="model-entry" />,
+      leftItems: <i data-testid="left-items" />,
+      rightItems: <i data-testid="right-items" />,
+    }
+    const chat = bench({ kind: 'chat', permissions, contextPressure, ...entries })
+    // The kind is the owner's word, not a projection read: the permissions
+    // projection is present and still nothing gates a tool-less session.
+    expect(chat.view.queryByLabelText(/^访问模式/)).toBeNull()
+    expect(chat.view.queryByTestId('plan-entry')).toBeNull()
+    expect(chat.slotCalls.map(call => call.key)).not.toContain('conversation.input.plan')
+    expect(chat.view.getByLabelText('指令')).toBeTruthy()
+    expect(chat.view.getByTestId('left-items')).toBeTruthy()
+    expect(chat.view.getByTestId('right-items')).toBeTruthy()
+    expect(chat.view.getByTestId('model-entry')).toBeTruthy()
+    expect(chat.view.getByLabelText(/上下文已用/)).toBeTruthy()
+    cleanup()
+    // A work session keeps the whole row.
+    const work = bench({ kind: 'work', permissions, contextPressure, ...entries })
+    expect(work.view.getByLabelText(/^访问模式/)).toBeTruthy()
+    expect(work.view.getByTestId('plan-entry')).toBeTruthy()
   })
 })

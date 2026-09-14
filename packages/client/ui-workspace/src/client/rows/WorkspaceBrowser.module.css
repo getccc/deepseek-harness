@@ -1,17 +1,11 @@
+/* The region takes its natural height inside the shell's scrolling region
+   column (SidebarRoot.module.css .regionArea owns the scroll clip, the
+   scrollbar gutter, and the bottom fade). */
 .root {
-  --dsh-session-list-edge-inset: var(--dsh-sidebar-inline-padding);
-  --dsh-session-list-scrollbar-width: 8px;
-  --dsh-session-list-scrollbar-offset: 2px;
-  flex: 1;
-  min-height: 0;
+  flex: none;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  padding-right: var(--dsh-session-list-edge-inset);
-}
-
-.root.rail {
-  padding-right: 0;
 }
 
 .iconButton {
@@ -278,45 +272,22 @@
   background: var(--dsw-alias-interactive-bg-hover);
 }
 
-/* List seat: always mounted so the shell foot never moves. */
+/* List seat: always mounted so the region keeps its place in the shell
+   column. Nothing clips here: the absolutely positioned first-boundary
+   marker occupies the header gap. */
 .listArea {
-  flex: 1;
-  min-height: 0;
+  flex: none;
   display: flex;
   flex-direction: column;
-  margin-left: -4px;
-  margin-right: calc(-1 * var(--dsh-session-list-edge-inset));
-  padding-left: 4px;
-  /* The list remains the scroll clip. This seat stays visible so the
-     absolutely positioned first-boundary marker can occupy the header gap. */
   overflow: visible;
 }
 
-.rail .listArea {
-  margin-left: 0;
-  margin-right: 0;
-  padding-left: 0;
-}
-
-/* Relative for the bottom fade overlay. */
+/* Relative for the first-boundary drop marker. */
 .treeBody {
-  flex: 1;
-  min-height: 0;
+  flex: none;
   display: flex;
   flex-direction: column;
   position: relative;
-}
-
-/* Bottom fade: compact overlay pinned to the visible bottom,
-   transparent -> sidebar fill so it tracks the theme. */
-.fade {
-  position: absolute;
-  left: 0;
-  right: var(--dsh-session-list-edge-inset);
-  bottom: 0;
-  height: 24px;
-  background: linear-gradient(to bottom, transparent, var(--dsw-specific-sidebar-fill));
-  pointer-events: none;
 }
 
 /* Wide-only content fades back in on expand remount (mirrors the shell). */
@@ -328,26 +299,11 @@
   from { opacity: 0; }
 }
 
-/* List: the only scrolling region. Block children keep their design heights
-   under content overflow. The 2px edge offset, stable 8px themed scrollbar,
-   and remaining padding equal the shell's right inset, with or without
-   overflow, so moving the bar does not move the rows. */
+/* List: natural height; the shell's region column is the one scroll clip
+   and reserves the scrollbar gutter, so rows end at the shell's right inset
+   with or without overflow. */
 .list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  margin-left: -4px;
-  margin-right: var(--dsh-session-list-scrollbar-offset);
-  padding-left: 4px;
-  padding-right: calc(
-    var(--dsh-session-list-edge-inset)
-    - var(--dsh-session-list-scrollbar-width)
-    - var(--dsh-session-list-scrollbar-offset)
-  );
-  /* Clears the compact bottom fade overlay: at scroll end the last row sits
-     above the gradient instead of under it. */
-  padding-bottom: 16px;
-  scrollbar-gutter: stable;
+  flex: none;
 }
 
 .flatList > * + *,
@@ -410,7 +366,7 @@
 .listTopDropIndicator {
   top: -8px;
   left: 0;
-  right: var(--dsh-session-list-edge-inset);
+  right: 0;
 }
 
 .listTopDropActive > .workspaceDropBefore:first-child::before {

@@ -19,12 +19,19 @@ afterEach(cleanup)
 
 const t: OfficeSelectProps['t'] = makeTranslate(zh, commonZh)
 
-/** Render the control over one projected choice. */
-function setup(choice: OfficeChoice | undefined, apply = vi.fn().mockResolvedValue(undefined)) {
+/** Render the control over one projected choice, for a session of one kind (work unless said). */
+function setup(
+  choice: OfficeChoice | undefined,
+  apply = vi.fn().mockResolvedValue(undefined),
+  kind: 'work' | 'chat' = 'work',
+) {
   const store = createSnapshotStore<{ value: OfficeChoice | undefined }>({ value: choice })
   const useProjection = (_key: string, selector?: (v: unknown) => unknown) =>
     bindSnapshotSelector(store)(s => (selector ?? (v => v))(s.value))
-  const props = { useProjection, apply, t } as unknown as OfficeSelectProps
+  const sessions = createSnapshotStore({ byId: { s1: { kind } } })
+  const props = {
+    sessionId: 's1', useSessions: bindSnapshotSelector(sessions), useProjection, apply, t,
+  } as unknown as OfficeSelectProps
   return { store, apply, view: render(<OfficeSelect {...props} />) }
 }
 
@@ -34,6 +41,13 @@ const trigger = (): HTMLElement => screen.getByTitle('本次对话要生成的�
 describe('OfficeSelect', () => {
   it('renders nothing where the Host folds no office choice', () => {
     expect(setup(undefined).view.container.innerHTML).toBe('')
+  })
+
+  it('renders nothing for a chat session, whatever the Host folds', () => {
+    // The kind is the session row's word: a chat session produces no
+    // document, so a choice the Host still projects has nothing to impose.
+    const chat = setup({ version: 1, kind: 'word' }, undefined, 'chat')
+    expect(chat.view.container.innerHTML).toBe('')
   })
 
   it('says the bare noun while nothing is chosen, and stays untinted', () => {

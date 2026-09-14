@@ -996,6 +996,9 @@ export function normalizeWebSessionVolatiles(log: string, workspaceCwd?: string)
   }).join('\n')
 }
 
+/** Stands in for the cwd of a session that owns none, so no path is ever rewritten to `{{cwd}}`. */
+const NO_CWD = '\0no-cwd\0'
+
 function stableSessionFixture(
   session: Session,
   existing: string,
@@ -1043,8 +1046,9 @@ async function assertReplaySession(
   })
   expect(candidates, `Web replay fixture ${fixturePath} must match one live root session`).toHaveLength(1)
   const session = candidates[0] as Session
-  const sessionCwd = session.header.cwd
-  if (sessionCwd === undefined) throw new Error(`${fixturePath}: replayed session has no cwd`)
+  // A session created without a workspace records no cwd; the sentinel keeps
+  // the normalizers' cwd placeholder inert for it.
+  const sessionCwd = session.header.cwd ?? NO_CWD
   const actual = rawSessionLog(session)
   if (mode === 'refresh' && writesCurrentSessionFixtures(manifest, mode)) {
     expected = stableSessionFixture(session, expected, sessionCwd, harnessHome)
@@ -1058,7 +1062,7 @@ async function assertReplaySession(
   const actualContext: NormalizeContext = { sessionIds: [String(session.id)], cwd: sessionCwd }
   const expectedContext: NormalizeContext = {
     sessionIds: typeof expectedHeader.id === 'string' ? [expectedHeader.id] : [],
-    cwd: typeof expectedHeader.cwd === 'string' ? expectedHeader.cwd : '\0no-cwd\0',
+    cwd: typeof expectedHeader.cwd === 'string' ? expectedHeader.cwd : NO_CWD,
   }
   const actualSnapshot = normalizeSessionSnapshots([normalizeWebSessionVolatiles(actual)], actualContext)[0]
     ?.split(harnessHome).join('{{harnessHome}}')

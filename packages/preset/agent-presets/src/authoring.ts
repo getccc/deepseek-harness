@@ -110,12 +110,13 @@ async function tightenModes(dir: string): Promise<void> {
  * not one file. Symlinks are dereferenced so the copy is self-contained
  * rather than a set of links back into the install it was copied from.
  *
- * The copied metadata is then rewritten: the source's description is kept
- * (the file is the author's to edit afterwards), but its name and roster
- * `order` are not — a copy presenting itself identically to its source, or
- * sorted into the shipped set's declared order, would make the roster stop
- * distinguishing them. With no name given and no description to keep, the
- * file is removed so the copy publishes nothing rather than a blank.
+ * The copied metadata is then rewritten: the source's description and
+ * workspace requirement are kept (the file is the author's to edit
+ * afterwards), but its name and roster `order` are not — a copy presenting
+ * itself identically to its source, or sorted into the shipped set's declared
+ * order, would make the roster stop distinguishing them. With no name given
+ * and nothing to keep, the file is removed so the copy publishes nothing
+ * rather than a blank.
  * @param roots - the configured roots; the first `user` one receives the copy.
  * @param source - the resolved preset the copy starts from.
  * @param id - the new preset's id, which becomes its directory name.
@@ -145,9 +146,12 @@ export async function copyComposition(
       recursive: true, dereference: true, force: false, errorOnExist: true,
     })
     await tightenModes(dir)
+    // The workspace requirement travels with the composition it describes:
+    // a copy of a preset that composes cwd-less sessions composes them too.
     const rendered = renderPresetMetadata({
       ...name === undefined ? {} : { name },
       ...source.description === undefined ? {} : { description: source.description },
+      ...source.workspace === 'required' ? {} : { workspace: source.workspace },
     })
     const metadataPath = join(dir, METADATA_FILE)
     if (rendered === undefined) {

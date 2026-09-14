@@ -35,6 +35,9 @@ import type { SessionRemotes } from './remotes.ts'
 import type { SessionListPhase, SessionSearchResultItem, SubagentCatalogSnapshot } from './manager.ts'
 import type { Session } from './session.ts'
 
+/** Whether a Session owns a working directory (`work`) or was created without one (`chat`). */
+export type SessionKind = 'work' | 'chat'
+
 /** Session list row projected from the host list RPC plus live stream increments. */
 export interface SessionSummary {
   id: SessionId
@@ -42,6 +45,13 @@ export interface SessionSummary {
   title?: string
   /** Human-facing label: durable title, project basename, then session id. */
   displayTitle: string
+  /**
+   * Which kind of Session this is: `work` owns a working directory (`cwd`)
+   * and belongs to a Workspace's browsing; `chat` was created without one
+   * and belongs to the recent-conversation list. The one home for the
+   * distinction: read this, not `cwd` presence.
+   */
+  kind: SessionKind
   cwd?: string
   parentId?: SessionId
   /** Coarse durable origin for navigation filtering; not a continuation capability. */
@@ -592,6 +602,7 @@ export class ClientSessions implements ISessions {
       byId[entry.sessionId] = {
         id: entry.sessionId,
         displayTitle: displayTitleOf(entry.title, entry.cwd, entry.sessionId),
+        kind: entry.cwd === undefined ? 'chat' : 'work',
         running: entry.running,
         ...(entry.completed ? { completed: true } : {}),
         blank: entry.blank,
@@ -621,6 +632,8 @@ export class ClientSessions implements ISessions {
           byId[childId] = {
             id: childId,
             displayTitle,
+            // A breadcrumb-only child rides its parent's kind; it inherits the parent's cwd or its absence.
+            kind: byId[address.parentSessionId]?.kind ?? 'work',
             parentId: address.parentSessionId,
             origin: 'subagent',
             running: child.activity === 'running',

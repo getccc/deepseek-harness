@@ -823,7 +823,7 @@ describe('web e2e: shipped right Sidebar', () => {
 
         // The real New Session action selects a distinct blank Session; its
         // collapsed surface must not inherit the settled Session's tabs.
-        await fx.getByRole('button', { name: 'New session', exact: true }).last().click()
+        await fx.getByRole('button', { name: 'New work task', exact: true }).last().click()
         await expect.poll(async () => await settled.getAttribute('aria-selected')).toBe('false')
         await expect.poll(async () => await frame.getAttribute('data-rightbar-collapsed')).toBe('true')
         expect(await column.locator('[data-sidebar-right-open]').count()).toBe(0)

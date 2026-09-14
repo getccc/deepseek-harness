@@ -28,17 +28,19 @@ export class ApiSessionSubagentOwnership extends Error {
   }
 }
 
-/** Explicit-id creation attempted to adopt a Session under another cwd. */
+/** Explicit-id creation attempted to adopt a Session under another cwd, or under none. */
 export class ApiSessionCwdConflict extends Error {
   constructor(
     readonly sessionId: SessionId,
-    readonly requestedCwd: string,
+    readonly requestedCwd: string | undefined,
     readonly existingCwd: string | undefined,
   ) {
     super(
-      existingCwd === undefined
-        ? `session "${sessionId}" records no cwd and cannot be adopted for "${requestedCwd}"`
-        : `session "${sessionId}" belongs to "${existingCwd}", not "${requestedCwd}"`,
+      requestedCwd === undefined
+        ? `session "${sessionId}" belongs to "${String(existingCwd)}" and cannot be adopted without a cwd`
+        : existingCwd === undefined
+          ? `session "${sessionId}" records no cwd and cannot be adopted for "${requestedCwd}"`
+          : `session "${sessionId}" belongs to "${existingCwd}", not "${requestedCwd}"`,
     )
   }
 }
@@ -128,9 +130,6 @@ export async function inspectApiSession(
       ...(signal === undefined ? {} : { signal }),
       projectionMode: 'none',
     })
-    if (observation.header.cwd === undefined) {
-      throw new ApiSessionNotFound(`session "${sessionId}" not found`)
-    }
     return {
       meta: observation.header,
       inheritedEventCount: observation.inheritedEventCount,
@@ -233,14 +232,14 @@ export class ApiSessionAgentController {
   /**
    * Resolve one requested identity, creating or resuming it once.
    * @param sessionId - requested Session identity.
-   * @param cwd - directory the Session must own.
+   * @param cwd - directory the Session must own, or undefined for a Session that owns none.
    * @param checkPersistedIdentity - whether to inspect a cold identity before creation.
    * @param presetId - optional Agent preset the Session must own.
    * @returns the matching live ordinary Agent.
    */
   async ensureSession(
     sessionId: SessionId,
-    cwd: string,
+    cwd: string | undefined,
     checkPersistedIdentity: boolean,
     presetId?: string,
   ): Promise<Agent> {
@@ -402,10 +401,15 @@ export class ApiSessionAgentController {
 
   /**
    * Resolve the preset id and pre-publication Agent setup for a create or resume.
-   * @param presetId - requested preset or the configured default when omitted.
+   *
+   * The Session's location selects the default and refuses a preset declared
+   * for the other kind of location: a Session with a cwd composes the
+   * roster's default, one without composes its `chatDefault`.
+   * @param presetId - requested preset or the location's default when omitted.
+   * @param cwd - the Session's working directory, or undefined when it owns none.
    * @returns the resolved preset identity and Agent setup callback.
    */
-  async composeAgent(presetId: string | undefined): Promise<{
+  async composeAgent(presetId: string | undefined, cwd: string | undefined): Promise<{
     readonly agentPreset?: string
     readonly setup: AgentSetup
   }> {
@@ -413,7 +417,7 @@ export class ApiSessionAgentController {
     if (presets === undefined) {
       return { setup: (_agentCtx, agent) => { this.installSelection(agent) } }
     }
-    const resolvedId = (await presets.resolve(presetId)).id
+    const resolvedId = (await presets.resolveFor(cwd === undefined ? 'none' : 'required', presetId)).id
     return {
       agentPreset: resolvedId,
       setup: async (agentCtx, agent) => {
@@ -449,13 +453,10 @@ export class ApiSessionAgentController {
     sessionId: SessionId,
     observation: SessionObservation,
   ): Promise<Agent> {
-    if (observation.header.id !== sessionId || observation.header.cwd === undefined) {
-      throw new ApiSessionNotFound(`session "${sessionId}" not found`)
-    }
     if (hasApiSessionSubagentOwner(this.ctx, { header: observation.header }, undefined)) {
       throw new ApiSessionSubagentOwnership(sessionId)
     }
-    const composition = await this.composeAgent(this.presetForObservation(observation))
+    const composition = await this.composeAgent(this.presetForObservation(observation), observation.header.cwd)
     const published = this.ctx.sessions.get(sessionId)
     const live = this.ctx.agents.get(sessionId)
     if (published !== undefined && hasApiSessionSubagentOwner(this.ctx, published, live)) {
@@ -470,7 +471,7 @@ export class ApiSessionAgentController {
 
   private async createOrAdopt(
     sessionId: SessionId,
-    cwd: string,
+    cwd: string | undefined,
     checkPersistedIdentity: boolean,
     presetId: string | undefined,
   ): Promise<Agent> {
@@ -492,7 +493,7 @@ export class ApiSessionAgentController {
         }
         const storedPreset = this.presetForObservation(observation)
         this.assertPresetUnchanged(sessionId, presetId, storedPreset)
-        const composition = await this.composeAgent(storedPreset)
+        const composition = await this.composeAgent(storedPreset, observation.header.cwd)
         return (await this.ctx.agents.resume({
           resumeSessionId: sessionId,
           agentOptions: this.agentOptions(),
@@ -504,17 +505,19 @@ export class ApiSessionAgentController {
       }
     }
 
-    try {
-      await mkdir(cwd, { recursive: true })
-    } catch (error: unknown) {
-      throw new Error(`failed to ensure project directory "${cwd}": ${String(error)}`, { cause: error })
+    if (cwd !== undefined) {
+      try {
+        await mkdir(cwd, { recursive: true })
+      } catch (error: unknown) {
+        throw new Error(`failed to ensure project directory "${cwd}": ${String(error)}`, { cause: error })
+      }
     }
-    const composition = await this.composeAgent(presetId)
+    const composition = await this.composeAgent(presetId, cwd)
     return (await this.ctx.agents.create({
       sessionId,
       agentOptions: this.agentOptions(),
       meta: {
-        cwd,
+        ...(cwd === undefined ? {} : { cwd }),
         ...(composition.agentPreset === undefined ? {} : { agentPreset: composition.agentPreset }),
       },
       setup: composition.setup,

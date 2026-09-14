@@ -249,10 +249,6 @@ export class SessionHistoryController {
         signal,
         projectionMode: withProjections || address.kind === 'subagent' ? 'all' : 'none',
       })
-      if (observation.header.cwd === undefined) {
-        observation[Symbol.dispose]()
-        rejectNotFound(address)
-      }
       try {
         validateAddress(
           address,
