@@ -52,6 +52,8 @@ Every deployment-varying fact is a packaging environment variable, so one source
 | `DSH_TEAM_PRODUCT_NAME`, `DSH_TEAM_APP_ID` | no | The installed application's name and bundle identifier. |
 | `DSH_TEAM_APP_ICON`, `DSH_TEAM_TRAY_ICON` | no | The application icon, and the menu bar template image whose `@2x` neighbour is staged with it. |
 | `DSH_TEAM_PPT_TEMPLATE` | no | The PowerPoint template the office picker's `ppt` kind imports; staged beside the Runner and pathed at runtime. |
+| `DSH_TEAM_SKILLS` | no | A directory of skill folders staged beside the Runner and scanned beside the member's own skill roots. |
+| `DSH_TEAM_PPT_SKILL`, `DSH_TEAM_WORD_SKILL`, `DSH_TEAM_EXCEL_SKILL` | no | The skill each office kind loads first; each must be a folder inside `DSH_TEAM_SKILLS`. |
 | `DSH_TEAM_APPLE_TEAM_ID` | no | Apple Developer Team ID; when set (with `APPLE_ID` and `APPLE_APP_SPECIFIC_PASSWORD` in the environment) the macOS build is notarized. |
 
 ### Pinning a private certificate authority
@@ -60,7 +62,7 @@ The Runner is a Node process and ignores the operating-system trust store, so a 
 
 ### Carrying out-of-tree plugins
 
-Plugins outside the Runner's own installation ship as a real directory rather than inside the packaged executable, because their native addons cannot be loaded from a packaged executable's virtual filesystem and their runtime dependency copying expects real files. Install them into a profile with `dsh plugin --profile <name> add <package>`, then point `DSH_TEAM_PLUGIN_TREE` at that profile's `node_modules`.
+Plugins outside the Runner's own installation ship as a real directory rather than inside the packaged executable, because their native addons cannot be loaded from a packaged executable's virtual filesystem and their runtime dependency copying expects real files. Install them into a profile with `dsh plugin --profile <name> add <package>`, then point `DSH_TEAM_PLUGIN_TREE` at that profile's `node_modules`. The layer list mounts `dsh-univer-office` and `@dsh-external/dsh-echarts` from that tree, so the tree must carry both; a pnpm patch recorded in the staging profile ships with the patched files.
 
 The shell owns the private profile's manifest: it writes the layer list on every launch and materializes the shipped tree as that profile's own `node_modules` once per application version. The packages have to be real files there rather than links into application resources — a plugin reaches its dependencies through its own real location, and `dsh` adds links beside them for the packages these plugins take as peers from the Runner installation. macOS clones the tree on a copy-on-write volume, so the duplicate costs little time and little disk space. A member never installs plugins into this profile, so an application upgrade that changes the layer list takes effect on the next launch. The member's own `cordis.patch.yml` is never touched.
 

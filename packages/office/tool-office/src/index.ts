@@ -38,8 +38,9 @@ export interface Config {
   /**
    * Name of the session-catalog skill every `ppt` deliverable starts by
    * loading. Set when the installation ships a skill that owns the template
-   * workflow; it outranks {@link welinkinTemplatePath}, because the skill
-   * names the template itself. Absent when no such skill is installed.
+   * workflow; the skill owns layouts and steps, and a configured
+   * {@link welinkinTemplatePath} still names the template file, whose location
+   * depends on the installation. Absent when no such skill is installed.
    */
   pptSkill?: string
   /**
@@ -136,7 +137,10 @@ export function renderOfficeSection(choice: OfficeChoice, route: OfficeRoute = {
       // the template workflow and outranks the bare path; the catalog route
       // names no brand, because the deployment names the catalog entry.
       if (route.pptSkill !== undefined) {
-        return `Produce the deliverable as a PowerPoint presentation (.pptx) built from the company template. Before anything else, load the skill named ${route.pptSkill} with the skill tool and follow it: it names the template to import as the starting Unit with the univer office tools and the layouts, colours, and type sizes to keep. Then ${EXPORT}${ECONOMY}${DELIVERY}`
+        const template = route.welinkinTemplatePath === undefined
+          ? ''
+          : ` The company template file on this computer is ${route.welinkinTemplatePath}; use this path wherever the skill names the template.`
+        return `Produce the deliverable as a PowerPoint presentation (.pptx) built from the company template. Before anything else, load the skill named ${route.pptSkill} with the skill tool and follow it: it names the template to import as the starting Unit with the univer office tools and the layouts, colours, and type sizes to keep.${template} Then ${EXPORT}${ECONOMY}${DELIVERY}`
       }
       return route.welinkinTemplatePath === undefined
         ? `Produce the deliverable as a PowerPoint presentation (.pptx) built from the company template, using the univer office tools. No template path is configured here, so find the template through the session skill catalog: if it lists a PowerPoint template skill, load that skill first and import the template it names as the starting Unit, keeping its slide masters, layouts, fonts, and brand colours and replacing only the content. If the catalog lists no such skill, say that the company template is not reachable before building a plain .pptx. Then ${EXPORT}${ECONOMY}${DELIVERY}`

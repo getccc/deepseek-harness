@@ -14,7 +14,7 @@ import {
   shell,
   Tray,
 } from 'electron'
-import { deploymentPatch, resolveDeployment, type LoginLocale } from './deployment.ts'
+import { deploymentPatch, resolveDeployment, type LoginLocale, type OfficeSkills } from './deployment.ts'
 import { profileManifest } from './profile.ts'
 import { runnerReady } from './readiness.ts'
 
@@ -35,6 +35,8 @@ const CONTROL_PLANE_CA = 'control-plane-ca.crt'
 const PLUGIN_TREE = 'plugins'
 /** The PowerPoint template the office picker's `ppt` kind builds from. */
 const PPT_TEMPLATE = 'templates/welinkin-ppt.pptx'
+/** The skill directory the office kinds' skills load from. */
+const SKILL_DIR = 'skills'
 /** Records which application version materialized the profile's plugin tree. */
 const PLUGIN_TREE_STAMP = '.dsh-plugin-tree'
 /**
@@ -124,6 +126,26 @@ function packagedControlPlaneUrl(): string {
     throw new Error('this desktop build has no Team Control Plane address')
   }
   return manifest.teamControlPlaneUrl
+}
+
+/**
+ * The office skill names this build records, read from packaged metadata or,
+ * in a development launch, from the packaging environment variables.
+ * @returns the skill each office kind starts from; kinds without one are absent.
+ */
+function officeSkills(): OfficeSkills {
+  if (!app.isPackaged) {
+    const development = {
+      ppt: process.env['DSH_TEAM_PPT_SKILL'],
+      word: process.env['DSH_TEAM_WORD_SKILL'],
+      excel: process.env['DSH_TEAM_EXCEL_SKILL'],
+    }
+    return Object.fromEntries(Object.entries(development).filter(([, skill]) => skill !== undefined))
+  }
+  const manifest = JSON.parse(readFileSync(join(app.getAppPath(), 'package.json'), 'utf8')) as {
+    teamOfficeSkills?: OfficeSkills
+  }
+  return manifest.teamOfficeSkills ?? {}
 }
 
 /** Executable bundled beside Electron, or an explicit development Runner. */
@@ -250,6 +272,8 @@ function startRunner(): void {
   const patchPath = join(data, 'team-deployment.patch.yml')
   const certificateAuthority = stagedResource(CONTROL_PLANE_CA, 'DSH_TEAM_CONTROL_PLANE_CA')
   const pptTemplate = stagedResource(PPT_TEMPLATE, 'DSH_TEAM_PPT_TEMPLATE')
+  const skillDir = stagedResource(SKILL_DIR, 'DSH_TEAM_SKILLS')
+  const skills = officeSkills()
   const deployment = resolveDeployment({
     controlPlaneUrl: app.isPackaged
       ? packagedControlPlaneUrl()
@@ -259,6 +283,8 @@ function startRunner(): void {
     callbackUrl: 'http://127.0.0.1:3090/team/callback',
     locale: loginLocale(),
     ...pptTemplate === undefined ? {} : { welinkinTemplatePath: pptTemplate },
+    ...skillDir === undefined ? {} : { skillDir },
+    ...Object.keys(skills).length === 0 ? {} : { officeSkills: skills },
   })
   writeFileSync(patchPath, deploymentPatch(deployment), { encoding: 'utf8', mode: 0o600 })
   const home = join(data, 'home')

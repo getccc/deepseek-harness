@@ -12,7 +12,7 @@ Status: implemented
 
 **`dsh-univer-office` 重新安装进 Team profile，分节点名它的工具。** Word 与 Excel 类型要求用 univer 办公工具创建或导入 `.docx` / `.xlsx` Unit，在其中编辑，导出到工作目录下，再用 `present` 声明；交付句保留，因为上游的交付物行仍只列出已声明的文件。图表类型重新要求回答里的严格 JSON `echarts` 围栏，并把 `@dsh-external/dsh-echarts` 装回 Team profile 来绘制它们；围栏不是文件，所以该类型不带交付句。
 
-**已配置的技能掌管 PowerPoint 流程。** `dsh-tool-office` 新增 `pptSkill`，即会话目录里某个技能的名字；设置后，`ppt` 分节让模型先用 skill 工具加载该技能并照做，既不写模版路径也不写版式，因为技能自己会说。`pptSkill` 优先于 `welinkinTemplatePath`：路径分支与目录搜索分支不变，只在没有技能时生效。源码启动的 `team` profile 在其 `office` patch 行里于模版路径旁设置 `pptSkill: amec-ppt`；桌面壳不随附技能，因此不设该键。
+**已配置的技能掌管 PowerPoint 流程。** `dsh-tool-office` 新增 `pptSkill`，即会话目录里某个技能的名字；设置后，`ppt` 分节让模型先用 skill 工具加载该技能并照做，既不写模版路径也不写版式，因为技能自己会说。`pptSkill` 优先于 `welinkinTemplatePath`：路径分支与目录搜索分支不变，只在没有技能时生效。源码启动的 `team` profile 在其 `office` patch 行里于模版路径旁设置 `pptSkill: amec-ppt`。本段中关于模版路径与桌面壳的部分已被[桌面安装器随附办公构建](2026-09-15-the-desktop-installer-ships-the-office-build.zh.md)取代：技能分支现在也给出已配置的模版文件，安装器暂存技能并设置办公技能键。
 
 本决策取代 present 那条记录里点名工具的那一半；其交付规则照旧。
 

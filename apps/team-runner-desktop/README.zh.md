@@ -52,6 +52,8 @@ pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 | `DSH_TEAM_PRODUCT_NAME`、`DSH_TEAM_APP_ID` | 否 | 安装后应用的名称与 bundle 标识符。 |
 | `DSH_TEAM_APP_ICON`、`DSH_TEAM_TRAY_ICON` | 否 | 应用图标，以及菜单栏模板图像——其 `@2x` 相邻文件随它一同置入资源。 |
 | `DSH_TEAM_PPT_TEMPLATE` | 否 | 办公选择器的 `ppt` 类型导入的 PowerPoint 模版；置于 Runner 旁并在运行时定位路径。 |
+| `DSH_TEAM_SKILLS` | 否 | 一个由技能文件夹组成的目录；置于 Runner 旁，并与成员自己的技能根目录一同扫描。 |
+| `DSH_TEAM_PPT_SKILL`、`DSH_TEAM_WORD_SKILL`、`DSH_TEAM_EXCEL_SKILL` | 否 | 各办公类型最先加载的技能；每个都必须是 `DSH_TEAM_SKILLS` 内的一个文件夹。 |
 | `DSH_TEAM_APPLE_TEAM_ID` | 否 | Apple Developer Team ID；设置后（且环境含 `APPLE_ID` 与 `APPLE_APP_SPECIFIC_PASSWORD`）对 macOS 构建进行公证。 |
 
 ### 固定一个私有证书颁发机构
@@ -60,7 +62,7 @@ Runner 是一个 Node 进程，不读取操作系统信任库，因此位于企�
 
 ### 携带树外插件
 
-位于 Runner 自身安装之外的插件以真实目录而非打包可执行文件内部的形式随附，因为它们的原生插件无法从打包可执行文件的虚拟文件系统中加载，而它们运行时的依赖复制需要真实文件。用 `dsh plugin --profile <name> add <package>` 把它们装进一个 profile，再让 `DSH_TEAM_PLUGIN_TREE` 指向该 profile 的 `node_modules`。
+位于 Runner 自身安装之外的插件以真实目录而非打包可执行文件内部的形式随附，因为它们的原生插件无法从打包可执行文件的虚拟文件系统中加载，而它们运行时的依赖复制需要真实文件。用 `dsh plugin --profile <name> add <package>` 把它们装进一个 profile，再让 `DSH_TEAM_PLUGIN_TREE` 指向该 profile 的 `node_modules`。层列表从这棵树挂载 `dsh-univer-office` 与 `@dsh-external/dsh-echarts`，因此树中必须同时带有两者；暂存 profile 中记录的 pnpm 补丁会随打过补丁的文件一同随附。
 
 外壳拥有这个私有 profile 的清单：它在每次启动时写入层列表，并按应用版本把随附的树物化为该 profile 自己的 `node_modules`。这些包必须是那里的真实文件，而不是指向应用资源的链接——插件通过自己的真实位置解析依赖，而 `dsh` 会在它们旁边补上插件作为 peer 从 Runner 安装取用的包。macOS 在写时复制卷上克隆这棵树，因此这份副本几乎不花时间也几乎不占磁盘空间。成员从不向这个 profile 安装插件，因此改变层列表的应用升级会在下次启动时生效。成员自己的 `cordis.patch.yml` 不会被触碰。
 

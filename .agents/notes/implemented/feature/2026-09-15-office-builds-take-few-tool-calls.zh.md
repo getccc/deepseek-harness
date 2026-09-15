@@ -27,6 +27,6 @@ Status: implemented
 
 每个 univer 构建的分节增加一句约 70 token 的话，每种类型固定不变。节约规则是引导：模型仍可能拆分构建，具体步骤由技能承载。未配置技能的 Word 或 Excel 分节仍会得到节约规则。被重试的已关闭流会重复丢失请求的 token。
 
-有两项部署事实位于本仓库之外，因分节的指令依赖它们而记录在此。`dsh-univer-office` 0.2.14 把每张导入或插入的 PNG 与 JPEG 存为 UUID 资源，而其导出器只接受内联 base64 来源，因此任何带位图的演示文稿，包括每一份从公司模版导入的演示文稿，`univer_export` 都会失败。开发用 Team profile 带有一个 pnpm 补丁，在导出前经 Gateway 的资源路由把每个资源读回。已验证的 `office-word`、`office-excel` 技能与重写后的 `amec-ppt` 技能位于该机器 `$DSH_HOME/skills` 下的用户技能目录；打包版 Runner 的私有 DSH home 在其安装器暂存它们之前，既没有该补丁也没有这些技能。
+有两项部署事实位于本仓库之外，因分节的指令依赖它们而记录在此。`dsh-univer-office` 0.2.14 把每张导入或插入的 PNG 与 JPEG 存为 UUID 资源，而其导出器只接受内联 base64 来源，因此任何带位图的演示文稿，包括每一份从公司模版导入的演示文稿，`univer_export` 都会失败。开发用 Team profile 带有一个 pnpm 补丁，在导出前经 Gateway 的资源路由把每个资源读回。已验证的 `office-word`、`office-excel` 技能与重写后的 `amec-ppt` 技能位于该机器 `$DSH_HOME/skills` 下的用户技能目录；打包版 Runner 从其安装器获得打过补丁的插件树与这些技能（[桌面安装器随附办公构建](2026-09-15-the-desktop-installer-ships-the-office-build.zh.md)）。
 
 `section.spec.ts` 固定 Word 与 Excel 的技能句、未配置技能时该句的缺席，以及每个 univer 构建分支上的节约句；`team.spec.ts` 固定重试代码。

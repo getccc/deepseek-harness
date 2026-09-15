@@ -36,7 +36,7 @@ kind: "package-reference"
 
 | 字段 | 默认 | 含义 |
 |---|---|---|
-| `pptSkill` | — | 每个 `ppt` 交付物一开始就要加载的会话目录技能；它掌管模版流程，优先于下面的路径 |
+| `pptSkill` | — | 每个 `ppt` 交付物一开始就要加载的会话目录技能；它掌管模版流程，已配置的下述路径仍给出模版文件位置 |
 | `wordSkill` | — | 每个 `word` 交付物在第一次 univer 调用前加载的会话目录技能 |
 | `excelSkill` | — | 每个 `excel` 交付物在第一次 univer 调用前加载的会话目录技能 |
 | `welinkinTemplatePath` | — | 未配置技能时每个 `ppt` 交付物据以构建的 PowerPoint 模版；缺省则改为让模型去会话技能目录加载模版技能 |
@@ -52,7 +52,7 @@ kind: "package-reference"
 
 #### 模型所见
 
-一个分节 `office:kind`，其文本由会话折叠后的办公选择决定。选择为 `none` 时它整段缺席。每种文档类型命名要用 univer 办公工具生成的格式；`word` 与 `excel` 另加在第一次 univer 调用前加载的已配置技能（`wordSkill`、`excelSkill`），句子与下方 Word 示例相同；`ppt` 另外携带要先加载的已配置技能，或已配置的模版路径以导入并保留，或在两者都未配置时携带从会话技能目录加载模版技能并导入其所指模版的指令；该分节绝不断言模版不存在，也不自行给出配色或品牌名。`chart` 要求回答里每张图表一个严格 JSON 的 `echarts` 围栏，由 Team 部署安装的 ECharts 插件就地绘制。每种产出文件的类型都以同样两句收尾：一条工具调用节约规则（每个 Unit 一个 `univer_execute` 脚本、独立调用同一步发出、只查确切的 Facade 方法而不展示整个类、同一错误出现两次即停下报告），以及文件只经 `present` 工具抵达读者、绝不靠写出路径的交付规则。
+一个分节 `office:kind`，其文本由会话折叠后的办公选择决定。选择为 `none` 时它整段缺席。每种文档类型命名要用 univer 办公工具生成的格式；`word` 与 `excel` 另加在第一次 univer 调用前加载的已配置技能（`wordSkill`、`excelSkill`），句子与下方 Word 示例相同；`ppt` 另外携带要先加载的已配置技能（设置了模版路径时随后给出该模版文件路径），或仅有已配置的模版路径以导入并保留，或在两者都未配置时携带从会话技能目录加载模版技能并导入其所指模版的指令；该分节绝不断言模版不存在，也不自行给出配色或品牌名。`chart` 要求回答里每张图表一个严格 JSON 的 `echarts` 围栏，由 Team 部署安装的 ECharts 插件就地绘制。每种产出文件的类型都以同样两句收尾：一条工具调用节约规则（每个 Unit 一个 `univer_execute` 脚本、独立调用同一步发出、只查确切的 Facade 方法而不展示整个类、同一错误出现两次即停下报告），以及文件只经 `present` 工具抵达读者、绝不靠写出路径的交付规则。
 
 ##### 选择 Word 或 Excel 类型且未配置技能时
 
@@ -66,10 +66,10 @@ Produce the deliverable as a Word document (.docx) with the univer office tools:
 Produce the deliverable as a Word document (.docx) with the univer office tools: create or import a .docx Unit, write and lay the document out there, export the finished file under the working directory, then declare it with the present tool so the reader receives it. Load the skill named <the configured skill> with the skill tool before the first univer call and follow its verified build steps. Keep the build to few tool calls: write a Unit's content in one univer_execute script instead of one edit per call, issue independent calls together in one step, look up only the exact Facade method you are missing rather than showing a whole class, and if the same univer tool fails with the same error twice, stop and report that error instead of rebuilding the file another way. Mentioning the path in the reply does not deliver the file; only the present call does.
 ```
 
-##### 选择 PowerPoint 类型且配置了技能时
+##### 选择 PowerPoint 类型且配置了技能与模版路径时
 
 ```markdown
-Produce the deliverable as a PowerPoint presentation (.pptx) built from the company template. Before anything else, load the skill named <the configured skill> with the skill tool and follow it: it names the template to import as the starting Unit with the univer office tools and the layouts, colours, and type sizes to keep. Then export the finished file under the working directory, then declare it with the present tool so the reader receives it. Keep the build to few tool calls: write a Unit's content in one univer_execute script instead of one edit per call, issue independent calls together in one step, look up only the exact Facade method you are missing rather than showing a whole class, and if the same univer tool fails with the same error twice, stop and report that error instead of rebuilding the file another way. Mentioning the path in the reply does not deliver the file; only the present call does.
+Produce the deliverable as a PowerPoint presentation (.pptx) built from the company template. Before anything else, load the skill named <the configured skill> with the skill tool and follow it: it names the template to import as the starting Unit with the univer office tools and the layouts, colours, and type sizes to keep. The company template file on this computer is <the configured template path>; use this path wherever the skill names the template. Then export the finished file under the working directory, then declare it with the present tool so the reader receives it. Keep the build to few tool calls: write a Unit's content in one univer_execute script instead of one edit per call, issue independent calls together in one step, look up only the exact Facade method you are missing rather than showing a whole class, and if the same univer tool fails with the same error twice, stop and report that error instead of rebuilding the file another way. Mentioning the path in the reply does not deliver the file; only the present call does.
 ```
 
 ##### 选择 PowerPoint 类型且只配置了模版路径时

@@ -63,12 +63,14 @@ describe('renderOfficeSection', () => {
     expect(text).not.toMatch(/skill tool/)
   })
 
-  it('starts every deck from the configured skill, which outranks the template path', () => {
+  it('starts every deck from the configured skill and names the installed template file beside it', () => {
     const text = renderOfficeSection({ version: 1, kind: 'ppt' }, { pptSkill: 'amec-ppt', welinkinTemplatePath: '/opt/welinkin/welinkin-ppt.pptx' })
     expect(text).toMatch(/Before anything else, load the skill named amec-ppt with the skill tool and follow it/)
     expect(text).toMatch(/univer office tools/)
-    expect(text).not.toContain('/opt/welinkin/welinkin-ppt.pptx')
+    expect(text).toContain('The company template file on this computer is /opt/welinkin/welinkin-ppt.pptx; use this path wherever the skill names the template.')
+    expect(text).not.toMatch(/import it with the univer office tools as the starting Unit/)
     expect(text).toMatch(/only the present call does\.$/)
+    expect(renderOfficeSection({ version: 1, kind: 'ppt' }, { pptSkill: 'amec-ppt' })).not.toMatch(/template file on this computer/)
   })
 
   it('asks for strict-JSON echarts fences in the answer for the chart kind', () => {

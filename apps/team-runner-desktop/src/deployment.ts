@@ -19,6 +19,20 @@ export interface DesktopDeployment {
    * builds from, or undefined when the build carries none.
    */
   readonly welinkinTemplatePath?: string
+  /**
+   * Absolute path of the skill directory the installer staged, scanned beside
+   * the member's own skill roots, or undefined when the build carries none.
+   */
+  readonly skillDir?: string
+  /** Session-catalog skill names each office kind starts from; absent kinds name none. */
+  readonly officeSkills?: OfficeSkills
+}
+
+/** The skill each office deliverable kind loads before building, by kind. */
+export interface OfficeSkills {
+  readonly ppt?: string
+  readonly word?: string
+  readonly excel?: string
 }
 
 /** The locales `dsh-team-local-login` renders. */
@@ -53,6 +67,18 @@ export function resolveDeployment(input: DesktopDeployment): DesktopDeployment {
   if (input.welinkinTemplatePath !== undefined && !isFullyQualifiedPath(input.welinkinTemplatePath)) {
     throw new Error('the PowerPoint template path must be absolute')
   }
+  if (input.skillDir !== undefined && !isFullyQualifiedPath(input.skillDir)) {
+    throw new Error('the staged skill directory must be an absolute path')
+  }
+  const officeSkills = Object.entries(input.officeSkills ?? {})
+  if (officeSkills.some(([, skill]) => typeof skill !== 'string' || skill.trim() === '')) {
+    throw new Error('an office skill name must not be empty')
+  }
+  // A named skill no staged directory carries would send every deliverable of
+  // that kind to a catalog entry that cannot load.
+  if (officeSkills.length > 0 && input.skillDir === undefined) {
+    throw new Error('office skills need the staged skill directory that carries them')
+  }
   return {
     controlPlaneUrl: controlPlane.origin,
     ...input.controlPlaneCa === undefined ? {} : { controlPlaneCa: input.controlPlaneCa },
@@ -60,6 +86,8 @@ export function resolveDeployment(input: DesktopDeployment): DesktopDeployment {
     callbackUrl: callback.href,
     locale: input.locale,
     ...input.welinkinTemplatePath === undefined ? {} : { welinkinTemplatePath: input.welinkinTemplatePath },
+    ...input.skillDir === undefined ? {} : { skillDir: input.skillDir },
+    ...officeSkills.length === 0 ? {} : { officeSkills: input.officeSkills },
   }
 }
 
@@ -72,6 +100,13 @@ export function resolveDeployment(input: DesktopDeployment): DesktopDeployment {
  * @returns a Team profile patch document.
  */
 export function deploymentPatch(deployment: DesktopDeployment): string {
+  const skills = deployment.officeSkills ?? {}
+  const office = {
+    ...deployment.welinkinTemplatePath === undefined ? {} : { welinkinTemplatePath: deployment.welinkinTemplatePath },
+    ...skills.ppt === undefined ? {} : { pptSkill: skills.ppt },
+    ...skills.word === undefined ? {} : { wordSkill: skills.word },
+    ...skills.excel === undefined ? {} : { excelSkill: skills.excel },
+  }
   const address = {
     controlPlaneUrl: deployment.controlPlaneUrl,
     ...deployment.controlPlaneCa === undefined ? {} : { controlPlaneCa: deployment.controlPlaneCa },
@@ -93,8 +128,9 @@ export function deploymentPatch(deployment: DesktopDeployment): string {
     { id: 'llm-http-transport', config: address },
     { id: 'knowledge', config: address },
     { id: 'web-search-team', config: address },
-    ...deployment.welinkinTemplatePath === undefined
+    ...Object.keys(office).length === 0 ? [] : [{ id: 'office', config: office }],
+    ...deployment.skillDir === undefined
       ? []
-      : [{ id: 'office', config: { welinkinTemplatePath: deployment.welinkinTemplatePath } }],
+      : [{ id: 'skill-filesystem', config: { customSkillDirs: [deployment.skillDir] } }],
   ], null, 2)}\n`
 }

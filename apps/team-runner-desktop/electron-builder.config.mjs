@@ -1,10 +1,17 @@
 import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 
 const runner = process.env.DSH_TEAM_RUNNER_EXECUTABLE
 const controlPlaneUrl = process.env.DSH_TEAM_CONTROL_PLANE_URL
 const controlPlaneCa = process.env.DSH_TEAM_CONTROL_PLANE_CA
 const pluginTree = process.env.DSH_TEAM_PLUGIN_TREE
 const pptTemplate = process.env.DSH_TEAM_PPT_TEMPLATE
+const skillDir = process.env.DSH_TEAM_SKILLS
+const officeSkills = Object.fromEntries([
+  ['ppt', process.env.DSH_TEAM_PPT_SKILL],
+  ['word', process.env.DSH_TEAM_WORD_SKILL],
+  ['excel', process.env.DSH_TEAM_EXCEL_SKILL],
+].filter(([, skill]) => skill !== undefined))
 const appIcon = process.env.DSH_TEAM_APP_ICON
 const trayIcon = process.env.DSH_TEAM_TRAY_ICON
 // Apple Developer Team ID; when set (with APPLE_ID + APPLE_APP_SPECIFIC_PASSWORD
@@ -35,6 +42,16 @@ if (pluginTree !== undefined && !existsSync(pluginTree)) {
 if (pptTemplate !== undefined && !existsSync(pptTemplate)) {
   throw new Error('DSH_TEAM_PPT_TEMPLATE must name the Welinkin PowerPoint template file')
 }
+// Skills the office kinds start from ship as a directory of skill folders the
+// Runner scans; each named office skill must be one of those folders.
+if (skillDir !== undefined && !existsSync(skillDir)) {
+  throw new Error('DSH_TEAM_SKILLS must name the directory of skill folders to ship')
+}
+for (const [kind, skill] of Object.entries(officeSkills)) {
+  if (skillDir === undefined || !existsSync(join(skillDir, skill, 'SKILL.md'))) {
+    throw new Error(`the ${kind} office skill ${skill} must be a skill folder inside DSH_TEAM_SKILLS`)
+  }
+}
 for (const [variable, path] of [['DSH_TEAM_APP_ICON', appIcon], ['DSH_TEAM_TRAY_ICON', trayIcon]]) {
   if (path !== undefined && !existsSync(path)) throw new Error(`${variable} must name an existing image`)
 }
@@ -60,6 +77,7 @@ const extraResources = [
   ...controlPlaneCa === undefined ? [] : [{ from: controlPlaneCa, to: 'runner/control-plane-ca.crt' }],
   ...pluginTree === undefined ? [] : [{ from: pluginTree, to: 'runner/plugins' }],
   ...pptTemplate === undefined ? [] : [{ from: pptTemplate, to: 'runner/templates/welinkin-ppt.pptx' }],
+  ...skillDir === undefined ? [] : [{ from: skillDir, to: 'runner/skills' }],
   ...trayVariants.map(path => ({ from: path, to: `runner/${path.split('/').pop()}` })),
 ]
 
@@ -74,6 +92,7 @@ export default {
   extraMetadata: {
     productName: process.env.DSH_TEAM_PRODUCT_NAME ?? 'DeepSeek Team Runner',
     teamControlPlaneUrl: controlPlaneUrl,
+    ...Object.keys(officeSkills).length === 0 ? {} : { teamOfficeSkills: officeSkills },
   },
   extraResources,
   directories: { output: 'release' },

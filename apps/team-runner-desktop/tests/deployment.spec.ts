@@ -66,6 +66,42 @@ describe('desktop deployment facts', () => {
   it('omits the pin entirely for a publicly trusted Control Plane', () => {
     expect(deploymentPatch(resolveDeployment(facts))).not.toMatch(/controlPlaneCa/u)
   })
+
+  it('points the office kinds at their staged skills and scans the staged skill directory', () => {
+    const patch = JSON.parse(deploymentPatch(resolveDeployment({
+      ...facts,
+      welinkinTemplatePath: '/opt/wework/runner/templates/welinkin-ppt.pptx',
+      skillDir: '/opt/wework/runner/skills',
+      officeSkills: { ppt: 'amec-ppt', word: 'office-word', excel: 'office-excel' },
+    }))) as { id: string; config: Record<string, unknown> }[]
+    expect(patch.find(row => row.id === 'office')?.config).toEqual({
+      welinkinTemplatePath: '/opt/wework/runner/templates/welinkin-ppt.pptx',
+      pptSkill: 'amec-ppt',
+      wordSkill: 'office-word',
+      excelSkill: 'office-excel',
+    })
+    expect(patch.find(row => row.id === 'skill-filesystem')?.config).toEqual({
+      customSkillDirs: ['/opt/wework/runner/skills'],
+    })
+  })
+
+  it('writes only the office facts a build carries', () => {
+    const skillsOnly = JSON.parse(deploymentPatch(resolveDeployment({
+      ...facts, skillDir: '/opt/wework/runner/skills', officeSkills: { word: 'office-word' },
+    }))) as { id: string; config: Record<string, unknown> }[]
+    expect(skillsOnly.find(row => row.id === 'office')?.config).toEqual({ wordSkill: 'office-word' })
+    const bare = deploymentPatch(resolveDeployment({ ...facts, officeSkills: {} }))
+    expect(bare).not.toMatch(/"office"|skill-filesystem/u)
+  })
+
+  it('rejects office skills without their staged directory, an empty name, or a relative directory', () => {
+    expect(() => resolveDeployment({ ...facts, officeSkills: { ppt: 'amec-ppt' } }))
+      .toThrow(/staged skill directory/u)
+    expect(() => resolveDeployment({ ...facts, skillDir: '/opt/skills', officeSkills: { excel: ' ' } }))
+      .toThrow(/must not be empty/u)
+    expect(() => resolveDeployment({ ...facts, skillDir: 'skills' }))
+      .toThrow(/absolute path/u)
+  })
 })
 
 describe('desktop profile composition', () => {
@@ -77,6 +113,8 @@ describe('desktop profile composition', () => {
       '@deepseek-ai/dsh-base',
       '@deepseek-ai/dsh-web-app',
       '@deepseek-ai/dsh-team',
+      'dsh-univer-office',
+      '@dsh-external/dsh-echarts',
     ])
     expect(manifest.dsh.profile.patchReload).toBe('live')
   })

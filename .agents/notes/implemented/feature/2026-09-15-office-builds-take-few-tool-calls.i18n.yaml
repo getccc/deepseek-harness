@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-15-office-builds-take-few-tool-calls.md
-2026-09-15-office-builds-take-few-tool-calls.md: 4ae0827f285b8535531a3201c44300313c7961be
-2026-09-15-office-builds-take-few-tool-calls.zh.md: 35cc17fa4430cee9258bf8a23f3a462c2350708f
+2026-09-15-office-builds-take-few-tool-calls.md: 6125f30f40e3495e719593b9c4673af60594c363
+2026-09-15-office-builds-take-few-tool-calls.zh.md: 7d336cce6e090e5e3f5836c054d2872387f467c3
