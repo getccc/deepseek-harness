@@ -61,6 +61,7 @@ export class OfficeController extends TypertRemoteService {
   @Remote('scope')
   async scope(sessionId: string): Promise<OfficeChoiceView> {
     const request = parseRequest('office.scope', sessionRequestSchema, { sessionId })
+    // oxlint-disable-next-line typescript/no-deprecated -- Existing Session history read; migration deferred.
     const choice = foldOfficeChoice(this.agentOf(request.sessionId).session.snapshotEvents())
     return Promise.resolve({ choice: { version: 1, kind: choice.kind } })
   }

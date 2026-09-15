@@ -308,19 +308,19 @@ describe('the tool exists only while the Session uses knowledge', () => {
   it('hides the tool for an agent whose Session is off', async () => {
     const mounted = await mountTool({ version: 1, mode: 'off' })
     expect(visible(mounted)).toBe(true)
-    mounted.ctx.emit('agent/created', { agent: mounted.agent as never })
+    mounted.ctx.emit('agent/created', { agent: mounted.agent as never, source: 'startup' })
     expect(visible(mounted)).toBe(false)
   })
 
   it('leaves the tool in place for an agent whose Session uses knowledge', async () => {
     const mounted = await mountTool()
-    mounted.ctx.emit('agent/created', { agent: mounted.agent as never })
+    mounted.ctx.emit('agent/created', { agent: mounted.agent as never, source: 'startup' })
     expect(visible(mounted)).toBe(true)
   })
 
   it('reveals the tool when a Session turns knowledge on mid-conversation', async () => {
     const mounted = await mountTool({ version: 1, mode: 'off' })
-    mounted.ctx.emit('agent/created', { agent: mounted.agent as never })
+    mounted.ctx.emit('agent/created', { agent: mounted.agent as never, source: 'startup' })
     expect(visible(mounted)).toBe(false)
     mounted.events.push({ seq: 0, type: 'knowledge/scope', data: { version: 1, mode: 'all' } })
     mounted.ctx.emit('session/event', mounted.agent.session as never, {
@@ -331,7 +331,7 @@ describe('the tool exists only while the Session uses knowledge', () => {
 
   it('hides it again when a Session turns knowledge off', async () => {
     const mounted = await mountTool()
-    mounted.ctx.emit('agent/created', { agent: mounted.agent as never })
+    mounted.ctx.emit('agent/created', { agent: mounted.agent as never, source: 'startup' })
     mounted.events.length = 0
     mounted.ctx.emit('session/event', mounted.agent.session as never, {
       seq: 1, type: 'knowledge/scope', data: { version: 1, mode: 'off' },
@@ -352,7 +352,7 @@ describe('the tool exists only while the Session uses knowledge', () => {
 
   it('ignores a session event that is not a scope change', async () => {
     const mounted = await mountTool({ version: 1, mode: 'off' })
-    mounted.ctx.emit('agent/created', { agent: mounted.agent as never })
+    mounted.ctx.emit('agent/created', { agent: mounted.agent as never, source: 'startup' })
     mounted.events.push({ seq: 1, type: 'knowledge/scope', data: { version: 1, mode: 'all' } })
     mounted.ctx.emit('session/event', mounted.agent.session as never, {
       seq: 1, type: 'turn/start', data: { turn: 1 },
@@ -363,7 +363,7 @@ describe('the tool exists only while the Session uses knowledge', () => {
 
   it('releases a disposed agent’s restriction rather than orphaning it', async () => {
     const mounted = await mountTool({ version: 1, mode: 'off' })
-    mounted.ctx.emit('agent/created', { agent: mounted.agent as never })
+    mounted.ctx.emit('agent/created', { agent: mounted.agent as never, source: 'startup' })
     expect(visible(mounted)).toBe(false)
     // Disposal normally takes the scope and every registration on it. Lifting
     // here as well is what keeps a restriction from outliving the agent that

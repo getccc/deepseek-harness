@@ -33,9 +33,7 @@
   - text: Ran for {{duration}}
 - text: {{clock}}
 - textbox "Message or run a task, / commands, @ files or sessions"
-- button "Commands":
-  - img
-- button "Add attachment":
+- button "Add files or run commands":
   - img
 - button "Web access on, press to turn off" [pressed]: Web
 - button "Select model, current DeepSeek-V4-Flash":

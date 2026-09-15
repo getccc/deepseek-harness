@@ -255,7 +255,7 @@ export function AgentPresetSection(props: AgentPresetSectionProps): ReactNode {
       {([['system', t('builtInGroup')], ['user', t('customGroup')]] as const).map(([trust, heading]) => {
         const group = state.rows
           .filter(row => row.trust === trust)
-          .map(row => {
+          .map((row) => {
             // A `none` row composes chat sessions, whose default is the
             // deployment's `chatDefault` rather than this page's setting: its
             // card never selects, whichever way the mode-selection switch is set.

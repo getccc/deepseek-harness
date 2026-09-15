@@ -61,7 +61,7 @@ Session 行渲染运行时的实时 `pendingInteraction` 分类：审批显示**
 <details>
 <summary>实现细节——点击展开</summary>
 
-本包是一条组合：两个目标 slot 都由其他插件声明，因此 `apply` 使用 `slots.inject()` 在各自的声明生命周期内完成注册，并在目标 slot 的声明恢复后重新注册。
+本包是一条组合：三个目标 slot 都由其他插件声明，因此 `apply` 使用 `slots.inject()` 在各自的声明生命周期内完成注册，并在目标 slot 的声明恢复后重新注册。
 
 ### 目录流子 slot
 
@@ -122,4 +122,4 @@ Workspace 与 Session 悬浮卡片会复制对应行被截断的值：激活 Wor
 
 </details>
 
-**运行时不变式：** 不发布伴生入口。这是一个纯消费方插件，只向两个由宿主声明的 slot 注册展示组件，并注册自身的 locale dictionaries；inject face 由无状态 RPC 包装层和一次 create-and-open 调用组成；本插件不发出 Cordis 事件，也不持有跨插件可变状态。
+**运行时不变式：** 不发布伴生入口。这是一个纯消费方插件，只向三个由宿主声明的 slot 注册展示组件，并注册自身的 locale dictionaries；inject face 由无状态 RPC 包装层和一次 create-and-open 调用组成；本插件不发出 Cordis 事件，也不持有跨插件可变状态。

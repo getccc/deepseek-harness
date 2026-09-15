@@ -4102,7 +4102,7 @@ SHA-256: `5186d42540d72069270711837a91a81011179a8af785f32b859ec0dc6d327559`
 
 SHA-256: `c2a13242efc3bea4b36a843ddf1524ff4d33c765a71b582fa1fdbfa4fa148434`
 
-来源：[`packages/web/tool-web/src/types.ts:30`](../packages/web/tool-web/src/types.ts)
+来源：[`packages/web/tool-web/lib/types/types.d.ts:28`](../packages/web/tool-web/lib/types/types.d.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|

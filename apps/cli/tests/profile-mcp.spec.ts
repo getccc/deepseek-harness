@@ -10,8 +10,22 @@ import { composeEntries, loadProfile, PROFILE_TEMPLATES } from '@deepseek-ai/dsh
 const installAnchor = fileURLToPath(new URL('../package.json', import.meta.url))
 const resourcePackage = '@deepseek-ai/dsh-mcp-resources'
 
+/** The Control Plane composes no Agent, so it carries no agent-scoped resource tools. */
+const AGENTLESS_PROFILES = new Set(['team-control-plane'])
+
 describe('shipped MCP resource composition', () => {
-  it.each(Object.keys(PROFILE_TEMPLATES))('%s carries one shared resource consumer without a server', (name) => {
+  it('team-control-plane carries no MCP resource consumer', () => {
+    const home = mkdtempSync(join(tmpdir(), 'dsh-profile-mcp-'))
+    try {
+      const profile = loadProfile('dsh', 'team-control-plane', installAnchor, home)
+      const rows = composeEntries([...profile.layers.map(layer => layer.patches), profile.patches], () => {})
+      expect(rows.filter(row => row.name === resourcePackage || row.name === '@deepseek-ai/dsh-mcp-client')).toEqual([])
+    } finally {
+      rmSync(home, { recursive: true, force: true })
+    }
+  })
+
+  it.each(Object.keys(PROFILE_TEMPLATES).filter(name => !AGENTLESS_PROFILES.has(name)))('%s carries one shared resource consumer without a server', (name) => {
     const home = mkdtempSync(join(tmpdir(), 'dsh-profile-mcp-'))
     try {
       const profile = loadProfile('dsh', name, installAnchor, home)

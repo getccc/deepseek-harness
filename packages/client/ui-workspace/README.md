@@ -61,7 +61,7 @@ The value is intentionally best effort for cold Sessions. An identity-matching u
 <details>
 <summary>Implementation internals — click to expand</summary>
 
-The package is one composition: both target slots are declared by other plugins, so `apply` uses `slots.inject()` to register for each declaration lifetime and re-register after a declaring slot is restored.
+The package is one composition: all three target slots are declared by other plugins, so `apply` uses `slots.inject()` to register for each declaration lifetime and re-register after a declaring slot is restored.
 
 ### The directory-flow hole
 
@@ -122,4 +122,4 @@ None.
 
 </details>
 
-**Runtime invariant:** No companion is published. This is a pure-consumer plugin that registers presentational components into two host-declared slots and registers its locale dictionaries; its inject face consists of stateless RPC wrappers plus a create-and-open call. It emits no Cordis events and owns no cross-plugin mutable state.
+**Runtime invariant:** No companion is published. This is a pure-consumer plugin that registers presentational components into three host-declared slots and registers its locale dictionaries; its inject face consists of stateless RPC wrappers plus a create-and-open call. It emits no Cordis events and owns no cross-plugin mutable state.

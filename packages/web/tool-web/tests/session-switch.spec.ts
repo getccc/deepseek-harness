@@ -109,7 +109,7 @@ async function guidance(mounted: Mounted): Promise<string[]> {
 
 /** Announce the agent and let the switch's asynchronous decision settle. */
 async function created(mounted: Mounted): Promise<void> {
-  mounted.ctx.emit('agent/created', { agent: mounted.agent as never })
+  mounted.ctx.emit('agent/created', { agent: mounted.agent as never, source: 'startup' })
   await new Promise(resolve => setImmediate(resolve))
 }
 
@@ -278,7 +278,7 @@ describe('the switch is offered only to a permitted member', () => {
     const mounted = await mountSwitch({ sessionSwitch: 'on' })
     let answer!: (permitted: boolean) => void
     mounted.permitted = () => new Promise((resolve) => { answer = resolve })
-    mounted.ctx.emit('agent/created', { agent: mounted.agent as never })
+    mounted.ctx.emit('agent/created', { agent: mounted.agent as never, source: 'startup' })
     expect(visible(mounted)).toEqual([])
     expect(mounted.events).toEqual([])
     answer(true)
@@ -318,7 +318,7 @@ describe('the switch is offered only to a permitted member', () => {
     expect(mounted.commands).toHaveLength(1)
     await mounted.dispose()
     // The row is gone: a later agent finds no switch to decide on.
-    mounted.ctx.emit('agent/created', { agent: mounted.agent as never })
+    mounted.ctx.emit('agent/created', { agent: mounted.agent as never, source: 'startup' })
     await new Promise(resolve => setImmediate(resolve))
     expect(mounted.events).toHaveLength(1)
   })
@@ -327,7 +327,7 @@ describe('the switch is offered only to a permitted member', () => {
     const mounted = await mountSwitch({ sessionSwitch: 'on' })
     let answer!: (permitted: boolean) => void
     mounted.permitted = () => new Promise((resolve) => { answer = resolve })
-    mounted.ctx.emit('agent/created', { agent: mounted.agent as never })
+    mounted.ctx.emit('agent/created', { agent: mounted.agent as never, source: 'startup' })
     disposed(mounted)
     answer(true)
     await new Promise(resolve => setImmediate(resolve))

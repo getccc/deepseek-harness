@@ -7,9 +7,7 @@
 
 本矩阵展示哪些包会派发各个 harness 自有事件，以及哪些包会监听这些事件。事件之间存在多对多关系，因此密集的关系数据以表格而非一张大型关系图呈现。接收方和事件名称类型还涵盖有意绕过 `ctx.emit` 的内含派发位置，例如 subagent 生命周期封装。
 
-本矩阵展示哪些包会派发各个 harness 自有事件，以及哪些包会监听这些事件。事件之间存在多对多关系，因此密集的关系数据以表格而非一张大型关系图呈现。接收方和事件名称类型还涵盖有意绕过 `ctx.emit` 的内含派发位置，例如 subagent 生命周期封装。
-
-| 事件 | 模式 | 声明位置 | 派发方 | 监听方 |
+| Event | Mode | Declared in | Dispatchers | Listeners |
 | --- | --- | --- | --- | --- |
 | `agent-loop/config-start-failed` | `emit` | [`packages/core/agent-loop/src/index.ts:245`](../packages/core/agent-loop/src/index.ts) | [`agent-loop`](../packages/core/agent-loop) (`events.dispatch`) | - |
 | `agent-preset/selected` | `emit` | [`packages/preset/agent-presets/src/types.ts:100`](../packages/preset/agent-presets/src/types.ts) | [`agent-presets`](../packages/preset/agent-presets) (`emit`) | `remotes` |
@@ -60,10 +58,10 @@
 | `settings/document-updated` | `emit` | [`packages/settings/settings/src/types.ts:105`](../packages/settings/settings/src/types.ts) | [`settings`](../packages/settings/settings) (`events.dispatch`) | `remotes` |
 | `settings/updated` | `emit` | [`packages/settings/settings/src/types.ts:92`](../packages/settings/settings/src/types.ts) | [`settings`](../packages/settings/settings) (`events.dispatch`) | [`settings`](../packages/settings/settings) |
 | `skills/change` | `emit` | [`packages/skill/skill/src/index.ts:296`](../packages/skill/skill/src/index.ts) | [`skill`](../packages/skill/skill) (`events.dispatch`) | - |
-| `subagent/end` | `emit` | [`packages/subagent/subagent/src/index.ts:168`](../packages/subagent/subagent/src/index.ts) | [`subagent`](../packages/subagent/subagent) (`events.dispatch`) | [`hooks-claude-code`](../packages/hooks/hooks-claude-code), `server`, [`subagent`](../packages/subagent/subagent) |
-| `subagent/provider-added` | `emit` | [`packages/subagent/subagent/src/index.ts:142`](../packages/subagent/subagent/src/index.ts) | [`subagent`](../packages/subagent/subagent) (`emit`) | [`subagent`](../packages/subagent/subagent), [`tool-subagent`](../packages/subagent/tool-subagent) |
-| `subagent/provider-removed` | `emit` | [`packages/subagent/subagent/src/index.ts:148`](../packages/subagent/subagent/src/index.ts) | [`subagent`](../packages/subagent/subagent) (`events.dispatch`) | [`subagent`](../packages/subagent/subagent), [`tool-subagent`](../packages/subagent/tool-subagent) |
-| `subagent/start` | `emit` | [`packages/subagent/subagent/src/index.ts:159`](../packages/subagent/subagent/src/index.ts) | [`subagent`](../packages/subagent/subagent) (`events.dispatch`) | [`hooks-claude-code`](../packages/hooks/hooks-claude-code), [`subagent`](../packages/subagent/subagent) |
+| `subagent/end` | `emit` | [`packages/subagent/subagent/src/index.ts:170`](../packages/subagent/subagent/src/index.ts) | [`subagent`](../packages/subagent/subagent) (`events.dispatch`) | [`hooks-claude-code`](../packages/hooks/hooks-claude-code), `server`, [`subagent`](../packages/subagent/subagent) |
+| `subagent/provider-added` | `emit` | [`packages/subagent/subagent/src/index.ts:144`](../packages/subagent/subagent/src/index.ts) | [`subagent`](../packages/subagent/subagent) (`emit`) | [`subagent`](../packages/subagent/subagent), [`tool-subagent`](../packages/subagent/tool-subagent) |
+| `subagent/provider-removed` | `emit` | [`packages/subagent/subagent/src/index.ts:150`](../packages/subagent/subagent/src/index.ts) | [`subagent`](../packages/subagent/subagent) (`events.dispatch`) | [`subagent`](../packages/subagent/subagent), [`tool-subagent`](../packages/subagent/tool-subagent) |
+| `subagent/start` | `emit` | [`packages/subagent/subagent/src/index.ts:161`](../packages/subagent/subagent/src/index.ts) | [`subagent`](../packages/subagent/subagent) (`events.dispatch`) | [`hooks-claude-code`](../packages/hooks/hooks-claude-code), [`subagent`](../packages/subagent/subagent) |
 | `system-prompt/assemble` | `waterfall` | [`packages/core/system-prompt/src/index.ts:31`](../packages/core/system-prompt/src/index.ts) | [`system-prompt`](../packages/core/system-prompt) (`waterfall`) | [`agent`](../packages/core/agent), [`agent-presets`](../packages/preset/agent-presets), `browser-use-runtime`, [`session-reference`](../packages/context/session-reference), [`system-prompt`](../packages/core/system-prompt) |
 | `system-prompt/change` | `emit` | [`packages/core/system-prompt/src/index.ts:37`](../packages/core/system-prompt/src/index.ts) | [`system-prompt`](../packages/core/system-prompt) (`emit`) | - |
 | `tools/change` | `emit` | [`packages/core/tools/src/index.ts:201`](../packages/core/tools/src/index.ts) | [`agent-presets`](../packages/preset/agent-presets) (`emit`), [`tools`](../packages/core/tools) (`emit`) | `browser-use-runtime`, [`tool-subagent`](../packages/subagent/tool-subagent) |

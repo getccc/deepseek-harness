@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-Stream DeepSeek models through `deepseek-official` with Messages by default, or select Chat Completions in Cordis YAML. Both protocols share credentials, endpoint settings, image handling, and the model catalog. Valid settings changes affect subsequent calls while in-flight calls retain their configuration. Web shows one DeepSeek provider with an editable API base and key. The member route is registered only while its API-key reference resolves, so a keyless composition advertises no DeepSeek models. With an LLM HTTP transport mounted, the package also owns a `built-in` route whose discovery and invocation go through that transport, which keeps the company endpoint, credential, and model authorization on the Control Plane. This package can run beside the [pi-ai adapter](../llm-pi-ai/README.md).
+Stream DeepSeek models through `deepseek-official` with Messages by default, or select Chat Completions in Cordis YAML. Both protocols share credentials, endpoint settings, image handling, and the model catalog, and valid settings changes affect subsequent calls. Web shows one DeepSeek provider with an editable API base and key; its route is registered only while that key resolves. A mounted LLM HTTP transport adds a `built-in` route that lists and invokes company models through the Control Plane. This package can run beside the [pi-ai adapter](../llm-pi-ai/README.md).
 
 ## Table of Contents
 

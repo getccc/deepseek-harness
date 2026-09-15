@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-通过 `deepseek-official` 流式调用 DeepSeek 模型，默认使用 Messages，也可在 Cordis YAML 中选择 Chat Completions。两种协议共用凭据、端点配置、图片处理和模型目录。有效的设置更改在后续请求生效，进行中的请求保留原配置。Web 显示一个 DeepSeek 提供方，并提供 API 地址和密钥编辑。成员路由只在其 API 密钥引用能解析出值时才注册，因此没有密钥的组合不会公布任何 DeepSeek 模型。挂载了 LLM HTTP 传输时，本包还拥有一条 `built-in` 路由，其模型发现与调用都经该传输，从而把公司端点、凭据与模型授权留在 Control Plane。本包可与 [pi-ai 适配器](../llm-pi-ai/README.zh.md)并用。
+通过 `deepseek-official` 流式调用 DeepSeek 模型，默认使用 Messages，也可在 Cordis YAML 中选择 Chat Completions。两种协议共用凭据、端点配置、图片处理和模型目录，有效的设置更改在后续请求生效。Web 显示一个 DeepSeek 提供方，并提供 API 地址和密钥编辑；该路由只在密钥可解析期间注册。挂载 LLM HTTP 传输后会增加 `built-in` 路由，经 Control Plane 列举并调用公司模型。本包可与 [pi-ai 适配器](../llm-pi-ai/README.zh.md)并用。
 
 ## 目录
 

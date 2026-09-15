@@ -77,7 +77,7 @@ describe('summary blank = conversation not started', () => {
   it('those same events end pristine, so New Session does not hand the setup back', async () => {
     const { ctx, remote, attach } = await harness()
     const session = ctx.sessions.create()
-    attach(session)
+    await attach(session)
     expect(await listPristine(remote, session.id)).toBe(true)
     appendStandalone(session)
     expect(await listPristine(remote, session.id)).toBe(false)
@@ -88,7 +88,7 @@ describe('summary blank = conversation not started', () => {
   it('the facts pinned at creation leave pristine alone', async () => {
     const { ctx, remote, attach } = await harness()
     const session = ctx.sessions.create()
-    attach(session)
+    await attach(session)
     session.append('permission/preset', { preset: 'workspace-write' })
     session.append('sandbox/mode', { mode: 'workspace-write' })
     session.append('approval/policy', { policy: 'ask' })

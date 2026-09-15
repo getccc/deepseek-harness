@@ -53695,7 +53695,7 @@
         "event:web/access.data"
       ],
       "sources": [
-        "packages/web/tool-web/src/types.ts:30"
+        "packages/web/tool-web/lib/types/types.d.ts:28"
       ]
     },
     {

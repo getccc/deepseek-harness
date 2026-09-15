@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-team` turns the local web surface into a Team Runner. It stacks on [`dsh-base`](../base/README.md) and [`dsh-web-app`](../web-app/README.md), keeps workspaces and execution on the member's computer, and owns port `3090`, the local login at `/team/login`, the device credential, and the company model and web search transports. Company models default to the `built-in` route; a member's own DeepSeek key still serves `deepseek-official`, and page fetching stays local. Model requests carry no Session-log upload: the layer turns off the `session-log-deepseek` contribution that `dsh-base` enables by default.
+`dsh-team` turns the local web surface into a Team Runner. It stacks on [`dsh-base`](../base/README.md) and [`dsh-web-app`](../web-app/README.md), keeps workspaces and execution on the member's computer, and owns port `3090`, the local login at `/team/login`, the device credential, and the company model and web search transports. Company models default to the `built-in` route; a member's own DeepSeek key still serves `deepseek-official`, and page fetching stays local.
 
 It refuses to bind unconfigured: with no Control Plane or Runner version named in the account-client row, the Runner fails to load rather than send a public key to a stranger.
 
@@ -58,7 +58,7 @@ A deployment that needs a different fixed port overrides the `webserver` row fro
 
 The package's substance is `cordis.patch.yml`, named by the `dsh.bundle.patch` manifest field. The profile composer applies each bundle's patch in the order the profile lists them, so this layer sees the rows `dsh-base` and `dsh-web-app` already inserted and overrides them by id.
 
-A patch replaces the targeted row's whole `config`, so the `webserver` and `web-runtime` overrides restate every key they own. The runtime entry is `/team/open`, which deliberately receives no standalone Web process token because local account authentication owns Team unlock.
+A patch replaces the targeted row's whole `config`, so the `webserver` and `web-runtime` overrides restate every key they own. The runtime entry is `/team/open`, which deliberately receives no standalone Web process token because local account authentication owns Team unlock. The layer also turns off the `session-log-deepseek` contribution that `dsh-base` enables by default, so model requests, including those the Control Plane carries to the company provider, never attach the Session log.
 
 ### Source map
 

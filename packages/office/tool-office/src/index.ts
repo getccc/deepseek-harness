@@ -165,6 +165,7 @@ export function apply(ctx: Context, config: Config): void {
     order: ctx.systemPrompt.getSectionOrder('TEAM_POLICY') + 50,
     text: (context) => {
       if (context.agent === undefined) return ''
+      // oxlint-disable-next-line typescript/no-deprecated -- Existing Session history read; migration deferred.
       return renderOfficeSection(foldOfficeChoice(context.agent.session.snapshotEvents()), config)
     },
   }), 'tool-office: kind prompt section')

@@ -9,7 +9,7 @@ kind: "package-bundle"
 
 ## 概述
 
-`dsh-team` 把本地 web 表面变成 Team Runner。它叠加在 [`dsh-base`](../base/README.zh.md) 与 [`dsh-web-app`](../web-app/README.zh.md) 之上，把工作区与执行留在成员的电脑上，并拥有端口 `3090`、`/team/login` 的本地登录、设备凭据，以及公司模型与网页搜索传输。公司模型默认走 `built-in` 路由；成员自己的 DeepSeek 密钥仍服务 `deepseek-official`，页面抓取留在本地。模型请求不携带 Session 日志上传：本层关闭 `dsh-base` 默认启用的 `session-log-deepseek` 贡献。
+`dsh-team` 把本地 web 表面变成 Team Runner。它叠加在 [`dsh-base`](../base/README.zh.md) 与 [`dsh-web-app`](../web-app/README.zh.md) 之上，把工作区与执行留在成员的电脑上，并拥有端口 `3090`、`/team/login` 的本地登录、设备凭据，以及公司模型与网页搜索传输。公司模型默认走 `built-in` 路由；成员自己的 DeepSeek 密钥仍服务 `deepseek-official`，页面抓取留在本地。
 
 它拒绝在未配置时绑定：account-client 行未命名 Control Plane 与 Runner 版本时，Runner 会加载失败，而不是把公钥发给陌生人。
 
@@ -58,7 +58,7 @@ dsh --profile team --port 8080
 
 本包的实质是 `cordis.patch.yml`，由 `dsh.bundle.patch` 清单字段指明。profile 组合器按 profile 列出的顺序应用每个 bundle 的 patch，因此本层看到的是 `dsh-base` 与 `dsh-web-app` 已经插入的配置行，并按 id 覆盖它们。
 
-patch 会替换目标行的整个 `config`，因此这里的 `webserver` 与 `web-runtime` 覆盖会重述各自拥有的每一个键。Runtime 入口为 `/team/open`，它刻意不接收独立 Web 的进程 Token，因为 Team 解锁由本地账户认证负责。
+patch 会替换目标行的整个 `config`，因此这里的 `webserver` 与 `web-runtime` 覆盖会重述各自拥有的每一个键。Runtime 入口为 `/team/open`，它刻意不接收独立 Web 的进程 Token，因为 Team 解锁由本地账户认证负责。本层还关闭 `dsh-base` 默认启用的 `session-log-deepseek` 贡献，因此模型请求（包括 Control Plane 转发给公司提供方的请求）从不附带 Session 日志。
 
 ### 源码地图
 
