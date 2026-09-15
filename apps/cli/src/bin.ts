@@ -63,16 +63,24 @@ export async function runCli(): Promise<void> {
   }
 }
 
-if (import.meta.main) {
-  // A child of the packaged executable that spawned `process.execPath` with its
-  // own script is served here, before the launcher grammar: argv becomes what
-  // `node <script>` gives, and Node's own main-module path runs it.
+/**
+ * Run one executable launch. A child of the packaged executable that spawned
+ * `process.execPath` with its own script is served before the launcher
+ * grammar: argv becomes what `node <script>` gives, and Node's own main-module
+ * path runs it. Every other launch runs {@link runCli}. The single-file
+ * runtime's bootstrap calls this, because there this module is not the main
+ * module.
+ * @returns a promise that settles when the CLI finishes, or at once for a carried script.
+ */
+export async function runExecutable(): Promise<void> {
   const carried = isPackagedExecutable() ? carriedScript(process.argv.slice(2), existsSync) : undefined
   if (carried !== undefined) {
     process.argv.splice(1, 1)
     const { runMain } = createRequire(import.meta.url)('node:module') as { runMain: () => void }
     runMain()
-  } else {
-    await runCli()
+    return
   }
+  await runCli()
 }
+
+if (import.meta.main) await runExecutable()
