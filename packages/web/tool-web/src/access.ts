@@ -4,7 +4,9 @@
  * restriction that withholds this composition's web tools from an agent
  * whose Session has the switch off. The log owns the state: a fresh log gets
  * the deployment's initial value recorded when its agent is created, so a
- * resumed or forked Session is offered exactly what its log says.
+ * resumed or forked Session is offered exactly what its log says. The switch
+ * is offered only to a member the web service's search provider permits;
+ * anyone else keeps the tools withheld with nothing logged and no command.
  */
 
 import type { Context } from '@deepseek-ai/cordis'
@@ -12,7 +14,9 @@ import type { Agent } from '@deepseek-ai/dsh-agent'
 import type { Session } from '@deepseek-ai/dsh-session'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 import zod, { type ZodType } from 'zod'
-import type {} from '@deepseek-ai/dsh-commands'
+import type { CommandDefinition } from '@deepseek-ai/dsh-commands'
+import { createScope, scopeOf } from '@deepseek-ai/dsh-scope'
+import type {} from '@deepseek-ai/dsh-web'
 import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
 import type {} from '@deepseek-ai/dsh-session-projection'
 import type { WebAccessProjection } from './types.ts'
@@ -56,11 +60,16 @@ export const webAccessProjectionDefinition = {
 /**
  * Mount the switch over the web tools this composition registered.
  *
- * The projection registers when a projection registry is composed and the
- * command when a command registry is; the restriction needs the agent
- * registry to find the agent driving a Session whose log just changed.
- * Listeners are registered through the mounting context, so a row inside an
- * agent preset observes exactly the agents joined under that preset.
+ * The projection registers when a projection registry is composed. The
+ * restriction, the initial event, and the `/web` command are settled per
+ * agent when it is created: the tools are withheld at once, then the web
+ * service is asked whether the deployment permits this member to search at
+ * all. A member it does not permit keeps the tools withheld, gets no `/web`
+ * command, and has no `web/access` event logged, so no client offers the
+ * switch; a permitted member gets the command on the agent's own scope, the
+ * initial value logged into a log without one, and the restriction that the
+ * log then implies. Listeners are registered through the mounting context, so
+ * a row inside an agent preset observes exactly the agents joined under it.
  * @param ctx - the mounting context.
  * @param initial - the value a log without a `web/access` event receives when its agent is created.
  * @param names - the web tool names this composition registered; every one is withheld while the switch is off.
@@ -70,63 +79,129 @@ export function installSessionSwitch(ctx: Context, initial: boolean, names: read
     projectionCtx.sessionProjections.register(webAccessProjectionDefinition)
   })
 
-  ctx.inject(['commands'], (commandCtx) => {
-    commandCtx.commands.register({
-      name: WEB_ACCESS_COMMAND,
-      description: 'Turn web search and page fetching on or off for this session',
-      input: { hint: '[on|off]' },
-      handler: ({ agent, rawInput }) => {
-        const word = rawInput.trim()
-        const current = foldWebAccess(agent.session.snapshotEvents()) ?? initial
-        const wanted = word === '' ? !current : word === 'on' ? true : word === 'off' ? false : undefined
-        if (wanted === undefined) return { kind: 'error', text: 'Usage: /web [on|off]' }
-        if (wanted === current) {
-          return { kind: 'success', text: wanted ? 'Web access is already on.' : 'Web access is already off.' }
-        }
-        agent.session.append('web/access', { enabled: wanted })
-        return {
-          kind: 'success',
-          text: wanted
-            ? 'Web access on: web search and page fetching are offered from the next step.'
-            : 'Web access off: web search and page fetching are withheld from the next step.',
-        }
-      },
+  /** The `/web` command, registered on each permitted agent's own scope. */
+  const command: CommandDefinition = {
+    name: WEB_ACCESS_COMMAND,
+    description: 'Turn web search and page fetching on or off for this session',
+    input: { hint: '[on|off]' },
+    handler: ({ agent, rawInput }) => {
+      const word = rawInput.trim()
+      // Registered only after the initial value was logged, so the fold never
+      // comes back empty; an empty fold reads as off rather than as a guess.
+      const current = foldWebAccess(agent.session.snapshotEvents()) === true
+      const wanted = word === '' ? !current : word === 'on' ? true : word === 'off' ? false : undefined
+      if (wanted === undefined) return { kind: 'error', text: 'Usage: /web [on|off]' }
+      if (wanted === current) {
+        return { kind: 'success', text: wanted ? 'Web access is already on.' : 'Web access is already off.' }
+      }
+      agent.session.append('web/access', { enabled: wanted })
+      return {
+        kind: 'success',
+        text: wanted
+          ? 'Web access on: web search and page fetching are offered from the next step.'
+          : 'Web access off: web search and page fetching are withheld from the next step.',
+      }
+    },
+  }
+
+  ctx.inject(['agents', 'web'], (agentCtx) => {
+    // A context that declares the command registry, from which a per-agent
+    // registration scope can be minted: the agent's own context declares no
+    // such injection, and a scoped registration must come through one that does.
+    let commandCtx: Context | undefined
+    agentCtx.inject(['commands'], (inner) => {
+      commandCtx = inner
+      inner.effect(() => () => { commandCtx = undefined }, 'tool-web: command registry context')
     })
-  })
 
-  ctx.inject(['agents'], (agentCtx) => {
-    const lifted = new Map<Session, () => void>()
+    /** What one live agent holds: its restriction while withheld, its command while offered. */
+    interface Held {
+      offered: boolean
+      disposed: boolean
+      lift?: () => void
+      command?: () => void
+    }
+    const held = new Map<Session, Held>()
 
-    /** Bring one agent's tool visibility in line with its Session's log, recording the initial value into a log without one. */
-    const settle = (agent: Agent): void => {
+    const withhold = (agent: Agent, entry: Held): void => {
+      entry.lift ??= agent.ctx.tools.restrict({ deny: [...names] })
+    }
+    const release = (entry: Held): void => {
+      entry.lift?.()
+      delete entry.lift
+    }
+
+    /** Bring one offered agent's visibility in line with its Session's log, recording the initial value into a log without one. */
+    const settle = (agent: Agent, entry: Held): void => {
       let enabled = foldWebAccess(agent.session.snapshotEvents())
       if (enabled === null) {
         enabled = initial
         agent.session.append('web/access', { enabled })
       }
-      const masked = lifted.get(agent.session)
-      if (enabled) {
-        if (masked === undefined) return
-        masked()
-        lifted.delete(agent.session)
-        return
-      }
-      if (masked !== undefined) return
-      lifted.set(agent.session, agent.ctx.tools.restrict({ deny: [...names] }))
+      if (enabled) release(entry)
+      else withhold(agent, entry)
     }
 
-    agentCtx.effect(() => agentCtx.on('agent/created', ({ agent }) => { settle(agent) }), 'tool-web: session switch at agent creation')
+    /** Decide once per agent whether the switch is offered, then settle it. */
+    const decide = async (agent: Agent, entry: Held): Promise<void> => {
+      let permitted: boolean
+      try {
+        permitted = await agentCtx.web.searchPermitted()
+      } catch {
+        // A decision that cannot be reached is a refusal: the tools stay
+        // withheld for this session rather than being offered on a guess.
+        permitted = false
+      }
+      if (entry.disposed || !permitted) return
+      entry.offered = true
+      // The command is the member's way to flip the switch by typing,
+      // registered on the agent's own scope so only this agent lists it; a
+      // deployment without a command registry has only the chip.
+      const key = scopeOf(agent.ctx)
+      if (commandCtx !== undefined && key !== undefined) {
+        const scope = createScope(commandCtx, key)
+        const unregister = scope.ctx.commands.register(command)
+        entry.command = () => {
+          unregister()
+          void scope.dispose()
+        }
+      }
+      settle(agent, entry)
+    }
+
+    /** Forget one agent's holdings, giving back its restriction and its command. */
+    const forget = (session: Session): void => {
+      const entry = held.get(session)
+      if (entry === undefined) return
+      entry.disposed = true
+      release(entry)
+      entry.command?.()
+      held.delete(session)
+    }
+
+    agentCtx.effect(() => agentCtx.on('agent/created', ({ agent }) => {
+      // A Session announced again replaces what its earlier agent held.
+      forget(agent.session)
+      const entry: Held = { offered: false, disposed: false }
+      held.set(agent.session, entry)
+      // Withheld first: the decision may take a network round trip, and a
+      // request assembled meanwhile must not carry tools the member may not have.
+      withhold(agent, entry)
+      decide(agent, entry).catch((error: unknown) => {
+        // A failure past the decision (registering the command, logging the
+        // initial value) leaves the tools withheld; say so rather than vanish.
+        agentCtx.logger.warn(`tool-web: session switch for "${agent.id}" stays withheld: ${String(error)}`)
+      })
+    }), 'tool-web: session switch at agent creation')
     agentCtx.effect(() => agentCtx.on('session/event', (session: Session, event: SessionEvent) => {
       if (event.type !== 'web/access') return
       const agent = agentCtx.agents.get(session.id)
-      if (agent !== undefined) settle(agent)
+      const entry = held.get(session)
+      if (agent !== undefined && entry?.offered === true) settle(agent, entry)
     }), 'tool-web: session switch on a logged change')
-    agentCtx.effect(() => agentCtx.on('agent/disposed', ({ agent }) => {
-      // Lifted rather than merely forgotten: disposing the agent usually takes
-      // its scope and every registration on it, but a forgotten handle over a
-      // scope that outlived its agent would be a restriction nothing removes.
-      lifted.get(agent.session)?.()
-      lifted.delete(agent.session)
-    }), 'tool-web: release a disposed agent')
+    // Lifted rather than merely forgotten: disposing the agent usually takes
+    // its scope and every registration on it, but a forgotten handle over a
+    // scope that outlived its agent would be a restriction nothing removes.
+    agentCtx.effect(() => agentCtx.on('agent/disposed', ({ agent }) => { forget(agent.session) }), 'tool-web: release a disposed agent')
   })
 }

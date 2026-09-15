@@ -2,7 +2,7 @@ import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Browser, Page } from 'playwright'
 import { chromium } from 'playwright'
-import { afterAll, beforeAll, describe, expect, it, onTestFailed } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, onTestFailed, vi } from 'vitest'
 import type { AgentHandle } from '@deepseek-ai/dsh-agent'
 import { createUserMessage } from '@deepseek-ai/dsh-llm'
 import { SessionId } from '@deepseek-ai/dsh-session'
@@ -56,11 +56,14 @@ describe('chat agent preset', () => {
       agentOptions: { provider: 'deepseek-official', model: 'deepseek-v4-flash' },
       setup: agentCtx => scaffold.ctx.agentPresets.mount(agentCtx, 'chat').then(() => undefined),
     })
-    // Off by default: the preset's switch logged its initial value when the
-    // agent was created and withholds every tool. Turning it on is what the
-    // composer's 联网 chip sends, so the pinned request is the switched-on one.
-    expect(agentHandle.agent.session.snapshotEvents().filter(event => event.type === 'web/access').map(event => event.data))
-      .toEqual([{ enabled: false }])
+    // Off by default: once the switch has asked the web service whether this
+    // member may search, it logs its initial value and registers /web on the
+    // agent; every tool stays withheld meanwhile. Turning it on is what the
+    // composer's 联网 chip records, so the pinned request is the switched-on one.
+    await vi.waitFor(() => {
+      expect(agentHandle.agent.session.snapshotEvents().filter(event => event.type === 'web/access').map(event => event.data))
+        .toEqual([{ enabled: false }])
+    })
     expect(scaffold.ctx.tools.schemas(agentHandle.agent)).toEqual([])
     const flipped = await scaffold.ctx.commands.execute(agentHandle.agent, '/web on', [], new AbortController().signal)
     expect(flipped?.result).toEqual({ kind: 'success', text: 'Web access on: web search and page fetching are offered from the next step.' })

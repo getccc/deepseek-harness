@@ -49,7 +49,7 @@ Mount it after `dsh-team-account-client`, which owns the device credential this 
 
 ### The token is read per call
 
-The account client refreshes the device access token, so a cached one would be the stale copy. That is also why no search credential comes here at all: the only thing this process holds is a short-lived proof of who is signed in. The provider always reports itself usable; whether this member may search is the Control Plane's decision, made on every call.
+The account client refreshes the device access token, so a cached one would be the stale copy. That is also why no search credential comes here at all: the only thing this process holds is a short-lived proof of who is signed in. The provider always reports itself usable; whether this member may search is the Control Plane's decision, made on every call. Its `permitted()` asks `POST /team/web/access` for that decision, which `dsh-tool-web` reads once per session to offer the web switch only to a member who may use it; anything short of an explicit yes, including an unbound computer or an unreachable Control Plane, is no.
 
 ### Failures
 

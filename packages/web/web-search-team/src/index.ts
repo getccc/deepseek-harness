@@ -17,6 +17,7 @@ import {
 } from '@deepseek-ai/dsh-web'
 import {
   ACCESS_TOKEN_HEADER,
+  WEB_ACCESS_PATH,
   WEB_SEARCH_PATH,
   WEB_SEARCH_PROTOCOL_VERSION,
   WEB_SEARCH_REFUSAL_REASONS,
@@ -84,6 +85,48 @@ export class TeamSearchProvider implements WebSearchProvider {
   /** Always usable locally: whether this member may search is the Control Plane's decision, made per call. */
   available(): boolean {
     return true
+  }
+
+  /**
+   * Ask the Control Plane whether this member may search at all. Anything
+   * short of an explicit `allowed: true` — not signed in, not granted, an
+   * old protocol, an unreachable or unreadable Control Plane — is false, so a
+   * consumer offers search only when the decision is certain.
+   * @param signal - cancellation of the decision request.
+   * @returns whether the Control Plane permits this member to search.
+   */
+  async permitted(signal?: AbortSignal): Promise<boolean> {
+    let token: string
+    try {
+      token = await this.ctx.teamAccountClient.accessToken()
+    } catch {
+      // Not bound or refused: no member to decide for.
+      return false
+    }
+    let response: Response
+    try {
+      response = await this.fetch(new URL(WEB_ACCESS_PATH, this.controlPlaneUrl), {
+        method: 'POST',
+        headers: {
+          [ACCESS_TOKEN_HEADER]: `Bearer ${token}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({ protocolVersion: WEB_SEARCH_PROTOCOL_VERSION }),
+        ...(signal === undefined ? {} : { signal }),
+      })
+    } catch {
+      // Unreachable, or the caller's own abort: no decision was made.
+      return false
+    }
+    if (!response.ok) return false
+    let decoded: unknown
+    try {
+      decoded = await response.json()
+    } catch {
+      // A reverse proxy error page rather than a Control Plane answer.
+      return false
+    }
+    return typeof decoded === 'object' && decoded !== null && (decoded as Record<string, unknown>)['allowed'] === true
   }
 
   /**

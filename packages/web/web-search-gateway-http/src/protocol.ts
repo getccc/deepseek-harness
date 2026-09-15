@@ -10,6 +10,9 @@ import type { WebSearchSource } from '@deepseek-ai/dsh-web'
 /** The Runner-facing search route. */
 export const WEB_SEARCH_PATH = '/team/web/search'
 
+/** The Runner-facing decision route: whether this member may search at all. */
+export const WEB_ACCESS_PATH = '/team/web/access'
+
 /** The header carrying the device access token as `Bearer <token>`. */
 export const ACCESS_TOKEN_HEADER = 'authorization'
 
@@ -30,6 +33,16 @@ export interface SearchBody {
   readonly query: string
   /** Upper bound on returned sources; the Control Plane's web service truncates to it. */
   readonly maxResults?: number
+}
+
+/** What a Runner sends to the decision route: the version alone. */
+export interface AccessBody {
+  readonly protocolVersion: number
+}
+
+/** What the decision route answers with: the `web.search` decision for the token's member. */
+export interface AccessAnswer {
+  readonly allowed: boolean
 }
 
 /** What the Control Plane answers with on success: the web service's result, verbatim. */

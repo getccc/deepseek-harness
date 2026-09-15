@@ -124,6 +124,8 @@ type WebFetchBody =
 
 A provider's `available(): boolean` is a cheap LOCAL check (credential presence, parseable config) and **must not make network calls**. It is an input to execution-time selection, not a health system: `search()`/`fetch()` read it to pick a usable provider, and a selection failure surfaces as the structured `WebError` the caller routes on — which carries the branchable detail (the missing id or ambiguous candidate set) in its code and message.
 
+A search provider may also answer `permitted(signal?): Promise<boolean>`: whether the deployment lets the current member search at all, a governance decision that may ask the network. `ctx.web.searchPermitted()` reads it from the provider a search would use, without the `available()` check, so a consumer that offers search as a per-session choice can withhold the choice from a member who may not use it while a missing credential stays a search-time failure. Absent means every member may search; the Team provider asks the Control Plane.
+
 Selection never depends on registration, config, or HMR order: a capability has an explicit provider id (config `searchProvider`/`fetchProvider`, or the matching env var feeding the same field), or auto-selects when exactly one usable provider is registered; multiple usable providers with no configured id is `WEB_PROVIDER_AMBIGUOUS`, not first-wins.
 
 ## Fetch network policy
@@ -181,6 +183,19 @@ registerSearchProvider(provider: WebSearchProvider): () => void
  * @returns the disposer that unregisters the provider.
  */
 registerFetchProvider(provider: WebFetchProvider): () => void
+
+/**
+ * Whether search is permitted to the current member by the provider a
+ * search would use: the configured provider, or the single registered one.
+ * Selection here ignores `available()`, because a missing credential is a
+ * search-time failure a member can fix, while a governance refusal is a
+ * reason not to offer search at all. No registered provider answers false;
+ * an ambiguous unconfigured selection answers true and leaves the refusal
+ * to search time.
+ * @param signal - cancellation of the provider's decision request.
+ * @returns whether the deployment permits search right now.
+ */
+async searchPermitted(signal?: AbortSignal): Promise<boolean>
 
 /**
  * Run one search through the selected provider. Resolves the provider at call

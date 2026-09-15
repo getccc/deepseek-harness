@@ -74,7 +74,7 @@ web_fetch({ url: 'https://example.com' })
 
 ### 按会话开关
 
-配置 `sessionSwitch: on` 或 `sessionSwitch: off` 后，已启用的工具照常注册，但由每个会话决定其 agent 是否被提供它们：`/web` 命令（`/web on`、`/web off`，或单独 `/web` 翻转）记录一条 `web/access` 事件，`webAccess` 投影向 [composer 徽章](../../client/ui-web-access/README.zh.md)等客户端报告 `{ enabled }`，该行对会话开关为关的 agent 扣留 `web_search` 与 `web_fetch`，指引一并扣留。日志拥有状态：该行首次遇到日志中没有 `web/access` 事件的 agent 时记录配置的初始值，因此即使部署之后更改了默认值，恢复或分叉的会话被提供的仍是其日志所说的内容。未挂载开关的组合，其会话折叠为 `{ enabled: null }`，客户端读作没有开关。挂在 agent preset 内时，开关管辖加入该 preset 的 agent；随附的 `chat` preset 以关闭状态挂载它。两个工具都未启用的开关在挂载时失败。
+配置 `sessionSwitch: on` 或 `sessionSwitch: off` 后，已启用的工具照常注册，但由每个会话决定其 agent 是否被提供它们：`/web` 命令（`/web on`、`/web off`，或单独 `/web` 翻转）记录一条 `web/access` 事件，`webAccess` 投影向 [composer 徽章](../../client/ui-web-access/README.zh.md)等客户端报告 `{ enabled }`，该行对会话开关为关的 agent 扣留 `web_search` 与 `web_fetch`，指引一并扣留。日志拥有状态：该行首次遇到日志中没有 `web/access` 事件的 agent 时记录配置的初始值，因此即使部署之后更改了默认值，恢复或分叉的会话被提供的仍是其日志所说的内容。未挂载开关的组合，其会话折叠为 `{ enabled: null }`，客户端读作没有开关。开关只提供给 web 服务的搜索提供方许可的成员：agent 创建时工具立即被扣留，该行询问 `ctx.web.searchPermitted()`，被拒绝或无法抵达的决定让工具保持扣留、不记录任何事件、也没有 `/web` 命令，因此没有客户端会显示开关；被许可的 agent 在自己的作用域上得到该命令，并按日志的值设置。挂在 agent preset 内时，开关管辖加入该 preset 的 agent；随附的 `chat` preset 以关闭状态挂载它。两个工具都未启用的开关在挂载时失败。
 
 ### 稳定注册
 

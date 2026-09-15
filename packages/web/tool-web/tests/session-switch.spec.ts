@@ -3,7 +3,7 @@
  * agent exactly while its Session has the switch on, the `/web` command
  * flips it, and the projection folds the same value for clients.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import { createScope, type ScopeKey } from '@deepseek-ai/dsh-scope'
 import type { CommandDefinition, CommandInvocation, CommandResult } from '@deepseek-ai/dsh-commands'
@@ -20,6 +20,8 @@ interface Logged { seq: number; type: string; data: unknown }
 /** One mounted tool-web over a fake agent whose Session log the switch folds. */
 interface Mounted {
   ctx: Context
+  /** What the stub search provider answers when asked whether the member may search. */
+  permitted: () => Promise<boolean>
   /** The Session log, mutable so a test can seed a state or read what was appended. */
   events: Logged[]
   /** The agent the fake registry reports for the Session; its ctx is a real scope. */
@@ -35,20 +37,39 @@ interface Mounted {
   commands: CommandDefinition[]
   /** Every projection definition the switch registered. */
   projections: ProjectionDefinition<'webAccess', WebAccessProjection>[]
+  /** Dispose the tool-web row. */
+  dispose: () => Promise<void>
 }
 
-async function mountSwitch(config: ToolWeb.Config, seed: Logged[] = []): Promise<Mounted> {
+async function mountSwitch(config: ToolWeb.Config, seed: Logged[] = [], withCommands = true): Promise<Mounted> {
   const ctx = new Context()
   await ctx.plugin(SystemPrompt)
   await ctx.plugin(ToolRuntime)
-  await ctx.plugin(WebRuntime, {})
+  await ctx.plugin(WebRuntime, { searchProvider: 'stub' })
   const state: Mounted = {
     ctx, events: seed, scopeKey: { agent: 'session-1' }, noAgent: false,
+    permitted: () => Promise.resolve(true),
     commands: [],
     projections: [],
     agent: { id: 'session-1', session: { id: 'session-1', snapshotEvents: () => [], append: () => { throw new Error('unset') } }, ctx },
+    dispose: () => Promise.resolve(),
   }
-  ctx.provide('commands', { register: (definition: CommandDefinition) => { state.commands.push(definition); return () => {} } })
+  // The stub provider decides per the test's script; its availability is a
+  // search-time matter the switch does not read.
+  ctx.web.registerSearchProvider({
+    id: 'stub',
+    available: () => true,
+    search: () => Promise.reject(new Error('unused')),
+    permitted: () => state.permitted(),
+  })
+  if (withCommands) {
+    ctx.provide('commands', {
+      register: (definition: CommandDefinition) => {
+        state.commands.push(definition)
+        return () => { state.commands.splice(state.commands.indexOf(definition), 1) }
+      },
+    })
+  }
   ctx.provide('sessionProjections', {
     register: (definition: ProjectionDefinition<'webAccess', WebAccessProjection>) => { state.projections.push(definition); return () => {} },
   })
@@ -69,7 +90,8 @@ async function mountSwitch(config: ToolWeb.Config, seed: Logged[] = []): Promise
   }
   state.agent = { id: 'session-1', session, ctx: scoped.ctx }
   ctx.provide('agents', { get: () => state.noAgent ? undefined : state.agent })
-  await ctx.plugin(ToolWeb, ToolWeb.Config(config))
+  const fiber = await ctx.plugin(ToolWeb, ToolWeb.Config(config))
+  state.dispose = async () => { await fiber.dispose() }
   return state
 }
 
@@ -85,8 +107,14 @@ async function guidance(mounted: Mounted): Promise<string[]> {
   return assembly.sections.filter(section => section.name.startsWith('tool:web_') && section.text !== '').map(section => section.name)
 }
 
-function created(mounted: Mounted): void {
+/** Announce the agent and let the switch's asynchronous decision settle. */
+async function created(mounted: Mounted): Promise<void> {
   mounted.ctx.emit('agent/created', { agent: mounted.agent as never })
+  await new Promise(resolve => setImmediate(resolve))
+}
+
+function disposed(mounted: Mounted): void {
+  mounted.ctx.emit('agent/disposed', { agent: mounted.agent as never })
 }
 
 /** Run the registered `/web` command with the given input. */
@@ -111,7 +139,7 @@ describe('sessionSwitch config', () => {
 
   it('mounts no switch without the field: always-on tools, no command, no projection', async () => {
     const mounted = await mountSwitch({})
-    created(mounted)
+    await created(mounted)
     expect(visible(mounted)).toEqual(['web_fetch', 'web_search'])
     expect(mounted.events).toEqual([])
     expect(mounted.commands).toEqual([])
@@ -123,7 +151,7 @@ describe('the log owns the switch', () => {
   it('records the initial off value when the agent is created and withholds the tools and their guidance', async () => {
     const mounted = await mountSwitch({ sessionSwitch: 'off' })
     expect(visible(mounted)).toEqual(['web_fetch', 'web_search'])
-    created(mounted)
+    await created(mounted)
     expect(mounted.events).toEqual([{ seq: 0, type: 'web/access', data: { enabled: false } }])
     expect(visible(mounted)).toEqual([])
     expect(await guidance(mounted)).toEqual([])
@@ -133,7 +161,7 @@ describe('the log owns the switch', () => {
 
   it('records the initial on value and offers the tools with their guidance', async () => {
     const mounted = await mountSwitch({ sessionSwitch: 'on' })
-    created(mounted)
+    await created(mounted)
     expect(mounted.events).toEqual([{ seq: 0, type: 'web/access', data: { enabled: true } }])
     expect(visible(mounted)).toEqual(['web_fetch', 'web_search'])
     expect(await guidance(mounted)).toEqual(['tool:web_search', 'tool:web_fetch'])
@@ -142,18 +170,18 @@ describe('the log owns the switch', () => {
   it('follows a resumed log rather than the configured initial value, without appending', async () => {
     const seeded = [{ seq: 0, type: 'turn/start', data: { turn: 1 } }, { seq: 1, type: 'web/access', data: { enabled: true } }]
     const mounted = await mountSwitch({ sessionSwitch: 'off' }, seeded)
-    created(mounted)
+    await created(mounted)
     expect(mounted.events).toHaveLength(2)
     expect(visible(mounted)).toEqual(['web_fetch', 'web_search'])
     // The last logged value wins.
     mounted.events.push({ seq: 2, type: 'web/access', data: { enabled: false } })
-    created(mounted)
+    await created(mounted)
     expect(visible(mounted)).toEqual([])
   })
 
   it('withholds only the tools this composition registered', async () => {
     const mounted = await mountSwitch({ search: false, sessionSwitch: 'off' })
-    created(mounted)
+    await created(mounted)
     expect(visible(mounted)).toEqual([])
     expect(mounted.ctx.tools.schemas().map(schema => schema.name)).toEqual(['web_fetch'])
     await web(mounted, 'on')
@@ -162,14 +190,18 @@ describe('the log owns the switch', () => {
 })
 
 describe('the /web command', () => {
-  it('is registered with its usage hint', async () => {
+  it('is registered on a permitted agent\'s own scope with its usage hint, and given back when the agent goes', async () => {
     const mounted = await mountSwitch({ sessionSwitch: 'off' })
+    expect(mounted.commands).toEqual([])
+    await created(mounted)
     expect(mounted.commands.map(definition => [definition.name, definition.input?.hint])).toEqual([['web', '[on|off]']])
+    disposed(mounted)
+    expect(mounted.commands).toEqual([])
   })
 
   it('turns the switch on and off, reporting an idempotent request as such', async () => {
     const mounted = await mountSwitch({ sessionSwitch: 'off' })
-    created(mounted)
+    await created(mounted)
     expect(await web(mounted, 'off')).toEqual({ kind: 'success', text: 'Web access is already off.' })
     expect(await web(mounted, ' on ')).toEqual({ kind: 'success', text: 'Web access on: web search and page fetching are offered from the next step.' })
     expect(mounted.events.at(-1)).toEqual({ seq: 1, type: 'web/access', data: { enabled: true } })
@@ -182,18 +214,18 @@ describe('the /web command', () => {
 
   it('flips the current value when given no word and rejects any other word', async () => {
     const mounted = await mountSwitch({ sessionSwitch: 'on' })
-    // No agent created yet: the fold falls back to the configured initial value.
+    await created(mounted)
     expect(await web(mounted, '')).toEqual({ kind: 'success', text: 'Web access off: web search and page fetching are withheld from the next step.' })
     expect(await web(mounted, '')).toEqual({ kind: 'success', text: 'Web access on: web search and page fetching are offered from the next step.' })
     expect(await web(mounted, 'sometimes')).toEqual({ kind: 'error', text: 'Usage: /web [on|off]' })
-    expect(mounted.events.map(event => event.data)).toEqual([{ enabled: false }, { enabled: true }])
+    expect(mounted.events.map(event => event.data)).toEqual([{ enabled: true }, { enabled: false }, { enabled: true }])
   })
 })
 
 describe('the restriction follows the log', () => {
   it('ignores a logged change for a Session no agent is driving, and any other event', async () => {
     const mounted = await mountSwitch({ sessionSwitch: 'off' })
-    created(mounted)
+    await created(mounted)
     expect(visible(mounted)).toEqual([])
     mounted.noAgent = true
     mounted.agent.session.append('web/access', { enabled: true })
@@ -203,19 +235,104 @@ describe('the restriction follows the log', () => {
     mounted.noAgent = false
     mounted.ctx.emit('session/event', mounted.agent.session as never, { seq: 9, type: 'turn/start', data: { turn: 1 } } as never)
     expect(visible(mounted)).toEqual([])
-    created(mounted)
+    await created(mounted)
     expect(visible(mounted)).toEqual(['web_fetch', 'web_search'])
   })
 
   it('releases a disposed agent\'s restriction rather than orphaning it', async () => {
     const mounted = await mountSwitch({ sessionSwitch: 'off' })
-    created(mounted)
+    await created(mounted)
     expect(visible(mounted)).toEqual([])
     mounted.ctx.emit('agent/disposed', { agent: mounted.agent as never })
     expect(visible(mounted)).toEqual(['web_fetch', 'web_search'])
     // Disposing an agent that was never masked is a no-op.
     mounted.ctx.emit('agent/disposed', { agent: mounted.agent as never })
     expect(visible(mounted)).toEqual(['web_fetch', 'web_search'])
+  })
+})
+
+describe('the switch is offered only to a permitted member', () => {
+  it('withholds the tools, logs nothing, and registers no command when the deployment refuses', async () => {
+    const mounted = await mountSwitch({ sessionSwitch: 'on', search: true, fetch: true })
+    mounted.permitted = () => Promise.resolve(false)
+    await created(mounted)
+    expect(visible(mounted)).toEqual([])
+    expect(mounted.events).toEqual([])
+    expect(mounted.commands).toEqual([])
+    // A logged change from elsewhere does not lift a refusal.
+    mounted.agent.session.append('web/access', { enabled: true })
+    expect(visible(mounted)).toEqual([])
+    disposed(mounted)
+    expect(visible(mounted)).toEqual(['web_fetch', 'web_search'])
+  })
+
+  it('treats a decision that cannot be reached as a refusal', async () => {
+    const mounted = await mountSwitch({ sessionSwitch: 'on' })
+    mounted.permitted = () => Promise.reject(new Error('control plane down'))
+    await created(mounted)
+    expect(visible(mounted)).toEqual([])
+    expect(mounted.events).toEqual([])
+  })
+
+  it('withholds the tools while the decision is pending, then settles from the log', async () => {
+    const mounted = await mountSwitch({ sessionSwitch: 'on' })
+    let answer!: (permitted: boolean) => void
+    mounted.permitted = () => new Promise((resolve) => { answer = resolve })
+    mounted.ctx.emit('agent/created', { agent: mounted.agent as never })
+    expect(visible(mounted)).toEqual([])
+    expect(mounted.events).toEqual([])
+    answer(true)
+    await new Promise(resolve => setImmediate(resolve))
+    expect(mounted.events).toEqual([{ seq: 0, type: 'web/access', data: { enabled: true } }])
+    expect(visible(mounted)).toEqual(['web_fetch', 'web_search'])
+  })
+
+  it('offers the switch without a command in a composition that has no command registry', async () => {
+    const mounted = await mountSwitch({ sessionSwitch: 'on' }, [], false)
+    await created(mounted)
+    expect(visible(mounted)).toEqual(['web_fetch', 'web_search'])
+    expect(mounted.events).toEqual([{ seq: 0, type: 'web/access', data: { enabled: true } }])
+    expect(mounted.commands).toEqual([])
+    // A logged off that repeats a withheld state keeps the one restriction.
+    mounted.agent.session.append('web/access', { enabled: false })
+    mounted.agent.session.append('web/access', { enabled: false })
+    expect(visible(mounted)).toEqual([])
+    disposed(mounted)
+    expect(visible(mounted)).toEqual(['web_fetch', 'web_search'])
+  })
+
+  it('keeps the tools withheld and says so when logging the initial value fails after the decision', async () => {
+    const mounted = await mountSwitch({ sessionSwitch: 'on' })
+    const warn = vi.spyOn(mounted.ctx.logger, 'warn').mockImplementation(() => undefined)
+    mounted.agent.session.append = () => { throw new Error('log closed') }
+    await created(mounted)
+    expect(visible(mounted)).toEqual([])
+    expect(mounted.events).toEqual([])
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('stays withheld'))
+    warn.mockRestore()
+  })
+
+  it('gives the command registry context back when the row is disposed', async () => {
+    const mounted = await mountSwitch({ sessionSwitch: 'on' })
+    await created(mounted)
+    expect(mounted.commands).toHaveLength(1)
+    await mounted.dispose()
+    // The row is gone: a later agent finds no switch to decide on.
+    mounted.ctx.emit('agent/created', { agent: mounted.agent as never })
+    await new Promise(resolve => setImmediate(resolve))
+    expect(mounted.events).toHaveLength(1)
+  })
+
+  it('drops a decision that lands after the agent was disposed', async () => {
+    const mounted = await mountSwitch({ sessionSwitch: 'on' })
+    let answer!: (permitted: boolean) => void
+    mounted.permitted = () => new Promise((resolve) => { answer = resolve })
+    mounted.ctx.emit('agent/created', { agent: mounted.agent as never })
+    disposed(mounted)
+    answer(true)
+    await new Promise(resolve => setImmediate(resolve))
+    expect(mounted.events).toEqual([])
+    expect(mounted.commands).toEqual([])
   })
 })
 

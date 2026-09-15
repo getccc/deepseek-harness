@@ -3470,6 +3470,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the disposer that unregisters the provider.',
       },
       {
+        signature: 'async searchPermitted(signal?: AbortSignal): Promise<boolean>',
+        description: 'Whether search is permitted to the current member by the provider a search would use: the configured provider, or the single registered one. Selection here ignores `available()`, because a missing credential is a search-time failure a member can fix, while a governance refusal is a reason not to offer search at all. No registered provider answers false; an ambiguous unconfigured selection answers true and leaves the refusal to search time.',
+        parameters: [{ name: 'signal', description: 'cancellation of the provider\'s decision request.' }],
+        returns: 'whether the deployment permits search right now.',
+      },
+      {
         signature: 'async search(request: WebSearchRequest, signal?: AbortSignal): Promise<WebSearchResult>',
         description: 'Run one search through the selected provider. Resolves the provider at call time with the selection rules above; throws WebError when the capability cannot run. The seam enforces `request.maxResults` on the result: if the provider over-returns, `sources[]` is truncated and `truncated` set.',
         parameters: [{ name: 'request', description: 'the query and optional result limit.' }, { name: 'signal', description: 'optional cancellation signal forwarded to the provider.' }],
@@ -7437,7 +7443,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'WebSearchProvider',
-    declaration: 'export interface WebSearchProvider {\n    readonly id: string;\n    available(): boolean;\n    search(request: WebSearchRequest, signal?: AbortSignal): Promise<WebSearchResult>;\n}',
+    declaration: 'export interface WebSearchProvider {\n    readonly id: string;\n    available(): boolean;\n    search(request: WebSearchRequest, signal?: AbortSignal): Promise<WebSearchResult>;\n    permitted?(signal?: AbortSignal): Promise<boolean>;\n}',
   },
   {
     name: 'WebSearchRequest',

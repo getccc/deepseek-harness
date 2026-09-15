@@ -124,6 +124,8 @@ type WebFetchBody =
 
 提供方的 `available(): boolean` 是一个廉价的本地检查（凭证是否存在、配置是否可解析），**禁止发起网络调用**。它是执行时选择提供方的输入，而不是健康检查系统：`search()`／`fetch()` 会读取它来选择可用的提供方。选择失败时，调用方会收到可据以分支处理的结构化 `WebError`；其错误代码和消息会说明缺失的 id 或存在歧义的候选集。
 
+搜索提供方还可以回答 `permitted(signal?): Promise<boolean>`：部署是否允许当前成员搜索，这是一个可以访问网络的治理决策。`ctx.web.searchPermitted()` 从一次搜索将使用的提供方读取它，不经过 `available()` 检查，因此把搜索作为按会话选项提供的消费方可以对不许使用的成员隐藏该选项，而凭据缺失仍是搜索时的失败。缺省表示每个成员都可以搜索；Team 提供方会询问控制面。
+
 选择从不依赖注册顺序、配置顺序或 HMR（热模块替换）顺序：一项能力要么有显式的提供方 id（配置 `searchProvider`／`fetchProvider`，或填充同一字段的对应环境变量），要么在恰好只有一个可用提供方注册时自动选择；如果存在多个可用提供方却未配置 id，则抛出 `WEB_PROVIDER_AMBIGUOUS`，而不会选用最先注册的提供方。
 
 ## 抓取网络策略
@@ -181,6 +183,19 @@ registerSearchProvider(provider: WebSearchProvider): () => void
  * @returns the disposer that unregisters the provider.
  */
 registerFetchProvider(provider: WebFetchProvider): () => void
+
+/**
+ * Whether search is permitted to the current member by the provider a
+ * search would use: the configured provider, or the single registered one.
+ * Selection here ignores `available()`, because a missing credential is a
+ * search-time failure a member can fix, while a governance refusal is a
+ * reason not to offer search at all. No registered provider answers false;
+ * an ambiguous unconfigured selection answers true and leaves the refusal
+ * to search time.
+ * @param signal - cancellation of the provider's decision request.
+ * @returns whether the deployment permits search right now.
+ */
+async searchPermitted(signal?: AbortSignal): Promise<boolean>
 
 /**
  * Run one search through the selected provider. Resolves the provider at call

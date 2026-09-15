@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-web-search-gateway-http` serves the one route a Team Runner calls to search the web with the company's credential: `POST /team/web/search`. The principal is recovered from a verified device access token and never read from a body; the search runs through the Control Plane's own `ctx.web`, where the search provider and its credential are composed, so a request has no place to name a provider, an address, or a key. Every call is decided by `web.search` on the organization's `web_search` resource and recorded in the audit log. Mount it in the Control Plane beside the web service it fronts.
+`dsh-web-search-gateway-http` serves the two routes a Team Runner calls for company web search: `POST /team/web/search` runs one, and `POST /team/web/access` answers whether this member may search at all. The principal is recovered from a verified device access token and never read from a body; the search runs through the Control Plane's own `ctx.web`, where the provider and its credential are composed, so a request cannot name a provider, an address, or a key. Every search is decided by `web.search` on the organization's `web_search` resource and recorded in the audit log.
 
 ## Table of Contents
 
@@ -47,9 +47,9 @@ Mount it in a `team-control-plane` composition after the web server, the web ser
 
 The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-web-search-gateway-http) is the exhaustive source for the accepted field.
 
-### The route
+### The routes
 
-`POST /team/web/search` takes `protocolVersion`, `query`, and an optional `maxResults`, and answers the web service's result verbatim: an optional `content`, the `sources`, and `truncated`. The body has no field for an organization, a principal, a device, a provider, an address, or a credential; a Runner names what it wants and the Control Plane resolves and authorizes the rest.
+`POST /team/web/access` takes `protocolVersion` alone and answers `{ allowed }`, the member's `web.search` decision, so a Runner offers the switch only to a member who may use it; the decision itself is not recorded, the search a member then runs is. `POST /team/web/search` takes `protocolVersion`, `query`, and an optional `maxResults`, and answers the web service's result verbatim: an optional `content`, the `sources`, and `truncated`. The body has no field for an organization, a principal, a device, a provider, an address, or a credential; a Runner names what it wants and the Control Plane resolves and authorizes the rest.
 
 ### The version is decided first
 
@@ -84,13 +84,13 @@ Every decided request writes one `web.search` audit event against the organizati
 <details>
 <summary>Implementation internals — click to expand</summary>
 
-The route is one handler over the web server. It reads the body under the configured bound, checks the version, verifies the token, validates `query` and `maxResults`, registers the organization's `web_search` resource once per process, asks access control, calls `ctx.web.search`, and maps a thrown `WebError` to a refusal: `WEB_ABORTED` is `cancelled`, the provider-selection and credential codes are `upstream-unavailable`, and every other web code is `upstream-invalid`. The audit record carries the same word under `webFailure`. The wire vocabulary lives in [`src/protocol.ts`](src/protocol.ts) and is imported by the Runner-side provider, so neither side can drift.
+Both routes open a request the same way: read the body under the configured bound, check the version, verify the token. The decision route then answers access control's word. The search route validates `query` and `maxResults`, registers the organization's `web_search` resource once per process, asks access control, calls `ctx.web.search`, and maps a thrown `WebError` to a refusal: `WEB_ABORTED` is `cancelled`, the provider-selection and credential codes are `upstream-unavailable`, and every other web code is `upstream-invalid`. The audit record carries the same word under `webFailure`. The wire vocabulary lives in [`src/protocol.ts`](src/protocol.ts) and is imported by the Runner-side provider, so neither side can drift.
 
 ### Source map
 
 | File | Holds |
 |---|---|
-| [`src/index.ts`](src/index.ts) | The route: version, token, validation, decision, search, record, refusal mapping |
+| [`src/index.ts`](src/index.ts) | The routes: version, token, validation, decision, search, record, refusal mapping |
 | [`src/protocol.ts`](src/protocol.ts) | The path, the header, the version, the request fields, and the closed refusal set |
 
 </details>

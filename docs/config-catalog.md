@@ -3900,7 +3900,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/web/web-search-gateway-http/src/index.ts:53`](../packages/web/web-search-gateway-http/src/index.ts)
+Source: [`packages/web/web-search-gateway-http/src/index.ts:59`](../packages/web/web-search-gateway-http/src/index.ts)
 
 <a id="deepseek-aidsh-web-search-perplexity"></a>
 
@@ -3942,7 +3942,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/web/web-search-team/src/index.ts:42`](../packages/web/web-search-team/src/index.ts)
+Source: [`packages/web/web-search-team/src/index.ts:43`](../packages/web/web-search-team/src/index.ts)
 
 <a id="deepseek-aidsh-webhook-github"></a>
 

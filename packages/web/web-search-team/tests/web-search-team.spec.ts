@@ -10,7 +10,7 @@ import { once } from 'node:events'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import WebRuntime, { WebError } from '@deepseek-ai/dsh-web'
-import { WEB_SEARCH_PATH, WEB_SEARCH_PROTOCOL_VERSION } from '@deepseek-ai/dsh-web-search-gateway-http'
+import { WEB_ACCESS_PATH, WEB_SEARCH_PATH, WEB_SEARCH_PROTOCOL_VERSION } from '@deepseek-ai/dsh-web-search-gateway-http'
 import * as teamSearch from '@deepseek-ai/dsh-web-search-team'
 import { TEAM_PROVIDER_ID, readAnswer } from '@deepseek-ai/dsh-web-search-team'
 
@@ -222,6 +222,66 @@ describe('what it makes of an answer it cannot read', () => {
     await new Promise(resolve => setTimeout(resolve, 50))
     controller.abort()
     expect((await pending).code).toBe('WEB_ABORTED')
+    await ctx.fiber.dispose()
+  })
+})
+
+describe('whether this member may search at all', () => {
+  it('asks the decision route with the token and the version, and answers only an explicit yes as yes', async () => {
+    controlPlane(200, { allowed: true })
+    const ctx = await mount()
+    expect(await ctx.web.searchPermitted()).toBe(true)
+    const call = calls[0]!
+    expect(call.url).toBe(`${ORIGIN}${WEB_ACCESS_PATH}`)
+    expect(call.headers['authorization']).toBe(`Bearer ${TOKEN}`)
+    expect(call.body).toEqual({ protocolVersion: WEB_SEARCH_PROTOCOL_VERSION })
+    await ctx.fiber.dispose()
+    for (const body of [{ allowed: false }, { allowed: 'yes' }, {}, [1]]) {
+      controlPlane(200, body)
+      const again = await mount()
+      expect(await again.web.searchPermitted()).toBe(false)
+      await again.fiber.dispose()
+    }
+  })
+
+  it.each([
+    ['a refusal', 403, { error: 'web', reason: 'not-allowed' }],
+    ['a signed-out token', 401, { error: 'web', reason: 'unauthenticated' }],
+    ['an old protocol', 426, { error: 'web', reason: 'update-required' }],
+    ['a proxy error page', 502, '<html>bad gateway</html>'],
+  ])('answers no for %s', async (_label, status, body) => {
+    controlPlane(status, body)
+    const ctx = await mount()
+    expect(await ctx.web.searchPermitted()).toBe(false)
+    await ctx.fiber.dispose()
+  })
+
+  it('answers no for an answer it cannot read, and for a decision the caller cancelled', async () => {
+    controlPlane(200, '<html>not json</html>')
+    const ctx = await mount()
+    expect(await ctx.web.searchPermitted()).toBe(false)
+    await ctx.fiber.dispose()
+    controlPlane(200, { allowed: true }, 2_000)
+    const slow = await mount()
+    const controller = new AbortController()
+    const pending = slow.web.searchPermitted(controller.signal)
+    await new Promise(resolve => setTimeout(resolve, 50))
+    controller.abort()
+    expect(await pending).toBe(false)
+    await slow.fiber.dispose()
+  })
+
+  it('answers no for an unbound computer without asking, and for a Control Plane it cannot reach', async () => {
+    controlPlane(200, { allowed: true })
+    const unbound = await mount(new Error('not-bound'))
+    expect(await unbound.web.searchPermitted()).toBe(false)
+    expect(calls).toEqual([])
+    await unbound.fiber.dispose()
+    const ctx = new Context()
+    ctx.provide('teamAccountClient', { accessToken: () => Promise.resolve(TOKEN) })
+    await ctx.plugin(WebRuntime, { searchProvider: TEAM_PROVIDER_ID }).await()
+    await ctx.plugin(teamSearch, teamSearch.Config({ controlPlaneUrl: 'http://127.0.0.1:9' })).await()
+    expect(await ctx.web.searchPermitted()).toBe(false)
     await ctx.fiber.dispose()
   })
 })

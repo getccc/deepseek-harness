@@ -14,6 +14,8 @@ Team Runner 经控制面抵达公司模型，控制面持有公司凭据并按�
 
 **每次搜索都是一次决策和一条记录。** 权限目录新增 `web_search|web.search`；路由在首次服务某个组织时注册该组织唯一的 `web_search` 资源，每次调用都重新询问访问控制，并写一条 `web.search` 审计事件，附来源数、`no-grant` 原因或 `webFailure` 词。随附的控制台导航在资源管理下带有一个 `action` 类的"联网搜索"条目，管理员由此在角色编辑器里把权限给角色；覆盖整个目录的角色从一开始就持有它，因此既有部署的管理员升级后不会被锁在外面。
 
+**不可搜索的成员不会得到开关。** `POST /team/web/access` 不执行搜索而只回答同一个 `web.search` 决策，Team 提供方的 `permitted()` 询问它，`ctx.web.searchPermitted()` 从一次搜索将使用的提供方读取它。聊天组合的开关在 agent 创建的那一刻就扣留工具，把这个问题问一次，对被拒绝或无法抵达的答复不记录任何事件、也不注册 `/web` 命令，因此在对话打开时读取 `webAccess` Remote 状态的 composer 徽章永远不会出现；授权后来被撤销的成员在下次打开时被 Remote 拒绝。被许可的成员在 agent 自己的作用域上得到该命令，并按日志的值设置。
+
 **失败映射为成员能做的事。** Runner 提供方把每个拒绝转为工具渲染的 web 错误码：登录（`WEB_PROVIDER_CREDENTIAL_MISSING`）、找管理员（指名拒绝的 `WEB_PROVIDER_ERROR`）、稍后重试（`WEB_PROVIDER_UNAVAILABLE`）、更新（`WEB_PROVIDER_ERROR`）或无事可做（`WEB_ABORTED`）。可达性失败、代理错误页与无法读取的答复从成员的座位看是同一个事实，共用 `WEB_PROVIDER_UNAVAILABLE`。
 
 ## 曾考虑的替代方案

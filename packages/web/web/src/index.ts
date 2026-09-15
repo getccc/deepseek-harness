@@ -129,6 +129,32 @@ export class WebRuntime extends Service {
   }
 
   /**
+   * Whether search is permitted to the current member by the provider a
+   * search would use: the configured provider, or the single registered one.
+   * Selection here ignores `available()`, because a missing credential is a
+   * search-time failure a member can fix, while a governance refusal is a
+   * reason not to offer search at all. No registered provider answers false;
+   * an ambiguous unconfigured selection answers true and leaves the refusal
+   * to search time.
+   * @param signal - cancellation of the provider's decision request.
+   * @returns whether the deployment permits search right now.
+   */
+  async searchPermitted(signal?: AbortSignal): Promise<boolean> {
+    let provider: WebSearchProvider
+    if (this.searchProviderId !== undefined) {
+      const configured = this.searchProviders.get(this.searchProviderId)
+      if (configured === undefined) return false
+      provider = configured
+    } else {
+      const [single, ...more] = this.searchProviders.values()
+      if (single === undefined) return false
+      if (more.length > 0) return true
+      provider = single
+    }
+    return provider.permitted === undefined ? true : await provider.permitted(signal)
+  }
+
+  /**
    * Run one search through the selected provider. Resolves the provider at call
    * time with the selection rules above; throws {@link WebError} when the
    * capability cannot run. The seam enforces `request.maxResults` on the result:

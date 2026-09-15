@@ -105,6 +105,17 @@ export interface WebSearchProvider {
   available(): boolean
   /** Run one search; honor `signal` for cancellation. */
   search(request: WebSearchRequest, signal?: AbortSignal): Promise<WebSearchResult>
+  /**
+   * Whether the deployment behind this provider lets the current member
+   * search at all — a governance decision, not a usability check, so it may
+   * ask the network. Absent means every member may search. A consumer that
+   * offers search as a per-session choice reads it once per session to
+   * decide whether to offer the choice; a search still fails on its own if
+   * the answer changes in between.
+   * @param signal - cancellation of the decision request.
+   * @returns whether search is permitted right now.
+   */
+  permitted?(signal?: AbortSignal): Promise<boolean>
 }
 
 /**

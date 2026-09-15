@@ -21,6 +21,7 @@ import HttpServer from '@deepseek-ai/dsh-host-webserver'
 import WebRuntime, { WebError, type WebSearchProvider, type WebSearchRequest, type WebSearchResult } from '@deepseek-ai/dsh-web'
 import * as gateway from '@deepseek-ai/dsh-web-search-gateway-http'
 import {
+  WEB_ACCESS_PATH,
   WEB_SEARCH_ACTION,
   WEB_SEARCH_PATH,
   WEB_SEARCH_PROTOCOL_VERSION,
@@ -126,9 +127,9 @@ const NO_TOKEN = 'none'
  * POST one body to the search route. The token is a separate argument rather
  * than a defaulted one, so a test about sending none cannot silently send one.
  */
-async function post(body: unknown, token: string | null = null, method = 'POST'): Promise<Response> {
+async function post(body: unknown, token: string | null = null, method = 'POST', path = WEB_SEARCH_PATH): Promise<Response> {
   const bearerToken = token ?? accessToken
-  return fetch(`${origin}${WEB_SEARCH_PATH}`, {
+  return fetch(`${origin}${path}`, {
     method,
     headers: {
       'content-type': 'application/json',
@@ -237,6 +238,27 @@ describe('a granted member searches through the Control Plane', () => {
     const response = await post(undefined, null, 'GET')
     expect(response.status).toBe(405)
     expect(await response.json()).toEqual({ error: 'method not allowed' })
+  })
+})
+
+describe('the decision route', () => {
+  it('answers the member\'s web.search decision without recording anything', async () => {
+    let response = await post({ protocolVersion: WEB_SEARCH_PROTOCOL_VERSION }, null, 'POST', WEB_ACCESS_PATH)
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ allowed: false })
+    // The governed resource exists from the first decision, so a grant can cover it.
+    expect(await access.listResources(orgId, WEB_SEARCH_RESOURCE_TYPE)).toHaveLength(1)
+    await grant()
+    response = await post({ protocolVersion: WEB_SEARCH_PROTOCOL_VERSION }, null, 'POST', WEB_ACCESS_PATH)
+    expect(await response.json()).toEqual({ allowed: true })
+    expect(await audit.query({ orgId, action: 'web.search' })).toEqual([])
+    expect(backend.requests).toEqual([])
+  })
+
+  it('decides the version and the token the same way the search route does', async () => {
+    expect((await post({ protocolVersion: 0 }, NO_TOKEN, 'POST', WEB_ACCESS_PATH)).status).toBe(426)
+    expect((await post({ protocolVersion: WEB_SEARCH_PROTOCOL_VERSION }, NO_TOKEN, 'POST', WEB_ACCESS_PATH)).status).toBe(401)
+    expect((await post(undefined, null, 'GET', WEB_ACCESS_PATH)).status).toBe(405)
   })
 })
 

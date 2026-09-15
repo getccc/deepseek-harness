@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-web-search-gateway-http` 提供 Team Runner 用公司凭据搜索网页时调用的唯一路由：`POST /team/web/search`。主体从已校验的设备访问令牌中恢复，绝不从请求体读取；搜索经控制面自身的 `ctx.web` 执行，搜索提供方及其凭据都组合在那里，因此请求没有位置指名提供方、地址或密钥。每次调用都由组织 `web_search` 资源上的 `web.search` 决定，并记入审计日志。把它挂在控制面中、它所代理的 web 服务旁。
+`dsh-web-search-gateway-http` 提供 Team Runner 为公司网页搜索调用的两条路由：`POST /team/web/search` 执行一次搜索，`POST /team/web/access` 回答该成员是否可以搜索。主体从已校验的设备访问令牌中恢复，绝不从请求体读取；搜索经控制面自身的 `ctx.web` 执行，提供方及其凭据都组合在那里，因此请求无法指名提供方、地址或密钥。每次搜索都由组织 `web_search` 资源上的 `web.search` 决定，并记入审计日志。
 
 ## 目录
 
@@ -49,7 +49,7 @@ kind: "package-reference"
 
 ### 路由
 
-`POST /team/web/search` 接受 `protocolVersion`、`query` 和可选的 `maxResults`，并原样回答 web 服务的结果：可选的 `content`、`sources` 与 `truncated`。请求体没有组织、主体、设备、提供方、地址或凭据的字段；Runner 说出它要什么，控制面解析并授权其余一切。
+`POST /team/web/access` 只接受 `protocolVersion`，回答 `{ allowed }`，即该成员的 `web.search` 决策，因此 Runner 只向可以使用的成员提供开关；决策本身不记录，成员随后执行的搜索才记录。`POST /team/web/search` 接受 `protocolVersion`、`query` 和可选的 `maxResults`，并原样回答 web 服务的结果：可选的 `content`、`sources` 与 `truncated`。请求体没有组织、主体、设备、提供方、地址或凭据的字段；Runner 说出它要什么，控制面解析并授权其余一切。
 
 ### 版本最先决定
 
@@ -84,13 +84,13 @@ kind: "package-reference"
 <details>
 <summary>实现细节——点击展开</summary>
 
-路由是 web 服务器上的一个处理器。它在配置的上限内读取请求体、检查版本、校验令牌、验证 `query` 与 `maxResults`、每个进程为组织注册一次 `web_search` 资源、询问访问控制、调用 `ctx.web.search`，并把抛出的 `WebError` 映射为拒绝：`WEB_ABORTED` 为 `cancelled`，提供方选择与凭据类的代码为 `upstream-unavailable`，其余 web 代码为 `upstream-invalid`。审计记录在 `webFailure` 下携带同一个词。线上词汇位于 [`src/protocol.ts`](src/protocol.ts)，由 Runner 侧提供方导入，因此两侧不会漂移。
+两条路由以同样的方式打开请求：在配置的上限内读取请求体、检查版本、校验令牌。决策路由随后回答访问控制的结论。搜索路由验证 `query` 与 `maxResults`、每个进程为组织注册一次 `web_search` 资源、询问访问控制、调用 `ctx.web.search`，并把抛出的 `WebError` 映射为拒绝：`WEB_ABORTED` 为 `cancelled`，提供方选择与凭据类的代码为 `upstream-unavailable`，其余 web 代码为 `upstream-invalid`。审计记录在 `webFailure` 下携带同一个词。线上词汇位于 [`src/protocol.ts`](src/protocol.ts)，由 Runner 侧提供方导入，因此两侧不会漂移。
 
 ### 源码地图
 
 | 文件 | 内容 |
 |---|---|
-| [`src/index.ts`](src/index.ts) | 路由：版本、令牌、验证、决策、搜索、记录、拒绝映射 |
+| [`src/index.ts`](src/index.ts) | 两条路由：版本、令牌、验证、决策、搜索、记录、拒绝映射 |
 | [`src/protocol.ts`](src/protocol.ts) | 路径、头、版本、请求字段与封闭的拒绝集合 |
 
 </details>
