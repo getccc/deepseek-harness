@@ -118,6 +118,14 @@ describe('dsh-team bundle', () => {
     expect(patch.find(row => row.id === 'llm-deepseek')?.inject).toEqual(['llmHttpTransport'])
   })
 
+  it('retries a stream the upstream model closed without [DONE], beside the default transient codes', () => {
+    const policy = patchRows().find(row => row.id === 'llm-deepseek')?.config?.['retryPolicy']
+    expect(policy).toEqual({
+      mode: 'normal',
+      retryableCodes: ['EMPTY_RESPONSE', 'RATE_LIMIT', 'SERVER', 'TIMEOUT', 'TRANSPORT', 'STREAM_CLOSED'],
+    })
+  })
+
   it('leaves the company and the version unnamed, so a Runner nobody configured does not bind', () => {
     // A Runner that guessed its Control Plane would send a public key to a
     // stranger, and one that invented a version would put a wrong fact in

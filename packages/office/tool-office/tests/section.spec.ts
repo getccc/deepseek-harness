@@ -21,7 +21,38 @@ describe('renderOfficeSection', () => {
     expect(excel).toMatch(/real cell values and formulas/)
     for (const text of [word, excel]) {
       expect(text).toMatch(/export the finished file under the working directory, then declare it with the present tool/)
+      expect(text).not.toMatch(/skill tool/)
     }
+  })
+
+  it('sends a Word or Excel deliverable to its configured skill before the first univer call', () => {
+    const route = { wordSkill: 'office-word', excelSkill: 'office-excel' }
+    const word = renderOfficeSection({ version: 1, kind: 'word' }, route)
+    expect(word).toMatch(/Load the skill named office-word with the skill tool before the first univer call/)
+    expect(word).toMatch(/and follow its verified build steps\./)
+    expect(word).not.toMatch(/office-excel/)
+    const excel = renderOfficeSection({ version: 1, kind: 'excel' }, route)
+    expect(excel).toMatch(/Load the skill named office-excel with the skill tool before the first univer call/)
+    expect(excel).not.toMatch(/office-word/)
+    // A document skill never reaches a deck.
+    expect(renderOfficeSection({ version: 1, kind: 'ppt' }, route)).not.toMatch(/office-(word|excel)/)
+  })
+
+  it('asks every univer-built kind for a short build that stops on a repeated error', () => {
+    const routes = [{}, { pptSkill: 'amec-ppt' }, { welinkinTemplatePath: '/opt/welinkin/welinkin-ppt.pptx' }]
+    const texts = [
+      renderOfficeSection({ version: 1, kind: 'word' }),
+      renderOfficeSection({ version: 1, kind: 'excel' }, { excelSkill: 'office-excel' }),
+      ...routes.map(route => renderOfficeSection({ version: 1, kind: 'ppt' }, route)),
+    ]
+    for (const text of texts) {
+      expect(text).toMatch(/write a Unit's content in one univer_execute script instead of one edit per call/)
+      expect(text).toMatch(/issue independent calls together in one step/)
+      expect(text).toMatch(/rather than showing a whole class/)
+      expect(text).toMatch(/fails with the same error twice, stop and report that error instead of rebuilding the file another way\./)
+      expect(text).toMatch(/only the present call does\.$/)
+    }
+    expect(renderOfficeSection({ version: 1, kind: 'chart' })).not.toMatch(/univer_execute/)
   })
 
   it('builds every deck from the configured template, with no second PowerPoint kind to pick', () => {
@@ -120,6 +151,16 @@ describe('apply', () => {
     apply(ctx, {})
     const events = [{ type: 'office/kind', data: { version: 1, kind: 'ppt' } }] as unknown as SessionEvent[]
     expect(sections[0]!.text({ agent: { session: { snapshotEvents: () => events } } })).toMatch(/PowerPoint template skill/)
+  })
+
+  it('names the configured document and workbook skills', () => {
+    const { ctx, sections } = fakeCtx()
+    apply(ctx, { wordSkill: 'office-word', excelSkill: 'office-excel' })
+    const text = (kind: 'word' | 'excel') => sections[0]!.text({
+      agent: { session: { snapshotEvents: () => [{ type: 'office/kind', data: { version: 1, kind } }] as unknown as SessionEvent[] } },
+    })
+    expect(text('word')).toMatch(/Load the skill named office-word/)
+    expect(text('excel')).toMatch(/Load the skill named office-excel/)
   })
 
   it('names the configured skill for every deck', () => {
