@@ -11,11 +11,14 @@ import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-web'
 import { applyWebSearchTool, WEB_SEARCH_MAX_QUERIES, WEB_SEARCH_MAX_RESULTS } from './search.ts'
 import { applyWebFetchTool } from './fetch.ts'
+import { installSessionSwitch } from './access.ts'
 
 export { WEB_SEARCH_MAX_QUERIES, WEB_SEARCH_MAX_RESULTS, applyWebSearchTool, formatSearchOutput, presentSearchCall, presentSearchResult, searchMetaFromValue, searchMetaFromResult } from './search.ts'
 export type { WebSearchMeta } from './search.ts'
 export { applyWebFetchTool, formatFetchOutput, parseFetchArgs, presentFetchCall, presentFetchResult, fetchMetaFromValue, fetchMetaFromResult } from './fetch.ts'
 export type { WebFetchMeta } from './fetch.ts'
+export { WEB_ACCESS_COMMAND, webAccessProjectionDefinition } from './access.ts'
+export type { WebAccessProjection } from './types.ts'
 
 /** Cordis plugin name used by loader diagnostics. */
 export const name = 'tool-web'
@@ -49,6 +52,14 @@ export interface Config {
   searchTimeoutMs?: number
   /** Cap on source characters converted and complete `web_fetch` output characters. Defaults to 200000. */
   fetchMaxOutputChars?: number
+  /**
+   * Offer a per-session web switch instead of always-on tools. `'off'` starts
+   * every new session with the enabled tools withheld and `'on'` starts it
+   * with them offered; the `/web` command flips one session, the `webAccess`
+   * projection reports it, and the log's `web/access` events own the state.
+   * Absent: the enabled tools are always offered and no switch exists.
+   */
+  sessionSwitch?: 'on' | 'off'
 }
 
 export const Config: z<Config> = z.object({
@@ -59,10 +70,11 @@ export const Config: z<Config> = z.object({
   fetchTimeoutMs: z.number().default(DEFAULT_WEB_TOOL_TIMEOUT_MS),
   searchTimeoutMs: z.number().default(DEFAULT_WEB_TOOL_TIMEOUT_MS),
   fetchMaxOutputChars: z.number().default(DEFAULT_FETCH_MAX_OUTPUT_CHARS),
+  sessionSwitch: z.union(['on', 'off'] as const),
 })
 
-/** Complete config after schemastery applies every field default. */
-type ResolvedConfig = Required<Config>
+/** Complete config after schemastery applies every field default; the switch has none. */
+type ResolvedConfig = Required<Omit<Config, 'sessionSwitch'>> & Pick<Config, 'sessionSwitch'>
 
 /** Configured count, timeout, and character caps must be positive integers. */
 function assertPositiveInteger(name: string, value: number): void {
@@ -78,7 +90,8 @@ function assertPositiveInteger(name: string, value: number): void {
  * here and attached to the tool as `ToolDefinition.timeoutMs` for
  * `@deepseek-ai/dsh-tool-call-timeout-policy` to enforce. The tools' disposers are
  * fiber-scoped (the effect-based registries clean up on dispose), so no manual
- * teardown is needed.
+ * teardown is needed. A `sessionSwitch` mounts the per-session switch over the
+ * enabled tools; a switch with no enabled tool fails at mount.
  */
 export function apply(ctx: Context, config: Config): void {
   // schemastery (Config) has already filled every defaulted field.
@@ -92,4 +105,8 @@ export function apply(ctx: Context, config: Config): void {
     applyWebSearchTool(ctx, resolved.searchMaxResults, resolved.searchMaxQueries, resolved.searchTimeoutMs, resolved.fetch)
   }
   if (resolved.fetch) applyWebFetchTool(ctx, resolved.fetchTimeoutMs, resolved.fetchMaxOutputChars)
+  if (resolved.sessionSwitch === undefined) return
+  const names = [...resolved.search ? ['web_search'] : [], ...resolved.fetch ? ['web_fetch'] : []]
+  if (names.length === 0) throw new Error('tool-web: sessionSwitch needs search or fetch enabled; there is no tool to switch')
+  installSessionSwitch(ctx, resolved.sessionSwitch === 'on', names)
 }

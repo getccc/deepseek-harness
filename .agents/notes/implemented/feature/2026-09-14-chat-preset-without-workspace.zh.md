@@ -36,4 +36,4 @@ host 里有三个事实挡在前面。`session.create` 没有 Workspace 或 cwd 
 
 ## 后果
 
-成员一键开始聊天，首个 token 只等模型：请求只携带 persona，没有工具 schema。聊天对话位于最近列表，绝不在 Workspace 里；工作对话仍然一键可达。没有 `chatDefault` 的部署里不带位置的创建会连同可以服务它的 preset 一起失败，需要工作区的 `chatDefault` 或不需要工作区的用户默认值会在它将组合的第一个会话处失败。之前把 `header.cwd` 缺失等同于"未找到"的每个读取方都必须为无 cwd 会话陈述自己的行为；ACP 会话列表保留其 cwd 过滤，因为 ACP 会话必须有 cwd。web 快照通道的 scaffold 曾拒绝无 cwd 的回放会话，现在接受，`snapshots/web/chat-preset` 固定聊天组合的提示词、工具 schema 与渲染。客户端视图存储键改为 `dsh.workspace.view.v6`，因为再水合是整体替换，旧文档缺少最近过滤器。
+成员一键开始聊天，首个 token 只等模型：在成员开启联网之前请求只携带 persona，没有工具 schema；开启之后恰好携带两个网页工具的 schema 及其指引，每次搜索在随附的 DeepSeek 路由上都是一次完整的辅助模型请求。聊天对话位于最近列表，绝不在 Workspace 里；工作对话仍然一键可达。没有 `chatDefault` 的部署里不带位置的创建会连同可以服务它的 preset 一起失败，需要工作区的 `chatDefault` 或不需要工作区的用户默认值会在它将组合的第一个会话处失败。之前把 `header.cwd` 缺失等同于"未找到"的每个读取方都必须为无 cwd 会话陈述自己的行为；ACP 会话列表保留其 cwd 过滤，因为 ACP 会话必须有 cwd。web 快照通道的 scaffold 曾拒绝无 cwd 的回放会话，现在接受，`snapshots/web/chat-preset` 以开关开启的状态固定聊天组合的提示词、工具 schema 与渲染。DeepSeek 搜索 provider 用成员自己的 `DEEPSEEK_API_KEY` 调用 `api.deepseek.com`，而不是控制面的公司 key，所以没有个人 key 的 Team 成员会看到结构化的 provider 错误，直到搜索像模型调用一样被代理；那是一项独立的改动。客户端视图存储键改为 `dsh.workspace.view.v6`，因为再水合是整体替换，旧文档缺少最近过滤器。

@@ -35,8 +35,9 @@ function systemPromptText(session: Session): string | undefined {
 
 /**
  * The chat preset: a session created without a workspace, whose request
- * carries the persona and no tool schema, and which the sidebar lists among
- * recent conversations rather than under a Workspace.
+ * carries the persona and, once the member turns web access on, exactly the
+ * two web tool schemas, and which the sidebar lists among recent
+ * conversations rather than under a Workspace.
  */
 describe('chat agent preset', () => {
   let scaffold: WebScaffold
@@ -55,6 +56,14 @@ describe('chat agent preset', () => {
       agentOptions: { provider: 'deepseek-official', model: 'deepseek-v4-flash' },
       setup: agentCtx => scaffold.ctx.agentPresets.mount(agentCtx, 'chat').then(() => undefined),
     })
+    // Off by default: the preset's switch logged its initial value when the
+    // agent was created and withholds every tool. Turning it on is what the
+    // composer's 联网 chip sends, so the pinned request is the switched-on one.
+    expect(agentHandle.agent.session.snapshotEvents().filter(event => event.type === 'web/access').map(event => event.data))
+      .toEqual([{ enabled: false }])
+    expect(scaffold.ctx.tools.schemas(agentHandle.agent)).toEqual([])
+    const flipped = await scaffold.ctx.commands.execute(agentHandle.agent, '/web on', [], new AbortController().signal)
+    expect(flipped?.result).toEqual({ kind: 'success', text: 'Web access on: web search and page fetching are offered from the next step.' })
     agentHandle.agent.followup(createUserMessage({
       content: [{ type: 'text', text: PROMPT }],
       source: { kind: 'user' },
@@ -72,7 +81,7 @@ describe('chat agent preset', () => {
     if (failures.length > 1) throw new AggregateError(failures, 'chat preset smoke teardown failed')
   })
 
-  it('sends the persona with no tool schema, no cwd, and no workspace-bound service', async () => {
+  it('sends the persona with the two web tool schemas only, no cwd, and no workspace-bound service', async () => {
     const requestHeader = agentHandle.agent.session.requestHeader()
     if (requestHeader === undefined) throw new Error('the chat agent issued no model request')
     const systemPrompt = systemPromptText(agentHandle.agent.session)
@@ -80,16 +89,19 @@ describe('chat agent preset', () => {
     expect(agentHandle.agent.session.header.cwd).toBeUndefined()
     expect(scaffold.ctx.agentPresets.serviceFor(agentHandle.agent, 'fs')).toBeUndefined()
     expect(scaffold.ctx.agentPresets.serviceFor(agentHandle.agent, 'compaction')).toBeDefined()
-    // The host-plane catalog is masked as well: nothing reaches this agent.
-    expect(scaffold.ctx.tools.schemas(agentHandle.agent)).toEqual([])
+    // The host-plane catalog is masked; the preset's own web rows are not.
+    expect(scaffold.ctx.tools.schemas(agentHandle.agent).map(schema => schema.name)).toEqual(['web_search', 'web_fetch'])
 
     // The assembled prompt is pinned, normalized, in system-prompt.expected.md;
     // here only the facts the preset owns: the chat persona, no working
-    // directory, no tool schema, and no goal command.
+    // directory, the web guidance, and no goal command.
     expect(systemPrompt).toContain('You are chatting without a workspace')
     expect(systemPrompt).not.toContain('working directory is')
-    expect(requestHeader.tools ?? []).toEqual([])
+    expect(systemPrompt).toContain('Use the web_search tool')
+    // Sorted: the replayed header carries the schemas in the fixture's normalized order.
+    expect((requestHeader.tools ?? []).map(tool => tool.name).sort()).toEqual(['web_fetch', 'web_search'])
     expect(scaffold.ctx.commands.find(agentHandle.agent, 'goal')).toBeUndefined()
+    expect(scaffold.ctx.commands.find(agentHandle.agent, 'web')).toBeDefined()
   })
 
   it.skipIf(MODE === 'record')('lists the chat among recent conversations and renders its reply', async () => {
@@ -105,6 +117,8 @@ describe('chat agent preset', () => {
     await recent.waitFor({ timeout: 15_000 })
     await recent.getByRole('treeitem').first().click()
     await page.getByText('CHAT_PRESET_REQUEST_OK', { exact: true }).waitFor({ timeout: 15_000 })
+    // The composer's web switch reads the projected on state the /web command logged.
+    await page.getByRole('button', { name: 'Web access on, press to turn off' }).waitFor({ timeout: 15_000 })
 
     const snapshot = await captureStableAria(page, '[class*="centerCol"]', scaffold.workspaceCwd)
     await compareOrRefreshGolden(UI_EXPECTED, snapshot, MODE)

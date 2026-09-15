@@ -727,7 +727,7 @@ class ToolLayer implements ScopeLayer {
       && this.mode === undefined
   }
 
-  /** Whether every compiled restriction in this layer admits a global tool name. */
+  /** Whether every compiled restriction in this layer admits an inherited tool name. */
   admits(name: string): boolean {
     for (const filter of this.restrictions.values()) {
       if ((filter.allow !== undefined && !filter.allow.has(name))
@@ -1052,9 +1052,11 @@ export class ToolRuntime extends Service {
   }
 
   /**
-   * Restrict global tools for the calling agent scope. Empty filters, unknown
-   * names, scope-local names, and reserved transport names fail. Restrictions
-   * intersect; scoped registrations remain visible.
+   * Restrict the tools the calling agent scope inherits. Empty filters,
+   * unknown names, scope-local names, and reserved transport names fail.
+   * Restrictions intersect; the scope's own registrations stay visible to it
+   * and to every scope nested inside it, because a restriction filters what
+   * its scope inherits and never what that scope contributes.
    * @param filter - global-tool mask: `allow` (keep only) and/or `deny` (remove).
    * @returns the exact disposer that lifts this restriction.
    */
@@ -1119,23 +1121,22 @@ export class ToolRuntime extends Service {
 
   /**
    * Resolve every registry fact one scope needs in one layer traversal. The
-   * visible map applies restrictions to the INHERITED surface, then the
-   * scope's own registrations and the reserved presentation transport; the
-   * other sets retain the pre-restriction facts needed by restriction and
-   * prompt-order validation.
+   * visible map applies restrictions to the contributions each layer
+   * inherits, then the reserved presentation transport; the other sets
+   * retain the pre-restriction facts needed by restriction and prompt-order
+   * validation.
    *
-   * A restriction filters what a scope inherits — the global layer and every
-   * ancestor layer on its chain — and never what its OWN layer registers.
-   * That exemption is what a per-child capability filter has to keep intact:
-   * the delegation runtime registers a child's structured-output tool into the
-   * child's own layer, and a filter naming the capabilities the child may use
-   * must not strip the machinery it answers through.
-   *
-   * Reading the exempt set as "the global layer" instead of "not mine" held
-   * only while every model-facing tool sat in the host composition. Once
-   * presets moved them onto the agent plane they became an ANCESTOR
-   * contribution, so a child's filter silently stopped constraining anything
-   * it was given.
+   * A restriction filters what ITS scope inherits — the global layer and
+   * every ancestor layer on its chain — and never what that scope's own
+   * layer registers, from any viewpoint. So a name contributed by one layer
+   * is masked only by restrictions on the layers nearer to the viewer than
+   * its contributor: a preset that masks every host tool with `allow: []`
+   * still shows the tools its own rows register to the agents joined under
+   * it, and a delegated child's filter naming the capabilities it may use
+   * never strips the structured-output tool the delegation runtime registers
+   * into the child's own layer, while that same filter does constrain the
+   * tools the child inherits from a preset (an ANCESTOR contribution once
+   * presets moved model-facing tools onto the agent plane).
    * @param scope - the viewing scope (the agent), or undefined for the global view.
    * @returns the complete derived view for that scope.
    */
@@ -1146,30 +1147,27 @@ export class ToolRuntime extends Service {
     // scope owns rather than inherits, and it is absent until the scope
     // contributes something.
     const own = this.layers.peek(scope)
-    // Inherited surface, nearest ancestor last: a nearer scope's same-name
-    // entry shadows a farther one, and the global layer is the farthest.
-    const inherited = new Map<string, ToolDefinition>(this.layers.global.tools.entries())
-    for (const layer of layers) {
-      if (layer === own) continue
-      for (const [name, definition] of layer.tools.entries()) inherited.set(name, definition)
+    // Every name with its nearest contributor, the global layer at chain
+    // index -1: a nearer scope's same-name entry shadows a farther one.
+    const contributions = new Map<string, { definition: ToolDefinition; from: number }>()
+    const restrictableNames = new Set<string>()
+    for (const [name, definition] of this.layers.global.tools.entries()) {
+      restrictableNames.add(name)
+      contributions.set(name, { definition, from: -1 })
     }
+    layers.forEach((layer, from) => {
+      for (const [name, definition] of layer.tools.entries()) {
+        if (layer !== own) restrictableNames.add(name)
+        contributions.set(name, { definition, from })
+      }
+    })
     const visible = new Map<string, ToolDefinition>()
     const knownNames = new Set<string>()
-    const restrictableNames = new Set<string>()
-    for (const [name, definition] of inherited) {
+    for (const [name, { definition, from }] of contributions) {
       knownNames.add(name)
-      restrictableNames.add(name)
-      // Restrictions intersect across the whole chain: any scope on it may
-      // mask an inherited name for everything nested inside it.
-      if (layers.every(layer => layer.admits(name))) visible.set(name, definition)
-    }
-    // The scope's own registrations last, shadowing an inherited name and
-    // outside the filter above.
-    if (own !== undefined) {
-      for (const [name, definition] of own.tools.entries()) {
-        knownNames.add(name)
-        visible.set(name, definition)
-      }
+      // Restrictions intersect along the chain below the contributor; the
+      // contributor's own restrictions and its ancestors' never apply to it.
+      if (layers.slice(from + 1).every(layer => layer.admits(name))) visible.set(name, definition)
     }
     // Presentation infrastructure is resolved last and outside capability
     // filtering. Registration rejects this reserved name, so the insertion is

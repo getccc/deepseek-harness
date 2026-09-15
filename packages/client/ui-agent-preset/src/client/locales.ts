@@ -46,7 +46,7 @@ export const en: Record<AgentPresetSettingsKey, string> = {
     'Built for creating custom agent presets, with all Standard mode capabilities plus runtime inspection, plugin experiments, and preset-authoring guidance.',
   presetChatName: 'Chat mode',
   presetChatDescription:
-    'Fast conversation without a workspace or tools: only the assistant persona and context compaction, so the first token waits for no directory scan or tool catalog.',
+    'Fast conversation without a workspace: only the assistant persona and context compaction, so the first token waits for no directory scan or tool catalog; web search is a per-session switch, off by default.',
   duplicate: 'Duplicate',
   duplicateUnavailable: 'This deployment has no writable preset directory',
   delete: 'Delete',
@@ -108,7 +108,7 @@ export const zh: Record<AgentPresetSettingsKey, string> = {
   presetCordisName: '创造模式',
   presetCordisDescription: '用于创建自定义 Agent preset：具备标准模式的全部能力，并提供运行时检查、插件实验和 preset 创作指导。',
   presetChatName: '聊天模式',
-  presetChatDescription: '无工作区、无工具的快速对话：只有小微的身份提示和上下文压缩，首个 token 不等待任何目录扫描或工具目录。',
+  presetChatDescription: '无工作区的快速对话：只有小微的身份提示和上下文压缩，首个 token 不等待任何目录扫描或工具目录；联网检索按会话开关，默认关闭。',
   duplicate: '复制',
   duplicateUnavailable: '此部署未配置可写的预设目录',
   delete: '删除',

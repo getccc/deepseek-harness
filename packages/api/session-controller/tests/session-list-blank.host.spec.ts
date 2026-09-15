@@ -93,6 +93,7 @@ describe('summary blank = conversation not started', () => {
     session.append('sandbox/mode', { mode: 'workspace-write' })
     session.append('approval/policy', { policy: 'ask' })
     session.append('agent-preset/selected', { agentPreset: 'standard' })
+    session.append('web/access', { enabled: false })
     expect(await listPristine(remote, session.id)).toBe(true)
     expect(await listBlank(remote, session.id)).toBe(true)
   })

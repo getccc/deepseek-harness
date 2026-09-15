@@ -3321,7 +3321,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
       },
       {
         signature: 'restrict(filter: ToolRestriction): () => void',
-        description: 'Restrict global tools for the calling agent scope. Empty filters, unknown names, scope-local names, and reserved transport names fail. Restrictions intersect; scoped registrations remain visible.',
+        description: 'Restrict the tools the calling agent scope inherits. Empty filters, unknown names, scope-local names, and reserved transport names fail. Restrictions intersect; the scope\'s own registrations stay visible to it and to every scope nested inside it, because a restriction filters what its scope inherits and never what that scope contributes.',
         parameters: [{ name: 'filter', description: 'global-tool mask: `allow` (keep only) and/or `deny` (remove).' }],
         returns: 'the exact disposer that lifts this restriction.',
       },

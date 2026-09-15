@@ -59,7 +59,7 @@ dsh --profile web --no-open --port 8080
 
 ### 按会话的 agent 设置
 
-每个浏览器会话都从随发行版交付的 preset（默认 `standard`，不带工作区开始的对话则用无工具的 `chat` preset）组合自己的 agent（智能体），而不是共享一套进程级工具集。你可以更改默认 preset，或在 `$DSH_HOME/.agent-presets` 下添加自己的 preset。
+每个浏览器会话都从随发行版交付的 preset（默认 `standard`，不带工作区开始的对话则用 `chat` preset，其唯一的工具是置于 composer 联网开关之后的网页检索与抓取）组合自己的 agent（智能体），而不是共享一套进程级工具集。你可以更改默认 preset，或在 `$DSH_HOME/.agent-presets` 下添加自己的 preset。
 
 -----
 

@@ -1,0 +1,70 @@
+/* Composer web switch: the sibling knowledge and office chips' chrome, tinted
+   while this conversation has web access on. */
+
+.wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  height: 28px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 24px;
+  outline: none;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.trigger:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.trigger:focus-visible {
+  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
+}
+
+.trigger:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Web access on is the exception the member chose, so it carries the business
+   tint the composer's default controls never do. */
+.triggerOn {
+  background: var(--dsw-alias-state-business-tertiary);
+  color: var(--dsw-alias-state-business-primary);
+}
+
+.icon {
+  display: inline-flex;
+  flex: none;
+}
+
+.label {
+  white-space: nowrap;
+}
+
+/* Narrow composer: the chip collapses to its icon at the sibling chips' 460px
+   cut, against the same anonymous container (ui-conversation InputBar .row).
+   The tint still marks the on state, and the aria-label still names it. */
+@container (max-width: 460px) {
+  .label {
+    display: none;
+  }
+}
+
+.error {
+  color: var(--dsw-alias-state-error-primary);
+  font-size: 12px;
+  line-height: 18px;
+}

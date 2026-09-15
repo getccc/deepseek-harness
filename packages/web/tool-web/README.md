@@ -50,6 +50,7 @@ Load the web service, at least one backend, and this package; both tools registe
 | `fetchTimeoutMs` | `30000` | Cooperative tool-call timeout budget (ms) for `web_fetch` |
 | `searchTimeoutMs` | `30000` | Cooperative tool-call timeout budget (ms) for `web_search` |
 | `fetchMaxOutputChars` | `200000` | Cap on source characters converted synchronously and on one complete `web_fetch` output |
+| `sessionSwitch` | absent | `on` or `off` offers a per-session web switch that starts every new session in that state; absent keeps the enabled tools always on |
 
 The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-tool-web) is the exhaustive source for every accepted field and its JSDoc. `searchMaxQueries` bounds the accepted array before exact-string deduplication and provider fan-out; validation rejects an oversized array before any search starts. The timeout budgets attach to each tool definition and are enforced by [`@deepseek-ai/dsh-tool-call-timeout-policy`](../../guard/timeout-policy/README.md); the model-facing schemas expose no timeout argument.
 
@@ -70,6 +71,10 @@ Call `web_fetch` with one `url`. HTML bodies are filtered and rendered to markdo
 ```text
 web_fetch({ url: 'https://example.com' })
 ```
+
+### Per-session switch
+
+With `sessionSwitch: on` or `sessionSwitch: off`, the enabled tools register as usual but each session decides whether its agent is offered them: the `/web` command (`/web on`, `/web off`, or `/web` alone to flip) logs a `web/access` event, the `webAccess` projection reports `{ enabled }` to clients such as the [composer chip](../../client/ui-web-access/README.md), and the row withholds `web_search` and `web_fetch` from an agent whose session has the switch off, guidance included. The log owns the state: when the row first meets an agent whose log records no `web/access` event, it logs the configured initial value, so a resumed or forked session is offered exactly what its log says even after the deployment changes the default. Sessions of a composition without the switch fold `{ enabled: null }`, which a client reads as no switch. Mounted inside an agent preset, the switch governs the agents joined to that preset; the shipped `chat` preset mounts it off. A switch with neither tool enabled fails at mount.
 
 ### Stable registration
 
@@ -103,6 +108,8 @@ The package is built on one separation and one registration rule:
 | [`src/index.ts`](src/index.ts) | Plugin entry: config schema, enablement, timeout budgets, tool registration |
 | [`src/search.ts`](src/search.ts) | The `web_search` tool: argument validation, query fan-out, merge, formatting, presentation meta |
 | [`src/fetch.ts`](src/fetch.ts) | The `web_fetch` tool: HTML→markdown conversion, output caps, formatting, presentation meta |
+| [`src/access.ts`](src/access.ts) | The per-session switch: the `/web` command, the `webAccess` projection, and the live per-agent restriction |
+| [`src/types.ts`](src/types.ts) | The `web/access` event and `webAccess` projection declarations, projected to browsers through `./client` |
 | — | No runtime invariant companion is published; this model-facing adapter has no independent lifecycle stream; execution relations are owned by the capability seam it calls. |
 
 ### Search flow
@@ -165,7 +172,7 @@ Use the web_fetch tool to retrieve the content of a specific HTTP(S) URL (for ex
 
 #### Token effect
 
-Guidance cost follows the visible tools. Config or scoped restrictions can remove a paragraph or select the existing search-only text; changing `searchMaxQueries` changes the advertised bound.
+Guidance cost follows the visible tools. Config, scoped restrictions, or a session whose switch is off can remove a paragraph or select the existing search-only text; changing `searchMaxQueries` changes the advertised bound.
 
 #### KV Cache effect
 
@@ -179,11 +186,11 @@ The model sees the generated [`web_search` and `web_fetch` schemas](../../../doc
 
 #### Token effect
 
-Fixed schema cost per request for a resolved `searchMaxQueries`; config disablement and scoped restrictions remove both the tool schema and its guidance.
+Fixed schema cost per request for a resolved `searchMaxQueries`; config disablement, scoped restrictions, and a session switch that is off remove both the tool schema and its guidance.
 
 #### KV Cache effect
 
-Prefix-stable while definitions, resolved query cap, and visibility are unchanged. Config enablement, changing `searchMaxQueries`, plugin lifecycle, or scoped restrictions may invalidate reuse from the first changed schema token.
+Prefix-stable while definitions, resolved query cap, and visibility are unchanged. Config enablement, changing `searchMaxQueries`, plugin lifecycle, scoped restrictions, or a `/web` flip may invalidate reuse from the first changed schema token.
 
 ### Search result
 

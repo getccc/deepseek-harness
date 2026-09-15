@@ -1180,6 +1180,25 @@ export type SessionEvent<T extends SessionEventType = SessionEventType> = {
 
 ### `web/*`
 
+<a id="webaccess--log-only"></a>
+
+#### `web/access` — log-only
+
+```ts persistence-catalog
+/**
+ * Whether the model is offered the web tools from this point on:
+ * log-only, whole-value replace, last one wins. Written by the `/web`
+ * command, and once per log by a `tool-web` row mounting a
+ * `sessionSwitch` when it meets an agent whose log records none, so the
+ * deployment's initial value is stated by the log rather than by
+ * configuration. Model-visible: the folded value decides whether the
+ * `web_search`/`web_fetch` schemas and their guidance reach the request.
+ */
+'web/access': { enabled: boolean }
+```
+
+来源：[`packages/web/tool-web/src/types.ts:30`](../packages/web/tool-web/src/types.ts)
+
 <a id="webdeepseek-search-llm-request--log-only"></a>
 
 #### `web/deepseek-search-llm-request` — log-only

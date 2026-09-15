@@ -27,7 +27,7 @@ Use `dsh-agent-presets` to give each session the tools, prompt sections, and ski
 
 Mount this package in a composition that should give each agent session its own tools, prompt sections, and skills from a preset file. Every session names a preset — explicitly or through the configured default — and is composed from it; without the package, sessions fall back to whatever the host composition mounts.
 
-The shipped Web `standard`, `ptc`, and `cordis` presets include [explicit file delivery](../../client/ui-deliverables/README.md#explicit-deliveries). The `minimal` preset keeps its fixed two-tool training configuration. The `chat` preset composes a session that owns no working directory: a persona, context compaction, and a [tool restriction](../../guard/tool-restriction/README.md) row that masks every global tool.
+The shipped Web `standard`, `ptc`, and `cordis` presets include [explicit file delivery](../../client/ui-deliverables/README.md#explicit-deliveries). The `minimal` preset keeps its fixed two-tool training configuration. The `chat` preset composes a session that owns no working directory: a persona, context compaction, a [tool restriction](../../guard/tool-restriction/README.md) row that masks every global tool, and the [web tools](../../web/tool-web/README.md) behind a per-session switch that starts off.
 
 ### What a preset gives a session
 

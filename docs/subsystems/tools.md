@@ -152,7 +152,7 @@ Registration is a trusted same-process contract. The registry borrows the typed 
 
 ## `ToolRestriction` — one scope's live filter over what it inherits
 
-`ToolRestriction` applies to the tools a scope inherits: the deployment-global layer plus every ancestor scope on its chain. The registry compiles readonly names into private sets, intersects multiple restrictions, then overlays the scope's OWN registrations, which stay exempt so a delegated child keeps the tools it answers through. A deny-only filter admits later unlisted inherited tools, while an allow-list excludes them.
+`ToolRestriction` applies to the tools a scope inherits: the deployment-global layer plus every ancestor scope on its chain. The registry compiles readonly names into private sets and intersects multiple restrictions; a name contributed by one layer is masked only by restrictions on the layers nearer to the viewer than that contributor, so a scope's OWN registrations stay exempt from its own filter for itself and for every scope nested inside it — a delegated child keeps the tools it answers through, and a preset that masks every host tool still offers the tools its own rows register. A deny-only filter admits later unlisted inherited tools, while an allow-list excludes them.
 
 ```ts type-equiv
 /**
@@ -504,9 +504,11 @@ presentAs(mode: ToolPresentationMode): () => void
 register(definition: ToolDefinition): () => void
 
 /**
- * Restrict global tools for the calling agent scope. Empty filters, unknown
- * names, scope-local names, and reserved transport names fail. Restrictions
- * intersect; scoped registrations remain visible.
+ * Restrict the tools the calling agent scope inherits. Empty filters,
+ * unknown names, scope-local names, and reserved transport names fail.
+ * Restrictions intersect; the scope's own registrations stay visible to it
+ * and to every scope nested inside it, because a restriction filters what
+ * its scope inherits and never what that scope contributes.
  * @param filter - global-tool mask: `allow` (keep only) and/or `deny` (remove).
  * @returns the exact disposer that lifts this restriction.
  */

@@ -27,7 +27,7 @@ kind: "package-reference"
 
 在需要让每个 agent 会话从 preset 文件获得自己的工具、提示词段落与 skill 的组装中挂载本包。每个会话都会命名一个 preset——显式指定或通过配置的默认值——并据此组装；没有本包时，会话只能回退到宿主组装挂载的内容。
 
-随附 Web 的 `standard`、`ptc` 与 `cordis` preset 包含[显式文件交付](../../client/ui-deliverables/README.zh.md#explicit-deliveries)。`minimal` preset 保留固定的双工具训练配置。`chat` preset 组装一个不拥有工作目录的会话：一个 persona、上下文压缩，以及一行遮蔽全部全局工具的[工具限制](../../guard/tool-restriction/README.zh.md)。
+随附 Web 的 `standard`、`ptc` 与 `cordis` preset 包含[显式文件交付](../../client/ui-deliverables/README.zh.md#explicit-deliveries)。`minimal` preset 保留固定的双工具训练配置。`chat` preset 组装一个不拥有工作目录的会话：一个 persona、上下文压缩、一行遮蔽全部全局工具的[工具限制](../../guard/tool-restriction/README.zh.md)，以及置于按会话开关之后、默认关闭的[网页工具](../../web/tool-web/README.zh.md)。
 
 ### preset 给会话带来什么
 

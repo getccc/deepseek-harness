@@ -50,6 +50,7 @@ kind: "package-reference"
 | `fetchTimeoutMs` | `30000` | `web_fetch` 的协作式工具调用超时预算（ms） |
 | `searchTimeoutMs` | `30000` | `web_search` 的协作式工具调用超时预算（ms） |
 | `fetchMaxOutputChars` | `200000` | 同步转换的源字符数与单次完整 `web_fetch` 输出的上限 |
+| `sessionSwitch` | 缺省 | `on` 或 `off` 提供按会话的联网开关，并让每个新会话以该状态开始；缺省则已启用的工具始终提供 |
 
 生成的[配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-tool-web)是每个受支持字段及其 JSDoc 的穷尽式真源。`searchMaxQueries` 在完全相同的字符串去重与提供方请求扇出之前限制可接受的数组；校验会在任何搜索开始前拒绝超限数组。超时预算附加到每个工具定义，由 [`@deepseek-ai/dsh-tool-call-timeout-policy`](../../guard/timeout-policy/README.zh.md) 强制执行；面向模型的 schema 不公开超时参数。
 
@@ -70,6 +71,10 @@ web_search({ queries: ['deepseek harness documentation'] })
 ```text
 web_fetch({ url: 'https://example.com' })
 ```
+
+### 按会话开关
+
+配置 `sessionSwitch: on` 或 `sessionSwitch: off` 后，已启用的工具照常注册，但由每个会话决定其 agent 是否被提供它们：`/web` 命令（`/web on`、`/web off`，或单独 `/web` 翻转）记录一条 `web/access` 事件，`webAccess` 投影向 [composer 徽章](../../client/ui-web-access/README.zh.md)等客户端报告 `{ enabled }`，该行对会话开关为关的 agent 扣留 `web_search` 与 `web_fetch`，指引一并扣留。日志拥有状态：该行首次遇到日志中没有 `web/access` 事件的 agent 时记录配置的初始值，因此即使部署之后更改了默认值，恢复或分叉的会话被提供的仍是其日志所说的内容。未挂载开关的组合，其会话折叠为 `{ enabled: null }`，客户端读作没有开关。挂在 agent preset 内时，开关管辖加入该 preset 的 agent；随附的 `chat` preset 以关闭状态挂载它。两个工具都未启用的开关在挂载时失败。
 
 ### 稳定注册
 
@@ -103,6 +108,8 @@ schema 校验会在执行前拒绝缺失或非数组的 `queries` 字段、非�
 | [`src/index.ts`](src/index.ts) | 插件入口：配置 schema、启用状态、超时预算、工具注册 |
 | [`src/search.ts`](src/search.ts) | `web_search` 工具：参数校验、查询扇出、合并、格式化、呈现元数据 |
 | [`src/fetch.ts`](src/fetch.ts) | `web_fetch` 工具：HTML→markdown 转换、输出上限、格式化、呈现元数据 |
+| [`src/access.ts`](src/access.ts) | 按会话开关：`/web` 命令、`webAccess` 投影与按 agent 的实时限制 |
+| [`src/types.ts`](src/types.ts) | `web/access` 事件与 `webAccess` 投影声明，经 `./client` 投射到浏览器 |
 | — | 不发布运行时不变式伴生入口；约定在工具处强制执行。 |
 
 ### 搜索流程
@@ -165,7 +172,7 @@ Use the web_fetch tool to retrieve the content of a specific HTTP(S) URL (for ex
 
 #### Token 影响
 
-指引成本取决于可见工具。配置或 scope 限制可以移除段落或选择原有的仅搜索文本；更改 `searchMaxQueries` 会改变公布的上限。
+指引成本取决于可见工具。配置、scope 限制或开关为关的会话可以移除段落或选择原有的仅搜索文本；更改 `searchMaxQueries` 会改变公布的上限。
 
 #### KV Cache 影响
 
@@ -179,11 +186,11 @@ Use the web_fetch tool to retrieve the content of a specific HTTP(S) URL (for ex
 
 #### Token 影响
 
-对于已解析的 `searchMaxQueries`，每次请求都会产生固定的 schema token 开销；通过配置禁用或施加 scope 限制，都会移除工具 schema 及其指引。
+对于已解析的 `searchMaxQueries`，每次请求都会产生固定的 schema token 开销；通过配置禁用、施加 scope 限制或会话开关为关，都会移除工具 schema 及其指引。
 
 #### KV Cache 影响
 
-只要定义、已解析查询上限与可见性不变，前缀就保持稳定。配置启用状态、更改 `searchMaxQueries`、插件生命周期或 scope 限制可能使从第一个变化的 schema token 起的复用失效。
+只要定义、已解析查询上限与可见性不变，前缀就保持稳定。配置启用状态、更改 `searchMaxQueries`、插件生命周期、scope 限制或一次 `/web` 翻转可能使从第一个变化的 schema token 起的复用失效。
 
 ### 搜索结果
 

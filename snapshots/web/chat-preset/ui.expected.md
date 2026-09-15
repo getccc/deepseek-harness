@@ -10,6 +10,8 @@
   - tablist:
     - tab "Chat" [selected]
     - tab "Trajectory"
+- img
+- text: "web Web access on: web search and page fetching are offered from the next step."
 - button "System prompt":
   - img
   - img
@@ -35,6 +37,7 @@
   - img
 - button "Add attachment":
   - img
+- button "Web access on, press to turn off" [pressed]: Web
 - button "Select model, current DeepSeek-V4-Flash":
   - text: DeepSeek-V4-Flash
   - img

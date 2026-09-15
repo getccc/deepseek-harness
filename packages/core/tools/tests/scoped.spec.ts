@@ -260,6 +260,26 @@ describe('restrict() over an inherited scope layer', () => {
     expect(ctx.tools.schemas(child.key).map(t => t.name)).toEqual(['bash'])
     expect(ctx.tools.schemas(parent.key).map(t => t.name)).toEqual(['bash'])
   })
+
+  it('keeps a scope\'s own registrations visible below it: its restriction filters only what it inherits', async () => {
+    // The preset shape: one composition masks every host tool with an empty
+    // allow-list and contributes tools of its own to the agents joined under it.
+    const ctx = await mount()
+    ctx.tools.register(tool('web'))
+    const parent = await mintAgentScope(ctx, 'parent')
+    parent.scope.ctx.tools.restrict({ allow: [] })
+    parent.scope.ctx.tools.register(tool('bash'))
+    const child = await mintChild(ctx, parent.key, 'child')
+
+    expect(ctx.tools.schemas(parent.key).map(t => t.name)).toEqual(['bash'])
+    expect(ctx.tools.schemas(child.key).map(t => t.name)).toEqual(['bash'])
+    expect(await run(ctx, 'bash', child.key)).toBe('ran:bash')
+    expect(await run(ctx, 'web', child.key)).toBe('Error: unknown tool "web"')
+    // The child's own filter still reaches what the child inherits from the parent.
+    child.scope.ctx.tools.restrict({ deny: ['bash'] })
+    expect(ctx.tools.schemas(child.key)).toEqual([])
+    expect(ctx.tools.schemas(parent.key).map(t => t.name)).toEqual(['bash'])
+  })
 })
 
 describe('scoped execution dispatch', () => {

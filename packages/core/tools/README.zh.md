@@ -78,7 +78,7 @@ ctx.tools.register(defineTool({
 
 ### 按 agent 限制工具
 
-`ctx.tools.restrict(filter)` 对单个 agent 继承的全局工具应用允许或拒绝掩码；掩码取交集，作用域注册保持可见，限制在 dispose（资源释放）时解除。`ctx.tools.get(name, scope)` 按一个作用域的视角解析工具。需要匹配实际执行 definition 的 Host 本地 presenter 消费方会传入发起调用的 agent。`ctx.tools.schemas(scope)` 返回可见 schema（不含 `execute` 函数）。
+`ctx.tools.restrict(filter)` 对单个 agent 作用域从全局层及其祖先作用域继承的工具应用允许或拒绝掩码；掩码取交集，作用域自身的注册对它自己及嵌套其下的作用域保持可见，限制在 dispose（资源释放）时解除。`ctx.tools.get(name, scope)` 按一个作用域的视角解析工具。需要匹配实际执行 definition 的 Host 本地 presenter 消费方会传入发起调用的 agent。`ctx.tools.schemas(scope)` 返回可见 schema（不含 `execute` 函数）。
 
 ### 对调用实施策略
 

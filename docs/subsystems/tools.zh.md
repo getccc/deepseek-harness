@@ -152,7 +152,7 @@ type InferArgs<S> = InferProperties<S, []>
 
 ## `ToolRestriction` — 单个作用域对其继承内容的实时过滤器
 
-`ToolRestriction` 作用于该作用域继承来的工具：部署全局层，加上其链上的每个祖先作用域。注册表将 readonly 名称编译为私有集合，对多个限制取交集，再叠加该作用域**自身**的注册——后者不受约束，因此被委派的子 agent 会保留其回报所依赖的工具。仅 deny 的过滤器允许后续未列出的继承工具通过，而 allow 列表则排除它们。
+`ToolRestriction` 作用于该作用域继承来的工具：部署全局层，加上其链上的每个祖先作用域。注册表将 readonly 名称编译为私有集合，对多个限制取交集；某一层贡献的名称只会被比该贡献层更靠近观察者的各层限制所遮蔽，因此作用域**自身**的注册对它自己及嵌套其下的每个作用域都不受其自身过滤器约束——被委派的子 agent 会保留其回报所依赖的工具，遮蔽全部宿主工具的 preset 仍会提供其自身行注册的工具。仅 deny 的过滤器允许后续未列出的继承工具通过，而 allow 列表则排除它们。
 
 ```ts type-equiv
 /**
@@ -504,9 +504,11 @@ presentAs(mode: ToolPresentationMode): () => void
 register(definition: ToolDefinition): () => void
 
 /**
- * Restrict global tools for the calling agent scope. Empty filters, unknown
- * names, scope-local names, and reserved transport names fail. Restrictions
- * intersect; scoped registrations remain visible.
+ * Restrict the tools the calling agent scope inherits. Empty filters,
+ * unknown names, scope-local names, and reserved transport names fail.
+ * Restrictions intersect; the scope's own registrations stay visible to it
+ * and to every scope nested inside it, because a restriction filters what
+ * its scope inherits and never what that scope contributes.
  * @param filter - global-tool mask: `allow` (keep only) and/or `deny` (remove).
  * @returns the exact disposer that lifts this restriction.
  */

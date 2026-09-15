@@ -1,12 +1,14 @@
-# The `chat` agent preset: a tool-less conversation with no working directory.
+# The `chat` agent preset: a conversation with no working directory and, by
+# default, no tools; web search and page fetching are a per-session switch.
 #
 # Sessions on this preset are created without a Workspace or cwd
 # (`preset.yml` declares `workspace: none`), so nothing here may interpolate
 # `{{cwd}}`, mount a filesystem or shell row, or scan a project directory. What
-# makes the first token fast is what is absent: no tool schemas in the request,
-# no skill discovery, no AGENTS.md read, no runtime-context snapshot of a
-# directory. The persona row shadows the deployment persona, suffix included,
-# because the Web deployment's suffix names the working directory.
+# makes the first token fast is what is absent: no tool schemas in the request
+# while the web switch is off, no skill discovery, no AGENTS.md read, no
+# runtime-context snapshot of a directory. The persona row shadows the
+# deployment persona, suffix included, because the Web deployment's suffix
+# names the working directory.
 
 # Runtime-context snapshots describe the file sandbox and approval policy,
 # which govern tools this agent does not have, so they are suppressed too.
@@ -14,16 +16,31 @@
   name: '@deepseek-ai/dsh-persona'
   config:
     prefix: >-
-      You are 小微 (Xiaowei), the WeWork assistant, powered by the {{model}} model. You are chatting without a workspace: answer directly from your own knowledge and the conversation, and say so when a question needs files, commands, or the web.
+      You are 小微 (Xiaowei), the WeWork assistant, powered by the {{model}} model. You are chatting without a workspace: answer directly from your own knowledge and the conversation, and say so when a question needs files or commands. When web_search is offered, use it for anything that needs current information; when no web tool is offered and the question needs one, say that the person can turn on web access from the composer.
     includeRuntimeContext: false
 
-# Nothing is registered into the tool catalog, and the host-plane tools every
-# scope inherits are masked so a deployment adding one later does not put it
-# into chat sessions. The empty allow list is the masking.
+# The host-plane tools every scope inherits are masked so a deployment adding
+# one later does not put it into chat sessions; the rows of this composition
+# are not inherited from outside it, so the web tools below stay visible. The
+# empty allow list is the masking.
 - id: tool-restriction
   name: '@deepseek-ai/dsh-tool-restriction'
   config:
     allow: []
+
+# The `web` service and its providers stay in the host composition; the
+# model-facing tools are this preset's, behind a switch every session starts
+# with off. `/web on` (the composer's 联网 chip) offers `web_search` and
+# `web_fetch` from the next step, and the log's `web/access` events own the
+# state, so a resumed chat is offered exactly what it was last set to. Search
+# is a full auxiliary model request with server-side retrieval on the shipped
+# DeepSeek route, hence the 60s budget the standard preset also gives it.
+- id: tool-web
+  name: '@deepseek-ai/dsh-tool-web'
+  config:
+    fetch: true
+    searchTimeoutMs: 60000
+    sessionSwitch: off
 
 # Same compaction group as the standard preset: a long chat still has to fit
 # the model's context, and the pruner is the service `compaction-basic`
