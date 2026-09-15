@@ -31,4 +31,4 @@ fork 行为重新落在上游的新结构上，而不是保留一份分叉副本
 
 适配后 typecheck、lint 与 `pnpm run build` 通过。单元测试剩下的失败是本机原有的（`experimental/ptc-runtime-python` 需要 CPython 3.10 而本机为 3.9、macOS 上的 `spawn-runner` 用例），外加上游的 `webworker-packer` image-loadable 用例，其测试与源码与标签一致。文档门禁通过，其中 `packages/README.md` 的字数上限从上游的 994 提高到 1045，以容纳 Team Edition 的包分组。
 
-本次合并未重跑 Web e2e、录制会话快照与打包后的桌面 Runner：上游把 profile 解析改为运行时模式并让打包载体采用它，因此 WeWork 安装包构建需要单独验证。把 fork 的同步 Session 历史读取迁移到 projection 是延后的工作。
+Web e2e 在其夹具遵循 fork 的 Session 语义（`pristine`、`webAccess` Remote、无密钥时休眠的路由），并且打开 Session 时改为以倍增页而非固定 200 条消息页回溯到被截断轮次的起点之后通过。录制会话快照只在 CPython 3.9 的 PTC 场景失败。本次合并未重跑打包后的桌面 Runner：上游把 profile 解析改为运行时模式并让打包载体采用它，因此 WeWork 安装包构建需要单独验证。把 fork 的同步 Session 历史读取迁移到 projection 是延后的工作。
