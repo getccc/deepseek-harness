@@ -56,7 +56,7 @@ Every deployment-varying fact is a packaging environment variable, so one source
 
 ### Pinning a private certificate authority
 
-The Runner is a Node process and ignores the operating-system trust store, so a Control Plane behind a company's own certificate authority is unreachable until the build carries that authority's certificate: installing it in a keychain fixes the browser only. `DSH_TEAM_CONTROL_PLANE_CA` stages the certificate beside the Runner, and the deployment patch pins it on every row that speaks to the Control Plane — the account client, the model transport, and knowledge. It is trusted for that origin alone. A publicly trusted Control Plane omits the variable and the patch omits the pin.
+The Runner is a Node process and ignores the operating-system trust store, so a Control Plane behind a company's own certificate authority is unreachable until the build carries that authority's certificate: installing it in a keychain fixes the browser only. `DSH_TEAM_CONTROL_PLANE_CA` stages the certificate beside the Runner, and the deployment patch pins it on every row that speaks to the Control Plane — the account client, the model transport, knowledge, and web search. It is trusted for that origin alone. A publicly trusted Control Plane omits the variable and the patch omits the pin.
 
 ### Carrying out-of-tree plugins
 

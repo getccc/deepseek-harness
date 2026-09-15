@@ -125,4 +125,16 @@ export const SHIPPED_CONSOLE_MENUS: readonly ShippedConsoleMenu[] = [
     icon: 'read',
     sortOrder: 2,
   },
+  {
+    key: 'web-search',
+    parentKey: 'resources',
+    name: 'Web search',
+    labelKey: 'nav.webSearch',
+    kind: 'action',
+    // No page: the entry exists so a role can be given company-paid web
+    // search, which the Control Plane's web search endpoint decides on.
+    permission: 'web_search|web.search',
+    icon: 'global',
+    sortOrder: 3,
+  },
 ]

@@ -74,6 +74,19 @@ describe('dsh-team bundle', () => {
     }
   })
 
+  it('sends web search through the Control Plane and keeps fetch local', () => {
+    // The base row selects the member's own DeepSeek key; a Team Runner
+    // searches with the company credential the Control Plane holds instead.
+    const patch = patchRows()
+    expect(patch.find(row => row.id === 'web')?.config).toEqual({ searchProvider: 'team', fetchProvider: 'http' })
+    const inserted = new Map(patch.flatMap(row => row.insert ?? []).map(row => [row.id as string, row.name as string]))
+    const manifest = JSON.parse(
+      readFileSync(resolve(root, 'package.json'), 'utf8'),
+    ) as { dependencies?: Record<string, string> }
+    expect(inserted.get('web-search-team')).toBe('@deepseek-ai/dsh-web-search-team')
+    expect(manifest.dependencies ?? {}).toHaveProperty('@deepseek-ai/dsh-web-search-team')
+  })
+
   it('adds every half of private knowledge, so no surface is mounted without the one it needs', () => {
     // The picker is useless without the Remote that answers it, the Remote
     // without the transport that reaches the Control Plane, and the transport

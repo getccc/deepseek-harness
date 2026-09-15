@@ -275,6 +275,7 @@ export const zh = {
   'models.empty': '还没有注册公司模型。',
 
   'nav.knowledgeBases': '知识库',
+  'nav.webSearch': '联网搜索',
   'knowledge.description': '本 Control Plane 治理的私有知识库。成员检索的是它们，凭据和地址只存在于服务端。',
   'knowledge.refresh': '刷新目录',
   'knowledge.name': '知识库',
@@ -633,6 +634,7 @@ export const en: Record<keyof typeof zh, string> = {
   'models.empty': 'No company models are registered.',
 
   'nav.knowledgeBases': 'Knowledge bases',
+  'nav.webSearch': 'Web search',
   'knowledge.description': 'The private knowledge bases this Control Plane governs. Members search these; the credential and the address exist only on the server.',
   'knowledge.refresh': 'Refresh catalog',
   'knowledge.name': 'Knowledge base',

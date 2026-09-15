@@ -33,7 +33,7 @@ kind: "package-bundle"
 dsh --profile team-control-plane
 ```
 
-该 profile 只组合本 bundle，并监听 `127.0.0.1:3095`。普通成员不会浏览此端口；管理员访问 `/team/admin/`，Runner 则调用设备、模型与知识端点。
+该 profile 只组合本 bundle，并监听 `127.0.0.1:3095`。普通成员不会浏览此端口；管理员访问 `/team/admin/`，Runner 则调用设备、模型、知识与网页搜索端点。
 
 ### 生产环境绑定
 

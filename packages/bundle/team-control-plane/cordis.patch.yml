@@ -158,6 +158,27 @@
       name: '@deepseek-ai/dsh-knowledge-gateway-http'
       config:
         maxRequestBodyBytes: 65536
+
+    # ── company web search ───────────────────────────────────────────────
+    # The search seam and its DeepSeek provider run here, where the company
+    # `DEEPSEEK_API_KEY` credential is, so no member's Runner needs a key of
+    # its own; fetch stays on each Runner, anonymous. Search is a full
+    # auxiliary model request with server-side retrieval on this route.
+    - id: web
+      name: '@deepseek-ai/dsh-web'
+      config:
+        searchProvider: deepseek-official
+
+    - id: web-search-deepseek
+      name: '@deepseek-ai/dsh-web-search-deepseek'
+      config:
+        apiKeyEnv: DEEPSEEK_API_KEY
+
+    # The Runner-facing route: token, `web.search` decision, search, record.
+    - id: web-search-gateway-http
+      name: '@deepseek-ai/dsh-web-search-gateway-http'
+      config:
+        maxRequestBodyBytes: 16384
     # Administrator-facing: the administration console's API and application.
     #
     # `secureCookie` stays true because a deployment terminates TLS in front

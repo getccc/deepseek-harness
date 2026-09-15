@@ -64,6 +64,7 @@ export const METADATA_KEYS = {
    * exists. Metadata keys are re-seeded on every open.
    */
   knowledgeFailure: { kind: 'label', members: ['upstream-unavailable', 'upstream-invalid', 'scope-incompatible'] },
+  webFailure: { kind: 'label', members: ['upstream-unavailable', 'upstream-invalid', 'cancelled'] },
 } as const satisfies Record<string, MetadataSpec>
 
 /** A key the metadata catalog registers. */

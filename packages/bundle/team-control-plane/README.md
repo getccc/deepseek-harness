@@ -33,7 +33,7 @@ You do not mount this bundle directly. Select the profile that names it:
 dsh --profile team-control-plane
 ```
 
-The profile composes this bundle alone and listens on `127.0.0.1:3095`. Ordinary members do not browse this port; administrators reach `/team/admin/`, while Runners call the device, model, and knowledge endpoints.
+The profile composes this bundle alone and listens on `127.0.0.1:3095`. Ordinary members do not browse this port; administrators reach `/team/admin/`, while Runners call the device, model, knowledge, and web search endpoints.
 
 ### Production binding
 

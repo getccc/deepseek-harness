@@ -6,6 +6,8 @@ Web 访问 seam 是一个[能力 seam](../../.agents/notes/implemented/architect
 
 源码：[`packages/web/web/src/types.ts`](../../packages/web/web/src/types.ts)
 
+在 Team Edition 中，搜索经控制面离开成员的电脑：[dsh-web-search-team](../../packages/web/web-search-team) 在 Runner 上注册 `team` 提供方并携带设备令牌发送查询，[dsh-web-search-gateway-http](../../packages/web/web-search-gateway-http) 在控制面上提供 `POST /team/web/search`，同一 seam 与 DeepSeek 提供方在那里以公司凭据运行，每次调用都由 `web.search` 决定并记入审计日志。抓取留在 Runner 上。
+
 ## 为什么一项能力包含两项操作
 
 搜索与抓取既不共享请求 schema，也不共享业务逻辑，但它们被有意设计为同一个 `ctx.web` 中间层：一个提供方选择策略的所有者、一套中止与错误词汇，以及一个面向产品的「此 harness 如何访问 Web」配置界面。代价是服务上并行的 `searchX`／`fetchX` 方法对；这种并行是有意为之，而不是遗漏了可抽取的共性。提供方注册的是**能力**（`WebSearchProvider` 或 `WebFetchProvider`），而非工具；面向模型的名称、schema、提示词引导与展示全部集中在唯一的消费方 `dsh-tool-web` 中。

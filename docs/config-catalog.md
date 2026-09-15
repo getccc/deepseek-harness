@@ -3886,6 +3886,22 @@ export interface Config {
 
 Source: [`packages/web/web-search-exa/src/index.ts:35`](../packages/web/web-search-exa/src/index.ts)
 
+<a id="deepseek-aidsh-web-search-gateway-http"></a>
+
+## `@deepseek-ai/dsh-web-search-gateway-http`
+
+Requires: `webServer` · `web` · `deviceAuthorization` · `accessControl` · `audit`
+
+```ts config-catalog
+/** Plugin config. */
+export interface Config {
+  /** Largest request body accepted; a query needs little. Defaults to 16384. */
+  maxRequestBodyBytes?: number
+}
+```
+
+Source: [`packages/web/web-search-gateway-http/src/index.ts:53`](../packages/web/web-search-gateway-http/src/index.ts)
+
 <a id="deepseek-aidsh-web-search-perplexity"></a>
 
 ## `@deepseek-ai/dsh-web-search-perplexity`
@@ -3909,6 +3925,24 @@ export interface Config {
 ```
 
 Source: [`packages/web/web-search-perplexity/src/index.ts:30`](../packages/web/web-search-perplexity/src/index.ts)
+
+<a id="deepseek-aidsh-web-search-team"></a>
+
+## `@deepseek-ai/dsh-web-search-team`
+
+Requires: `web` · `teamAccountClient`
+
+```ts config-catalog
+/** Plugin config: where the Control Plane is, and how to trust it. */
+export interface Config {
+  /** Origin of the company Control Plane; no default. */
+  controlPlaneUrl: string
+  /** PEM file holding the only certificates accepted for it; absent verifies like any host. */
+  controlPlaneCa?: string
+}
+```
+
+Source: [`packages/web/web-search-team/src/index.ts:42`](../packages/web/web-search-team/src/index.ts)
 
 <a id="deepseek-aidsh-webhook-github"></a>
 

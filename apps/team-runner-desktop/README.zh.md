@@ -56,7 +56,7 @@ pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 
 ### 固定一个私有证书颁发机构
 
-Runner 是一个 Node 进程，不读取操作系统信任库，因此位于企业自签证书颁发机构之后的 Control Plane 在构建携带该机构证书之前不可达：把证书装进钥匙串只能修好浏览器。`DSH_TEAM_CONTROL_PLANE_CA` 把证书置于 Runner 旁，部署补丁则在每一行与 Control Plane 通信的插件上固定它——账号客户端、模型传输与知识。它只对那一个源受信任。使用公开受信任证书的 Control Plane 省略该变量，补丁也就不写这项固定。
+Runner 是一个 Node 进程，不读取操作系统信任库，因此位于企业自签证书颁发机构之后的 Control Plane 在构建携带该机构证书之前不可达：把证书装进钥匙串只能修好浏览器。`DSH_TEAM_CONTROL_PLANE_CA` 把证书置于 Runner 旁，部署补丁则在每一行与 Control Plane 通信的插件上固定它——账号客户端、模型传输、知识与网页搜索。它只对那一个源受信任。使用公开受信任证书的 Control Plane 省略该变量，补丁也就不写这项固定。
 
 ### 携带树外插件
 

@@ -54,6 +54,16 @@
 - id: llm-deepseek
   inject: [llmHttpTransport]
 
+# Web search leaves this computer through the Control Plane, which holds the
+# company search credential and decides per member; the base row's
+# `deepseek-official` selection would spend a member's own key. Fetch stays
+# local and anonymous. A patch replaces the whole config, so both keys are
+# restated.
+- id: web
+  config:
+    searchProvider: team
+    fetchProvider: http
+
 # ── the team account this computer holds ───────────────────────────────────
 
 # `controlPlaneUrl` and `runnerVersion` are deliberately absent, and the row
@@ -99,6 +109,11 @@
     # `controlPlaneUrl` is absent for the same reason it is absent above: a
     # Runner that guessed which company it belongs to would ask a stranger what
     # its member may read.
+    # The search provider the `web` row above selects: one Control Plane
+    # request per search, carrying the device token and the query.
+    - id: web-search-team
+      name: '@deepseek-ai/dsh-web-search-team'
+
     - id: knowledge
       name: '@deepseek-ai/dsh-knowledge-team'
 

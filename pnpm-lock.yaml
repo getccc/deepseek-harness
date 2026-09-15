@@ -2058,6 +2058,9 @@ importers:
       '@deepseek-ai/dsh-tool-office':
         specifier: workspace:^
         version: link:../../office/tool-office
+      '@deepseek-ai/dsh-web-search-team':
+        specifier: workspace:^
+        version: link:../../web/web-search-team
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:^
@@ -2119,6 +2122,15 @@ importers:
       '@deepseek-ai/dsh-team-control-plane-http':
         specifier: workspace:^
         version: link:../../team/team-control-plane-http
+      '@deepseek-ai/dsh-web':
+        specifier: workspace:^
+        version: link:../../web/web
+      '@deepseek-ai/dsh-web-search-deepseek':
+        specifier: workspace:^
+        version: link:../../web/web-search-deepseek
+      '@deepseek-ai/dsh-web-search-gateway-http':
+        specifier: workspace:^
+        version: link:../../web/web-search-gateway-http
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:^
@@ -11742,6 +11754,46 @@ importers:
         specifier: workspace:^
         version: link:../web
 
+  packages/web/web-search-gateway-http:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:^
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-access-control-sqlite':
+        specifier: workspace:^
+        version: link:../../access/access-control-sqlite
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:^
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:^
+        version: link:../../account/account-store-sqlite
+      '@deepseek-ai/dsh-audit':
+        specifier: workspace:^
+        version: link:../../access/audit
+      '@deepseek-ai/dsh-audit-sqlite':
+        specifier: workspace:^
+        version: link:../../access/audit-sqlite
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:^
+        version: link:../../account/device-authorization
+      '@deepseek-ai/dsh-device-authorization-sqlite':
+        specifier: workspace:^
+        version: link:../../account/device-authorization-sqlite
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:^
+        version: link:../../host/webserver
+      '@deepseek-ai/dsh-web':
+        specifier: workspace:^
+        version: link:../web
+
   packages/web/web-search-perplexity:
     dependencies:
       '@deepseek-ai/schemastery':
@@ -11760,6 +11812,25 @@ importers:
       '@deepseek-ai/dsh-web':
         specifier: workspace:^
         version: link:../web
+
+  packages/web/web-search-team:
+    dependencies:
+      '@deepseek-ai/dsh-team-account-client':
+        specifier: workspace:^
+        version: link:../../team/team-account-client
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-web':
+        specifier: workspace:^
+        version: link:../web
+      '@deepseek-ai/dsh-web-search-gateway-http':
+        specifier: workspace:^
+        version: link:../web-search-gateway-http
 
   packages/webhook/webhook:
     dependencies:

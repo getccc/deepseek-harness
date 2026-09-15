@@ -1,0 +1,37 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/types"
+  },
+  "include": ["src"],
+  "references": [
+    {
+      "path": "../../../vendor/cosmokit"
+    },
+    {
+      "path": "../../../vendor/cordis"
+    },
+    {
+      "path": "../../../vendor/schemastery"
+    },
+    {
+      "path": "../../access/access-control"
+    },
+    {
+      "path": "../../access/audit"
+    },
+    {
+      "path": "../../account/account-store"
+    },
+    {
+      "path": "../../account/device-authorization"
+    },
+    {
+      "path": "../../host/webserver"
+    },
+    {
+      "path": "../web"
+    }
+  ]
+}

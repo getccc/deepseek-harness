@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-team` turns the local web surface into a Team Runner. It stacks on [`dsh-base`](../base/README.md) and [`dsh-web-app`](../web-app/README.md), keeping workspaces and execution on the member's computer, and owns port `3090`, the local account login at `/team/login`, the device credential this computer holds, and the company model transport. Company models use the `built-in` provider route by default, while a member's configured DeepSeek key still serves `deepseek-official`.
+`dsh-team` turns the local web surface into a Team Runner. It stacks on [`dsh-base`](../base/README.md) and [`dsh-web-app`](../web-app/README.md), keeps workspaces and execution on the member's computer, and owns port `3090`, the local login at `/team/login`, the device credential, and the company model and web search transports. Company models default to the `built-in` route; a member's own DeepSeek key still serves `deepseek-official`, and page fetching stays local.
 
 It refuses to bind unconfigured: with no Control Plane or Runner version named in the account-client row, the Runner fails to load rather than send a public key to a stranger.
 

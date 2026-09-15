@@ -17,7 +17,7 @@ describe('the permission catalog', () => {
   it('governs exactly the resource types Team Edition authorizes', () => {
     expect([...GOVERNED_RESOURCE_TYPES].sort()).toEqual([
       'department', 'device', 'knowledge_scope', 'mcp_server', 'mcp_tool',
-      'member', 'menu', 'model', 'organization', 'plugin', 'role', 'skill', 'usage',
+      'member', 'menu', 'model', 'organization', 'plugin', 'role', 'skill', 'usage', 'web_search',
     ])
   })
 

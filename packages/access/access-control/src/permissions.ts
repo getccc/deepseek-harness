@@ -61,6 +61,7 @@ export const PERMISSION_CATALOG: readonly Permission[] = [
   { resourceType: 'knowledge_scope', action: 'knowledge.download' },
   { resourceType: 'knowledge_scope', action: 'knowledge.catalog.read' },
   { resourceType: 'knowledge_scope', action: 'knowledge.catalog.manage' },
+  { resourceType: 'web_search', action: 'web.search' },
   { resourceType: 'plugin', action: 'plugin.discover' },
   { resourceType: 'plugin', action: 'plugin.download' },
   { resourceType: 'plugin', action: 'plugin.use' },

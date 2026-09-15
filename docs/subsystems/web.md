@@ -6,6 +6,8 @@ The web access seam — a [capability seam](../../.agents/notes/implemented/arch
 
 Source: [`packages/web/web/src/types.ts`](../../packages/web/web/src/types.ts)
 
+In Team Edition search leaves a member's computer through the Control Plane: [dsh-web-search-team](../../packages/web/web-search-team) registers the `team` provider on the Runner and sends the query with the device token, and [dsh-web-search-gateway-http](../../packages/web/web-search-gateway-http) serves `POST /team/web/search` on the Control Plane, where the same seam and the DeepSeek provider run with the company credential, each call decided by `web.search` and recorded in the audit log. Fetch stays on the Runner.
+
 ## Why one capability has two operations
 
 Search and fetch share no request schema and no business logic, but they are deliberately one `ctx.web` middle layer: one provider-selection policy owner, one abort/error vocabulary, and one product-facing "how this harness reaches the web" configuration API. The cost is the parallel `searchX`/`fetchX` method pairs on the service; that parallelism is intentional, not a missed extraction. Providers register **capabilities** (a `WebSearchProvider` or `WebFetchProvider`), not tools; the model-facing names, schemas, prompt guidance, and presentation all live in the single `dsh-tool-web` consumer.

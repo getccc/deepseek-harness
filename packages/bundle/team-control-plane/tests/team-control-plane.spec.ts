@@ -117,6 +117,9 @@ describe('dsh-team-control-plane bundle', () => {
       ['team-control-plane-http', '@deepseek-ai/dsh-team-control-plane-http'],
       ['model-gateway-http', '@deepseek-ai/dsh-model-gateway-http'],
       ['knowledge-gateway-http', '@deepseek-ai/dsh-knowledge-gateway-http'],
+      ['web', '@deepseek-ai/dsh-web'],
+      ['web-search-deepseek', '@deepseek-ai/dsh-web-search-deepseek'],
+      ['web-search-gateway-http', '@deepseek-ai/dsh-web-search-gateway-http'],
       ['team-admin-api', '@deepseek-ai/dsh-team-admin-api'],
       ['team-admin-app', '@deepseek-ai/dsh-team-admin-app'],
     ] as const) {

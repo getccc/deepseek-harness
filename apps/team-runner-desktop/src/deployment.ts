@@ -92,6 +92,7 @@ export function deploymentPatch(deployment: DesktopDeployment): string {
     },
     { id: 'llm-http-transport', config: address },
     { id: 'knowledge', config: address },
+    { id: 'web-search-team', config: address },
     ...deployment.welinkinTemplatePath === undefined
       ? []
       : [{ id: 'office', config: { welinkinTemplatePath: deployment.welinkinTemplatePath } }],
