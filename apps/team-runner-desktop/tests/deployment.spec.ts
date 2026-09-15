@@ -39,7 +39,7 @@ describe('desktop deployment facts', () => {
   it('pins a private certificate authority on every Control Plane consumer', () => {
     const patch = JSON.parse(deploymentPatch(resolveDeployment({
       ...facts, controlPlaneCa: '/opt/welinkin/control-plane-ca.crt', locale: 'zh-CN',
-    }))) as { id: string; config: Record<string, unknown> }[]
+    }))) as { id: string; disabled?: boolean; config: Record<string, unknown> }[]
     const pinned = patch.filter(row => row.config['controlPlaneCa'] === '/opt/welinkin/control-plane-ca.crt')
     expect(pinned.map(row => row.id)).toEqual(['team-account-client', 'llm-http-transport', 'knowledge', 'web-search-team'])
     expect(patch[1]?.config).toMatchObject({ locale: 'zh-CN' })
@@ -73,22 +73,24 @@ describe('desktop deployment facts', () => {
       welinkinTemplatePath: '/opt/wework/runner/templates/welinkin-ppt.pptx',
       skillDir: '/opt/wework/runner/skills',
       officeSkills: { ppt: 'amec-ppt', word: 'office-word', excel: 'office-excel' },
-    }))) as { id: string; config: Record<string, unknown> }[]
+    }))) as { id: string; disabled?: boolean; config: Record<string, unknown> }[]
     expect(patch.find(row => row.id === 'office')?.config).toEqual({
       welinkinTemplatePath: '/opt/wework/runner/templates/welinkin-ppt.pptx',
       pptSkill: 'amec-ppt',
       wordSkill: 'office-word',
       excelSkill: 'office-excel',
     })
-    expect(patch.find(row => row.id === 'skill-filesystem')?.config).toEqual({
-      customSkillDirs: ['/opt/wework/runner/skills'],
+    expect(patch.find(row => row.id === 'skill-filesystem')).toEqual({
+      id: 'skill-filesystem',
+      disabled: false,
+      config: { includeDefaultRoots: false, customSkillDirs: ['/opt/wework/runner/skills'] },
     })
   })
 
   it('writes only the office facts a build carries', () => {
     const skillsOnly = JSON.parse(deploymentPatch(resolveDeployment({
       ...facts, skillDir: '/opt/wework/runner/skills', officeSkills: { word: 'office-word' },
-    }))) as { id: string; config: Record<string, unknown> }[]
+    }))) as { id: string; disabled?: boolean; config: Record<string, unknown> }[]
     expect(skillsOnly.find(row => row.id === 'office')?.config).toEqual({ wordSkill: 'office-word' })
     const bare = deploymentPatch(resolveDeployment({ ...facts, officeSkills: {} }))
     expect(bare).not.toMatch(/"office"|skill-filesystem/u)

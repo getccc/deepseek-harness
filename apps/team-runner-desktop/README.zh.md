@@ -52,7 +52,7 @@ pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 | `DSH_TEAM_PRODUCT_NAME`、`DSH_TEAM_APP_ID` | 否 | 安装后应用的名称与 bundle 标识符。 |
 | `DSH_TEAM_APP_ICON`、`DSH_TEAM_TRAY_ICON` | 否 | 应用图标，以及菜单栏模板图像——其 `@2x` 相邻文件随它一同置入资源。 |
 | `DSH_TEAM_PPT_TEMPLATE` | 否 | 办公选择器的 `ppt` 类型导入的 PowerPoint 模版；置于 Runner 旁并在运行时定位路径。 |
-| `DSH_TEAM_SKILLS` | 否 | 一个由技能文件夹组成的目录；置于 Runner 旁，并与成员自己的技能根目录一同扫描。 |
+| `DSH_TEAM_SKILLS` | 否 | 一个由技能文件夹组成的目录，置于 Runner 旁；部署补丁仅为该目录重新启用宿主技能扫描，使每个预设的目录都在成员自己的技能旁带上它们。 |
 | `DSH_TEAM_PPT_SKILL`、`DSH_TEAM_WORD_SKILL`、`DSH_TEAM_EXCEL_SKILL` | 否 | 各办公类型最先加载的技能；每个都必须是 `DSH_TEAM_SKILLS` 内的一个文件夹。 |
 | `DSH_TEAM_APPLE_TEAM_ID` | 否 | Apple Developer Team ID；设置后（且环境含 `APPLE_ID` 与 `APPLE_APP_SPECIFIC_PASSWORD`）对 macOS 构建进行公证。 |
 

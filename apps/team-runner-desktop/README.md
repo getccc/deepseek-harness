@@ -52,7 +52,7 @@ Every deployment-varying fact is a packaging environment variable, so one source
 | `DSH_TEAM_PRODUCT_NAME`, `DSH_TEAM_APP_ID` | no | The installed application's name and bundle identifier. |
 | `DSH_TEAM_APP_ICON`, `DSH_TEAM_TRAY_ICON` | no | The application icon, and the menu bar template image whose `@2x` neighbour is staged with it. |
 | `DSH_TEAM_PPT_TEMPLATE` | no | The PowerPoint template the office picker's `ppt` kind imports; staged beside the Runner and pathed at runtime. |
-| `DSH_TEAM_SKILLS` | no | A directory of skill folders staged beside the Runner and scanned beside the member's own skill roots. |
+| `DSH_TEAM_SKILLS` | no | A directory of skill folders staged beside the Runner; the deployment patch re-enables the host skill scanner for this directory alone, so every preset's catalog carries them beside the member's own skills. |
 | `DSH_TEAM_PPT_SKILL`, `DSH_TEAM_WORD_SKILL`, `DSH_TEAM_EXCEL_SKILL` | no | The skill each office kind loads first; each must be a folder inside `DSH_TEAM_SKILLS`. |
 | `DSH_TEAM_APPLE_TEAM_ID` | no | Apple Developer Team ID; when set (with `APPLE_ID` and `APPLE_APP_SPECIFIC_PASSWORD` in the environment) the macOS build is notarized. |
 

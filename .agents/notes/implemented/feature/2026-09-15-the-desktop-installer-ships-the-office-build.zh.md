@@ -12,7 +12,7 @@ Status: implemented
 
 **安装器从其插件树挂载办公插件。** `SHIPPED_PLUGIN_BUNDLES` 点名 `dsh-univer-office` 与 `@dsh-external/dsh-echarts`，因此 `DSH_TEAM_PLUGIN_TREE` 必须同时带有两者。暂存 profile 中记录的 pnpm 补丁以打过补丁的文件随附，univer 位图导出修复就是这样抵达成员的。
 
-**安装器随附办公技能。** `DSH_TEAM_SKILLS` 把一个由技能文件夹组成的目录暂存为 `runner/skills`，部署补丁把该目录加入 `skill-filesystem` 的 `customSkillDirs`，与成员自己的根目录一同扫描。`DSH_TEAM_PPT_SKILL`、`DSH_TEAM_WORD_SKILL` 与 `DSH_TEAM_EXCEL_SKILL` 点名各办公类型最先加载的技能；除非每个都点名 `DSH_TEAM_SKILLS` 内的一个文件夹，否则打包失败。这些名字以 `teamOfficeSkills` 记入应用元数据，并作为 `pptSkill`、`wordSkill` 与 `excelSkill` 写入 `office` 行，与暂存的模版路径并列。没有暂存技能目录时，部署拒绝办公技能。
+**安装器随附办公技能。** `DSH_TEAM_SKILLS` 把一个由技能文件夹组成的目录暂存为 `runner/skills`，部署补丁以 `includeDefaultRoots: false` 重新启用宿主 `skill-filesystem` 行，并把该目录作为其唯一的 `customSkillDirs` 条目。`dsh-web-app` 因为本地发现由预设负责而禁用了这一行，不重新启用时暂存的技能进不了任何目录；作为宿主行，它注册进每个预设目录都会合并的全局技能层，与各预设仍自行发现的成员自己的根目录并列。`DSH_TEAM_PPT_SKILL`、`DSH_TEAM_WORD_SKILL` 与 `DSH_TEAM_EXCEL_SKILL` 点名各办公类型最先加载的技能；除非每个都点名 `DSH_TEAM_SKILLS` 内的一个文件夹，否则打包失败。这些名字以 `teamOfficeSkills` 记入应用元数据，并作为 `pptSkill`、`wordSkill` 与 `excelSkill` 写入 `office` 行，与暂存的模版路径并列。没有暂存技能目录时，部署拒绝办公技能。
 
 **PowerPoint 技能路线给出模版文件。** 同时配置了 `pptSkill` 与 `welinkinTemplatePath` 时，`ppt` 分节仍以技能为流程所有者，并加上模版文件路径，要求在技能提到模版的地方都使用该路径。这取代了此前技能分支不给出模版路径的规则。
 

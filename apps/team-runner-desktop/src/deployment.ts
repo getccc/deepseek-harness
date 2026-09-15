@@ -129,8 +129,16 @@ export function deploymentPatch(deployment: DesktopDeployment): string {
     { id: 'knowledge', config: address },
     { id: 'web-search-team', config: address },
     ...Object.keys(office).length === 0 ? [] : [{ id: 'office', config: office }],
+    // `dsh-web-app` disables the host `skill-filesystem` row because presets own
+    // local discovery; a deployment-level skill directory belongs in the host's
+    // global skill layer that every preset's catalog merges, so the row is
+    // re-enabled for the staged directory alone.
     ...deployment.skillDir === undefined
       ? []
-      : [{ id: 'skill-filesystem', config: { customSkillDirs: [deployment.skillDir] } }],
+      : [{
+        id: 'skill-filesystem',
+        disabled: false,
+        config: { includeDefaultRoots: false, customSkillDirs: [deployment.skillDir] },
+      }],
   ], null, 2)}\n`
 }
