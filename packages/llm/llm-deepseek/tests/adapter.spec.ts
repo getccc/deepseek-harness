@@ -2191,6 +2191,28 @@ describe('plugin registration and config', () => {
         .rejects.toMatchObject({ code: 'EMPTY_RESPONSE' })
     })
 
+    it('reports a company model error status with the provider message and no Files recovery', async () => {
+      const send = vi.fn<(request: TransportRequest) => Promise<TransportResponse>>(() => Promise.resolve({
+        status: 429,
+        headers: { 'content-type': 'application/json' },
+        body: Readable.from([Buffer.from(JSON.stringify({ error: { message: 'company quota window is full' } }))]),
+      }))
+      const adapter = new DeepSeekAdapter({
+        options: () => resolveAdapterOptions({}),
+        transport: () => ({ send, listModels: () => Promise.resolve([remoteVision]) }) as unknown as LlmHttpTransport,
+        resolveApiKey: () => Promise.reject(new Error('must not resolve')),
+        resolveUserId: () => TEST_USER_ID,
+        prepareExtensions: noExtensions,
+      })
+
+      const failure = await drain(adapter.stream({ provider: BUILT_IN_PROVIDER, model: 'company-vision', messages: [] }))
+        .then(() => undefined, (error: unknown) => error)
+      expect(failure).toBeInstanceOf(LlmError)
+      expect(failure).toMatchObject({ code: 'RATE_LIMIT' })
+      expect((failure as Error).message).toBe('company quota window is full')
+      expect(send).toHaveBeenCalledOnce()
+    })
+
     it('prices a company model from the catalog it last listed', async () => {
       const adapter = new DeepSeekAdapter({
         options: () => resolveAdapterOptions({}),
