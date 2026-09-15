@@ -394,11 +394,24 @@ describe('opening inside a turn', () => {
       : history(slice(6, 12), true)))
     await session.open()
     expect(mock.log.requests(PAGE)).toMatchObject([
-      { address: ADDRESS, beforeSeq: 20, maxMessages: JUMP_PAGE_MESSAGES },
-      { address: ADDRESS, beforeSeq: 12, maxMessages: JUMP_PAGE_MESSAGES },
+      { address: ADDRESS, beforeSeq: 20, maxMessages: 1 },
+      { address: ADDRESS, beforeSeq: 12, maxMessages: 2 },
     ])
     expect(eventSeqs(session)[0]).toBe(6)
     expect(session.getSnapshot()).toMatchObject({ openState: 'open', hasMore: true, loadingOlder: false })
+  })
+
+  it('doubles each page from one message up to the jump page size', async ({ mock, start }) => {
+    const session = await sessionBench(mock, start, SID)
+    mock.stream(FOLLOW, followScript(history(slice(20, 30), true)))
+    mock.remote.session.page.mockImplementation(pageRule(({ beforeSeq = 0 }) =>
+      history(slice(beforeSeq - 1, beforeSeq), true)))
+    await session.open()
+    expect(mock.log.requests(PAGE).map(request => (request as SessionPageRequest).maxMessages)).toEqual([
+      1, 2, 4, 8, 16, 32, 64, 128, JUMP_PAGE_MESSAGES, JUMP_PAGE_MESSAGES, JUMP_PAGE_MESSAGES,
+      JUMP_PAGE_MESSAGES, JUMP_PAGE_MESSAGES, JUMP_PAGE_MESSAGES,
+    ])
+    expect(eventSeqs(session)[0]).toBe(6)
   })
 
   it('pages nothing when the window opens at a turn boundary', async ({ mock, start }) => {

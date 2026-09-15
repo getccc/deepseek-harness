@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-15-opening-a-session-loads-its-cut-turn-start.md
-2026-09-15-opening-a-session-loads-its-cut-turn-start.md: d6e8be1c719b7ca5256b5bf85cd0e01bf7206d08
-2026-09-15-opening-a-session-loads-its-cut-turn-start.zh.md: 47d0e99687314d578fb1291d92e4a56440057f7c
+2026-09-15-opening-a-session-loads-its-cut-turn-start.md: 11b57b5da46fed7aa92fbab39b3bed178b18fb28
+2026-09-15-opening-a-session-loads-its-cut-turn-start.zh.md: 81d4db43242168ab6086dc309c0cbfca73b81ae6
