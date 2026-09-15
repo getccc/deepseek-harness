@@ -474,10 +474,11 @@ describe('opening inside a turn', () => {
   })
 
   it('names the turn of the first turn-scoped event before any turn/start', () => {
-    expect(turnOpenedInside(entries([ev.stepEnd(SessionSeq(3), 4), ev.turnEnd(SessionSeq(4), 4)]))).toBe(4)
-    expect(turnOpenedInside(entries([ev.turnEnd(SessionSeq(4), 4)]))).toBe(4)
-    expect(turnOpenedInside(entries([ev.commandRun(SessionSeq(1), 'c', 'x'), ev.turnStart(SessionSeq(2), 5)]))).toBeUndefined()
-    expect(turnOpenedInside(entries([ev.user(SessionSeq(1), 'q')]))).toBeUndefined()
+    const window = (events: SessionEvent[]) => events.map(event => ({ type: 'event' as const, event }))
+    expect(turnOpenedInside(window([ev.stepEnd(SessionSeq(3), 4), ev.turnEnd(SessionSeq(4), 4)]))).toBe(4)
+    expect(turnOpenedInside(window([ev.turnEnd(SessionSeq(4), 4)]))).toBe(4)
+    expect(turnOpenedInside(window([ev.commandRun(SessionSeq(1), 'c', 'x'), ev.turnStart(SessionSeq(2), 5)]))).toBeUndefined()
+    expect(turnOpenedInside(window([ev.user(SessionSeq(1), 'q')]))).toBeUndefined()
     expect(turnOpenedInside([])).toBeUndefined()
   })
 })
