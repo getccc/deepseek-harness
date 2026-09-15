@@ -67,6 +67,7 @@ const HOST_DESCRIPTION_KEYS = new Map<string, CommandKey>([
   ['goal', 'description.goal'],
   ['permission', 'description.permission'],
   ['plan', 'description.plan'],
+  ['web', 'description.web'],
 ])
 
 /** Command surface: session-keyed directory + '/' source + contribution registry + per-session popups. */
