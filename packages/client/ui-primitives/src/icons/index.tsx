@@ -1003,3 +1003,42 @@ export const IconChartOutline16 = ({ size = 16, className }: IconProps) => (
     />
   </svg>
 )
+
+/* The Session-kind glyphs below mark sidebar Session rows as a chat or a work
+   task; the set carries neither. The chat bubble reuses the new-chat outline
+   without its plus; the briefcase is built from rounded rects at the bubble's
+   1.3px stroke and full 16px extent so the pair reads at one weight. */
+
+/** Chat Session: the new-chat speech-bubble outline over three message dots. */
+export const IconChatOutline16 = ({ size = 16, className }: IconProps) => (
+  <svg width={size} height={size} className={className} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M8.00003 0.3237C3.76075 0.3237 0.32373 3.76072 0.32373 8C0.32373 9.17603 0.589121 10.2922 1.0632 11.2901L1.35291 11.8989L2.5705 11.3205L2.28079 10.7117C1.89079 9.89074 1.67301 8.97167 1.67301 8C1.67301 4.50546 4.50549 1.67298 8.00003 1.67298C11.4946 1.67298 14.3271 4.50546 14.3271 8C14.3271 11.4945 11.4946 14.327 8.00003 14.327C7.28473 14.327 6.76077 14.277 6.29621 14.1487C5.83857 14.0224 5.40441 13.8109 4.88514 13.4488C4.12569 12.919 3.03778 12.7316 2.141 13.2978L2.12682 13.307L2.11264 13.3171L1.34886 13.854L1.79659 15.188L2.86122 14.4384C3.19068 14.2305 3.68325 14.2542 4.11326 14.5539C4.72789 14.9826 5.30042 15.2724 5.93762 15.4484C6.56803 15.6224 7.22776 15.6763 8.00003 15.6763C12.2393 15.6763 15.6763 12.2393 15.6763 8C15.6763 3.76072 12.2393 0.3237 8.00003 0.3237Z"
+      fill="currentColor"
+    />
+    <path
+      d="M5.85 8A0.85 0.85 0 1 1 4.15 8A0.85 0.85 0 1 1 5.85 8ZM8.85 8A0.85 0.85 0 1 1 7.15 8A0.85 0.85 0 1 1 8.85 8ZM11.85 8A0.85 0.85 0 1 1 10.15 8A0.85 0.85 0 1 1 11.85 8Z"
+      fill="currentColor"
+    />
+  </svg>
+)
+
+/** Work Session: briefcase body under a handle, crossed by a clasp rule. */
+export const IconBriefcaseOutline16 = ({ size = 16, className }: IconProps) => (
+  <svg width={size} height={size} className={className} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M3.3 4.3H12.7A2.2 2.2 0 0 1 14.9 6.5V12.1A2.2 2.2 0 0 1 12.7 14.3H3.3A2.2 2.2 0 0 1 1.1 12.1V6.5A2.2 2.2 0 0 1 3.3 4.3ZM3.3 5.6H12.7A0.9 0.9 0 0 1 13.6 6.5V12.1A0.9 0.9 0 0 1 12.7 13H3.3A0.9 0.9 0 0 1 2.4 12.1V6.5A0.9 0.9 0 0 1 3.3 5.6Z"
+      fill="currentColor"
+    />
+    <path
+      d="M5.3 4.3V2.7A1.2 1.2 0 0 1 6.5 1.5H9.5A1.2 1.2 0 0 1 10.7 2.7V4.3H9.4V2.8H6.6V4.3Z"
+      fill="currentColor"
+    />
+    <path
+      d="M2.4 8.7H13.6V9.8H2.4ZM7.1 8.05H8.9A0.45 0.45 0 0 1 9.35 8.5V10A0.45 0.45 0 0 1 8.9 10.45H7.1A0.45 0.45 0 0 1 6.65 10V8.5A0.45 0.45 0 0 1 7.1 8.05Z"
+      fill="currentColor"
+    />
+  </svg>
+)

@@ -52,7 +52,7 @@
 .searchResultTitle {
   flex: 0 1 auto;
   min-width: 0;
-  margin-left: 4px;
+  margin-left: 6px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -65,7 +65,7 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
-  margin-left: 20px;
+  margin-left: 42px;
 }
 
 .searchResultWorkspace,
@@ -100,7 +100,8 @@
   height: 20px;
 }
 
-/* Session cell (figma): pad 8, a 16px status slot, then a 4px title gap. */
+/* Session cell (figma): pad 8, a 16px status slot, a 4px gap, the 16px kind
+   glyph, then a 6px title gap. */
 .sessionRow {
   height: 32px;
   gap: 0;
@@ -110,10 +111,10 @@
 }
 
 .sessionRow .title {
-  margin: 0 6px 0 4px;
+  margin: 0 6px;
 }
 
-.flatSessionRowWithoutStatus .title {
+.flatSessionRowWithoutStatus .kindIcon {
   margin-left: 0;
 }
 
@@ -128,6 +129,18 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+/* Session-kind glyph: tertiary grey like the Workspace folder glyph. */
+.kindIcon {
+  flex: none;
+  width: 16px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
   color: var(--dsw-alias-label-tertiary);
 }
 

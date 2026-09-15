@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
+import type { ReactElement } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, createEvent, fireEvent, render, screen } from '@testing-library/react'
+import { IconBriefcaseOutline16, IconChatOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { WorkspaceId } from '@deepseek-ai/dsh-api-workspace-controller/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import { makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
@@ -15,6 +17,13 @@ afterEach(cleanup)
 const t = makeTranslate(zh, commonZh) as never
 
 const sid = (id: string) => id as SessionId
+/** Markup of a standalone glyph, compared against a row's kind-glyph cell. */
+const glyphMarkup = (glyph: ReactElement): string => {
+  const view = render(glyph)
+  const markup = view.container.innerHTML
+  view.unmount()
+  return markup
+}
 const wid = (id: string) => id as WorkspaceId
 
 /** Half detection reads the row rect; jsdom rects are all-zero by default. */
@@ -64,18 +73,46 @@ describe('workspace browser rows', () => {
     }
     const view = render(<SessionNodeItem node={idle} currentId={undefined} now={0} onOpen={vi.fn()}
       onRename={vi.fn()} onFork={vi.fn()} onArchive={vi.fn()} flat t={t} />)
-    const title = screen.getByText('Flat Session')
-    expect(title.previousElementSibling).toBeNull()
+    const kindIcon = screen.getByText('Flat Session').previousElementSibling
+    expect(kindIcon?.innerHTML).toBe(glyphMarkup(<IconBriefcaseOutline16 />))
+    expect(kindIcon?.previousElementSibling).toBeNull()
 
     view.rerender(<SessionNodeItem node={{ ...idle, running: true }} currentId={undefined} now={0}
       onOpen={vi.fn()} onRename={vi.fn()} onFork={vi.fn()} onArchive={vi.fn()} flat t={t} />)
-    expect(screen.getByText('Flat Session').previousElementSibling?.querySelector('[data-state="ongoing"]')).toBeTruthy()
+    const leading = screen.getByText('Flat Session').previousElementSibling?.previousElementSibling
+    expect(leading?.querySelector('[data-state="ongoing"]')).toBeTruthy()
+  })
+
+  it('marks chat and work Session rows and search results with a decorative kind glyph before the title', () => {
+    const chat: SessionNode = {
+      id: sid('chat'), title: 'Chat Session', kind: 'chat', blank: false, running: false,
+      runningSubagentCount: 0, completed: false, hasActiveSchedule: false, updatedAt: 0,
+    }
+    const chatGlyph = glyphMarkup(<IconChatOutline16 />)
+    const kindIconOf = (title: string): Element | null => screen.getByText(title).previousElementSibling
+    const view = render(<SessionNodeItem node={chat} currentId={undefined} now={0} onOpen={vi.fn()}
+      onRename={vi.fn()} onFork={vi.fn()} onArchive={vi.fn()} flat t={t} />)
+    expect(kindIconOf('Chat Session')?.innerHTML).toBe(chatGlyph)
+    expect(kindIconOf('Chat Session')?.getAttribute('aria-hidden')).toBe('true')
+
+    view.rerender(<SessionNodeItem node={{ ...chat, kind: 'work', title: 'Work Session' }} currentId={undefined}
+      now={0} onOpen={vi.fn()} onRename={vi.fn()} onFork={vi.fn()} onArchive={vi.fn()} t={t} />)
+    expect(kindIconOf('Work Session')?.innerHTML).toBe(glyphMarkup(<IconBriefcaseOutline16 />))
+    view.unmount()
+
+    const result: SearchResultNode = {
+      id: sid('chat-result'), kind: 'chat', title: 'Chat result', workspace: '',
+      running: false, runningSubagentCount: 0, completed: false, hasActiveSchedule: false,
+    }
+    render(<SearchResultItem result={result} currentId={undefined} onOpen={vi.fn()} t={t} />)
+    expect(kindIconOf('Chat result')?.innerHTML).toBe(chatGlyph)
   })
 
   it('renders a selected content-search row and opens only its session', () => {
     const onOpen = vi.fn()
     const result: SearchResultNode = {
       id: sid('result'),
+      kind: 'work',
       title: 'Result title',
       workspace: 'Workspace context',
       running: true,
@@ -99,7 +136,7 @@ describe('workspace browser rows', () => {
   it('keeps the active-Schedule marker after a search title and inside the row action', () => {
     const onOpen = vi.fn()
     const result: SearchResultNode = {
-      id: sid('scheduled-result'), title: 'Scheduled result', workspace: 'Project',
+      id: sid('scheduled-result'), kind: 'work', title: 'Scheduled result', workspace: 'Project',
       running: false, runningSubagentCount: 0, completed: false, hasActiveSchedule: true,
     }
     render(<SearchResultItem result={result} currentId={undefined} onOpen={onOpen} t={t} />)
@@ -122,7 +159,7 @@ describe('workspace browser rows', () => {
     ['question', '等待回答'],
   ] as const)('shows %s ahead of running in search results', (pendingInteraction, label) => {
     const result: SearchResultNode = {
-      id: sid(pendingInteraction), title: 'Needs input', workspace: 'Project',
+      id: sid(pendingInteraction), kind: 'work', title: 'Needs input', workspace: 'Project',
       pendingInteraction, running: true, runningSubagentCount: 0, completed: false,
       hasActiveSchedule: false,
     }
@@ -295,7 +332,7 @@ describe('workspace browser rows', () => {
   it('shows the green done dot on a finished search result row', () => {
     render(<SearchResultItem
       result={{
-        id: sid('result'), title: 'Done', workspace: 'Workspace', running: false,
+        id: sid('result'), kind: 'work', title: 'Done', workspace: 'Workspace', running: false,
         runningSubagentCount: 0, completed: true, hasActiveSchedule: false,
       }}
       currentId={undefined} onOpen={vi.fn()} t={t}

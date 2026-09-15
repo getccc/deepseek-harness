@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
 import {
   HoverCard, IconAlarmClockOutline16, IconArchiveOutline20, IconBranchOutline16,
-  IconEditOutline16, IconEllipsisOutline16, IconFolderClose16, IconFolderOpen16,
+  IconBriefcaseOutline16, IconChatOutline16, IconEditOutline16, IconEllipsisOutline16, IconFolderClose16, IconFolderOpen16,
   IconPlusOutline16, IconTrashOutline16, IconTriangleRightFill14, Menu, relativeTime,
   StateDot,
 } from '@deepseek-ai/dsh-client-ui-primitives'
@@ -281,6 +281,18 @@ function SessionStatusDots({ statuses }: { statuses: readonly [SessionStatus, ..
   )
 }
 
+/**
+ * Leading Session-kind glyph: a chat bubble or a work briefcase. Decorative like
+ * the Workspace folder glyph; the Recent filter and blank-row titles name the kind.
+ */
+function SessionKindIcon({ kind }: { kind: SessionNode['kind'] }) {
+  return (
+    <span className={css.kindIcon} aria-hidden="true">
+      {kind === 'chat' ? <IconChatOutline16 /> : <IconBriefcaseOutline16 />}
+    </span>
+  )
+}
+
 /** Non-interactive active-Schedule marker; the enclosing row remains the only action. */
 function ActiveScheduleIndicator({ t, search = false }: { t: RowTranslate; search?: boolean }) {
   const label = t('schedule.active')
@@ -316,7 +328,7 @@ function SessionHoverContent({ node, now, t }: { node: SessionNode; now: number;
 }
 
 /**
- * One flat search result: title, Workspace context, and optional content
+ * One flat search result: Session-kind glyph, title, Workspace context, and optional content
  * excerpt. Search navigation opens the session only; it does not address an
  * event inside the conversation.
  * @param props.result - merged local/content search row.
@@ -348,6 +360,7 @@ export function SearchResultItem({ result, currentId, onOpen, t }: {
             <SessionStatusDots statuses={statuses} />
           )}
         </span>
+        <SessionKindIcon kind={result.kind} />
         <span className={css.searchResultTitle}>{result.title}</span>
         {result.hasActiveSchedule && <ActiveScheduleIndicator t={t} search />}
       </span>
@@ -363,7 +376,8 @@ export function SearchResultItem({ result, currentId, onOpen, t }: {
 
 /**
  * One top-level 34px session row: status dot (pending user interaction outranks
- * own or descendant activity), title, relative time, and the row actions menu.
+ * own or descendant activity), Session-kind glyph, title, relative time, and
+ * the row actions menu.
  * @param props.node - derived session node.
  * @param props.currentId - selected session id (row highlight).
  * @param props.now - epoch ms for relative-time formatting.
@@ -420,7 +434,7 @@ export function SessionNodeItem({
     // 20-native glyph in the menu's 16px icon slot (Menu.module.css .itemIcon).
     { id: 'archive', label: t('menu.archiveSession'), icon: <IconArchiveOutline20 size={16} /> },
   ]
-  // Figma session cell: pad 8, status slot 16, then a 4px title gap.
+  // Figma session cell: pad 8, status slot 16, a 4px gap, the kind glyph, then a 6px title gap.
   const ownRow = (
     <div
       ref={rowRef}
@@ -465,6 +479,7 @@ export function SessionNodeItem({
           {showStatus && <SessionStatusDots statuses={statuses} />}
         </span>
       )}
+      <SessionKindIcon kind={row.kind} />
       <span className={css.title}>{title}</span>
       {row.hasActiveSchedule && <ActiveScheduleIndicator t={t} />}
       {/* A blank New Session row is a provisional placeholder: nothing has

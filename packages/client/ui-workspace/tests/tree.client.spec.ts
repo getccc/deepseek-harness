@@ -448,6 +448,7 @@ describe('deriveSearchResults', () => {
       items: [
         {
           id: titleHit.id,
+          kind: 'work',
           title: 'Needle title',
           workspace: 'Alpha',
           running: false,
@@ -459,6 +460,7 @@ describe('deriveSearchResults', () => {
         },
         {
           id: workspaceHit.id,
+          kind: 'work',
           title: 'Ordinary title',
           workspace: 'Needle Workspace',
           running: false,
@@ -468,6 +470,7 @@ describe('deriveSearchResults', () => {
         },
         {
           id: contentHit.id,
+          kind: 'work',
           title: 'content-hit',
           workspace: 'c',
           running: false,

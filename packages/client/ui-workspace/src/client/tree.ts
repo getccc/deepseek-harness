@@ -88,6 +88,8 @@ export interface GroupNode {
 /** One flat search row combining list metadata with an optional content match. */
 export interface SearchResultNode {
   id: SessionId
+  /** Which kind of Session the result is. */
+  kind: SessionKind
   title: string
   workspace: string
   /** A Session-scoped UI consumer is awaiting this user. */
@@ -455,6 +457,7 @@ export function deriveSearchResults(
       const pendingInteraction = visiblePendingKind(pendingInteractions.get(summary.id)?.kind)
       return {
         id: summary.id,
+        kind: summary.kind,
         title: sessionTitle(summary),
         workspace: labelOf(summary),
         running: summary.running,
