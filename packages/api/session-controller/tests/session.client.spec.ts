@@ -5,7 +5,7 @@ import { SessionSeq, type SessionEvent } from '@deepseek-ai/dsh-session/types'
 import type { SessionId } from '@deepseek-ai/dsh-api-remotes/client'
 import { RemoteStreamCarrierError } from '@deepseek-ai/dsh-api-gateway/client'
 import { RemoteError } from '@deepseek-ai/dsh-typert-protocol'
-import { JUMP_PAGE_MESSAGES, Session, type SessionOptions } from '../src/client/sessions/session.ts'
+import { JUMP_PAGE_MESSAGES, Session, turnOpenedInside, type SessionOptions } from '../src/client/sessions/session.ts'
 import { FakeApiClient, deferred, err, fakeRemote, ok } from './fake-api.client.ts'
 import { entries, ev, historyValue, plainTurn } from './event-script.client.ts'
 
@@ -388,6 +388,97 @@ describe('paging', () => {
     await Promise.all([first, second])
     expect(api.callsOf('session.follow')).toHaveLength(1)
     expect(api.callsOf('session.history')).toHaveLength(1)
+  })
+})
+
+describe('opening inside a turn', () => {
+  /** Turn-scoped step events for one turn, contiguous from startSeq. */
+  function steps(startSeq: number, count: number, turn: number): SessionEvent[] {
+    return Array.from({ length: count }, (_value, index) => index % 2 === 0
+      ? ev.stepStart(SessionSeq(startSeq + index), turn, index / 2)
+      : ev.stepEnd(SessionSeq(startSeq + index), turn, (index - 1) / 2))
+  }
+
+  /** Turn 0 (seqs 0-5), then turn 1 opening at seq 6 with its steps through seq 29. */
+  const log = [
+    ...plainTurn(SessionSeq(0), 0, '旧问', '旧答'),
+    ev.turnStart(SessionSeq(6), 1),
+    ev.user(SessionSeq(7), '长任务'),
+    ...steps(8, 22, 1),
+  ]
+  const slice = (from: number, to: number) => log.filter(event => event.seq >= from && event.seq < to)
+
+  it('pages back to the turn/start of a cut turn and loads no older turn', async () => {
+    const { api, session } = makeSession()
+    api.onHistory = (payload) => {
+      if (payload.beforeSeq === undefined) return histResponse(slice(20, 30), true)
+      return payload.beforeSeq === 20 ? histResponse(slice(12, 20), true) : histResponse(slice(6, 12), true)
+    }
+    await session.open()
+    expect(api.callsOf('session.history')).toMatchObject([
+      { beforeSeq: 20, maxMessages: JUMP_PAGE_MESSAGES },
+      { beforeSeq: 12, maxMessages: JUMP_PAGE_MESSAGES },
+    ])
+    expect(eventSeqs(session)[0]).toBe(6)
+    expect(session.getSnapshot()).toMatchObject({ openState: 'open', hasMore: true, loadingOlder: false })
+  })
+
+  it('pages nothing when the window opens at a turn boundary', async () => {
+    const { api, session } = makeSession()
+    api.onHistory = () => histResponse(slice(6, 30), true)
+    await session.open()
+    expect(api.callsOf('session.history')).toHaveLength(0)
+  })
+
+  it('stops on a page that makes no progress', async () => {
+    const { api, session } = makeSession()
+    api.onHistory = payload => payload.beforeSeq === undefined
+      ? histResponse(slice(20, 30), true)
+      : histResponse([], true)
+    await session.open()
+    expect(api.callsOf('session.history')).toHaveLength(1)
+    expect(session.getSnapshot()).toMatchObject({ openState: 'open', loadingOlder: false })
+  })
+
+  it('fails soft on a thrown page and keeps the opened window', async () => {
+    const { api, session } = makeSession()
+    api.onHistory = payload => payload.beforeSeq === undefined
+      ? histResponse(slice(20, 30), true)
+      : Promise.reject(new Error('page wire down'))
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    try {
+      await session.open()
+      expect(errorSpy).toHaveBeenCalled()
+      expect(eventSeqs(session)[0]).toBe(20)
+      expect(session.getSnapshot()).toMatchObject({ openState: 'open', loadingOlder: false })
+    } finally {
+      errorSpy.mockRestore()
+    }
+  })
+
+  it('stops when the event stream generation moves while a page is in flight', async () => {
+    const { api, session } = makeSession()
+    const gate = deferred<Awaited<ReturnType<FakeApiClient['onHistory']>>>()
+    api.onHistory = payload => payload.beforeSeq === undefined ? histResponse(slice(20, 30), true) : gate.promise
+    const opened = session.open()
+    await vi.waitFor(() => {
+      expect(api.callsOf('session.history')).toHaveLength(1)
+    })
+    api.onHistory = () => histResponse(slice(6, 30), true)
+    const rebuilt = session.resync()
+    gate.resolve(ok(historyValue(slice(12, 20), true)))
+    await opened
+    await rebuilt
+    expect(api.callsOf('session.history')).toHaveLength(1)
+    expect(session.getSnapshot().loadingOlder).toBe(false)
+  })
+
+  it('names the turn of the first turn-scoped event before any turn/start', () => {
+    expect(turnOpenedInside(entries([ev.stepEnd(SessionSeq(3), 4), ev.turnEnd(SessionSeq(4), 4)]))).toBe(4)
+    expect(turnOpenedInside(entries([ev.turnEnd(SessionSeq(4), 4)]))).toBe(4)
+    expect(turnOpenedInside(entries([ev.commandRun(SessionSeq(1), 'c', 'x'), ev.turnStart(SessionSeq(2), 5)]))).toBeUndefined()
+    expect(turnOpenedInside(entries([ev.user(SessionSeq(1), 'q')]))).toBeUndefined()
+    expect(turnOpenedInside([])).toBeUndefined()
   })
 })
 

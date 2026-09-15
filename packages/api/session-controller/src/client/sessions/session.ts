@@ -55,6 +55,21 @@ export const PAGE_MESSAGES = 50
 /** Messages requested per page while a turn jump loops backwards (fewer, larger round trips). */
 export const JUMP_PAGE_MESSAGES = 200
 
+/**
+ * The turn an event window opens inside of.
+ * @param entries - a contiguous event window in seq order.
+ * @returns the turn of the first turn-scoped event when that event precedes the
+ * turn's `turn/start`, or undefined when the window opens at or between turns.
+ */
+export function turnOpenedInside(entries: readonly SessionEventLikeEntry[]): number | undefined {
+  for (const { event } of entries) {
+    if (event.type === 'turn/start') return undefined
+    const turn = (event.data as { readonly turn?: unknown } | undefined)?.turn
+    if (typeof turn === 'number') return turn
+  }
+  return undefined
+}
+
 /** Manager-owned observers of a Session object's local state edges. */
 export interface SessionOptions {
   /** Catalog-discovered address selecting non-activating subagent transport. */
@@ -621,6 +636,7 @@ export class Session implements SessionFace {
       await events.open({ maxMessages: PAGE_MESSAGES })
       if (generation !== this.openGeneration || this.events !== events) return
       this.openState = 'open'
+      await this.loadOpeningTurnStart(generation)
     } catch (error) {
       if (generation !== this.openGeneration || this.events !== events) return
       if (!isRemoteFailure(error)) throw error
@@ -629,6 +645,39 @@ export class Session implements SessionFace {
       this.openError = error
     } finally {
       if (generation === this.openGeneration) this.notifier.markDirty()
+    }
+  }
+
+  /**
+   * Page backwards until the opening window holds the `turn/start` of the turn
+   * it opens inside of. A message-counted page can cut a long turn; turn-scoped
+   * Conversation Definitions ignore every update until their start arrives, so
+   * without this a long last turn renders without its turn-level views.
+   * @param generation - openGeneration of the open pass that installed the window.
+   */
+  private async loadOpeningTurnStart(generation: number): Promise<void> {
+    const turn = turnOpenedInside(this.eventSource.getSnapshot().entries)
+    if (turn === undefined) return
+    const hasStart = (): boolean => this.eventSource.getSnapshot().entries.some(({ event }) =>
+      event.type === 'turn/start' && event.data.turn === turn)
+    this.loadingOlder = true
+    this.notifier.markDirty()
+    try {
+      while (this.hasMore && !hasStart()) {
+        const events = this.events
+        if (generation !== this.openGeneration || events === undefined) return
+        const before = this.baseSeq
+        await events.prepend({ beforeSeq: this.baseSeq, maxMessages: JUMP_PAGE_MESSAGES })
+        // An empty or dropped page that still claims more history ends the loop.
+        if (this.baseSeq >= before) return
+      }
+    } catch (error) {
+      if (!isRemoteFailure(error)) {
+        console.error('[session-controller] opening turn load failed:', error)
+      }
+    } finally {
+      this.loadingOlder = false
+      this.notifier.markDirty()
     }
   }
 
