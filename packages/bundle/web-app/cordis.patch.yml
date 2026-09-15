@@ -105,6 +105,11 @@
     - id: session-controller
       name: '@deepseek-ai/dsh-api-session-controller'
 
+    # The composer web switch's Remote: sets one Session's `web/access` for
+    # the chip without a command node in the transcript.
+    - id: api-web-access-controller
+      name: '@deepseek-ai/dsh-api-web-access-controller'
+
     # Workspace file service: bounded read, directory listing, and the
     # agent-write change feed inside the session workspace root.
     - id: workspace-files

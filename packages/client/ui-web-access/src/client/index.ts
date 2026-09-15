@@ -1,13 +1,21 @@
 /**
  * Web access control plugin, browser half: a switch chip in the composer's
  * `conversation.input.left` zone over the `webAccess` projection. The chip
- * renders for a Session whose composition offers the switch (the projection
- * carries a boolean) and executes `/web on` or `/web off` through the command
- * channel; zero client-side switch state.
+ * renders for a Session the Host offers the switch to (the `webAccess` Remote
+ * answers its state, and the projection carries a boolean) and sets it
+ * through the same Remote, which
+ * records the same `web/access` event the `/web` command does without a
+ * command node in the transcript; zero client-side switch state.
+ *
+ * The `webAccess` namespace is mounted here rather than in the shared Client
+ * assembly because only a Host composing the switch serves it.
  */
-import type {} from '@deepseek-ai/dsh-api-remotes/client'
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
+import webAccessRemote from '@deepseek-ai/dsh-api-web-access-controller/remote'
+// Type-only: the assembled Client Remote face this plugin extends.
+import type {} from '@deepseek-ai/dsh-api-remotes/client'
+import type {} from '@deepseek-ai/dsh-api-web-access-controller/remote'
 // Type-only: pulls the ui-conversation SlotMap merge (the composer left zone).
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 // Type-only: pulls the locale plugin's Context merge (ctx.locale).
@@ -30,14 +38,20 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
 /** Dictionary namespace owned by this plugin. */
 const NS = 'webAccess'
 
-/** Required services: the chip's slot registry, commands Remote, and locale registry. */
-export const inject = ['slots', 'remote', 'remote.commands', 'locale']
+/** Required services: the chip's slot registry, the Remote mount, and the locale registry. */
+export const inject = ['locale', 'remote', 'slots']
 
 /**
- * Client plugin body: register the web switch chip over the command channel.
+ * Client plugin body: mount the webAccess Remote namespace, then register the chip.
  * @param ctx - client root context.
  */
 export function apply(ctx: ClientContext): void {
+  ctx.effect(() => ctx.remote.$mount(webAccessRemote), 'ui-web-access: webAccess Remote namespace')
+  ctx.inject(['locale', 'remote.webAccess', 'slots'], registerUi)
+}
+
+/** Register the composer chip over a live `webAccess` namespace. */
+function registerUi(ctx: ClientContext): void {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'ui-web-access: dictionaries')
 
   ctx.slots.inject('conversation.input.left', () => ctx.slots.register({
@@ -48,13 +62,13 @@ export function apply(ctx: ClientContext): void {
     order: 50,
     locale: NS,
     inject: (sessionId: SessionId): WebAccessChipInjected => ({
+      // The Host refuses a member it does not permit to search, and a Session
+      // whose composition offers no switch; either way there is nothing to show.
+      offered: async () => (await ctx.remote.webAccess.state(sessionId)).ok,
       // Failure strings stay English (error-surface policy: not localized).
       setEnabled: async (enabled) => {
-        const line = enabled ? '/web on' : '/web off'
-        const result = await ctx.remote.commands.execute(sessionId, line, [])
-        if (!result.ok) return `${result.error.message} (${result.error.code})`
-        if (result.value === undefined) return `unknown command: ${line}`
-        return result.value.result.kind === 'error' ? result.value.result.text : null
+        const result = await ctx.remote.webAccess.set(sessionId, enabled)
+        return result.ok ? null : `${result.error.message} (${result.error.code})`
       },
     }),
   }, WebAccessChip))

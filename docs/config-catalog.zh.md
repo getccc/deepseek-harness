@@ -4007,6 +4007,7 @@ export interface Config {
 - `@deepseek-ai/dsh-api-knowledge-controller` — 需要 `agents` · `knowledge` · `typert`（[`packages/api/knowledge-controller/src/index.ts`](../packages/api/knowledge-controller/src/index.ts)）
 - `@deepseek-ai/dsh-api-office-controller` — 需要 `agents` · `typert`（[`packages/api/office-controller/src/index.ts`](../packages/api/office-controller/src/index.ts)）
 - `@deepseek-ai/dsh-api-remotes` — 需要 `typertGateway`（[`packages/api/remotes/src/index.ts`](../packages/api/remotes/src/index.ts)）
+- `@deepseek-ai/dsh-api-web-access-controller` — 需要 `agents` · `typert` · `web`（[`packages/api/web-access-controller/src/index.ts`](../packages/api/web-access-controller/src/index.ts)）
 - `@deepseek-ai/dsh-api-workspace-controller` — 需要 `typert` · `workspaceRegistry`（[`packages/api/workspace-controller/src/index.ts`](../packages/api/workspace-controller/src/index.ts)）
 - `@deepseek-ai/dsh-authorization` — 需要 `credentials`（[`packages/credentials/authorization/src/index.ts`](../packages/credentials/authorization/src/index.ts)）
 - `@deepseek-ai/dsh-client-file-upload` — 需要 `agents` · `attachments` · `commands` · `connection`（[`packages/client/file-upload/src/index.ts`](../packages/client/file-upload/src/index.ts)）

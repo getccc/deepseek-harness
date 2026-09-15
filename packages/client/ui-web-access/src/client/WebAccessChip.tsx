@@ -12,8 +12,14 @@ import css from './WebAccessChip.module.css'
 /** What this control needs from the plugin that registered it. */
 export interface WebAccessChipInjected {
   /**
-   * Set the switch by executing `/web on` or `/web off`.
-   * @returns null on admitted execution; a user-visible failure line otherwise.
+   * Whether the Host offers this conversation a switch at all: the composition
+   * mounts one and the deployment permits this member to search.
+   * @returns true when the chip should render.
+   */
+  offered: () => Promise<boolean>
+  /**
+   * Set the switch through the `webAccess` Remote.
+   * @returns null once recorded; a user-visible failure line otherwise.
    */
   setEnabled: (enabled: boolean) => Promise<string | null>
 }
@@ -28,14 +34,19 @@ export type WebAccessChipProps =
  * Switch this conversation's web access from the composer.
  *
  * The state is read from the `webAccess` projection rather than held here:
- * the `/web` command writes the same Session event, so whichever way a member
- * flipped it, the chip and the model agree a moment later. A click sends the
- * opposite of the projected state and waits for the projection to confirm.
+ * the Remote and the `/web` command write the same Session event, so
+ * whichever way a member flipped it, the chip and the model agree a moment
+ * later. A click sends the opposite of the projected state and waits for the
+ * projection to confirm.
+ * The chip renders only once the Host has said the switch is offered to this
+ * member: the projection alone cannot say that, because a member whose grant
+ * was revoked still has the log an earlier session wrote.
  * @param props - the composer zone's runtime share, the plugin's face, and the locale seat.
- * @returns the control, or null for a Session whose composition offers no switch.
+ * @returns the control, or null for a Session that is offered no switch.
  */
-export function WebAccessChip({ useProjection, setEnabled, t }: WebAccessChipProps) {
+export function WebAccessChip({ sessionId, useProjection, offered, setEnabled, t }: WebAccessChipProps) {
   const access = useProjection('webAccess')
+  const [shown, setShown] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const aliveRef = useRef(true)
@@ -47,7 +58,24 @@ export function WebAccessChip({ useProjection, setEnabled, t }: WebAccessChipPro
     }
   }, [])
 
-  if (access === undefined || access.enabled === null) return null
+  // Asked when the conversation opens, and again when the projection first
+  // carries a value: the Host logs a fresh Session's initial value only after
+  // its own permission decision lands, so an ask that raced ahead of it was
+  // refused for a reason that has since gone.
+  const projected = access !== undefined && access.enabled !== null
+  useEffect(() => {
+    setShown(false)
+    void offered().then((yes) => {
+      if (aliveRef.current) setShown(yes)
+    }, () => {
+      // An unanswered question hides the chip: a control the Host may refuse is
+      // worse than none.
+      if (aliveRef.current) setShown(false)
+    })
+  }, [sessionId, offered, projected])
+
+  // Spelled out rather than through `projected` so the value narrows to a boolean.
+  if (!shown || access === undefined || access.enabled === null) return null
   const on = access.enabled
 
   const flip = (): void => {

@@ -293,6 +293,7 @@
     { "path": "./packages/office/office" },
     { "path": "./packages/office/tool-office" },
     { "path": "./packages/api/office-controller" },
+    { "path": "./packages/api/web-access-controller" },
     { "path": "./packages/web/web" },
     { "path": "./packages/web/web-search-exa" },
     { "path": "./packages/web/web-search-perplexity" },

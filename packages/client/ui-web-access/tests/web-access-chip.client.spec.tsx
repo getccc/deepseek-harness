@@ -22,40 +22,67 @@ const t: WebAccessChipProps['t'] = makeTranslate(zh, commonZh)
 function setup(
   access: WebAccessProjection | undefined,
   setEnabled = vi.fn((_enabled: boolean) => Promise.resolve<string | null>(null)),
+  offered: () => Promise<boolean> = () => Promise.resolve(true),
 ) {
   const store = createSnapshotStore<{ value: WebAccessProjection | undefined }>({ value: access })
   const useProjection = (_key: string, selector?: (v: unknown) => unknown) =>
     bindSnapshotSelector(store)(s => (selector ?? (v => v))(s.value))
-  const props = { useProjection, setEnabled, t } as unknown as WebAccessChipProps
+  const props = { sessionId: 's1', useProjection, offered, setEnabled, t } as unknown as WebAccessChipProps
   const view = render(<WebAccessChip {...props} />)
   return { store, setEnabled, view }
 }
+
+/** Let the offered question settle. */
+const settled = () => new Promise(resolve => setTimeout(resolve, 0))
 
 const offChip = () => screen.getByRole('button', { name: '联网已关闭，按下开启' })
 const onChip = () => screen.getByRole('button', { name: '联网已开启，按下关闭' })
 
 describe('WebAccessChip', () => {
-  it('renders nothing for an absent capability or a composition without a switch', () => {
+  it('renders nothing for an absent capability, a composition without a switch, or a member the Host refuses', async () => {
     const absent = setup(undefined)
+    await settled()
     expect(absent.view.container.innerHTML).toBe('')
     cleanup()
     const unswitched = setup({ enabled: null })
+    await settled()
     expect(unswitched.view.container.innerHTML).toBe('')
+    cleanup()
+    const refused = setup({ enabled: false }, undefined, () => Promise.resolve(false))
+    await settled()
+    expect(refused.view.container.innerHTML).toBe('')
+    cleanup()
+    const unanswered = setup({ enabled: false }, undefined, () => Promise.reject(new Error('gone')))
+    await settled()
+    expect(unanswered.view.container.innerHTML).toBe('')
   })
 
-  it('states the projected value as a pressed toggle', () => {
-    setup({ enabled: false })
-    expect(offChip().getAttribute('aria-pressed')).toBe('false')
+  it('asks again once the projection first carries a value, so an ask that raced the Host\'s decision recovers', async () => {
+    const answers = [false, true]
+    const offered = vi.fn(() => Promise.resolve(answers.shift() ?? true))
+    const { store, view } = setup({ enabled: null }, undefined, offered)
+    await settled()
+    expect(view.container.innerHTML).toBe('')
+    store.set({ value: { enabled: false } })
+    await waitFor(() => { expect(offChip()).toBeTruthy() })
+    expect(offered).toHaveBeenCalledTimes(2)
+  })
+
+  it('states the projected value as a pressed toggle once the Host says the switch is offered', async () => {
+    const { view } = setup({ enabled: false })
+    expect(view.container.innerHTML).toBe('')
+    await waitFor(() => { expect(offChip().getAttribute('aria-pressed')).toBe('false') })
     expect(offChip().textContent).toBe('联网')
     cleanup()
     setup({ enabled: true })
-    expect(onChip().getAttribute('aria-pressed')).toBe('true')
+    await waitFor(() => { expect(onChip().getAttribute('aria-pressed')).toBe('true') })
   })
 
   it('sends the opposite value once and follows the projection', async () => {
     let resolve!: (value: string | null) => void
     const setEnabled = vi.fn((_enabled: boolean) => new Promise<string | null>((done) => { resolve = done }))
     const { store } = setup({ enabled: false }, setEnabled)
+    await waitFor(() => { expect(offChip()).toBeTruthy() })
     fireEvent.click(offChip())
     expect(setEnabled).toHaveBeenCalledExactlyOnceWith(true)
     // Busy until the command settles: a second click sends nothing.
@@ -71,6 +98,7 @@ describe('WebAccessChip', () => {
   it('reports a refused flip inline and clears it on the next attempt', async () => {
     const setEnabled = vi.fn((_enabled: boolean) => Promise.resolve<string | null>('Usage: /web [on|off]'))
     setup({ enabled: false }, setEnabled)
+    await waitFor(() => { expect(offChip()).toBeTruthy() })
     fireEvent.click(offChip())
     await waitFor(() => { expect(screen.getByRole('status').textContent).toBe('切换联网失败') })
     expect(screen.getByRole('status').getAttribute('title')).toBe('Usage: /web [on|off]')
@@ -82,10 +110,24 @@ describe('WebAccessChip', () => {
     await waitFor(() => { expect(screen.getByRole('status').getAttribute('title')).toBe('offline') })
   })
 
+  it('ignores an offered answer, yes or no, that lands after unmount', async () => {
+    for (const settle of [(done: (value: boolean) => void) => { done(true) }, (_done: (value: boolean) => void, fail: (reason: unknown) => void) => { fail(new Error('late')) }]) {
+      let finish!: () => void
+      const offered = () => new Promise<boolean>((done, fail) => { finish = () => { settle(done, fail) } })
+      const { view } = setup({ enabled: false }, undefined, offered)
+      view.unmount()
+      finish()
+      await settled()
+      expect(view.container.innerHTML).toBe('')
+      cleanup()
+    }
+  })
+
   it('ignores a settlement or a rejection that lands after unmount', async () => {
     let resolve!: (value: string | null) => void
     const setEnabled = vi.fn((_enabled: boolean) => new Promise<string | null>((done) => { resolve = done }))
     const { view } = setup({ enabled: false }, setEnabled)
+    await waitFor(() => { expect(offChip()).toBeTruthy() })
     fireEvent.click(offChip())
     view.unmount()
     resolve('late')
@@ -96,6 +138,7 @@ describe('WebAccessChip', () => {
     let reject!: (reason: unknown) => void
     const failing = vi.fn((_enabled: boolean) => new Promise<string | null>((_done, fail) => { reject = fail }))
     const late = setup({ enabled: true }, failing)
+    await waitFor(() => { expect(onChip()).toBeTruthy() })
     fireEvent.click(onChip())
     late.view.unmount()
     reject(new Error('late'))

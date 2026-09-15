@@ -18,7 +18,9 @@ host 里有三个事实挡在前面。`session.create` 没有 Workspace 或 cwd 
 
 **无 cwd 的会话是完整的会话。** 列表、搜索、历史分页、follow、冷恢复、inspect 和 skill 目录都为它服务；Workspace 注册表不再把它记为无效路径，因为没有 Workspace 能索引它。它的日志位于持久层早已存在的 `_no-cwd` 目录。会话格式不变：header 里的 `cwd` 本来就是可选的。
 
-**工具面是 host 事实。** `dsh-tool-restriction` 是 `ctx.tools.restrict()` 的配置面，挂在 preset 组合内；`allow: []` 为加入该 preset 的 agent 遮蔽全部全局工具，包括部署之后注册的工具，所以"聊天没有工具"不依赖每个 host 层工具自己的可见性规则。
+**工具面是 host 事实。** `dsh-tool-restriction` 是 `ctx.tools.restrict()` 的配置面，挂在 preset 组合内；`allow: []` 为加入该 preset 的 agent 遮蔽全部全局工具，包括部署之后注册的工具，所以"聊天没有工具"不依赖每个 host 层工具自己的可见性规则。限制只过滤其自身作用域继承的内容，绝不过滤该作用域自己贡献的内容：注册表只通过比名称贡献层更靠近观察 agent 的各层限制来遮蔽一个名称，因此 preset 的 `allow: []` 让 preset 自身行注册的工具对加入其下的 agent 保持可见，这正是限制行的 README 一直声明的契约。
+
+**联网是聊天组合内的按会话开关。** chat preset 以 `sessionSwitch: off` 挂载 `dsh-tool-web`；该行照常注册 `web_search` 与 `web_fetch`，并通过 agent 自身作用域上的实时限制，对 Session 开关为关的每个 agent 扣留它们（指引一并扣留），与 `tool-knowledge` 扣留 `knowledge_search` 的方式相同。`/web` 命令记录一条 `web/access` 事件，`webAccess` 投影为客户端折叠它，而该行在首次遇到日志中没有该事件的 agent 时记录配置的初始值，因此日志陈述模型被提供了什么，恢复或分叉的聊天被提供的正是其日志所说的。composer 的「联网」徽章（`ui-web-access`）在投影携带布尔值的 Session 上渲染，并经 `webAccess` Remote（`dsh-api-web-access-controller`）设置开关，它记录与命令相同的 `web/access` 事件但不留下命令节点，所以反复点击徽章不会填满对话流；工作会话的投影折叠为 `null`，所以不出现徽章。初始的 `web/access` 事件加入不影响 `pristine` 的 seed 事件之列，所以"新对话"仍会复用未被触碰的聊天。
 
 **客户端只读一个事实。** `SessionSummary.kind` 在摘要不含 cwd 时为 `chat`，否则为 `work`，在 session service 里推导一次。侧栏顶部两项是"新对话"和"新工作任务"；`uiWorkspace.startChat()` 复用 pristine 的聊天会话或以不命名位置的方式新建一个；Workspace 树下方的 `sidebar.recent` 区块按最新优先列出会话，过滤器持久化（聊天、工作、全部；默认聊天），聊天会话绝不进入 Workspace 树或其单列表。聊天会话的 hero 不渲染 Workspace 行也不 inert；其 composer 隐藏访问 chip、plan slot 以及知识和 office 选择器；agent-preset chip 只提供 `required` 的 preset，也绝不把暂存的选择施加到聊天会话上。
 
@@ -31,6 +33,10 @@ host 里有三个事实挡在前面。`session.create` 没有 Workspace 或 cwd 
 **仅靠约定实现零工具。** 隐藏知识和 office 选择器后，每个 host 层工具仍由各自的可见性规则管辖，部署之后新增一个就会进入聊天会话。限制行只多一个小包，却让工具面成为挂载时的事实。
 
 **在客户端推导聊天 preset id。** 侧栏本可以读 roster 并用 `none` 默认值的 id 创建。拒绝：不命名位置在 host 上已经选择了 `chatDefault`，客户端因此不携带任何 preset id，部署只在一处更改聊天组合。
+
+**第二个 preset（`chat-web`）经 `agentPresets.select` 切换。** 开关本可以是两个 `none` 组合之间的 preset 交换。拒绝：Session 一旦跑过一轮，host 就拒绝交换，因为在一套工具下产生的历史无法在另一套下重放，成员只能在第一条消息之前选择联网；按会话记录的值随时可翻转，而它驱动的限制正是知识工具已在使用的机制。
+
+**折叠时读取部署默认值的投影。** 折叠 `enabled: logged ?? config.sessionSwitch` 本可以省掉初始事件。拒绝：投影注册表在挂载该行的每个 preset 之间共享同一键的一个定义，默认值不同的两个 preset 会与自己的折叠相悖，而模型被提供了什么将取决于读取时的配置而非日志。
 
 **为工作 preset 保留 `process.cwd()` 兜底。** 没有生产调用方依赖它：Web 客户端总是命名 Workspace，SDK、headless、ACP 和 webhook 总是传 cwd。只有测试依赖它，而桌面 Runner 的 `process.cwd()` 是 `/`，正是这次改动要让其响亮失败的错误配置。
 

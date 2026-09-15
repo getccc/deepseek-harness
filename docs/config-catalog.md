@@ -4005,6 +4005,7 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 - `@deepseek-ai/dsh-api-knowledge-controller` — requires `agents` · `knowledge` · `typert` ([`packages/api/knowledge-controller/src/index.ts`](../packages/api/knowledge-controller/src/index.ts))
 - `@deepseek-ai/dsh-api-office-controller` — requires `agents` · `typert` ([`packages/api/office-controller/src/index.ts`](../packages/api/office-controller/src/index.ts))
 - `@deepseek-ai/dsh-api-remotes` — requires `typertGateway` ([`packages/api/remotes/src/index.ts`](../packages/api/remotes/src/index.ts))
+- `@deepseek-ai/dsh-api-web-access-controller` — requires `agents` · `typert` · `web` ([`packages/api/web-access-controller/src/index.ts`](../packages/api/web-access-controller/src/index.ts))
 - `@deepseek-ai/dsh-api-workspace-controller` — requires `typert` · `workspaceRegistry` ([`packages/api/workspace-controller/src/index.ts`](../packages/api/workspace-controller/src/index.ts))
 - `@deepseek-ai/dsh-authorization` — requires `credentials` ([`packages/credentials/authorization/src/index.ts`](../packages/credentials/authorization/src/index.ts))
 - `@deepseek-ai/dsh-client-file-upload` — requires `agents` · `attachments` · `commands` · `connection` ([`packages/client/file-upload/src/index.ts`](../packages/client/file-upload/src/index.ts))
