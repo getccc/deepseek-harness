@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-web-search-team",
   "description": "The Team Runner's web search provider: one Control Plane request carrying the device token and the query, and no search credential or address of its own",
-  "version": "0.1.5-rc.2",
+  "version": "0.1.6-alpha.1",
   "publishConfig": {
     "access": "public"
   },

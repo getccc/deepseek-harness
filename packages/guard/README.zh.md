@@ -9,7 +9,7 @@ kind: "package-group"
 
 ## 概述
 
-`guard/` 组让工具调用保持高效且有界。`repeat-tool-reminder` 会在模型重复完全相同的工具调用时提醒它改变方法或结束任务。`timeout-policy` 为声明了限时的工具调用设置时间上限，让挂起的调用返回清晰的超时错误而不是拖住整个会话。`tool-restriction` 让一个 agent preset 声明其 agent 能看到哪些全局工具，这样无工具的组合无论 host 注册了什么都保持无工具。前两者随 `dsh` base 组合默认启用；第三个是 preset 组合自行挂载的一行。
+`guard/` 组让工具调用保持高效且有界。`repeat-tool-reminder` 会在模型重复完全相同的工具调用时提醒它改变方法或结束任务。`timeout-policy` 为声明了限时的工具调用设置时间上限，让挂起的调用返回清晰的超时错误，而不是拖住整个会话。`tool-restriction` 让一个 agent preset 声明其 agent 能看到哪些全局工具，因此无论 Host 注册了什么，无工具的组合都保持无工具。前两者在 `dsh` 基础组合包中默认启用；第三个是 preset 组合自行挂载的一行。
 
 ## 目录
 
@@ -26,7 +26,7 @@ kind: "package-group"
 
 | 包 | 提供什么 |
 |---|---|
-| [`repeat-tool-reminder/`](repeat-tool-reminder/README.zh.md) | 在模型重复相同工具调用时提醒它，使其改变方法或结束任务 |
+| [`repeat-tool-reminder/`](repeat-tool-reminder/README.zh.md) | 在模型重复完全相同的工具调用时提醒它，使其改变方法或结束任务 |
 | [`timeout-policy/`](timeout-policy/README.zh.md) | 为声明了限时的工具调用设置超时，让模型得到清晰错误而不是无限等待 |
 | [`tool-restriction/`](tool-restriction/README.zh.md) | 按允许列表或拒绝列表，为一个 preset 组合的 agent 遮蔽全局工具 |
 
@@ -37,7 +37,7 @@ kind: "package-group"
 
 先从工具子系统参考了解工具调用流水线，再看重复提醒的配置与策略背后的超时库决策。
 
-- [工具子系统参考](../../docs/subsystems/tools.zh.md)——两个 guard 都依赖的工具调用流水线与决策。
+- [工具子系统参考](../../docs/subsystems/tools.zh.md)——各 guard 所依赖的工具调用流水线与决策。
 - [生成配置目录](../../docs/config-catalog.zh.md#deepseek-aidsh-repeat-tool-reminder)——重复调用提醒的每个受支持字段。
 - [超时截止时间库 Agent Note](../../.agents/notes/implemented/architecture/2026-07-06-timeout-deadline-library.zh.md)——`timeout-policy` 所执行的时序／终止拆分。
 

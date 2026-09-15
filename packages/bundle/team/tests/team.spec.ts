@@ -126,6 +126,10 @@ describe('dsh-team bundle', () => {
     })
   })
 
+  it('sends model requests without the Session log the base row uploads by default', () => {
+    expect(patchRows().find(row => row.id === 'session-log-deepseek')?.config).toEqual({ enabled: false })
+  })
+
   it('leaves the company and the version unnamed, so a Runner nobody configured does not bind', () => {
     // A Runner that guessed its Control Plane would send a public key to a
     // stranger, and one that invented a version would put a wrong fact in

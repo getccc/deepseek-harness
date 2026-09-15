@@ -1,8 +1,8 @@
 /**
- * Derives the workspace browser tree from Host Workspace order and membership,
- * plus the Recent list's kind-filtered rows. Unassigned work Sessions trail
- * under Ungrouped; chat Sessions belong to the Recent list alone; only the
- * selected blank Session remains visible.
+ * Derives the workspace browser tree from caller-projected Workspace and
+ * Session order, plus the Recent list's kind-filtered rows. Unassigned work
+ * Sessions trail under Ungrouped; chat Sessions belong to the Recent list
+ * alone; only the selected blank Session remains visible.
  */
 import {
   type SessionKind, type SessionListState, type SessionSearchResultItem, type SessionSummary,
@@ -138,10 +138,68 @@ export function workspaceLabel(cwd: string | undefined): string {
   return base !== '' ? base : cwd
 }
 
-/** Recency comparator: newest first, id as the deterministic tiebreak (ids are unique per group). */
-function byRecency(a: SessionSummary, b: SessionSummary): number {
-  if (b.updatedAt !== a.updatedAt) return b.updatedAt - a.updatedAt
-  return a.id < b.id ? -1 : 1
+/**
+ * Project known account members by current Session recency.
+ * @param sessionIds - authoritative account membership.
+ * @param summaries - current Session summaries; members without a summary are omitted until it arrives.
+ * @returns known members newest first, with Session identity as the deterministic tie-break.
+ */
+export function orderByRecency(
+  sessionIds: readonly SessionId[],
+  summaries: SessionListState['byId'],
+): SessionId[] {
+  return sessionIds.flatMap((id) => {
+    const summary = summaries[id]
+    return summary === undefined ? [] : [{ id, updatedAt: summary.updatedAt }]
+  })
+    .sort((a, b) => {
+      if (a.updatedAt !== b.updatedAt) return b.updatedAt - a.updatedAt
+      return a.id < b.id ? -1 : 1
+    })
+    .map(member => member.id)
+}
+
+/**
+ * Reconcile a browser-local manual order with current account membership.
+ * @param memberIds - authoritative account membership.
+ * @param savedOrder - previously saved browser-local order.
+ * @param summaries - current Session summaries used to append newly known members by recency.
+ * @returns retained saved slots followed by newly known members; departed members and unknown new members are omitted.
+ */
+export function reconcileManualOrder(
+  memberIds: readonly SessionId[],
+  savedOrder: readonly string[] | undefined,
+  summaries: SessionListState['byId'],
+): SessionId[] {
+  const members = new Map(memberIds.map(id => [id as string, id]))
+  const included = new Set<string>()
+  const ordered: SessionId[] = []
+  for (const key of savedOrder ?? []) {
+    const id = members.get(key)
+    if (id === undefined || included.has(key)) continue
+    ordered.push(id)
+    included.add(key)
+  }
+  for (const id of orderByRecency(memberIds, summaries)) {
+    if (included.has(id)) continue
+    ordered.push(id)
+    included.add(id)
+  }
+  return ordered
+}
+
+/**
+ * Keep the selected provisional New Session ahead of either base order.
+ * @param order - recency or reconciled manual order.
+ * @param currentBlank - selected blank Session in this account, when present.
+ * @returns a copy with the selected blank first and no duplicate slot.
+ */
+export function pinCurrentBlank(
+  order: readonly SessionId[],
+  currentBlank: SessionId | undefined,
+): SessionId[] {
+  if (currentBlank === undefined) return [...order]
+  return [currentBlank, ...order.filter(id => id !== currentBlank)]
 }
 
 /**
@@ -183,39 +241,33 @@ function buildGroup(
   createdAt: number | undefined,
   label: string,
   members: readonly SessionSummary[],
-  order: 'account' | 'recency',
 ): Group {
-  const sessions = [...members]
-  // Real Workspace order comes from sessionIds. Ungrouped falls back to
-  // recency until the browser supplies its persisted local order.
-  if (order === 'recency') sessions.sort(byRecency)
-  return { key, workspaceId, cwd, createdAt, label, sessions }
+  return { key, workspaceId, cwd, createdAt, label, sessions: [...members] }
 }
 
 /** Apply a stored Ungrouped order and append newly loose Sessions by recency. */
-function orderedUngrouped(members: readonly SessionSummary[], stored: readonly string[]): SessionSummary[] {
+function orderedUngrouped(
+  members: readonly SessionSummary[],
+  stored: readonly string[] | undefined,
+  summaries: SessionListState['byId'],
+): SessionSummary[] {
   const byId = new Map(members.map(session => [session.id as string, session]))
-  const included = new Set<string>()
-  const ordered: SessionSummary[] = []
-  for (const key of stored) {
-    const session = byId.get(key)
-    if (session === undefined || included.has(key)) continue
-    ordered.push(session)
-    included.add(key)
-  }
-  for (const session of [...members].sort(byRecency)) {
-    if (included.has(session.id)) continue
-    ordered.push(session)
-  }
-  return ordered
+  const ids = stored === undefined
+    ? orderByRecency(members.map(session => session.id), summaries)
+    : reconcileManualOrder(members.map(session => session.id), stored, summaries)
+  return ids.flatMap((id) => {
+    const session = byId.get(id)
+    /* v8 ignore next -- ids are projected exclusively from the members used to build byId. */
+    return session === undefined ? [] : [session]
+  })
 }
 
 /**
- * Group Sessions by Host Workspace: one group per entity in stable Host
- * order, with members resolved from sessionIds in their stored order. Work
- * Sessions outside every Workspace trail in the browser-local Ungrouped
- * order, which falls back to recency before that order is initialized; chat
- * Sessions belong to the Recent list and never to a group.
+ * Group Sessions by Workspace: one group per caller-ordered entity, with
+ * members resolved from caller-ordered sessionIds. Work Sessions outside every
+ * Workspace trail in the browser-local Ungrouped order, which falls back to
+ * recency before that order is initialized; chat Sessions belong to the
+ * Recent list and never to a group.
  */
 function groupByWorkspace(
   list: SessionListState,
@@ -236,7 +288,7 @@ function groupByWorkspace(
     }
     groups.push(buildGroup(
       workspace.workspaceId, workspace.workspaceId, workspace.path,
-      Date.parse(workspace.createdAt), workspace.title, members, 'account',
+      Date.parse(workspace.createdAt), workspace.title, members,
     ))
   }
   const stray = list.ids
@@ -250,8 +302,7 @@ function groupByWorkspace(
       undefined,
       undefined,
       '',
-      ungroupedOrder === undefined ? stray : orderedUngrouped(stray, ungroupedOrder),
-      ungroupedOrder === undefined ? 'recency' : 'account',
+      orderedUngrouped(stray, ungroupedOrder, list.byId),
     ))
   }
   return groups
@@ -298,7 +349,7 @@ function sessionNode(
  * Content search lives outside this derivation
  * (see {@link deriveSearchResults}).
  * @param list - sessions list snapshot (`current` feeds containsCurrent).
- * @param workspaces - real workspaces in stable Host order.
+ * @param workspaces - real Workspaces in Host group order with caller-projected Session order.
  * @param archivedSessionIds - registry-global archive set.
  * @param pendingInteractions - pending UI interactions by Session.
  * @param view - local expansion arrays.
@@ -338,9 +389,48 @@ export function deriveGroups(
 }
 
 /**
+ * Select flat-list or Recent-list members without deriving row presentation
+ * or ordering. The Workspace browser's flat list admits `'work'`; chat
+ * Sessions belong to the Recent list alone.
+ * @param list - sessions list snapshot.
+ * @param archivedSessionIds - registry-global archive set.
+ * @param filter - the Session kinds admitted.
+ * @returns known visible Session ids of the admitted kinds in list order, including ordinary forks and only the current blank.
+ */
+export function visibleSessionIds(
+  list: SessionListState,
+  archivedSessionIds: readonly SessionId[],
+  filter: RecentFilter,
+): SessionId[] {
+  const archived = new Set(archivedSessionIds)
+  return list.ids.filter((id) => {
+    const s = list.byId[id]
+    return s !== undefined && matchesKind(s, filter) && sessionVisible(s, list.current, archived)
+  })
+}
+
+/**
+ * Derive flat rows from the browser's ordered visible Session ids.
+ * @param list - sessions list snapshot used to select the ids.
+ * @param sessionIds - known visible members in render order, including any pinned blank.
+ * @param pendingInteractions - pending UI interactions by Session.
+ * @returns flat rows in the supplied order with current status indicators.
+ */
+export function deriveFlat(
+  list: SessionListState,
+  sessionIds: readonly SessionId[],
+  pendingInteractions: SessionPendingInteractions,
+): SessionNode[] {
+  const descendants = indexSubagentDescendants(list.byId)
+  return sessionIds
+    .map(id => sessionNode(list.byId[id] as SessionSummary, descendants, pendingInteractions))
+}
+
+/**
  * Derive the Recent list: every visible session of the admitted kinds — fork
- * children included — as a top-level row, strictly newest-first. No grouping,
- * no parent/child adjacency. Content search lives outside this derivation
+ * children included — as a top-level row, strictly newest-first with Session
+ * identity as the tie-break. The Recent list has no manual order and does not
+ * pin the current blank. Content search lives outside this derivation
  * (see {@link deriveSearchResults}).
  * @param list - sessions list snapshot.
  * @param archivedSessionIds - registry-global archive set.
@@ -354,33 +444,11 @@ export function deriveRecent(
   pendingInteractions: SessionPendingInteractions,
   filter: RecentFilter,
 ): SessionNode[] {
-  const archived = new Set(archivedSessionIds)
-  const descendants = indexSubagentDescendants(list.byId)
-  const rows: SessionSummary[] = []
-  for (const id of list.ids) {
-    const s = list.byId[id]
-    if (s === undefined || !matchesKind(s, filter) || !sessionVisible(s, list.current, archived)) continue
-    rows.push(s)
-  }
-  rows.sort(byRecency)
-  return rows.map(session => sessionNode(session, descendants, pendingInteractions))
-}
-
-/**
- * Derive the flat session list ("In one list" mode): every work session —
- * fork children included — as a top-level row, strictly newest-first. Chat
- * sessions belong to the Recent list ({@link deriveRecent}) and are excluded.
- * @param list - sessions list snapshot.
- * @param archivedSessionIds - registry-global archive set.
- * @param pendingInteractions - pending UI interactions by Session.
- * @returns flat rows in render order.
- */
-export function deriveFlat(
-  list: SessionListState,
-  archivedSessionIds: readonly SessionId[],
-  pendingInteractions: SessionPendingInteractions,
-): SessionNode[] {
-  return deriveRecent(list, archivedSessionIds, pendingInteractions, 'work')
+  return deriveFlat(
+    list,
+    orderByRecency(visibleSessionIds(list, archivedSessionIds, filter), list.byId),
+    pendingInteractions,
+  )
 }
 
 /**
@@ -436,7 +504,9 @@ export function deriveSearchResults(
       local.push(summary)
     }
   }
-  local.sort(byRecency)
+  const localById = new Map(local.map(summary => [summary.id, summary]))
+  const orderedLocal = orderByRecency(local.map(summary => summary.id), list.byId)
+    .map(id => localById.get(id) as SessionSummary)
 
   const ordered: SessionSummary[] = []
   const included = new Set<SessionId>()
@@ -445,7 +515,7 @@ export function deriveSearchResults(
     included.add(summary.id)
     ordered.push(summary)
   }
-  for (const summary of local) include(summary)
+  for (const summary of orderedLocal) include(summary)
   for (const item of content.items) {
     const summary = list.byId[item.sessionId]
     if (summary !== undefined && !summary.blank && sessionVisible(summary, list.current, archived)) include(summary)

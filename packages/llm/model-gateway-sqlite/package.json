@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-model-gateway-sqlite",
   "description": "SQLite-backed model gateway: the catalog store, and the authorization and reservation in front of it",
-  "version": "0.1.5-rc.2",
+  "version": "0.1.6-alpha.1",
   "publishConfig": {
     "access": "public"
   },

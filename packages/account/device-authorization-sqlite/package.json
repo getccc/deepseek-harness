@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-device-authorization-sqlite",
   "description": "SQLite-backed device authorization: the binding state machine, the device registry, and refresh-token families that revoke on reuse",
-  "version": "0.1.5-rc.2",
+  "version": "0.1.6-alpha.1",
   "publishConfig": {
     "access": "public"
   },

@@ -15,6 +15,7 @@ import type { Session } from '@deepseek-ai/dsh-session'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 import zod, { type ZodType } from 'zod'
 import type { CommandDefinition } from '@deepseek-ai/dsh-commands'
+import { CommandDefinitionId } from '@deepseek-ai/dsh-commands/brand'
 import { createScope, scopeOf } from '@deepseek-ai/dsh-scope'
 import type {} from '@deepseek-ai/dsh-web'
 import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
@@ -81,6 +82,7 @@ export function installSessionSwitch(ctx: Context, initial: boolean, names: read
 
   /** The `/web` command, registered on each permitted agent's own scope. */
   const command: CommandDefinition = {
+    definitionId: CommandDefinitionId('@deepseek-ai/dsh-tool-web'),
     name: WEB_ACCESS_COMMAND,
     description: 'Turn web search and page fetching on or off for this session',
     input: { hint: '[on|off]' },
