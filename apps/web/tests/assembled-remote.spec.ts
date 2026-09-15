@@ -16,12 +16,18 @@ it('advances turns and updates the Session summary after accepted prompts', asyn
   const listed = await mock.dispatch('session/list', []) as {
     readonly ok: true
     readonly value: {
-      readonly items: readonly { readonly sessionId: string; readonly blank: boolean; readonly running: boolean }[]
+      readonly items: readonly {
+        readonly sessionId: string
+        readonly blank: boolean
+        readonly pristine: boolean
+        readonly running: boolean
+      }[]
     }
   }
   expect(listed.ok).toBe(true)
   expect(listed.value.items.find(item => item.sessionId === 'fx-1')).toMatchObject({
     blank: false,
+    pristine: false,
     running: true,
   })
 

@@ -8,6 +8,7 @@
           "updatedAt": 1789268875874,
           "running": true,
           "blank": false,
+          "pristine": false,
           "cwd": "/tmp/fixture"
         },
         {
@@ -15,6 +16,7 @@
           "updatedAt": 1789268815874,
           "running": false,
           "blank": false,
+          "pristine": false,
           "parentSessionId": "fx-alpha",
           "cwd": "/tmp/fixture"
         },
@@ -23,6 +25,7 @@
           "updatedAt": 1789268755874,
           "running": false,
           "blank": false,
+          "pristine": false,
           "cwd": "/tmp/fixture"
         }
       ]

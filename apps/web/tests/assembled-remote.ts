@@ -16,6 +16,7 @@ interface SessionSummary {
   updatedAt: number
   running: boolean
   blank: boolean
+  pristine: boolean
   readonly parentSessionId?: string
   readonly origin?: 'subagent'
   readonly cwd?: string
@@ -153,6 +154,16 @@ export function createAssembledRemote(options: AssembledRemoteOptions = {}): Ass
         },
       },
       'session/cancel': ok({ accepted: true }),
+      // The composer's web chip asks for every rendered Session; fixture
+      // Sessions record no `web/access` event, so the Host offers no switch.
+      'webAccess/state': {
+        ok: false,
+        error: {
+          code: 'web-access/unavailable',
+          message: 'assembled fixture Sessions offer no web switch',
+          details: {},
+        },
+      },
     },
   })
 
@@ -235,6 +246,7 @@ export function createAssembledRemote(options: AssembledRemoteOptions = {}): Ass
       updatedAt: Date.now(),
       running: false,
       blank: true,
+      pristine: true,
       cwd,
       projections: structuredClone(blankSessionProjections),
     }
@@ -302,6 +314,7 @@ export function createAssembledRemote(options: AssembledRemoteOptions = {}): Ass
     nextTurns.set(sessionId, turn + 1)
     summary.updatedAt = Date.now()
     summary.blank = false
+    summary.pristine = false
     if (!summary.running) {
       summary.running = true
       mock.streams.push('$events', { type: 'emit', event: 'api-session/status', args: [sessionId, true] })

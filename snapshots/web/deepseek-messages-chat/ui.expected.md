@@ -17,8 +17,8 @@
 - text: 只回复 MESSAGES_WEB_READY，不调用工具。 {{clock}}
 - button "复制":
   - img
-- button "已思考":
-  - text: 已思考
+- button "小微思考了一会儿":
+  - text: 小微思考了一会儿
   - img
 - button "思考":
   - img
@@ -43,7 +43,7 @@
 - textbox "发消息或创建任务, / 调用指令, @ 文件或对话"
 - button "添加文件或调用指令":
   - img
-- button "访问模式，当前：工作区内修改": 工作区内修改
+- button "访问模式，当前：工作区可写": 工作区可写
 - button "选择模型，当前 DeepSeek-V4-Flash，推理等级 high":
   - text: DeepSeek-V4-Flash high
   - img

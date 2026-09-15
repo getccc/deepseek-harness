@@ -36,13 +36,16 @@ describe.skipIf(webSnapshotMode() === 'record')('web e2e: DeepSeek Messages opt-
 
   it('offers one DeepSeek card and saves Messages settings using the existing credential reference', async () => {
     onTestFailed(() => saveFailureShot(page, 'web-e2e-deepseek-messages-settings'))
-    expect(scaffold.ctx.llm.listProviders()).toContainEqual({ id: 'deepseek-official', name: 'DeepSeek' })
-    expect(scaffold.ctx.llm.listProviders().filter(provider => provider.id === 'deepseek-official')).toHaveLength(1)
+    // The member DeepSeek route stays dormant until its key resolves; the
+    // configurable declaration keeps the first-run key prompt reachable.
+    expect(scaffold.ctx.llm.listProviders().filter(provider => provider.id === 'deepseek-official')).toEqual([])
     expect(scaffold.ctx.agentDefaultModel.currentSelection()).toEqual({ provider: 'deepseek-official', model: 'deepseek-flash' })
     const onboarding = page.getByRole('dialog', { name: '添加一个 API Key 开始使用' })
     await onboarding.getByLabel('API 密钥', { exact: true }).fill('sk-messages-onboarding')
     await onboarding.getByRole('button', { name: '保存并继续' }).click()
     await onboarding.waitFor({ state: 'detached' })
+    await expect.poll(() => scaffold.ctx.llm.listProviders()).toContainEqual({ id: 'deepseek-official', name: 'DeepSeek' })
+    expect(scaffold.ctx.llm.listProviders().filter(provider => provider.id === 'deepseek-official')).toHaveLength(1)
     await page.getByRole('button', { name: '设置', exact: true }).click()
     const dialog = page.getByRole('dialog', { name: '设置', exact: true })
     await dialog.getByRole('button', { name: '模型', exact: true }).click()
