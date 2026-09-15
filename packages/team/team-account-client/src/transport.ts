@@ -44,7 +44,10 @@ export type ControlPlaneFetch = (url: URL, init?: RequestInit) => Promise<Respon
  * a direct one for an origin the policy leaves direct, and one per proxy that
  * tunnels through it and verifies the Control Plane with the pinned trust at
  * the far end of the tunnel. The agents own connection pools, so they are
- * closed when the plugin unloads.
+ * closed when the plugin unloads. They speak HTTP/1.1 only: Undici 8 keeps a
+ * destroyed HTTP/2 session in its pool after a cancelled stream, and every
+ * later call on that agent then fails with `ERR_HTTP2_INVALID_SESSION` until
+ * the Runner restarts, while an HTTP/1.1 pool discards a closed socket.
  * @param ctx - the plugin context whose unload closes the connection pools.
  * @param ca - path to the PEM file to trust, or undefined for Node's default trust.
  * @returns the fetch to use for every Control Plane call.
@@ -63,9 +66,9 @@ export function controlPlaneFetch(ctx: Context, ca: string | undefined): Control
     // origin handshake, which the installed dispatcher cannot carry.
     const agent = route.proxied
       // proxy-exempt: tunnels through the proxy `proxyRouteFor` chose, verifying the origin with the pinned trust.
-      ? new ProxyAgent({ uri: route.proxy, requestTls: { ca: certificate } })
+      ? new ProxyAgent({ uri: route.proxy, allowH2: false, requestTls: { ca: certificate } })
       // proxy-exempt: the route left this origin direct.
-      : new Agent({ connect: { ca: certificate } })
+      : new Agent({ allowH2: false, connect: { ca: certificate } })
     agents.set(key, agent)
     return agent
   }

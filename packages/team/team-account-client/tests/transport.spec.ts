@@ -16,9 +16,29 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { Context } from '@deepseek-ai/cordis'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { installProxyFromEnvironment } from '@deepseek-ai/dsh-http-proxy'
 import { controlPlaneFetch } from '../src/transport.ts'
+
+/** Options each pinned-trust agent was constructed with, in construction order. */
+const agentOptions = vi.hoisted(() => [] as { kind: string; options: Record<string, unknown> }[])
+
+vi.mock('undici', async (importOriginal) => {
+  const undici = await importOriginal<typeof import('undici')>()
+  class RecordingAgent extends undici.Agent {
+    constructor(options: ConstructorParameters<typeof undici.Agent>[0]) {
+      agentOptions.push({ kind: 'direct', options: options as Record<string, unknown> })
+      super(options)
+    }
+  }
+  class RecordingProxyAgent extends undici.ProxyAgent {
+    constructor(options: ConstructorParameters<typeof undici.ProxyAgent>[0]) {
+      agentOptions.push({ kind: 'proxy', options: options as unknown as Record<string, unknown> })
+      super(options)
+    }
+  }
+  return { ...undici, Agent: RecordingAgent, ProxyAgent: RecordingProxyAgent }
+})
 
 let plane: Server
 let origin: string
@@ -75,6 +95,15 @@ describe('the Control Plane fetch', () => {
     const call = controlPlaneFetch(ctx, certificateFile('ca.crt'))
     const response = await call(new URL('/team/device/login', origin))
     expect(response.status).toBe(200)
+    await ctx.fiber.dispose()
+  })
+
+  it('keeps the pinned-trust connection pool on HTTP/1.1', async () => {
+    agentOptions.length = 0
+    const ctx = new Context()
+    const call = controlPlaneFetch(ctx, certificateFile('ca.crt'))
+    await call(new URL('/team/device/login', origin))
+    expect(agentOptions.map(entry => [entry.kind, entry.options['allowH2']])).toEqual([['direct', false]])
     await ctx.fiber.dispose()
   })
 
@@ -140,8 +169,10 @@ describe('the Control Plane fetch', () => {
     it('tunnels a call carrying pinned trust through the same proxy', async () => {
       const ctx = new Context()
       const call = controlPlaneFetch(ctx, certificateFile('ca.crt'))
+      agentOptions.length = 0
       await expect(call(new URL('https://control-plane.test/team/device/login'))).rejects.toThrow()
       expect(seen).toEqual(['CONNECT control-plane.test:443'])
+      expect(agentOptions.map(entry => [entry.kind, entry.options['allowH2']])).toEqual([['proxy', false]])
       await ctx.fiber.dispose()
     })
 
