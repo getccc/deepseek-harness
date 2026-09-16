@@ -41,10 +41,14 @@ kind: "package-reference"
 
 | 行 | 面板 | 作用 |
 |---|---|---|
-| 知识库 | `knowledge` | 列出已授权的知识库、成员选中的那一个之中的文档，以及他们打开的那一份文档，并带一个检索该知识库的操作 |
+| 知识库 | `knowledge` | 以卡片展示已授权的知识库、成员打开的那一个之中的文档，以及在列表旁抽屉里展示的那一份文档，并带一个检索该知识库的操作 |
 | 知识库检索 | `knowledge-search` | 在所选知识库上运行一次检索，并把段落按所属文档分组排名 |
 
 两个行都注册到侧边栏的 `sidebar.panellist` 座位，并指向同名 id 的 `main` 面板，因此行归侧边栏所有，本包只拥有图标和面板。
+
+### 成员如何在其中移动
+
+是两个层级，不是分栏：先是卡片，再是该知识库的文档。上方的面包屑给出路径，其中较早的一段就是回到上一层的控件；回退会丢掉文档列表并关闭抽屉，因为两者都属于刚刚打开的那个知识库。一份文档在面板右侧的抽屉中打开，可通过它自己的控件、点击旁边的区域，或按 Escape 关闭。
 
 ### 面板持有什么
 
@@ -64,7 +68,7 @@ kind: "package-reference"
 | 文件 | 内容 |
 |---|---|
 | [`src/client/index.ts`](src/client/index.ts) | 两个行、两个面板，以及它们背后的 Remote 调用 |
-| [`src/client/KnowledgeBasesPanel.tsx`](src/client/KnowledgeBasesPanel.tsx) | 已授权知识库列表、选中知识库中的文档，以及哪一份处于打开状态 |
+| [`src/client/KnowledgeBasesPanel.tsx`](src/client/KnowledgeBasesPanel.tsx) | 知识库卡片、面包屑、文档卡片，以及抽屉 |
 | [`src/client/DocumentPreview.tsx`](src/client/DocumentPreview.tsx) | 一份文档，按 Control Plane 所提供的内容绘制 |
 | [`src/client/KnowledgeSearchPanel.tsx`](src/client/KnowledgeSearchPanel.tsx) | 范围 chip、查询框和排名结果 |
 | [`src/client/results.ts`](src/client/results.ts) | 把段落按文档分组，以及得分如何书写 |
@@ -91,7 +95,7 @@ kind: "package-reference"
 
 这些限制界定了面板自身何时不完整。它们是当前的包级约束。
 
-- **Office 文件不在这里绘制** —— 预览栏绘制的是浏览器仅凭字节就能绘制的东西：PDF、图片、任何属于文本的内容，以及 Control Plane 回落到的解析文本。`.docx`、`.xlsx` 或 `.pptx` 会以字节到达，并显示为「这里还不能显示」，因为这些格式的渲染器位于右侧 Sidebar 那个按会话划分的文档槽之后，而这个面板没有会话。
+- **Office 文件不在这里绘制** —— 抽屉绘制的是浏览器仅凭字节就能绘制的东西：PDF、图片、任何属于文本的内容，以及 Control Plane 回落到的解析文本。`.docx`、`.xlsx` 或 `.pptx` 会以字节到达，并显示为「这里还不能显示」，因为这些格式的渲染器位于右侧 Sidebar 那个按会话划分的文档槽之后，而这个面板没有会话。
 - **文档列表一次一页** —— 知识库内没有搜索、没有排序、也没有文件夹树，因此要在成千上万份文档里找到一份，只能一页页翻过去。
 - **预览每次重新读取，从不保留** —— 同一份文档打开两次就读取两次，面板之间和刷新之间都不缓存。对一份每次调用都要重新判定授权的文件，这是有意为之。
 - **文档以标题标识** —— 段落尚未携带文档引用，因此同一知识库中标题相同的两份文档会合并为同一条结果。

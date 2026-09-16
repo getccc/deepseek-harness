@@ -154,39 +154,44 @@ export function KnowledgeSearchPanel({ directory, search, discuss, useRequested,
         </Button>
       </div>
 
-      {phase === 'failed' && <p className={css.notice}><span className={css.failed}>{t('search.failed')}</span></p>}
-      {discussFailed && <p className={css.notice}><span className={css.failed}>{t('search.discuss.failed')}</span></p>}
-      {phase === 'ready' && groups.length === 0 && <p className={css.notice}>{t('search.empty')}</p>}
-      {phase === 'ready' && view !== undefined && groups.length > 0 && (
-        <>
-          <p className={css.summary}>
-            {t('search.summary', { passages: view.passages.length, documents: groups.length })}
-            {view.truncated && <span className={css.truncated}>{t('search.truncated')}</span>}
-          </p>
-          <ul className={css.list}>
-            {groups.map(group => (
-              <li key={group.key} className={css.card}>
-                <span className={css.cardName}>
-                  {group.title}
-                  <span className={css.cardMeta}>{group.knowledgeName}</span>
-                  <span className={css.cardMeta}>{t('search.score', { score: formatScore(group.best) })}</span>
-                </span>
-                {group.passages.map(passage => (
-                  <span key={`${passage.title}${String(passage.score)}${passage.text}`} className={css.cardText}>
-                    {passage.text}
-                    {passage.truncated && <span className={css.cardMeta}>{t('search.passage.truncated')}</span>}
+      {/* The scope and the query stay put; only the answer scrolls. */}
+      <div className={css.body}>
+        {phase === 'failed' && <p className={css.notice}><span className={css.failed}>{t('search.failed')}</span></p>}
+        {discussFailed && (
+          <p className={css.notice}><span className={css.failed}>{t('search.discuss.failed')}</span></p>
+        )}
+        {phase === 'ready' && groups.length === 0 && <p className={css.notice}>{t('search.empty')}</p>}
+        {phase === 'ready' && view !== undefined && groups.length > 0 && (
+          <>
+            <p className={css.summary}>
+              {t('search.summary', { passages: view.passages.length, documents: groups.length })}
+              {view.truncated && <span className={css.truncated}>{t('search.truncated')}</span>}
+            </p>
+            <ul className={css.list}>
+              {groups.map(group => (
+                <li key={group.key} className={css.card}>
+                  <span className={css.cardName}>
+                    {group.title}
+                    <span className={css.cardMeta}>{group.knowledgeName}</span>
+                    <span className={css.cardMeta}>{t('search.score', { score: formatScore(group.best) })}</span>
                   </span>
-                ))}
-                <span className={css.cardActions}>
-                  <Button variant="outline" onClick={() => { open(group) }}>
-                    {t('search.discuss')}
-                  </Button>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+                  {group.passages.map(passage => (
+                    <span key={`${passage.title}${String(passage.score)}${passage.text}`} className={css.cardText}>
+                      {passage.text}
+                      {passage.truncated && <span className={css.cardMeta}>{t('search.passage.truncated')}</span>}
+                    </span>
+                  ))}
+                  <span className={css.cardActions}>
+                    <Button variant="outline" onClick={() => { open(group) }}>
+                      {t('search.discuss')}
+                    </Button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
     </section>
   )
 }

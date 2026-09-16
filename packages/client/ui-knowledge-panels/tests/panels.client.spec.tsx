@@ -91,9 +91,14 @@ function renderBases(
   return { searchIn, documents: listed, content: read, view: render(<KnowledgeBasesPanel {...props} />) }
 }
 
-/** Choose the first knowledge base, which is what loads its documents. */
+/** Open the first knowledge base's card, which is what loads its documents. */
 async function choose(name = '临港知识库'): Promise<void> {
   fireEvent.click(await screen.findByRole('button', { name: new RegExp(name, 'u') }))
+}
+
+/** Take the breadcrumb back up to the knowledge-base cards. */
+async function back(): Promise<void> {
+  fireEvent.click(await screen.findByRole('button', { name: '知识库' }))
 }
 
 /** Render the retrieval panel over scripted faces and one requested selection. */
@@ -345,9 +350,9 @@ describe('the navigation rows', () => {
 })
 
 describe('the documents in one knowledge base', () => {
-  it('asks for nothing until a knowledge base is chosen, then lists its first page', async () => {
+  it('asks for nothing until a knowledge base is opened, then lists its first page', async () => {
     const bases = renderBases(() => Promise.resolve(BASES))
-    expect(await screen.findByText('选择左侧的知识库，查看其中的文档')).toBeTruthy()
+    expect(await screen.findByText('你有权限的知识库，点击卡片查看其中的文档')).toBeTruthy()
     expect(bases.documents).not.toHaveBeenCalled()
     await choose()
     await waitFor(() => { expect(bases.documents).toHaveBeenCalledWith(REF_A, 1) })
@@ -356,6 +361,26 @@ describe('the documents in one knowledge base', () => {
     expect(screen.getByText('共 1 篇')).toBeTruthy()
     expect(screen.getByText('第 1 页')).toBeTruthy()
     expect(screen.getByText('20KB')).toBeTruthy()
+    // The day comes from the timestamp the source reported, read as this
+    // computer's calendar reads it.
+    expect(screen.getByText('2025-09-03')).toBeTruthy()
+  })
+
+  it('takes the breadcrumb back to the cards, and keeps the heading on the way in', async () => {
+    renderBases(() => Promise.resolve(BASES))
+    await choose()
+    // The level a member is on is the heading; the level above it is a control.
+    expect((await screen.findByRole('heading')).textContent).toBe('临港知识库')
+    expect(screen.getByText('点击一份文档，在右侧查看它的内容')).toBeTruthy()
+    await back()
+    expect((await screen.findByRole('heading')).textContent).toBe('知识库')
+    expect(screen.getByText('南昌知识库')).toBeTruthy()
+  })
+
+  it('says a knowledge base carries no description rather than leaving the card blank', async () => {
+    renderBases(() => Promise.resolve(BASES))
+    expect(await screen.findByText('无描述')).toBeTruthy()
+    expect(screen.getByText('现场运维资料')).toBeTruthy()
   })
 
   it('names a document by its file name when the source holds no title', async () => {
@@ -452,6 +477,7 @@ describe('the documents in one knowledge base', () => {
     await screen.findByText('第 1 页')
     fireEvent.click(screen.getByRole('button', { name: '下一页' }))
     await waitFor(() => { expect(bases.documents).toHaveBeenLastCalledWith(REF_A, 2) })
+    await back()
     await choose('南昌知识库')
     await waitFor(() => { expect(bases.documents).toHaveBeenLastCalledWith(REF_B, 1) })
   })
@@ -478,7 +504,7 @@ describe('the documents in one knowledge base', () => {
   })
 })
 
-describe('one document in the preview column', () => {
+describe('one document in the drawer', () => {
   /** Choose the knowledge base, then open its first document. */
   async function open(): Promise<void> {
     await choose()
@@ -488,8 +514,26 @@ describe('one document in the preview column', () => {
   it('asks for nothing until a document is opened', async () => {
     const bases = renderBases(() => Promise.resolve(BASES))
     await choose()
-    expect(await screen.findByText('选择一份文档查看内容')).toBeTruthy()
+    expect(await screen.findByText('运维手册')).toBeTruthy()
+    expect(screen.queryByRole('dialog')).toBeNull()
     expect(bases.content).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['the close control', () => { fireEvent.click(screen.getByRole('button', { name: '关闭' })) }],
+    ['a click beside it', () => { fireEvent.click(screen.getByTestId('knowledge-drawer-scrim')) }],
+    ['the Escape key', () => { fireEvent.keyDown(window, { key: 'Escape' }) }],
+    ['another key doing nothing', () => { fireEvent.keyDown(window, { key: 'a' }) }],
+  ])('stays or closes on %s', async (label, act) => {
+    renderBases(() => Promise.resolve(BASES))
+    await open()
+    await screen.findByText('一级故障 30 分钟内响应。')
+    act()
+    if (label === 'another key doing nothing') {
+      expect(screen.getByRole('dialog')).toBeTruthy()
+      return
+    }
+    await waitFor(() => { expect(screen.queryByRole('dialog')).toBeNull() })
   })
 
   it('draws parsed text, and says when it was cut', async () => {
@@ -578,12 +622,13 @@ describe('one document in the preview column', () => {
     expect(await screen.findByText('文档内容读取失败')).toBeTruthy()
   })
 
-  it('forgets the open document when another knowledge base is chosen', async () => {
+  it('forgets the open document when another knowledge base is opened', async () => {
     renderBases(() => Promise.resolve(BASES))
     await open()
     await screen.findByText('一级故障 30 分钟内响应。')
+    await back()
     await choose('南昌知识库')
-    expect(await screen.findByText('选择一份文档查看内容')).toBeTruthy()
+    await waitFor(() => { expect(screen.queryByRole('dialog')).toBeNull() })
   })
 
   it.each([

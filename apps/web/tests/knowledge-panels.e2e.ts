@@ -153,7 +153,7 @@ describe('web e2e: knowledge panels', () => {
     await page.getByRole('button', { name: '知识库', exact: true }).click()
     await page.getByText('临港智慧园区知识库').waitFor({ timeout: 15_000 })
     await page.getByText('南昌制造基地知识库').waitFor()
-    await page.getByText('选择左侧的知识库，查看其中的文档').waitFor()
+    await page.getByText('你有权限的知识库，点击卡片查看其中的文档').waitFor()
 
     await page.getByRole('button', { name: /临港智慧园区知识库/u }).click()
     await page.getByText('园区运维手册 v3').waitFor({ timeout: 15_000 })
@@ -164,8 +164,15 @@ describe('web e2e: knowledge panels', () => {
     expect(await page.getByRole('button', { name: '上一页' }).isDisabled()).toBe(true)
     expect(await page.getByRole('button', { name: '下一页' }).isDisabled()).toBe(true)
 
+    // A document opens in the drawer beside the list, and the breadcrumb is
+    // what takes a member back to the cards.
     await page.getByRole('button', { name: /2026 年度应急演练实施方案/u }).click()
-    await page.getByText('演练覆盖消防、电力中断、危化品泄漏三类场景。').waitFor({ timeout: 15_000 })
+    const drawer = page.getByRole('dialog', { name: '2026 年度应急演练实施方案' })
+    await drawer.getByText('演练覆盖消防、电力中断、危化品泄漏三类场景。').waitFor({ timeout: 15_000 })
+    await drawer.getByRole('button', { name: '关闭' }).click()
+    await expect.poll(async () => await page.getByRole('dialog').count()).toBe(0)
+    await page.getByRole('button', { name: '知识库', exact: true }).nth(1).click()
+    await page.getByText('你有权限的知识库，点击卡片查看其中的文档').waitFor()
     expect(tripwire.pageErrors).toEqual([])
     expect(tripwire.warnings).toEqual([])
   }, 120_000)

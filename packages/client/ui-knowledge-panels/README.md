@@ -41,10 +41,14 @@ The plugin has no configuration.
 
 | Row | Panel | What it does |
 |---|---|---|
-| Knowledge | `knowledge` | Lists the authorized knowledge bases, the documents in the one a member chooses, and the document they open, with an action that searches the knowledge base |
+| Knowledge | `knowledge` | Shows the authorized knowledge bases as cards, the documents in the one a member opens, and one document in a drawer beside the list, with an action that searches the knowledge base |
 | Knowledge search | `knowledge-search` | Runs one retrieval over the chosen knowledge bases and ranks the passages under the document each came from |
 
 Both rows register into the sidebar's `sidebar.panellist` seat and address a `main` panel of the same id, so the sidebar owns the row and this package owns only the glyph and the panel.
+
+### How a member moves through it
+
+Two levels, not columns: the cards, then that knowledge base's documents. The breadcrumb above them names the path and its earlier step is the control that goes back up; going back drops the document list and closes the drawer, because both belong to the knowledge base that was open. One document opens in a drawer over the right of the panel, which closes on its own control, on a click beside it, or on Escape.
 
 ### What the panels hold
 
@@ -64,7 +68,7 @@ Ranking is the provider's. The panel groups passages under their document and sh
 | File | Holds |
 |---|---|
 | [`src/client/index.ts`](src/client/index.ts) | The two rows, the two panels, and the Remote calls behind them |
-| [`src/client/KnowledgeBasesPanel.tsx`](src/client/KnowledgeBasesPanel.tsx) | The authorized knowledge-base list, the documents in the chosen one, and which one is open |
+| [`src/client/KnowledgeBasesPanel.tsx`](src/client/KnowledgeBasesPanel.tsx) | The knowledge-base cards, the breadcrumb, the document cards, and the drawer |
 | [`src/client/DocumentPreview.tsx`](src/client/DocumentPreview.tsx) | One document, drawn from what the Control Plane served |
 | [`src/client/KnowledgeSearchPanel.tsx`](src/client/KnowledgeSearchPanel.tsx) | The scope chips, the query, and the ranked results |
 | [`src/client/results.ts`](src/client/results.ts) | Grouping passages under their document, and how a score is written |
@@ -91,7 +95,7 @@ No direct invalidation. A discussion opens a new Session, so there is no prefix 
 
 These limits define when the panels are incomplete on their own. They are current package constraints.
 
-- **Office files are not drawn here** — the preview column draws what a browser draws from bytes on its own: a PDF, an image, anything that is text, and the parsed text the Control Plane falls back to. A `.docx`, `.xlsx`, or `.pptx` arrives as bytes and reads as "not here yet", because the renderers for those live behind the right Sidebar's session-scoped document slot and this panel has no Session.
+- **Office files are not drawn here** — the drawer draws what a browser draws from bytes on its own: a PDF, an image, anything that is text, and the parsed text the Control Plane falls back to. A `.docx`, `.xlsx`, or `.pptx` arrives as bytes and reads as "not here yet", because the renderers for those live behind the right Sidebar's session-scoped document slot and this panel has no Session.
 - **A document list is a page at a time** — there is no search within a knowledge base, no sort, and no folder tree, so finding one document in thousands means paging to it.
 - **A preview is re-read, never kept** — opening the same document twice reads it twice, and nothing is cached between panels or reloads. That is deliberate for a file whose authorization is decided per call.
 - **A document is identified by its title** — passages carry no document reference yet, so two documents sharing one title inside one knowledge base group as one result.

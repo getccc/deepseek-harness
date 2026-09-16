@@ -19,7 +19,7 @@ Ship a member-facing knowledge surface as two global panels reached from the lef
 ### Product outcome
 
 - A member sees **知识库** and **知识库检索** under **新工作任务** in the left navigation of a Team build. A build without private knowledge shows neither.
-- **知识库** opens a panel listing the knowledge bases the member's roles authorize. Selecting one lists its documents; selecting a document previews it in the panel's own preview column.
+- **知识库** opens a panel showing the knowledge bases the member's roles authorize as cards. Opening one lists its documents under a breadcrumb that goes back up; opening a document draws it in a drawer over the right of the panel.
 - **知识库检索** opens a panel that runs one retrieval and shows the passages ranked by score, grouped under the document each came from, with no model turn and no token cost.
 - Selecting a result's document starts a new Session whose knowledge scope is narrowed to that one document, so the conversation that follows retrieves from it and nothing else.
 - Every panel operation is authorized on the Control Plane against current grants, exactly as `knowledge_search` already is. Revoking a role, suspending the member, revoking the device, or disabling the knowledge base changes the next panel operation without a new login.
@@ -36,9 +36,11 @@ Ship a member-facing knowledge surface as two global panels reached from the lef
 
 The left navigation already has the seat: `sidebar.panellist` is a list slot whose rows render directly under the New chat and New work task entries, each row addressing a `main` panel by the same id ([contract/slots.ts](../../../../packages/client/ui-sidebar/src/client/contract/slots.ts)). No production plugin registers into it yet; these two rows are the first, and the sidebar shell needs no change to carry them.
 
-Both panels are root-scoped and hold no Session. The knowledge panel therefore owns its own preview column rather than opening the right Sidebar, whose tabs are session-scoped and whose docking surface exists per Session.
+Both panels are root-scoped and hold no Session. The knowledge panel therefore draws documents itself rather than opening the right Sidebar, whose tabs are session-scoped and whose docking surface exists per Session.
 
-That cuts the panel off from the right Sidebar's registered document bodies, which is the one thing this shape costs: the renderer slot is declared by the Sidebar's own tab type and scoped to a Session, so the Word, Excel, and PowerPoint bodies cannot be rendered from a panel that has none. The preview column therefore draws what a browser draws from bytes on its own — PDFs, images, anything that is text — plus the parsed text the Control Plane falls back to, and says plainly that an Office file is not shown here yet. Closing that gap means a renderer seat both surfaces can reach, which is its own change to the Sidebar's contract.
+Inside the panel it is two levels and a drawer rather than side-by-side columns: the cards, then one knowledge base's documents with a breadcrumb back up, then one document over the right of the panel. Columns would have given every level a third of the width whether or not a member was reading a document, and a knowledge base's name is what a member needs above the list either way.
+
+That cuts the panel off from the right Sidebar's registered document bodies, which is the one thing this shape costs: the renderer slot is declared by the Sidebar's own tab type and scoped to a Session, so the Word, Excel, and PowerPoint bodies cannot be rendered from a panel that has none. The drawer therefore draws what a browser draws from bytes on its own — PDFs, images, anything that is text — plus the parsed text the Control Plane falls back to, and says plainly that an Office file is not shown here yet. Closing that gap means a renderer seat both surfaces can reach, which is its own change to the Sidebar's contract.
 
 ## Capability and package topology
 
@@ -53,7 +55,7 @@ That cuts the panel off from the right Sidebar's registered document bodies, whi
 | `packages/knowledge/knowledge-team` | The Runner-side provider for both operations |
 | `packages/knowledge/tool-knowledge` | The prompt section and search request for a document-level scope |
 | `packages/api/knowledge-controller` | `directory`, `documents`, `documentContent`, and `search` remotes for the browser |
-| `packages/client/ui-knowledge-panels` (new) | The two navigation rows, the two panels, and the preview column |
+| `packages/client/ui-knowledge-panels` (new) | The two navigation rows, the two panels, and the document drawer |
 | `packages/bundle/team` | The composition rows that mount the new client package |
 
 The catalog stays a catalog of knowledge bases. A document is not a governed resource, is not synchronized, and gets no durable row: it exists upstream, it is named by a reference the gateway can verify, and the grant that admits it is the one on its knowledge base.
@@ -133,13 +135,13 @@ Four changes, each shippable on its own.
 
 **Document listing.** The `documents` operation through all five layers, the listing route, its audit action, and the 知识库 panel's document list.
 
-**Document content.** The `documentContent` operation, the content route, the preview column, and the chunk-text fallback.
+**Document content.** The `documentContent` operation, the content route, the drawer, and the chunk-text fallback.
 
 **Document-level scope.** The recorded `docRefs`, the prompt section and search request that read it, the picker and composer chip that display it, and the retrieval panel's document-narrowed Session.
 
 ## Alternatives considered
 
-**Preview in the right Sidebar.** The right Sidebar owns document preview today, including the Office renderers, and reusing it would have bought splitting, floating, and multiple tabs. Its tabs are scoped to a Session and its docking surface is created per Session, while these panels are root-scoped and deliberately have no Session; giving the panels one would mean inventing a Session that exists only to hold a preview. The panel owns its preview column instead, and the price is that the Office bodies stay on the far side of that Session boundary.
+**Preview in the right Sidebar.** The right Sidebar owns document preview today, including the Office renderers, and reusing it would have bought splitting, floating, and multiple tabs. Its tabs are scoped to a Session and its docking surface is created per Session, while these panels are root-scoped and deliberately have no Session; giving the panels one would mean inventing a Session that exists only to hold a preview. The panel draws documents itself instead, and the price is that the Office bodies stay on the far side of that Session boundary.
 
 **Preview the parsed chunk text only.** Cheapest and safest: no company file leaves the Control Plane, and the retrieved passage can be highlighted in place. It loses the document — layout, tables, images, and page structure are exactly what a member opening a report is looking for. Chunk text remains as the fallback for a document over the byte bound or in a type no renderer claims.
 

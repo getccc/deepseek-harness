@@ -1,4 +1,4 @@
-/** The knowledge panel's preview column: one document, drawn from what the Control Plane served. */
+/** The knowledge panel's preview drawer: one document, drawn from what the Control Plane served. */
 
 import { useEffect, useMemo, useState } from 'react'
 import type { KnowledgeDocumentContentView } from '@deepseek-ai/dsh-api-knowledge-controller/types'
@@ -6,12 +6,12 @@ import type { Translate } from './locales.ts'
 import css from './panels.module.css'
 
 /** What this column is showing right now. */
-type Phase = 'idle' | 'loading' | 'ready' | 'failed'
+type Phase = 'loading' | 'ready' | 'failed'
 
 /** What the preview column needs to draw one document. */
 export interface DocumentPreviewProps {
-  /** The document to draw, or undefined while none is chosen. */
-  readonly docRef: string | undefined
+  /** The document to draw; the column is mounted per document a member opens. */
+  readonly docRef: string
   /** Read one document's content. */
   readonly content: (docRef: string) => Promise<KnowledgeDocumentContentView>
   /** The panel's bound translate. */
@@ -49,15 +49,10 @@ function bytesOf(base64: string): Uint8Array<ArrayBuffer> {
  * @returns the preview element tree.
  */
 export function DocumentPreview({ docRef, content, t }: DocumentPreviewProps) {
-  const [phase, setPhase] = useState<Phase>(docRef === undefined ? 'idle' : 'loading')
+  const [phase, setPhase] = useState<Phase>('loading')
   const [answer, setAnswer] = useState<KnowledgeDocumentContentView | undefined>(undefined)
 
   useEffect(() => {
-    if (docRef === undefined) {
-      setPhase('idle')
-      setAnswer(undefined)
-      return
-    }
     let live = true
     setPhase('loading')
     content(docRef).then((served) => {
@@ -82,7 +77,6 @@ export function DocumentPreview({ docRef, content, t }: DocumentPreviewProps) {
     return () => { URL.revokeObjectURL(objectUrl) }
   }, [objectUrl])
 
-  if (phase === 'idle') return <p className={css.notice}>{t('preview.select')}</p>
   if (phase === 'loading') return <p className={css.notice}>{t('preview.loading')}</p>
   if (phase === 'failed' || answer === undefined) {
     return <p className={css.notice}><span className={css.failed}>{t('preview.failed')}</span></p>
