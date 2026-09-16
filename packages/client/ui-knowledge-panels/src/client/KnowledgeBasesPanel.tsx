@@ -1,14 +1,17 @@
-/** The main panel listing the knowledge bases this member may search, and the documents in one. */
+/** The main panel listing the knowledge bases this member may search, the documents in one, and one document. */
 
 import { useEffect, useState } from 'react'
 import clsx from 'clsx'
 import { Button, IconDataOutline16, fileSizeText } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
-import type { KnowledgeChoice, KnowledgeDocumentsView } from '@deepseek-ai/dsh-api-knowledge-controller/types'
+import type {
+  KnowledgeChoice, KnowledgeDocumentContentView, KnowledgeDocumentsView,
+} from '@deepseek-ai/dsh-api-knowledge-controller/types'
 // Type-only: pulls the layout SlotMap merge (the keyed `main` panel seat).
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
+import { DocumentPreview } from './DocumentPreview.tsx'
 import css from './panels.module.css'
 
 /** What this panel needs from the plugin that registered it. */
@@ -17,6 +20,8 @@ export interface KnowledgeBasesInjected {
   directory: () => Promise<readonly KnowledgeChoice[]>
   /** One page of one knowledge base's documents. */
   documents: (knowledgeRef: string, page: number) => Promise<KnowledgeDocumentsView>
+  /** One document's content: the original file, or the parsed text standing in for it. */
+  content: (docRef: string) => Promise<KnowledgeDocumentContentView>
   /** Open the retrieval panel with one knowledge base already chosen. */
   searchIn: (knowledgeRef: string) => void
 }
@@ -37,11 +42,12 @@ type Phase = 'loading' | 'ready' | 'failed'
  * the last look should narrow this list, and an empty answer is shown as
  * "nothing is authorized" while a refusal is shown as a failure — a member who
  * cannot be told apart from a member with no access learns the wrong thing.
- * The document list is read the same way, per knowledge base and per page.
+ * The document list is read the same way, per knowledge base and per page, and
+ * a document's content per document opened.
  * @param props - the main slot's runtime share, the plugin's face, and the locale seat.
  * @returns the panel element tree.
  */
-export function KnowledgeBasesPanel({ directory, documents, searchIn, t }: KnowledgeBasesPanelProps) {
+export function KnowledgeBasesPanel({ directory, documents, content, searchIn, t }: KnowledgeBasesPanelProps) {
   const [phase, setPhase] = useState<Phase>('loading')
   const [entries, setEntries] = useState<readonly KnowledgeChoice[]>([])
   const [attempt, setAttempt] = useState(0)
@@ -49,6 +55,7 @@ export function KnowledgeBasesPanel({ directory, documents, searchIn, t }: Knowl
   const [page, setPage] = useState(1)
   const [docsPhase, setDocsPhase] = useState<Phase>('loading')
   const [docs, setDocs] = useState<KnowledgeDocumentsView | undefined>(undefined)
+  const [opened, setOpened] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     let live = true
@@ -81,6 +88,7 @@ export function KnowledgeBasesPanel({ directory, documents, searchIn, t }: Knowl
     setChosen(knowledgeRef)
     setPage(1)
     setDocs(undefined)
+    setOpened(undefined)
   }
 
   const rows = docs?.documents ?? []
@@ -146,15 +154,22 @@ export function KnowledgeBasesPanel({ directory, documents, searchIn, t }: Knowl
                 </p>
                 <ul className={css.list}>
                   {rows.map(document => (
-                    <li key={document.docRef} className={css.card}>
-                      <span className={css.cardName}>
-                        {document.title === '' ? document.fileName : document.title}
-                        <span className={css.cardMeta}>{t(`docs.state.${document.state}`)}</span>
-                      </span>
-                      <span className={css.summary}>
-                        {document.fileType !== '' && <span>{document.fileType}</span>}
-                        {document.byteSize > 0 && <span>{fileSizeText(document.byteSize)}</span>}
-                      </span>
+                    <li key={document.docRef} className={clsx(css.card, document.docRef === opened && css.cardOn)}>
+                      <button
+                        type="button"
+                        className={css.cardSelect}
+                        aria-pressed={document.docRef === opened}
+                        onClick={() => { setOpened(document.docRef) }}
+                      >
+                        <span className={css.cardName}>
+                          {document.title === '' ? document.fileName : document.title}
+                          <span className={css.cardMeta}>{t(`docs.state.${document.state}`)}</span>
+                        </span>
+                        <span className={css.summary}>
+                          {document.fileType !== '' && <span>{document.fileType}</span>}
+                          {document.byteSize > 0 && <span>{fileSizeText(document.byteSize)}</span>}
+                        </span>
+                      </button>
                     </li>
                   ))}
                 </ul>
@@ -168,6 +183,10 @@ export function KnowledgeBasesPanel({ directory, documents, searchIn, t }: Knowl
                 </span>
               </>
             )}
+          </div>
+
+          <div className={css.documents}>
+            <DocumentPreview docRef={opened} content={content} t={t} />
           </div>
         </div>
       )}

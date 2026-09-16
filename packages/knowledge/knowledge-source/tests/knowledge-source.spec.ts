@@ -8,7 +8,10 @@ import { describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import {
   KnowledgeSource,
+  type UpstreamDocumentContent,
   type UpstreamDocumentPage,
+  type UpstreamDocumentPlacement,
+  type UpstreamDocumentRequest,
   type UpstreamDocumentsRequest,
   type UpstreamKnowledgeBase,
   type UpstreamPassage,
@@ -47,6 +50,27 @@ class StubSource extends KnowledgeSource {
       pageSize: request.pageSize,
       total: 1,
     })
+  }
+
+  describeDocument(upstreamDocId: string): Promise<UpstreamDocumentPlacement> {
+    return Promise.resolve({
+      upstreamId: 'kb-1',
+      document: {
+        upstreamDocId,
+        title: '运维手册',
+        fileName: '运维手册.pdf',
+        fileType: 'pdf',
+        byteSize: 2048,
+        state: 'ready',
+        updatedAt: undefined,
+      },
+    })
+  }
+
+  fetchDocument(request: UpstreamDocumentRequest): Promise<UpstreamDocumentContent> {
+    return Promise.resolve(request.maxBytes >= 2048
+      ? { kind: 'bytes', fileName: '运维手册.pdf', contentType: 'application/pdf', bytes: new Uint8Array([1, 2]) }
+      : { kind: 'text', fileName: '运维手册.pdf', text: '一级故障 30 分钟内响应。', truncated: false })
   }
 
   search(request: UpstreamSearchRequest): Promise<readonly UpstreamPassage[]> {

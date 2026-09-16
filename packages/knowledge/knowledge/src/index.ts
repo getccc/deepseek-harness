@@ -2,9 +2,10 @@
  * The knowledge seam: one service a Runner asks for the private knowledge its
  * signed-in member may reach, and for passages out of it.
  *
- * The seam is deliberately small — a directory, its documents, and a search —
- * because every operation it names has to be one the Control Plane can
- * authorize against a current account, a current device, and current grants. There is no operation
+ * The seam is deliberately small — a directory, its documents, one document's
+ * content, and a search — because every operation it names has to be one the
+ * Control Plane can authorize against a current account, a current device, and
+ * current grants. There is no operation
  * for naming an address, choosing a tenant, or passing an upstream identifier,
  * so a Runner holding this service still cannot reach a knowledge source
  * except through a decision made elsewhere.
@@ -13,7 +14,8 @@
 
 import { Service, type Context } from '@deepseek-ai/cordis'
 import type {
-  KnowledgeBaseEntry, KnowledgeDocumentPage, KnowledgeDocumentsRequest,
+  KnowledgeBaseEntry, KnowledgeDocumentContent, KnowledgeDocumentPage,
+  KnowledgeDocumentRequest, KnowledgeDocumentsRequest,
   KnowledgeSearchRequest, KnowledgeSearchResult,
 } from './types.ts'
 
@@ -44,7 +46,9 @@ export {
   KnowledgeError,
   type KnowledgeBaseEntry,
   type KnowledgeDocument,
+  type KnowledgeDocumentContent,
   type KnowledgeDocumentPage,
+  type KnowledgeDocumentRequest,
   type KnowledgeDocumentState,
   type KnowledgeDocumentsRequest,
   type KnowledgeFailureReason,
@@ -97,6 +101,20 @@ export abstract class Knowledge extends Service {
    * @throws {KnowledgeError} when the knowledge base is refused or the upstream does not answer usably.
    */
   abstract documents(request: KnowledgeDocumentsRequest): Promise<KnowledgeDocumentPage>
+
+  /**
+   * One document's content: the original file, or the source's parsed text
+   * when the file is larger than the caller accepts or the source holds none.
+   *
+   * The document's knowledge base is resolved from the source and authorized
+   * on this call, and a reference whose two halves disagree is refused before
+   * any content is read: holding a reference proves nothing.
+   * @param request - the document, and the most bytes the caller can accept.
+   * @returns the content, saying which of the two it is.
+   * @throws {KnowledgeError} when the knowledge base is refused, the document has no
+   * content to serve (`document-unavailable`), or the upstream does not answer usably.
+   */
+  abstract documentContent(request: KnowledgeDocumentRequest): Promise<KnowledgeDocumentContent>
 
   /**
    * Search the knowledge bases one operation names.

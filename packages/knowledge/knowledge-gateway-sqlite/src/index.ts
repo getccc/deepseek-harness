@@ -22,7 +22,9 @@ import {
   KnowledgeRef,
   formatKnowledgeDocRef,
   formatKnowledgeRef,
+  parseKnowledgeDocRef,
   type KnowledgeBaseEntry,
+  type KnowledgeDocumentContent,
   type KnowledgeDocumentPage,
   type KnowledgeKind,
   type KnowledgePassage,
@@ -32,6 +34,7 @@ import {
   KNOWLEDGE_CATALOG_RESOURCE,
   KNOWLEDGE_RESOURCE_TYPE,
   KnowledgeGateway,
+  type GovernedDocumentRequest,
   type GovernedDocumentsRequest,
   type GovernedSearchRequest,
   type KnowledgeCatalogEntry,
@@ -56,6 +59,10 @@ export interface Config {
   defaultMaxResults?: number
   /** How many documents one listing page holds when a caller names no size. */
   defaultDocumentPageSize?: number
+  /** The largest original file one read may carry when a caller names no bound. */
+  defaultMaxDocumentBytes?: number
+  /** The most characters of parsed text one read may carry. */
+  defaultMaxDocumentTextChars?: number
 }
 
 /** {@link Config} once schemastery has filled every defaulted field. */
@@ -66,6 +73,12 @@ const DEFAULT_MAX_RESULTS = 10
 
 /** How many documents one listing page holds when a caller names no size. */
 const DEFAULT_DOCUMENT_PAGE_SIZE = 20
+
+/** The largest original file one read carries when a caller names no bound. */
+const DEFAULT_MAX_DOCUMENT_BYTES = 16 * 1024 * 1024
+
+/** The most characters of parsed text one read carries. */
+const DEFAULT_MAX_DOCUMENT_TEXT_CHARS = 200_000
 
 /** The permission a search is evaluated against. */
 const SEARCH_ACTION = 'knowledge.search'
@@ -80,6 +93,16 @@ const SEARCH_ACTION = 'knowledge.search'
  * authorization path grown beside the first.
  */
 const DOCUMENT_LIST_ACTION = 'knowledge.search'
+
+/**
+ * The permission a document read is evaluated against.
+ *
+ * The same permission again, by the same decision: a member who may retrieve
+ * passages from a knowledge base may open the documents those passages are in.
+ * Its own constant so tightening this one operation to `knowledge.read` does
+ * not disturb the other two.
+ */
+const DOCUMENT_READ_ACTION = 'knowledge.search'
 
 /** Cordis plugin name. */
 export const name = 'knowledge-gateway-sqlite'
@@ -99,6 +122,8 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
     path: z.string().required(),
     defaultMaxResults: z.natural().default(DEFAULT_MAX_RESULTS),
     defaultDocumentPageSize: z.natural().min(1).default(DEFAULT_DOCUMENT_PAGE_SIZE),
+    defaultMaxDocumentBytes: z.natural().min(1).default(DEFAULT_MAX_DOCUMENT_BYTES),
+    defaultMaxDocumentTextChars: z.natural().min(1).default(DEFAULT_MAX_DOCUMENT_TEXT_CHARS),
   })
 
   private readonly db: DatabaseSync
@@ -206,6 +231,60 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
       page,
       pageSize: upstream.pageSize,
       total: upstream.total,
+    }
+  }
+
+  async documentContent(request: GovernedDocumentRequest): Promise<KnowledgeDocumentContent> {
+    const parts = parseKnowledgeDocRef(request.docRef)
+    const row = parts === undefined ? undefined : this.row(request.orgId, parts.ref)
+    const usable = parts !== undefined && row !== undefined && row.admin_enabled === 1
+    const allowed = usable && await this.may(request, parts.ref, DOCUMENT_READ_ACTION)
+    if (!allowed) {
+      await this.record(
+        { ...request, resourceRef: parts?.ref ?? request.docRef }, 'denied', undefined, 'no-grant',
+        undefined, 'knowledge.document.read',
+      )
+      throw new KnowledgeError('not-allowed', 'that document is not available')
+    }
+    try {
+      // The source is asked where the document sits before it is asked for
+      // anything in it: a reference whose knowledge base disagrees with the
+      // source's is refused with nothing read.
+      const placement = await this.ctx.knowledgeSource.describeDocument(
+        parts.upstreamDocId,
+        request.signal,
+      )
+      if (placement.upstreamId !== row.upstream_id) {
+        await this.record(
+          { ...request, resourceRef: parts.ref }, 'denied', undefined, 'no-grant',
+          undefined, 'knowledge.document.read',
+        )
+        throw new KnowledgeError('not-allowed', 'that document is not available')
+      }
+      const content = await this.ctx.knowledgeSource.fetchDocument({
+        upstreamDocId: parts.upstreamDocId,
+        maxBytes: request.maxBytes ?? this.resolved.defaultMaxDocumentBytes,
+        maxTextChars: this.resolved.defaultMaxDocumentTextChars,
+        ...(request.signal === undefined ? {} : { signal: request.signal }),
+      })
+      await this.record(
+        { ...request, resourceRef: parts.ref }, 'allowed', undefined,
+        undefined, undefined, 'knowledge.document.read',
+      )
+      return content.kind === 'bytes'
+        ? { kind: 'bytes', docRef: request.docRef, fileName: content.fileName, contentType: content.contentType, bytes: content.bytes }
+        : { kind: 'text', docRef: request.docRef, fileName: content.fileName, text: content.text, truncated: content.truncated }
+    } catch (error) {
+      // A refusal this method raised itself is already recorded; only an
+      // upstream failure is recorded here.
+      const label = upstreamLabel(error)
+      if (label !== undefined) {
+        await this.record(
+          { ...request, resourceRef: parts.ref }, 'error', undefined, undefined,
+          label, 'knowledge.document.read',
+        )
+      }
+      throw error
     }
   }
 
@@ -560,7 +639,7 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
     itemCount: number | undefined,
     reason?: 'no-grant',
     failure?: string,
-    action: 'knowledge.search' | 'knowledge.document.list' = 'knowledge.search',
+    action: 'knowledge.search' | 'knowledge.document.list' | 'knowledge.document.read' = 'knowledge.search',
   ): Promise<void> {
     await this.ctx.audit.record({
       orgId: principal.orgId,

@@ -15,6 +15,7 @@ import WeknoraKnowledgeSource, {
   ERROR_CODES,
   LIST_PATH,
   RESOURCE_PLACEHOLDER,
+  contentTypeOf,
   hybridSearchPath,
   type Config,
 } from '@deepseek-ai/dsh-knowledge-weknora'
@@ -483,5 +484,276 @@ describe('listing one knowledge base’s documents', () => {
     const mounted = await mount([fail(ERROR_CODES.notFound)], {}, 404)
     await expect(mounted.ctx.knowledgeSource.listDocuments({ upstreamId: B, page: 1, pageSize: 20 }))
       .rejects.toBeInstanceOf(KnowledgeError)
+  })
+})
+
+/** The single-object envelope the document record endpoint answers with. */
+function okRecord(patch: Record<string, unknown> = {}): unknown {
+  return { data: { ...wireDocument(), knowledge_base_id: A, ...patch }, success: true }
+}
+
+/** One parsed chunk as the chunk listing returns one. */
+function wireChunk(index: number, content: string, patch: Record<string, unknown> = {}): Record<string, unknown> {
+  return { id: `chunk-${String(index)}`, content, chunk_index: index, chunk_type: 'text', ...patch }
+}
+
+/**
+ * A fake WeKnora that answers one JSON body, then one binary body.
+ *
+ * The file endpoint is the one call that is not JSON, so it needs its own
+ * answer rather than another scripted envelope.
+ */
+function fakeFile(record: unknown, file: { bytes: Uint8Array<ArrayBuffer>; length?: string } | undefined, after: readonly unknown[] = []): {
+  calls: Captured[]
+  fetch: typeof globalThis.fetch
+} {
+  const calls: Captured[] = []
+  let index = 0
+  const fetchImpl = (input: string | URL, init?: RequestInit): Promise<Response> => {
+    const url = input instanceof URL ? input.href : input
+    calls.push({ url, method: init?.method ?? 'GET', headers: { ...(init?.headers as Record<string, string>) }, body: undefined })
+    if (url.endsWith('/preview')) {
+      if (file === undefined) return Promise.resolve(new Response('no', { status: 404 }))
+      return Promise.resolve(new Response(file.bytes, {
+        status: 200,
+        headers: file.length === undefined ? {} : { 'content-length': file.length },
+      }))
+    }
+    if (url.includes('/chunks/')) {
+      return Promise.resolve(new Response(JSON.stringify(after[0] ?? { data: [], success: true }), {
+        status: 200, headers: { 'content-type': 'application/json' },
+      }))
+    }
+    index += 1
+    return Promise.resolve(new Response(JSON.stringify(record), {
+      status: 200, headers: { 'content-type': 'application/json' },
+    }))
+  }
+  return { calls, fetch: fetchImpl as unknown as typeof globalThis.fetch }
+}
+
+/** Mount the provider over a scripted record, file, and chunk listing. */
+async function mountFile(
+  record: unknown,
+  file: { bytes: Uint8Array<ArrayBuffer>; length?: string } | undefined,
+  chunks: readonly unknown[] = [],
+  overrides: Partial<Config> = {},
+): Promise<{ ctx: Context; calls: Captured[] }> {
+  const upstream = fakeFile(record, file, chunks)
+  vi.stubGlobal('fetch', upstream.fetch)
+  const ctx = rootWith({ value: KEY, source: 'env' })
+  await load(ctx, overrides)
+  return { ctx, calls: upstream.calls }
+}
+
+describe('where a document sits', () => {
+  it('answers the knowledge base the source says holds it, with the document beside it', async () => {
+    const mounted = await mountFile(okRecord(), undefined)
+    const placement = await mounted.ctx.knowledgeSource.describeDocument('doc-1')
+    expect(mounted.calls[0]?.url).toBe('http://127.0.0.1:8080/api/v1/knowledge/doc-1')
+    expect(placement.upstreamId).toBe(A)
+    expect(placement.document).toMatchObject({ upstreamDocId: 'doc-1', fileName: '运维手册.pdf', state: 'ready' })
+  })
+
+  it('refuses a record with no knowledge base, because there would be nothing to authorize', async () => {
+    const mounted = await mountFile(okRecord({ knowledge_base_id: '' }), undefined)
+    await expect(mounted.ctx.knowledgeSource.describeDocument('doc-1'))
+      .rejects.toMatchObject({ reason: 'upstream-invalid' })
+  })
+
+  it('refuses a record the envelope does not carry as an object', async () => {
+    const mounted = await mountFile({ data: [okRecord()], success: true }, undefined)
+    await expect(mounted.ctx.knowledgeSource.describeDocument('doc-1'))
+      .rejects.toMatchObject({ reason: 'upstream-invalid' })
+  })
+})
+
+describe('one document’s content', () => {
+  it('serves the original file, typed by its name, from the read-level preview endpoint', async () => {
+    const bytes = new Uint8Array([0x25, 0x50, 0x44, 0x46])
+    const mounted = await mountFile(okRecord({ file_size: bytes.byteLength }), { bytes })
+    const content = await mounted.ctx.knowledgeSource.fetchDocument({
+      upstreamDocId: 'doc-1', maxBytes: 1024, maxTextChars: 1000,
+    })
+    // `preview`, never `download`: the second is guarded upstream by a write
+    // check, and this is a read-only surface.
+    expect(mounted.calls.map(call => call.url)).toEqual([
+      'http://127.0.0.1:8080/api/v1/knowledge/doc-1',
+      'http://127.0.0.1:8080/api/v1/knowledge/doc-1/preview',
+    ])
+    expect(content).toEqual({
+      kind: 'bytes', fileName: '运维手册.pdf', contentType: 'application/pdf', bytes,
+    })
+  })
+
+  it.each<[string, Record<string, unknown>]>([
+    ['a file the source reports as larger than the caller accepts', { file_size: 4096 }],
+    ['a document the source holds no file for', { file_name: '' }],
+    ['a document whose size the source does not report', { file_size: 0 }],
+  ])('falls back to parsed text for %s', async (_label, patch) => {
+    const mounted = await mountFile(okRecord(patch), { bytes: new Uint8Array([1]) }, [{
+      data: [wireChunk(1, '二级故障 2 小时内响应。'), wireChunk(0, '一级故障 30 分钟内响应。')],
+      success: true,
+    }])
+    const content = await mounted.ctx.knowledgeSource.fetchDocument({
+      upstreamDocId: 'doc-1', maxBytes: 2048, maxTextChars: 1000,
+    })
+    // Chunks are joined in the source's own order, which is the index, not the
+    // order the listing happened to answer in.
+    expect(content).toEqual({
+      kind: 'text',
+      fileName: patch['file_name'] === '' ? '' : '运维手册.pdf',
+      text: '一级故障 30 分钟内响应。\n\n二级故障 2 小时内响应。',
+      truncated: false,
+    })
+  })
+
+  it('falls back to text when the file arrives larger than it was declared', async () => {
+    const mounted = await mountFile(
+      okRecord({ file_size: 4 }),
+      { bytes: new Uint8Array(64), length: '4' },
+      [{ data: [wireChunk(0, '一级故障 30 分钟内响应。')], success: true }],
+    )
+    const content = await mounted.ctx.knowledgeSource.fetchDocument({
+      upstreamDocId: 'doc-1', maxBytes: 8, maxTextChars: 1000,
+    })
+    // The bound holds against what arrived, not only against what was claimed:
+    // a source that under-reports a length must not decide this process's memory.
+    expect(content.kind).toBe('text')
+  })
+
+  it('cuts the text to the bound and says so', async () => {
+    const mounted = await mountFile(okRecord({ file_name: '' }), undefined, [{
+      data: [wireChunk(0, '一二三四五六七八九十')], success: true,
+    }])
+    const content = await mounted.ctx.knowledgeSource.fetchDocument({
+      upstreamDocId: 'doc-1', maxBytes: 1024, maxTextChars: 4,
+    })
+    expect(content).toMatchObject({ kind: 'text', text: '一二三四', truncated: true })
+  })
+
+  it('bounds the text by this deployment as well as by the caller', async () => {
+    const mounted = await mountFile(okRecord({ file_name: '' }), undefined, [{
+      data: [wireChunk(0, '一二三四五六七八九十')], success: true,
+    }], { maxDocumentTextChars: 2 })
+    const content = await mounted.ctx.knowledgeSource.fetchDocument({
+      upstreamDocId: 'doc-1', maxBytes: 1024, maxTextChars: 1000,
+    })
+    expect(content).toMatchObject({ text: '一二', truncated: true })
+  })
+
+  it('reports a document the source will serve nothing from as unavailable', async () => {
+    const mounted = await mountFile(okRecord({ file_name: '' }), undefined, [{
+      data: [wireChunk(0, ''), wireChunk(1, 'an image', { chunk_type: 'image' })], success: true,
+    }])
+    // Having the document and nothing to serve from it is a different fact
+    // from failing to read it, and a member can act on the difference.
+    await expect(mounted.ctx.knowledgeSource.fetchDocument({
+      upstreamDocId: 'doc-1', maxBytes: 1024, maxTextChars: 1000,
+    })).rejects.toMatchObject({ reason: 'document-unavailable' })
+  })
+
+  it('reports a refused file as the source not answering', async () => {
+    const mounted = await mountFile(okRecord({ file_size: 4 }), undefined)
+    await expect(mounted.ctx.knowledgeSource.fetchDocument({
+      upstreamDocId: 'doc-1', maxBytes: 1024, maxTextChars: 1000,
+    })).rejects.toBeInstanceOf(KnowledgeError)
+  })
+
+  it('refuses to read a file with no credential to read it with', async () => {
+    vi.stubGlobal('fetch', fakeFile(okRecord({ file_size: 4 }), { bytes: new Uint8Array([1]) }).fetch)
+    const ctx = rootWith(undefined)
+    await load(ctx)
+    await expect(ctx.knowledgeSource.fetchDocument({
+      upstreamDocId: 'doc-1', maxBytes: 1024, maxTextChars: 1000,
+    })).rejects.toMatchObject({ reason: 'upstream-unavailable' })
+  })
+})
+
+describe('the media type one file is served as', () => {
+  it.each([
+    ['报告.pdf', 'application/pdf'],
+    ['图.PNG', 'image/png'],
+    ['表.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+    ['说明.md', 'text/markdown; charset=utf-8'],
+    ['归档.tar.gz', 'application/octet-stream'],
+    ['noextension', 'application/octet-stream'],
+  ])('reads %s from its name', (fileName, expected) => {
+    // From the name, never from the source: these bytes reach a browser, and a
+    // source-chosen type is a source-chosen way to have a browser treat a file
+    // as something else.
+    expect(contentTypeOf(fileName)).toBe(expected)
+  })
+})
+
+describe('what the content path refuses to read', () => {
+  it('drops a chunk with no text in it', async () => {
+    const mounted = await mountFile(okRecord({ file_name: '' }), undefined, [{
+      data: [wireChunk(0, ''), { id: 'chunk-1', chunk_index: 1 }, wireChunk(2, '一级故障 30 分钟内响应。')],
+      success: true,
+    }])
+    const content = await mounted.ctx.knowledgeSource.fetchDocument({
+      upstreamDocId: 'doc-1', maxBytes: 1024, maxTextChars: 1000,
+    })
+    expect(content).toMatchObject({ kind: 'text', text: '一级故障 30 分钟内响应。' })
+  })
+
+  it.each([
+    ['a body that is not an object', '"nope"'],
+    ['a body the source did not mark successful', { data: {}, success: false }],
+    ['an array where a record belongs', { data: [], success: true }],
+  ])('refuses %s from the record endpoint', async (_label, body) => {
+    const mounted = await mountFile(body, undefined)
+    await expect(mounted.ctx.knowledgeSource.describeDocument('doc-1'))
+      .rejects.toBeInstanceOf(KnowledgeError)
+  })
+
+  it('abandons a file the source never finishes sending', async () => {
+    const calls: string[] = []
+    const fetchImpl = (input: string | URL, init?: RequestInit): Promise<Response> => {
+      const url = input instanceof URL ? input.href : input
+      calls.push(url)
+      if (!url.endsWith('/preview')) {
+        return Promise.resolve(new Response(JSON.stringify(okRecord({ file_size: 4 })), {
+          status: 200, headers: { 'content-type': 'application/json' },
+        }))
+      }
+      // A source that accepted the connection and never answers: the
+      // provider's own deadline is what ends this, not the caller's patience.
+      return new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => { reject(new Error('aborted')) })
+      })
+    }
+    vi.stubGlobal('fetch', fetchImpl)
+    const ctx = rootWith({ value: KEY, source: 'env' })
+    await load(ctx, { requestTimeoutMs: 5 })
+    await expect(ctx.knowledgeSource.fetchDocument({
+      upstreamDocId: 'doc-1', maxBytes: 1024, maxTextChars: 1000,
+    })).rejects.toMatchObject({ reason: 'upstream-unavailable' })
+    expect(calls).toHaveLength(2)
+  })
+})
+
+describe('the byte bound holds at both places it can', () => {
+  it('stops before reading a body the response declares as over the bound', async () => {
+    const mounted = await mountFile(
+      okRecord({ file_size: 4 }),
+      { bytes: new Uint8Array(64), length: '999' },
+      [{ data: [wireChunk(0, '一级故障 30 分钟内响应。')], success: true }],
+    )
+    const content = await mounted.ctx.knowledgeSource.fetchDocument({
+      upstreamDocId: 'doc-1', maxBytes: 8, maxTextChars: 1000,
+    })
+    expect(content.kind).toBe('text')
+  })
+
+  it('carries the caller’s cancellation into the file read', async () => {
+    const bytes = new Uint8Array([1, 2, 3, 4])
+    const mounted = await mountFile(okRecord({ file_size: 4 }), { bytes })
+    const controller = new AbortController()
+    const content = await mounted.ctx.knowledgeSource.fetchDocument({
+      upstreamDocId: 'doc-1', maxBytes: 1024, maxTextChars: 1000, signal: controller.signal,
+    })
+    expect(content).toMatchObject({ kind: 'bytes' })
   })
 })

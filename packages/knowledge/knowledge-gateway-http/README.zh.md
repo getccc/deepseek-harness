@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-knowledge-gateway-http` 提供 Team Runner 访问私有知识所调用的这些路由：读取已授权目录、列出某个知识库中的文档，以及在其中检索。它做的一切都围绕一个事实展开——请求不得能够声明是谁在问、答案从哪里来。主体从已验证的设备 Access Token 恢复，绝不从请求体读取；数据源由目录解析，在请求中根本没有位置。在 Control Plane 中与它所前置的受治理网关并排挂载。
+`dsh-knowledge-gateway-http` 提供 Team Runner 访问私有知识所调用的这些路由：读取已授权目录、列出并读取某个知识库中的文档，以及在其中检索。它做的一切都围绕一个事实展开——请求不得能够声明是谁在问、答案从哪里来。主体从已验证的设备 Access Token 恢复，绝不从请求体读取；数据源由目录解析，在请求中根本没有位置。在 Control Plane 中与它所前置的受治理网关并排挂载。
 
 ## 目录
 
@@ -41,9 +41,11 @@ kind: "package-reference"
 
 ### 这些路由
 
-`POST /team/knowledge/catalog` 只接受 `protocolVersion`，回答主体的已授权目录。`POST /team/knowledge/documents` 增加 `ref` 以及可选的 `page` 和 `pageSize`。`POST /team/knowledge/search` 增加 `query`、`scope` 和可选的 `maxResults`。没有任何请求体带有组织、主体、设备、数据源、地址、租户、凭据或上游 id 的字段——Runner 说出它想要什么，其余由 Control Plane 解析并授权。
+`POST /team/knowledge/catalog` 只接受 `protocolVersion`，回答主体的已授权目录。`POST /team/knowledge/documents` 增加 `ref` 以及可选的 `page` 和 `pageSize`。`POST /team/knowledge/document` 增加 `docRef` 和可选的 `maxBytes`。`POST /team/knowledge/search` 增加 `query`、`scope` 和可选的 `maxResults`。没有任何请求体带有组织、主体、设备、数据源、地址、租户、凭据或上游 id 的字段——Runner 说出它想要什么，其余由 Control Plane 解析并授权。
 
-新增一条路由上调了当前协议版本，最低版本保持不变：在它之前构建的 Runner 仍保有目录与检索，只是没有任何东西去调用这条更新的路由。
+每新增一条路由都上调当前协议版本，最低版本保持不变：在某条路由之前构建的 Runner 仍保有它已知的每条路由，只是没有任何东西去调用更新的那条。
+
+一份文档的内容和其他一切一样以 JSON 传输，文件以 base64 放在请求体中。二进制响应会让这一条路由需要自己的一套拒绝、体积和取消处理；让 JSON 可负担的，是部署自己的字节上界——它在读取文件之前就已生效。
 
 ### 版本最先判定
 
@@ -103,7 +105,7 @@ kind: "package-reference"
 这些限制界定了本适配器自身在何处不完整。它们是当前的包约束。
 
 - **不转发取消** —— 客户端在检索中途断开不会中止上游调用；结束它的是网关自身的上界。把请求的 abort 信号串下去，需要一个能携带它的路由契约。
-- **没有文档内容路由** —— Runner 可以列出文档但从不取回任何一份，因此接口面止于一份文档「是什么」。
+- **一个文件就是一整个响应体** —— 内容路由回答一份完整文件，以 base64 放在 JSON 中。没有区间、没有分块、也没有流式传输，因此部署的字节上界也就是这条路由能产生的最大响应。
 - **没有限流** —— 一台设备可以多频繁检索的上界属于这里，而目前没有任何地方施加；当前的答案是前置的反向代理。
 - **`cancelled` 映射到非标准的 499** —— 没有已注册的状态码描述被客户端放弃的请求，而 Runner 读的是理由词；状态码是给日志看的。
 

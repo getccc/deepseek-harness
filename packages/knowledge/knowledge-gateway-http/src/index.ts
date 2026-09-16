@@ -19,8 +19,10 @@ import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-device-authorization'
 import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
 import {
+  KnowledgeDocRef,
   KnowledgeError,
   KnowledgeRef,
+  isKnowledgeDocRef,
   isKnowledgeRef,
   type KnowledgeFailureReason,
   type KnowledgeScopeSelection,
@@ -30,6 +32,7 @@ import {
   ACCESS_TOKEN_HEADER,
   KNOWLEDGE_CATALOG_PATH,
   KNOWLEDGE_DOCUMENTS_PATH,
+  KNOWLEDGE_DOCUMENT_PATH,
   KNOWLEDGE_PROTOCOL_VERSION,
   KNOWLEDGE_SEARCH_PATH,
   MINIMUM_KNOWLEDGE_PROTOCOL_VERSION,
@@ -39,10 +42,13 @@ export {
   ACCESS_TOKEN_HEADER,
   KNOWLEDGE_CATALOG_PATH,
   KNOWLEDGE_DOCUMENTS_PATH,
+  KNOWLEDGE_DOCUMENT_PATH,
   KNOWLEDGE_PROTOCOL_VERSION,
   KNOWLEDGE_SEARCH_PATH,
   MINIMUM_KNOWLEDGE_PROTOCOL_VERSION,
   type CatalogBody,
+  type DocumentBody,
+  type DocumentContentBody,
   type DocumentsBody,
   type KnowledgeProtocolRefusal,
   type KnowledgeRefusal,
@@ -75,6 +81,7 @@ type ResolvedConfig = Required<Config>
 const STATUS_BY_REASON: Readonly<Record<KnowledgeFailureReason, number>> = {
   'unauthenticated': 401,
   'not-allowed': 403,
+  'document-unavailable': 409,
   'scope-unavailable': 409,
   'scope-incompatible': 409,
   'upstream-unavailable': 502,
@@ -264,6 +271,39 @@ export function apply(ctx: Context, config: Config): void {
     },
   }
 
+  const document: WebRoute = {
+    kind: 'exact',
+    path: KNOWLEDGE_DOCUMENT_PATH,
+    handler: async (req, res) => {
+      const opened = await open(req, res)
+      if (opened === undefined) return
+      const docRef = opened.body['docRef']
+      const maxBytes = readCount(opened.body['maxBytes'])
+      if (typeof docRef !== 'string' || !isKnowledgeDocRef(docRef) || maxBytes === 'invalid') {
+        json(res, 400, { error: 'malformed' })
+        return
+      }
+      try {
+        const content = await ctx.knowledgeGateway.documentContent({
+          ...opened.principal,
+          docRef: KnowledgeDocRef(docRef),
+          ...(maxBytes === undefined ? {} : { maxBytes }),
+        })
+        json(res, 200, content.kind === 'bytes'
+          ? {
+            kind: 'bytes',
+            docRef: content.docRef,
+            fileName: content.fileName,
+            contentType: content.contentType,
+            base64: Buffer.from(content.bytes).toString('base64'),
+          }
+          : content)
+      } catch (error) {
+        answerFailure(res, error)
+      }
+    },
+  }
+
   const search: WebRoute = {
     kind: 'exact',
     path: KNOWLEDGE_SEARCH_PATH,
@@ -292,6 +332,7 @@ export function apply(ctx: Context, config: Config): void {
 
   ctx.effect(() => ctx.webServer.register(catalog), 'knowledge-gateway-http: catalog route')
   ctx.effect(() => ctx.webServer.register(documents), 'knowledge-gateway-http: documents route')
+  ctx.effect(() => ctx.webServer.register(document), 'knowledge-gateway-http: document content route')
   ctx.effect(() => ctx.webServer.register(search), 'knowledge-gateway-http: search route')
 }
 

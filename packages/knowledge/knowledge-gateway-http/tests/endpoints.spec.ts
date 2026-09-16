@@ -23,7 +23,10 @@ import SqliteKnowledgeGateway from '@deepseek-ai/dsh-knowledge-gateway-sqlite'
 import {
   KnowledgeSource,
   type UpstreamDocument,
+  type UpstreamDocumentContent,
   type UpstreamDocumentPage,
+  type UpstreamDocumentPlacement,
+  type UpstreamDocumentRequest,
   type UpstreamDocumentsRequest,
   type UpstreamKnowledgeBase,
   type UpstreamPassage,
@@ -33,6 +36,7 @@ import * as knowledgeHttp from '@deepseek-ai/dsh-knowledge-gateway-http'
 import {
   KNOWLEDGE_CATALOG_PATH,
   KNOWLEDGE_DOCUMENTS_PATH,
+  KNOWLEDGE_DOCUMENT_PATH,
   KNOWLEDGE_PROTOCOL_VERSION,
   KNOWLEDGE_SEARCH_PATH,
 } from '@deepseek-ai/dsh-knowledge-gateway-http'
@@ -41,6 +45,19 @@ const A = '690c0727-1af5-4b7a-8465-ebd2845f2266'
 const REF_A = `stub:prod:${A}`
 
 /** A knowledge source a test scripts. */
+/** One document as a source describes it, for a placement answer. */
+function documentOf(upstreamDocId: string): UpstreamDocument {
+  return {
+    upstreamDocId,
+    title: '运维手册',
+    fileName: '运维手册.pdf',
+    fileType: 'pdf',
+    byteSize: 20480,
+    state: 'ready',
+    updatedAt: undefined,
+  }
+}
+
 class ScriptedSource extends KnowledgeSource {
   override readonly providerKind = 'stub'
   override readonly sourceCode = 'prod'
@@ -56,9 +73,30 @@ class ScriptedSource extends KnowledgeSource {
     return Promise.resolve(this.listing)
   }
 
+  /** Every document `describeDocument` was asked about, in order. */
+  readonly described: string[] = []
+  /** The knowledge base the source says holds any document, or the failure it raises. */
+  placement: string | Error = ''
+  /** Every content request `fetchDocument` received, in order. */
+  readonly fetched: UpstreamDocumentRequest[] = []
+  /** What the next content read answers, or the failure it raises. */
+  content: UpstreamDocumentContent | Error =
+    { kind: 'text', fileName: '运维手册.pdf', text: '一级故障 30 分钟内响应。', truncated: false }
+
   listDocuments(request: UpstreamDocumentsRequest): Promise<UpstreamDocumentPage> {
     this.listed.push(request)
     return Promise.resolve({ documents: this.documents, pageSize: request.pageSize, total: this.documents.length })
+  }
+
+  describeDocument(upstreamDocId: string): Promise<UpstreamDocumentPlacement> {
+    this.described.push(upstreamDocId)
+    if (this.placement instanceof Error) return Promise.reject(this.placement)
+    return Promise.resolve({ upstreamId: this.placement, document: documentOf(upstreamDocId) })
+  }
+
+  fetchDocument(request: UpstreamDocumentRequest): Promise<UpstreamDocumentContent> {
+    this.fetched.push(request)
+    return this.content instanceof Error ? Promise.reject(this.content) : Promise.resolve(this.content)
   }
 
   search(request: UpstreamSearchRequest): Promise<readonly UpstreamPassage[]> {
@@ -459,5 +497,74 @@ describe('one knowledge base’s documents', () => {
       headers: { authorization: `Bearer ${accessToken}` },
     })
     expect(response.status).toBe(405)
+  })
+})
+
+describe('one document’s content', () => {
+  it('carries the original file as base64, with the type it is served as', async () => {
+    await grantAll()
+    source.placement = A
+    source.content = {
+      kind: 'bytes', fileName: '运维手册.pdf', contentType: 'application/pdf', bytes: new Uint8Array([1, 2, 3]),
+    }
+    const response = await post(KNOWLEDGE_DOCUMENT_PATH, {
+      protocolVersion: KNOWLEDGE_PROTOCOL_VERSION, docRef: `${REF_A}/doc-1`, maxBytes: 4096,
+    })
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({
+      kind: 'bytes',
+      docRef: `${REF_A}/doc-1`,
+      fileName: '运维手册.pdf',
+      contentType: 'application/pdf',
+      base64: 'AQID',
+    })
+  })
+
+  it('carries parsed text as itself', async () => {
+    await grantAll()
+    source.placement = A
+    source.content = { kind: 'text', fileName: '运维手册.pdf', text: '一级故障 30 分钟内响应。', truncated: true }
+    const response = await post(KNOWLEDGE_DOCUMENT_PATH, {
+      protocolVersion: KNOWLEDGE_PROTOCOL_VERSION, docRef: `${REF_A}/doc-1`,
+    })
+    expect(await response.json()).toMatchObject({ kind: 'text', truncated: true })
+  })
+
+  it('answers a document the source will serve nothing from with its own reason', async () => {
+    await grantAll()
+    source.placement = A
+    source.content = new KnowledgeError('document-unavailable', 'nothing to serve')
+    const response = await post(KNOWLEDGE_DOCUMENT_PATH, {
+      protocolVersion: KNOWLEDGE_PROTOCOL_VERSION, docRef: `${REF_A}/doc-1`,
+    })
+    expect(response.status).toBe(409)
+    expect(await response.json()).toEqual({ error: 'knowledge', reason: 'document-unavailable' })
+  })
+
+  it.each([
+    ['no reference', {}],
+    ['a knowledge reference where a document belongs', { docRef: REF_A }],
+    ['a byte bound that is not a whole number', { docRef: `${REF_A}/doc-1`, maxBytes: 0.5 }],
+  ])('refuses %s as malformed', async (_label, patch) => {
+    await grantAll()
+    const response = await post(KNOWLEDGE_DOCUMENT_PATH, {
+      protocolVersion: KNOWLEDGE_PROTOCOL_VERSION, ...patch,
+    })
+    expect(response.status).toBe(400)
+    expect(source.described).toEqual([])
+  })
+
+  it('reads nothing for a request that never opened', async () => {
+    await grantAll()
+    const unauthenticated = await post(KNOWLEDGE_DOCUMENT_PATH, {
+      protocolVersion: KNOWLEDGE_PROTOCOL_VERSION, docRef: `${REF_A}/doc-1`,
+    }, NO_TOKEN)
+    expect(unauthenticated.status).toBe(401)
+    const wrongMethod = await fetch(`${origin}${KNOWLEDGE_DOCUMENT_PATH}`, {
+      method: 'GET',
+      headers: { authorization: `Bearer ${accessToken}` },
+    })
+    expect(wrongMethod.status).toBe(405)
+    expect(source.described).toEqual([])
   })
 })

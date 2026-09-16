@@ -2,7 +2,7 @@
 
 English | [中文](knowledge.zh.md)
 
-The private-knowledge seam — a [capability seam](../../.agents/notes/implemented/architecture/2026-06-13-capability-seams.md) spanning **three operations** (directory, document listing, and search) on one `ctx.knowledge` service. The Service Definition is [dsh-knowledge](../../packages/knowledge/knowledge); its Team providers and the model-facing tool arrive with the [Control Plane knowledge capability](../../.agents/notes/proposed/feature/2026-09-01-team-private-knowledge-control-plane.md). Knowledge is **one optional capability**, not part of the agent-loop spine, so its vocabulary lives here rather than in [core.md](core.md).
+The private-knowledge seam — a [capability seam](../../.agents/notes/implemented/architecture/2026-06-13-capability-seams.md) spanning **four operations** (directory, document listing, document content, and search) on one `ctx.knowledge` service. The Service Definition is [dsh-knowledge](../../packages/knowledge/knowledge); its Team providers and the model-facing tool arrive with the [Control Plane knowledge capability](../../.agents/notes/proposed/feature/2026-09-01-team-private-knowledge-control-plane.md). Knowledge is **one optional capability**, not part of the agent-loop spine, so its vocabulary lives here rather than in [core.md](core.md).
 
 The seam names product operations, never upstream ones. A Runner holding `ctx.knowledge` cannot name an address, a tenant, a credential, or an upstream document id, because no operation has a place for one. That is what lets a governed deployment put every knowledge decision — which member, which device, which knowledge bases, right now — behind a service the member's own process cannot bypass.
 
@@ -62,6 +62,8 @@ Source: [`packages/knowledge/knowledge/src/scope.ts`](../../packages/knowledge/k
 
 `documents()` answers one page of one knowledge base's documents, each carrying its governed reference, what the source holds about the file, and a `KnowledgeDocumentState` — `ready`, `processing`, or `unavailable`. The state is the source's own parse and enablement words read as the three things a member can act on: use it, wait, or ask an administrator. A state this build does not know reads as `unavailable`, which promises least. The page reports the source's `total` only when the source gives one; absent means "the source did not say" and must not be read as zero.
 
+`documentContent()` answers one document as a `KnowledgeDocumentContent`, which says which of two things it is. `bytes` is the original file with the media type its name implies, and is never partial. `text` is the source's parsed text, which is what is served when the file is over the caller's or the deployment's bound, when the source holds no file, and when the text had to be cut. A document the source will serve neither from is `document-unavailable` — it exists, and there is nothing to read.
+
 `search()` takes the query, the scope resolved from the Session, and the caller's bounds. `KnowledgeScopeSelection` keeps `all` as a mode rather than an expanded list, because expanding it is an authorization act only the Control Plane can perform; a Runner that expanded it would be asserting authorization it cannot compute.
 
 No operation returns a partial answer. A directory that could not be authorized, a listing on a refused knowledge base, and a search whose scope was refused all raise, because a quietly narrowed result is indistinguishable from a correct one to the model that reads it.
@@ -74,6 +76,7 @@ Every failure is a `KnowledgeError` carrying one reason from a closed set, so a 
 |---|---|
 | `unauthenticated` | No valid device token, an inactive member, or a revoked device |
 | `not-allowed` | No grant admits the operation, or a named resource is unknown or disabled |
+| `document-unavailable` | The document exists for the source but has no content it will serve |
 | `scope-unavailable` | A selected reference is no longer in the principal's authorized directory |
 | `scope-incompatible` | Selected knowledge bases cannot be searched together by the upstream |
 | `upstream-unavailable` | The knowledge service did not answer in time or at all |
@@ -120,6 +123,20 @@ abstract catalog(signal?: AbortSignal): Promise<readonly KnowledgeBaseEntry[]>
  * @throws {KnowledgeError} when the knowledge base is refused or the upstream does not answer usably.
  */
 abstract documents(request: KnowledgeDocumentsRequest): Promise<KnowledgeDocumentPage>
+
+/**
+ * One document's content: the original file, or the source's parsed text
+ * when the file is larger than the caller accepts or the source holds none.
+ *
+ * The document's knowledge base is resolved from the source and authorized
+ * on this call, and a reference whose two halves disagree is refused before
+ * any content is read: holding a reference proves nothing.
+ * @param request - the document, and the most bytes the caller can accept.
+ * @returns the content, saying which of the two it is.
+ * @throws {KnowledgeError} when the knowledge base is refused, the document has no
+ * content to serve (`document-unavailable`), or the upstream does not answer usably.
+ */
+abstract documentContent(request: KnowledgeDocumentRequest): Promise<KnowledgeDocumentContent>
 
 /**
  * Search the knowledge bases one operation names.
@@ -195,6 +212,20 @@ abstract directory(principal: KnowledgePrincipal): Promise<readonly KnowledgeBas
 abstract documents(request: GovernedDocumentsRequest): Promise<KnowledgeDocumentPage>
 
 /**
+ * Authorize one document read and perform it.
+ *
+ * Two things are proved before any content is read: the knowledge base the
+ * reference names admits this principal now, and the source agrees that the
+ * document belongs to that knowledge base. The second is what makes an
+ * unsigned reference safe — a reference whose halves disagree is refused,
+ * and possession of one is never authority.
+ * @param request - who is asking, which document, and the caller's byte bound.
+ * @returns the original file, or the parsed text when the file does not fit or does not exist.
+ * @throws {KnowledgeError} with the reason the operation was refused or failed.
+ */
+abstract documentContent(request: GovernedDocumentRequest): Promise<KnowledgeDocumentContent>
+
+/**
  * Authorize one search and perform it.
  *
  * Every knowledge base the scope resolves to is evaluated before the source
@@ -235,6 +266,26 @@ abstract list(signal?: AbortSignal): Promise<readonly UpstreamKnowledgeBase[]>
  * @throws {KnowledgeError} `upstream-unavailable` or `upstream-invalid`.
  */
 abstract listDocuments(request: UpstreamDocumentsRequest): Promise<UpstreamDocumentPage>
+
+/**
+ * Where one document sits, so the gateway can authorize the knowledge base
+ * that holds it before asking for anything in it.
+ * @param upstreamDocId - the source's own document id.
+ * @param signal - aborts the operation.
+ * @returns the knowledge base it belongs to, and the document.
+ * @throws {KnowledgeError} `upstream-unavailable`, `upstream-invalid`, or
+ * `document-unavailable` when the source holds no such document.
+ */
+abstract describeDocument(upstreamDocId: string, signal?: AbortSignal): Promise<UpstreamDocumentPlacement>
+
+/**
+ * One already-authorized document's content.
+ * @param request - the document and the caller's bounds.
+ * @returns the original file, or the parsed text when the file does not fit or does not exist.
+ * @throws {KnowledgeError} `upstream-unavailable`, `upstream-invalid`, or
+ * `document-unavailable` when the source will serve neither a file nor text.
+ */
+abstract fetchDocument(request: UpstreamDocumentRequest): Promise<UpstreamDocumentContent>
 
 /**
  * Search an explicit, already-authorized set of knowledge bases.

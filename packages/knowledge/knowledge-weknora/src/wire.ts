@@ -44,6 +44,39 @@ export function documentsPath(upstreamId: string): string {
   return `${API_PREFIX}/knowledge-bases/${encodeURIComponent(upstreamId)}/knowledge`
 }
 
+/**
+ * One document's own record, which is what says which knowledge base holds it.
+ * @param upstreamDocId - the source's document id.
+ * @returns the path to GET.
+ */
+export function documentPath(upstreamDocId: string): string {
+  return `${API_PREFIX}/knowledge/${encodeURIComponent(upstreamDocId)}`
+}
+
+/**
+ * The original file, typed by its name for in-browser display.
+ *
+ * `preview` rather than `download`: the two serve the same bytes, but upstream
+ * guards `download` with a contributor-and-write check while `preview` needs
+ * only read access. A read-only product surface must not be built on a write
+ * guard.
+ * @param upstreamDocId - the source's document id.
+ * @returns the path to GET.
+ */
+export function documentPreviewPath(upstreamDocId: string): string {
+  return `${API_PREFIX}/knowledge/${encodeURIComponent(upstreamDocId)}/preview`
+}
+
+/**
+ * The parsed chunks of one document, which is what stands in for a file the
+ * caller cannot accept or the source does not hold.
+ * @param upstreamDocId - the source's document id.
+ * @returns the path to GET.
+ */
+export function documentChunksPath(upstreamDocId: string): string {
+  return `${API_PREFIX}/chunks/${encodeURIComponent(upstreamDocId)}`
+}
+
 /** The header WeKnora authenticates with. */
 export const API_KEY_HEADER = 'X-API-Key'
 
@@ -102,6 +135,19 @@ export interface WireKnowledge {
   readonly updated_at?: unknown
   readonly processed_at?: unknown
   readonly created_at?: unknown
+}
+
+/**
+ * One parsed chunk as a chunk listing returns it.
+ *
+ * `content` is the text; `chunk_index` is its position in the document, which
+ * is what lets a reader reassemble them in the source's own order.
+ */
+export interface WireChunk {
+  readonly id: string
+  readonly content?: unknown
+  readonly chunk_index?: unknown
+  readonly chunk_type?: unknown
 }
 
 /** One retrieved chunk as `hybrid-search` returns it. */

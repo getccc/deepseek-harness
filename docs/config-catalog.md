@@ -1219,7 +1219,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/knowledge/knowledge-gateway-http/src/index.ts:58`](../packages/knowledge/knowledge-gateway-http/src/index.ts)
+Source: [`packages/knowledge/knowledge-gateway-http/src/index.ts:64`](../packages/knowledge/knowledge-gateway-http/src/index.ts)
 
 <a id="deepseek-aidsh-knowledge-gateway-sqlite"></a>
 
@@ -1236,10 +1236,14 @@ export interface Config {
   defaultMaxResults?: number
   /** How many documents one listing page holds when a caller names no size. */
   defaultDocumentPageSize?: number
+  /** The largest original file one read may carry when a caller names no bound. */
+  defaultMaxDocumentBytes?: number
+  /** The most characters of parsed text one read may carry. */
+  defaultMaxDocumentTextChars?: number
 }
 ```
 
-Source: [`packages/knowledge/knowledge-gateway-sqlite/src/index.ts:52`](../packages/knowledge/knowledge-gateway-sqlite/src/index.ts)
+Source: [`packages/knowledge/knowledge-gateway-sqlite/src/index.ts:55`](../packages/knowledge/knowledge-gateway-sqlite/src/index.ts)
 
 <a id="deepseek-aidsh-knowledge-team"></a>
 
@@ -1268,7 +1272,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/knowledge/knowledge-team/src/index.ts:54`](../packages/knowledge/knowledge-team/src/index.ts)
+Source: [`packages/knowledge/knowledge-team/src/index.ts:57`](../packages/knowledge/knowledge-team/src/index.ts)
 
 <a id="deepseek-aidsh-knowledge-weknora"></a>
 
@@ -1299,12 +1303,19 @@ export interface Config {
   maxSearchResults?: number
   /** The most documents one listing page may return. */
   maxDocumentsPerPage?: number
+  /**
+   * The largest original file this Control Plane will pull from the source and
+   * hold in memory. A document over it is served as parsed text instead.
+   */
+  maxDocumentBytes?: number
+  /** The most characters of parsed text one document may return. */
+  maxDocumentTextChars?: number
   /** The most characters one passage may carry. */
   maxPassageChars?: number
 }
 ```
 
-Source: [`packages/knowledge/knowledge-weknora/src/index.ts:74`](../packages/knowledge/knowledge-weknora/src/index.ts)
+Source: [`packages/knowledge/knowledge-weknora/src/index.ts:84`](../packages/knowledge/knowledge-weknora/src/index.ts)
 
 <a id="deepseek-aidsh-llm-deepseek"></a>
 

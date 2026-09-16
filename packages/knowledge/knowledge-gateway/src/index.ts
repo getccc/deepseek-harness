@@ -21,6 +21,8 @@ import type { ResourceId } from '@deepseek-ai/dsh-access-control'
 import type { OrgId, UserId } from '@deepseek-ai/dsh-account-store'
 import type {
   KnowledgeBaseEntry,
+  KnowledgeDocRef,
+  KnowledgeDocumentContent,
   KnowledgeDocumentPage,
   KnowledgeKind,
   KnowledgeRef,
@@ -144,6 +146,15 @@ export interface GovernedDocumentsRequest extends KnowledgePrincipal {
   readonly signal?: AbortSignal
 }
 
+/** One governed document read: who is asking, and which document. */
+export interface GovernedDocumentRequest extends KnowledgePrincipal {
+  /** The document to read; the knowledge base inside it is authorized on this call. */
+  readonly docRef: KnowledgeDocRef
+  /** The most bytes the caller can accept; a larger file is answered as text. */
+  readonly maxBytes?: number
+  readonly signal?: AbortSignal
+}
+
 /**
  * The governed catalog and the decision in front of it. A provider mounts this
  * service; consumers inject `knowledgeGateway`.
@@ -209,6 +220,20 @@ export abstract class KnowledgeGateway extends Service {
    * @throws {KnowledgeError} with the reason the operation was refused or failed.
    */
   abstract documents(request: GovernedDocumentsRequest): Promise<KnowledgeDocumentPage>
+
+  /**
+   * Authorize one document read and perform it.
+   *
+   * Two things are proved before any content is read: the knowledge base the
+   * reference names admits this principal now, and the source agrees that the
+   * document belongs to that knowledge base. The second is what makes an
+   * unsigned reference safe — a reference whose halves disagree is refused,
+   * and possession of one is never authority.
+   * @param request - who is asking, which document, and the caller's byte bound.
+   * @returns the original file, or the parsed text when the file does not fit or does not exist.
+   * @throws {KnowledgeError} with the reason the operation was refused or failed.
+   */
+  abstract documentContent(request: GovernedDocumentRequest): Promise<KnowledgeDocumentContent>
 
   /**
    * Authorize one search and perform it.

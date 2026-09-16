@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-knowledge-source` (`ctx.knowledgeSource`) is the seam a governed knowledge gateway speaks to an upstream knowledge product through. Its operations — list what a source holds, list one knowledge base's documents, search an explicit set of its knowledge bases — are in upstream terms: upstream ids, not `KnowledgeRef`s, because mapping between the two is the catalog's job. It mounts in the Control Plane alone, never in a Runner. No operation takes a URL, a caller-chosen header, or an arbitrary upstream path, so a gateway in front of it cannot be talked into an operation the permission catalog does not govern.
+`dsh-knowledge-source` (`ctx.knowledgeSource`) is the seam a governed knowledge gateway speaks to an upstream knowledge product through. Its operations — list a source, list and read one knowledge base's documents, search an explicit set of its knowledge bases — are in upstream terms: upstream ids, not `KnowledgeRef`s, because mapping between the two is the catalog's job. It mounts in the Control Plane alone, never in a Runner. No operation takes a URL, a caller-chosen header, or an arbitrary upstream path, so a gateway in front of it cannot be talked into an operation the permission catalog does not govern.
 
 ## Table of Contents
 
@@ -91,7 +91,7 @@ No request prefix changes here; the Runner-side consumer of a governed result ow
 
 These limits define when the seam is incomplete on its own. They are current package constraints.
 
-- **No document content** — a source can be listed, paged, and searched; nothing returns what one document holds. The operation arrives with the delivery that adds it.
+- **Two record reads per content read** — `describeDocument` answers where a document sits so the gateway can authorize it, and `fetchDocument` reads the record again for the file name and size it decides from. Each is correct on its own and neither trusts the other's copy; a deployment that minded the second call would have to pass metadata across the seam instead.
 - **No provider registry** — one provider mounts the service. Several sources in one Control Plane would need a registry and a selection policy; the `KnowledgeRef` source-code segment leaves room for it, but nothing consumes that room yet.
 - **No ingestion or mutation** — nothing here creates, uploads, edits, or deletes upstream knowledge.
 - **No incremental listing** — `list()` returns every knowledge base a source holds, with no paging or change cursor; only the document listing pages. A source with many thousands of knowledge bases would need one.

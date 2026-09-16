@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-knowledge` (`ctx.knowledge`) is the seam a Team Runner asks for the private company knowledge its signed-in member may reach. It defines three operations — read the authorized directory, list a knowledge base's documents, search it for passages — plus the two governed references, the `knowledge/scope` Session event, and the closed failure set. It makes no network call: a mounted provider does, and in Team Edition that provider forwards to a Control Plane that authorizes every operation. No operation names a source or passes an upstream id, so this service alone reaches nothing.
+`dsh-knowledge` (`ctx.knowledge`) is the seam a Team Runner asks for the private company knowledge its signed-in member may reach. It defines four operations — read the authorized directory, list a knowledge base's documents, read one document, search for passages — plus the two governed references, the `knowledge/scope` Session event, and the closed failure set. It makes no network call: a mounted provider does, and in Team Edition that provider forwards to a Control Plane that authorizes every operation. No operation names a source or passes an upstream id, so this service alone reaches nothing.
 
 ## Table of Contents
 
@@ -83,7 +83,7 @@ Scope lives in the Session log and nowhere else. It reaches the model twice — 
 
 ### Data model
 
-A `KnowledgeBaseEntry` is what a principal may search, named for a reader. A `KnowledgeDocument` is one document in one of them, carrying its governed reference, what the source holds about the file, and a `KnowledgeDocumentState` — `ready`, `processing`, or `unavailable` — which is the source's own parse and enablement words read as the three things a member can act on. A `KnowledgePassage` carries the reference that produced it, so a transcript can attribute text without a second lookup. A `KnowledgeScope` is a versioned discriminated union; its `selected` arm records a display name beside each reference, snapshotted at the moment of choice, because a model-visible name has to be reconstructable from the log.
+A `KnowledgeBaseEntry` is what a principal may search, named for a reader. A `KnowledgeDocument` is one document in one of them, carrying its governed reference, what the source holds about the file, and a `KnowledgeDocumentState` — `ready`, `processing`, or `unavailable` — which is the source's own parse and enablement words read as the three things a member can act on. A `KnowledgeDocumentContent` is what one document holds, and says which of two things it is: the original file, or the source's parsed text standing in for a file the caller cannot accept. Bytes are never partial — a document that would not fit is answered as text instead, so a half file never reaches a renderer that would draw it as a whole one. A `KnowledgePassage` carries the reference that produced it, so a transcript can attribute text without a second lookup. A `KnowledgeScope` is a versioned discriminated union; its `selected` arm records a display name beside each reference, snapshotted at the moment of choice, because a model-visible name has to be reconstructable from the log.
 
 <a id="further-exploration"></a>
 ## Further Exploration
@@ -106,7 +106,7 @@ No direct invalidation. The named consumer owns the request-prefix change a scop
 
 These limits define when the seam is incomplete on its own. They are current package constraints.
 
-- **No document content** — the seam lists documents and names them, and returns nothing of what one holds. Content arrives with the delivery that adds it ([Agent Note](../../../.agents/notes/proposed/feature/2026-09-16-member-knowledge-browsing-and-retrieval.md)).
+- **No model-facing document read** — the seam serves a document to a product surface, and no tool offers one to a model. The model's retrieval surface is still passages alone ([Agent Note](../../../.agents/notes/proposed/feature/2026-09-16-member-knowledge-browsing-and-retrieval.md)).
 - **No provider registry** — one provider mounts the service, and there is no selection policy, availability query, or provider-change event. A second provider kind would need one, and the `KnowledgeRef` grammar leaves room for it.
 - **No ingestion or mutation** — nothing here creates, uploads, edits, or deletes knowledge. Those operations need authorization and audit decisions the permission catalog does not yet carry.
 - **Scope cannot express exclusion** — a scope narrows to named knowledge bases or to all of them; there is no "everything except" arm, because authorization has no deny rule for one to compose with.

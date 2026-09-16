@@ -82,6 +82,12 @@ Nothing upstream is forwarded that a decision did not put there. The provider re
 
 `GET /api/v1/knowledge-bases/{id}/knowledge?page&page_size` lists one knowledge base's documents, and is the only endpoint here whose envelope carries counts beside `data`. The provider reads `total` only when it is a whole count, bounds `page_size` by `maxDocumentsPerPage`, and refuses a row whose `id` a governed document reference could not carry.
 
+`GET /api/v1/knowledge/{id}` is one document's own record, and the only place the knowledge base holding it comes from. `GET /api/v1/knowledge/{id}/preview` serves the original file, and `GET /api/v1/chunks/{id}` the parsed text that stands in for a file the caller cannot accept. `preview` rather than `download`: the two serve the same bytes, but upstream guards `download` with a contributor-and-write check while `preview` needs only read access, and a read-only product surface must not be built on a write guard.
+
+A file is served only when the source reports a name and a size within the bound, and the bound is enforced again against the declared length and against what actually arrived — a source that under-reports a length does not get to decide how much memory this process spends. Not fitting is not a failure: the provider answers the parsed text instead, joined in the source's own chunk order. A document with no text chunks either is `document-unavailable`, which says the source has the document and nothing it will serve from it.
+
+The media type comes from the file name, never from the source. These bytes reach a browser, and a source-chosen type is a source-chosen way to have a browser treat a file as something else.
+
 `parse_status` is `pending`, `processing`, `finalizing`, `completed`, `failed`, `cancelled`, or `deleting`, and `enable_status` is `enabled` or `disabled`. The provider claims `ready` only for a document that is both `completed` and enabled, reads the three in-progress words as `processing`, and reads everything else — including a word this build does not know — as `unavailable`, which is the state that promises least.
 
 ### No loadable URL can come back
@@ -119,7 +125,8 @@ These limits define when the provider is incomplete on its own. They are current
 
 - **Multi-base retrieval needs one embedding model** — WeKnora's `knowledge_base_ids` spans several knowledge bases only when they share an embedding model, and the API declares no error for a set that does not. The provider reports `embeddingModelId` so the gateway can refuse a mixed set before calling; it does not fan out per model and merge, because scores from separate calls are normalized within their own rerank and are not comparable.
 - **An unknown knowledge base id is silently ignored upstream** — a list mixing a real id with an unknown one answers `success` with results from the real base alone. The provider drops hits from bases the request did not name, but existence and authorization must be settled before the call, not after it.
-- **No document content** — the provider lists documents and never fetches one. WeKnora's preview, download, and chunk endpoints are not called.
+- **No paged document text** — the parsed text of one document is assembled in one read and cut to a bound. A document longer than the bound cannot be read past it, because nothing here carries an offset.
+- **No chunk-level addressing** — the text arrives as one string. A passage a search returned cannot be located inside it, because a chunk id never leaves this module.
 - **No chunk count** — the listing's `chunk_count` reads zero on knowledge bases whose chunks a search plainly returns, so this provider does not read it and nothing downstream carries one. `knowledge_count` and `processing_count` are taken as the listing gives them.
 - **No incremental listing** — `list()` fetches every knowledge base; WeKnora offers no paging or change cursor on that endpoint. Only the document listing pages, and it has no change cursor either, so a page read twice can differ.
 

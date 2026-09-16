@@ -20,7 +20,9 @@ import {
   isKnowledgeRef,
   type KnowledgeBaseEntry,
   type KnowledgeDocument,
+  type KnowledgeDocumentContent,
   type KnowledgeDocumentPage,
+  type KnowledgeDocumentRequest,
   type KnowledgeDocumentState,
   type KnowledgeDocumentsRequest,
   type KnowledgeFailureReason,
@@ -33,6 +35,7 @@ import {
   ACCESS_TOKEN_HEADER,
   KNOWLEDGE_CATALOG_PATH,
   KNOWLEDGE_DOCUMENTS_PATH,
+  KNOWLEDGE_DOCUMENT_PATH,
   KNOWLEDGE_PROTOCOL_VERSION,
   KNOWLEDGE_SEARCH_PATH,
 } from '@deepseek-ai/dsh-knowledge-gateway-http'
@@ -45,9 +48,9 @@ import {
 
 /** Every reason the Control Plane may answer with, for decoding one back. */
 const KNOWN_REASONS: readonly string[] = [
-  'unauthenticated', 'not-allowed', 'scope-unavailable', 'scope-incompatible',
-  'upstream-unavailable', 'upstream-invalid', 'control-plane-unreachable',
-  'update-required', 'cancelled',
+  'unauthenticated', 'not-allowed', 'document-unavailable', 'scope-unavailable',
+  'scope-incompatible', 'upstream-unavailable', 'upstream-invalid',
+  'control-plane-unreachable', 'update-required', 'cancelled',
 ]
 
 /** Plugin config: which Control Plane this Runner belongs to. */
@@ -121,6 +124,32 @@ export default class TeamKnowledge extends Knowledge {
       // zero: a member must not be told the list ends where it does not.
       total: typeof total === 'number' && Number.isSafeInteger(total) && total >= 0 ? total : undefined,
     }
+  }
+
+  async documentContent(request: KnowledgeDocumentRequest): Promise<KnowledgeDocumentContent> {
+    const body = await this.call(KNOWLEDGE_DOCUMENT_PATH, {
+      docRef: request.docRef,
+      ...(request.maxBytes === undefined ? {} : { maxBytes: request.maxBytes }),
+    }, request.signal)
+    const fileName = typeof body['fileName'] === 'string' ? body['fileName'] : ''
+    if (body['kind'] === 'text') {
+      const text = body['text']
+      if (typeof text !== 'string') {
+        throw new KnowledgeError('upstream-invalid', 'document text is missing')
+      }
+      return { kind: 'text', docRef: request.docRef, fileName, text, truncated: body['truncated'] === true }
+    }
+    const base64 = body['base64']
+    const contentType = body['contentType']
+    if (body['kind'] !== 'bytes' || typeof base64 !== 'string' || typeof contentType !== 'string') {
+      throw new KnowledgeError('upstream-invalid', 'document content is missing its fields')
+    }
+    // No decode guard: `Buffer.from(…, 'base64')` accepts any string, dropping
+    // what is not base64. Bytes that decode to nonsense are a file the Control
+    // Plane encoded wrongly, which a renderer reports the same way it reports
+    // any corrupt file — there is nothing a reason word here would add.
+    const bytes = Uint8Array.from(Buffer.from(base64, 'base64'))
+    return { kind: 'bytes', docRef: request.docRef, fileName, contentType, bytes }
   }
 
   async search(request: KnowledgeSearchRequest): Promise<KnowledgeSearchResult> {

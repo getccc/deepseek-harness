@@ -2,7 +2,7 @@
 
 [English](knowledge.md) | 中文
 
-私有知识接缝——一个横跨**三个操作**（目录、文档列表与检索）、位于同一个 `ctx.knowledge` 服务上的[能力接缝](../../.agents/notes/implemented/architecture/2026-06-13-capability-seams.zh.md)。Service Definition 是 [dsh-knowledge](../../packages/knowledge/knowledge)；它的 Team 提供方和面向模型的工具随 [Control Plane 知识能力](../../.agents/notes/proposed/feature/2026-09-01-team-private-knowledge-control-plane.zh.md)一起到来。知识是**一个可选能力**，不属于 agent-loop 主干，因此它的词汇在这里，而不在 [core.zh.md](core.zh.md)。
+私有知识接缝——一个横跨**四个操作**（目录、文档列表、文档内容与检索）、位于同一个 `ctx.knowledge` 服务上的[能力接缝](../../.agents/notes/implemented/architecture/2026-06-13-capability-seams.zh.md)。Service Definition 是 [dsh-knowledge](../../packages/knowledge/knowledge)；它的 Team 提供方和面向模型的工具随 [Control Plane 知识能力](../../.agents/notes/proposed/feature/2026-09-01-team-private-knowledge-control-plane.zh.md)一起到来。知识是**一个可选能力**，不属于 agent-loop 主干，因此它的词汇在这里，而不在 [core.zh.md](core.zh.md)。
 
 接缝命名产品操作，绝不命名上游操作。持有 `ctx.knowledge` 的 Runner 无法指名地址、租户、凭据或上游文档 id，因为没有任何操作为它们留下位置。正是这一点，使受治理的部署能够把每一个知识判定——哪位成员、哪台设备、哪些知识库、此时此刻——放在成员自己的进程绕不过去的服务背后。
 
@@ -62,6 +62,8 @@ export const selected: KnowledgeScope = {
 
 `documents()` 回答某个知识库中文档的一页，每份都携带它的受治理引用、源对该文件所持有的信息，以及一个 `KnowledgeDocumentState`——`ready`、`processing` 或 `unavailable`。该状态是把源自己的解析与启用用词，读成成员可以据此行动的三件事：用它、等待，或者去问管理员。本次构建不认识的状态读作 `unavailable`，即承诺最少的那个。这一页只在源给出 `total` 时报告它；缺失意味着「源没有说」，不能被读成零。
 
+`documentContent()` 以一个 `KnowledgeDocumentContent` 回答一份文档，并说明它是两者中的哪一个。`bytes` 是原始文件，媒体类型由其文件名推出，并且从不是部分的。`text` 是源的解析文本，在文件超过调用方或部署的上界、源不持有文件，以及文本必须被截断时提供。源两者都不会提供的文档是 `document-unavailable`——它存在，而没有任何可读的内容。
+
 `search()` 接受查询、从会话解析出的范围，以及调用方的上界。`KnowledgeScopeSelection` 把 `all` 保留为一个模式而不是展开后的列表，因为展开是只有 Control Plane 能执行的授权行为；展开它的 Runner 等于在断言它算不出来的授权。
 
 所有操作都不返回部分答案。无法完成授权的目录、在被拒知识库上的列表，以及范围被拒的检索都会抛出，因为对读到它的模型而言，被悄悄收窄的结果与正确结果无法区分。
@@ -74,6 +76,7 @@ export const selected: KnowledgeScope = {
 |---|---|
 | `unauthenticated` | 没有有效设备 Token、成员非活跃，或设备已撤销 |
 | `not-allowed` | 没有授权准许该操作，或具名资源未知或已停用 |
+| `document-unavailable` | 该文档对源而言存在，但没有任何它会提供的内容 |
 | `scope-unavailable` | 某个已选引用不再位于主体的已授权目录中 |
 | `scope-incompatible` | 上游无法把所选知识库放在一起检索 |
 | `upstream-unavailable` | 知识服务未在限时内应答或完全没有应答 |
@@ -120,6 +123,20 @@ abstract catalog(signal?: AbortSignal): Promise<readonly KnowledgeBaseEntry[]>
  * @throws {KnowledgeError} when the knowledge base is refused or the upstream does not answer usably.
  */
 abstract documents(request: KnowledgeDocumentsRequest): Promise<KnowledgeDocumentPage>
+
+/**
+ * One document's content: the original file, or the source's parsed text
+ * when the file is larger than the caller accepts or the source holds none.
+ *
+ * The document's knowledge base is resolved from the source and authorized
+ * on this call, and a reference whose two halves disagree is refused before
+ * any content is read: holding a reference proves nothing.
+ * @param request - the document, and the most bytes the caller can accept.
+ * @returns the content, saying which of the two it is.
+ * @throws {KnowledgeError} when the knowledge base is refused, the document has no
+ * content to serve (`document-unavailable`), or the upstream does not answer usably.
+ */
+abstract documentContent(request: KnowledgeDocumentRequest): Promise<KnowledgeDocumentContent>
 
 /**
  * Search the knowledge bases one operation names.
@@ -195,6 +212,20 @@ abstract directory(principal: KnowledgePrincipal): Promise<readonly KnowledgeBas
 abstract documents(request: GovernedDocumentsRequest): Promise<KnowledgeDocumentPage>
 
 /**
+ * Authorize one document read and perform it.
+ *
+ * Two things are proved before any content is read: the knowledge base the
+ * reference names admits this principal now, and the source agrees that the
+ * document belongs to that knowledge base. The second is what makes an
+ * unsigned reference safe — a reference whose halves disagree is refused,
+ * and possession of one is never authority.
+ * @param request - who is asking, which document, and the caller's byte bound.
+ * @returns the original file, or the parsed text when the file does not fit or does not exist.
+ * @throws {KnowledgeError} with the reason the operation was refused or failed.
+ */
+abstract documentContent(request: GovernedDocumentRequest): Promise<KnowledgeDocumentContent>
+
+/**
  * Authorize one search and perform it.
  *
  * Every knowledge base the scope resolves to is evaluated before the source
@@ -235,6 +266,26 @@ abstract list(signal?: AbortSignal): Promise<readonly UpstreamKnowledgeBase[]>
  * @throws {KnowledgeError} `upstream-unavailable` or `upstream-invalid`.
  */
 abstract listDocuments(request: UpstreamDocumentsRequest): Promise<UpstreamDocumentPage>
+
+/**
+ * Where one document sits, so the gateway can authorize the knowledge base
+ * that holds it before asking for anything in it.
+ * @param upstreamDocId - the source's own document id.
+ * @param signal - aborts the operation.
+ * @returns the knowledge base it belongs to, and the document.
+ * @throws {KnowledgeError} `upstream-unavailable`, `upstream-invalid`, or
+ * `document-unavailable` when the source holds no such document.
+ */
+abstract describeDocument(upstreamDocId: string, signal?: AbortSignal): Promise<UpstreamDocumentPlacement>
+
+/**
+ * One already-authorized document's content.
+ * @param request - the document and the caller's bounds.
+ * @returns the original file, or the parsed text when the file does not fit or does not exist.
+ * @throws {KnowledgeError} `upstream-unavailable`, `upstream-invalid`, or
+ * `document-unavailable` when the source will serve neither a file nor text.
+ */
+abstract fetchDocument(request: UpstreamDocumentRequest): Promise<UpstreamDocumentContent>
 
 /**
  * Search an explicit, already-authorized set of knowledge bases.

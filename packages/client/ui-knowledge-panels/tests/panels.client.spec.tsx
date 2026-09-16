@@ -10,7 +10,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
 import { bindSnapshotSelector, makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
 import type {
-  KnowledgeChoice, KnowledgeDocumentView, KnowledgeDocumentsView,
+  KnowledgeChoice, KnowledgeDocumentContentView, KnowledgeDocumentView, KnowledgeDocumentsView,
   KnowledgePassageView, KnowledgeSearchView,
 } from '@deepseek-ai/dsh-api-knowledge-controller/types'
 import { KnowledgeBasesGlyph, KnowledgeSearchGlyph } from '../src/client/Glyphs.tsx'
@@ -65,15 +65,29 @@ function documentPage(patch: Partial<KnowledgeDocumentsView> = {}): KnowledgeDoc
   return { knowledgeRef: REF_A, documents: [document()], page: 1, pageSize: 20, total: 1, ...patch }
 }
 
+/** One text answer, which is what a scripted content read serves by default. */
+function textContent(patch: Partial<Extract<KnowledgeDocumentContentView, { kind: 'text' }>> = {}): KnowledgeDocumentContentView {
+  return {
+    kind: 'text',
+    docRef: `${REF_A}/doc-1`,
+    fileName: '运维手册.pdf',
+    text: '一级故障 30 分钟内响应。',
+    truncated: false,
+    ...patch,
+  }
+}
+
 /** Render the knowledge-base list over scripted faces. */
 function renderBases(
   directory: () => Promise<readonly KnowledgeChoice[]>,
   searchIn = vi.fn(),
   documents: (knowledgeRef: string, page: number) => Promise<KnowledgeDocumentsView> = () => Promise.resolve(documentPage()),
+  content: (docRef: string) => Promise<KnowledgeDocumentContentView> = () => Promise.resolve(textContent()),
 ) {
   const listed = vi.fn(documents)
-  const props = { directory, documents: listed, searchIn, t } as unknown as KnowledgeBasesPanelProps
-  return { searchIn, documents: listed, view: render(<KnowledgeBasesPanel {...props} />) }
+  const read = vi.fn(content)
+  const props = { directory, documents: listed, content: read, searchIn, t } as unknown as KnowledgeBasesPanelProps
+  return { searchIn, documents: listed, content: read, view: render(<KnowledgeBasesPanel {...props} />) }
 }
 
 /** Choose the first knowledge base, which is what loads its documents. */
@@ -103,6 +117,12 @@ function renderSearch(options: {
 /** The two ways a pending directory read finishes, held for a test to fire late. */
 interface Settle {
   resolve: (rows: readonly KnowledgeChoice[]) => void
+  reject: (reason: Error) => void
+}
+
+/** The same, for a pending content read. */
+interface ContentSettle {
+  resolve: (content: KnowledgeDocumentContentView) => void
   reject: (reason: Error) => void
 }
 
@@ -434,5 +454,134 @@ describe('the documents in one knowledge base', () => {
     await settled()
     expect(screen.queryByText('运维手册')).toBeNull()
     expect(screen.queryByText('文档列表读取失败')).toBeNull()
+  })
+})
+
+describe('one document in the preview column', () => {
+  /** Choose the knowledge base, then open its first document. */
+  async function open(): Promise<void> {
+    await choose()
+    fireEvent.click(await screen.findByRole('button', { name: /运维手册/u }))
+  }
+
+  it('asks for nothing until a document is opened', async () => {
+    const bases = renderBases(() => Promise.resolve(BASES))
+    await choose()
+    expect(await screen.findByText('选择一份文档查看内容')).toBeTruthy()
+    expect(bases.content).not.toHaveBeenCalled()
+  })
+
+  it('draws parsed text, and says when it was cut', async () => {
+    const bases = renderBases(
+      () => Promise.resolve(BASES), undefined, undefined,
+      () => Promise.resolve(textContent({ truncated: true })),
+    )
+    await open()
+    await waitFor(() => { expect(bases.content).toHaveBeenCalledWith(`${REF_A}/doc-1`) })
+    expect(await screen.findByText('一级故障 30 分钟内响应。')).toBeTruthy()
+    expect(screen.getByText('（内容已截断）')).toBeTruthy()
+  })
+
+  it('draws a text file the source served as bytes', async () => {
+    renderBases(
+      () => Promise.resolve(BASES), undefined, undefined,
+      () => Promise.resolve({
+        kind: 'bytes',
+        docRef: `${REF_A}/doc-1`,
+        fileName: '说明.md',
+        contentType: 'text/markdown; charset=utf-8',
+        // "# 标题" in base64, so the decode path is what is being read here.
+        base64: 'IyDmoIfpopg=',
+      }),
+    )
+    await open()
+    expect(await screen.findByText('# 标题')).toBeTruthy()
+  })
+
+  it.each([
+    ['an image', 'image/png', 'img'],
+    ['a PDF', 'application/pdf', 'object'],
+  ])('draws %s from an object URL', async (_label, contentType, tag) => {
+    const created: string[] = []
+    const revoked: string[] = []
+    const url = globalThis.URL as unknown as { createObjectURL?: unknown; revokeObjectURL?: unknown }
+    url.createObjectURL = (blob: Blob) => {
+      const href = `blob:${String(created.length)}#${blob.type}`
+      created.push(href)
+      return href
+    }
+    url.revokeObjectURL = (href: string) => { revoked.push(href) }
+    const bases = renderBases(
+      () => Promise.resolve(BASES), undefined, undefined,
+      () => Promise.resolve({
+        kind: 'bytes', docRef: `${REF_A}/doc-1`, fileName: '图.png', contentType, base64: 'AQID',
+      }),
+    )
+    await open()
+    await waitFor(() => { expect(created).toHaveLength(1) })
+    expect(bases.view.container.querySelector(tag)?.getAttribute(tag === 'img' ? 'src' : 'data')).toBe(created[0])
+    // The URL goes away with the column: one that outlived it would keep the
+    // file readable from a page that is no longer showing it.
+    bases.view.unmount()
+    expect(revoked).toEqual(created)
+    delete url.createObjectURL
+    delete url.revokeObjectURL
+  })
+
+  it('says so for a file it cannot draw here', async () => {
+    const url = globalThis.URL as unknown as { createObjectURL?: unknown; revokeObjectURL?: unknown }
+    url.createObjectURL = () => 'blob:office'
+    url.revokeObjectURL = () => {}
+    renderBases(
+      () => Promise.resolve(BASES), undefined, undefined,
+      () => Promise.resolve({
+        kind: 'bytes',
+        docRef: `${REF_A}/doc-1`,
+        fileName: '报告.docx',
+        contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        base64: 'AQID',
+      }),
+    )
+    await open()
+    expect(await screen.findByText('这里还不能显示这种文件，请在对话中打开它')).toBeTruthy()
+    delete url.createObjectURL
+    delete url.revokeObjectURL
+  })
+
+  it('reports a read it could not complete', async () => {
+    renderBases(
+      () => Promise.resolve(BASES), undefined, undefined,
+      () => Promise.reject(new Error('refused')),
+    )
+    await open()
+    expect(await screen.findByText('文档内容读取失败')).toBeTruthy()
+  })
+
+  it('forgets the open document when another knowledge base is chosen', async () => {
+    renderBases(() => Promise.resolve(BASES))
+    await open()
+    await screen.findByText('一级故障 30 分钟内响应。')
+    await choose('南昌知识库')
+    expect(await screen.findByText('选择一份文档查看内容')).toBeTruthy()
+  })
+
+  it.each([
+    ['answers', (settle: ContentSettle) => { settle.resolve(textContent()) }],
+    ['is refused', (settle: ContentSettle) => { settle.reject(new Error('too late')) }],
+  ])('ignores a read that %s after the column is gone', async (_label, finish) => {
+    const settle = {} as ContentSettle
+    const bases = renderBases(
+      () => Promise.resolve(BASES), undefined, undefined,
+      () => new Promise((resolve, reject) => {
+        settle.resolve = resolve
+        settle.reject = reject
+      }),
+    )
+    await open()
+    bases.view.unmount()
+    finish(settle)
+    await settled()
+    expect(screen.queryByText('一级故障 30 分钟内响应。')).toBeNull()
+    expect(screen.queryByText('文档内容读取失败')).toBeNull()
   })
 })

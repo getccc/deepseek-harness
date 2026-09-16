@@ -17,7 +17,7 @@ import SqliteAccountStore from '@deepseek-ai/dsh-account-store-sqlite'
 import type { AccountStore, OrgId, UserId } from '@deepseek-ai/dsh-account-store'
 import AuditSqlite from '@deepseek-ai/dsh-audit-sqlite'
 import type { Audit } from '@deepseek-ai/dsh-audit'
-import { KnowledgeError, KnowledgeRef, type KnowledgeScopeSelection } from '@deepseek-ai/dsh-knowledge'
+import { KnowledgeDocRef, KnowledgeError, KnowledgeRef, type KnowledgeScopeSelection } from '@deepseek-ai/dsh-knowledge'
 import {
   KNOWLEDGE_CATALOG_RESOURCE,
   KNOWLEDGE_RESOURCE_TYPE,
@@ -26,7 +26,10 @@ import {
 import {
   KnowledgeSource,
   type UpstreamDocument,
+  type UpstreamDocumentContent,
   type UpstreamDocumentPage,
+  type UpstreamDocumentPlacement,
+  type UpstreamDocumentRequest,
   type UpstreamDocumentsRequest,
   type UpstreamKnowledgeBase,
   type UpstreamPassage,
@@ -44,6 +47,19 @@ const REF_A = KnowledgeRef(`stub:prod:${A}`)
 const REF_B = KnowledgeRef(`stub:prod:${B}`)
 
 /** A knowledge source whose listing and answers a test scripts. */
+/** One document as a source describes it, for a placement answer. */
+function documentOf(upstreamDocId: string): UpstreamDocument {
+  return {
+    upstreamDocId,
+    title: '运维手册',
+    fileName: '运维手册.pdf',
+    fileType: 'pdf',
+    byteSize: 20480,
+    state: 'ready',
+    updatedAt: undefined,
+  }
+}
+
 class ScriptedSource extends KnowledgeSource {
   override readonly providerKind = 'stub'
   override readonly sourceCode = 'prod'
@@ -64,11 +80,32 @@ class ScriptedSource extends KnowledgeSource {
     return this.listing instanceof Error ? Promise.reject(this.listing) : Promise.resolve(this.listing)
   }
 
+  /** Every document `describeDocument` was asked about, in order. */
+  readonly described: string[] = []
+  /** The knowledge base the source says holds any document, or the failure it raises. */
+  placement: string | Error = ''
+  /** Every content request `fetchDocument` received, in order. */
+  readonly fetched: UpstreamDocumentRequest[] = []
+  /** What the next content read answers, or the failure it raises. */
+  content: UpstreamDocumentContent | Error =
+    { kind: 'text', fileName: '运维手册.pdf', text: '一级故障 30 分钟内响应。', truncated: false }
+
   listDocuments(request: UpstreamDocumentsRequest): Promise<UpstreamDocumentPage> {
     this.listed.push(request)
     return this.documents instanceof Error
       ? Promise.reject(this.documents)
       : Promise.resolve({ documents: this.documents, pageSize: request.pageSize, total: this.documentTotal })
+  }
+
+  describeDocument(upstreamDocId: string): Promise<UpstreamDocumentPlacement> {
+    this.described.push(upstreamDocId)
+    if (this.placement instanceof Error) return Promise.reject(this.placement)
+    return Promise.resolve({ upstreamId: this.placement, document: documentOf(upstreamDocId) })
+  }
+
+  fetchDocument(request: UpstreamDocumentRequest): Promise<UpstreamDocumentContent> {
+    this.fetched.push(request)
+    return this.content instanceof Error ? Promise.reject(this.content) : Promise.resolve(this.content)
   }
 
   search(request: UpstreamSearchRequest): Promise<readonly UpstreamPassage[]> {
@@ -790,5 +827,102 @@ describe('listing one knowledge base’s documents', () => {
     source.documents = [document('doc-1')]
     const page = await gateway.documents({ orgId: ORG, principalId: BOB, ref: KnowledgeRef(REF_A) })
     expect(page.documents).toHaveLength(1)
+  })
+})
+
+describe('reading one document', () => {
+  /** Grant Alice the knowledge base holding both test documents. */
+  async function grantA(): Promise<void> {
+    await syncBoth()
+    const role = await roleFor(ALICE, 'reader')
+    await access.grantResource(role.id, await resourceOf(REF_A), 'knowledge.search')
+    source.placement = A
+  }
+
+  it('authorizes the knowledge base in the reference, then proves the source agrees', async () => {
+    await grantA()
+    source.content = { kind: 'bytes', fileName: '运维手册.pdf', contentType: 'application/pdf', bytes: new Uint8Array([1, 2]) }
+    const content = await gateway.documentContent({
+      orgId: ORG, principalId: ALICE, docRef: KnowledgeDocRef(`${REF_A}/doc-1`), maxBytes: 4096,
+    })
+    expect(source.described).toEqual(['doc-1'])
+    expect(source.fetched).toEqual([{ upstreamDocId: 'doc-1', maxBytes: 4096, maxTextChars: 200_000 }])
+    expect(content).toEqual({
+      kind: 'bytes',
+      docRef: `${REF_A}/doc-1`,
+      fileName: '运维手册.pdf',
+      contentType: 'application/pdf',
+      bytes: new Uint8Array([1, 2]),
+    })
+    const [row] = await audit.query({ orgId: ORG, action: 'knowledge.document.read' })
+    expect(row).toMatchObject({ outcome: 'allowed', resourceId: REF_A })
+    expect(rendered(row)).not.toContain('运维手册')
+  })
+
+  it('applies the deployment byte bound when a caller names none', async () => {
+    await grantA()
+    await gateway.documentContent({ orgId: ORG, principalId: ALICE, docRef: KnowledgeDocRef(`${REF_A}/doc-1`) })
+    expect(source.fetched[0]?.maxBytes).toBe(16 * 1024 * 1024)
+  })
+
+  it('refuses a reference whose knowledge base the source does not agree with, reading nothing', async () => {
+    await grantA()
+    // The document is real and the knowledge base in the reference is
+    // authorized — but the source says the document is in the other one.
+    source.placement = B
+    await expect(gateway.documentContent({
+      orgId: ORG, principalId: ALICE, docRef: KnowledgeDocRef(`${REF_A}/doc-1`),
+    })).rejects.toMatchObject({ reason: 'not-allowed' })
+    expect(source.fetched).toEqual([])
+    const [row] = await audit.query({ orgId: ORG, action: 'knowledge.document.read' })
+    expect(row).toMatchObject({ outcome: 'denied', reason: 'no-grant' })
+  })
+
+  it.each([
+    ['a knowledge base no grant admits', `${REF_B}/doc-1`],
+    ['a reference that is not one', 'not-a-reference'],
+  ])('refuses %s without asking the source anything', async (_label, docRef) => {
+    await grantA()
+    await expect(gateway.documentContent({
+      orgId: ORG, principalId: ALICE, docRef: KnowledgeDocRef(docRef),
+    })).rejects.toMatchObject({ reason: 'not-allowed' })
+    expect(source.described).toEqual([])
+  })
+
+  it('carries a source failure back under its closed class', async () => {
+    await grantA()
+    source.content = new KnowledgeError('document-unavailable', 'nothing to serve')
+    await expect(gateway.documentContent({
+      orgId: ORG, principalId: ALICE, docRef: KnowledgeDocRef(`${REF_A}/doc-1`),
+    })).rejects.toMatchObject({ reason: 'document-unavailable' })
+    // `document-unavailable` is the source's answer about this document, not
+    // an upstream outage, so it carries no failure label.
+    const [row] = await audit.query({ orgId: ORG, action: 'knowledge.document.read' })
+    expect(row).toBeUndefined()
+  })
+
+  it('records an upstream outage against the knowledge base', async () => {
+    await grantA()
+    source.content = new KnowledgeError('upstream-unavailable', 'the source did not answer')
+    await expect(gateway.documentContent({
+      orgId: ORG, principalId: ALICE, docRef: KnowledgeDocRef(`${REF_A}/doc-1`),
+    })).rejects.toMatchObject({ reason: 'upstream-unavailable' })
+    const [row] = await audit.query({ orgId: ORG, action: 'knowledge.document.read' })
+    expect(row).toMatchObject({ outcome: 'error', metadata: { knowledgeFailure: 'upstream-unavailable' } })
+  })
+
+  it('passes parsed text through as the text it is', async () => {
+    await grantA()
+    source.content = { kind: 'text', fileName: '运维手册.pdf', text: '一级故障 30 分钟内响应。', truncated: true }
+    const content = await gateway.documentContent({
+      orgId: ORG, principalId: ALICE, docRef: KnowledgeDocRef(`${REF_A}/doc-1`), signal: new AbortController().signal,
+    })
+    expect(content).toEqual({
+      kind: 'text',
+      docRef: `${REF_A}/doc-1`,
+      fileName: '运维手册.pdf',
+      text: '一级故障 30 分钟内响应。',
+      truncated: true,
+    })
   })
 })

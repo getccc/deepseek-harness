@@ -1655,6 +1655,13 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         throws: ['{KnowledgeError} when the knowledge base is refused or the upstream does not answer usably.'],
       },
       {
+        signature: 'abstract documentContent(request: KnowledgeDocumentRequest): Promise<KnowledgeDocumentContent>',
+        description: 'One document\'s content: the original file, or the source\'s parsed text when the file is larger than the caller accepts or the source holds none.\n\nThe document\'s knowledge base is resolved from the source and authorized on this call, and a reference whose two halves disagree is refused before any content is read: holding a reference proves nothing.',
+        parameters: [{ name: 'request', description: 'the document, and the most bytes the caller can accept.' }],
+        returns: 'the content, saying which of the two it is.',
+        throws: ['{KnowledgeError} when the knowledge base is refused, the document has no content to serve (`document-unavailable`), or the upstream does not answer usably.'],
+      },
+      {
         signature: 'abstract search(request: KnowledgeSearchRequest): Promise<KnowledgeSearchResult>',
         description: 'Search the knowledge bases one operation names.',
         parameters: [{ name: 'request', description: 'the query, the scope resolved from the Session, and the caller\'s bounds.' }],
@@ -1700,6 +1707,13 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         throws: ['{KnowledgeError} with the reason the operation was refused or failed.'],
       },
       {
+        signature: 'abstract documentContent(request: GovernedDocumentRequest): Promise<KnowledgeDocumentContent>',
+        description: 'Authorize one document read and perform it.\n\nTwo things are proved before any content is read: the knowledge base the reference names admits this principal now, and the source agrees that the document belongs to that knowledge base. The second is what makes an unsigned reference safe — a reference whose halves disagree is refused, and possession of one is never authority.',
+        parameters: [{ name: 'request', description: 'who is asking, which document, and the caller\'s byte bound.' }],
+        returns: 'the original file, or the parsed text when the file does not fit or does not exist.',
+        throws: ['{KnowledgeError} with the reason the operation was refused or failed.'],
+      },
+      {
         signature: 'abstract search(request: GovernedSearchRequest): Promise<KnowledgeSearchResult>',
         description: 'Authorize one search and perform it.\n\nEvery knowledge base the scope resolves to is evaluated before the source is called, and one refusal fails the whole request: a partial result is indistinguishable from a complete one to the model that reads it.',
         parameters: [{ name: 'request', description: 'who is asking, the scope, the query, and the caller\'s bounds.' }],
@@ -1736,6 +1750,20 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [{ name: 'request', description: 'the authorized upstream id, and which page of it.' }],
         returns: 'the page, empty when the knowledge base holds no document.',
         throws: ['{KnowledgeError} `upstream-unavailable` or `upstream-invalid`.'],
+      },
+      {
+        signature: 'abstract describeDocument(upstreamDocId: string, signal?: AbortSignal): Promise<UpstreamDocumentPlacement>',
+        description: 'Where one document sits, so the gateway can authorize the knowledge base that holds it before asking for anything in it.',
+        parameters: [{ name: 'upstreamDocId', description: 'the source\'s own document id.' }, { name: 'signal', description: 'aborts the operation.' }],
+        returns: 'the knowledge base it belongs to, and the document.',
+        throws: ['{KnowledgeError} `upstream-unavailable`, `upstream-invalid`, or `document-unavailable` when the source holds no such document.'],
+      },
+      {
+        signature: 'abstract fetchDocument(request: UpstreamDocumentRequest): Promise<UpstreamDocumentContent>',
+        description: 'One already-authorized document\'s content.',
+        parameters: [{ name: 'request', description: 'the document and the caller\'s bounds.' }],
+        returns: 'the original file, or the parsed text when the file does not fit or does not exist.',
+        throws: ['{KnowledgeError} `upstream-unavailable`, `upstream-invalid`, or `document-unavailable` when the source will serve neither a file nor text.'],
       },
       {
         signature: 'abstract search(request: UpstreamSearchRequest): Promise<readonly UpstreamPassage[]>',
@@ -5339,6 +5367,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface GoalView extends GoalSnapshot {\n    readonly roundsStarted: number;\n    readonly createdAt: number;\n    readonly updatedAt: number;\n    readonly activation: GoalActivation;\n}',
   },
   {
+    name: 'GovernedDocumentRequest',
+    declaration: 'export interface GovernedDocumentRequest extends KnowledgePrincipal {\n    readonly docRef: KnowledgeDocRef;\n    readonly maxBytes?: number;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
     name: 'GovernedDocumentsRequest',
     declaration: 'export interface GovernedDocumentsRequest extends KnowledgePrincipal {\n    readonly ref: KnowledgeRef;\n    readonly page?: number;\n    readonly pageSize?: number;\n    readonly signal?: AbortSignal;\n}',
   },
@@ -5523,8 +5555,16 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface KnowledgeDocument {\n    readonly docRef: KnowledgeDocRef;\n    readonly ref: KnowledgeRef;\n    readonly title: string;\n    readonly fileName: string;\n    readonly fileType: string;\n    readonly byteSize: number;\n    readonly state: KnowledgeDocumentState;\n    readonly updatedAt: number | undefined;\n}',
   },
   {
+    name: 'KnowledgeDocumentContent',
+    declaration: 'export type KnowledgeDocumentContent = {\n    readonly kind: \'bytes\';\n    readonly docRef: KnowledgeDocRef;\n    readonly fileName: string;\n    readonly contentType: string;\n    readonly bytes: Uint8Array;\n} | {\n    readonly kind: \'text\';\n    readonly docRef: KnowledgeDocRef;\n    readonly fileName: string;\n    readonly text: string;\n    readonly truncated: boolean;\n};',
+  },
+  {
     name: 'KnowledgeDocumentPage',
     declaration: 'export interface KnowledgeDocumentPage {\n    readonly ref: KnowledgeRef;\n    readonly documents: readonly KnowledgeDocument[];\n    readonly page: number;\n    readonly pageSize: number;\n    readonly total: number | undefined;\n}',
+  },
+  {
+    name: 'KnowledgeDocumentRequest',
+    declaration: 'export interface KnowledgeDocumentRequest {\n    readonly docRef: KnowledgeDocRef;\n    readonly maxBytes?: number;\n    readonly signal?: AbortSignal;\n}',
   },
   {
     name: 'KnowledgeDocumentsRequest',
@@ -7595,8 +7635,20 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface UpstreamDocument {\n    readonly upstreamDocId: string;\n    readonly title: string;\n    readonly fileName: string;\n    readonly fileType: string;\n    readonly byteSize: number;\n    readonly state: KnowledgeDocumentState;\n    readonly updatedAt: number | undefined;\n}',
   },
   {
+    name: 'UpstreamDocumentContent',
+    declaration: 'export type UpstreamDocumentContent = {\n    readonly kind: \'bytes\';\n    readonly fileName: string;\n    readonly contentType: string;\n    readonly bytes: Uint8Array;\n} | {\n    readonly kind: \'text\';\n    readonly fileName: string;\n    readonly text: string;\n    readonly truncated: boolean;\n};',
+  },
+  {
     name: 'UpstreamDocumentPage',
     declaration: 'export interface UpstreamDocumentPage {\n    readonly documents: readonly UpstreamDocument[];\n    readonly pageSize: number;\n    readonly total: number | undefined;\n}',
+  },
+  {
+    name: 'UpstreamDocumentPlacement',
+    declaration: 'export interface UpstreamDocumentPlacement {\n    readonly upstreamId: string;\n    readonly document: UpstreamDocument;\n}',
+  },
+  {
+    name: 'UpstreamDocumentRequest',
+    declaration: 'export interface UpstreamDocumentRequest {\n    readonly upstreamDocId: string;\n    readonly maxBytes: number;\n    readonly maxTextChars: number;\n    readonly signal?: AbortSignal;\n}',
   },
   {
     name: 'UpstreamDocumentsRequest',

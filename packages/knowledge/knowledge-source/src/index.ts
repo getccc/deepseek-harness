@@ -94,6 +94,39 @@ export interface UpstreamDocumentPage {
   readonly total: number | undefined
 }
 
+/** What the gateway asks a source about where one document sits. */
+export interface UpstreamDocumentPlacement {
+  /** The knowledge base the source says holds it. */
+  readonly upstreamId: string
+  /** The document itself, as a listing would describe it. */
+  readonly document: UpstreamDocument
+}
+
+/** What the gateway asks a source for one document's content. */
+export interface UpstreamDocumentRequest {
+  /** The document to read; its knowledge base is already authorized. */
+  readonly upstreamDocId: string
+  /**
+   * The most bytes to return. A file over it is answered as parsed text
+   * instead of refused, because the text is the part of the document that
+   * still fits; the provider's own maximum applies first.
+   */
+  readonly maxBytes: number
+  /** The most characters of parsed text to return when text is answered. */
+  readonly maxTextChars: number
+  readonly signal?: AbortSignal
+}
+
+/**
+ * One document's content as its source serves it.
+ *
+ * `bytes` is the original file and is never partial: a provider that cannot
+ * deliver the whole file within the caller's bound answers `text` instead.
+ */
+export type UpstreamDocumentContent =
+  | { readonly kind: 'bytes'; readonly fileName: string; readonly contentType: string; readonly bytes: Uint8Array }
+  | { readonly kind: 'text'; readonly fileName: string; readonly text: string; readonly truncated: boolean }
+
 /** What the gateway asks a source to search. */
 export interface UpstreamSearchRequest {
   /**
@@ -164,6 +197,26 @@ export abstract class KnowledgeSource extends Service {
    * @throws {KnowledgeError} `upstream-unavailable` or `upstream-invalid`.
    */
   abstract listDocuments(request: UpstreamDocumentsRequest): Promise<UpstreamDocumentPage>
+
+  /**
+   * Where one document sits, so the gateway can authorize the knowledge base
+   * that holds it before asking for anything in it.
+   * @param upstreamDocId - the source's own document id.
+   * @param signal - aborts the operation.
+   * @returns the knowledge base it belongs to, and the document.
+   * @throws {KnowledgeError} `upstream-unavailable`, `upstream-invalid`, or
+   * `document-unavailable` when the source holds no such document.
+   */
+  abstract describeDocument(upstreamDocId: string, signal?: AbortSignal): Promise<UpstreamDocumentPlacement>
+
+  /**
+   * One already-authorized document's content.
+   * @param request - the document and the caller's bounds.
+   * @returns the original file, or the parsed text when the file does not fit or does not exist.
+   * @throws {KnowledgeError} `upstream-unavailable`, `upstream-invalid`, or
+   * `document-unavailable` when the source will serve neither a file nor text.
+   */
+  abstract fetchDocument(request: UpstreamDocumentRequest): Promise<UpstreamDocumentContent>
 
   /**
    * Search an explicit, already-authorized set of knowledge bases.

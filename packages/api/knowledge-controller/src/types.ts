@@ -62,6 +62,30 @@ export interface KnowledgeDocumentsView {
   readonly total?: number
 }
 
+/**
+ * One document's content, as the browser receives it.
+ *
+ * Bytes travel base64 because the Remote boundary carries JSON; the browser
+ * decodes them once and hands the array to a renderer. A document too large
+ * for the deployment's bound arrives as `text` instead, which is the source's
+ * parsed text rather than a partial file.
+ */
+export type KnowledgeDocumentContentView =
+  | {
+    readonly kind: 'bytes'
+    readonly docRef: string
+    readonly fileName: string
+    readonly contentType: string
+    readonly base64: string
+  }
+  | {
+    readonly kind: 'text'
+    readonly docRef: string
+    readonly fileName: string
+    readonly text: string
+    readonly truncated: boolean
+  }
+
 /** One retrieved passage, as a member-run retrieval draws it. */
 export interface KnowledgePassageView {
   /** Which knowledge base produced it. */

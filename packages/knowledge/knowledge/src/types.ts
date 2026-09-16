@@ -88,6 +88,49 @@ export interface KnowledgeDocumentPage {
 }
 
 /**
+ * What one document's content is, as a reader receives it.
+ *
+ * Two arms because two things can be served, and a reader has to know which it
+ * got: the original file, which renders as the document a member recognizes,
+ * and the source's parsed text, which is what is left when the file is larger
+ * than a caller accepts or the source holds no file at all. Bytes are never
+ * truncated — a document that would not fit is answered as text instead, so a
+ * partial file never reaches a renderer that would draw it as a whole one.
+ */
+export type KnowledgeDocumentContent =
+  | {
+    readonly kind: 'bytes'
+    readonly docRef: KnowledgeDocRef
+    /** The original file name, empty when the source holds none. */
+    readonly fileName: string
+    /** The media type the file is served as, from its name. */
+    readonly contentType: string
+    readonly bytes: Uint8Array
+  }
+  | {
+    readonly kind: 'text'
+    readonly docRef: KnowledgeDocRef
+    readonly fileName: string
+    /** The source's parsed text, in the order the source holds it. */
+    readonly text: string
+    /** Whether the text was cut to the caller's character bound. */
+    readonly truncated: boolean
+  }
+
+/** What a consumer asks for one document's content. */
+export interface KnowledgeDocumentRequest {
+  readonly docRef: KnowledgeDocRef
+  /**
+   * The most bytes the caller can accept. A document over it is answered as
+   * parsed text rather than refused, because a member asked to read something
+   * and the text is the part of it that still fits. The provider's own maximum
+   * still applies.
+   */
+  readonly maxBytes?: number
+  readonly signal?: AbortSignal
+}
+
+/**
  * One knowledge base named in a Session scope, with the display name recorded
  * beside it.
  *
@@ -187,6 +230,8 @@ export type KnowledgeFailureReason =
   | 'not-allowed'
   /** A selected reference is no longer in the principal's authorized directory. */
   | 'scope-unavailable'
+  /** The document exists for the source but has no content it will serve. */
+  | 'document-unavailable'
   /** Selected knowledge bases do not share one embedding model. */
   | 'scope-incompatible'
   /** The upstream knowledge service did not answer in time or at all. */

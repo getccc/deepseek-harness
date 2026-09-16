@@ -38,7 +38,7 @@ The controller has no configuration.
 - name: '@deepseek-ai/dsh-api-knowledge-controller'
 ```
 
-### The five methods
+### The six methods
 
 | Method | Answers | Needs a Session |
 |---|---|---|
@@ -46,11 +46,12 @@ The controller has no configuration.
 | `choose(sessionId, mode, knowledgeRefs?)` | Records the choice and answers the same view | Yes |
 | `directory()` | The knowledge bases this member may search right now | No |
 | `documents(knowledgeRef, page?, pageSize?)` | One page of one knowledge base's documents, each named by a governed reference | No |
+| `documentContent(docRef, maxBytes?)` | One document's original file as base64, or the parsed text standing in for it | No |
 | `search(query, mode, knowledgeRefs?, maxResults?)` | The ranked passages, and the knowledge bases actually searched | No |
 
 The directory is read on every call rather than cached: a grant revoked since the last look should narrow the picker, and a knowledge base an administrator switched off should leave it.
 
-`directory`, `documents`, and `search` touch no Session: they append no event, start no model turn, and need no conversation to be open. That is what makes them safe for a panel a member opens on their own — and it is why authorization is unchanged rather than relaxed, because the Control Plane evaluates every knowledge base the call names, on that call. A well-formed reference is passed through rather than checked against a directory read here: the answer that matters is the Control Plane's, and anticipating it would cost a directory read per query and could still disagree.
+`directory`, `documents`, `documentContent`, and `search` touch no Session: they append no event, start no model turn, and need no conversation to be open. That is what makes them safe for a panel a member opens on their own — and it is why authorization is unchanged rather than relaxed, because the Control Plane evaluates every knowledge base the call names, on that call. A well-formed reference is passed through rather than checked against a directory read here: the answer that matters is the Control Plane's, and anticipating it would cost a directory read per query and could still disagree.
 
 ### Why a choice carries names
 
@@ -69,7 +70,7 @@ Nothing here authorizes. The directory this controller offers is one the Control
 
 | File | Holds |
 |---|---|
-| [`src/index.ts`](src/index.ts) | The `knowledge` Remote namespace, its request validation, the scope projection, the document listing, and the member-run retrieval |
+| [`src/index.ts`](src/index.ts) | The `knowledge` Remote namespace, its request validation, the scope projection, the document listing and read, and the member-run retrieval |
 
 <a id="further-exploration"></a>
 ## Further Exploration
@@ -82,7 +83,7 @@ Nothing here authorizes. The directory this controller offers is one the Control
 <a id="model-experience"></a>
 ## Model Experience
 
-Indirectly, through `dsh-tool-knowledge`: the scope this records is what its prompt section names and what decides whether its tool is offered. This controller contributes no prompt and registers no schema. A retrieval run through `search`, and a listing run through `documents`, reach no model at all — what they answer goes to the browser and ends there.
+Indirectly, through `dsh-tool-knowledge`: the scope this records is what its prompt section names and what decides whether its tool is offered. This controller contributes no prompt and registers no schema. A retrieval run through `search`, and a listing or read run through `documents` and `documentContent`, reach no model at all — what they answer goes to the browser and ends there.
 
 #### KV Cache effect
 
@@ -96,6 +97,7 @@ These limits define when the controller is incomplete on its own. They are curre
 
 - **A choice needs a live Session** — `scope` and `choose` resolve an agent by Session id and refuse when none is open, so a scope cannot be set for a conversation that is not running. `directory` and `search` need no Session.
 - **A member-run retrieval is not recorded anywhere** — `search` appends no Session event, and what the Control Plane audits is the retrieval, not which browser surface asked for it.
+- **A file crosses the boundary base64** — `documentContent` answers one whole file as text in JSON, which costs about a third again in transfer. The Control Plane's byte bound is what keeps that affordable; nothing here streams or caches.
 - **No change notification** — a browser that has the picker open does not learn that a grant changed; it sees the narrowed directory the next time it opens.
 - **No per-choice audit** — recording a scope writes only the Session event. Which knowledge bases a member searched is audited by the Control Plane at search time, which is where the decision is.
 

@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-knowledge-gateway` (`ctx.knowledgeGateway`) is the Control Plane service between a member's Runner and a knowledge source — the only party that decides which knowledge bases a principal may reach. It serves two audiences from one owner: an administrator reads and curates the durable catalog, and a Runner reads an authorized directory, lists one knowledge base's documents, and searches it. Both go through here because the catalog and the authorization decision have to agree; a directory showing a knowledge base a search would refuse is worse than either alone. Import it to write a gateway provider or to consume one.
+`dsh-knowledge-gateway` (`ctx.knowledgeGateway`) is the Control Plane service between a member's Runner and a knowledge source — the only party that decides which knowledge bases a principal may reach. It serves two audiences from one owner: an administrator reads and curates the durable catalog, and a Runner reads an authorized directory, lists and reads its documents, and searches it. Both go through here because the catalog and the authorization decision have to agree; a directory showing a knowledge base a search would refuse is worse than either alone. Import it to write a gateway provider or to consume one.
 
 ## Table of Contents
 
@@ -90,8 +90,8 @@ No request prefix changes here; the Runner-side consumer of a governed result ow
 These limits define when the seam is incomplete on its own. They are current package constraints.
 
 - **One source per gateway** — the seam names no source, so a Control Plane governs one. Several would need a source selection in the catalog and in every operation.
-- **No document content** — a directory, its documents, and a search are the whole member-facing surface; nothing returns what one document holds.
-- **A document listing is evaluated as a search** — `knowledge.search` admits it, by product decision rather than because the operations are the same. A deployment that wants them apart needs `knowledge.read` granted and the provider's action constant changed ([Agent Note](../../../.agents/notes/proposed/feature/2026-09-16-member-knowledge-browsing-and-retrieval.md)).
+- **Every member-facing operation is evaluated as a search** — `knowledge.search` admits the listing and the read too, by product decision rather than because the operations are the same. A deployment that wants them apart needs `knowledge.read` granted and the provider's action constants changed ([Agent Note](../../../.agents/notes/proposed/feature/2026-09-16-member-knowledge-browsing-and-retrieval.md)).
+- **A content read is not bounded by the seam** — the caller names a byte bound and the provider applies its own; the seam itself has no page, range, or offset, so a document too large for both is read as text or not at all.
 - **A retired entry takes its grants** — an entry a successful listing stops naming is deleted, and `deleteResource` deletes every grant naming it. A source that answers with a partial listing therefore revokes access an administrator has to grant again; there is no undo and no grace period.
 - **Administration methods are unauthorized here** — they take an organization and trust their caller, so a route that forgot its permission check would reach them. The check lives in the route, and its absence is a route defect this seam cannot catch.
 

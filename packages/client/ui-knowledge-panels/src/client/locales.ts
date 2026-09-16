@@ -22,6 +22,11 @@ export const zh = {
   'docs.state.ready': '可检索',
   'docs.state.processing': '解析中',
   'docs.state.unavailable': '不可检索',
+  'preview.select': '选择一份文档查看内容',
+  'preview.loading': '正在读取文档内容',
+  'preview.failed': '文档内容读取失败',
+  'preview.truncated': '（内容已截断）',
+  'preview.unsupported': '这里还不能显示这种文件，请在对话中打开它',
   'search.title': '知识库检索',
   'search.scope': '检索范围',
   'search.scope.all': '全部知识库',
@@ -42,6 +47,15 @@ export const zh = {
 /** The knowledgePanels namespace key union. */
 export type KnowledgePanelsKey = keyof typeof zh
 
+/**
+ * The bound translate this package's plain components take.
+ *
+ * Components the framework composes receive `t` through `PropsLocale`; the
+ * preview column is composed by this package instead, so it names the same
+ * seat explicitly.
+ */
+export type Translate = (key: KnowledgePanelsKey, params?: Record<string, unknown>) => string
+
 /** English dictionary, checked complete against the zh key set. */
 export const en = {
   'bases.title': 'Knowledge',
@@ -61,6 +75,11 @@ export const en = {
   'docs.state.ready': 'Searchable',
   'docs.state.processing': 'Processing',
   'docs.state.unavailable': 'Not searchable',
+  'preview.select': 'Choose a document to see it',
+  'preview.loading': 'Reading the document',
+  'preview.failed': 'The document could not be read',
+  'preview.truncated': '(content cut)',
+  'preview.unsupported': 'This kind of file cannot be shown here yet; open it from a conversation',
   'search.title': 'Knowledge search',
   'search.scope': 'Search in',
   'search.scope.all': 'All knowledge bases',

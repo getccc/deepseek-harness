@@ -1,7 +1,8 @@
 /**
  * Host Remote owner for private knowledge: the authorized directory a browser
- * reads, the documents in one of its knowledge bases, the Session scope choice
- * it records, and the retrieval a member runs for themselves.
+ * reads, the documents in one of its knowledge bases and what one of those
+ * holds, the Session scope choice it records, and the retrieval a member runs
+ * for themselves.
  *
  * The browser cannot reach `ctx.knowledge` directly — the knowledge service
  * lives on the Host, and its provider is what holds the device token — so the
@@ -15,7 +16,9 @@
 
 import { Context } from '@deepseek-ai/cordis'
 import {
+  isKnowledgeDocRef,
   isKnowledgeRef,
+  KnowledgeDocRef,
   KnowledgeRef,
   KnowledgeError,
   foldKnowledgeScope,
@@ -27,7 +30,8 @@ import { SessionId } from '@deepseek-ai/dsh-session'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { z } from 'zod'
 import type {
-  KnowledgeChoice, KnowledgeDocumentsView, KnowledgeScopeView, KnowledgeSearchView,
+  KnowledgeChoice, KnowledgeDocumentContentView, KnowledgeDocumentsView,
+  KnowledgeScopeView, KnowledgeSearchView,
 } from './types.ts'
 
 export type * from './types.ts'
@@ -63,6 +67,11 @@ const documentsRequestSchema = z.object({
 // query and, when given, a positive whole maximum. Everything else about how
 // much may come back is the gateway's and the provider's to decide, and a
 // second opinion here would refuse requests the Control Plane would serve.
+const documentRequestSchema = z.object({
+  docRef: z.string().min(1),
+  maxBytes: z.number().int().min(1).optional(),
+})
+
 const searchRequestSchema = z.object({
   query: z.string().min(1),
   mode: z.union([z.literal('all'), z.literal('selected')]),
@@ -187,6 +196,49 @@ export class KnowledgeController extends TypertRemoteService {
       pageSize: result.pageSize,
       ...(result.total === undefined ? {} : { total: result.total }),
     }
+  }
+
+  /**
+   * One document's content: the original file, or the source's parsed text
+   * when the file is over the bound or the source holds none.
+   *
+   * The bytes are transient UI input. Nothing here writes them anywhere, and
+   * the browser that decodes them holds them for as long as it draws them.
+   * @param docRef - the document to read.
+   * @param maxBytes - the most bytes the browser accepts; the deployment's maximum applies first.
+   * @returns the content, saying which of the two it is.
+   * @throws RemoteError when the request is invalid, the document is refused, or knowledge cannot be reached.
+   */
+  @Remote('documentContent')
+  async documentContent(docRef: string, maxBytes?: number): Promise<KnowledgeDocumentContentView> {
+    const request = parseRequest('knowledge.documentContent', documentRequestSchema, { docRef, maxBytes })
+    if (!isKnowledgeDocRef(request.docRef)) {
+      throw new RemoteError('knowledge/not-available', 'that document is not available to this member', { knowledgeRef: request.docRef })
+    }
+    let content
+    try {
+      content = await this.ctx.knowledge.documentContent({
+        docRef: KnowledgeDocRef(request.docRef),
+        ...(request.maxBytes === undefined ? {} : { maxBytes: request.maxBytes }),
+      })
+    } catch (error) {
+      throw this.unavailable(error)
+    }
+    return content.kind === 'bytes'
+      ? {
+        kind: 'bytes',
+        docRef: content.docRef,
+        fileName: content.fileName,
+        contentType: content.contentType,
+        base64: Buffer.from(content.bytes).toString('base64'),
+      }
+      : {
+        kind: 'text',
+        docRef: content.docRef,
+        fileName: content.fileName,
+        text: content.text,
+        truncated: content.truncated,
+      }
   }
 
   /**

@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-client-ui-knowledge-panels` is private knowledge outside a conversation: two rows under the sidebar's New work task entry, the knowledge bases a member's roles authorize with the documents in one of them, and a retrieval they run for themselves and read ranked. A retrieval here starts no model turn and costs no tokens; what reaches a model is only what a member asks for by selecting a result, which opens a conversation scoped to that document's knowledge base with the passage in its composer. The panels mount in the Team browser composition alone, beside the `/knowledge` picker whose Remote namespace they share.
+`dsh-client-ui-knowledge-panels` is private knowledge outside a conversation: two rows under the sidebar's New work task entry, the authorized knowledge bases with their documents and the one a member opens, and a retrieval they run for themselves and read ranked. A retrieval here starts no model turn and costs no tokens; what reaches a model is only what a member asks for by selecting a result, which opens a conversation scoped to that document's knowledge base with the passage in its composer. The panels mount in the Team browser composition alone, beside the `/knowledge` picker whose Remote namespace they share.
 
 ## Table of Contents
 
@@ -41,14 +41,14 @@ The plugin has no configuration.
 
 | Row | Panel | What it does |
 |---|---|---|
-| Knowledge | `knowledge` | Lists the authorized knowledge bases, and the documents in the one a member chooses, with an action that searches it |
+| Knowledge | `knowledge` | Lists the authorized knowledge bases, the documents in the one a member chooses, and the document they open, with an action that searches the knowledge base |
 | Knowledge search | `knowledge-search` | Runs one retrieval over the chosen knowledge bases and ranks the passages under the document each came from |
 
 Both rows register into the sidebar's `sidebar.panellist` seat and address a `main` panel of the same id, so the sidebar owns the row and this package owns only the glyph and the panel.
 
 ### What the panels hold
 
-Nothing between reads. The directory is read on every mount and a document list on every knowledge base and page, so a revoked grant narrows what a member sees and a disabled knowledge base leaves it; a retrieval answer belongs to the query that asked for it. The one value that crosses the two panels is the knowledge base the list asked the retrieval panel to start from, and the retrieval panel keeps it only while its own directory read still holds that knowledge base.
+Nothing between reads. The directory is read on every mount, a document list on every knowledge base and page, and a document's content on every document opened, so a revoked grant narrows what a member sees and a disabled knowledge base leaves it; a retrieval answer belongs to the query that asked for it. The one value that crosses the two panels is the knowledge base the list asked the retrieval panel to start from, and the retrieval panel keeps it only while its own directory read still holds that knowledge base.
 
 <a id="understand-the-implementation"></a>
 ## Understand the implementation
@@ -64,7 +64,8 @@ Ranking is the provider's. The panel groups passages under their document and sh
 | File | Holds |
 |---|---|
 | [`src/client/index.ts`](src/client/index.ts) | The two rows, the two panels, and the Remote calls behind them |
-| [`src/client/KnowledgeBasesPanel.tsx`](src/client/KnowledgeBasesPanel.tsx) | The authorized knowledge-base list, and the documents in the chosen one |
+| [`src/client/KnowledgeBasesPanel.tsx`](src/client/KnowledgeBasesPanel.tsx) | The authorized knowledge-base list, the documents in the chosen one, and which one is open |
+| [`src/client/DocumentPreview.tsx`](src/client/DocumentPreview.tsx) | One document, drawn from what the Control Plane served |
 | [`src/client/KnowledgeSearchPanel.tsx`](src/client/KnowledgeSearchPanel.tsx) | The scope chips, the query, and the ranked results |
 | [`src/client/results.ts`](src/client/results.ts) | Grouping passages under their document, and how a score is written |
 
@@ -90,8 +91,9 @@ No direct invalidation. A discussion opens a new Session, so there is no prefix 
 
 These limits define when the panels are incomplete on their own. They are current package constraints.
 
-- **A document cannot be opened** — a document row names the file and says whether it is searchable; there is nothing to click through to until document content ships.
+- **Office files are not drawn here** — the preview column draws what a browser draws from bytes on its own: a PDF, an image, anything that is text, and the parsed text the Control Plane falls back to. A `.docx`, `.xlsx`, or `.pptx` arrives as bytes and reads as "not here yet", because the renderers for those live behind the right Sidebar's session-scoped document slot and this panel has no Session.
 - **A document list is a page at a time** — there is no search within a knowledge base, no sort, and no folder tree, so finding one document in thousands means paging to it.
+- **A preview is re-read, never kept** — opening the same document twice reads it twice, and nothing is cached between panels or reloads. That is deliberate for a file whose authorization is decided per call.
 - **A document is identified by its title** — passages carry no document reference yet, so two documents sharing one title inside one knowledge base group as one result.
 - **A discussion is scoped to the knowledge base, not the document** — the Session scope has no document-level form, so a conversation opened from a result may retrieve from the rest of that knowledge base too.
 - **No change notification** — a panel left open does not learn that a grant changed; it sees the narrowed directory the next time it is opened.

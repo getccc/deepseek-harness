@@ -12,7 +12,8 @@ import { describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import {
   KnowledgeDocRef, KnowledgeError, KnowledgeRef,
-  type KnowledgeBaseEntry, type KnowledgeDocumentPage, type KnowledgeDocumentsRequest,
+  type KnowledgeBaseEntry, type KnowledgeDocumentContent, type KnowledgeDocumentPage,
+  type KnowledgeDocumentRequest, type KnowledgeDocumentsRequest,
   type KnowledgeSearchRequest, type KnowledgeSearchResult,
 } from '@deepseek-ai/dsh-knowledge'
 import { KnowledgeController, type KnowledgeScopeView } from '@deepseek-ai/dsh-api-knowledge-controller'
@@ -40,6 +41,10 @@ interface Mounted {
   page: KnowledgeDocumentPage | Error
   /** Every document listing the controller asked for, in order. */
   listed: KnowledgeDocumentsRequest[]
+  /** What the next content read answers, or the failure it raises. */
+  content: KnowledgeDocumentContent | Error
+  /** Every content read the controller asked for, in order. */
+  read: KnowledgeDocumentRequest[]
 }
 
 /** One retrieved passage. */
@@ -78,12 +83,24 @@ async function mount(open = true): Promise<Mounted> {
       total: 7,
     },
     listed: [],
+    content: {
+      kind: 'text',
+      docRef: KnowledgeDocRef(`${REF_A}/doc-1`),
+      fileName: '运维手册.pdf',
+      text: '一级故障 30 分钟内响应。',
+      truncated: false,
+    },
+    read: [],
   }
   ctx.provide('typert', { register: () => () => {} })
   ctx.provide('knowledge', {
     catalog: () => state.directory instanceof Error
       ? Promise.reject(state.directory)
       : Promise.resolve(state.directory),
+    documentContent: (request: KnowledgeDocumentRequest) => {
+      state.read.push(request)
+      return state.content instanceof Error ? Promise.reject(state.content) : Promise.resolve(state.content)
+    },
     documents: (request: KnowledgeDocumentsRequest) => {
       state.listed.push(request)
       return state.page instanceof Error ? Promise.reject(state.page) : Promise.resolve(state.page)
@@ -404,6 +421,53 @@ describe('what a member browses', () => {
     mounted.page = new KnowledgeError('not-allowed')
     await expect(mounted.controller.documents(REF_A)).rejects.toMatchObject({
       code: 'knowledge/unavailable', details: { reason: 'not-allowed' },
+    })
+  })
+})
+
+describe('what a member opens', () => {
+  it('carries a file to the browser as base64, with the type it is served as', async () => {
+    const mounted = await mount(false)
+    mounted.content = {
+      kind: 'bytes',
+      docRef: KnowledgeDocRef(`${REF_A}/doc-1`),
+      fileName: '运维手册.pdf',
+      contentType: 'application/pdf',
+      bytes: new Uint8Array([1, 2, 3]),
+    }
+    const view = await mounted.controller.documentContent(`${REF_A}/doc-1`, 4096)
+    expect(mounted.read).toEqual([{ docRef: `${REF_A}/doc-1`, maxBytes: 4096 }])
+    expect(view).toEqual({
+      kind: 'bytes',
+      docRef: `${REF_A}/doc-1`,
+      fileName: '运维手册.pdf',
+      contentType: 'application/pdf',
+      base64: 'AQID',
+    })
+  })
+
+  it('carries parsed text as text, and asks for no bound when the caller names none', async () => {
+    const mounted = await mount()
+    const view = await mounted.controller.documentContent(`${REF_A}/doc-1`)
+    expect(mounted.read).toEqual([{ docRef: `${REF_A}/doc-1` }])
+    expect(view).toMatchObject({ kind: 'text', text: '一级故障 30 分钟内响应。', truncated: false })
+  })
+
+  it.each([
+    ['a reference that is not one', 'not-a-reference', 'knowledge/not-available'],
+    ['a knowledge reference where a document belongs', REF_A, 'knowledge/not-available'],
+    ['an empty reference', '', 'gateway/bad-request'],
+  ])('refuses %s', async (_label, docRef, code) => {
+    const mounted = await mount()
+    await expect(mounted.controller.documentContent(docRef)).rejects.toMatchObject({ code })
+    expect(mounted.read).toEqual([])
+  })
+
+  it('reports the closed reason a refused read carries', async () => {
+    const mounted = await mount()
+    mounted.content = new KnowledgeError('document-unavailable')
+    await expect(mounted.controller.documentContent(`${REF_A}/doc-1`)).rejects.toMatchObject({
+      code: 'knowledge/unavailable', details: { reason: 'document-unavailable' },
     })
   })
 })

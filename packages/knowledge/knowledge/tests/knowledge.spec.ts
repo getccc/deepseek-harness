@@ -21,7 +21,9 @@ import {
   parseKnowledgeScope,
   selectionOf,
   type KnowledgeBaseEntry,
+  type KnowledgeDocumentContent,
   type KnowledgeDocumentPage,
+  type KnowledgeDocumentRequest,
   type KnowledgeDocumentsRequest,
   type KnowledgeScope,
   type KnowledgeSearchRequest,
@@ -274,6 +276,16 @@ describe('the seam', () => {
       })
     }
 
+    documentContent(request: KnowledgeDocumentRequest): Promise<KnowledgeDocumentContent> {
+      return Promise.resolve({
+        kind: 'text',
+        docRef: request.docRef,
+        fileName: '运维手册.pdf',
+        text: '一级故障 30 分钟内响应。',
+        truncated: false,
+      })
+    }
+
     search(request: KnowledgeSearchRequest): Promise<KnowledgeSearchResult> {
       return Promise.resolve({ query: request.query, searched: [], passages: [], truncated: false })
     }
@@ -286,6 +298,8 @@ describe('the seam', () => {
     expect(entries.map(entry => entry.displayName)).toEqual(['临港知识库'])
     const page = await ctx.knowledge.documents({ ref: KnowledgeRef(ref()) })
     expect(page.documents.map(document => document.docRef)).toEqual([`${ref()}/doc-1`])
+    const content = await ctx.knowledge.documentContent({ docRef: KnowledgeDocRef(`${ref()}/doc-1`) })
+    expect(content.kind).toBe('text')
     const result = await ctx.knowledge.search({ query: '年假', scope: { mode: 'all' } })
     expect(result.query).toBe('年假')
   })

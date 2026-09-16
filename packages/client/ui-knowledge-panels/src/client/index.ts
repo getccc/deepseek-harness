@@ -21,7 +21,7 @@ import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
 import type { MainPanelId } from '@deepseek-ai/dsh-client-ui-layout/client'
 import type { RemoteResult } from '@deepseek-ai/dsh-api-remotes/client'
 import type {
-  KnowledgeChoice, KnowledgeDocumentsView, KnowledgeSearchView,
+  KnowledgeChoice, KnowledgeDocumentContentView, KnowledgeDocumentsView, KnowledgeSearchView,
 } from '@deepseek-ai/dsh-api-knowledge-controller/types'
 // Type-only: the assembled Client Remote face these panels call.
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
@@ -43,9 +43,11 @@ import { en, zh, type KnowledgePanelsKey } from './locales.ts'
 
 export { formatScore, groupByDocument } from './results.ts'
 export type { DocumentGroup } from './results.ts'
+export type { DocumentPreviewProps } from './DocumentPreview.tsx'
+export { DocumentPreview } from './DocumentPreview.tsx'
 export type { KnowledgeBasesInjected, KnowledgeBasesPanelProps } from './KnowledgeBasesPanel.tsx'
 export type { KnowledgeSearchInjected, KnowledgeSearchPanelProps } from './KnowledgeSearchPanel.tsx'
-export type { KnowledgePanelsKey } from './locales.ts'
+export type { KnowledgePanelsKey, Translate } from './locales.ts'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
@@ -109,6 +111,9 @@ function registerUi(ctx: ClientContext): void {
   const documents = async (knowledgeRef: string, page: number): Promise<KnowledgeDocumentsView> =>
     unwrap(await ctx.remote.knowledge.documents(knowledgeRef, page))
 
+  const content = async (docRef: string): Promise<KnowledgeDocumentContentView> =>
+    unwrap(await ctx.remote.knowledge.documentContent(docRef))
+
   const search = async (query: string, knowledgeRefs: readonly string[]): Promise<KnowledgeSearchView> =>
     unwrap(await ctx.remote.knowledge.search(
       query,
@@ -157,6 +162,7 @@ function registerUi(ctx: ClientContext): void {
       inject: (): KnowledgeBasesInjected => ({
         directory,
         documents,
+        content,
         searchIn: (knowledgeRef) => {
           requested.set([knowledgeRef])
           ctx.layout.selectPanel(SEARCH_PANEL)

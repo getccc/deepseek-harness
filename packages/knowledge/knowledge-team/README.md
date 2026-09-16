@@ -92,7 +92,7 @@ These limits define when the provider is incomplete on its own. They are current
 - **No offline cache** — a Runner that cannot reach the Control Plane has no knowledge at all, deliberately: a cached private passage would be one served without a current authorization decision.
 - **No deadline of its own** — a caller's signal is forwarded and the Control Plane owns the operation's bound. A Runner whose Control Plane accepts a connection and never answers waits on the caller's own timeout.
 - **No retry** — one attempt per call. Whether a transient failure is worth retrying belongs to the caller that knows what the member is waiting for.
-- **No document content** — the seam has no such operation yet, so neither does this; documents can be listed and named, and nothing fetches one.
+- **A file is held whole** — a content answer is decoded from base64 into one array in this process before it reaches a caller. The Control Plane's bound is what keeps that affordable; nothing here streams.
 
 <a id="dev-note"></a>
 ### Dev Note

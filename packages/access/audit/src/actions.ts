@@ -64,6 +64,7 @@ export const AUDIT_ACTIONS = {
   'resource.delete': { resourceType: 'managed_resource', metadata: [] },
   'knowledge.search': { resourceType: 'knowledge_scope', metadata: ['itemCount', 'knowledgeFailure'] },
   'knowledge.document.list': { resourceType: 'knowledge_scope', metadata: ['itemCount', 'knowledgeFailure'] },
+  'knowledge.document.read': { resourceType: 'knowledge_scope', metadata: ['knowledgeFailure'] },
   'knowledge.catalog.sync': { resourceType: 'knowledge_scope', metadata: ['itemCount', 'knowledgeFailure'] },
   'web.search': { resourceType: 'web_search', metadata: ['itemCount', 'webFailure'] },
   'policy.update': { resourceType: 'organization', metadata: [] },

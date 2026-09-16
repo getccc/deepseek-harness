@@ -24,7 +24,10 @@ import {
 import {
   KnowledgeSource,
   type UpstreamDocument,
+  type UpstreamDocumentContent,
   type UpstreamDocumentPage,
+  type UpstreamDocumentPlacement,
+  type UpstreamDocumentRequest,
   type UpstreamDocumentsRequest,
   type UpstreamKnowledgeBase,
   type UpstreamPassage,
@@ -35,11 +38,15 @@ import {
   ERROR_CODES,
   LIST_PATH,
   REQUEST_ID_HEADER,
+  documentChunksPath,
+  documentPath,
+  documentPreviewPath,
   documentsPath,
   errorCode,
   hybridSearchPath,
   successData,
   successPage,
+  type WireChunk,
   type WireKnowledge,
   type WireKnowledgeBase,
   type WireSearchResult,
@@ -51,6 +58,9 @@ export {
   ERROR_CODES,
   LIST_PATH,
   REQUEST_ID_HEADER,
+  documentChunksPath,
+  documentPath,
+  documentPreviewPath,
   documentsPath,
   hybridSearchPath,
 } from './wire.ts'
@@ -92,6 +102,13 @@ export interface Config {
   maxSearchResults?: number
   /** The most documents one listing page may return. */
   maxDocumentsPerPage?: number
+  /**
+   * The largest original file this Control Plane will pull from the source and
+   * hold in memory. A document over it is served as parsed text instead.
+   */
+  maxDocumentBytes?: number
+  /** The most characters of parsed text one document may return. */
+  maxDocumentTextChars?: number
   /** The most characters one passage may carry. */
   maxPassageChars?: number
 }
@@ -110,6 +127,10 @@ const DEFAULT_MAX_SEARCH_RESULTS = 20
 const DEFAULT_MAX_PASSAGE_CHARS = 4_000
 /** The most documents one listing page carries when a deployment names no bound. */
 const DEFAULT_MAX_DOCUMENTS_PER_PAGE = 100
+/** The largest file pulled from the source when a deployment names no bound. */
+const DEFAULT_MAX_DOCUMENT_BYTES = 16 * 1024 * 1024
+/** The most characters of parsed text returned when a deployment names no bound. */
+const DEFAULT_MAX_DOCUMENT_TEXT_CHARS = 200_000
 
 /**
  * A WeKnora deployment, as a knowledge source.
@@ -129,6 +150,8 @@ export default class WeknoraKnowledgeSource extends KnowledgeSource {
     maxSearchResults: z.natural().default(DEFAULT_MAX_SEARCH_RESULTS),
     maxPassageChars: z.natural().default(DEFAULT_MAX_PASSAGE_CHARS),
     maxDocumentsPerPage: z.natural().min(1).default(DEFAULT_MAX_DOCUMENTS_PER_PAGE),
+    maxDocumentBytes: z.natural().min(1).default(DEFAULT_MAX_DOCUMENT_BYTES),
+    maxDocumentTextChars: z.natural().min(1).default(DEFAULT_MAX_DOCUMENT_TEXT_CHARS),
   })
 
   override readonly providerKind = 'weknora'
@@ -183,6 +206,33 @@ export default class WeknoraKnowledgeSource extends KnowledgeSource {
     }
   }
 
+  async describeDocument(upstreamDocId: string, signal?: AbortSignal): Promise<UpstreamDocumentPlacement> {
+    const row = await this.record(documentPath(upstreamDocId), signal)
+    const upstreamId = row['knowledge_base_id']
+    if (typeof upstreamId !== 'string' || upstreamId === '') {
+      // Without the knowledge base there is nothing to authorize, which makes
+      // this unreadable rather than a document that happens to be missing one.
+      throw new KnowledgeError('upstream-invalid', 'a document record is missing its knowledge base')
+    }
+    return { upstreamId, document: toDocument(row) }
+  }
+
+  async fetchDocument(request: UpstreamDocumentRequest): Promise<UpstreamDocumentContent> {
+    const placement = await this.describeDocument(request.upstreamDocId, request.signal)
+    const { fileName, byteSize } = placement.document
+    const bound = Math.min(request.maxBytes, this.resolved.maxDocumentBytes)
+    // The size the source reports decides this, because reading the file to
+    // find out would mean pulling bytes nobody can be served.
+    const servable = fileName !== '' && byteSize > 0 && byteSize <= bound
+    if (servable) {
+      const bytes = await this.bytes(documentPreviewPath(request.upstreamDocId), bound, request.signal)
+      if (bytes !== undefined) {
+        return { kind: 'bytes', fileName, contentType: contentTypeOf(fileName), bytes }
+      }
+    }
+    return this.text(request, fileName)
+  }
+
   async search(request: UpstreamSearchRequest): Promise<readonly UpstreamPassage[]> {
     // Never empty by contract, and the gateway proves it before calling; an
     // empty array would ask WeKnora to fall back to its path id, which is the
@@ -229,6 +279,100 @@ export default class WeknoraKnowledgeSource extends KnowledgeSource {
   }
 
   /**
+   * The parsed text of one document, as the chunk listing holds it.
+   *
+   * Chunks are ordered by the index the source gives them, because their
+   * order in the answer is not the document's. A document with no text chunks
+   * at all is `document-unavailable`: the source has the document and nothing
+   * it will serve from it, which is a different fact from a failure.
+   */
+  private async text(request: UpstreamDocumentRequest, fileName: string): Promise<UpstreamDocumentContent> {
+    const data = await this.call(documentChunksPath(request.upstreamDocId), undefined, request.signal)
+    const chunks = data.flatMap((entry) => {
+      const chunk = asRecord(entry) as unknown as WireChunk
+      const text = typeof chunk.content === 'string' ? chunk.content : ''
+      if (text === '' || (typeof chunk.chunk_type === 'string' && chunk.chunk_type !== 'text')) return []
+      return [{ index: count(chunk.chunk_index), text }]
+    })
+    if (chunks.length === 0) {
+      throw new KnowledgeError('document-unavailable', 'the source serves neither a file nor text for this document')
+    }
+    chunks.sort((left, right) => left.index - right.index)
+    const joined = chunks.map(chunk => chunk.text).join('\n\n')
+    const bound = Math.min(request.maxTextChars, this.resolved.maxDocumentTextChars)
+    const truncated = joined.length > bound
+    return { kind: 'text', fileName, text: truncated ? joined.slice(0, bound) : joined, truncated }
+  }
+
+  /**
+   * One document record, which every content operation starts from.
+   *
+   * The record endpoint answers a single object under `data` rather than an
+   * array, so it is read with its own envelope reader instead of the one the
+   * listings share.
+   */
+  private async record(path: string, signal: AbortSignal | undefined): Promise<Record<string, unknown>> {
+    return this.request(path, undefined, signal, (decoded) => {
+      if (typeof decoded !== 'object' || decoded === null) return undefined
+      const body = decoded as Record<string, unknown>
+      if (body['success'] !== true) return undefined
+      const data = body['data']
+      return typeof data === 'object' && data !== null && !Array.isArray(data)
+        ? data as Record<string, unknown>
+        : undefined
+    })
+  }
+
+  /**
+   * The bytes one file endpoint serves, or undefined when they do not fit.
+   *
+   * The bound is enforced against what actually arrived as well as against the
+   * declared length, because a source that under-reports a length would
+   * otherwise decide how much memory this process spends. Not fitting is not a
+   * failure: the caller falls back to text.
+   */
+  private async bytes(
+    path: string,
+    bound: number,
+    signal: AbortSignal | undefined,
+  ): Promise<Uint8Array | undefined> {
+    const credential = await this.credential()
+    const controller = new AbortController()
+    const timeout = setTimeout(() => { controller.abort() }, this.resolved.requestTimeoutMs)
+    const deadline = signal === undefined ? controller.signal : AbortSignal.any([controller.signal, signal])
+    try {
+      const response = await fetch(new URL(path, this.origin), {
+        method: 'GET',
+        headers: { [API_KEY_HEADER]: credential, [REQUEST_ID_HEADER]: randomUUID() },
+        signal: deadline,
+      })
+      if (!response.ok) {
+        throw new KnowledgeError(reasonOf(undefined, response.status), `${this.providerKind} refused the file`)
+      }
+      const declared = Number(response.headers.get('content-length') ?? Number.NaN)
+      if (Number.isFinite(declared) && declared > bound) return undefined
+      const buffer = await response.arrayBuffer()
+      return buffer.byteLength > bound ? undefined : new Uint8Array(buffer)
+    } catch (error) {
+      if (error instanceof KnowledgeError) throw error
+      // fetch rejects for a refused connection, a TLS failure, and the abort
+      // above alike; all of them are "the source did not answer" here.
+      throw new KnowledgeError('upstream-unavailable', `${this.providerKind} did not answer`)
+    } finally {
+      clearTimeout(timeout)
+    }
+  }
+
+  /** The current knowledge credential, or the reason there is none. */
+  private async credential(): Promise<string> {
+    const credential = await this.ctx.credentials.resolve(credentialRef(this.config.credentialRef))
+    if (credential === undefined) {
+      throw new KnowledgeError('upstream-unavailable', 'no knowledge credential is configured')
+    }
+    return credential.value
+  }
+
+  /**
    * Perform one upstream GET and return its page, total included.
    *
    * Separate from {@link call} because only this envelope carries counts, and a
@@ -267,10 +411,7 @@ export default class WeknoraKnowledgeSource extends KnowledgeSource {
     signal: AbortSignal | undefined,
     read: (decoded: unknown) => T | undefined,
   ): Promise<T> {
-    const credential = await this.ctx.credentials.resolve(credentialRef(this.config.credentialRef))
-    if (credential === undefined) {
-      throw new KnowledgeError('upstream-unavailable', 'no knowledge credential is configured')
-    }
+    const credential = await this.credential()
     const controller = new AbortController()
     const timeout = setTimeout(() => { controller.abort() }, this.resolved.requestTimeoutMs)
     // `AbortSignal.any` rather than a listener on the caller's signal: a
@@ -282,7 +423,7 @@ export default class WeknoraKnowledgeSource extends KnowledgeSource {
       response = await fetch(new URL(path, this.origin), {
         method: body === undefined ? 'GET' : 'POST',
         headers: {
-          [API_KEY_HEADER]: credential.value,
+          [API_KEY_HEADER]: credential,
           [REQUEST_ID_HEADER]: randomUUID(),
           ...(body === undefined ? {} : { 'content-type': 'application/json' }),
         },
@@ -463,5 +604,40 @@ function timestamp(value: unknown): number | undefined {
   return Number.isNaN(parsed) ? undefined : parsed
 }
 
+/**
+ * The media type a file name is served as.
+ *
+ * Derived from the name rather than forwarded from the source: the bytes reach
+ * a browser, and a type a source chose is a type a source could use to make a
+ * browser treat a file as something else. The set is what this build's
+ * renderers can draw; anything else is delivered as an opaque download type.
+ * @param fileName - the document's original file name.
+ * @returns the media type to serve the bytes as.
+ */
+export function contentTypeOf(fileName: string): string {
+  const dot = fileName.lastIndexOf('.')
+  const extension = dot < 0 ? '' : fileName.slice(dot + 1).toLowerCase()
+  return CONTENT_TYPES[extension] ?? 'application/octet-stream'
+}
+
+/** Media types by file extension, for the kinds a preview can draw. */
+const CONTENT_TYPES: Readonly<Record<string, string>> = {
+  pdf: 'application/pdf',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  svg: 'image/svg+xml',
+  bmp: 'image/bmp',
+  txt: 'text/plain; charset=utf-8',
+  md: 'text/markdown; charset=utf-8',
+  csv: 'text/csv; charset=utf-8',
+  json: 'application/json; charset=utf-8',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+}
+
 /** The row shapes this provider reads, for a fixture author. */
-export type { WireKnowledge, WireKnowledgeBase, WireSearchResult }
+export type { WireChunk, WireKnowledge, WireKnowledgeBase, WireSearchResult }

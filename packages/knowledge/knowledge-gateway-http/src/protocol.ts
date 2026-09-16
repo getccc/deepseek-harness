@@ -14,6 +14,9 @@ export const KNOWLEDGE_CATALOG_PATH = '/team/knowledge/catalog'
 /** Path the Control Plane serves one knowledge base's document listing under. */
 export const KNOWLEDGE_DOCUMENTS_PATH = '/team/knowledge/documents'
 
+/** Path the Control Plane serves one document's content under. */
+export const KNOWLEDGE_DOCUMENT_PATH = '/team/knowledge/document'
+
 /** Path the Control Plane serves governed knowledge search under. */
 export const KNOWLEDGE_SEARCH_PATH = '/team/knowledge/search'
 
@@ -29,7 +32,7 @@ export const ACCESS_TOKEN_HEADER = 'authorization'
  * lock an old Runner out of binding, which is the one operation it would need
  * in order to recover.
  */
-export const KNOWLEDGE_PROTOCOL_VERSION = 2
+export const KNOWLEDGE_PROTOCOL_VERSION = 3
 
 /**
  * The oldest knowledge protocol version this Control Plane still answers.
@@ -69,6 +72,35 @@ export interface DocumentsBody {
   /** How many documents one page holds; the deployment's own maximum still applies. */
   readonly pageSize?: number
 }
+
+/**
+ * What a Runner sends to read one document.
+ *
+ * The document reference is the only address here, and `maxBytes` is what this
+ * Runner can carry rather than what the deployment allows: the Control Plane
+ * applies its own bound first, and a file over either is answered as parsed
+ * text rather than refused.
+ */
+export interface DocumentBody {
+  readonly protocolVersion: number
+  /** The governed document reference to read. */
+  readonly docRef: string
+  /** The most bytes this Runner accepts; the deployment's own maximum applies first. */
+  readonly maxBytes?: number
+}
+
+/**
+ * How one document's content travels.
+ *
+ * Bytes are base64 in a JSON body rather than a binary response, because every
+ * other knowledge route is JSON and one binary exception would need its own
+ * refusal, size, and cancellation handling. The bound that keeps this
+ * affordable is the deployment's `maxDocumentBytes`, applied before the file
+ * is read.
+ */
+export type DocumentContentBody =
+  | { readonly kind: 'bytes'; readonly docRef: string; readonly fileName: string; readonly contentType: string; readonly base64: string }
+  | { readonly kind: 'text'; readonly docRef: string; readonly fileName: string; readonly text: string; readonly truncated: boolean }
 
 /**
  * What a Runner sends to search.

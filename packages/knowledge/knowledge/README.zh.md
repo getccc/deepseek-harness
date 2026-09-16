@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-knowledge`（`ctx.knowledge`）是 Team Runner 向其索取已登录成员可触达的私有公司知识的接缝。它定义三个操作——读取经授权的目录、列出某个知识库中的文档、在其中搜索段落——外加两个受治理引用、`knowledge/scope` Session 事件与封闭的失败集合。它不发起任何网络调用：由挂载的提供方发起，而在 Team Edition 中该提供方转发给对每个操作进行授权的 Control Plane。没有任何操作命名源或传递上游 id，因此仅凭这个服务触达不了任何东西。
+`dsh-knowledge`（`ctx.knowledge`）是 Team Runner 向其索取已登录成员可触达的私有公司知识的接缝。它定义四个操作——读取经授权的目录、列出某个知识库中的文档、读取某一份文档、搜索段落——外加两个受治理引用、`knowledge/scope` Session 事件与封闭的失败集合。它不发起任何网络调用：由挂载的提供方发起，而在 Team Edition 中该提供方转发给对每个操作进行授权的 Control Plane。没有任何操作命名源或传递上游 id，因此仅凭这个服务触达不了任何东西。
 
 ## 目录
 
@@ -83,7 +83,7 @@ kind: "package-reference"
 
 ### 数据模型
 
-`KnowledgeBaseEntry` 是主体可以检索的东西，以可读方式命名。`KnowledgeDocument` 是其中的一份文档，携带它的受治理引用、源对该文件所持有的信息，以及一个 `KnowledgeDocumentState`——`ready`、`processing` 或 `unavailable`——即把源自己的解析与启用用词，读成成员可以据此行动的三件事。`KnowledgePassage` 携带产生它的引用，因此转录可以在不做第二次查找的情况下标注出处。`KnowledgeScope` 是版本化的可区分联合；其 `selected` 分支在每个引用旁记录一个显示名称，在选择的那一刻快照下来，因为模型可见的名字必须能从日志重建。
+`KnowledgeBaseEntry` 是主体可以检索的东西，以可读方式命名。`KnowledgeDocument` 是其中的一份文档，携带它的受治理引用、源对该文件所持有的信息，以及一个 `KnowledgeDocumentState`——`ready`、`processing` 或 `unavailable`——即把源自己的解析与启用用词，读成成员可以据此行动的三件事。`KnowledgeDocumentContent` 是一份文档所持有的内容，并说明它是两者中的哪一个：原始文件，或者在调用方无法接受该文件时代替它的源解析文本。字节从不是部分的——装不下的文档会改为以文本作答，因此半个文件永远不会到达一个会把它当作完整文件来绘制的渲染器。`KnowledgePassage` 携带产生它的引用，因此转录可以在不做第二次查找的情况下标注出处。`KnowledgeScope` 是版本化的可区分联合；其 `selected` 分支在每个引用旁记录一个显示名称，在选择的那一刻快照下来，因为模型可见的名字必须能从日志重建。
 
 <a id="further-exploration"></a>
 ## 延伸阅读
@@ -106,7 +106,7 @@ kind: "package-reference"
 
 这些限制界定了本接缝自身在何处不完整。它们是当前的包约束。
 
-- **没有文档内容** —— 接缝会列出并命名文档，但不返回一份文档所持有的任何内容。内容随新增它的那个阶段一起到来（[Agent Note](../../../.agents/notes/proposed/feature/2026-09-16-member-knowledge-browsing-and-retrieval.zh.md)）。
+- **没有面向模型的文档阅读** —— 接缝把文档提供给产品界面，没有任何工具把它提供给模型。模型的检索接口面仍然只有段落（[Agent Note](../../../.agents/notes/proposed/feature/2026-09-16-member-knowledge-browsing-and-retrieval.zh.md)）。
 - **没有提供方注册表** —— 由一个提供方挂载本服务，不存在选择策略、可用性查询或提供方变更事件。第二种提供方类型会需要这些，而 `KnowledgeRef` 语法为此留了位置。
 - **没有录入或修改** —— 这里没有任何东西创建、上传、编辑或删除知识。这些操作需要权限目录尚未承载的授权与审计决策。
 - **范围无法表达排除** —— 范围要么收窄到具名知识库，要么是全部，没有「除某某之外」的分支，因为授权没有可与之组合的拒绝规则。

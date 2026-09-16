@@ -10,7 +10,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { once } from 'node:events'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
-import { KnowledgeError, KnowledgeRef } from '@deepseek-ai/dsh-knowledge'
+import { KnowledgeDocRef, KnowledgeError, KnowledgeRef } from '@deepseek-ai/dsh-knowledge'
 import {
   KNOWLEDGE_CATALOG_PATH,
   KNOWLEDGE_DOCUMENTS_PATH,
@@ -369,5 +369,61 @@ describe('listing one knowledge base’s documents', () => {
     const ctx = await mount()
     await expect(ctx.knowledge.documents({ ref: KnowledgeRef(REF) }))
       .rejects.toMatchObject({ reason: 'not-allowed' })
+  })
+})
+
+describe('reading one document', () => {
+  it('names the document and the byte bound, and decodes the file it gets', async () => {
+    controlPlane(200, {
+      kind: 'bytes', docRef: `${REF}/doc-1`, fileName: '运维手册.pdf',
+      contentType: 'application/pdf', base64: 'AQID',
+    })
+    const ctx = await mount()
+    const content = await ctx.knowledge.documentContent({
+      docRef: KnowledgeDocRef(`${REF}/doc-1`), maxBytes: 4096,
+    })
+    expect(calls[0]?.body).toEqual({
+      protocolVersion: KNOWLEDGE_PROTOCOL_VERSION, docRef: `${REF}/doc-1`, maxBytes: 4096,
+    })
+    expect(content).toEqual({
+      kind: 'bytes',
+      docRef: `${REF}/doc-1`,
+      fileName: '运维手册.pdf',
+      contentType: 'application/pdf',
+      bytes: new Uint8Array([1, 2, 3]),
+    })
+  })
+
+  it('reads parsed text as text, and a missing file name as empty', async () => {
+    controlPlane(200, { kind: 'text', docRef: `${REF}/doc-1`, text: '一级故障 30 分钟内响应。', truncated: true })
+    const ctx = await mount()
+    const content = await ctx.knowledge.documentContent({ docRef: KnowledgeDocRef(`${REF}/doc-1`) })
+    expect(calls[0]?.body).toEqual({ protocolVersion: KNOWLEDGE_PROTOCOL_VERSION, docRef: `${REF}/doc-1` })
+    expect(content).toEqual({
+      kind: 'text',
+      docRef: `${REF}/doc-1`,
+      fileName: '',
+      text: '一级故障 30 分钟内响应。',
+      truncated: true,
+    })
+  })
+
+  it.each([
+    ['an answer naming no kind', { docRef: `${REF}/doc-1`, base64: 'AQID' }],
+    ['a byte answer with no base64', { kind: 'bytes', contentType: 'application/pdf' }],
+    ['a byte answer with no content type', { kind: 'bytes', base64: 'AQID' }],
+    ['a text answer with no text', { kind: 'text', truncated: false }],
+  ])('refuses %s', async (_label, body) => {
+    controlPlane(200, body)
+    const ctx = await mount()
+    await expect(ctx.knowledge.documentContent({ docRef: KnowledgeDocRef(`${REF}/doc-1`) }))
+      .rejects.toMatchObject({ reason: 'upstream-invalid' })
+  })
+
+  it('carries the document-unavailable refusal back as itself', async () => {
+    controlPlane(409, { error: 'knowledge', reason: 'document-unavailable' })
+    const ctx = await mount()
+    await expect(ctx.knowledge.documentContent({ docRef: KnowledgeDocRef(`${REF}/doc-1`) }))
+      .rejects.toMatchObject({ reason: 'document-unavailable' })
   })
 })

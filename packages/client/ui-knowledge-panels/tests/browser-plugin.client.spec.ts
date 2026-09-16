@@ -23,6 +23,7 @@ const SID = 's-knowledge' as SessionId
 type Recorded =
   | { call: 'directory' }
   | { call: 'documents'; knowledgeRef: string; page?: number }
+  | { call: 'documentContent'; docRef: string }
   | { call: 'search'; query: string; mode: string; knowledgeRefs?: string[] }
   | { call: 'choose'; sessionId: string; mode: string; knowledgeRefs?: string[] }
 
@@ -46,6 +47,10 @@ async function bench(declareSeats = true) {
     documents: (knowledgeRef: string, page?: number) => {
       recorded.push({ call: 'documents', knowledgeRef, ...(page === undefined ? {} : { page }) })
       return answer({ knowledgeRef, documents: [], page: page ?? 1, pageSize: 20, total: 0 })
+    },
+    documentContent: (docRef: string) => {
+      recorded.push({ call: 'documentContent', docRef })
+      return answer({ kind: 'text', docRef, fileName: '运维手册.pdf', text: '一级故障 30 分钟内响应。', truncated: false })
     },
     search: (query: string, mode: string, knowledgeRefs?: string[]) => {
       recorded.push({ call: 'search', query, mode, ...(knowledgeRefs === undefined ? {} : { knowledgeRefs }) })
@@ -152,6 +157,17 @@ describe('ui-knowledge-panels browser apply', () => {
     b.refuseNext('that knowledge base is not available to this member')
     await expect(face.documents(REF_A, 1))
       .rejects.toThrow('that knowledge base is not available to this member (knowledge/unavailable)')
+    await b.fiber.dispose()
+  })
+
+  it('reads one document\u2019s content through the Remote', async () => {
+    const b = await bench()
+    const face = faceOf(b, BASES_PANEL)
+    await expect(face.content(`${REF_A}/doc-1`)).resolves.toMatchObject({ kind: 'text' })
+    expect(b.recorded).toEqual([{ call: 'documentContent', docRef: `${REF_A}/doc-1` }])
+    b.refuseNext('that document is not available')
+    await expect(face.content(`${REF_A}/doc-1`))
+      .rejects.toThrow('that document is not available (knowledge/unavailable)')
     await b.fiber.dispose()
   })
 

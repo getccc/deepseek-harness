@@ -9,7 +9,8 @@ import { ResourceId } from '@deepseek-ai/dsh-access-control'
 import { OrgId } from '@deepseek-ai/dsh-account-store'
 import {
   KnowledgeDocRef, KnowledgeRef,
-  type KnowledgeBaseEntry, type KnowledgeDocumentPage, type KnowledgeSearchResult,
+  type KnowledgeBaseEntry, type KnowledgeDocumentContent, type KnowledgeDocumentPage,
+  type KnowledgeSearchResult,
 } from '@deepseek-ai/dsh-knowledge'
 import {
   KNOWLEDGE_CATALOG_RESOURCE,
@@ -57,6 +58,16 @@ class StubGateway extends KnowledgeGateway {
 
   setEnabled(): Promise<void> {
     return Promise.resolve()
+  }
+
+  documentContent(): Promise<KnowledgeDocumentContent> {
+    return Promise.resolve({
+      kind: 'text',
+      docRef: KnowledgeDocRef(`${REF}/doc-1`),
+      fileName: '运维手册.pdf',
+      text: '一级故障 30 分钟内响应。',
+      truncated: false,
+    })
   }
 
   documents(): Promise<KnowledgeDocumentPage> {
