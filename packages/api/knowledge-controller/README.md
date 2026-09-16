@@ -38,12 +38,13 @@ The controller has no configuration.
 - name: '@deepseek-ai/dsh-api-knowledge-controller'
 ```
 
-### The six methods
+### The seven methods
 
 | Method | Answers | Needs a Session |
 |---|---|---|
 | `scope(sessionId)` | What one Session may choose from, what it has chosen, and which selected references the directory no longer holds | Yes |
-| `choose(sessionId, mode, knowledgeRefs?)` | Records the choice and answers the same view | Yes |
+| `choose(sessionId, mode, knowledgeRefs?)` | Records `off`, `all`, or the knowledge bases selected, and answers the same view | Yes |
+| `chooseDocuments(sessionId, documents)` | Narrows the Session to documents inside one authorized knowledge base, each recorded with the title it was chosen by, and answers the same view | Yes |
 | `directory()` | The knowledge bases this member may search right now, each with the document count and creation time the Control Plane reports for it | No |
 | `documents(knowledgeRef, page?)` | One page of one knowledge base's documents, each named by a governed reference | No |
 | `documentContent(docRef)` | One document's original file as base64, or the parsed text standing in for it | No |
@@ -52,6 +53,10 @@ The controller has no configuration.
 The directory is read on every call rather than cached: a grant revoked since the last look should narrow the picker, and a knowledge base an administrator switched off should leave it.
 
 `directory`, `documents`, `documentContent`, and `search` touch no Session: they append no event, start no model turn, and need no conversation to be open. That is what makes them safe for a panel a member opens on their own — and it is why authorization is unchanged rather than relaxed, because the Control Plane evaluates every knowledge base the call names, on that call. A well-formed reference is passed through rather than checked against a directory read here: the answer that matters is the Control Plane's, and anticipating it would cost a directory read per query and could still disagree.
+
+### Why a document carries the title it was chosen by
+
+`chooseDocuments` records each title the browser sends rather than looking one up. There is no governed operation that describes a single document, and adding one would put a Control Plane round trip in front of opening a conversation for a label. The title is not an authorization fact — the knowledge base holding the document is, and that is authorized against the directory on this call — so it is folded to one line of at most 200 characters, because it reaches the prompt, and recorded as the member saw it.
 
 ### Why a choice carries names
 

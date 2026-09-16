@@ -8,7 +8,7 @@
 
 import type { KnowledgeChoice, KnowledgeScopeView } from '@deepseek-ai/dsh-api-knowledge-controller/types'
 import type { SelectOption } from '@deepseek-ai/dsh-client-ui-commands/client'
-import type { KnowledgeScope, KnowledgeScopeBase } from '@deepseek-ai/dsh-knowledge'
+import type { KnowledgeScope, KnowledgeScopeBase, KnowledgeScopeDocument } from '@deepseek-ai/dsh-knowledge'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 
 /**
@@ -22,7 +22,7 @@ export const ALL_ROW_ID = 'all'
 
 /** One recorded choice, as the Remote takes it. */
 export interface KnowledgeChoiceRequest {
-  readonly mode: 'off' | 'all' | 'selected' | 'documents'
+  readonly mode: 'off' | 'all' | 'selected'
   readonly knowledgeRefs: string[]
 }
 
@@ -114,10 +114,10 @@ export function scopeNames(scope: KnowledgeScope, t: TranslateNS<'knowledge'>): 
       return t('chip.all')
     case 'selected': {
       const narrowed = documentsOf(scope)
-      // The knowledge base and how many documents, which is everything the
-      // log holds: no document title is recorded, so none can be shown.
+      // The knowledge base and how many documents: the titles are the
+      // documents dock's to show, above the composer, one chip each.
       if (narrowed !== undefined) {
-        return t('chip.documents', { name: narrowed.base.displayName, count: narrowed.docRefs.length })
+        return t('chip.documents', { name: narrowed.base.displayName, count: narrowed.documents.length })
       }
       return scope.bases.map(base => base.displayName).join('、')
     }
@@ -129,10 +129,12 @@ export function scopeNames(scope: KnowledgeScope, t: TranslateNS<'knowledge'>): 
  * @param scope - the Session's folded knowledge scope.
  * @returns the knowledge base and its documents, or undefined for any wider scope.
  */
-export function documentsOf(scope: KnowledgeScope): { base: KnowledgeScopeBase; docRefs: readonly string[] } | undefined {
+export function documentsOf(
+  scope: KnowledgeScope,
+): { base: KnowledgeScopeBase; documents: readonly KnowledgeScopeDocument[] } | undefined {
   if (scope.mode !== 'selected' || scope.bases.length !== 1) return undefined
   const [only] = scope.bases
-  return only?.docRefs === undefined ? undefined : { base: only, docRefs: only.docRefs }
+  return only?.documents === undefined ? undefined : { base: only, documents: only.documents }
 }
 
 /**

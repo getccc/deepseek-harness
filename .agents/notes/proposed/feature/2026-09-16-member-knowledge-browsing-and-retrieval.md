@@ -97,13 +97,22 @@ Search hits already carry `knowledge_id` and `knowledge_title`; the provider cur
 
 ## Document-level Session scope
 
-A `selected` scope naming exactly one knowledge base carries the documents inside it, as an optional `docRefs` on that recorded entry.
+A `selected` scope naming exactly one knowledge base carries the documents inside it, as an optional `documents` on that recorded entry — each a reference with the title it was chosen by.
 
 It is an optional property rather than a mode of its own, and the reason is the persistence mechanism rather than taste. A new union variant is classed as a changed type, which requires a `SESSION_FORMAT_VERSION` bump and the whole adjacent-migration apparatus: a format package, an identity edge with per-artifact stages, snapshot successors, historical-format documents, and a `release/*` integration base. An optional property is a same-version addition. The feature does not earn a format generation, so it takes the shape the rules allow ([record](../../../../docs/persistence-changes/2026-09-16-knowledge-scope-documents.md)).
 
 That choice has one cost, and it is stated rather than hidden: a build that predates the field ignores it and searches the whole knowledge base — wider than the member chose, never narrower. Reaching it takes a member recording a narrowed scope on a newer build, downgrading their packaged Runner, and resuming that Session. A new mode would instead have made an older build refuse the log outright, which is cleaner and costs a format generation.
 
-No document title is recorded. What the prompt says about such a scope is its knowledge base and how many documents, both of which the log holds; a title would be model-visible text taken from whoever chose, and the passages a search returns name their documents anyway.
+Each document's title is recorded beside its reference, and the prompt names the document by it. A conversation about one report should be able to say which report, and a model-visible name has to come from the log. The title is the one the member saw, sent by the browser and folded by the controller to one line of at most 200 characters: no governed operation describes a single document, and the title is a label rather than an authorization fact — what is authorized is the knowledge base holding the document. The field is still unreleased, so it replaced the reference-only `docRefs` inside the same acknowledgement rather than stacking a second one; a development log that recorded `docRefs` reads as the whole knowledge base, the same downgrade an older build takes.
+
+<a id="a-document-conversation-is-a-chat-that-can-search"></a>
+## A document conversation is a chat that can search
+
+Opening a conversation about a document creates a chat Session: a member reading one report should not have to pick a working directory first. The shipped `chat` preset masks every host tool with `allow: []`, and until this change that included `knowledge_search`, so such a conversation recorded a scope its model was told about and could not use. `dsh-tool-restriction` now takes `allowWhenRegistered`, and the chat preset lists `knowledge_search` there. It stays visible only where a Team deployment registers it, and the tool's own rule still withholds it until a knowledge scope is recorded, so an ordinary chat sends no tool schema.
+
+A Team-only preset holding the same composition was the alternative. Its root would have had to be an absolute path inside an installed bundle, resolved at load in a packaged Runner, and the chat preset already carries a per-session tool in exactly this way. The price of the chosen form is on the restriction row: a name in `allowWhenRegistered` gets no misspelling check, and the list is read once at mount.
+
+The document shows above the composer the way an attached file does, one chip per document from the `ui-knowledge` dock, and its × takes it off; the last one off turns knowledge off rather than widening to a knowledge base the member never chose.
 
 Two invariants hold in the validator rather than in convention: every document reference must resolve to the knowledge base carrying it, and a scope naming several knowledge bases may not carry documents at all, because the upstream narrowing applies inside one.
 
@@ -139,7 +148,7 @@ Four changes, each shippable on its own.
 
 **Document content.** The `documentContent` operation, the content route, the drawer, and the chunk-text fallback.
 
-**Document-level scope.** The recorded `docRefs`, the prompt section and search request that read it, the picker and composer chip that display it, and the retrieval panel's document-narrowed Session.
+**Document-level scope.** The recorded `documents`, the prompt section and search request that read it, the picker and composer chip that display it, and the retrieval panel's document-narrowed Session.
 
 ## Alternatives considered
 
@@ -160,7 +169,7 @@ Four changes, each shippable on its own.
 - Both navigation rows appear under New work task in a Team build, in the member's locale, and are absent from a build that mounts no knowledge service.
 - The 知识库 panel lists exactly the knowledge bases the member's roles authorize, lists one selected knowledge base's documents, and previews a selected document from its original bytes; a document over the byte bound or in an unclaimed type previews as parsed text.
 - The 知识库检索 panel returns passages ordered by score with their document titles, starts no model turn, and appends no Session event.
-- Selecting a result opens a Session whose folded scope is that one document, whose prompt section names it, and whose `knowledge_search` retrieves from it alone.
+- Selecting a result opens a chat Session whose folded scope is that one document with its title, whose prompt section names it, whose composer shows it as an attached file, and which is offered `knowledge_search` retrieving from it alone.
 - A document reference whose knowledge base the member does not hold a grant on is refused, and refused identically whether the knowledge base is unauthorized, disabled, or absent.
 - A document reference naming a knowledge base the document does not belong to is refused before any content is read.
 - Revoking the grant, disabling the knowledge base, or revoking the device changes the next panel operation without a new login or a new Session.

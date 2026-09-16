@@ -45,7 +45,6 @@ export const zh = {
   'search.passage.truncated': '（本段已截断）',
   'search.discuss': '讨论这篇原文',
   'search.discuss.failed': '无法打开讨论',
-  'draft.template': '关于《{title}》中的这段内容：\n\n> {text}\n\n',
 } satisfies Record<string, string>
 
 /** The knowledgePanels namespace key union. */
@@ -102,5 +101,4 @@ export const en = {
   'search.passage.truncated': '(passage cut)',
   'search.discuss': 'Discuss this document',
   'search.discuss.failed': 'The discussion could not be opened',
-  'draft.template': 'About this part of "{title}":\n\n> {text}\n\n',
 } satisfies Record<KnowledgePanelsKey, string>

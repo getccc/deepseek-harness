@@ -49,7 +49,7 @@ export const selected: KnowledgeScope = {
 export const documents: KnowledgeScope = {
   version: 1,
   mode: 'selected',
-  bases: [{ ref, displayName: '临港知识库', docRefs: [KnowledgeDocRef(`${ref}/doc-7`)] }],
+  bases: [{ ref, displayName: '临港知识库', documents: [{ ref: KnowledgeDocRef(`${ref}/doc-7`), title: '运维手册.pdf' }] }],
 }
 ```
 
@@ -59,7 +59,7 @@ export const documents: KnowledgeScope = {
 
 `all` 不记录名字，因为它指代的集合是主体在每次调用时的授权范围，无法诚实地快照。
 
-恰好命名一个知识库的范围，还可以通过该条目的 `docRefs` 进一步收窄到其中的文档。它是一个可选属性而不是独立的 mode：按[持久化规则](../persistence-changes/README.zh.md#compatibility-rules)，联合类型变更要升 Session 格式版本，而新增可选属性属于 same-version（[记录](../persistence-changes/2026-09-16-knowledge-scope-documents.zh.md)）。代价被写在那里而不是被藏起来——早于该字段的构建会忽略它并检索整个知识库，这比成员所选更宽，绝不会更窄。每个文档引用都必须解析到携带它的那个知识库，而命名多个知识库的范围根本不能携带文档，因为上游的收窄只在一个知识库内生效。模型对这种范围被告知的是它的知识库和文档数量；不记录任何文档标题，而检索返回的段落本来就会说出各自的文档。
+恰好命名一个知识库的范围，还可以通过该条目的 `documents` 进一步收窄到其中的文档，每一项是一个引用加上它被选中时的标题。它是一个可选属性而不是独立的 mode：按[持久化规则](../persistence-changes/README.zh.md#compatibility-rules)，联合类型变更要升 Session 格式版本，而新增可选属性属于 same-version（[记录](../persistence-changes/2026-09-16-knowledge-scope-documents.zh.md)）。代价被写在那里而不是被藏起来——早于该字段的构建会忽略它并检索整个知识库，这比成员所选更宽，绝不会更窄。每个文档引用都必须解析到携带它的那个知识库，而命名多个知识库的范围根本不能携带文档，因为上游的收窄只在一个知识库内生效。记录标题的理由与记录知识库名字相同：提示词会点出这份文档，因此名字必须来自日志。它是成员看到的标题，由记录它的 controller 折叠为一行、至多 200 个字符，而不是授权事实——被授权的是装着这份文档的知识库。
 
 范围只会收窄当前权限。它绝不新增知识库，陈旧或伪造的引用仍会到达一个无法被会话日志扩大的授权判定。
 

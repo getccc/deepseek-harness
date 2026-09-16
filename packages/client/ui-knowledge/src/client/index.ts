@@ -27,11 +27,14 @@ import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
+import { KnowledgeDocumentsDock, type KnowledgeDocumentsDockInjected } from './KnowledgeDocumentsDock.tsx'
 import { KnowledgeSelect, type KnowledgeSelectInjected } from './KnowledgeSelect.tsx'
-import { choiceOf, optionsOf, toggleScope, type KnowledgeChoiceRequest } from './scope.ts'
+import { choiceOf, documentsOf, optionsOf, toggleScope, type KnowledgeChoiceRequest } from './scope.ts'
 import { en, zh, type KnowledgeKey } from './locales.ts'
 
 export { ALL_ROW_ID, chipLabel, choiceOf, chosenRows, documentsOf, optionsOf, toggleScope } from './scope.ts'
+export { KnowledgeDocumentsDock } from './KnowledgeDocumentsDock.tsx'
+export type { KnowledgeDocumentsDockInjected, KnowledgeDocumentsDockProps } from './KnowledgeDocumentsDock.tsx'
 export type { KnowledgeChoiceRequest } from './scope.ts'
 export type { KnowledgeKey } from './locales.ts'
 
@@ -85,6 +88,28 @@ function registerUi(ctx: ClientContext): void {
     if (!result.ok) throw new Error(`${result.error.message} (${result.error.code})`)
   }
 
+  /**
+   * Take one document off a narrowed conversation.
+   *
+   * The remaining documents are re-recorded with the titles the log already
+   * holds; the last one taken off turns knowledge off, because a member who
+   * removed the only document asked for no knowledge, not for a whole
+   * knowledge base they never chose.
+   */
+  const removeDocument = async (sessionId: SessionId, docRef: string): Promise<void> => {
+    const narrowed = documentsOf((await view(sessionId)).scope)
+    const rest = (narrowed?.documents ?? []).filter(document => document.ref !== docRef)
+    if (rest.length === 0) {
+      await record(sessionId, { mode: 'off', knowledgeRefs: [] })
+      return
+    }
+    const result = await ctx.remote.knowledge.chooseDocuments(
+      sessionId,
+      rest.map(document => ({ docRef: document.ref, title: document.title })),
+    )
+    if (!result.ok) throw new Error(`${result.error.message} (${result.error.code})`)
+  }
+
   ctx.effect(() => (ctx.get('commandUi') as CommandUiContract).register({
     name: NS,
     label: () => t('command.label'),
@@ -116,4 +141,16 @@ function registerUi(ctx: ClientContext): void {
       },
     }),
   }, KnowledgeSelect))
+
+  ctx.slots.inject('conversation.input.dock', () => ctx.slots.register({
+    name: 'conversation.input.dock',
+    id: 'knowledge-documents',
+    // Directly above the composer card, below the todo and queue docks: it
+    // names what the next message will be answered from.
+    order: 90,
+    locale: NS,
+    inject: (sessionId: SessionId): KnowledgeDocumentsDockInjected => ({
+      remove: docRef => removeDocument(sessionId, docRef),
+    }),
+  }, KnowledgeDocumentsDock))
 }

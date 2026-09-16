@@ -2,6 +2,9 @@
 # stable base, with the Control Plane provider left out — the test process
 # mounts a fixture `ctx.knowledge` instead.
 - insert:
+    - id: tool-knowledge
+      name: '@deepseek-ai/dsh-tool-knowledge'
+
     - id: api-knowledge-controller
       name: '@deepseek-ai/dsh-api-knowledge-controller'
 

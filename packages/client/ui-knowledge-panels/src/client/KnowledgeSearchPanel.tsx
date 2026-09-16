@@ -19,7 +19,7 @@ export interface KnowledgeSearchInjected {
   /** Run one retrieval; an empty selection searches every authorized knowledge base. */
   search: (query: string, knowledgeRefs: readonly string[]) => Promise<KnowledgeSearchView>
   /** Open a conversation scoped to one document, or to its knowledge base when it named none. */
-  discuss: (target: DiscussTarget, draft: string) => Promise<void>
+  discuss: (target: DiscussTarget) => Promise<void>
 }
 
 /** Full panel props: the main slot's runtime share, the plugin's face, and the locale seat. */
@@ -34,6 +34,8 @@ export interface DiscussTarget {
   readonly knowledgeRef: string
   /** The document, when the result named one. */
   readonly docRef?: string
+  /** The title the member chose the document by; the conversation records it. */
+  readonly title: string
 }
 
 /** What the result area is showing right now. */
@@ -89,10 +91,11 @@ export function KnowledgeSearchPanel({ directory, search, discuss, t }: Knowledg
 
   const open = (group: DocumentGroup): void => {
     setDiscussFailed(false)
-    discuss(
-      { knowledgeRef: group.knowledgeRef, ...(group.docRef === undefined ? {} : { docRef: group.docRef }) },
-      t('draft.template', { title: group.lead.title, text: group.lead.text }),
-    ).catch(() => { setDiscussFailed(true) })
+    discuss({
+      knowledgeRef: group.knowledgeRef,
+      ...(group.docRef === undefined ? {} : { docRef: group.docRef }),
+      title: group.title,
+    }).catch(() => { setDiscussFailed(true) })
   }
 
   const groups = view === undefined ? [] : groupByDocument(view)

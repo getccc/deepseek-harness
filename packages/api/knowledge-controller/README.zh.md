@@ -38,12 +38,13 @@ kind: "package-reference"
 - name: '@deepseek-ai/dsh-api-knowledge-controller'
 ```
 
-### 六个方法
+### 七个方法
 
 | 方法 | 回答什么 | 需要会话 |
 |---|---|---|
 | `scope(sessionId)` | 某个会话可以从什么中选择、它选了什么，以及已选引用中哪些已不在目录里 | 是 |
-| `choose(sessionId, mode, knowledgeRefs?)` | 记录选择并回答同样的视图 | 是 |
+| `choose(sessionId, mode, knowledgeRefs?)` | 记录 `off`、`all` 或所选知识库，并回答同样的视图 | 是 |
+| `chooseDocuments(sessionId, documents)` | 把会话收窄到一个已授权知识库中的文档，每份文档连同它被选中时的标题一起记录，并回答同样的视图 | 是 |
 | `directory()` | 该成员此刻可以检索的知识库，并带上 Control Plane 为每个知识库报告的文档数量与创建时间 | 否 |
 | `documents(knowledgeRef, page?)` | 某个知识库中文档的一页，每份都由受治理引用命名 | 否 |
 | `documentContent(docRef)` | 某一份文档的原始文件（base64），或代替它的解析文本 | 否 |
@@ -52,6 +53,10 @@ kind: "package-reference"
 目录在每次调用时重新读取而不缓存：上次查看之后被撤销的授权应当让选择器变窄，管理员停用的知识库应当从中消失。
 
 `directory`、`documents`、`documentContent` 和 `search` 都不触及会话：它们不追加事件、不启动模型轮次，也不需要有会话处于打开状态。这正是它们可以服务于成员自行打开的面板的原因——也正因如此，授权只是保持不变而非被放宽：Control Plane 会在这次调用上判定它所命名的每一个知识库。格式正确的引用会被原样传递，而不是先与这里读到的目录比对：真正作数的答案在 Control Plane，提前判断既要为每次查询多读一次目录，又仍可能与那个答案不一致。
+
+### 文档为何带着它被选中时的标题
+
+`chooseDocuments` 记录浏览器发来的每个标题，而不是去查一次。并不存在描述单份文档的受治理操作，而为了一个标签加一个这样的操作，会让打开对话之前多一次 Control Plane 往返。标题不是授权事实——装着这份文档的知识库才是，它在本次调用里对照目录被授权——因此标题被折叠为一行、至多 200 个字符（因为它会进入提示词），并按成员看到的样子记录下来。
 
 ### 选择为何携带名字
 

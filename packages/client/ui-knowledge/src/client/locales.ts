@@ -1,4 +1,4 @@
-/** `knowledge` namespace dictionaries (the /knowledge picker and the composer chip). */
+/** `knowledge` namespace dictionaries (the /knowledge picker, the composer chip, and the documents dock). */
 
 /** Simplified Chinese dictionary (the key-set source of truth). */
 export const zh = {
@@ -14,6 +14,10 @@ export const zh = {
   'chip.aria': '知识库：{state}',
   'chip.title': '本次对话可检索的知识库',
   'menu.failed': '未能保存这次更改',
+  'dock.label': '本次对话基于 {name} 中的这些文档回答',
+  'dock.untitled': '未命名文档',
+  'dock.remove': '从本次对话中移除 {title}',
+  'dock.failed': '未能移除这份文档',
 } satisfies Record<string, string>
 
 /** The knowledge namespace key union. */
@@ -33,4 +37,8 @@ export const en = {
   'chip.aria': 'Knowledge: {state}',
   'chip.title': 'The knowledge this conversation may search',
   'menu.failed': 'That change could not be saved',
+  'dock.label': 'This conversation answers from these documents in {name}',
+  'dock.untitled': 'Untitled document',
+  'dock.remove': 'Remove {title} from this conversation',
+  'dock.failed': 'That document could not be removed',
 } satisfies Record<KnowledgeKey, string>

@@ -25,8 +25,6 @@ import type {
 // Type-only: the assembled Client Remote face these panels call.
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
 import type {} from '@deepseek-ai/dsh-api-knowledge-controller/remote'
-// Type-only: pulls the composer input face (a discussion opens with a draft).
-import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 // Type-only: pulls the locale plugin's Context merge (ctx.locale).
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 // Type-only: pulls the layout SlotMap merge (the keyed `main` panel seat).
@@ -83,7 +81,7 @@ export const inject = ['locale', 'remote', 'slots']
  * @param ctx - client root context.
  */
 export function apply(ctx: ClientContext): void {
-  ctx.inject(['conversation', 'layout', 'locale', 'remote.knowledge', 'sessions', 'slots'], registerUi)
+  ctx.inject(['layout', 'locale', 'remote.knowledge', 'sessions', 'slots'], registerUi)
 }
 
 /**
@@ -122,26 +120,28 @@ function registerUi(ctx: ClientContext): void {
     ))
 
   /**
-   * Open a conversation about one passage: a new Session, scoped to the
-   * document the passage came from, with the passage in its composer.
+   * Open a conversation about one document: a new chat Session narrowed to
+   * it, with the document shown above the composer the way an attached file
+   * is, and nothing typed for the member.
    *
-   * The scope is recorded before the Session is shown, so the conversation a
-   * member sees is already the one they asked for; the draft is written after,
-   * because the composer's input machine exists once the Session is open.
+   * A chat, because a document conversation needs no working directory and
+   * the member should not have to pick one; the chat composition reaches
+   * knowledge search only in a deployment that registers it, and offers it
+   * only once this scope is recorded. The scope is recorded before the Session
+   * is shown, so the conversation a member sees is already the one they asked
+   * for.
    *
    * A result that named no document — a passage whose source this build could
    * not address — falls back to its knowledge base, which is the narrowest
    * scope such a result supports.
    */
-  const discuss = async (target: DiscussTarget, draft: string): Promise<void> => {
+  const discuss = async (target: DiscussTarget): Promise<void> => {
     const sessionId = await ctx.sessions.create()
     unwrap(target.docRef === undefined
       ? await ctx.remote.knowledge.choose(sessionId, 'selected', [target.knowledgeRef])
-      : await ctx.remote.knowledge.choose(sessionId, 'documents', [target.docRef]))
+      : await ctx.remote.knowledge.chooseDocuments(sessionId, [{ docRef: target.docRef, title: target.title }]))
     ctx.sessions.open(sessionId)
     ctx.layout.selectPanel(null)
-    const scope = ctx.sessions.scope(sessionId)
-    if (scope !== undefined) ctx.conversation.input.for(scope).setDraft(draft)
   }
 
   ctx.slots.inject('sidebar.panellist', function* () {

@@ -178,7 +178,7 @@ describe('what the prompt says about scope', () => {
     const scopes: readonly KnowledgeScope[] = [
       { version: 1, mode: 'all' },
       { version: 1, mode: 'selected', bases: [{ ref: REF_A, displayName: 'x' }] },
-      { version: 1, mode: 'selected', bases: [{ ref: REF_A, displayName: 'x', docRefs: [KnowledgeDocRef(DOC_A)] }] },
+      { version: 1, mode: 'selected', bases: [{ ref: REF_A, displayName: 'x', documents: [{ ref: KnowledgeDocRef(DOC_A), title: '运维手册' }] }] },
     ]
     for (const scope of scopes) {
       expect(renderScopeSection(scope)).toContain('not instructions')
@@ -186,24 +186,23 @@ describe('what the prompt says about scope', () => {
   })
 
   it.each([
-    ['one document', [DOC_A], 'one document'],
-    ['several documents', [DOC_A, DOC_B], '2 documents'],
-  ])('says the knowledge base and how many documents for %s', (_label, docRefs, expected) => {
+    ['one document', [{ ref: DOC_A, title: '运维手册' }], 'limited for this conversation to the document "运维手册", which the member chose in 临港知识库. Search it before answering a question that document would cover'],
+    ['several documents', [{ ref: DOC_A, title: '运维手册' }, { ref: DOC_B, title: '值班制度' }], 'limited for this conversation to the documents "运维手册", "值班制度", which the member chose in 临港知识库. Search it before answering a question those documents would cover'],
+    ['a document the source held no title for', [{ ref: DOC_A, title: '' }], 'limited for this conversation to an untitled document, which the member chose in 临港知识库'],
+    ['several documents, one untitled', [{ ref: DOC_A, title: '运维手册' }, { ref: DOC_B, title: '' }], 'the documents "运维手册", an untitled one, which'],
+    // Quoted as JSON, so a quote mark inside a title cannot end the name early.
+    ['a title with a quote mark', [{ ref: DOC_A, title: '《"一级"故障》' }], 'the document "《\\"一级\\"故障》"'],
+  ])('names the documents and their knowledge base for %s', (_label, documents, expected) => {
     const scope: KnowledgeScope = {
       version: 1,
       mode: 'selected',
       bases: [{
         ref: REF_A,
         displayName: '临港知识库',
-        docRefs: docRefs.map(docRef => KnowledgeDocRef(docRef)),
+        documents: documents.map(document => ({ ref: KnowledgeDocRef(document.ref), title: document.title })),
       }],
     }
-    const text = renderScopeSection(scope)
-    expect(text).toContain(expected)
-    expect(text).toContain('临港知识库')
-    // No document title is recorded, so none can be said: what the model is
-    // told about a document scope is its knowledge base and a count.
-    expect(text).not.toContain('运维手册')
+    expect(renderScopeSection(scope)).toContain(expected)
   })
 })
 
@@ -442,6 +441,14 @@ describe('the projection a client reads', () => {
     expect(init()).toEqual({ version: 1, mode: 'off' })
     const all = apply(init(), { type: 'knowledge/scope', data: { version: 1, mode: 'all' } })
     expect(all).toEqual({ version: 1, mode: 'all' })
+  })
+
+  it('keeps the scope in force when a recorded one is not one this build reads', async () => {
+    const { init, apply } = await unit()
+    const all = apply(init(), { type: 'knowledge/scope', data: { version: 1, mode: 'all' } })
+    // A value the parser refuses leaves the scope as it was: silently turning
+    // a member's choice off is a change they did not ask for.
+    expect(apply(all, { type: 'knowledge/scope', data: { version: 9, mode: 'everything' } })).toBe(all)
   })
 
   it('returns the same state for an event it does not own', async () => {

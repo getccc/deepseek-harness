@@ -3480,7 +3480,7 @@ export interface Config {
 }
 ```
 
-来源：[`packages/knowledge/tool-knowledge/src/index.ts:47`](../packages/knowledge/tool-knowledge/src/index.ts)
+来源：[`packages/knowledge/tool-knowledge/src/index.ts:48`](../packages/knowledge/tool-knowledge/src/index.ts)
 
 <a id="deepseek-aidsh-tool-lsp"></a>
 
@@ -3635,12 +3635,25 @@ export interface Config {
 export interface Config {
   /** Global tool names that stay visible; every other global tool is removed. `[]` removes them all. */
   allow?: string[]
+  /**
+   * Global tool names that also stay visible, but only when some deployment
+   * row has registered them by the time this row mounts; an absent one is
+   * skipped rather than refused. Beside `allow` only.
+   *
+   * For a shipped preset that should reach a tool some deployments add — the
+   * `chat` preset and Team knowledge search — without failing every deployment
+   * that does not. The price is the name check `allow` gets: a misspelling
+   * here masks the tool instead of failing, so list only names a registering
+   * package owns. Resolved once, at mount: a tool registered afterwards stays
+   * masked until the preset mounts again.
+   */
+  allowWhenRegistered?: string[]
   /** Global tool names removed from visibility. */
   deny?: string[]
 }
 ```
 
-来源：[`packages/guard/tool-restriction/src/index.ts:34`](../packages/guard/tool-restriction/src/index.ts)
+来源：[`packages/guard/tool-restriction/src/index.ts:36`](../packages/guard/tool-restriction/src/index.ts)
 
 <a id="deepseek-aidsh-tool-session-query"></a>
 

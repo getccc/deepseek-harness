@@ -49,7 +49,7 @@ export const selected: KnowledgeScope = {
 export const documents: KnowledgeScope = {
   version: 1,
   mode: 'selected',
-  bases: [{ ref, displayName: '临港知识库', docRefs: [KnowledgeDocRef(`${ref}/doc-7`)] }],
+  bases: [{ ref, displayName: '临港知识库', documents: [{ ref: KnowledgeDocRef(`${ref}/doc-7`), title: '运维手册.pdf' }] }],
 }
 ```
 
@@ -59,7 +59,7 @@ Scope is model-visible input twice over — it decides the prompt section that n
 
 `all` records no names, because the set it denotes is whatever the principal is authorized for at each call and cannot be snapshotted honestly.
 
-A scope naming exactly one knowledge base may narrow further, to documents inside it, through that entry's `docRefs`. It is an optional property rather than a mode of its own: a union change is a Session format-version bump under the [persistence rules](../persistence-changes/README.md#compatibility-rules), while an optional property is a same-version addition ([record](../persistence-changes/2026-09-16-knowledge-scope-documents.md)). The cost is stated there rather than hidden — a build that predates the field ignores it and searches the whole knowledge base, which is wider than the member chose and never narrower. Every document reference must resolve to the knowledge base carrying it, and a scope naming several knowledge bases may not carry documents at all, because the upstream narrowing applies inside one. What the model is told about such a scope is its knowledge base and how many documents; no document title is recorded, and the passages a search returns name their documents anyway.
+A scope naming exactly one knowledge base may narrow further, to documents inside it, through that entry's `documents`, each a reference with the title it was chosen by. It is an optional property rather than a mode of its own: a union change is a Session format-version bump under the [persistence rules](../persistence-changes/README.md#compatibility-rules), while an optional property is a same-version addition ([record](../persistence-changes/2026-09-16-knowledge-scope-documents.md)). The cost is stated there rather than hidden — a build that predates the field ignores it and searches the whole knowledge base, which is wider than the member chose and never narrower. Every document reference must resolve to the knowledge base carrying it, and a scope naming several knowledge bases may not carry documents at all, because the upstream narrowing applies inside one. The title is recorded for the reason a knowledge base's name is: the prompt names the document, so the name has to come from the log. It is the title the member saw, folded to one line of at most 200 characters by the controller that records it, not an authorization fact — what is authorized is the knowledge base holding the document.
 
 Scope only ever narrows current authorization. It never adds a knowledge base, and a stale or forged reference still reaches an authorization decision that cannot be widened from a Session log.
 

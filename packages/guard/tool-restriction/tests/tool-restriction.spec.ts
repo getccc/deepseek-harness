@@ -54,6 +54,26 @@ describe('the mask a preset row declares', () => {
     expect(names(ctx, (await mintScope(ctx, 'other')).key)).toEqual(['added_later', 'knowledge_search', 'web_search'])
   })
 
+  it('keeps a tool named as allowed-when-registered only in a deployment that registered it', async () => {
+    // A Team deployment registers knowledge search before any preset mounts;
+    // a deployment that never registers it must still compose the preset.
+    const team = await mount()
+    team.tools.register(tool('knowledge_search'))
+    team.tools.register(tool('web_search'))
+    const teamPreset = await mintScope(team, 'preset')
+    await teamPreset.scope.ctx.plugin(ToolRestriction, { allow: [], allowWhenRegistered: ['knowledge_search'] })
+    expect(names(team, (await mintScope(team, 'agent', teamPreset.key)).key)).toEqual(['knowledge_search'])
+
+    const plain = await mount()
+    plain.tools.register(tool('web_search'))
+    const plainPreset = await mintScope(plain, 'preset')
+    await plainPreset.scope.ctx.plugin(ToolRestriction, { allow: [], allowWhenRegistered: ['knowledge_search'] })
+    expect(names(plain, (await mintScope(plain, 'agent', plainPreset.key)).key)).toEqual([])
+    // Registered after the row mounted, it stays masked: the list is read once.
+    plain.tools.register(tool('knowledge_search'))
+    expect(names(plain, (await mintScope(plain, 'agent-2', plainPreset.key)).key)).toEqual([])
+  })
+
   it('keeps only the allow-list, removes the deny-list, and lifts with the row', async () => {
     const ctx = await mount()
     for (const name of ['read', 'bash', 'web']) ctx.tools.register(tool(name))

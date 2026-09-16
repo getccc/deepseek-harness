@@ -30,7 +30,7 @@ Three facts in the host stood in the way. `session.create` without a Workspace o
 
 **A scratch cwd for chat sessions.** Creating chat sessions under a fixed directory would have kept every cwd guard untouched. Rejected: the session would then claim a directory it never uses, the sandbox and file tools would resolve against it, and the Workspace registry's bootstrap would adopt it as a Workspace.
 
-**Zero tools by convention only.** Hiding the knowledge and office pickers leaves every host-plane tool governed by its own visibility rule, and a deployment adding one later would put it into chat sessions. The restriction row costs one small package and makes the surface a mount-time fact.
+**Zero tools by convention only.** Hiding the knowledge and office pickers leaves every host-plane tool governed by its own visibility rule, and a deployment adding one later would put it into chat sessions. The restriction row costs one small package and makes the surface a mount-time fact. Knowledge search is since let through where a Team deployment registers it, for the chat a member opens about one document ([member knowledge browsing](../../proposed/feature/2026-09-16-member-knowledge-browsing-and-retrieval.md#a-document-conversation-is-a-chat-that-can-search)).
 
 **Deriving the chat preset id on the client.** The sidebar could have read the roster and created with the `none` default's id. Rejected: naming no location already selects `chatDefault` on the host, so the client carries no preset id and a deployment changes the chat composition in one place.
 

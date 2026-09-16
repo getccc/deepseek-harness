@@ -30,7 +30,7 @@ host 里有三个事实挡在前面。`session.create` 没有 Workspace 或 cwd 
 
 **给聊天会话一个 scratch cwd。** 在固定目录下创建聊天会话可以让所有 cwd 守卫原样不动。拒绝：会话会宣称拥有一个它从不使用的目录，沙箱和文件工具会据此解析，Workspace 注册表的引导会把它领养为一个 Workspace。
 
-**仅靠约定实现零工具。** 隐藏知识和 office 选择器后，每个 host 层工具仍由各自的可见性规则管辖，部署之后新增一个就会进入聊天会话。限制行只多一个小包，却让工具面成为挂载时的事实。
+**仅靠约定实现零工具。** 隐藏知识和 office 选择器后，每个 host 层工具仍由各自的可见性规则管辖，部署之后新增一个就会进入聊天会话。限制行只多一个小包，却让工具面成为挂载时的事实。此后，在 Team 部署注册了知识检索的地方，它被放行给成员就某份文档打开的聊天（[成员知识浏览](../../proposed/feature/2026-09-16-member-knowledge-browsing-and-retrieval.zh.md#a-document-conversation-is-a-chat-that-can-search)）。
 
 **在客户端推导聊天 preset id。** 侧栏本可以读 roster 并用 `none` 默认值的 id 创建。拒绝：不命名位置在 host 上已经选择了 `chatDefault`，客户端因此不携带任何 preset id，部署只在一处更改聊天组合。
 

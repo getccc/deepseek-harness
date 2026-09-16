@@ -31,7 +31,7 @@ import { SessionId } from '@deepseek-ai/dsh-session'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { z } from 'zod'
 import type {
-  KnowledgeChoice, KnowledgeDocumentContentView, KnowledgeDocumentsView,
+  KnowledgeChoice, KnowledgeDocumentChoice, KnowledgeDocumentContentView, KnowledgeDocumentsView,
   KnowledgeScopeView, KnowledgeSearchView,
 } from './types.ts'
 
@@ -54,8 +54,21 @@ const sessionRequestSchema = z.object({ sessionId: z.string().min(1) })
 
 const chooseRequestSchema = z.object({
   sessionId: z.string().min(1),
-  mode: z.union([z.literal('off'), z.literal('all'), z.literal('selected'), z.literal('documents')]),
+  mode: z.union([z.literal('off'), z.literal('all'), z.literal('selected')]),
   knowledgeRefs: z.array(z.string()).optional(),
+})
+
+/**
+ * The most characters of a document title a Session records.
+ *
+ * A title reaches the prompt, so it is bounded where it is recorded rather
+ * than trusted at whatever length a source gave it.
+ */
+const MAX_DOCUMENT_TITLE_CHARS = 200
+
+const chooseDocumentsRequestSchema = z.object({
+  sessionId: z.string().min(1),
+  documents: z.array(z.object({ docRef: z.string().min(1), title: z.string() })).min(1),
 })
 
 const documentsRequestSchema = z.object({
@@ -75,6 +88,20 @@ const searchRequestSchema = z.object({
   mode: z.union([z.literal('all'), z.literal('selected')]),
   knowledgeRefs: z.array(z.string()).optional(),
 })
+
+/** Splits a title into the characters a reader sees, so a cut never lands inside one. */
+const GRAPHEMES = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+
+/**
+ * A document title as a Session records it: one line, at most
+ * {@link MAX_DOCUMENT_TITLE_CHARS} characters as a reader counts them.
+ * @param title - the title the browser showed.
+ * @returns the title with every run of whitespace folded to one space and the excess cut.
+ */
+function titleOf(title: string): string {
+  const line = title.replace(/\s+/gu, ' ').trim()
+  return Array.from(GRAPHEMES.segment(line), part => part.segment).slice(0, MAX_DOCUMENT_TITLE_CHARS).join('')
+}
 
 /**
  * Read one request, refusing what no call could act on.
@@ -133,9 +160,8 @@ export class KnowledgeController extends TypertRemoteService {
    * would refuse it at search time anyway, and recording it would put a
    * promise in the log that no search can keep.
    * @param sessionId - the Session to record the choice in.
-   * @param mode - `off`, `all`, `selected`, or `documents`.
-   * @param knowledgeRefs - the chosen references: knowledge bases for `selected`,
-   *   documents for `documents`, required and non-empty for both.
+   * @param mode - `off`, `all`, or `selected`.
+   * @param knowledgeRefs - the chosen knowledge bases, required and non-empty for `selected`.
    * @returns the Session's scope as it now stands.
    * @throws RemoteError when the request is invalid, the Session is unknown, or a reference is not currently authorized.
    */
@@ -146,6 +172,30 @@ export class KnowledgeController extends TypertRemoteService {
     const scope = await this.buildScope(request.mode, request.knowledgeRefs ?? [])
     // Synchronous: the log is the durable source of truth, so a bad event
     // fails here rather than during a later flush.
+    agent.session.append('knowledge/scope', scope)
+    return this.scope(request.sessionId)
+  }
+
+  /**
+   * Narrow one Session to documents inside one knowledge base.
+   *
+   * The title travels from the browser, which read it from an authorized
+   * listing or retrieval, and is recorded as it was shown: there is no
+   * governed operation that describes a single document, and the title is a
+   * label the member chose by, not an authorization fact. It is normalized to
+   * one line and bounded before it is written, because it reaches the prompt.
+   * What is authorized here is what matters — every document sits in one
+   * knowledge base the directory holds now.
+   * @param sessionId - the Session to record the choice in.
+   * @param documents - the documents, each with the title the member saw; at least one.
+   * @returns the Session's scope as it now stands.
+   * @throws RemoteError when the request is invalid, the Session is unknown, or a document is not currently authorized.
+   */
+  @Remote('chooseDocuments')
+  async chooseDocuments(sessionId: string, documents: KnowledgeDocumentChoice[]): Promise<KnowledgeScopeView> {
+    const request = parseRequest('knowledge.chooseDocuments', chooseDocumentsRequestSchema, { sessionId, documents })
+    const agent = this.agentOf(request.sessionId)
+    const scope = await this.buildDocumentScope(request.documents)
     agent.session.append('knowledge/scope', scope)
     return this.scope(request.sessionId)
   }
@@ -310,11 +360,7 @@ export class KnowledgeController extends TypertRemoteService {
   }
 
   /** Turn one requested mode into the scope value a Session records. */
-  private async buildScope(
-    mode: 'off' | 'all' | 'selected' | 'documents',
-    refs: readonly string[],
-  ): Promise<KnowledgeScope> {
-    if (mode === 'documents') return this.buildDocumentScope(refs)
+  private async buildScope(mode: 'off' | 'all' | 'selected', refs: readonly string[]): Promise<KnowledgeScope> {
     if (mode !== 'selected') return { version: 1, mode }
     if (refs.length === 0) {
       throw new RemoteError('knowledge/empty-selection', 'a knowledge selection names at least one knowledge base', {})
@@ -338,23 +384,21 @@ export class KnowledgeController extends TypertRemoteService {
    * selection follows, for the same reason: the recorded name reaches a
    * prompt, so it has to have been earned at the moment of choice.
    */
-  private async buildDocumentScope(docRefs: readonly string[]): Promise<KnowledgeScope> {
-    const [head] = docRefs
-    if (head === undefined) {
-      throw new RemoteError('knowledge/empty-selection', 'a document selection names at least one document', {})
-    }
+  private async buildDocumentScope(documents: readonly KnowledgeDocumentChoice[]): Promise<KnowledgeScope> {
+    // The request schema already refused an empty list.
+    const head = (documents[0] as KnowledgeDocumentChoice).docRef
     const ref = parseKnowledgeDocRef(head)?.ref
     if (ref === undefined) {
       throw new RemoteError('knowledge/not-available', 'that document is not available to this member', { knowledgeRef: head })
     }
-    const chosen = docRefs.map((docRef) => {
+    const chosen = documents.map(({ docRef, title }) => {
       // Every document has to be in the knowledge base the first one named:
       // that knowledge base is what gets authorized, and a document from
       // elsewhere would ride an admission nobody asked for.
       if (parseKnowledgeDocRef(docRef)?.ref !== ref) {
         throw new RemoteError('knowledge/not-available', 'that document is not available to this member', { knowledgeRef: docRef })
       }
-      return KnowledgeDocRef(docRef)
+      return { ref: KnowledgeDocRef(docRef), title: titleOf(title) }
     })
     const displayName = (await this.directory()).find(choice => choice.knowledgeRef === ref)?.displayName
     if (displayName === undefined) {
@@ -363,7 +407,7 @@ export class KnowledgeController extends TypertRemoteService {
     // Recorded as a one-knowledge-base selection carrying its documents: an
     // optional field is a same-version persistence addition, where a mode of
     // its own would have been a format-version bump.
-    return { version: 1, mode: 'selected', bases: [{ ref, displayName, docRefs: chosen }] }
+    return { version: 1, mode: 'selected', bases: [{ ref, displayName, documents: chosen }] }
   }
 
   /**

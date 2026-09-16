@@ -6,7 +6,7 @@
       "kind": "event",
       "event": "knowledge/scope",
       "surface": false,
-      "digest": "dec35810f66b8eda5b53537f7f9232a9d40eb10faf0a4b000673ce0623afb5a2",
+      "digest": "4ab10b0fffb11e82617ef098edb5bf856421740fd052f7ca55fbee3cad8aca65",
       "schema": {
         "root": 0,
         "nodes": [
@@ -20,22 +20,22 @@
               },
               {
                 "name": "ignorable",
-                "type": 13,
+                "type": 14,
                 "optional": true
               },
               {
                 "name": "seq",
-                "type": 14,
+                "type": 15,
                 "optional": false
               },
               {
                 "name": "time",
-                "type": 14,
+                "type": 15,
                 "optional": false
               },
               {
                 "name": "type",
-                "type": 15,
+                "type": 16,
                 "optional": false
               }
             ],
@@ -45,8 +45,8 @@
             "kind": "union",
             "types": [
               2,
-              9,
-              11
+              10,
+              12
             ]
           },
           {
@@ -59,12 +59,12 @@
               },
               {
                 "name": "mode",
-                "type": 7,
+                "type": 8,
                 "optional": false
               },
               {
                 "name": "version",
-                "type": 8,
+                "type": 9,
                 "optional": false
               }
             ],
@@ -83,7 +83,7 @@
                 "optional": false
               },
               {
-                "name": "docRefs",
+                "name": "documents",
                 "type": 6,
                 "optional": true
               },
@@ -101,7 +101,23 @@
           },
           {
             "kind": "array",
-            "element": 5
+            "element": 7
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "ref",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "title",
+                "type": 5,
+                "optional": false
+              }
+            ],
+            "indices": []
           },
           {
             "kind": "literal",
@@ -116,12 +132,12 @@
             "properties": [
               {
                 "name": "mode",
-                "type": 10,
+                "type": 11,
                 "optional": false
               },
               {
                 "name": "version",
-                "type": 8,
+                "type": 9,
                 "optional": false
               }
             ],
@@ -136,12 +152,12 @@
             "properties": [
               {
                 "name": "mode",
-                "type": 12,
+                "type": 13,
                 "optional": false
               },
               {
                 "name": "version",
-                "type": 8,
+                "type": 9,
                 "optional": false
               }
             ],

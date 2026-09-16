@@ -51,6 +51,7 @@ function document(patch: Partial<KnowledgeDocumentView> = {}): KnowledgeDocument
     docRef: `${REF_A}/doc-1`,
     knowledgeRef: REF_A,
     title: '运维手册',
+    description: '',
     fileName: '运维手册.pdf',
     fileType: 'pdf',
     byteSize: 20480,
@@ -109,7 +110,7 @@ async function back(): Promise<void> {
 function renderSearch(options: {
   directory?: () => Promise<readonly KnowledgeChoice[]>
   search?: (query: string, refs: readonly string[]) => Promise<KnowledgeSearchView>
-  discuss?: (ref: string, draft: string) => Promise<void>
+  discuss?: (target: unknown) => Promise<void>
 } = {}) {
   const directory = options.directory ?? (() => Promise.resolve(BASES))
   const search = vi.fn(options.search ?? (query => Promise.resolve(
@@ -285,22 +286,16 @@ describe('the retrieval panel', () => {
     ask()
     fireEvent.click(await screen.findByRole('button', { name: '讨论这篇原文' }))
     await waitFor(() => {
-      expect(panel.discuss).toHaveBeenCalledWith(
-        { knowledgeRef: REF_A },
-        '关于《运维手册》中的这段内容：\n\n> 一级故障 30 分钟内响应。\n\n',
-      )
+      expect(panel.discuss).toHaveBeenCalledWith({ knowledgeRef: REF_A, title: '运维手册' })
     })
   })
 
-  it('opens a discussion with the passage quoted, and reports one it could not open', async () => {
+  it('opens a discussion about the document by its title, and reports one it could not open', async () => {
     const panel = renderSearch()
     ask()
     fireEvent.click(await screen.findByRole('button', { name: '讨论这篇原文' }))
     await waitFor(() => {
-      expect(panel.discuss).toHaveBeenCalledWith(
-        { knowledgeRef: REF_A, docRef: `${REF_A}/doc-1` },
-        '关于《运维手册》中的这段内容：\n\n> 一级故障 30 分钟内响应。\n\n',
-      )
+      expect(panel.discuss).toHaveBeenCalledWith({ knowledgeRef: REF_A, docRef: `${REF_A}/doc-1`, title: '运维手册' })
     })
     panel.view.unmount()
     renderSearch({ discuss: () => Promise.reject(new Error('no session')) })

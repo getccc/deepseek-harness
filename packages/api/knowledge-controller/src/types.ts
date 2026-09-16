@@ -9,6 +9,14 @@
 
 import type { KnowledgeScope } from '@deepseek-ai/dsh-knowledge'
 
+/** One document a Session is narrowed to, with the title the member chose it by. */
+export interface KnowledgeDocumentChoice {
+  /** The governed reference of the document. */
+  readonly docRef: string
+  /** The title the browser showed; the controller folds it to one line and bounds it. */
+  readonly title: string
+}
+
 /** One knowledge base a member may pick, as the picker draws it. */
 export interface KnowledgeChoice {
   /** The stable reference the Session records when this one is chosen. */

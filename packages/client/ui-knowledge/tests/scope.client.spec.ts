@@ -153,12 +153,15 @@ describe('a conversation narrowed to documents', () => {
     bases: [{
       ref: REF_A,
       displayName: '临港知识库',
-      docRefs: Array.from({ length: count }, (_value, index) => `${REF_A}/doc-${String(index)}` as never),
+      documents: Array.from({ length: count }, (_value, index) => ({
+        ref: `${REF_A}/doc-${String(index)}` as never,
+        title: `报告 ${String(index)}`,
+      })),
     }],
   })
 
   it('says the knowledge base and how many documents', () => {
-    // No document title is recorded, so the chip has none to show either.
+    // The titles are the documents dock's to show; the chip keeps its width.
     expect(chipLabel(documents(1), t)).toBe('临港知识库 · 1 篇文档')
     expect(scopeNames(documents(3), t)).toBe('临港知识库 · 3 篇文档')
   })

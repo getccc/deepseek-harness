@@ -57,6 +57,7 @@ export {
   type KnowledgePassage,
   type KnowledgeScope,
   type KnowledgeScopeBase,
+  type KnowledgeScopeDocument,
   type KnowledgeScopeMode,
   type KnowledgeScopeSelection,
   type KnowledgeSearchRequest,

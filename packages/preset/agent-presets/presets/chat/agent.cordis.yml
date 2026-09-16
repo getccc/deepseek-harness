@@ -23,10 +23,17 @@
 # one later does not put it into chat sessions; the rows of this composition
 # are not inherited from outside it, so the web tools below stay visible. The
 # empty allow list is the masking.
+#
+# Knowledge search is the one host tool let through, and only where a Team
+# deployment registers it. It is offered solely to a chat whose log records a
+# knowledge scope — the knowledge panels open one narrowed to a document — so
+# an ordinary chat still sends no tool schema, while a chat the member opened
+# about a document can actually search it instead of being told it can.
 - id: tool-restriction
   name: '@deepseek-ai/dsh-tool-restriction'
   config:
     allow: []
+    allowWhenRegistered: [knowledge_search]
 
 # The `web` service and its providers stay in the host composition; the
 # model-facing tools are this preset's, behind a switch every session starts

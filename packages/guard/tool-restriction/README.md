@@ -43,9 +43,10 @@ Choose it when a preset must see fewer tools than the host registers for everyon
 | Field | Default | Meaning |
 |---|---|---|
 | `allow` | absent | Global tool names that stay visible; every other global tool is removed. `[]` removes them all |
+| `allowWhenRegistered` | absent | Beside `allow` only: global tool names that also stay visible when a deployment has registered them by the time the row mounts, and are skipped rather than refused when it has not |
 | `deny` | absent | Global tool names removed from visibility |
 
-At least one list must be declared: a row that masks nothing fails validation, and an absent list is never read as an empty one. Both lists together intersect. A name no registered global tool carries fails when the row mounts, which for a preset is the first session that composes it. The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-tool-restriction) documents every accepted value.
+At least one list must be declared: a row that masks nothing fails validation, and an absent list is never read as an empty one. Both lists together intersect. A name no registered global tool carries fails when the row mounts, which for a preset is the first session that composes it — except in `allowWhenRegistered`, which exists so a shipped preset can keep a tool only some deployments register (the `chat` preset and Team knowledge search) without failing the others. It gives up the misspelling check in exchange, and it is read once at mount: a tool registered afterwards stays masked until the preset mounts again. The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-tool-restriction) documents every accepted value.
 
 ### What you get
 

@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-09-16-knowledge-scope-documents.md
-2026-09-16-knowledge-scope-documents.md: fe28b8c8a656307671bcbc9233f796f5fbd3e9a4
-2026-09-16-knowledge-scope-documents.zh.md: 0ac8cc5c0a560d077f47593ca24bd0344c6a799c
+2026-09-16-knowledge-scope-documents.md: 6759a7a489cbb468f78a504ad0e1f5b139f39130
+2026-09-16-knowledge-scope-documents.zh.md: f1c2467aa31ca35e305c09fe5a4176dc5e6040f7

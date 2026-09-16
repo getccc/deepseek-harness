@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-14-chat-preset-without-workspace.md
-2026-09-14-chat-preset-without-workspace.md: 541cb6d7c28251b0f381f903dd8954578372db18
-2026-09-14-chat-preset-without-workspace.zh.md: 4ab01ef6cb6b6d1a70bebde5027c1fc0655a7a3e
+2026-09-14-chat-preset-without-workspace.md: 6fa80ad9c3db0ad8d3e8fa6ffdb6758c63d42f7d
+2026-09-14-chat-preset-without-workspace.zh.md: 54ccf3a25976595ff2ae4451d933f23cc3868c08

@@ -157,7 +157,8 @@ export interface KnowledgeScopeBase {
   readonly displayName: string
   /**
    * Documents inside this knowledge base, when the member narrowed the
-   * conversation to them; absent means the whole knowledge base.
+   * conversation to them; absent means the whole knowledge base. Never empty
+   * when present.
    *
    * An optional field on the recorded knowledge base rather than a mode of its
    * own: a new mode is a union change, which the persistence rules class as a
@@ -171,7 +172,22 @@ export interface KnowledgeScopeBase {
    * inside one knowledge base, so a second one carrying documents would
    * describe a search nobody can perform.
    */
-  readonly docRefs?: readonly KnowledgeDocRef[]
+  readonly documents?: readonly KnowledgeScopeDocument[]
+}
+
+/**
+ * One document a Session scope narrows to, with the title recorded beside it.
+ *
+ * The title is recorded for the reason a knowledge base's name is: the prompt
+ * names the document, and a model-visible name has to be reconstructable from
+ * the log. It is the title the member saw when they chose it, a snapshot like
+ * the name beside it; a source that renames the document afterwards does not
+ * change what an already-recorded Session says.
+ */
+export interface KnowledgeScopeDocument {
+  readonly ref: KnowledgeDocRef
+  /** Empty when the source held no title or file name for it. */
+  readonly title: string
 }
 
 /**
@@ -183,10 +199,8 @@ export interface KnowledgeScopeBase {
  * each call, not every knowledge base that exists.
  *
  * A `selected` scope naming one knowledge base may narrow further, to
- * documents inside it, through {@link KnowledgeScopeBase.docRefs}. No document
- * title is recorded: what the prompt says about such a scope is its knowledge
- * base and how many documents, both of which the log already holds, and the
- * passages a search returns name their documents anyway.
+ * documents inside it, through {@link KnowledgeScopeBase.documents}, each
+ * recorded with the title the prompt names it by.
  */
 export type KnowledgeScope =
   | { readonly version: 1; readonly mode: 'off' }

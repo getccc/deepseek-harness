@@ -310,18 +310,34 @@ describe('a document-narrowed scope', () => {
   const DOC_A = `${ref()}/doc-1`
   const DOC_B = `${ref()}/doc-2`
 
-  /** A document-narrowed scope over the given references. */
+  /** A document-narrowed scope over the given references, each titled by its own reference. */
   function documentScope(base: string, docRefs: unknown): unknown {
-    return { version: 1, mode: 'selected', bases: [{ ref: base, displayName: '临港知识库', docRefs }] }
+    const documents = Array.isArray(docRefs)
+      ? (docRefs as unknown[]).map(docRef => ({ ref: docRef, title: `标题 ${String(docRef)}` }))
+      : docRefs
+    return { version: 1, mode: 'selected', bases: [{ ref: base, displayName: '临港知识库', documents }] }
   }
 
-  it('reads back as one knowledge base carrying the documents inside it', () => {
+  it('reads back as one knowledge base carrying the documents inside it, titles included', () => {
     const scope = parseKnowledgeScope(documentScope(ref(), [DOC_A, DOC_B]))
     expect(scope).toEqual({
       version: 1,
       mode: 'selected',
-      bases: [{ ref: ref(), displayName: '临港知识库', docRefs: [DOC_A, DOC_B] }],
+      bases: [{
+        ref: ref(),
+        displayName: '临港知识库',
+        documents: [{ ref: DOC_A, title: `标题 ${DOC_A}` }, { ref: DOC_B, title: `标题 ${DOC_B}` }],
+      }],
     })
+  })
+
+  it('reads a narrowing written under a name this build does not know as the whole knowledge base', () => {
+    // Wider than the member chose, never narrower: the one cost of recording
+    // the narrowing as an optional property rather than a mode.
+    const scope = parseKnowledgeScope({
+      version: 1, mode: 'selected', bases: [{ ref: ref(), displayName: '临港知识库', docRefs: [DOC_A] }],
+    })
+    expect(scope).toEqual({ version: 1, mode: 'selected', bases: [{ ref: ref(), displayName: '临港知识库' }] })
   })
 
   it('carries its knowledge base and its documents into one operation', () => {
@@ -350,11 +366,17 @@ describe('a document-narrowed scope', () => {
     ['a document reference that is not one', documentScope(ref(), ['not-a-reference'])],
     ['a knowledge base that is not one', documentScope('weknora:prod', [DOC_A])],
     ['documents that are not a list', documentScope(ref(), 'doc-1')],
+    ['a document that is not an object', {
+      version: 1, mode: 'selected', bases: [{ ref: ref(), displayName: '临港知识库', documents: ['doc-1'] }],
+    }],
+    ['a document with no title', {
+      version: 1, mode: 'selected', bases: [{ ref: ref(), displayName: '临港知识库', documents: [{ ref: DOC_A }] }],
+    }],
     ['documents on one of several knowledge bases', {
       version: 1,
       mode: 'selected',
       bases: [
-        { ref: ref(), displayName: '临港知识库', docRefs: [DOC_A] },
+        { ref: ref(), displayName: '临港知识库', documents: [{ ref: DOC_A, title: '运维手册' }] },
         { ref: ref('other'), displayName: '南昌知识库' },
       ],
     }],

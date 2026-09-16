@@ -131,15 +131,16 @@ describe('web e2e: knowledge panels', () => {
   let browser: Browser
   let page: Page
   let tripwire: ReturnType<typeof watchConsole>
-  // Every scope any Session records, in order: the discussion opens a Session
-  // of its own, so the assertion cannot address one known in advance.
-  const scopes: unknown[] = []
+  // Every scope any Session records, in order, with the Session that recorded
+  // it: the discussion opens a Session of its own, so the assertion cannot
+  // address one known in advance.
+  const scopes: { sessionId: string; data: unknown }[] = []
 
   beforeAll(async () => {
     scaffold = await launchWebScaffold({ extraOverlayPath: OVERLAY, extraInstallAnchors: ANCHORS })
     await scaffold.ctx.plugin(FixtureKnowledge).await()
-    scaffold.ctx.on('session/event', (_session, event: SessionEvent) => {
-      if (event.type === 'knowledge/scope') scopes.push(event.data)
+    scaffold.ctx.on('session/event', (session, event: SessionEvent) => {
+      if (event.type === 'knowledge/scope') scopes.push({ sessionId: session.id, data: event.data })
     })
     browser = await chromium.launch()
     page = await browser.newPage({
@@ -209,21 +210,31 @@ describe('web e2e: knowledge panels', () => {
     await page.getByText('（本段已截断）').waitFor()
 
     await page.getByRole('button', { name: '讨论这篇原文' }).first().click()
-    // The retrieval panel gives way to the conversation it opened, whose
-    // composer holds the passage: the member lands in the discussion, not
-    // beside it.
+    // The retrieval panel gives way to the conversation it opened: the
+    // document sits above the composer the way an attached file does, and
+    // nothing is typed for the member.
     await page.getByPlaceholder('描述你要找的内容').waitFor({ state: 'hidden', timeout: 20_000 })
-    const composer = page.locator('[data-composer-input]')
-    await composer.getByText('关于《园区运维手册 v3》中的这段内容：').waitFor({ timeout: 20_000 })
-    expect(await composer.innerText()).toContain('一级故障：接报后 30 分钟内到场，1 小时内形成处置方案。')
+    const dock = page.getByRole('group', { name: '本次对话基于 临港智慧园区知识库 中的这些文档回答' })
+    await dock.getByText('园区运维手册 v3').waitFor({ timeout: 20_000 })
+    expect((await page.locator('[data-composer-input]').innerText()).trim()).toBe('')
 
-    // Narrowed to the result's document, recorded as the one knowledge base
-    // carrying it.
-    expect(scopes.at(-1)).toEqual({
+    // Narrowed to the result's document, recorded with the title it was chosen by.
+    const recorded = scopes.at(-1)
+    expect(recorded?.data).toEqual({
       version: 1,
       mode: 'selected',
-      bases: [{ ref: LINGANG, displayName: '临港智慧园区知识库', docRefs: [MANUAL] }],
+      bases: [{ ref: LINGANG, displayName: '临港智慧园区知识库', documents: [{ ref: MANUAL, title: '园区运维手册 v3' }] }],
     })
+    // The conversation is a chat, and it can search that document: the chat
+    // composition lets knowledge search through where the deployment
+    // registers it, and the tool is offered once the scope is recorded.
+    const agent = scaffold.ctx.agents.get(recorded?.sessionId as never)
+    expect(agent === undefined ? [] : scaffold.ctx.tools.schemas(agent).map(schema => schema.name)).toContain('knowledge_search')
+
+    // Taking the document off leaves the conversation without knowledge.
+    await dock.getByRole('button', { name: '从本次对话中移除 园区运维手册 v3' }).click()
+    await expect.poll(() => scopes.at(-1)?.data).toEqual({ version: 1, mode: 'off' })
+    await dock.waitFor({ state: 'detached', timeout: 20_000 })
     expect(tripwire.pageErrors).toEqual([])
   }, 120_000)
 })

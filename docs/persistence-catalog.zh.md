@@ -43,7 +43,7 @@
 | `event:hook/invoked` | event | `8a6e1ec9e8db346b0e02f027db73c07a94f067a26d40c1aef1abd09c47ce7ba0` | [`event:hook/invoked`](#persistence-type-eventhookinvoked) |
 | `event:hook/result` | event | `e75916628f3f10c2d50658bd143052a46285fbf1a9a700ba54947614603d26b4` | [`event:hook/result`](#persistence-type-eventhookresult) |
 | `event:image/offload` | event | `b222069eea2d768065161c1147b1f2c78c1b54328c84b3586ae5c8f91b8ed35e` | [`event:image/offload`](#persistence-type-eventimageoffload) |
-| `event:knowledge/scope` | event | `dec35810f66b8eda5b53537f7f9232a9d40eb10faf0a4b000673ce0623afb5a2` | [`event:knowledge/scope`](#persistence-type-eventknowledgescope) |
+| `event:knowledge/scope` | event | `4ab10b0fffb11e82617ef098edb5bf856421740fd052f7ca55fbee3cad8aca65` | [`event:knowledge/scope`](#persistence-type-eventknowledgescope) |
 | `event:llm/retry` | event | `525254db03b1d1e6b74cf55aced52817568331ac1f96c0818728910b6692e336` | [`event:llm/retry`](#persistence-type-eventllmretry) |
 | `event:llm/retry-started` | event | `48e5c9861f16ac07e78cb7b5ae9dabdf7bb85c58baed5a51b4ad275050ea58e3` | [`event:llm/retry-started`](#persistence-type-eventllmretry-started) |
 | `event:model/selection` | event | `35203ba7ad5ef6f97d556b85df20ae98f04f09c65748cecdf8eefdb8b6405ffc` | [`event:model/selection`](#persistence-type-eventmodelselection) |
@@ -2912,7 +2912,7 @@ SHA-256: `9e2c06d8653585b33d72d5c1a80da79c8a24a88c284409bca15cc0f0ead5ebfb`
 
 ### `event:knowledge/scope`
 
-SHA-256: `dec35810f66b8eda5b53537f7f9232a9d40eb10faf0a4b000673ce0623afb5a2`
+SHA-256: `4ab10b0fffb11e82617ef098edb5bf856421740fd052f7ca55fbee3cad8aca65`
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -2928,7 +2928,7 @@ SHA-256: `dec35810f66b8eda5b53537f7f9232a9d40eb10faf0a4b000673ce0623afb5a2`
 
 SHA-256: `ac44e4667f7f878b329a55172d9619994b18e891428860b8fd2e530fc2490a9c`
 
-来源：[`packages/knowledge/knowledge/src/types.ts:192`](../packages/knowledge/knowledge/src/types.ts)
+来源：[`packages/knowledge/knowledge/src/types.ts:206`](../packages/knowledge/knowledge/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -2941,7 +2941,7 @@ SHA-256: `ac44e4667f7f878b329a55172d9619994b18e891428860b8fd2e530fc2490a9c`
 
 SHA-256: `911cb8dc287709be3e9be4d9e8bee3f62758eca0bdce19b9894c436f5fea7d5f`
 
-来源：[`packages/knowledge/knowledge/src/types.ts:193`](../packages/knowledge/knowledge/src/types.ts)
+来源：[`packages/knowledge/knowledge/src/types.ts:207`](../packages/knowledge/knowledge/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -2952,9 +2952,9 @@ SHA-256: `911cb8dc287709be3e9be4d9e8bee3f62758eca0bdce19b9894c436f5fea7d5f`
 
 ### `event:knowledge/scope.data[2]`
 
-SHA-256: `5f4d27180fcd8b1351e44ce2f40f224047c20e93fe9114bf1836623e892eba19`
+SHA-256: `48371635db47164f63fd42a07e5d2e1c7bc3be156c03bf7289eac1150932f553`
 
-来源：[`packages/knowledge/knowledge/src/types.ts:194`](../packages/knowledge/knowledge/src/types.ts)
+来源：[`packages/knowledge/knowledge/src/types.ts:208`](../packages/knowledge/knowledge/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -2966,9 +2966,17 @@ SHA-256: `5f4d27180fcd8b1351e44ce2f40f224047c20e93fe9114bf1836623e892eba19`
 
 ### `event:knowledge/scope.data[2].bases`
 
-SHA-256: `092dd52fe947ca45c96a43c6dbeb5bded460a3b152f3f7ea52098df84baa57e3`
+SHA-256: `bdd617f7c4444d0910e772cc837d37d2921d9d7ed688b778162e7e4cb53c8676`
 
 [`packages/knowledge/knowledge/src/types.ts#KnowledgeScopeBase`](#persistence-type-packagesknowledgeknowledgesrctypestsknowledgescopebase) 的数组。
+
+<a id="persistence-type-eventknowledgescopedata2bases0documents"></a>
+
+### `event:knowledge/scope.data[2].bases[0].documents`
+
+SHA-256: `853396af7dd76e89b543c1946e114d439c938ecb12a7a199c8bba6c48529e026`
+
+[`packages/knowledge/knowledge/src/types.ts#KnowledgeScopeDocument`](#persistence-type-packagesknowledgeknowledgesrctypestsknowledgescopedocument) 的数组。
 
 <a id="persistence-type-eventllmretry"></a>
 
@@ -5240,29 +5248,42 @@ SHA-256: `930c1cd289def119d443e19dd90008916bf035f0a4d23e07241e7f050f2b89b7`
 
 ### `packages/knowledge/knowledge/src/types.ts#KnowledgeScope`
 
-SHA-256: `41e6aab360a9f8bf06107b3e4713c41be5e388ada46b84f096f871eb122ae880`
+SHA-256: `d9aa58ff3ab5a1549c1bfcd11c4983ef276bf983791e234b9fba6abb4a7436d8`
 
-来源：[`packages/knowledge/knowledge/src/types.ts:191`](../packages/knowledge/knowledge/src/types.ts)
+来源：[`packages/knowledge/knowledge/src/types.ts:205`](../packages/knowledge/knowledge/src/types.ts)
 
 以下类型之一：
 
+- [`event:knowledge/scope.data[0]`](#persistence-type-eventknowledgescopedata0)
 - [`event:knowledge/scope.data[2]`](#persistence-type-eventknowledgescopedata2)
 - [`event:knowledge/scope.data[1]`](#persistence-type-eventknowledgescopedata1)
-- [`event:knowledge/scope.data[0]`](#persistence-type-eventknowledgescopedata0)
 
 <a id="persistence-type-packagesknowledgeknowledgesrctypestsknowledgescopebase"></a>
 
 ### `packages/knowledge/knowledge/src/types.ts#KnowledgeScopeBase`
 
-SHA-256: `f048767814898000fbcdb30d436a397f15188da4eb5c9481c6295c2b49f3bcda`
+SHA-256: `736c9eedeafb1faf3dc222b6d69a832ec3a9ece71e2c4d9546646fc9c191de85`
 
 来源：[`packages/knowledge/knowledge/src/types.ts:155`](../packages/knowledge/knowledge/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
 | `displayName` | 必需 | `string` |
-| `docRefs` | 可选 | [`event:assistant/attempt.data.stream[0][0].texts`](#persistence-type-eventassistantattemptdatastream00texts) |
+| `documents` | 可选 | [`event:knowledge/scope.data[2].bases[0].documents`](#persistence-type-eventknowledgescopedata2bases0documents) |
 | `ref` | 必需 | `string` |
+
+<a id="persistence-type-packagesknowledgeknowledgesrctypestsknowledgescopedocument"></a>
+
+### `packages/knowledge/knowledge/src/types.ts#KnowledgeScopeDocument`
+
+SHA-256: `567e79d4c5a8587823dafedd0a3adce55fabcb761636531c709c6370b15fc374`
+
+来源：[`packages/knowledge/knowledge/src/types.ts:187`](../packages/knowledge/knowledge/src/types.ts)
+
+| 属性 | 存在性 | 类型 |
+|---|---|---|
+| `ref` | 必需 | `string` |
+| `title` | 必需 | `string` |
 
 <a id="persistence-type-packagesllmllm-retrysrctypestsllmretryeventdata"></a>
 

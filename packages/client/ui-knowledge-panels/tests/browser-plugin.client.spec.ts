@@ -26,16 +26,15 @@ type Recorded =
   | { call: 'documentContent'; docRef: string }
   | { call: 'search'; query: string; mode: string; knowledgeRefs?: string[] }
   | { call: 'choose'; sessionId: string; mode: string; knowledgeRefs?: string[] }
+  | { call: 'chooseDocuments'; sessionId: string; documents: { docRef: string; title: string }[] }
 
-/** Boot the plugin over fake Remote, layout, Session, and composer faces. */
+/** Boot the plugin over fake Remote, layout, and Session faces. */
 async function bench(declareSeats = true) {
   const ctx = new Context()
   const recorded: Recorded[] = []
   const opened: string[] = []
   const panels: (string | null)[] = []
-  const drafts: string[] = []
   let refusal: string | undefined
-  let scoped = true
   const answer = (value: unknown) => refusal === undefined
     ? Promise.resolve({ ok: true as const, value })
     : Promise.resolve({ ok: false as const, error: { code: 'knowledge/unavailable', message: refusal, details: {} } })
@@ -60,6 +59,10 @@ async function bench(declareSeats = true) {
       recorded.push({ call: 'choose', sessionId, mode, ...(knowledgeRefs === undefined ? {} : { knowledgeRefs }) })
       return answer({ choices: [], scope: { version: 1, mode: 'off' }, unavailable: [] })
     },
+    chooseDocuments: (sessionId: string, documents: { docRef: string; title: string }[]) => {
+      recorded.push({ call: 'chooseDocuments', sessionId, documents })
+      return answer({ choices: [], scope: { version: 1, mode: 'off' }, unavailable: [] })
+    },
   }
   ctx.provide('remote', { knowledge })
   ctx.provide('remote.knowledge', knowledge)
@@ -67,10 +70,6 @@ async function bench(declareSeats = true) {
   ctx.provide('sessions', {
     create: () => Promise.resolve(SID),
     open: (id: string) => { opened.push(id) },
-    scope: () => scoped ? ({ id: SID } as unknown as Context) : undefined,
-  })
-  ctx.provide('conversation', {
-    input: { for: () => ({ setDraft: (text: string) => { drafts.push(text) } }) },
   })
   await ctx.plugin(SlotRegistry).await()
   const slots = ctx.get('slots') as SlotRegistry
@@ -87,9 +86,8 @@ async function bench(declareSeats = true) {
   const fiber = ctx.plugin({ inject: [...inject], apply })
   await fiber.await()
   return {
-    ctx, fiber, slots, recorded, opened, panels, drafts,
+    ctx, fiber, slots, recorded, opened, panels,
     refuseNext: (message: string | undefined) => { refusal = message },
-    unscope: () => { scoped = false },
   }
 }
 
@@ -183,44 +181,34 @@ describe('ui-knowledge-panels browser apply', () => {
     await b.fiber.dispose()
   })
 
-  it('opens a discussion as one Session, scoped to the document before it is shown', async () => {
+  it('opens a discussion as one Session, narrowed to the document by its title before it is shown', async () => {
     const b = await bench()
-    await faceOf(b, SEARCH_PANEL).discuss({ knowledgeRef: REF_A, docRef: `${REF_A}/doc-1` }, '关于《运维手册》')
+    await faceOf(b, SEARCH_PANEL).discuss({ knowledgeRef: REF_A, docRef: `${REF_A}/doc-1`, title: '运维手册.pdf' })
     expect(b.recorded).toEqual([{
-      call: 'choose', sessionId: SID, mode: 'documents', knowledgeRefs: [`${REF_A}/doc-1`],
+      call: 'chooseDocuments', sessionId: SID, documents: [{ docRef: `${REF_A}/doc-1`, title: '运维手册.pdf' }],
     }])
     expect(b.opened).toEqual([SID])
-    // Leaving the panel is what puts the member in the conversation they just opened.
+    // Leaving the panel is what puts the member in the conversation they just
+    // opened, where the document sits above an empty composer.
     expect(b.panels).toEqual([null])
-    expect(b.drafts).toEqual(['关于《运维手册》'])
     await b.fiber.dispose()
   })
 
   it('falls back to the knowledge base for a result that named no document', async () => {
     const b = await bench()
-    await faceOf(b, SEARCH_PANEL).discuss({ knowledgeRef: REF_A }, '关于《运维手册》')
+    await faceOf(b, SEARCH_PANEL).discuss({ knowledgeRef: REF_A, title: '运维手册' })
     // The narrowest scope such a result supports: without a document
     // reference there is nothing narrower to record.
     expect(b.recorded).toEqual([{ call: 'choose', sessionId: SID, mode: 'selected', knowledgeRefs: [REF_A] }])
     await b.fiber.dispose()
   })
 
-  it('opens the conversation even when its input machine is not resolvable yet', async () => {
-    const b = await bench()
-    b.unscope()
-    await faceOf(b, SEARCH_PANEL).discuss({ knowledgeRef: REF_A, docRef: `${REF_A}/doc-1` }, '关于《运维手册》')
-    expect(b.opened).toEqual([SID])
-    expect(b.drafts).toEqual([])
-    await b.fiber.dispose()
-  })
-
   it('records no scope and opens nothing when the choice is refused', async () => {
     const b = await bench()
     b.refuseNext('that knowledge base is not available to this member')
-    await expect(faceOf(b, SEARCH_PANEL).discuss({ knowledgeRef: REF_A, docRef: `${REF_A}/doc-1` }, '关于《运维手册》'))
+    await expect(faceOf(b, SEARCH_PANEL).discuss({ knowledgeRef: REF_A, docRef: `${REF_A}/doc-1`, title: '运维手册' }))
       .rejects.toThrow('that knowledge base is not available to this member (knowledge/unavailable)')
     expect(b.opened).toEqual([])
-    expect(b.drafts).toEqual([])
     await b.fiber.dispose()
   })
 })
