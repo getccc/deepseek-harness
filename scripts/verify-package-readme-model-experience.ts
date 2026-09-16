@@ -127,6 +127,8 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/client/ui-settings-plugins': { kind: 'none', reason: 'Browser-side settings surface; registers no model surface.' },
   'packages/client/ui-plan': { kind: 'indirect', reason: 'The chip dispatches /plan off; dsh-plan-mode owns the model-visible policy, exit tool, and logged state.' },
   'packages/client/ui-web-access': { kind: 'indirect', reason: 'The chip dispatches /web on|off; dsh-tool-web owns the model-visible tool schemas, guidance, and logged switch state.' },
+  'packages/client/ui-bi': { kind: 'none', reason: 'The chip is an inert placeholder: it renders no model-facing text and records nothing in the Session log.' },
+  'packages/client/ui-voice': { kind: 'none', reason: 'Both controls are inert placeholders: they render no model-facing text and record nothing in the Session log.' },
   'packages/web/web-search-gateway-http': { kind: 'none', reason: 'Control Plane route; registers no prompt section, tool, or request context.' },
   'packages/web/web-search-team': { kind: 'indirect', reason: 'The provider answers dsh-tool-web, which owns the web_search schema, guidance, and source rendering.' },
   'packages/client/ui-user-questions': { kind: 'indirect', reason: 'The package mounts dsh-tool-ask-user; that tool owns the model-visible schema and answer rendering.' },

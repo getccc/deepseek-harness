@@ -44,6 +44,7 @@
   "dependencies": {
     "@deepseek-ai/dsh-api-knowledge-controller": "workspace:^",
     "@deepseek-ai/dsh-api-office-controller": "workspace:^",
+    "@deepseek-ai/dsh-client-ui-bi": "workspace:^",
     "@deepseek-ai/dsh-client-ui-knowledge": "workspace:^",
     "@deepseek-ai/dsh-client-ui-office": "workspace:^",
     "@deepseek-ai/dsh-client-ui-sidebar-documentpreview-office": "workspace:^",

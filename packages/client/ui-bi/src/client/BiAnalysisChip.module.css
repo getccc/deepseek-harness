@@ -1,0 +1,44 @@
+/* Composer BI-analysis chip: the sibling web, knowledge, and office chips'
+   chrome, in the composer's own ink because the control is inert. */
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  height: 28px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 24px;
+  outline: none;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  /* No pointer: the chip states its own unavailability rather than inviting a
+     click that would do nothing. */
+  cursor: default;
+}
+
+.trigger:focus-visible {
+  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
+}
+
+.icon {
+  display: inline-flex;
+  flex: none;
+}
+
+.label {
+  white-space: nowrap;
+}
+
+/* Narrow composer: the chip collapses to its icon at the sibling chips' 460px
+   cut, against the same anonymous container (ui-conversation InputBar .row).
+   The aria-label still names it. */
+@container (max-width: 460px) {
+  .label {
+    display: none;
+  }
+}
