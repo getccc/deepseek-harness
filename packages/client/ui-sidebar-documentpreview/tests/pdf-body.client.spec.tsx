@@ -12,7 +12,7 @@ import type { openPdf } from '../src/client/pdf/runtime.ts'
 const engine = vi.hoisted(() => ({ open: vi.fn<typeof openPdf>(), render: vi.fn<typeof renderPdfPage>() }))
 vi.mock('../src/client/pdf/runtime.ts', () => ({ openPdf: engine.open }))
 vi.mock('../src/client/pdf/document.ts', () => ({ renderPdfPage: engine.render }))
-import { PdfBody, type PdfBodyProps } from '../src/client/pdf/PdfBody.tsx'
+import { PdfBody, PdfView, type PdfBodyProps, type PdfViewProps } from '../src/client/pdf/PdfBody.tsx'
 import { createPdfStore, type PdfState } from '../src/client/pdf/store.ts'
 import { en } from '../src/client/pdf/locales.ts'
 import { PdfWorkerFailure } from '../src/client/pdf/errors.ts'
@@ -214,5 +214,38 @@ describe('PDF body', () => {
     await act(async () => {})
     expect(screen.queryByRole('alert')).toBeNull()
     expect(screen.getByRole('img', { name: 'PDF page 1' })).toBeTruthy()
+  })
+})
+
+describe('PDF view', () => {
+  function View({ data = 'one' }: { readonly data?: string }) {
+    const bytes = useMemo(() => new TextEncoder().encode(data), [data])
+    // The view reads its claimed bytes and locale; the remaining framework seats are unused here.
+    const props = { fileName: 'report.pdf', content: { kind: 'bytes', data: bytes }, matched: bytes, t: makeTranslate(en) }
+    return <PdfView {...props as unknown as PdfViewProps} />
+  }
+
+  it('reads the claimed bytes and draws the pages as one sequence, starting from the first', async () => {
+    IntersectionObserverStub.instances = []
+    vi.stubGlobal('IntersectionObserver', IntersectionObserverStub)
+    const view = render(<View />)
+    expect(screen.getByRole('status').getAttribute('aria-label')).toBe('Reading…')
+    expect(new TextDecoder().decode(engine.open.mock.calls[0]![0])).toBe('one')
+    await act(async () => { loads[0]!.deferred.resolve(documentOf(2)) })
+    expect(engine.render.mock.calls.map(([, page]) => page)).toEqual([1])
+    const second = view.container.querySelector('[data-pdf-page="2"]') as HTMLElement
+    const observer = IntersectionObserverStub.instances.find(instance => instance.observed.has(second))!
+    await act(async () => { observer.intersect(second, true) })
+    expect(screen.getAllByRole('img').map(image => image.getAttribute('aria-label'))).toEqual(['PDF page 1', 'PDF page 2'])
+  })
+
+  it('releases the document and aborts page renders when the view unmounts', async () => {
+    const view = render(<View />)
+    await act(async () => { loads[0]!.deferred.resolve(documentOf(1)) })
+    const [, , , signal] = engine.render.mock.calls[0]!
+    view.unmount()
+    expect(loads[0]!.dispose).toHaveBeenCalledOnce()
+    expect(signal.aborted).toBe(true)
+    expect(engine.open.mock.calls[0]![1].aborted).toBe(true)
   })
 })

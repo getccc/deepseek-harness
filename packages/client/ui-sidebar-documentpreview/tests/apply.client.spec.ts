@@ -17,13 +17,13 @@ import { TextPreview } from '../src/client/TextPreview.tsx'
 import { TextTitle } from '../src/client/TextTitle.tsx'
 import { TextBody } from '../src/client/text/TextBody.tsx'
 import { PLAIN_BODY_ID } from '../src/client/text/index.ts'
-import { MarkdownBody } from '../src/client/markdown/MarkdownBody.tsx'
+import { MarkdownBody, MarkdownView } from '../src/client/markdown/MarkdownBody.tsx'
 import { MARKDOWN_BODY_ID } from '../src/client/markdown/index.ts'
 import { HtmlBody } from '../src/client/html/HtmlBody.tsx'
 import { HTML_BODY_ID } from '../src/client/html/index.ts'
 import { ImageBody } from '../src/client/image/ImageBody.tsx'
 import { IMAGE_BODY_ID } from '../src/client/image/index.ts'
-import { PdfBody } from '../src/client/pdf/PdfBody.tsx'
+import { PdfBody, PdfView } from '../src/client/pdf/PdfBody.tsx'
 import { PDF_BODY_ID } from '../src/client/pdf/index.ts'
 import { CodeBody } from '../src/client/code/CodeBody.tsx'
 import { en, zh } from '../src/client/locales.ts'
@@ -94,9 +94,11 @@ describe('ui-sidebar-documentpreview apply', () => {
       ['sidebar.right.pane.tab.title', TEXTPREVIEW_ID, undefined, TextTitle],
       ['sidebar.right.tab.document', PLAIN_BODY_ID, undefined, TextBody],
       ['sidebar.right.tab.document', MARKDOWN_BODY_ID, 'documentMarkdown', MarkdownBody],
+      ['document.view', undefined, 'documentMarkdown', MarkdownView],
       ['sidebar.right.tab.document', HTML_BODY_ID, 'documentHtml', HtmlBody],
       ['sidebar.right.tab.document', IMAGE_BODY_ID, 'sidebarImage', ImageBody],
       ['sidebar.right.tab.document', PDF_BODY_ID, 'sidebarPdf', PdfBody],
+      ['document.view', undefined, 'sidebarPdf', PdfView],
       ['sidebar.right.tab.document', '@deepseek-ai/dsh-client-ui-sidebar-documentpreview/code', 'sidebarCodePreview', CodeBody],
     ])
     expect(registered[0]?.store).toBeDefined()

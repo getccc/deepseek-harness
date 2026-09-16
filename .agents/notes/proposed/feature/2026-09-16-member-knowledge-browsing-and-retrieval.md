@@ -42,7 +42,9 @@ Inside the panel it is two levels and a drawer rather than side-by-side columns:
 
 A card names its document count and creation day, and both come from the catalog mirror rather than a live upstream read: the directory is an authorization answer, and making it reach the source would put the source's availability in front of a member who only wanted to see what there is. The count was already mirrored; the creation time cost the catalog one nullable column, `knowledge_base.upstream_created_at`, and a `SCHEMA_VERSION` of 4. That bump is the whole price, and it is paid by hand on a deployment holding an older file, because this repository ships no migration code for its SQLite stores.
 
-That cuts the panel off from the right Sidebar's registered document bodies, which is the one thing this shape costs: the renderer slot is declared by the Sidebar's own tab type and scoped to a Session, so the Word, Excel, and PowerPoint bodies cannot be rendered from a panel that has none. The drawer therefore draws what a browser draws from bytes on its own — PDFs, images, anything that is text — plus the parsed text the Control Plane falls back to, and says plainly that an Office file is not shown here yet. Closing that gap means a renderer seat both surfaces can reach, which is its own change to the Sidebar's contract.
+That cuts the panel off from the right Sidebar's registered document bodies: their slot is declared by the Sidebar's own tab type and scoped to a Session. The renderers are reached instead through `document.view`, a root-scoped chain slot `dsh-client-ui-sidebar-documentpreview` declares in its SlotMap and the knowledge-base panel declares as a child of its `main` entry. The drawer passes a file name and the complete content — text, or bytes — and the first entry whose selector claims them draws the document; the Markdown and PDF renderers register there, so a Markdown file reads as a document and a PDF as its pages with the PDF.js runtime the Sidebar already ships, rather than a second copy of it in this package. A chain rather than a keyed slot, because the drawer then needs neither the preview registry nor the implementation ids: an unclaimed document, or a composition without the preview package, falls to the drawer's own drawing of text and images. Word, Excel, and PowerPoint still register only in the tab slot, so an Office file reads as not shown here, with the file offered for download.
+
+The drawer slides in from the panel's right edge over a fading scrim and plays both in reverse on the way out. It stays mounted until its own `animationend`, and reduced motion shortens the animations to a millisecond rather than removing them, so that end still arrives. A member can copy the document's text when it has any and save the original file when the Control Plane served one; parsed text standing in for a file over the bound is never offered as that file.
 
 ## Capability and package topology
 
@@ -58,6 +60,7 @@ That cuts the panel off from the right Sidebar's registered document bodies, whi
 | `packages/knowledge/tool-knowledge` | The prompt section and search request for a document-level scope |
 | `packages/api/knowledge-controller` | `directory`, `documents`, `documentContent`, and `search` remotes for the browser |
 | `packages/client/ui-knowledge-panels` (new) | The two navigation rows, the two panels, and the document drawer |
+| `packages/client/ui-sidebar-documentpreview` | The root-scoped `document.view` chain, with its Markdown and PDF renderers registered there |
 | `packages/bundle/team` | The composition rows that mount the new client package |
 
 The catalog stays a catalog of knowledge bases. A document is not a governed resource, is not synchronized, and gets no durable row: it exists upstream, it is named by a reference the gateway can verify, and the grant that admits it is the one on its knowledge base.
@@ -112,7 +115,16 @@ Opening a conversation about a document creates a chat Session: a member reading
 
 A Team-only preset holding the same composition was the alternative. Its root would have had to be an absolute path inside an installed bundle, resolved at load in a packaged Runner, and the chat preset already carries a per-session tool in exactly this way. The price of the chosen form is on the restriction row: a name in `allowWhenRegistered` gets no misspelling check, and the list is read once at mount.
 
-The document shows above the composer the way an attached file does, one chip per document from the `ui-knowledge` dock, and its × takes it off; the last one off turns knowledge off rather than widening to a knowledge base the member never chose.
+The document shows inside the composer the way an attached file does: `ui-conversation` gained a `conversation.input.context` list seat at the top of the composer card, because the draft attachment rail is a single slot `ui-attachment` owns, and `ui-knowledge` draws one card per document there in the attached-file card's shape — kind, title, knowledge base. Its × takes the document off; the last one off turns knowledge off rather than widening to a knowledge base the member never chose.
+
+<a id="a-retrieval-ranks-documents"></a>
+## A retrieval ranks documents
+
+The retrieval panel ranks documents, ten by default, rather than passages. A passage ranking names few documents because passages cluster in long ones: against the live deployment, 年度报告 — which every page header of every annual report carries — returned its first 10 passages from 2 reports, 50 from 5, 100 from 8, and 200 from 18. A member choosing a document needs the documents.
+
+`KnowledgeSearchRequest.maxDocuments` asks for that ranking and the WeKnora provider does the work on the Control Plane: it reads `documentSearchCandidates` passages (200, about a second, 18 to 39 distinct documents across the probed queries), keeps each document at its first passage's rank with at most `passagesPerDocument` passages, and stops at the documents asked for. Grouping on the Control Plane is the point: 200 candidates are about a megabyte, and only the grouped answer crosses to the Runner and the browser.
+
+No protocol version marks the field. A Control Plane that predates it reads the search route by named keys and ranks passages — fewer documents, never a wider scope — which is the rule a version exists to prevent being broken. The count is the controller's `searchDocuments`, a deployment setting rather than a browser argument, and the model's own `knowledge_search` keeps ranking passages, which is what a model reading the text wants.
 
 Two invariants hold in the validator rather than in convention: every document reference must resolve to the knowledge base carrying it, and a scope naming several knowledge bases may not carry documents at all, because the upstream narrowing applies inside one.
 
@@ -167,7 +179,7 @@ Four changes, each shippable on its own.
 ## Acceptance criteria
 
 - Both navigation rows appear under New work task in a Team build, in the member's locale, and are absent from a build that mounts no knowledge service.
-- The 知识库 panel lists exactly the knowledge bases the member's roles authorize, lists one selected knowledge base's documents, and previews a selected document from its original bytes; a document over the byte bound or in an unclaimed type previews as parsed text.
+- The 知识库 panel lists exactly the knowledge bases the member's roles authorize, lists one selected knowledge base's documents, and previews a selected document from its original bytes — a Markdown file as a rendered document and a PDF as its pages; a document over the byte bound or in an unclaimed type previews as parsed text.
 - The 知识库检索 panel returns passages ordered by score with their document titles, starts no model turn, and appends no Session event.
 - Selecting a result opens a chat Session whose folded scope is that one document with its title, whose prompt section names it, whose composer shows it as an attached file, and which is offered `knowledge_search` retrieving from it alone.
 - A document reference whose knowledge base the member does not hold a grant on is refused, and refused identically whether the knowledge base is unauthorized, disabled, or absent.

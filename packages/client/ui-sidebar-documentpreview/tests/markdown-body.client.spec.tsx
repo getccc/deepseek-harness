@@ -3,7 +3,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, render } from '@testing-library/react'
 import { makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
-import { MarkdownBody, type MarkdownBodyProps } from '../src/client/markdown/MarkdownBody.tsx'
+import { MarkdownBody, MarkdownView, type MarkdownBodyProps, type MarkdownViewProps } from '../src/client/markdown/MarkdownBody.tsx'
 import { en, zh } from '../src/client/markdown/locales.ts'
 import type { DocumentContent } from '../src/client/document/contract.ts'
 
@@ -99,5 +99,18 @@ describe('MarkdownBody', () => {
     expect(view.container.querySelector('[data-document-markdown]')?.textContent).toBe('')
     view.rerender(<MarkdownBody {...props({ kind: 'bytes', data: new TextEncoder().encode('text') })} />)
     expect(view.container.childElementCount).toBe(0)
+  })
+})
+
+describe('MarkdownView', () => {
+  it('renders a claimed complete document settled, with localized code chrome', () => {
+    const text = '# Notes\n\nValue $x^2$.\n\n```ts\nconst answer = 42\n```'
+    // The view reads its claimed text and locale; the owner's own props are unused here.
+    const props = { fileName: 'notes.md', content: { kind: 'text', text }, matched: text, t: makeTranslate(zh) }
+    const view = render(<MarkdownView {...props as unknown as MarkdownViewProps} />)
+    expect(view.getByRole('heading', { name: 'Notes' })).toBeDefined()
+    // Math renders only in a settled parse, so its presence shows the view is not streaming.
+    expect(view.container.querySelector('.katex')).not.toBeNull()
+    expect(view.getByRole('button', { name: '复制' })).toBeDefined()
   })
 })

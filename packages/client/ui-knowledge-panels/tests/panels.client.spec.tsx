@@ -5,13 +5,15 @@
  * panel that rendered an empty list would collapse into one — and what a
  * result row does when it is selected.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { ReactNode } from 'react'
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
 import type {
   KnowledgeChoice, KnowledgeDocumentContentView, KnowledgeDocumentView, KnowledgeDocumentsView,
   KnowledgePassageView, KnowledgeSearchView,
 } from '@deepseek-ai/dsh-api-knowledge-controller/types'
+import type { DocumentViewOwnerProps } from '@deepseek-ai/dsh-client-ui-sidebar-documentpreview/client'
 import { KnowledgeBasesGlyph, KnowledgeSearchGlyph } from '../src/client/Glyphs.tsx'
 import { KnowledgeBasesPanel, type KnowledgeBasesPanelProps } from '../src/client/KnowledgeBasesPanel.tsx'
 import { KnowledgeSearchPanel, type KnowledgeSearchPanelProps } from '../src/client/KnowledgeSearchPanel.tsx'
@@ -78,15 +80,19 @@ function textContent(patch: Partial<Extract<KnowledgeDocumentContentView, { kind
   }
 }
 
+/** A view chain with no renderer registered: every document is the owner's to draw. */
+const unclaimed = ((_key: string, _owner: unknown, opts?: { fallback?: ReactNode }) => opts?.fallback) as KnowledgeBasesPanelProps['renderSlotChain']
+
 /** Render the knowledge-base list over scripted faces. */
 function renderBases(
   directory: () => Promise<readonly KnowledgeChoice[]>,
   documents: (knowledgeRef: string, page: number) => Promise<KnowledgeDocumentsView> = () => Promise.resolve(documentPage()),
   content: (docRef: string) => Promise<KnowledgeDocumentContentView> = () => Promise.resolve(textContent()),
+  renderSlotChain: KnowledgeBasesPanelProps['renderSlotChain'] = unclaimed,
 ) {
   const listed = vi.fn(documents)
   const read = vi.fn(content)
-  const props = { directory, documents: listed, content: read, t } as unknown as KnowledgeBasesPanelProps
+  const props = { directory, documents: listed, content: read, renderSlotChain, t } as unknown as KnowledgeBasesPanelProps
   return { documents: listed, content: read, view: render(<KnowledgeBasesPanel {...props} />) }
 }
 
@@ -627,6 +633,51 @@ describe('one document in the drawer', () => {
     fireEvent.click(await screen.findByRole('button', { name: /运维手册/u }))
   }
 
+  /**
+   * End an animation on an element the way React hears it here: jsdom has no
+   * `AnimationEvent`, so React DOM listens for the prefixed event name.
+   */
+  function endAnimation(element: Element): void {
+    fireEvent(element, new Event('webkitAnimationEnd', { bubbles: true }))
+  }
+
+  /** Every document the view chain was offered, in order. */
+  const offered: DocumentViewOwnerProps[] = []
+
+  /** A view chain whose one renderer claims Markdown text and PDF bytes, and passes on everything else. */
+  const chain = ((_key: 'document.view', owner: DocumentViewOwnerProps, opts?: { fallback?: ReactNode }) => {
+    offered.push(owner)
+    const { fileName, content } = owner
+    if (content.kind === 'text' && fileName.endsWith('.md')) return <div data-testid="rendered">{`markdown: ${content.text}`}</div>
+    if (content.kind === 'bytes' && fileName.endsWith('.pdf')) return <div data-testid="rendered">{`pdf: ${String(content.data.length)} bytes`}</div>
+    return opts?.fallback
+  }) as KnowledgeBasesPanelProps['renderSlotChain']
+
+  /** A byte answer for the first document. */
+  function bytesContent(fileName: string, contentType: string, base64 = 'AQID'): KnowledgeDocumentContentView {
+    return { kind: 'bytes', docRef: `${REF_A}/doc-1`, fileName, contentType, base64 }
+  }
+
+  /** Object URLs the drawer created and revoked, over a stubbed URL factory. */
+  function objectUrls() {
+    const created: string[] = []
+    const revoked: string[] = []
+    const url = globalThis.URL as unknown as { createObjectURL?: unknown; revokeObjectURL?: unknown }
+    url.createObjectURL = (blob: Blob) => {
+      const href = `blob:${String(created.length)}#${blob.type}`
+      created.push(href)
+      return href
+    }
+    url.revokeObjectURL = (href: string) => { revoked.push(href) }
+    onTestFinished(() => {
+      delete url.createObjectURL
+      delete url.revokeObjectURL
+    })
+    return { created, revoked }
+  }
+
+  beforeEach(() => { offered.length = 0 })
+
   it('asks for nothing until a document is opened', async () => {
     const bases = renderBases(() => Promise.resolve(BASES))
     await choose()
@@ -639,103 +690,170 @@ describe('one document in the drawer', () => {
     ['the close control', () => { fireEvent.click(screen.getByRole('button', { name: '关闭' })) }],
     ['a click beside it', () => { fireEvent.click(screen.getByTestId('knowledge-drawer-scrim')) }],
     ['the Escape key', () => { fireEvent.keyDown(window, { key: 'Escape' }) }],
-    ['another key doing nothing', () => { fireEvent.keyDown(window, { key: 'a' }) }],
-  ])('stays or closes on %s', async (label, act) => {
+  ])('plays its exit on %s, and is gone only when the exit ends', async (_label, act) => {
     renderBases(() => Promise.resolve(BASES))
     await open()
     await screen.findByText('一级故障 30 分钟内响应。')
+    // The end of the entrance closes nothing.
+    endAnimation(screen.getByRole('dialog'))
+    expect(screen.getByRole('dialog')).toBeTruthy()
     act()
-    if (label === 'another key doing nothing') {
-      expect(screen.getByRole('dialog')).toBeTruthy()
-      return
-    }
-    await waitFor(() => { expect(screen.queryByRole('dialog')).toBeNull() })
+    const leaving = screen.getByRole('dialog')
+    // An animation ending inside the document is not the drawer's own.
+    endAnimation(screen.getByText('一级故障 30 分钟内响应。'))
+    expect(screen.getByRole('dialog')).toBe(leaving)
+    endAnimation(leaving)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.queryByTestId('knowledge-drawer-scrim')).toBeNull()
   })
 
-  it('draws parsed text, and says when it was cut', async () => {
+  it('stays open on a key that is not Escape', async () => {
+    renderBases(() => Promise.resolve(BASES))
+    await open()
+    await screen.findByText('一级故障 30 分钟内响应。')
+    fireEvent.keyDown(window, { key: 'a' })
+    endAnimation(screen.getByRole('dialog'))
+    expect(screen.getByRole('dialog')).toBeTruthy()
+  })
+
+  it('draws parsed text itself, says when it was cut, and offers no file to save', async () => {
     const bases = renderBases(
       () => Promise.resolve(BASES), undefined,
       () => Promise.resolve(textContent({ truncated: true })),
+      chain,
     )
     await open()
     await waitFor(() => { expect(bases.content).toHaveBeenCalledWith(`${REF_A}/doc-1`) })
     expect(await screen.findByText('一级故障 30 分钟内响应。')).toBeTruthy()
-    expect(screen.getByText('（内容已截断）')).toBeTruthy()
+    expect(screen.getByText('文档较长，这里只显示解析出的前一部分文本')).toBeTruthy()
+    // A PDF's parsed text is not the PDF: no renderer claims it.
+    expect(offered.at(-1)).toEqual({ fileName: '运维手册.pdf', content: { kind: 'text', text: '一级故障 30 分钟内响应。' } })
+    expect(screen.queryByTestId('rendered')).toBeNull()
+    expect(screen.getByRole('button', { name: '复制内容' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '下载原文件' })).toBeNull()
   })
 
-  it('draws a text file the source served as bytes', async () => {
+  it('offers a Markdown file served as bytes to its renderer as text, and keeps the file to save', async () => {
+    objectUrls()
     renderBases(
       () => Promise.resolve(BASES), undefined,
-      () => Promise.resolve({
-        kind: 'bytes',
-        docRef: `${REF_A}/doc-1`,
-        fileName: '说明.md',
-        contentType: 'text/markdown; charset=utf-8',
-        // "# 标题" in base64, so the decode path is what is being read here.
-        base64: 'IyDmoIfpopg=',
-      }),
+      // "# 标题" in base64, so the decode path is what is being read here.
+      () => Promise.resolve(bytesContent('说明.md', 'text/markdown; charset=utf-8', 'IyDmoIfpopg=')),
+      chain,
+    )
+    await open()
+    expect((await screen.findByTestId('rendered')).textContent).toBe('markdown: # 标题')
+    expect(screen.getByRole('button', { name: '复制内容' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '下载原文件' })).toBeTruthy()
+  })
+
+  it('draws a text file no renderer claims as it was served', async () => {
+    objectUrls()
+    renderBases(
+      () => Promise.resolve(BASES), undefined,
+      () => Promise.resolve(bytesContent('说明.txt', 'text/plain; charset=utf-8', 'IyDmoIfpopg=')),
+      chain,
     )
     await open()
     expect(await screen.findByText('# 标题')).toBeTruthy()
+    expect(screen.queryByTestId('rendered')).toBeNull()
   })
 
-  it.each([
-    ['an image', 'image/png', 'img'],
-    ['a PDF', 'application/pdf', 'object'],
-  ])('draws %s from an object URL', async (_label, contentType, tag) => {
-    const created: string[] = []
-    const revoked: string[] = []
-    const url = globalThis.URL as unknown as { createObjectURL?: unknown; revokeObjectURL?: unknown }
-    url.createObjectURL = (blob: Blob) => {
-      const href = `blob:${String(created.length)}#${blob.type}`
-      created.push(href)
-      return href
-    }
-    url.revokeObjectURL = (href: string) => { revoked.push(href) }
-    const bases = renderBases(
-      () => Promise.resolve(BASES), undefined,
-      () => Promise.resolve({
-        kind: 'bytes', docRef: `${REF_A}/doc-1`, fileName: '图.png', contentType, base64: 'AQID',
-      }),
-    )
-    await open()
-    await waitFor(() => { expect(created).toHaveLength(1) })
-    expect(bases.view.container.querySelector(tag)?.getAttribute(tag === 'img' ? 'src' : 'data')).toBe(created[0])
-    // The URL goes away with the column: one that outlived it would keep the
-    // file readable from a page that is no longer showing it.
-    bases.view.unmount()
-    expect(revoked).toEqual(created)
-    delete url.createObjectURL
-    delete url.revokeObjectURL
-  })
-
-  it('says so for a file it cannot draw here', async () => {
-    const url = globalThis.URL as unknown as { createObjectURL?: unknown; revokeObjectURL?: unknown }
-    url.createObjectURL = () => 'blob:office'
-    url.revokeObjectURL = () => {}
+  it('offers a PDF to its renderer as the complete file', async () => {
+    const urls = objectUrls()
     renderBases(
       () => Promise.resolve(BASES), undefined,
-      () => Promise.resolve({
-        kind: 'bytes',
-        docRef: `${REF_A}/doc-1`,
-        fileName: '报告.docx',
-        contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        base64: 'AQID',
-      }),
+      () => Promise.resolve(bytesContent('运维手册.pdf', 'application/pdf')),
+      chain,
     )
     await open()
-    expect(await screen.findByText('这里还不能显示这种文件，请在对话中打开它')).toBeTruthy()
-    delete url.createObjectURL
-    delete url.revokeObjectURL
+    expect((await screen.findByTestId('rendered')).textContent).toBe('pdf: 3 bytes')
+    expect(offered.at(-1)).toEqual({ fileName: '运维手册.pdf', content: { kind: 'bytes', data: new Uint8Array([1, 2, 3]) } })
+    // A file with no text has nothing to copy, but is still a file to save.
+    expect(screen.queryByRole('button', { name: '复制内容' })).toBeNull()
+    expect(screen.getByRole('button', { name: '下载原文件' })).toBeTruthy()
+    expect(urls.created).toEqual(['blob:0#application/pdf'])
   })
 
-  it('reports a read it could not complete', async () => {
+  it('draws an image itself from an object URL, and revokes it with the drawer', async () => {
+    const urls = objectUrls()
+    const bases = renderBases(
+      () => Promise.resolve(BASES), undefined,
+      () => Promise.resolve(bytesContent('图.png', 'image/png')),
+      chain,
+    )
+    await open()
+    expect((await screen.findByRole('img', { name: '图.png' })).getAttribute('src')).toBe(urls.created[0])
+    // The URL goes away with the drawer: one that outlived it would keep the
+    // file readable from a page that is no longer showing it.
+    bases.view.unmount()
+    expect(urls.revoked).toEqual(urls.created)
+  })
+
+  it('says a file nothing can draw cannot be shown here, and still offers the file', async () => {
+    objectUrls()
+    renderBases(
+      () => Promise.resolve(BASES), undefined,
+      () => Promise.resolve(bytesContent('报告.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')),
+      chain,
+    )
+    await open()
+    expect(await screen.findByText('这里还不能显示这种文件，可以下载后查看')).toBeTruthy()
+    expect(screen.getByRole('button', { name: '下载原文件' })).toBeTruthy()
+  })
+
+  it('saves the served file under its own name', async () => {
+    const urls = objectUrls()
+    const saved: { href: string; download: string }[] = []
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      saved.push({ href: this.getAttribute('href') ?? '', download: this.download })
+    })
+    onTestFinished(() => { click.mockRestore() })
+    renderBases(
+      () => Promise.resolve(BASES), undefined,
+      () => Promise.resolve(bytesContent('运维手册.pdf', 'application/pdf')),
+      chain,
+    )
+    await open()
+    fireEvent.click(await screen.findByRole('button', { name: '下载原文件' }))
+    expect(saved).toEqual([{ href: urls.created[0], download: '运维手册.pdf' }])
+  })
+
+  it('copies the text, says so for a moment, and says nothing when the host refuses', async () => {
+    const accepted: string[] = []
+    let refuse = false
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: (text: string) => {
+          if (refuse) return Promise.reject(new Error('denied'))
+          accepted.push(text)
+          return Promise.resolve()
+        },
+      },
+    })
+    onTestFinished(() => { Reflect.deleteProperty(navigator, 'clipboard') })
+    renderBases(() => Promise.resolve(BASES))
+    await open()
+    fireEvent.click(await screen.findByRole('button', { name: '复制内容' }))
+    expect(await screen.findByRole('button', { name: '已复制' })).toBeTruthy()
+    expect(accepted).toEqual(['一级故障 30 分钟内响应。'])
+    expect(await screen.findByRole('button', { name: '复制内容' }, { timeout: 2000 })).toBeTruthy()
+    refuse = true
+    fireEvent.click(screen.getByRole('button', { name: '复制内容' }))
+    await settled()
+    expect(screen.queryByRole('button', { name: '已复制' })).toBeNull()
+  })
+
+  it('reports a read it could not complete, and offers only to close', async () => {
     renderBases(
       () => Promise.resolve(BASES), undefined,
       () => Promise.reject(new Error('refused')),
     )
     await open()
     expect(await screen.findByText('文档内容读取失败')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: '复制内容' })).toBeNull()
+    expect(screen.queryByRole('button', { name: '下载原文件' })).toBeNull()
   })
 
   it('forgets the open document when another knowledge base is opened', async () => {
@@ -750,7 +868,7 @@ describe('one document in the drawer', () => {
   it.each([
     ['answers', (settle: ContentSettle) => { settle.resolve(textContent()) }],
     ['is refused', (settle: ContentSettle) => { settle.reject(new Error('too late')) }],
-  ])('ignores a read that %s after the column is gone', async (_label, finish) => {
+  ])('ignores a read that %s after the drawer is gone', async (_label, finish) => {
     const settle = {} as ContentSettle
     const bases = renderBases(
       () => Promise.resolve(BASES), undefined,

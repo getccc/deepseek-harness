@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-/** Markdown metadata, deferred slot registration, localization, and unload through the real renderer. */
+/** Markdown metadata, deferred slot and view registration, localization, and unload through the real renderer. */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { act } from '@testing-library/react'
 import { SlotTestRuntime } from '@deepseek-ai/dsh-client-test-runtime'
@@ -7,6 +7,7 @@ import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import type { UseSidebarRightTabInfo } from '@deepseek-ai/dsh-client-ui-sidebar-right/client'
 import { DocumentPreviewRegistry } from '../src/client/document/registry.ts'
 import { documentTabInfoFactory } from '../src/client/document/contract.ts'
+import type { DocumentViewOwnerProps } from '../src/client/document/view.ts'
 import { apply, MARKDOWN_BODY_ID, markdownDefinition } from '../src/client/markdown/index.ts'
 
 const runtimes: SlotTestRuntime[] = []
@@ -74,5 +75,41 @@ describe('Markdown implementation registration', () => {
     await runtime.mount({ inject: ['slots', 'locale', 'documentPreviews'], apply })
     expect(previews.getSnapshot()).toHaveLength(1)
     expect(view.getByRole('button', { name: '复制' })).toBeDefined()
+  })
+})
+
+describe('Markdown complete-document view', () => {
+  it('claims whole Markdown text once the view chain is declared, leaves other documents to the owner, and leaves on unload', async () => {
+    const runtime = await SlotTestRuntime.create()
+    runtimes.push(runtime)
+    runtime.ctx.provide('documentPreviews', new DocumentPreviewRegistry())
+    const locale = new LocaleRuntime(runtime.ctx)
+    runtime.ctx.provide('locale', locale)
+    runtime.slots.installLocale(locale)
+    locale.setLocale('en')
+    const feature = await runtime.mount({ inject: ['slots', 'locale', 'documentPreviews'], apply })
+    expect(runtime.slots.entries('document.view')).toEqual([])
+    const documents: readonly DocumentViewOwnerProps[] = [
+      { fileName: 'docs/NOTES.MD', content: { kind: 'text', text: '# Notes' } },
+      { fileName: 'notes.txt', content: { kind: 'text', text: '# Plain' } },
+      { fileName: 'notes.md', content: { kind: 'bytes', data: new TextEncoder().encode('# Bytes') } },
+    ]
+    await runtime.root.declare({
+      'document.view': { kind: 'chain', scope: 'root' },
+    }, ({ renderSlotChain }) => documents.map(owner => (
+      <div key={owner.fileName} data-view={owner.fileName}>
+        {renderSlotChain('document.view', owner, { fallback: <span>owner fallback</span> })}
+      </div>
+    )))
+    const view = runtime.renderRoot()
+    expect(runtime.slots.entries('document.view')).toHaveLength(1)
+    const drawn = (fileName: string) => view.container.querySelector(`[data-view="${fileName}"]`)?.textContent
+    expect(view.getByRole('heading', { name: 'Notes' })).toBeDefined()
+    expect(drawn('notes.txt')).toBe('owner fallback')
+    expect(drawn('notes.md')).toBe('owner fallback')
+
+    await feature.dispose()
+    expect(runtime.slots.entries('document.view')).toEqual([])
+    expect(drawn('docs/NOTES.MD')).toBe('owner fallback')
   })
 })

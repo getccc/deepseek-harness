@@ -48,13 +48,15 @@ Both rows register into the sidebar's `sidebar.panellist` seat and address a `ma
 
 ### How a member moves through it
 
-Two levels, not columns: the cards, then that knowledge base's documents. The breadcrumb above them names the path — the knowledge base is where it ends — and its earlier step is the control that goes back up; going back drops the document list and closes the drawer, because both belong to the knowledge base that was open. One document opens in a drawer over the right of the panel, which closes on its own control, on a click beside it, or on Escape.
+Two levels, not columns: the cards, then that knowledge base's documents. The breadcrumb above them names the path — the knowledge base is where it ends — and its earlier step is the control that goes back up; going back drops the document list and closes the drawer, because both belong to the knowledge base that was open. One document opens in a drawer that slides in over the right of the panel and slides out when it closes — on its own control, on a click beside it, or on Escape; with reduced motion both movements are immediate.
+
+The drawer names the document at the top and offers, beside its close control, to copy the document's text when it has any and to save the original file when the Control Plane served one. The document sits on a sheet below. A Markdown file is drawn as a document and a PDF as its pages, each by the renderer `dsh-client-ui-sidebar-documentpreview` registers in the `document.view` chain; text no renderer claims is shown as served, an image is drawn from its bytes, and any other file says it cannot be shown here while still offering the file. The Control Plane's parsed text for a file over its bound is never offered to a PDF renderer, and a note says when that text was cut.
 
 A document card's footer carries its type, size, and day. Its state appears only when it is not the ordinary one — 解析中 or 不可检索 — because a searchable document has nothing to say, while one that is not is otherwise indistinguishable from one a retrieval simply did not rank.
 
 The pager holds the panel's bottom right. With a total it names the total and at most seven page slots: the first and last page, the current one with its neighbours, and an ellipsis for the runs between, sliding to either end near it so the pager keeps one width. Without a total it names only the current page and offers the next while the page is full.
 
-The retrieval panel is a search page: a heading, a query box with its scope menu and send control, and what lies under it. Before a search that is the documents in scope — the first page of each knowledge base, newest first across them, at most 30, each with its file's kind, the source's summary, and its knowledge base — so a member without a question can still pick a document. A knowledge base whose listing fails is left out; only a scope whose every listing failed says so. Enter searches (Shift+Enter is a new line, and an IME still composing owns its Enter), and the answer replaces the documents: one card per document at its best passage's rank, the first three set apart, the passages with the query's whitespace-separated terms marked, and the score as the provider gave it to two significant figures. A new scope asks again; an emptied query goes back to the documents.
+The retrieval panel is a search page: a heading, a query box with its scope menu and send control, and what lies under it. Before a search that is the documents in scope — the first page of each knowledge base, newest first across them, at most 30, each with its file's kind, the source's summary, and its knowledge base — so a member without a question can still pick a document. A knowledge base whose listing fails is left out; only a scope whose every listing failed says so. Enter searches (Shift+Enter is a new line, and an IME still composing owns its Enter), and the answer replaces the documents with the controller's document ranking — ten documents unless the deployment says otherwise, each at its best passage's rank, the first three set apart, the passages with the query's whitespace-separated terms marked, and the score as the provider gave it to two significant figures. A new scope asks again; an emptied query goes back to the documents.
 
 Selecting any card — a document or a result — opens a chat narrowed to that document by its title, with the document above an empty composer. Only the one score the provider fuses is shown: the source answers no separate term or vector score to show beside it.
 
@@ -78,8 +80,8 @@ Ranking is the provider's. The panel groups passages under their document and sh
 | File | Holds |
 |---|---|
 | [`src/client/index.ts`](src/client/index.ts) | The two rows, the two panels, and the Remote calls behind them |
-| [`src/client/KnowledgeBasesPanel.tsx`](src/client/KnowledgeBasesPanel.tsx) | The knowledge-base cards, the breadcrumb, the document cards, and the drawer |
-| [`src/client/DocumentPreview.tsx`](src/client/DocumentPreview.tsx) | One document, drawn from what the Control Plane served |
+| [`src/client/KnowledgeBasesPanel.tsx`](src/client/KnowledgeBasesPanel.tsx) | The knowledge-base cards, the breadcrumb, the document cards, and when the drawer opens and leaves |
+| [`src/client/DocumentDrawer.tsx`](src/client/DocumentDrawer.tsx) | One document in the drawer: its read, its copy and download controls, and the `document.view` chain with the drawer's own drawing as fallback |
 | [`src/client/KnowledgeSearchPanel.tsx`](src/client/KnowledgeSearchPanel.tsx) | The query box and scope menu, the documents before a search, and the ranked answer |
 | [`src/client/results.ts`](src/client/results.ts) | Grouping passages under their document, how a score is written, and which runs of text a query marks |
 | [`src/client/documents.ts`](src/client/documents.ts) | How a document is named and dated, and how several listings become one feed |
@@ -91,6 +93,7 @@ Ranking is the provider's. The panel groups passages under their document and sh
 
 - [dsh-client-ui-knowledge](../ui-knowledge/README.md) — the `/knowledge` picker and the composer chip, and the namespace mount these panels wait for.
 - [dsh-api-knowledge-controller](../../api/knowledge-controller/README.md) — the Remote methods the panels call.
+- [dsh-client-ui-sidebar-documentpreview](../ui-sidebar-documentpreview/README.md) — the `document.view` chain and the Markdown and PDF renderers that draw a document in the drawer.
 - [Member knowledge browsing Agent Note](../../../.agents/notes/proposed/feature/2026-09-16-member-knowledge-browsing-and-retrieval.md) — why the panels are global, and what the later deliveries add.
 
 <a id="model-experience"></a>
@@ -108,7 +111,7 @@ No direct invalidation. A discussion opens a new Session, so there is no prefix 
 
 These limits define when the panels are incomplete on their own. They are current package constraints.
 
-- **Office files are not drawn here** — the drawer draws what a browser draws from bytes on its own: a PDF, an image, anything that is text, and the parsed text the Control Plane falls back to. A `.docx`, `.xlsx`, or `.pptx` arrives as bytes and reads as "not here yet", because the renderers for those live behind the right Sidebar's session-scoped document slot and this panel has no Session.
+- **Office files are not drawn here** — the drawer draws what a `document.view` renderer claims (Markdown and PDF today), text, and images. A `.docx`, `.xlsx`, or `.pptx` arrives as bytes and reads as "not here yet" with the file offered for download, because the Office renderers register only in the right Sidebar's session-scoped document slot. A composition without `dsh-client-ui-sidebar-documentpreview` also shows Markdown as plain text and a PDF as "not here yet".
 - **A document list is a page at a time** — there is no search within a knowledge base, no sort, and no folder tree, so finding one document in thousands means paging to it.
 - **A preview is re-read, never kept** — opening the same document twice reads it twice, and nothing is cached between panels or reloads. That is deliberate for a file whose authorization is decided per call.
 - **A document is identified by its title** — passages carry no document reference yet, so two documents sharing one title inside one knowledge base group as one result.

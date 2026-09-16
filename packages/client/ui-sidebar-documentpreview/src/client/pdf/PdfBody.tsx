@@ -1,10 +1,11 @@
-/** PDF page presentation; binary content and tab information come from the document owner. */
+/** PDF page presentation for a Sidebar document tab and for a complete-document view; bytes come from the owner. */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import clsx from 'clsx'
 import { Button } from '@deepseek-ai/dsh-client-ui-primitives'
-import type { PropsLocale, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
+import type { PropsLocale, PropsRuntime, PropsStore } from '@deepseek-ai/dsh-client-ui-slots'
 import type { TabId } from '@deepseek-ai/dsh-client-ui-dockkit'
 import type { DocumentPreviewProps } from '../document/contract.ts'
+import type {} from '../document/view.ts'
 import { LoadingIndicator } from '../LoadingIndicator.tsx'
 import { DEFAULT_PDF_VIEW, type PdfStore } from './store.ts'
 import { renderPdfPage, type PdfDocument } from './document.ts'
@@ -26,6 +27,9 @@ export interface PdfBodyInjected {
 /** Standard document props plus the PDF entry's locale, viewing store, and lifetime callback. */
 export type PdfBodyProps = DocumentPreviewProps & PropsLocale<'sidebarPdf'> & PropsStore<PdfStore> & PdfBodyInjected
 
+/** A complete-document view entry's inputs: the claimed bytes and the PDF entry's locale. */
+export type PdfViewProps = PropsRuntime<'document.view'> & { readonly matched: Uint8Array<ArrayBuffer> } & PropsLocale<'sidebarPdf'>
+
 type LoadState =
   | { readonly kind: 'loaded'; readonly data: Uint8Array<ArrayBuffer>; readonly document: PdfDocument }
   | { readonly kind: 'failed'; readonly data: Uint8Array<ArrayBuffer>; readonly error: unknown }
@@ -38,19 +42,55 @@ type LoadState =
 export function PdfBody(props: PdfBodyProps): ReactNode {
   const { tab } = props.useTabInfo()
   const view = props.useStore(state => state.byTab[tab.id] ?? DEFAULT_PDF_VIEW)
-  const data = props.content.kind === 'bytes' ? props.content.data : undefined
-  const [load, setLoad] = useState<LoadState>()
-  const [attempt, setAttempt] = useState(0)
   const { retainTab, actions, t } = props
   const pageVisible = useCallback((page: number): void => {
     actions.page(tab.id, page)
   }, [actions, tab.id])
 
   useEffect(() => { retainTab(tab.id, tab.signal) }, [retainTab, tab.id, tab.signal])
+  if (props.content.kind !== 'bytes') return <p className={css.status} role="alert">{t('unsupported')}</p>
+  return <PdfReader data={props.content.data} lifetime={tab.signal} page={view.page} onVisible={pageVisible} t={t} />
+}
+
+/** A complete-document view keeps no reading position, so a reached page is recorded nowhere. */
+function forgetPage(): void {}
+
+/**
+ * A view has no lifetime beyond its mount, and the reader aborts its own work
+ * on unmount, so the outer lifetime a view passes never ends.
+ */
+const VIEW_LIFETIME = new AbortController().signal
+
+/**
+ * Present one complete PDF claimed from the `document.view` chain, from its first page.
+ * @param props - the claimed bytes and the PDF entry's locale seat.
+ * @returns the PDF reader.
+ */
+export function PdfView({ matched, t }: PdfViewProps): ReactNode {
+  return <PdfReader data={matched} lifetime={VIEW_LIFETIME} page={1} onVisible={forgetPage} t={t} />
+}
+
+/**
+ * Open complete bytes and draw every page as one vertical sequence, rendering
+ * a page once it nears the viewport.
+ * @param props - the bytes, the outer lifetime that ends every load, the page
+ * to render without waiting for the viewport, the reached-page callback, and
+ * the locale seat.
+ * @returns the loading state, a retryable failure, or the page sequence.
+ */
+function PdfReader({ data, lifetime, page, onVisible, t }: {
+  readonly data: Uint8Array<ArrayBuffer>
+  readonly lifetime: AbortSignal
+  readonly page: number
+  readonly onVisible: (page: number) => void
+} & PropsLocale<'sidebarPdf'>): ReactNode {
+  const [load, setLoad] = useState<LoadState>()
+  const [attempt, setAttempt] = useState(0)
+
   useEffect(() => {
-    if (data === undefined || tab.signal.aborted) return
-    const lifetime = new AbortController()
-    const signal = AbortSignal.any([lifetime.signal, tab.signal])
+    if (lifetime.aborted) return
+    const owned = new AbortController()
+    const signal = AbortSignal.any([owned.signal, lifetime])
     setLoad(undefined)
     const session = openPdf(data, signal, (error) => {
       if (!signal.aborted) setLoad({ kind: 'failed', data, error })
@@ -60,11 +100,10 @@ export function PdfBody(props: PdfBodyProps): ReactNode {
       (error: unknown) => { if (!signal.aborted) setLoad({ kind: 'failed', data, error }) },
     )
     return () => {
-      lifetime.abort()
+      owned.abort()
       void session.dispose()
     }
-  }, [data, tab.signal, attempt])
-  if (data === undefined) return <p className={css.status} role="alert">{t('unsupported')}</p>
+  }, [data, lifetime, attempt])
   // The open wait centres like the owner's read spinner before it, so one
   // spinner position covers everything until the first page block appears.
   if (load?.data !== data) return <LoadingIndicator className={clsx(css.status, css.opening)} label={t('loading')} />
@@ -77,7 +116,7 @@ export function PdfBody(props: PdfBodyProps): ReactNode {
   return <section className={css.body} data-pdf-preview>
     {Array.from({ length: load.document.numPages }, (_, index) => (
       <PdfPage key={index} document={load.document} page={index + 1}
-        requested={index === 0 || view.page === index + 1} onVisible={pageVisible} signal={tab.signal} t={t} />
+        requested={index === 0 || page === index + 1} onVisible={onVisible} signal={lifetime} t={t} />
     ))}
   </section>
 }

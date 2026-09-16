@@ -15,6 +15,7 @@ import {
   type KnowledgeSearchRequest, type KnowledgeSearchResult,
 } from '@deepseek-ai/dsh-knowledge'
 import type { SessionEvent } from '@deepseek-ai/dsh-session'
+import { pdfFixture } from '../../../packages/client/ui-sidebar-documentpreview/tests/pdf-fixture.ts'
 import { launchWebScaffold, watchConsole, type WebScaffold } from './scaffold.ts'
 import { saveFailureShot } from './support.ts'
 
@@ -82,12 +83,19 @@ class FixtureKnowledge extends Knowledge {
   }
 
   documentContent(request: KnowledgeDocumentRequest): Promise<KnowledgeDocumentContent> {
+    // The manual is a PDF and the drill plan a Markdown file, each served as
+    // its original bytes the way a Control Plane serves a file under its bound.
+    if (request.docRef.includes('/doc-1-')) {
+      return Promise.resolve({
+        kind: 'bytes', docRef: request.docRef, fileName: '园区运维手册v3.pdf', contentType: 'application/pdf', bytes: pdfFixture(),
+      })
+    }
     return Promise.resolve({
-      kind: 'text',
+      kind: 'bytes',
       docRef: request.docRef,
       fileName: '应急演练实施方案.md',
-      text: '# 2026 年度应急演练实施方案\n\n演练覆盖消防、电力中断、危化品泄漏三类场景。',
-      truncated: false,
+      contentType: 'text/markdown; charset=utf-8',
+      bytes: new TextEncoder().encode('# 2026 年度应急演练实施方案\n\n演练覆盖消防、电力中断、危化品泄漏三类场景。\n\n> 每季度至少组织一次综合演练。\n'),
     })
   }
 
@@ -184,13 +192,28 @@ describe('web e2e: knowledge panels', () => {
     await pager.getByRole('button', { name: '第 1 页' }).click()
     await expect.poll(async () => await pager.getByRole('button', { name: '第 1 页' }).getAttribute('aria-current')).toBe('page')
 
-    // A document opens in the drawer beside the list, and the breadcrumb is
-    // what takes a member back to the cards.
+    // A document opens in the drawer beside the list, drawn by the renderer
+    // registered for its kind: Markdown as a document, a PDF as its pages.
     await page.getByRole('button', { name: /2026 年度应急演练实施方案/u }).click()
     const drawer = page.getByRole('dialog', { name: '2026 年度应急演练实施方案' })
-    await drawer.getByText('演练覆盖消防、电力中断、危化品泄漏三类场景。').waitFor({ timeout: 15_000 })
+    const markdown = drawer.locator('[data-document-markdown]')
+    await markdown.getByRole('heading', { name: '2026 年度应急演练实施方案' }).waitFor({ timeout: 15_000 })
+    await markdown.locator('blockquote', { hasText: '每季度至少组织一次综合演练。' }).waitFor()
+    await drawer.getByRole('button', { name: '复制内容' }).waitFor()
+    await drawer.getByRole('button', { name: '下载原文件' }).waitFor()
+    // The drawer leaves once its exit has played.
     await drawer.getByRole('button', { name: '关闭' }).click()
     await expect.poll(async () => await page.getByRole('dialog').count()).toBe(0)
+
+    await page.getByRole('button', { name: /园区运维手册 v3/u }).click()
+    const manual = page.getByRole('dialog', { name: '园区运维手册 v3' })
+    await manual.getByRole('img', { name: 'PDF 第 1 页', exact: true }).waitFor({ state: 'visible', timeout: 30_000 })
+    expect(await manual.locator('[data-pdf-page]').count()).toBe(2)
+    expect(await manual.getByRole('button', { name: '复制内容' }).count()).toBe(0)
+    await page.keyboard.press('Escape')
+    await expect.poll(async () => await page.getByRole('dialog').count()).toBe(0)
+
+    // The breadcrumb is what takes a member back to the cards.
     await page.getByRole('button', { name: '知识库', exact: true }).nth(1).click()
     await page.getByText('你有权限的知识库，点击卡片查看其中的文档').waitFor()
     expect(tripwire.pageErrors).toEqual([])

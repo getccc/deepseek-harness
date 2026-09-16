@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import clsx from 'clsx'
 import { Button, IconDataOutline16, fileSizeText } from '@deepseek-ai/dsh-client-ui-primitives'
-import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
+import type { InjectFace, PropsLocale, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type {
   KnowledgeChoice, KnowledgeDocumentContentView, KnowledgeDocumentsView, KnowledgeDocumentView,
 } from '@deepseek-ai/dsh-api-knowledge-controller/types'
@@ -11,7 +11,9 @@ import type {
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
-import { DocumentPreview } from './DocumentPreview.tsx'
+// Type-only: pulls the document preview SlotMap merge (the `document.view` chain).
+import type {} from '@deepseek-ai/dsh-client-ui-sidebar-documentpreview/client'
+import { DocumentDrawer } from './DocumentDrawer.tsx'
 import { dayText, titleOf } from './documents.ts'
 import type { Translate } from './locales.ts'
 import { Pager } from './Pager.tsx'
@@ -27,10 +29,11 @@ export interface KnowledgeBasesInjected {
   content: (docRef: string) => Promise<KnowledgeDocumentContentView>
 }
 
-/** Full panel props: the main slot's runtime share, the plugin's face, and the locale seat. */
+/** Full panel props: the main slot's runtime share, the plugin's face, the document view chain, and the locale seat. */
 export type KnowledgeBasesPanelProps =
   PropsRuntime<'main'>
   & InjectFace<KnowledgeBasesInjected>
+  & PropsRenderSlots<'document.view'>
   & PropsLocale<'knowledgePanels'>
 
 /** What either level is showing right now. */
@@ -74,10 +77,10 @@ function DocumentFacts({ document, t }: { readonly document: KnowledgeDocumentVi
  * member who cannot tell those apart learns the wrong thing. The document list
  * is read the same way, per knowledge base and per page, and a document's
  * content per document opened.
- * @param props - the main slot's runtime share, the plugin's face, and the locale seat.
+ * @param props - the main slot's runtime share, the plugin's face, the document view chain, and the locale seat.
  * @returns the panel element tree.
  */
-export function KnowledgeBasesPanel({ directory, documents, content, t }: KnowledgeBasesPanelProps) {
+export function KnowledgeBasesPanel({ directory, documents, content, renderSlotChain, t }: KnowledgeBasesPanelProps) {
   const [phase, setPhase] = useState<Phase>('loading')
   const [entries, setEntries] = useState<readonly KnowledgeChoice[]>([])
   const [attempt, setAttempt] = useState(0)
@@ -86,6 +89,7 @@ export function KnowledgeBasesPanel({ directory, documents, content, t }: Knowle
   const [docsPhase, setDocsPhase] = useState<Phase>('loading')
   const [docs, setDocs] = useState<KnowledgeDocumentsView | undefined>(undefined)
   const [opened, setOpened] = useState<KnowledgeDocumentView | undefined>(undefined)
+  const [closing, setClosing] = useState(false)
 
   useEffect(() => {
     let live = true
@@ -119,23 +123,30 @@ export function KnowledgeBasesPanel({ directory, documents, content, t }: Knowle
   useEffect(() => {
     if (opened === undefined) return
     const close = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') setOpened(undefined)
+      if (event.key === 'Escape') setClosing(true)
     }
     window.addEventListener('keydown', close)
     return () => { window.removeEventListener('keydown', close) }
   }, [opened])
 
+  // The drawer is gone once its exit has played, or at once when the list it
+  // was opened over is replaced.
+  const dismiss = (): void => {
+    setOpened(undefined)
+    setClosing(false)
+  }
+
   const open = (knowledgeRef: string): void => {
     setChosen(knowledgeRef)
     setPage(1)
     setDocs(undefined)
-    setOpened(undefined)
+    dismiss()
   }
 
   const back = (): void => {
     setChosen(undefined)
     setDocs(undefined)
-    setOpened(undefined)
+    dismiss()
   }
 
   const rows = docs?.documents ?? []
@@ -251,27 +262,17 @@ export function KnowledgeBasesPanel({ directory, documents, content, t }: Knowle
       )}
 
       {opened !== undefined && (
-        <>
-          {/* The scrim repeats the drawer's own close control, so it stays out
-              of the accessibility tree rather than offering it twice. */}
-          <button
-            type="button"
-            className={css.scrim}
-            data-testid="knowledge-drawer-scrim"
-            tabIndex={-1}
-            aria-hidden="true"
-            onClick={() => { setOpened(undefined) }}
-          />
-          <aside className={css.drawer} role="dialog" aria-label={titleOf(opened)}>
-            <header className={css.drawerHead}>
-              <span className={css.cardName}>{titleOf(opened)}</span>
-              <Button variant="outline" onClick={() => { setOpened(undefined) }}>{t('drawer.close')}</Button>
-            </header>
-            <div className={css.drawerBody}>
-              <DocumentPreview docRef={opened.docRef} content={content} t={t} />
-            </div>
-          </aside>
-        </>
+        <DocumentDrawer
+          key={opened.docRef}
+          title={titleOf(opened)}
+          docRef={opened.docRef}
+          content={content}
+          closing={closing}
+          close={() => { setClosing(true) }}
+          closed={dismiss}
+          renderSlotChain={renderSlotChain}
+          t={t}
+        />
       )}
     </section>
   )

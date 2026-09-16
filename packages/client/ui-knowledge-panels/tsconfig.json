@@ -51,6 +51,9 @@
       "path": "../ui-sidebar"
     },
     {
+      "path": "../ui-sidebar-documentpreview"
+    },
+    {
       "path": "../ui-slots"
     }
   ]

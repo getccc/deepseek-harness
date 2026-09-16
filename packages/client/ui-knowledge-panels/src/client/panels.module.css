@@ -146,41 +146,143 @@
   color: var(--dsw-alias-label-tertiary);
 }
 
-/* One document over the list: the drawer takes the panel's right side, and the
-   scrim behind it closes on a click anywhere else. */
+/* One document over the list: the drawer slides in from the panel's right
+   edge over a scrim that fades in, and both play in reverse on the way out.
+   The closing variants hold their last frame until the drawer is removed. */
 .scrim {
   position: absolute;
   inset: 0;
   border: none;
   background: var(--dsw-alias-bg-mask-1);
   cursor: default;
+  animation: scrim-in var(--ds-transition-duration-slow) var(--ds-ease-in-out) both;
+}
+
+.scrimClosing {
+  animation-name: scrim-out;
 }
 
 .drawer {
   display: flex;
   flex-direction: column;
-  gap: 12px;
   position: absolute;
   inset-block: 0;
   inset-inline-end: 0;
-  width: min(720px, 90%);
-  padding: 20px;
+  width: min(960px, 92%);
   border-inline-start: 1px solid var(--dsw-alias-border-l2);
-  background: var(--dsw-alias-bg-base);
+  background: var(--dsw-alias-bg-module-platform);
   box-shadow: -8px 0 24px rgb(0 0 0 / 12%);
+  animation: drawer-in var(--ds-transition-duration-slow) var(--ds-ease-in-out) both;
 }
 
+.drawerClosing {
+  animation-name: drawer-out;
+}
+
+@keyframes scrim-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scrim-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes drawer-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes drawer-out {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+
+/* Removal waits for the drawer's `animationend`, so reduced motion shortens
+   the animations rather than dropping them. */
+@media (prefers-reduced-motion: reduce) {
+  .scrim,
+  .drawer {
+    animation-duration: 1ms;
+  }
+}
+
+/* The document's title on the drawer's own ground, with its controls at the
+   right: copy, download, close. */
 .drawerHead {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
+  padding: 16px 16px 12px 24px;
 }
 
+.drawerTitle {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dsw-alias-label-primary);
+}
+
+.drawerActions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+}
+
+.drawerAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  outline: none;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  cursor: pointer;
+}
+
+.drawerAction:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.drawerAction:focus-visible {
+  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
+}
+
+/* The scrolling part: the document sits on a sheet inset from the drawer's
+   edges, and the scrollbar runs along the drawer's own right edge. */
 .drawerBody {
   flex: 1 1 auto;
   min-height: 0;
+  padding: 0 24px 24px;
   overflow-y: auto;
+}
+
+.sheet {
+  box-sizing: border-box;
+  min-height: 100%;
+  padding: 24px 28px;
+  border-radius: 12px;
+  background: var(--dsw-alias-bg-base);
+}
+
+.sheetNote {
+  margin: 0 0 12px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-state-warn-label);
 }
 
 .title {
@@ -305,38 +407,21 @@
   color: var(--dsw-alias-label-tertiary);
 }
 
-/* The preview itself: one document, as large as the drawer will give it. */
-.preview {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-  min-height: 0;
-}
-
+/* A document no renderer claimed: its text as served, or its image. */
 .previewText {
   margin: 0;
-  padding: 12px 14px;
-  border: 1px solid var(--dsw-alias-border-l2);
-  border-radius: 10px;
-  background: var(--dsw-alias-bg-module-platform);
-  font-size: 13px;
-  line-height: 21px;
+  font-size: 14px;
+  line-height: 24px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  color: var(--dsw-alias-label-primary);
 }
 
 .previewImage {
+  display: block;
   max-width: 100%;
-  border: 1px solid var(--dsw-alias-border-l2);
-  border-radius: 10px;
-}
-
-.previewFrame {
-  width: 100%;
-  height: 65vh;
-  border: 1px solid var(--dsw-alias-border-l2);
-  border-radius: 10px;
+  margin-inline: auto;
+  border-radius: 8px;
 }
 
 .summary {

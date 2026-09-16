@@ -31,6 +31,8 @@ import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 // Type-only: pulls the sidebar SlotMap merge (the panel-row list seat).
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
+// Type-only: pulls the document preview SlotMap merge (the `document.view` chain).
+import type {} from '@deepseek-ai/dsh-client-ui-sidebar-documentpreview/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import { KnowledgeBasesGlyph, KnowledgeSearchGlyph } from './Glyphs.tsx'
@@ -42,8 +44,8 @@ export { formatScore, groupByDocument, highlight } from './results.ts'
 export type { DocumentGroup, TextRun } from './results.ts'
 export { FEED_LIMIT, dayText, feedOf, titleOf } from './documents.ts'
 export type { FeedDocument } from './documents.ts'
-export type { DocumentPreviewProps } from './DocumentPreview.tsx'
-export { DocumentPreview } from './DocumentPreview.tsx'
+export type { DocumentDrawerProps, PreparedDocument } from './DocumentDrawer.tsx'
+export { DocumentDrawer, prepareDocument } from './DocumentDrawer.tsx'
 export type { KnowledgeBasesInjected, KnowledgeBasesPanelProps } from './KnowledgeBasesPanel.tsx'
 export type { DiscussTarget, KnowledgeSearchInjected, KnowledgeSearchPanelProps } from './KnowledgeSearchPanel.tsx'
 export type { KnowledgePanelsKey, Translate } from './locales.ts'
@@ -167,6 +169,9 @@ function registerUi(ctx: ClientContext): void {
       name: 'main',
       key: BASES_PANEL,
       locale: NS,
+      // A document in the drawer is drawn by whichever renderer claims it;
+      // with none, the drawer draws it itself.
+      children: { 'document.view': { kind: 'chain', scope: 'root' } },
       inject: (): KnowledgeBasesInjected => ({ directory, documents, content }),
     }, KnowledgeBasesPanel)
     yield ctx.slots.register({

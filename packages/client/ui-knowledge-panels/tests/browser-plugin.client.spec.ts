@@ -136,6 +136,14 @@ describe('ui-knowledge-panels browser apply', () => {
     expect(b.slots.entries('main')).toHaveLength(0)
   })
 
+  it('declares the document view chain, so a renderer waiting for it joins and leaves with the panel', async () => {
+    const b = await bench()
+    b.ctx.slots.inject('document.view', () => b.ctx.slots.register({ name: 'document.view', select: () => null }, () => null))
+    expect(b.slots.entries('document.view')).toHaveLength(1)
+    await b.fiber.dispose()
+    expect(b.slots.entries('document.view')).toHaveLength(0)
+  })
+
   it('reads the directory through the Remote and folds a refusal into a rejection', async () => {
     const b = await bench()
     const face = faceOf(b, BASES_PANEL)

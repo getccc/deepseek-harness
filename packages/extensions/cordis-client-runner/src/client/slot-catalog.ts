@@ -1496,6 +1496,46 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     source: 'packages/client/ui-conversation/src/client/contract/slots.ts:155',
   },
   {
+    key: 'document.view',
+    kind: 'chain',
+    scope: 'root',
+    summary: 'One complete document drawn by whichever implementation claims its file name and content kind.',
+    doc: 'One complete document drawn by whichever implementation claims its file\nname and content kind. Entry selectors run in chain order; the first\nnon-null result renders that entry with the result as `matched`, and\nwith no claiming entry the owner\'s fallback renders.',
+    registerOptions: [
+      {
+        name: 'select',
+        requirement: 'required',
+        type: '(owner) => unknown | null',
+        doc: 'Pure routing selector. Entries are tried in ascending order; the first non-null result wins and arrives as the component\'s `matched` prop. All-null falls through to the owner\'s fallback.',
+      },
+    ],
+    ownerProps: [
+      '/** What the owner of a `document.view` occurrence passes to every entry\'s selector. */\nexport interface DocumentViewOwnerProps {\n  /** The document\'s file name; its suffix is what an entry\'s selector matches. */\n  readonly fileName: string\n  readonly content: DocumentViewContent\n}',
+    ],
+    ownerPropsReferences: [
+      'DocumentViewContent',
+    ],
+    standardProps: [
+      'useResource: UseResource',
+      'useWorkspaces: SnapshotSelectorHook<WorkspaceSnapshot>',
+      'usePanelInfo: UsePanelInfo',
+      'useSessions: UseSessions',
+      'useSessionPendingInteraction: UseSessionPendingInteraction',
+      'useWorkspaces: SnapshotSelectorHook<WorkspaceSnapshot>',
+    ],
+    keyDomain: '',
+    hookContext: '',
+    slotInject: '',
+    declaredBy: 'an entry in \'main\' (client-ui-knowledge-panels), so it exists while that entry is mounted',
+    occupants: [
+      'client-ui-sidebar-documentpreview MarkdownView',
+      'client-ui-sidebar-documentpreview PdfView',
+    ],
+    replaceRisk: 'none',
+    example: 'return {\n  inject: [\'slots\'],\n  apply(ctx) {\n    ctx.slots.inject(\'document.view\', () => ctx.slots.register(\n      { name: \'document.view\', select: owner => null },\n      () => React.createElement(\'div\', null, \'hello\'),\n    ))\n  },\n}',
+    source: 'packages/client/ui-sidebar-documentpreview/src/client/document/view.ts:29',
+  },
+  {
     key: 'main',
     kind: 'keyed',
     scope: 'root',

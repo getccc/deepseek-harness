@@ -32,6 +32,8 @@ kind: "package-reference"
 
 文档实现在 `ctx.documentPreviews.register({ id, extensions, binaryExtensions?, priority, title, loading, wrap? })` 注册元数据，并以相同 `id` 向 keyed、Session 作用域的子 slot `sidebar.right.tab.document` 注册正文。`binaryExtensions` 列出 `extensions` 中字节不可按文本阅读的后缀；匹配这类后缀的文件在其查看器选项中不再提供纯文本兜底。两处注册都由 effect 持有，通过 `ctx.slots.inject` 等待子 slot。正文接收 `resourceAddress`、准备好的 `content`、`wrap`、`scrollportRef` 和标准 `useTabInfo`/`useResource` 钩子，不接收自定义资源加载器。拥有内部滚动元素的渲染器把 `scrollportRef` 挂到该元素上；该元素卸载后，owner 恢复使用共享正文。元数据声明 `loading: 'text-pages'` 或 `'bytes-complete'`。注册表保留所有匹配备选：`extension`（默认）优先于 `builtin`，随后按更长的后缀、再按注册顺序排列。所选实现仍可用时，下拉选择保持不变；移除后选择下一个候选。内置正文也使用相同注册方式。
 
+在 Sidebar tab 之外，已持有完整文档的界面在自己的条目中把根作用域的 `document.view` 链声明为子 slot，并以 `renderSlotChain('document.view', { fileName, content }, { fallback })` 渲染，其中 `content` 为 `{ kind: 'text', text }` 或 `{ kind: 'bytes', data }`。条目通过 selector 认领文档：Markdown 条目认领文件名以 `.md` 或 `.markdown` 结尾的文本，PDF 条目认领文件名以 `.pdf` 结尾的字节，两者都使用与注册表相同的后缀匹配规则。认领的条目按已完成的文档、从第一页开始绘制，没有 tab、store 或重新载入；没有条目认领时渲染 owner 的兜底内容。只有某个界面声明这条链时它才存在，因此这些条目通过 `ctx.slots.inject` 等待它。目前声明它的是知识库面板的文档抽屉。
+
 <a id="addresses"></a>
 ## 地址
 
@@ -74,6 +76,7 @@ PNG、JPEG、GIF、WebP、BMP、ICO 和 SVG 通过 Blob URL 在 `<img>` 静态�
 <a id="known-limitations-and-deferred-work"></a>
 - **预览而非编辑。** 查看器不提供文件编辑或共享搜索接口；目录地址以 `not-regular-file` 失败。未知扩展名使用纯文本读取，仍受其 UTF-8/NUL 检查限制。
 - **文本顺序分页，完整文件受限。** 定位到较深处的源码行需要先加载此前各页；PDF、HTML 和图片必须取得 Host `maxFileBytes` 上限内的完整结果。
+- **完整文档视图只绘制 Markdown 与 PDF。** 代码、HTML、图片和 Office 渲染器只注册在 tab slot 中，因此 `document.view` 的 owner 用自己的兜底内容绘制这些文档。
 - **字节视图不恢复滚动位置。** PDF、HTML 与图片的渲染器重新挂载或重新载入时可能回到顶部；图片适配面板宽度、不产生横向滚动，HTML iframe 的滚动属于其不透明浏览上下文。
 - **本地 HTML 依赖集合有限。** 只打包直接引用的经典 `.js` 脚本和 `.css` 样式表。浏览器解析的资源仍受浏览器源与网络规则限制；iframe 不获得运行时文件读取桥接。
 - **换行图标为包内自绘。** `IconWrapFill16` 与 `IconNowrapFill16` 住在 `src/client/icons.tsx`，直到共享图标集提供为止；它们的 props 已与共享图标契约一致。

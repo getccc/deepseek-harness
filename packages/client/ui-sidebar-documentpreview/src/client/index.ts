@@ -46,6 +46,7 @@ export type { TextInjected } from './face.ts'
 export type { ReadWorkspaceFilePage, SessionFile, WorkspaceFilesReadRemote } from './rpc.ts'
 export type { TextPage, TextState, TextStore, TextTabState } from './store.ts'
 export type { DocumentContent, DocumentPreviewProps, DocumentTextPage } from './document/contract.ts'
+export type { DocumentViewContent, DocumentViewOwnerProps } from './document/view.ts'
 export type { DocumentLoadMode, DocumentPreviewDefinition } from './document/registry.ts'
 
 declare module '@deepseek-ai/cordis' {
