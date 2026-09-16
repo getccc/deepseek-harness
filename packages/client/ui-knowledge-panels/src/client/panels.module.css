@@ -183,13 +183,6 @@
   overflow-y: auto;
 }
 
-.header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--dsw-alias-label-secondary);
-}
-
 .title {
   margin: 0;
   font-size: 16px;
@@ -210,15 +203,6 @@
 
 .failed {
   color: var(--dsw-alias-state-error-primary);
-}
-
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
 }
 
 .card {
@@ -259,12 +243,6 @@
   line-height: 18px;
   font-weight: 400;
   color: var(--dsw-alias-label-tertiary);
-}
-
-.cardActions {
-  display: flex;
-  gap: 8px;
-  margin-top: 2px;
 }
 
 /* The selectable part of a knowledge-base card: the row itself, with its
@@ -361,51 +339,6 @@
   border-radius: 10px;
 }
 
-.scope {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-/* The scope chips carry the composer knowledge chip's chrome: the same
-   control in another place should not look like another control. */
-.chip {
-  height: 28px;
-  padding: 0 12px;
-  border: 1px solid var(--dsw-alias-border-l2);
-  border-radius: 24px;
-  outline: none;
-  background: transparent;
-  color: var(--dsw-alias-label-secondary);
-  font-size: 13px;
-  line-height: 20px;
-  cursor: pointer;
-}
-
-.chip:hover {
-  background: var(--dsw-alias-interactive-bg-hover);
-}
-
-.chip:focus-visible {
-  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
-}
-
-.chipOn {
-  border-color: transparent;
-  background: var(--dsw-alias-state-business-tertiary);
-  color: var(--dsw-alias-state-business-primary);
-}
-
-.query {
-  display: flex;
-  gap: 8px;
-}
-
-.queryInput {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
 .summary {
   display: flex;
   flex-wrap: wrap;
@@ -418,4 +351,274 @@
 
 .truncated {
   color: var(--dsw-alias-state-warn-label);
+}
+
+/* The retrieval panel's head: the heading and the query box, centred the way
+   a search page is, above a feed or an answer that takes the full width. */
+.searchHead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 24px 0 8px;
+}
+
+.hero {
+  margin: 0;
+  font-size: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--dsw-alias-label-primary);
+}
+
+.queryBox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(760px, 100%);
+  padding: 12px 12px 10px 14px;
+  border: 1px solid var(--dsw-alias-border-l3);
+  border-radius: 14px;
+  background: var(--dsw-alias-bg-layer-2);
+  box-shadow: 0 2px 10px rgb(0 0 0 / 5%);
+}
+
+.queryBox:focus-within {
+  border-color: var(--dsw-alias-state-business-primary);
+}
+
+.queryInput {
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.queryInput::placeholder {
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.queryBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.scopeTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 260px;
+  height: 30px;
+  padding: 0 8px 0 12px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  outline: none;
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.scopeTrigger:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.scopeTrigger:focus-visible {
+  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
+}
+
+.scopeName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.send {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  outline: none;
+  background: var(--dsw-alias-state-business-primary);
+  color: var(--dsw-alias-label-primary-inverted);
+  cursor: pointer;
+}
+
+.send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.send:focus-visible {
+  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
+}
+
+/* The retrieval panel's reading column, which its notices and summary share
+   with the cards so everything under the query lines up. */
+.column {
+  width: min(900px, 100%);
+  margin-inline: auto;
+}
+
+/* Before a search: the documents in scope, one row each — the file's kind,
+   its title, the source's summary, and where it came from. */
+.feed,
+.ranked {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(900px, 100%);
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.feedCard,
+.rankCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 12px;
+  outline: none;
+  background: var(--dsw-alias-bg-layer-2);
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.feedCard:hover,
+.rankCard:hover {
+  border-color: var(--dsw-alias-border-l4);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 6%);
+}
+
+.feedCard:focus-visible,
+.rankCard:focus-visible {
+  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
+}
+
+.feedThumb {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-module-platform);
+}
+
+.feedMain,
+.rankMain {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.feedTitle,
+.rankTitle {
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-primary);
+  overflow-wrap: anywhere;
+}
+
+.feedText,
+.rankText {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-secondary);
+  overflow-wrap: anywhere;
+}
+
+.feedText {
+  -webkit-line-clamp: 3;
+}
+
+.rankText {
+  -webkit-line-clamp: 5;
+}
+
+/* After a search: the rank a document earned, set apart for the first three. */
+.medal {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--dsw-alias-bg-module-platform);
+  color: var(--dsw-alias-label-secondary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.rankHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rankBadge {
+  flex: 0 0 auto;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-module-platform);
+  color: var(--dsw-alias-label-secondary);
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.medalGold {
+  background: var(--dsw-static-amber-400);
+  color: var(--dsw-static-amber-900);
+}
+
+.medalSilver {
+  background: var(--dsw-static-neutral-bluish-200);
+  color: var(--dsw-static-neutral-bluish-700);
+}
+
+.medalBronze {
+  background: var(--dsw-static-amber-600);
+  color: var(--dsw-static-neutral-bluish-00);
+}
+
+/* A query term inside a passage. */
+.hit {
+  padding: 0;
+  background: transparent;
+  color: var(--dsw-alias-state-error-primary);
+  font-weight: 600;
 }

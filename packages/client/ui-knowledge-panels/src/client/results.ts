@@ -1,12 +1,10 @@
 /**
  * What a retrieval answer looks like once it is arranged for reading: its
  * passages gathered under the document each came from, its scores written for
- * a member, and the draft a discussion starts from.
+ * a member, and the runs of text its query matched.
  *
  * Pure projections over one `KnowledgeSearchView`, so the panel holds no
- * derived state and the arrangement can be read without a browser. The draft a
- * discussion opens with is not here: it is the `draft.template` dictionary
- * entry, filled by the same `t` that writes every other member-visible string.
+ * derived state and the arrangement can be read without a browser.
  * @module @deepseek-ai/dsh-client-ui-knowledge-panels/results
  */
 
@@ -67,12 +65,47 @@ export function groupByDocument(view: KnowledgeSearchView): readonly DocumentGro
 /**
  * Write one score for a member.
  *
- * Two decimals, because the number is only comparable within one answer: it
- * orders the rows and says how far apart they are, and more digits would
- * suggest a precision that does not survive the next query.
+ * Two significant figures, because the number is only comparable within one
+ * answer: it orders the rows and says how far apart they are, and more digits
+ * would suggest a precision that does not survive the next query. Significant
+ * figures rather than fixed decimals, because a fused ranking score is a small
+ * number — `0.016` and `0.015` must not both read as `0.02`.
  * @param score - the upstream relevance score.
  * @returns the score as displayed text.
  */
 export function formatScore(score: number): string {
-  return score.toFixed(2)
+  return score >= 0.1 || score === 0 ? score.toFixed(2) : score.toPrecision(2)
+}
+
+/** One run of passage text, and whether it matched the query. */
+export interface TextRun {
+  readonly text: string
+  readonly match: boolean
+}
+
+/**
+ * Split passage text into the runs a member's query matched and the rest.
+ *
+ * The query is read as its whitespace-separated terms, each matched
+ * case-insensitively wherever it appears. That is the whole rule: a Chinese
+ * query with no spaces is one term and matches only where it appears whole,
+ * because splitting it into characters would light up half a passage and say
+ * nothing about why it ranked.
+ * @param text - the passage text.
+ * @param query - the query the answer belongs to.
+ * @returns the runs in order; one unmatched run when nothing matched.
+ */
+export function highlight(text: string, query: string): readonly TextRun[] {
+  const terms = [...new Set(query.split(/\s+/u).filter(term => term !== ''))]
+  if (terms.length === 0 || text === '') return [{ text, match: false }]
+  // Longer terms first, so one term that contains another is matched whole.
+  const pattern = new RegExp(`(${terms.sort((a, b) => b.length - a.length).map(escape).join('|')})`, 'giu')
+  return text.split(pattern)
+    .filter(part => part !== '')
+    .map(part => ({ text: part, match: terms.some(term => term.toLowerCase() === part.toLowerCase()) }))
+}
+
+/** A term as literal text inside a regular expression. */
+function escape(term: string): string {
+  return term.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
 }

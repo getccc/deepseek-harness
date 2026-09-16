@@ -52,28 +52,28 @@ class FixtureKnowledge extends Knowledge {
 
   documents(request: KnowledgeDocumentsRequest): Promise<KnowledgeDocumentPage> {
     const first = [
-      { id: 'doc-1', title: '园区运维手册 v3', fileName: '园区运维手册v3.pdf', fileType: 'pdf', byteSize: 2_340_000, state: 'ready' as const },
-      { id: 'doc-3', title: '2026 年度应急演练实施方案', fileName: '应急演练实施方案.md', fileType: 'md', byteSize: 12_400, state: 'ready' as const },
-      { id: 'doc-4', title: '门禁设备台账', fileName: '门禁设备台账.xlsx', fileType: 'xlsx', byteSize: 240_000, state: 'processing' as const },
+      { id: 'doc-1', title: '园区运维手册 v3', description: '园区一级、二级故障的响应时限、处置流程与值班交接要求，覆盖供配电、暖通与安防三类系统。', fileName: '园区运维手册v3.pdf', fileType: 'pdf', byteSize: 2_340_000, state: 'ready' as const, day: '2026-09-12T02:00:00Z' },
+      { id: 'doc-3', title: '2026 年度应急演练实施方案', description: '年度应急演练的组织分工、场景设计与评估标准，包含消防、电力中断、危化品泄漏三类场景。', fileName: '应急演练实施方案.md', fileType: 'md', byteSize: 12_400, state: 'ready' as const, day: '2026-09-10T02:00:00Z' },
+      { id: 'doc-4', title: '门禁设备台账', description: '', fileName: '门禁设备台账.xlsx', fileType: 'xlsx', byteSize: 240_000, state: 'processing' as const, day: '2026-09-08T02:00:00Z' },
     ]
     // The Lingang base reports 190 documents at 20 a page, so the pager has
     // ten pages and folds a run of them; each page carries the same three rows
     // under its own ids.
     const rows = request.ref === LINGANG
       ? first.map(row => ({ ...row, id: `${row.id}-p${String(request.page ?? 1)}` }))
-      : [{ id: 'doc-9', title: '产线交接规范', fileName: '产线交接规范.docx', fileType: 'docx', byteSize: 54_000, state: 'ready' as const }]
+      : [{ id: 'doc-9', title: '产线交接规范', description: '南昌基地产线换班时的设备状态确认、异常记录与责任交接流程。', fileName: '产线交接规范.docx', fileType: 'docx', byteSize: 54_000, state: 'ready' as const, day: '2026-09-11T02:00:00Z' }]
     return Promise.resolve({
       ref: request.ref,
       documents: rows.map(row => ({
         docRef: KnowledgeDocRef(`${request.ref}/${row.id}`),
         ref: request.ref,
         title: row.title,
-        description: '',
+        description: row.description,
         fileName: row.fileName,
         fileType: row.fileType,
         byteSize: row.byteSize,
         state: row.state,
-        updatedAt: Date.parse('2026-09-10T02:00:00Z'),
+        updatedAt: Date.parse(row.day),
       })),
       page: request.page ?? 1,
       pageSize: 20,
@@ -197,23 +197,30 @@ describe('web e2e: knowledge panels', () => {
     expect(tripwire.warnings).toEqual([])
   }, 120_000)
 
-  it('ranks a retrieval under its documents and opens one as a narrowed conversation', async () => {
+  it('shows the documents, ranks a retrieval, and opens a result as a conversation over it', async () => {
     onTestFailed(async () => { await saveFailureShot(page, 'knowledge-panels-search') })
-    await page.getByRole('button', { name: '知识库检索', exact: true }).click()
-    await page.getByPlaceholder('描述你要找的内容').fill('一级故障响应时间')
-    await page.getByRole('button', { name: '检索', exact: true }).click()
+    await page.getByRole('button', { name: '知识检索', exact: true }).click()
+    // Before a search: every authorized knowledge base's documents, newest
+    // first, each with the source's own summary.
+    await page.getByText('南昌基地产线换班时的设备状态确认、异常记录与责任交接流程。').waitFor({ timeout: 15_000 })
+    const box = page.getByPlaceholder('你想知道什么？')
+    await box.fill('一级故障 响应')
+    await box.press('Enter')
 
     // Three passages from two documents: the two sharing a document group
-    // under its better score, which is what the summary counts.
+    // under its better score, which is what the summary counts and the rank
+    // follows. The query's terms are marked inside the text.
     await page.getByText('共 3 段，来自 2 篇原文').waitFor({ timeout: 15_000 })
+    await page.getByText('排名 1').waitFor()
     await page.getByText('相似度 0.87').waitFor()
     await page.getByText('（本段已截断）').waitFor()
+    await page.locator('mark', { hasText: '一级故障' }).first().waitFor()
 
-    await page.getByRole('button', { name: '讨论这篇原文' }).first().click()
+    await page.getByRole('button', { name: /园区运维手册 v3/u }).first().click()
     // The retrieval panel gives way to the conversation it opened: the
     // document sits above the composer the way an attached file does, and
     // nothing is typed for the member.
-    await page.getByPlaceholder('描述你要找的内容').waitFor({ state: 'hidden', timeout: 20_000 })
+    await box.waitFor({ state: 'hidden', timeout: 20_000 })
     const dock = page.getByRole('group', { name: '本次对话基于 临港智慧园区知识库 中的这些文档回答' })
     await dock.getByText('园区运维手册 v3').waitFor({ timeout: 20_000 })
     expect((await page.locator('[data-composer-input]').innerText()).trim()).toBe('')

@@ -109,16 +109,29 @@ async function back(): Promise<void> {
 /** Render the retrieval panel over scripted faces. */
 function renderSearch(options: {
   directory?: () => Promise<readonly KnowledgeChoice[]>
+  documents?: (knowledgeRef: string, page: number) => Promise<KnowledgeDocumentsView>
   search?: (query: string, refs: readonly string[]) => Promise<KnowledgeSearchView>
   discuss?: (target: unknown) => Promise<void>
 } = {}) {
   const directory = options.directory ?? (() => Promise.resolve(BASES))
+  const documents = vi.fn(options.documents ?? ((knowledgeRef: string) => Promise.resolve(documentPage({
+    knowledgeRef,
+    documents: knowledgeRef === REF_A
+      ? [document({ description: '园区一级故障的响应时限。' })]
+      : [document({ docRef: `${REF_B}/doc-9`, knowledgeRef: REF_B, title: '产线交接规范', fileName: '产线交接规范.docx', updatedAt: 1756944000000 })],
+  }))))
   const search = vi.fn(options.search ?? (query => Promise.resolve(
     { query, searched: [], passages: [passage()], truncated: false },
   )))
   const discuss = vi.fn(options.discuss ?? (() => Promise.resolve()))
-  const props = { directory, search, discuss, t } as unknown as KnowledgeSearchPanelProps
-  return { search, discuss, view: render(<KnowledgeSearchPanel {...props} />) }
+  const props = { directory, documents, search, discuss, t } as unknown as KnowledgeSearchPanelProps
+  return { documents, search, discuss, view: render(<KnowledgeSearchPanel {...props} />) }
+}
+
+/** Choose one row of the scope menu. */
+async function scope(name: string): Promise<void> {
+  fireEvent.click(await screen.findByRole('button', { name: /^检索范围：/u }))
+  fireEvent.click(await screen.findByRole('menuitem', { name }))
 }
 
 /** The two ways a pending directory read finishes, held for a test to fire late. */
@@ -209,48 +222,122 @@ describe('the knowledge-base list', () => {
 })
 
 describe('the retrieval panel', () => {
-  it('offers every authorized knowledge base as a scope, with everything chosen by default', async () => {
-    renderSearch()
-    expect(await screen.findByRole('button', { name: '临港知识库' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: '全部知识库' }).getAttribute('aria-pressed')).toBe('true')
+  it('shows the documents in every authorized knowledge base before a search, newest first', async () => {
+    const panel = renderSearch()
+    expect(screen.getByText('正在读取文档')).toBeTruthy()
+    expect(await screen.findByText('产线交接规范')).toBeTruthy()
+    const titles = screen.getAllByRole('button', { name: /运维手册|产线交接规范/u }).map(card => card.textContent)
+    // The Nanchang document changed later, so it leads.
+    expect(titles[0]).toContain('产线交接规范')
+    expect(screen.getByText('园区一级故障的响应时限。')).toBeTruthy()
+    expect(screen.getByText('南昌知识库')).toBeTruthy()
+    expect(panel.documents).toHaveBeenCalledWith(REF_A, 1)
+    expect(panel.documents).toHaveBeenCalledWith(REF_B, 1)
   })
 
-  it('searches everything until a knowledge base is picked, and only that one afterwards', async () => {
+  it('closes the scope menu without changing the scope', async () => {
     const panel = renderSearch()
-    await screen.findByRole('button', { name: '临港知识库' })
+    await screen.findByText('产线交接规范')
+    fireEvent.click(screen.getByRole('button', { name: '检索范围：全部知识库' }))
+    expect(await screen.findByRole('menuitem', { name: '临港知识库' })).toBeTruthy()
+    fireEvent.keyDown(window.document, { key: 'Escape' })
+    await waitFor(() => { expect(screen.queryByRole('menuitem', { name: '临港知识库' })).toBeNull() })
+    expect(panel.documents).toHaveBeenCalledTimes(2)
+  })
+
+  it('draws a document the source holds no file name for by its title', async () => {
+    renderSearch({
+      documents: knowledgeRef => Promise.resolve(documentPage({
+        knowledgeRef,
+        documents: knowledgeRef === REF_A ? [document({ fileName: '' })] : [],
+      })),
+    })
+    expect(await screen.findByText('运维手册')).toBeTruthy()
+  })
+
+  it('follows the scope: one knowledge base lists only its own documents', async () => {
+    const panel = renderSearch()
+    await screen.findByText('产线交接规范')
+    await scope('临港知识库')
+    await waitFor(() => { expect(screen.queryByText('产线交接规范')).toBeNull() })
+    expect(screen.getByRole('button', { name: '检索范围：临港知识库' })).toBeTruthy()
+    expect(panel.documents).toHaveBeenLastCalledWith(REF_A, 1)
+  })
+
+  it('keeps the documents that could be read, and says so only when none could', async () => {
+    renderSearch({
+      documents: knowledgeRef => knowledgeRef === REF_A
+        ? Promise.resolve(documentPage())
+        : Promise.reject(new Error('refused')),
+    })
+    expect(await screen.findByText('运维手册')).toBeTruthy()
+    expect(screen.queryByText('文档读取失败')).toBeNull()
+    cleanup()
+    renderSearch({ documents: () => Promise.reject(new Error('refused')) })
+    expect(await screen.findByText('文档读取失败')).toBeTruthy()
+  })
+
+  it('says a scope holds no documents, including a member with no knowledge base at all', async () => {
+    renderSearch({ documents: knowledgeRef => Promise.resolve(documentPage({ knowledgeRef, documents: [] })) })
+    expect(await screen.findByText('检索范围内还没有文档')).toBeTruthy()
+    cleanup()
+    renderSearch({ directory: () => Promise.reject(new Error('unreachable')) })
+    // The retrieval itself still runs: what the Control Plane authorizes is
+    // decided on the call, not by a directory the browser failed to read.
+    expect(await screen.findByText('检索范围内还没有文档')).toBeTruthy()
+    expect(screen.getByRole('button', { name: '检索范围：全部知识库' })).toBeTruthy()
+  })
+
+  it('searches everything until a knowledge base is picked, and asks again when the scope changes', async () => {
+    const panel = renderSearch()
+    await screen.findByText('产线交接规范')
     ask()
     await waitFor(() => { expect(panel.search).toHaveBeenCalledWith('故障响应', []) })
-    fireEvent.click(screen.getByRole('button', { name: '临港知识库' }))
-    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })
+    await screen.findByText('运维手册')
+    await scope('临港知识库')
     await waitFor(() => { expect(panel.search).toHaveBeenLastCalledWith('故障响应', [REF_A]) })
-    // Clicking the chosen knowledge base again takes it back out of the scope.
-    fireEvent.click(screen.getByRole('button', { name: '临港知识库' }))
-    fireEvent.click(screen.getByRole('button', { name: '检索' }))
+    await scope('全部知识库')
     await waitFor(() => { expect(panel.search).toHaveBeenLastCalledWith('故障响应', []) })
-    // Every knowledge base at once is its own choice, not the absence of one.
-    fireEvent.click(screen.getByRole('button', { name: '临港知识库' }))
-    fireEvent.click(screen.getByRole('button', { name: '全部知识库' }))
-    fireEvent.click(screen.getByRole('button', { name: '检索' }))
-    await waitFor(() => { expect(panel.search).toHaveBeenLastCalledWith('故障响应', []) })
-    expect(panel.search).toHaveBeenCalledTimes(4)
+    expect(panel.search).toHaveBeenCalledTimes(3)
   })
 
-  it('ranks the passages under their document and says how far the answer goes', async () => {
+  it('ranks the answer by document, marks the query in the text, and says how far it goes', async () => {
     renderSearch({
       search: query => Promise.resolve({
         query,
         searched: [],
-        passages: [passage(), passage({ score: 0.44, text: '二级故障 2 小时内响应。', truncated: true })],
+        passages: [
+          passage(),
+          passage({ score: 0.44, text: '二级故障 2 小时内响应。', truncated: true }),
+          passage({ docRef: `${REF_A}/doc-2`, title: '值班制度', score: 0.016, text: '交班前确认故障单。' }),
+          passage({ docRef: `${REF_A}/doc-3`, title: '巡检记录', score: 0.012 }),
+          passage({ docRef: `${REF_A}/doc-4`, title: '门禁台账', score: 0.011 }),
+        ],
         truncated: true,
       }),
     })
-    await screen.findByRole('button', { name: '临港知识库' })
-    ask()
-    expect(await screen.findByText('运维手册')).toBeTruthy()
+    ask('故障')
+    expect(await screen.findByText('排名 1')).toBeTruthy()
+    const cards = screen.getAllByRole('listitem').map(item => item.textContent ?? '')
+    expect(cards[0]).toContain('运维手册')
+    expect(cards[3]).toContain('排名 4')
     expect(screen.getByText('相似度 0.81')).toBeTruthy()
-    expect(screen.getByText('共 2 段，来自 1 篇原文')).toBeTruthy()
+    // A fused ranking score is small; two significant figures keep neighbours apart.
+    expect(screen.getByText('相似度 0.016')).toBeTruthy()
+    expect(screen.getAllByText('故障', { selector: 'mark' }).length).toBeGreaterThan(0)
+    expect(screen.getByText('共 5 段，来自 4 篇原文')).toBeTruthy()
     expect(screen.getByText('（本段已截断）')).toBeTruthy()
     expect(screen.getByText('结果已达上限，缩小检索范围可以看到更多')).toBeTruthy()
+  })
+
+  it('goes back to the documents when the query is emptied', async () => {
+    renderSearch()
+    await screen.findByText('产线交接规范')
+    ask()
+    await screen.findByText('排名 1')
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: '' } })
+    expect(await screen.findByText('产线交接规范')).toBeTruthy()
+    expect(screen.queryByText('排名 1')).toBeNull()
   })
 
   it('tells an answer with nothing in it apart from a refused retrieval', async () => {
@@ -260,23 +347,39 @@ describe('the retrieval panel', () => {
     ask()
     expect(await screen.findByText('没有检索到相关内容')).toBeTruthy()
     nothing.view.unmount()
-    renderSearch({ search: () => Promise.reject(new Error('refused')) })
+    let refuse!: (reason: Error) => void
+    renderSearch({ search: () => new Promise((_resolve, reject) => { refuse = reject }) })
     ask()
+    expect(screen.getByText('正在检索')).toBeTruthy()
+    refuse(new Error('refused'))
     expect(await screen.findByText('检索失败')).toBeTruthy()
   })
 
-  it('does not ask for a blank query, and types without asking', () => {
+  it('searches on Enter, but not on Shift+Enter, a composing IME, or a blank query', () => {
     const panel = renderSearch()
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: '   ' } })
-    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })
+    const box = screen.getByRole('textbox')
+    fireEvent.change(box, { target: { value: '   ' } })
+    fireEvent.keyDown(box, { key: 'Enter' })
     expect(panel.search).not.toHaveBeenCalled()
     expect(screen.getByRole('button', { name: '检索' }).hasAttribute('disabled')).toBe(true)
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: '故障' } })
-    fireEvent.keyDown(screen.getByRole('textbox'), { key: 'a' })
+    fireEvent.change(box, { target: { value: '故障' } })
+    fireEvent.keyDown(box, { key: 'a' })
+    fireEvent.keyDown(box, { key: 'Enter', shiftKey: true })
+    fireEvent.keyDown(box, { key: 'Enter', isComposing: true })
     expect(panel.search).not.toHaveBeenCalled()
+    fireEvent.keyDown(box, { key: 'Enter' })
+    expect(panel.search).toHaveBeenCalledWith('故障', [])
   })
 
-  it('narrows a discussion to the knowledge base for a result that named no document', async () => {
+  it('opens a conversation about a document from the feed', async () => {
+    const panel = renderSearch()
+    fireEvent.click(await screen.findByRole('button', { name: /产线交接规范/u }))
+    await waitFor(() => {
+      expect(panel.discuss).toHaveBeenCalledWith({ knowledgeRef: REF_B, docRef: `${REF_B}/doc-9`, title: '产线交接规范' })
+    })
+  })
+
+  it('narrows a conversation to the knowledge base for a result that named no document', async () => {
     const panel = renderSearch({
       search: (query) => {
         const { docRef: _docRef, ...noDocument } = passage()
@@ -284,32 +387,24 @@ describe('the retrieval panel', () => {
       },
     })
     ask()
-    fireEvent.click(await screen.findByRole('button', { name: '讨论这篇原文' }))
+    fireEvent.click((await screen.findByText('排名 1')).closest('button') as HTMLElement)
     await waitFor(() => {
       expect(panel.discuss).toHaveBeenCalledWith({ knowledgeRef: REF_A, title: '运维手册' })
     })
   })
 
-  it('opens a discussion about the document by its title, and reports one it could not open', async () => {
+  it('opens a conversation about a result by its title, and reports one it could not open', async () => {
     const panel = renderSearch()
     ask()
-    fireEvent.click(await screen.findByRole('button', { name: '讨论这篇原文' }))
+    fireEvent.click((await screen.findByText('排名 1')).closest('button') as HTMLElement)
     await waitFor(() => {
       expect(panel.discuss).toHaveBeenCalledWith({ knowledgeRef: REF_A, docRef: `${REF_A}/doc-1`, title: '运维手册' })
     })
     panel.view.unmount()
     renderSearch({ discuss: () => Promise.reject(new Error('no session')) })
     ask()
-    fireEvent.click(await screen.findByRole('button', { name: '讨论这篇原文' }))
+    fireEvent.click((await screen.findByText('排名 1')).closest('button') as HTMLElement)
     expect(await screen.findByText('无法打开讨论')).toBeTruthy()
-  })
-
-  it('offers no scope at all when the directory cannot be read', async () => {
-    renderSearch({ directory: () => Promise.reject(new Error('unreachable')) })
-    await waitFor(() => { expect(screen.queryByRole('button', { name: '临港知识库' })).toBeNull() })
-    // The retrieval itself still runs: what the Control Plane authorizes is
-    // decided on the call, not by a directory the browser failed to read.
-    expect(screen.getByRole('button', { name: '全部知识库' })).toBeTruthy()
   })
 
   it.each([
@@ -326,7 +421,17 @@ describe('the retrieval panel', () => {
     panel.view.unmount()
     finish(settle)
     await settled()
-    expect(screen.queryByRole('button', { name: '临港知识库' })).toBeNull()
+    expect(panel.documents).not.toHaveBeenCalled()
+  })
+
+  it('ignores a feed that answers after the panel is gone', async () => {
+    const answers: ((page: KnowledgeDocumentsView) => void)[] = []
+    const panel = renderSearch({ documents: () => new Promise((resolve) => { answers.push(resolve) }) })
+    await waitFor(() => { expect(answers).toHaveLength(2) })
+    panel.view.unmount()
+    for (const answer of answers) answer(documentPage())
+    await settled()
+    expect(screen.queryByText('运维手册')).toBeNull()
   })
 })
 

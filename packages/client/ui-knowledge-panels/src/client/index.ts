@@ -38,8 +38,10 @@ import { KnowledgeBasesPanel, type KnowledgeBasesInjected } from './KnowledgeBas
 import { KnowledgeSearchPanel, type DiscussTarget, type KnowledgeSearchInjected } from './KnowledgeSearchPanel.tsx'
 import { en, zh, type KnowledgePanelsKey } from './locales.ts'
 
-export { formatScore, groupByDocument } from './results.ts'
-export type { DocumentGroup } from './results.ts'
+export { formatScore, groupByDocument, highlight } from './results.ts'
+export type { DocumentGroup, TextRun } from './results.ts'
+export { FEED_LIMIT, dayText, feedOf, titleOf } from './documents.ts'
+export type { FeedDocument } from './documents.ts'
 export type { DocumentPreviewProps } from './DocumentPreview.tsx'
 export { DocumentPreview } from './DocumentPreview.tsx'
 export type { KnowledgeBasesInjected, KnowledgeBasesPanelProps } from './KnowledgeBasesPanel.tsx'
@@ -171,7 +173,7 @@ function registerUi(ctx: ClientContext): void {
       name: 'main',
       key: SEARCH_PANEL,
       locale: NS,
-      inject: (): KnowledgeSearchInjected => ({ directory, search, discuss }),
+      inject: (): KnowledgeSearchInjected => ({ directory, documents, search, discuss }),
     }, KnowledgeSearchPanel)
   })
 }

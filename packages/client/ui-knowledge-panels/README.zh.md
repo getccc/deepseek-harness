@@ -42,7 +42,7 @@ kind: "package-reference"
 | 行 | 面板 | 作用 |
 |---|---|---|
 | 知识库 | `knowledge` | 以卡片展示已授权的知识库（卡片带文档数量与创建日期）、成员打开的那一个之中的文档，以及在列表旁抽屉里展示的那一份文档 |
-| 知识库检索 | `knowledge-search` | 在所选知识库上运行一次检索，并把段落按所属文档分组排名 |
+| 知识检索 | `knowledge-search` | 显示所选范围内的文档，在该范围上运行一次检索并按文档排名，并就成员选中的文档打开一次对话 |
 
 两个行都注册到侧边栏的 `sidebar.panellist` 座位，并指向同名 id 的 `main` 面板，因此行归侧边栏所有，本包只拥有图标和面板。
 
@@ -53,6 +53,10 @@ kind: "package-reference"
 文档卡片底部给出类型、大小与日期。状态只在不是常态时出现——解析中或不可检索——因为可检索的文档没什么要说的，而不可检索的文档若不标出，就与一次检索只是没把它排上来无从区分。
 
 分页器固定在面板右下角。有总数时，它给出总数和至多七个页码位：首页、末页、当前页及其前后各一页，中间省去的部分用省略号表示；靠近两端时窗口滑向那一端，让分页器保持同一宽度。没有总数时，它只给出当前页，并在本页已满时提供下一页。
+
+检索面板是一个搜索页：一个标题、一个带范围菜单与发送控件的查询框，以及它下方的内容。检索之前，下方是范围内的文档——每个知识库的第一页，跨知识库按最新在前排列，至多 30 份，每份带文件类型、知识源的摘要和所属知识库——因此没有问题的成员也能挑一份文档。列表读取失败的知识库会被略去；只有范围内每个列表都失败时才会提示。回车即检索（Shift+回车换行，输入法仍在组词时回车归它所有），答案替换文档：每份文档一张卡片，排在其最佳段落的名次上，前三名突出显示，段落里按空白分隔的查询词被标出，得分按提供方给出的值保留两位有效数字。更换范围会重新检索；清空查询会回到文档。
+
+选中任何卡片——文档或结果——都会打开一个按标题收窄到这份文档的聊天，文档显示在空的 composer 上方。只显示提供方融合后的那一个得分：知识源没有单独返回可并列显示的词项或向量得分。
 
 ### 面板持有什么
 
@@ -76,8 +80,9 @@ kind: "package-reference"
 | [`src/client/index.ts`](src/client/index.ts) | 两个行、两个面板，以及它们背后的 Remote 调用 |
 | [`src/client/KnowledgeBasesPanel.tsx`](src/client/KnowledgeBasesPanel.tsx) | 知识库卡片、面包屑、文档卡片，以及抽屉 |
 | [`src/client/DocumentPreview.tsx`](src/client/DocumentPreview.tsx) | 一份文档，按 Control Plane 所提供的内容绘制 |
-| [`src/client/KnowledgeSearchPanel.tsx`](src/client/KnowledgeSearchPanel.tsx) | 范围 chip、查询框和排名结果 |
-| [`src/client/results.ts`](src/client/results.ts) | 把段落按文档分组，以及得分如何书写 |
+| [`src/client/KnowledgeSearchPanel.tsx`](src/client/KnowledgeSearchPanel.tsx) | 查询框与范围菜单、检索前的文档，以及排名后的答案 |
+| [`src/client/results.ts`](src/client/results.ts) | 把段落按文档分组、得分如何书写，以及查询标出哪些文本 |
+| [`src/client/documents.ts`](src/client/documents.ts) | 文档如何命名与标注日期，以及多个列表如何合成一个信息流 |
 | [`src/client/Pager.tsx`](src/client/Pager.tsx) | 文档列表的分页器 |
 | [`src/client/paging.ts`](src/client/paging.ts) | 总数跨多少页，以及分页器给出哪些页码 |
 

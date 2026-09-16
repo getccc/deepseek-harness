@@ -12,6 +12,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import { DocumentPreview } from './DocumentPreview.tsx'
+import { dayText, titleOf } from './documents.ts'
 import type { Translate } from './locales.ts'
 import { Pager } from './Pager.tsx'
 import css from './panels.module.css'
@@ -34,27 +35,6 @@ export type KnowledgeBasesPanelProps =
 
 /** What either level is showing right now. */
 type Phase = 'loading' | 'ready' | 'failed'
-
-/**
- * The day a document last changed, as the calendar reads it here.
- *
- * Written out from the local parts rather than through `Intl`, so the same
- * timestamp reads the same in both dictionaries and a test can name the day it
- * expects.
- * @param at - epoch milliseconds the source reported.
- * @returns the day as `YYYY-MM-DD`.
- */
-function dayText(at: number): string {
-  const when = new Date(at)
-  const month = String(when.getMonth() + 1).padStart(2, '0')
-  const day = String(when.getDate()).padStart(2, '0')
-  return `${String(when.getFullYear())}-${month}-${day}`
-}
-
-/** What a document card shows beside its name. */
-function titleOf(document: KnowledgeDocumentView): string {
-  return document.title === '' ? document.fileName : document.title
-}
 
 /**
  * A document card's footer: its type, size, and day, and its state only when

@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { KnowledgePassageView, KnowledgeSearchView } from '@deepseek-ai/dsh-api-knowledge-controller/types'
-import { formatScore, groupByDocument } from '../src/client/results.ts'
+import { formatScore, groupByDocument, highlight } from '../src/client/results.ts'
 
 const REF_A = 'weknora:prod:690c0727-1af5-4b7a-8465-ebd2845f2266'
 const REF_B = 'weknora:prod:08f25606-8876-49cc-b509-70e84828db08'
@@ -56,7 +56,42 @@ describe('grouping an answer by document', () => {
 })
 
 describe('writing a score', () => {
-  it.each([[0.8123, '0.81'], [0.4, '0.40'], [1, '1.00'], [0, '0.00']])('writes %s as %s', (score, text) => {
+  it.each([
+    [0.8123, '0.81'], [0.4, '0.40'], [1, '1.00'], [0, '0.00'], [0.1, '0.10'],
+    // A fused ranking score: fixed decimals would write both of these as 0.02.
+    [0.016129, '0.016'], [0.015054, '0.015'],
+  ])('writes %s as %s', (score, text) => {
     expect(formatScore(score)).toBe(text)
+  })
+})
+
+/** The runs as a reader sees them, a match in brackets. */
+function marked(text: string, query: string): string {
+  return highlight(text, query).map(run => run.match ? `[${run.text}]` : run.text).join('')
+}
+
+describe('marking a query in passage text', () => {
+  it('marks every term wherever it appears, whatever its case', () => {
+    expect(marked('TSMC 2023 tsmc capex (tsmc)', 'tsmc capex')).toBe('[TSMC] 2023 [tsmc] [capex] ([tsmc])')
+  })
+
+  it('marks a Chinese query only where it appears whole', () => {
+    // Splitting it into characters would light up half the passage and say
+    // nothing about why the passage ranked.
+    expect(marked('营业收入同比增长，收入结构稳定', '营业收入')).toBe('[营业收入]同比增长，收入结构稳定')
+  })
+
+  it('matches the longer of two overlapping terms whole, and reads punctuation as text', () => {
+    expect(marked('故障单与故障', '故障 故障单')).toBe('[故障单]与[故障]')
+    expect(marked('a.b*c and axb', 'a.b*')).toBe('[a.b*]c and axb')
+  })
+
+  it.each([
+    ['a blank query', '一级故障 30 分钟内响应。', '   '],
+    ['empty text', '', '故障'],
+    ['a query that appears nowhere', '一级故障 30 分钟内响应。', '年假'],
+  ])('marks nothing for %s', (_label, text, query) => {
+    expect(highlight(text, query).every(run => !run.match)).toBe(true)
+    expect(highlight(text, query).map(run => run.text).join('')).toBe(text)
   })
 })

@@ -20,7 +20,7 @@ Ship a member-facing knowledge surface as two global panels reached from the lef
 
 - A member sees **知识库** and **知识库检索** under **新工作任务** in the left navigation of a Team build. A build without private knowledge shows neither.
 - **知识库** opens a panel showing the knowledge bases the member's roles authorize as cards, each naming how many documents it holds and the day the source created it. Opening one lists its documents under a breadcrumb that goes back up; opening a document draws it in a drawer over the right of the panel.
-- **知识库检索** opens a panel that runs one retrieval and shows the passages ranked by score, grouped under the document each came from, with no model turn and no token cost.
+- **知识检索** opens a search page: before a query it lists the documents in the chosen scope with the source's own summaries; a query replaces them with the answer ranked by document, the first three set apart and the query's terms marked, with no model turn and no token cost. Selecting a document or a result opens the conversation about it.
 - Selecting a result's document starts a new Session whose knowledge scope is narrowed to that one document, so the conversation that follows retrieves from it and nothing else.
 - Every panel operation is authorized on the Control Plane against current grants, exactly as `knowledge_search` already is. Revoking a role, suspending the member, revoking the device, or disabling the knowledge base changes the next panel operation without a new login.
 

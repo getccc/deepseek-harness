@@ -42,7 +42,7 @@ The plugin has no configuration.
 | Row | Panel | What it does |
 |---|---|---|
 | Knowledge | `knowledge` | Shows the authorized knowledge bases as cards carrying their document count and creation day, the documents in the one a member opens, and one document in a drawer beside the list |
-| Knowledge search | `knowledge-search` | Runs one retrieval over the chosen knowledge bases and ranks the passages under the document each came from |
+| Knowledge search (知识检索) | `knowledge-search` | Shows the documents in the chosen scope, runs one retrieval over it and ranks the answer by document, and opens a conversation over whichever document a member selects |
 
 Both rows register into the sidebar's `sidebar.panellist` seat and address a `main` panel of the same id, so the sidebar owns the row and this package owns only the glyph and the panel.
 
@@ -53,6 +53,10 @@ Two levels, not columns: the cards, then that knowledge base's documents. The br
 A document card's footer carries its type, size, and day. Its state appears only when it is not the ordinary one — 解析中 or 不可检索 — because a searchable document has nothing to say, while one that is not is otherwise indistinguishable from one a retrieval simply did not rank.
 
 The pager holds the panel's bottom right. With a total it names the total and at most seven page slots: the first and last page, the current one with its neighbours, and an ellipsis for the runs between, sliding to either end near it so the pager keeps one width. Without a total it names only the current page and offers the next while the page is full.
+
+The retrieval panel is a search page: a heading, a query box with its scope menu and send control, and what lies under it. Before a search that is the documents in scope — the first page of each knowledge base, newest first across them, at most 30, each with its file's kind, the source's summary, and its knowledge base — so a member without a question can still pick a document. A knowledge base whose listing fails is left out; only a scope whose every listing failed says so. Enter searches (Shift+Enter is a new line, and an IME still composing owns its Enter), and the answer replaces the documents: one card per document at its best passage's rank, the first three set apart, the passages with the query's whitespace-separated terms marked, and the score as the provider gave it to two significant figures. A new scope asks again; an emptied query goes back to the documents.
+
+Selecting any card — a document or a result — opens a chat narrowed to that document by its title, with the document above an empty composer. Only the one score the provider fuses is shown: the source answers no separate term or vector score to show beside it.
 
 ### What the panels hold
 
@@ -76,8 +80,9 @@ Ranking is the provider's. The panel groups passages under their document and sh
 | [`src/client/index.ts`](src/client/index.ts) | The two rows, the two panels, and the Remote calls behind them |
 | [`src/client/KnowledgeBasesPanel.tsx`](src/client/KnowledgeBasesPanel.tsx) | The knowledge-base cards, the breadcrumb, the document cards, and the drawer |
 | [`src/client/DocumentPreview.tsx`](src/client/DocumentPreview.tsx) | One document, drawn from what the Control Plane served |
-| [`src/client/KnowledgeSearchPanel.tsx`](src/client/KnowledgeSearchPanel.tsx) | The scope chips, the query, and the ranked results |
-| [`src/client/results.ts`](src/client/results.ts) | Grouping passages under their document, and how a score is written |
+| [`src/client/KnowledgeSearchPanel.tsx`](src/client/KnowledgeSearchPanel.tsx) | The query box and scope menu, the documents before a search, and the ranked answer |
+| [`src/client/results.ts`](src/client/results.ts) | Grouping passages under their document, how a score is written, and which runs of text a query marks |
+| [`src/client/documents.ts`](src/client/documents.ts) | How a document is named and dated, and how several listings become one feed |
 | [`src/client/Pager.tsx`](src/client/Pager.tsx) | The document list's pager |
 | [`src/client/paging.ts`](src/client/paging.ts) | How many pages a total spans, and which of them the pager names |
 
