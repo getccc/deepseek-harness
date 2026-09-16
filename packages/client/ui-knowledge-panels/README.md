@@ -1,0 +1,109 @@
+---
+description: "The member-facing knowledge panels: two left-navigation rows, the authorized knowledge-base list, and a retrieval a member runs without a model."
+kind: "package-reference"
+---
+
+# @deepseek-ai/dsh-client-ui-knowledge-panels
+
+English | [中文](README.zh.md)
+
+## Summary
+
+`dsh-client-ui-knowledge-panels` is private knowledge outside a conversation: two rows under the sidebar's New work task entry, the list of knowledge bases a member's roles authorize, and a retrieval they run for themselves and read ranked. A retrieval here starts no model turn and costs no tokens; what reaches a model is only what a member asks for by selecting a result, which opens a conversation scoped to that document's knowledge base with the passage in its composer. The panels mount in the Team browser composition alone, beside the `/knowledge` picker whose Remote namespace they share.
+
+## Table of Contents
+
+- [Use this package](#use-this-package)
+- [Understand the implementation](#understand-the-implementation)
+- [Further Exploration](#further-exploration)
+- [Model Experience](#model-experience)
+- [Known Limitations and Deferred Work](#known-limitations-and-deferred-work)
+- [Dev Note](#dev-note)
+
+-----
+
+<a id="use-this-package"></a>
+## Use this package
+
+Mount it in a composition that already mounts `@deepseek-ai/dsh-client-ui-knowledge`, whose client half mounts the `knowledge` Remote namespace these panels call.
+
+### Minimal configuration
+
+The plugin has no configuration.
+
+```yaml
+- name: '@deepseek-ai/dsh-api-knowledge-controller'
+- name: '@deepseek-ai/dsh-client-ui-knowledge'
+- name: '@deepseek-ai/dsh-client-ui-knowledge-panels'
+```
+
+### What a member reaches
+
+| Row | Panel | What it does |
+|---|---|---|
+| Knowledge | `knowledge` | Lists the authorized knowledge bases, each with its description and an action that searches it |
+| Knowledge search | `knowledge-search` | Runs one retrieval over the chosen knowledge bases and ranks the passages under the document each came from |
+
+Both rows register into the sidebar's `sidebar.panellist` seat and address a `main` panel of the same id, so the sidebar owns the row and this package owns only the glyph and the panel.
+
+### What the panels hold
+
+Nothing between reads. The directory is read on every mount, so a revoked grant narrows the list and a disabled knowledge base leaves it; a retrieval answer belongs to the query that asked for it. The one value that crosses the two panels is the knowledge base the list asked the retrieval panel to start from, and the retrieval panel keeps it only while its own directory read still holds that knowledge base.
+
+<a id="understand-the-implementation"></a>
+## Understand the implementation
+
+### Design philosophy
+
+A member-run retrieval is deliberately not a Session event. The rule that model-visible input is reconstructable from the Session log is what makes a scope choice durable; a retrieval no model sees owes the log nothing, and recording it would put a member's browsing in a conversation's history. The moment that changes is the discussion a result opens, which records the ordinary `knowledge/scope` event through the same Remote as `/knowledge`.
+
+Ranking is the provider's. The panel groups passages under their document and shows the score as given, without re-sorting or normalizing: the number is comparable within one answer, and a second opinion here would make it look like something a member could compare across queries.
+
+### Source map
+
+| File | Holds |
+|---|---|
+| [`src/client/index.ts`](src/client/index.ts) | The two rows, the two panels, and the Remote calls behind them |
+| [`src/client/KnowledgeBasesPanel.tsx`](src/client/KnowledgeBasesPanel.tsx) | The authorized knowledge-base list |
+| [`src/client/KnowledgeSearchPanel.tsx`](src/client/KnowledgeSearchPanel.tsx) | The scope chips, the query, and the ranked results |
+| [`src/client/results.ts`](src/client/results.ts) | Grouping passages under their document, and how a score is written |
+
+<a id="further-exploration"></a>
+## Further Exploration
+
+- [dsh-client-ui-knowledge](../ui-knowledge/README.md) — the `/knowledge` picker and the composer chip, and the namespace mount these panels wait for.
+- [dsh-api-knowledge-controller](../../api/knowledge-controller/README.md) — the Remote methods the panels call.
+- [Member knowledge browsing Agent Note](../../../.agents/notes/proposed/feature/2026-09-16-member-knowledge-browsing-and-retrieval.md) — why the panels are global, and what the later deliveries add.
+
+<a id="model-experience"></a>
+## Model Experience
+
+Indirectly, through `dsh-tool-knowledge`: a retrieval run in these panels reaches no model, and the scope a selected result records is what its prompt section names and what gates its search tool.
+
+#### KV Cache effect
+
+No direct invalidation. A discussion opens a new Session, so there is no prefix to invalidate; the scope it records is part of that Session's first request.
+
+## Known Limitations and Deferred Work
+
+<a id="known-limitations-and-deferred-work"></a>
+
+These limits define when the panels are incomplete on their own. They are current package constraints.
+
+- **A knowledge base is a name, not its contents** — the list panel shows what a member may search and stops there. Listing the documents inside one needs a Control Plane operation that does not exist yet.
+- **A document cannot be opened** — a result names its document and quotes a passage; there is nothing to click through to until document content ships.
+- **A document is identified by its title** — passages carry no document reference yet, so two documents sharing one title inside one knowledge base group as one result.
+- **A discussion is scoped to the knowledge base, not the document** — the Session scope has no document-level form, so a conversation opened from a result may retrieve from the rest of that knowledge base too.
+- **No change notification** — a panel left open does not learn that a grant changed; it sees the narrowed directory the next time it is opened.
+
+<a id="dev-note"></a>
+### Dev Note
+
+<details>
+<summary>Working context for maintainers — click to expand</summary>
+
+The `knowledge` Remote namespace is mounted once per Client, by `dsh-client-ui-knowledge`. This plugin injects `remote.knowledge` and never mounts it: a second mount is refused as a namespace collision, which would take down whichever plugin lost the race.
+
+</details>
+
+**Runtime invariant:** No companion is published: every relationship this package owns is between a row and the panel of the same id, which the slot registry already refuses to break, and a panel holds no state a second observation could disagree with.

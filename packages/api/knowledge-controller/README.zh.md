@@ -1,5 +1,5 @@
 ---
-description: "仅 Team 的知识 Remote：浏览器读取的已授权目录，以及它记录的会话范围选择。"
+description: "仅 Team 的知识 Remote：浏览器读取的已授权目录、它记录的会话范围选择，以及成员自行运行的检索。"
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-api-knowledge-controller` 是 `/knowledge` 选择器的 Host 那一半：它回答成员可以检索什么，并记录他们选了什么。浏览器自己够不到 `ctx.knowledge`——该服务位于 Host，而持有设备 Token 的是它的提供方——因此选择器来问这里。它是独立的包而不是 session controller 上的更多接口面，因为知识只属于 Team：没有知识的组合不挂载它；而一个容忍服务缺席的 controller 只能报告空目录，那读起来像「你什么权限都没有」。
+`dsh-api-knowledge-controller` 是私有知识每一个浏览器界面的 Host 那一半：成员可以检索什么、他们为某个会话选了什么，以及他们在会话之外运行的检索。浏览器自己够不到 `ctx.knowledge`——该服务位于 Host，而持有设备 Token 的是它的提供方——因此选择器和面板都来问这里。它是独立的包而不是 session controller 上的更多接口面，因为知识只属于 Team：没有知识的组合不挂载它；而一个容忍服务缺席的 controller 只能报告空目录，那读起来像「你什么权限都没有」。
 
 ## 目录
 
@@ -38,11 +38,18 @@ kind: "package-reference"
 - name: '@deepseek-ai/dsh-api-knowledge-controller'
 ```
 
-### 两个方法
+### 四个方法
 
-`scope(sessionId)` 回答某个会话可以从什么中选择、它选了什么，以及它已选引用中哪些已不在已授权目录里。`choose(sessionId, mode, knowledgeRefs?)` 记录选择并回答同样的视图。
+| 方法 | 回答什么 | 需要会话 |
+|---|---|---|
+| `scope(sessionId)` | 某个会话可以从什么中选择、它选了什么，以及已选引用中哪些已不在目录里 | 是 |
+| `choose(sessionId, mode, knowledgeRefs?)` | 记录选择并回答同样的视图 | 是 |
+| `directory()` | 该成员此刻可以检索的知识库 | 否 |
+| `search(query, mode, knowledgeRefs?, maxResults?)` | 排名后的段落，以及实际被检索的知识库 | 否 |
 
 目录在每次调用时重新读取而不缓存：上次查看之后被撤销的授权应当让选择器变窄，管理员停用的知识库应当从中消失。
+
+`search` 是唯一不触及会话的方法：它不追加事件、不启动模型轮次，也不需要有会话处于打开状态。这正是它可以服务于成员自行打开的面板的原因——也正因如此，授权只是保持不变而非被放宽：Control Plane 会在这次调用上判定它所命名的每一个知识库。格式正确的引用会被原样传递，而不是先与这里读到的目录比对：真正作数的答案在 Control Plane，提前判断既要为每次查询多读一次目录，又仍可能与那个答案不一致。
 
 ### 选择为何携带名字
 
@@ -61,19 +68,20 @@ kind: "package-reference"
 
 | 文件 | 内容 |
 |---|---|
-| [`src/index.ts`](src/index.ts) | `knowledge` Remote 命名空间、其请求校验和范围投影 |
+| [`src/index.ts`](src/index.ts) | `knowledge` Remote 命名空间、其请求校验、范围投影，以及成员自行运行的检索 |
 
 <a id="further-exploration"></a>
 ## 延伸阅读
 
 - [dsh-client-ui-knowledge](../../client/ui-knowledge/README.zh.md) —— 本命名空间服务的选择器与 Chip。
+- [dsh-client-ui-knowledge-panels](../../client/ui-knowledge-panels/README.zh.md) —— 读取目录并运行检索的两个面板。
 - [知识子系统](../../../docs/subsystems/knowledge.zh.md) —— 本包记录的范围值。
 - [Team 私有知识 Agent Note](../../../.agents/notes/proposed/feature/2026-09-01-team-private-knowledge-control-plane.zh.md) —— 范围为何存在于会话日志中。
 
 <a id="model-experience"></a>
 ## 模型体验
 
-间接影响，通过 `dsh-tool-knowledge`：本包记录的范围决定它的提示词章节写出什么，也决定它的工具是否被提供。本 controller 不贡献提示词，也不注册 schema。
+间接影响，通过 `dsh-tool-knowledge`：本包记录的范围决定它的提示词章节写出什么，也决定它的工具是否被提供。本 controller 不贡献提示词，也不注册 schema。通过 `search` 运行的检索完全不到达模型——它的段落回答给浏览器，到此为止。
 
 #### KV Cache 影响
 
@@ -85,7 +93,8 @@ kind: "package-reference"
 
 这些限制界定了本 controller 自身在何处不完整。它们是当前的包约束。
 
-- **选择需要一个活跃会话** —— 两个方法都按会话 id 解析 agent，没有活跃 agent 时拒绝，因此无法为一个没在运行的会话设置范围。
+- **选择需要一个活跃会话** —— `scope` 与 `choose` 按会话 id 解析 agent，没有活跃 agent 时拒绝，因此无法为一个没在运行的会话设置范围。`directory` 与 `search` 不需要会话。
+- **成员自行运行的检索不被记录在任何地方** —— `search` 不追加会话事件，而 Control Plane 审计的是这次检索本身，不是哪个浏览器界面发起了它。
 - **没有变更通知** —— 已打开选择器的浏览器不会得知授权发生了变化；它在下次打开时看到收窄后的目录。
 - **没有逐次选择的审计** —— 记录范围只写会话事件。成员检索了哪些知识库由 Control Plane 在检索时审计，判定发生在那里。
 

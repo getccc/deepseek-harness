@@ -1,10 +1,11 @@
 /**
  * Host Remote owner for private knowledge: the authorized directory a browser
- * reads, and the Session scope choice it records.
+ * reads, the Session scope choice it records, and the retrieval a member runs
+ * for themselves.
  *
  * The browser cannot reach `ctx.knowledge` directly — the knowledge service
- * lives on the Host, and its provider is what holds the device token — so a
- * `/knowledge` picker asks here instead. This is a Team-only namespace: a
+ * lives on the Host, and its provider is what holds the device token — so the
+ * `/knowledge` picker and the knowledge panels ask here instead. This is a Team-only namespace: a
  * composition without private knowledge does not mount it, which is why it is
  * its own package rather than more surface on the session controller, where an
  * absent service would have to read as an empty directory.
@@ -18,12 +19,13 @@ import {
   KnowledgeError,
   foldKnowledgeScope,
   type KnowledgeScope,
+  type KnowledgeScopeSelection,
 } from '@deepseek-ai/dsh-knowledge'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import { SessionId } from '@deepseek-ai/dsh-session'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { z } from 'zod'
-import type { KnowledgeChoice, KnowledgeScopeView } from './types.ts'
+import type { KnowledgeChoice, KnowledgeScopeView, KnowledgeSearchView } from './types.ts'
 
 export type * from './types.ts'
 
@@ -46,6 +48,17 @@ const chooseRequestSchema = z.object({
   sessionId: z.string().min(1),
   mode: z.union([z.literal('off'), z.literal('all'), z.literal('selected')]),
   knowledgeRefs: z.array(z.string()).optional(),
+})
+
+// The same bounds the Control Plane's own request parser applies: a non-empty
+// query and, when given, a positive whole maximum. Everything else about how
+// much may come back is the gateway's and the provider's to decide, and a
+// second opinion here would refuse requests the Control Plane would serve.
+const searchRequestSchema = z.object({
+  query: z.string().min(1),
+  mode: z.union([z.literal('all'), z.literal('selected')]),
+  knowledgeRefs: z.array(z.string()).optional(),
+  maxResults: z.number().int().min(1).optional(),
 })
 
 /**
@@ -121,6 +134,79 @@ export class KnowledgeController extends TypertRemoteService {
     return this.scope(request.sessionId)
   }
 
+  /**
+   * Run one retrieval for the member, outside any Session.
+   *
+   * The panel calling this starts no model turn and appends no Session event:
+   * nothing here reaches a model, so nothing here has to be reconstructable
+   * from a log. Authorization is untouched — the Control Plane evaluates every
+   * knowledge base this names, on this call, exactly as it does for the tool.
+   * @param query - the natural-language question.
+   * @param mode - `all` for every currently authorized knowledge base, or `selected`.
+   * @param knowledgeRefs - the chosen references, required and non-empty for `selected`.
+   * @param maxResults - at most this many passages; the provider's own maximum still applies.
+   * @returns the ranked passages and the knowledge bases actually searched.
+   * @throws RemoteError when the request is invalid, a named reference is refused, or knowledge cannot be reached.
+   */
+  @Remote('search')
+  async search(query: string, mode: string, knowledgeRefs?: string[], maxResults?: number): Promise<KnowledgeSearchView> {
+    const request = parseRequest('knowledge.search', searchRequestSchema, { query, mode, knowledgeRefs, maxResults })
+    const scope: KnowledgeScopeSelection = request.mode === 'all'
+      ? { mode: 'all' }
+      : { mode: 'selected', refs: this.refsOf(request.knowledgeRefs ?? []) }
+    let result
+    try {
+      result = await this.ctx.knowledge.search({
+        query: request.query,
+        scope,
+        ...(request.maxResults === undefined ? {} : { maxResults: request.maxResults }),
+      })
+    } catch (error) {
+      throw this.unavailable(error)
+    }
+    // Names come from what was searched rather than from a second directory
+    // read: `all` expands on the Control Plane, so this is the only answer
+    // that names the knowledge bases this retrieval actually reached.
+    const names = new Map(result.searched.map(entry => [entry.ref as string, entry.displayName]))
+    return {
+      query: result.query,
+      searched: result.searched.map(entry => ({
+        knowledgeRef: entry.ref,
+        displayName: entry.displayName,
+        description: entry.description,
+      })),
+      passages: result.passages.map(passage => ({
+        knowledgeRef: passage.ref,
+        knowledgeName: names.get(passage.ref) ?? '',
+        title: passage.title,
+        text: passage.text,
+        truncated: passage.truncated,
+        score: passage.score,
+      })),
+      truncated: result.truncated,
+    }
+  }
+
+  /**
+   * Read the references one retrieval names, refusing what no call could use.
+   *
+   * Syntax alone is checked here. Whether a well-formed reference is one this
+   * member may search is the Control Plane's decision, made on the call that
+   * follows; anticipating it would cost a directory read per keystroke and
+   * could still disagree with the answer that matters.
+   */
+  private refsOf(refs: readonly string[]): readonly KnowledgeRef[] {
+    if (refs.length === 0) {
+      throw new RemoteError('knowledge/empty-selection', 'a knowledge selection names at least one knowledge base', {})
+    }
+    return refs.map((ref) => {
+      if (!isKnowledgeRef(ref)) {
+        throw new RemoteError('knowledge/not-available', 'that knowledge base is not available to this member', { knowledgeRef: ref })
+      }
+      return KnowledgeRef(ref)
+    })
+  }
+
   /** Turn one requested mode into the scope value a Session records. */
   private async buildScope(
     mode: 'off' | 'all' | 'selected',
@@ -141,8 +227,17 @@ export class KnowledgeController extends TypertRemoteService {
     return { version: 1, mode: 'selected', bases }
   }
 
-  /** The knowledge bases this member may search right now. */
-  private async directory(): Promise<readonly KnowledgeChoice[]> {
+  /**
+   * The knowledge bases this member may search right now.
+   *
+   * Read on every call rather than cached: a grant revoked since the last look
+   * should narrow what a panel shows, and a knowledge base an administrator
+   * switched off should leave it.
+   * @returns the authorized directory, empty when the member holds nothing.
+   * @throws RemoteError when knowledge cannot be reached or the member cannot be established.
+   */
+  @Remote('directory')
+  async directory(): Promise<readonly KnowledgeChoice[]> {
     try {
       return (await this.ctx.knowledge.catalog()).map(entry => ({
         knowledgeRef: entry.ref,
@@ -150,11 +245,19 @@ export class KnowledgeController extends TypertRemoteService {
         description: entry.description,
       }))
     } catch (error) {
-      // The closed reason travels so a picker can say "sign in again" or "the
-      // Control Plane is unreachable" rather than showing an empty list, which
-      // would read as "you have access to nothing".
-      throw new RemoteError('knowledge/unavailable', 'private knowledge could not be read', { reason: error instanceof KnowledgeError ? error.reason : 'control-plane-unreachable' })
+      throw this.unavailable(error)
     }
+  }
+
+  /**
+   * The refusal a failed knowledge operation reaches the browser as.
+   *
+   * The closed reason travels so a surface can say "sign in again" or "the
+   * Control Plane is unreachable" rather than showing an empty list, which
+   * would read as "you have access to nothing".
+   */
+  private unavailable(error: unknown): RemoteError<'knowledge/unavailable'> {
+    return new RemoteError('knowledge/unavailable', 'private knowledge could not be read', { reason: error instanceof KnowledgeError ? error.reason : 'control-plane-unreachable' })
   }
 
   /** One Session's folded scope, or the refusal that it is not open here. */

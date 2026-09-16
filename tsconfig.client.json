@@ -98,6 +98,7 @@
     { "path": "./packages/client/ui-goal" },
     { "path": "./packages/client/ui-message-feedback" },
     { "path": "./packages/client/ui-knowledge" },
+    { "path": "./packages/client/ui-knowledge-panels" },
     { "path": "./packages/client/ui-office" },
     { "path": "./packages/client/ui-sidebar-documentpreview-office" },
     { "path": "./packages/client/ui-model-selection" },

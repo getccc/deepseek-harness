@@ -64,6 +64,7 @@ The kernel packages boot and serve the page; the UI feature packages present it.
 | [`ui-schedule/`](ui-schedule/README.md) | Lists the current Session's active reminders in a read-only header catalog | — |
 | [`ui-jobs/`](ui-jobs/README.md) | Lists this session's background jobs in the conversation header | — |
 | [`ui-knowledge/`](ui-knowledge/README.md) | Chooses which private knowledge bases a conversation may search | — |
+| [`ui-knowledge-panels/`](ui-knowledge-panels/README.md) | Browses the authorized knowledge bases and retrieves from them without a model | — |
 | [`ui-model-selection/`](ui-model-selection/README.md) | Provides model selection in conversation surfaces | — |
 | [`ui-permission-presets/`](ui-permission-presets/README.md) | Configures default permissions and switches the current session's access | — |
 | [`ui-plan/`](ui-plan/README.md) | Presents active plan-mode status and its exit control | — |

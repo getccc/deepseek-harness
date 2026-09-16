@@ -1,5 +1,5 @@
 ---
-description: "The Team-only knowledge Remote: the authorized directory a browser reads, and the Session scope choice it records."
+description: "The Team-only knowledge Remote: the authorized directory a browser reads, the Session scope choice it records, and the retrieval a member runs for themselves."
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-api-knowledge-controller` is the Host half of the `/knowledge` picker: it answers what a member may search and records what they chose. The browser cannot reach `ctx.knowledge` itself — the service lives on the Host and its provider is what holds the device token — so the picker asks here. It is its own package rather than more surface on the session controller because knowledge is Team-only: a composition without it does not mount this, where a controller tolerating an absent service would have to report an empty directory, which reads as "you have access to nothing".
+`dsh-api-knowledge-controller` is the Host half of every browser surface for private knowledge: what a member may search, what they chose for one Session, and the retrievals they run outside a conversation. The browser cannot reach `ctx.knowledge` itself — the service lives on the Host and its provider holds the device token — so the picker and the panels ask here. It is its own package because knowledge is Team-only: a composition without it does not mount this, where a controller tolerating an absent service would report an empty directory, which reads as "you have access to nothing".
 
 ## Table of Contents
 
@@ -38,11 +38,18 @@ The controller has no configuration.
 - name: '@deepseek-ai/dsh-api-knowledge-controller'
 ```
 
-### The two methods
+### The four methods
 
-`scope(sessionId)` answers what one Session may choose from, what it has chosen, and which of its selected references the authorized directory no longer holds. `choose(sessionId, mode, knowledgeRefs?)` records the choice and answers the same view.
+| Method | Answers | Needs a Session |
+|---|---|---|
+| `scope(sessionId)` | What one Session may choose from, what it has chosen, and which selected references the directory no longer holds | Yes |
+| `choose(sessionId, mode, knowledgeRefs?)` | Records the choice and answers the same view | Yes |
+| `directory()` | The knowledge bases this member may search right now | No |
+| `search(query, mode, knowledgeRefs?, maxResults?)` | The ranked passages, and the knowledge bases actually searched | No |
 
 The directory is read on every call rather than cached: a grant revoked since the last look should narrow the picker, and a knowledge base an administrator switched off should leave it.
+
+`search` is the one method that touches no Session: it appends no event, starts no model turn, and needs no conversation to be open. That is what makes it safe for a panel a member opens on its own — and it is why authorization is unchanged rather than relaxed, because the Control Plane evaluates every knowledge base the call names, on that call. A well-formed reference is passed through rather than checked against a directory read here: the answer that matters is the Control Plane's, and anticipating it would cost a directory read per query and could still disagree.
 
 ### Why a choice carries names
 
@@ -61,19 +68,20 @@ Nothing here authorizes. The directory this controller offers is one the Control
 
 | File | Holds |
 |---|---|
-| [`src/index.ts`](src/index.ts) | The `knowledge` Remote namespace, its request validation, and the scope projection |
+| [`src/index.ts`](src/index.ts) | The `knowledge` Remote namespace, its request validation, the scope projection, and the member-run retrieval |
 
 <a id="further-exploration"></a>
 ## Further Exploration
 
 - [dsh-client-ui-knowledge](../../client/ui-knowledge/README.md) — the picker and chip this namespace answers.
+- [dsh-client-ui-knowledge-panels](../../client/ui-knowledge-panels/README.md) — the panels that read the directory and run retrievals.
 - [Knowledge subsystem](../../../docs/subsystems/knowledge.md) — the scope value this records.
 - [Team private knowledge Agent Note](../../../.agents/notes/proposed/feature/2026-09-01-team-private-knowledge-control-plane.md) — why the scope lives in the Session log.
 
 <a id="model-experience"></a>
 ## Model Experience
 
-Indirectly, through `dsh-tool-knowledge`: the scope this records is what its prompt section names and what decides whether its tool is offered. This controller contributes no prompt and registers no schema.
+Indirectly, through `dsh-tool-knowledge`: the scope this records is what its prompt section names and what decides whether its tool is offered. This controller contributes no prompt and registers no schema. A retrieval run through `search` reaches no model at all — its passages are answered to the browser and end there.
 
 #### KV Cache effect
 
@@ -85,7 +93,8 @@ No direct invalidation, but a recorded choice causes one: the named consumer's p
 
 These limits define when the controller is incomplete on its own. They are current package constraints.
 
-- **A choice needs a live Session** — both methods resolve an agent by Session id and refuse when none is open, so a scope cannot be set for a conversation that is not running.
+- **A choice needs a live Session** — `scope` and `choose` resolve an agent by Session id and refuse when none is open, so a scope cannot be set for a conversation that is not running. `directory` and `search` need no Session.
+- **A member-run retrieval is not recorded anywhere** — `search` appends no Session event, and what the Control Plane audits is the retrieval, not which browser surface asked for it.
 - **No change notification** — a browser that has the picker open does not learn that a grant changed; it sees the narrowed directory the next time it opens.
 - **No per-choice audit** — recording a scope writes only the Session event. Which knowledge bases a member searched is audited by the Control Plane at search time, which is where the decision is.
 

@@ -1,0 +1,187 @@
+/** The main panel a member retrieves from private knowledge with. */
+
+import { useEffect, useState } from 'react'
+import clsx from 'clsx'
+import { Button, IconSearchOutline16, Input } from '@deepseek-ai/dsh-client-ui-primitives'
+import type { ObservableSnapshot } from '@deepseek-ai/dsh-client-store'
+import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
+import type {
+  KnowledgeChoice, KnowledgePassageView, KnowledgeSearchView,
+} from '@deepseek-ai/dsh-api-knowledge-controller/types'
+// Type-only: pulls the layout SlotMap merge (the keyed `main` panel seat).
+import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
+import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
+import type {} from '@deepseek-ai/dsh-client-ui-session/client'
+import { formatScore, groupByDocument } from './results.ts'
+import css from './panels.module.css'
+
+/** What this panel needs from the plugin that registered it. */
+export interface KnowledgeSearchInjected {
+  /** The knowledge bases this member may search right now. */
+  directory: () => Promise<readonly KnowledgeChoice[]>
+  /** Run one retrieval; an empty selection searches every authorized knowledge base. */
+  search: (query: string, knowledgeRefs: readonly string[]) => Promise<KnowledgeSearchView>
+  /** Open a conversation scoped to one knowledge base, with a passage in its composer. */
+  discuss: (knowledgeRef: string, draft: string) => Promise<void>
+  /** Private reactive sources bound to framework selector hooks. */
+  hooks: { requested: ObservableSnapshot<readonly string[]> }
+}
+
+/** Full panel props: the main slot's runtime share, the plugin's face, and the locale seat. */
+export type KnowledgeSearchPanelProps =
+  PropsRuntime<'main'>
+  & InjectFace<KnowledgeSearchInjected>
+  & PropsLocale<'knowledgePanels'>
+
+/** What the result area is showing right now. */
+type Phase = 'idle' | 'running' | 'ready' | 'failed'
+
+/** The selection a hook snapshot puts in force, bounded to what is authorized. */
+function selectionOf(requested: readonly string[], entries: readonly KnowledgeChoice[]): readonly string[] {
+  const known = new Set(entries.map(entry => entry.knowledgeRef))
+  return requested.filter(ref => known.has(ref))
+}
+
+/**
+ * Retrieve from private knowledge without a model.
+ *
+ * The scope is a selection the member makes here and nothing else reads: no
+ * Session records it, because no model sees it. What a result row offers is
+ * the one thing that does reach a model — a conversation scoped to the
+ * document's knowledge base, with the passage quoted in its composer.
+ * @param props - the main slot's runtime share, the plugin's face, and the locale seat.
+ * @returns the panel element tree.
+ */
+export function KnowledgeSearchPanel({ directory, search, discuss, useRequested, t }: KnowledgeSearchPanelProps) {
+  const requested = useRequested(snapshot => snapshot)
+  const [entries, setEntries] = useState<readonly KnowledgeChoice[]>([])
+  const [chosen, setChosen] = useState<readonly string[]>([])
+  const [query, setQuery] = useState('')
+  const [phase, setPhase] = useState<Phase>('idle')
+  const [view, setView] = useState<KnowledgeSearchView | undefined>(undefined)
+  const [discussFailed, setDiscussFailed] = useState(false)
+
+  useEffect(() => {
+    let live = true
+    directory().then((rows) => {
+      if (!live) return
+      setEntries(rows)
+      // A knowledge base the bases panel asked for only counts while the
+      // directory still holds it: the ask travelled through the browser, and
+      // the directory is what the Control Plane just authorized.
+      setChosen(selectionOf(requested, rows))
+    }, () => {
+      if (live) setEntries([])
+    })
+    return () => { live = false }
+  }, [directory, requested])
+
+  const toggle = (knowledgeRef: string): void => {
+    setChosen(chosen.includes(knowledgeRef)
+      ? chosen.filter(ref => ref !== knowledgeRef)
+      : [...chosen, knowledgeRef])
+  }
+
+  const run = (): void => {
+    if (query.trim() === '') return
+    setPhase('running')
+    setDiscussFailed(false)
+    search(query, chosen).then((answer) => {
+      setView(answer)
+      setPhase('ready')
+    }, () => {
+      setView(undefined)
+      setPhase('failed')
+    })
+  }
+
+  const open = (passage: KnowledgePassageView): void => {
+    setDiscussFailed(false)
+    discuss(passage.knowledgeRef, t('draft.template', { title: passage.title, text: passage.text }))
+      .catch(() => { setDiscussFailed(true) })
+  }
+
+  const groups = view === undefined ? [] : groupByDocument(view)
+
+  return (
+    <section className={css.panel} aria-label={t('search.title')}>
+      <header className={css.header}>
+        <IconSearchOutline16 size={16} />
+        <h1 className={css.title}>{t('search.title')}</h1>
+      </header>
+
+      <div className={css.scope} role="group" aria-label={t('search.scope')}>
+        <button
+          type="button"
+          className={clsx(css.chip, chosen.length === 0 && css.chipOn)}
+          aria-pressed={chosen.length === 0}
+          onClick={() => { setChosen([]) }}
+        >
+          {t('search.scope.all')}
+        </button>
+        {entries.map(entry => (
+          <button
+            key={entry.knowledgeRef}
+            type="button"
+            className={clsx(css.chip, chosen.includes(entry.knowledgeRef) && css.chipOn)}
+            aria-pressed={chosen.includes(entry.knowledgeRef)}
+            onClick={() => { toggle(entry.knowledgeRef) }}
+          >
+            {entry.displayName}
+          </button>
+        ))}
+      </div>
+
+      <div className={css.query}>
+        <Input
+          className={clsx(css.queryInput)}
+          value={query}
+          placeholder={t('search.placeholder')}
+          aria-label={t('search.title')}
+          onChange={(event) => { setQuery(event.target.value) }}
+          onKeyDown={(event) => { if (event.key === 'Enter') run() }}
+        />
+        <Button variant="primary" disabled={phase === 'running' || query.trim() === ''} onClick={run}>
+          {phase === 'running' ? t('search.running') : t('search.run')}
+        </Button>
+      </div>
+
+      {phase === 'failed' && <p className={css.notice}><span className={css.failed}>{t('search.failed')}</span></p>}
+      {discussFailed && <p className={css.notice}><span className={css.failed}>{t('search.discuss.failed')}</span></p>}
+      {phase === 'ready' && groups.length === 0 && <p className={css.notice}>{t('search.empty')}</p>}
+      {phase === 'ready' && view !== undefined && groups.length > 0 && (
+        <>
+          <p className={css.summary}>
+            {t('search.summary', { passages: view.passages.length, documents: groups.length })}
+            {view.truncated && <span className={css.truncated}>{t('search.truncated')}</span>}
+          </p>
+          <ul className={css.list}>
+            {groups.map(group => (
+              <li key={group.key} className={css.card}>
+                <span className={css.cardName}>
+                  {group.title}
+                  <span className={css.cardMeta}>{group.knowledgeName}</span>
+                  <span className={css.cardMeta}>{t('search.score', { score: formatScore(group.best) })}</span>
+                </span>
+                {group.passages.map(passage => (
+                  <span key={`${passage.title}${String(passage.score)}${passage.text}`} className={css.cardText}>
+                    {passage.text}
+                    {passage.truncated && <span className={css.cardMeta}>{t('search.passage.truncated')}</span>}
+                  </span>
+                ))}
+                <span className={css.cardActions}>
+                  <Button
+                    variant="outline"
+                    onClick={() => { open(group.passages[0] as KnowledgePassageView) }}
+                  >
+                    {t('search.discuss')}
+                  </Button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  )
+}

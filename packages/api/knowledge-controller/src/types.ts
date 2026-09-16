@@ -17,6 +17,36 @@ export interface KnowledgeChoice {
   readonly description: string
 }
 
+/** One retrieved passage, as a member-run retrieval draws it. */
+export interface KnowledgePassageView {
+  /** Which knowledge base produced it. */
+  readonly knowledgeRef: string
+  /**
+   * That knowledge base's display name, resolved against the directory read
+   * for the same retrieval, so a row names its source without a second read.
+   */
+  readonly knowledgeName: string
+  /** The source document's title, empty when the upstream supplies none. */
+  readonly title: string
+  readonly text: string
+  /** Whether the text was cut to the provider's per-passage maximum. */
+  readonly truncated: boolean
+  /** The upstream relevance score, comparable only within one retrieval. */
+  readonly score: number
+}
+
+/** What one member-run retrieval answers. */
+export interface KnowledgeSearchView {
+  /** The query as asked, echoed so a result reads without its request. */
+  readonly query: string
+  /** The knowledge bases actually searched. */
+  readonly searched: readonly KnowledgeChoice[]
+  /** The passages, in the order the provider ranked them. */
+  readonly passages: readonly KnowledgePassageView[]
+  /** Whether passages were dropped to reach the requested maximum. */
+  readonly truncated: boolean
+}
+
 /** What the picker reads when it opens. */
 export interface KnowledgeScopeView {
   /** Every knowledge base this member may search right now. */

@@ -64,6 +64,7 @@ kind: "package-group"
 | [`ui-schedule/`](ui-schedule/README.zh.md) | 在只读标题栏目录中列出当前会话中生效的提醒 | — |
 | [`ui-jobs/`](ui-jobs/README.zh.md) | 在会话标题栏列出当前会话的后台任务 | — |
 | [`ui-knowledge/`](ui-knowledge/README.zh.md) | 选择本次对话可检索的私有知识库 | — |
+| [`ui-knowledge-panels/`](ui-knowledge-panels/README.zh.md) | 浏览已授权的知识库，并不经模型从中检索 | — |
 | [`ui-model-selection/`](ui-model-selection/README.zh.md) | 在对话界面中提供模型选择 | — |
 | [`ui-permission-presets/`](ui-permission-presets/README.zh.md) | 配置默认权限并切换当前会话的访问模式 | — |
 | [`ui-plan/`](ui-plan/README.zh.md) | 展示生效中的 plan mode 状态及其退出控件 | — |

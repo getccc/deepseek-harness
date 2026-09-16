@@ -64,6 +64,7 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/knowledge/knowledge-team': { kind: 'indirect', reason: 'The transport registers no prompt or schema; dsh-tool-knowledge renders passages and owns the scope prompt section.' },
   'packages/api/knowledge-controller': { kind: 'indirect', reason: 'The Remote registers no prompt or schema; the scope it records is what dsh-tool-knowledge names and gates on.' },
   'packages/client/ui-knowledge': { kind: 'indirect', reason: 'Browser-side picker and chip; the scope it records is what dsh-tool-knowledge names in the prompt and gates the search tool on.' },
+  'packages/client/ui-knowledge-panels': { kind: 'indirect', reason: 'Browser-side panels; a retrieval they run reaches no model, and the scope a discussion records is what dsh-tool-knowledge names in the prompt.' },
   'packages/api/office-controller': { kind: 'indirect', reason: 'The Remote records the office choice the browser makes; dsh-tool-office is what names it to the model.' },
   'packages/api/web-access-controller': { kind: 'indirect', reason: 'The Remote records the web switch the browser sets; dsh-tool-web is what offers or withholds the tools.' },
   'packages/client/ui-office': { kind: 'indirect', reason: 'Browser-side composer chip; the choice it records is what dsh-tool-office names in the prompt.' },

@@ -101,6 +101,7 @@ describe('dsh-team bundle', () => {
       ['tool-knowledge', '@deepseek-ai/dsh-tool-knowledge'],
       ['api-knowledge-controller', '@deepseek-ai/dsh-api-knowledge-controller'],
       ['client-ui-knowledge', '@deepseek-ai/dsh-client-ui-knowledge'],
+      ['client-ui-knowledge-panels', '@deepseek-ai/dsh-client-ui-knowledge-panels'],
     ] as const) {
       expect(inserted.get(id), id).toBe(name)
       expect(manifest.dependencies ?? {}, id).toHaveProperty(name)

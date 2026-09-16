@@ -1,14 +1,19 @@
 /**
- * What a picker may read and what it may record.
+ * What a picker may read and record, and what a panel may retrieve.
  *
  * The claim worth testing is that a recorded choice can only name knowledge
  * bases the member could search at the moment they chose — the log carries the
- * display names into a prompt, so a name it holds has to have been earned.
+ * display names into a prompt, so a name it holds has to have been earned. A
+ * member-run retrieval carries the opposite claim: it reaches no log at all,
+ * so the tests pin that it appends nothing and needs no open Session.
  */
 
 import { describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
-import { KnowledgeError, KnowledgeRef, type KnowledgeBaseEntry } from '@deepseek-ai/dsh-knowledge'
+import {
+  KnowledgeError, KnowledgeRef,
+  type KnowledgeBaseEntry, type KnowledgeSearchRequest, type KnowledgeSearchResult,
+} from '@deepseek-ai/dsh-knowledge'
 import { KnowledgeController, type KnowledgeScopeView } from '@deepseek-ai/dsh-api-knowledge-controller'
 
 const REF_A = 'weknora:prod:690c0727-1af5-4b7a-8465-ebd2845f2266'
@@ -26,6 +31,15 @@ interface Mounted {
   events: { type: string; data: unknown }[]
   /** What the next directory read answers, or the failure it raises. */
   directory: readonly KnowledgeBaseEntry[] | Error
+  /** What the next retrieval answers, or the failure it raises. */
+  result: KnowledgeSearchResult | Error
+  /** Every retrieval the controller asked for, in order. */
+  searched: KnowledgeSearchRequest[]
+}
+
+/** One retrieved passage. */
+function passage(ref: string, title: string, score: number): KnowledgeSearchResult['passages'][number] {
+  return { ref: KnowledgeRef(ref), title, text: '一级故障 30 分钟内响应。', truncated: false, score }
 }
 
 /** Mount the controller with one open Session and a scripted knowledge service. */
@@ -35,13 +49,23 @@ async function mount(open = true): Promise<Mounted> {
     controller: undefined as unknown as KnowledgeController,
     events: [],
     directory: [entry(REF_A, '临港知识库'), entry(REF_B, '南昌知识库')],
+    result: {
+      query: '故障响应时间',
+      searched: [entry(REF_A, '临港知识库')],
+      passages: [passage(REF_A, '运维手册', 0.81), passage(REF_A, '值班制度', 0.42)],
+      truncated: false,
+    },
+    searched: [],
   }
   ctx.provide('typert', { register: () => () => {} })
   ctx.provide('knowledge', {
     catalog: () => state.directory instanceof Error
       ? Promise.reject(state.directory)
       : Promise.resolve(state.directory),
-    search: () => Promise.reject(new Error('not used here')),
+    search: (request: KnowledgeSearchRequest) => {
+      state.searched.push(request)
+      return state.result instanceof Error ? Promise.reject(state.result) : Promise.resolve(state.result)
+    },
   })
   const session = {
     events: state.events,
@@ -182,5 +206,98 @@ describe('what a picker records', () => {
     await expect(mounted.controller.choose('session-1', 'all'))
       .rejects.toMatchObject({ code: 'knowledge/session-not-open' })
     expect(mounted.events).toEqual([])
+  })
+})
+
+describe('what a member retrieves for themselves', () => {
+  it('answers ranked passages, each naming the knowledge base it came from', async () => {
+    const mounted = await mount()
+    const view = await mounted.controller.search('故障响应时间', 'all')
+    expect(mounted.searched).toEqual([{ query: '故障响应时间', scope: { mode: 'all' } }])
+    expect(view.query).toBe('故障响应时间')
+    expect(view.searched.map(choice => choice.displayName)).toEqual(['临港知识库'])
+    expect(view.passages.map(row => [row.title, row.knowledgeName, row.score]))
+      .toEqual([['运维手册', '临港知识库', 0.81], ['值班制度', '临港知识库', 0.42]])
+  })
+
+  it('appends nothing to the Session log and needs no Session at all', async () => {
+    const mounted = await mount(false)
+    await mounted.controller.search('故障响应时间', 'all')
+    expect(mounted.events).toEqual([])
+  })
+
+  it('carries a selection and a requested maximum through unchanged', async () => {
+    const mounted = await mount()
+    await mounted.controller.search('故障响应时间', 'selected', [REF_A, REF_B], 5)
+    expect(mounted.searched).toEqual([{
+      query: '故障响应时间',
+      scope: { mode: 'selected', refs: [REF_A, REF_B] },
+      maxResults: 5,
+    }])
+  })
+
+  it('names a passage from a knowledge base the answer did not name at all', async () => {
+    const mounted = await mount()
+    mounted.result = {
+      query: '故障响应时间',
+      searched: [],
+      passages: [passage(REF_A, '运维手册', 0.81)],
+      truncated: true,
+    }
+    const view = await mounted.controller.search('故障响应时间', 'all')
+    // An unnamed source is shown as unnamed rather than dropped: the passage
+    // was retrieved, and hiding it would tell the member less than it knows.
+    expect(view.passages).toEqual([{
+      knowledgeRef: REF_A, knowledgeName: '', title: '运维手册',
+      text: '一级故障 30 分钟内响应。', truncated: false, score: 0.81,
+    }])
+    expect(view.truncated).toBe(true)
+  })
+
+  it.each([
+    ['an empty selection', 'selected', [], 'knowledge/empty-selection'],
+    ['a selection with no list at all', 'selected', undefined, 'knowledge/empty-selection'],
+    ['a reference that is not one at all', 'selected', ['not-a-reference'], 'knowledge/not-available'],
+  ])('refuses %s before reaching the Control Plane', async (_label, mode, refs, code) => {
+    const mounted = await mount()
+    await expect(mounted.controller.search('故障响应时间', mode, refs))
+      .rejects.toMatchObject({ code })
+    expect(mounted.searched).toEqual([])
+  })
+
+  it.each([
+    ['an empty query', '', 'all'],
+    ['the off mode, which is a Session choice rather than a retrieval', '故障响应时间', 'off'],
+  ])('refuses %s as a malformed request', async (_label, query, mode) => {
+    const mounted = await mount()
+    await expect(mounted.controller.search(query, mode)).rejects.toMatchObject({ code: 'gateway/bad-request' })
+    expect(mounted.searched).toEqual([])
+  })
+
+  it('reports the closed reason a refused retrieval carries', async () => {
+    const mounted = await mount()
+    mounted.result = new KnowledgeError('scope-incompatible')
+    await expect(mounted.controller.search('故障响应时间', 'all')).rejects.toMatchObject({
+      code: 'knowledge/unavailable', details: { reason: 'scope-incompatible' },
+    })
+  })
+})
+
+describe('what a panel reads before it retrieves', () => {
+  it('answers the authorized directory without a Session', async () => {
+    const mounted = await mount(false)
+    expect(await mounted.controller.directory())
+      .toEqual([
+        { knowledgeRef: REF_A, displayName: '临港知识库', description: '' },
+        { knowledgeRef: REF_B, displayName: '南昌知识库', description: '' },
+      ])
+  })
+
+  it('says why the directory could not be read', async () => {
+    const mounted = await mount()
+    mounted.directory = new KnowledgeError('control-plane-unreachable')
+    await expect(mounted.controller.directory()).rejects.toMatchObject({
+      code: 'knowledge/unavailable', details: { reason: 'control-plane-unreachable' },
+    })
   })
 })
