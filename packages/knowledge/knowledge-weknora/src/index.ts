@@ -100,6 +100,20 @@ export interface Config {
   requestTimeoutMs?: number
   /** The most passages one search may return, after enrichment. */
   maxSearchResults?: number
+  /** The most documents one document-ranked search may answer. */
+  maxSearchDocuments?: number
+  /**
+   * How many passages a document-ranked search asks the source for before
+   * grouping them by document.
+   *
+   * Far more than it returns, because passages cluster: a query every page
+   * header of a report matches answers its first hundred passages from a few
+   * reports. Probed against a live deployment, 200 candidates reached 18 to 39
+   * distinct documents across ordinary queries in about a second.
+   */
+  documentSearchCandidates?: number
+  /** The most passages one document carries in a document-ranked answer. */
+  passagesPerDocument?: number
   /** The most documents one listing page may return. */
   maxDocumentsPerPage?: number
   /**
@@ -123,6 +137,12 @@ export const name = 'knowledge-weknora'
 const DEFAULT_REQUEST_TIMEOUT_MS = 30_000
 /** The most passages one search returns when a deployment names no bound. */
 const DEFAULT_MAX_SEARCH_RESULTS = 20
+/** The most documents a document-ranked search answers when a deployment names no bound. */
+const DEFAULT_MAX_SEARCH_DOCUMENTS = 20
+/** How many candidates a document-ranked search reads when a deployment names none. */
+const DEFAULT_DOCUMENT_SEARCH_CANDIDATES = 200
+/** The most passages per document in a document-ranked answer when a deployment names no bound. */
+const DEFAULT_PASSAGES_PER_DOCUMENT = 3
 /** The most characters one passage carries when a deployment names no bound. */
 const DEFAULT_MAX_PASSAGE_CHARS = 4_000
 /** The most documents one listing page carries when a deployment names no bound. */
@@ -148,6 +168,9 @@ export default class WeknoraKnowledgeSource extends KnowledgeSource {
     credentialRef: z.string().required(),
     requestTimeoutMs: z.natural().default(DEFAULT_REQUEST_TIMEOUT_MS),
     maxSearchResults: z.natural().default(DEFAULT_MAX_SEARCH_RESULTS),
+    maxSearchDocuments: z.natural().min(1).default(DEFAULT_MAX_SEARCH_DOCUMENTS),
+    documentSearchCandidates: z.natural().min(1).default(DEFAULT_DOCUMENT_SEARCH_CANDIDATES),
+    passagesPerDocument: z.natural().min(1).default(DEFAULT_PASSAGES_PER_DOCUMENT),
     maxPassageChars: z.natural().default(DEFAULT_MAX_PASSAGE_CHARS),
     maxDocumentsPerPage: z.natural().min(1).default(DEFAULT_MAX_DOCUMENTS_PER_PAGE),
     maxDocumentBytes: z.natural().min(1).default(DEFAULT_MAX_DOCUMENT_BYTES),
@@ -239,15 +262,9 @@ export default class WeknoraKnowledgeSource extends KnowledgeSource {
     // one way this request could search something nobody authorized.
     const [first] = request.upstreamIds
     if (first === undefined) throw new KnowledgeError('upstream-invalid', 'search scope is empty')
+    if (request.maxDocuments !== undefined) return this.searchDocuments(request, first, request.maxDocuments)
     const bound = Math.min(request.maxResults, this.resolved.maxSearchResults)
-    const data = await this.call(hybridSearchPath(first), {
-      query_text: request.query,
-      match_count: bound,
-      knowledge_base_ids: [...request.upstreamIds],
-      // Present only when the caller narrowed to documents: the field means
-      // "inside these", and an empty array would mean the opposite upstream.
-      ...(request.upstreamDocIds === undefined ? {} : { knowledge_ids: [...request.upstreamDocIds] }),
-    }, request.signal)
+    const data = await this.call(hybridSearchPath(first), hybridSearchBody(request, bound), request.signal)
     const authorized = new Set(request.upstreamIds)
     const passages: UpstreamPassage[] = []
     for (const entry of data) {
@@ -266,6 +283,43 @@ export default class WeknoraKnowledgeSource extends KnowledgeSource {
       if (passages.length === bound) break
     }
     return passages
+  }
+
+  /**
+   * Rank documents: read a wide candidate set, then keep the best passages of
+   * the first documents it names.
+   *
+   * The candidates arrive in the source's own order, so a document's place is
+   * where its first passage ranked and a passage keeps its place inside its
+   * document; nothing is re-scored here. A passage naming no document stands
+   * for its title inside its knowledge base, which is how a reader groups it
+   * too. The answer is grouped — one document's passages, then the next — so
+   * a reader that groups by first appearance keeps the ranking.
+   */
+  private async searchDocuments(
+    request: UpstreamSearchRequest,
+    first: string,
+    maxDocuments: number,
+  ): Promise<readonly UpstreamPassage[]> {
+    const limit = Math.min(maxDocuments, this.resolved.maxSearchDocuments)
+    const data = await this.call(
+      hybridSearchPath(first), hybridSearchBody(request, this.resolved.documentSearchCandidates), request.signal,
+    )
+    const authorized = new Set(request.upstreamIds)
+    const groups = new Map<string, UpstreamPassage[]>()
+    for (const entry of data) {
+      const result = toSearchResult(entry)
+      if (result.chunkType !== 'text' || !authorized.has(result.upstreamId)) continue
+      const passage = this.toPassage(result)
+      const key = passage.upstreamDocId ?? `${passage.upstreamId}\u0000${passage.title}`
+      const group = groups.get(key)
+      if (group === undefined) {
+        if (groups.size < limit) groups.set(key, [passage])
+      } else if (group.length < this.resolved.passagesPerDocument) {
+        group.push(passage)
+      }
+    }
+    return [...groups.values()].flat()
   }
 
   /** Cut one wire result down to what may leave this module. */
@@ -509,6 +563,23 @@ function toKnowledgeBase(entry: unknown): UpstreamKnowledgeBase {
     embeddingModelId: text(row['embedding_model_id']),
     updatedAt: timestamp(row['updated_at']),
     createdAt: timestamp(row['created_at']),
+  }
+}
+
+/**
+ * The `hybrid-search` body for one request at one candidate count.
+ * @param request - the authorized search.
+ * @param matchCount - how many passages to ask the source for.
+ * @returns the JSON body.
+ */
+function hybridSearchBody(request: UpstreamSearchRequest, matchCount: number): Record<string, unknown> {
+  return {
+    query_text: request.query,
+    match_count: matchCount,
+    knowledge_base_ids: [...request.upstreamIds],
+    // Present only when the caller narrowed to documents: the field means
+    // "inside these", and an empty array would mean the opposite upstream.
+    ...(request.upstreamDocIds === undefined ? {} : { knowledge_ids: [...request.upstreamDocIds] }),
   }
 }
 

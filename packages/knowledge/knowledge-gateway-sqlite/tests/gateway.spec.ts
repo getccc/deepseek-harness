@@ -407,6 +407,31 @@ describe('searching', () => {
     expect(result.searched.map(entry => entry.displayName).sort()).toEqual(['临港知识库', '南昌知识库'].sort())
   })
 
+  it('passes a document ranking to the source, and calls it full at the documents asked for', async () => {
+    await grantBoth()
+    source.hits = [
+      { ...passage(A), upstreamDocId: 'doc-1' },
+      { ...passage(A), upstreamDocId: 'doc-1', text: '二级故障 2 小时内响应。' },
+      { ...passage(B), upstreamDocId: 'doc-2' },
+    ]
+    const full = await gateway.search({
+      orgId: ORG, principalId: ALICE, scope: { mode: 'all' }, query: '年度报告', maxDocuments: 2,
+    })
+    expect(source.searched[0]?.maxDocuments).toBe(2)
+    // Three passages, two documents: full for a document ranking of two.
+    expect(full.truncated).toBe(true)
+    const room = await gateway.search({
+      orgId: ORG, principalId: ALICE, scope: { mode: 'all' }, query: '年度报告', maxDocuments: 3,
+    })
+    expect(room.truncated).toBe(false)
+    // A passage naming no document counts once per title, as a reader groups it.
+    source.hits = [passage(A), passage(A)]
+    const titled = await gateway.search({
+      orgId: ORG, principalId: ALICE, scope: { mode: 'all' }, query: '年度报告', maxDocuments: 1,
+    })
+    expect(titled.truncated).toBe(true)
+  })
+
   it('narrows to a selected subset without widening it', async () => {
     await grantBoth()
     source.hits = [passage(A)]

@@ -48,6 +48,9 @@ Choose it when a deployment's private knowledge lives in WeKnora. A deployment w
 | `credentialRef` | — | Credential reference resolving to a WeKnora **space** key |
 | `requestTimeoutMs` | `30000` | How long one upstream call may take |
 | `maxSearchResults` | `20` | The most passages one search may return |
+| `maxSearchDocuments` | `20` | The most documents one document-ranked search may answer |
+| `documentSearchCandidates` | `200` | How many passages a document-ranked search asks the source for before grouping them |
+| `passagesPerDocument` | `3` | The most passages each document carries in a document-ranked answer |
 | `maxPassageChars` | `4000` | The most characters one passage may carry |
 
 `sourceCode`, `credentialRef`, and `baseUrl` are validated at plugin load. A source code is bounded at 19 characters over the audit token alphabet, because it is the part of a `KnowledgeRef` a deployment chooses and the reference as a whole must fit what the audit store will record.
@@ -59,6 +62,8 @@ WeKnora authenticates with `X-API-Key`. A **space** key is fixed to the space it
 ### Bounds and cost
 
 `maxSearchResults` is applied twice: as the upstream `match_count`, and again over the decoded results. The second application is not belt-and-braces. While WeKnora's context enrichment is on — and this provider keeps it on, because surrounding context is what partly stands in for a document read this delivery does not have — `match_count` is not a hard cap: the endpoint returns the top matches plus their parent, nearby, and relation chunks, so a request for ten answers with eleven.
+
+A search that sets `maxDocuments` ranks documents instead. Passages cluster in long documents — every page header of an annual report matches 年度报告, so on a live deployment the first ten passages came from two reports, the first hundred from eight — and a passage bound therefore names few documents. The provider asks for `documentSearchCandidates` passages, keeps each document at the rank of its first passage, gives it at most `passagesPerDocument` passages in their own order, and stops at `maxDocuments` bounded by `maxSearchDocuments`; the answer is grouped one document after another. Two hundred candidates reached 18 to 39 distinct documents across probed queries in about a second, and only the grouped answer leaves the Control Plane.
 
 `match_count` is also a global budget across the searched knowledge bases rather than a per-base one, so one base can fill the whole result set and crowd the others out.
 

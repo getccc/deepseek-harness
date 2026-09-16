@@ -314,6 +314,7 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
         ...(upstreamDocIds === undefined ? {} : { upstreamDocIds }),
         query: request.query,
         maxResults,
+        ...(request.maxDocuments === undefined ? {} : { maxDocuments: request.maxDocuments }),
         ...(request.signal === undefined ? {} : { signal: request.signal }),
       })
       passages = upstream.flatMap((passage) => {
@@ -350,7 +351,11 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
         kind: row.kind as KnowledgeKind,
       })),
       passages,
-      truncated: passages.length >= maxResults,
+      // A document-ranked answer is full when it names as many documents as
+      // were asked for; a passage-ranked one when it carries as many passages.
+      truncated: request.maxDocuments === undefined
+        ? passages.length >= maxResults
+        : new Set(passages.map(passage => passage.docRef ?? `${passage.ref}\u0000${passage.title}`)).size >= request.maxDocuments,
     }
   }
 

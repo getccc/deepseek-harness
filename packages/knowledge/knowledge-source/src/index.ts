@@ -154,6 +154,13 @@ export interface UpstreamSearchRequest {
   readonly query: string
   /** The most passages to return, after the provider's own bounds apply. */
   readonly maxResults: number
+  /**
+   * Rank documents instead: answer the best passages of at most this many
+   * distinct documents, grouped by document with the best document first.
+   * `maxResults` does not bound such an answer; the provider's own
+   * per-document and document bounds do.
+   */
+  readonly maxDocuments?: number
   readonly signal?: AbortSignal
 }
 

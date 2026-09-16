@@ -163,6 +163,7 @@ export default class TeamKnowledge extends Knowledge {
       query: request.query,
       scope: scopeOf(request.scope),
       ...(request.maxResults === undefined ? {} : { maxResults: request.maxResults }),
+      ...(request.maxDocuments === undefined ? {} : { maxDocuments: request.maxDocuments }),
     }, request.signal)
     const searched = body['searched']
     const passages = body['passages']

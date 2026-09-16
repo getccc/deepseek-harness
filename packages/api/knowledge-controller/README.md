@@ -29,7 +29,7 @@ Mount it in a composition that already mounts a knowledge provider; it registers
 
 ### Minimal configuration
 
-The controller has no configuration.
+The controller needs no configuration. `searchDocuments` (default `10`) is how many distinct documents one panel retrieval ranks; a deployment that wants a longer ranking raises it here, and the provider's own document bound still applies.
 
 ```yaml
 - name: '@deepseek-ai/dsh-knowledge-team'
@@ -48,7 +48,7 @@ The controller has no configuration.
 | `directory()` | The knowledge bases this member may search right now, each with the document count and creation time the Control Plane reports for it | No |
 | `documents(knowledgeRef, page?)` | One page of one knowledge base's documents, each named by a governed reference | No |
 | `documentContent(docRef)` | One document's original file as base64, or the parsed text standing in for it | No |
-| `search(query, mode, knowledgeRefs?)` | The ranked passages, and the knowledge bases actually searched | No |
+| `search(query, mode, knowledgeRefs?)` | The best passages of the `searchDocuments` most relevant documents, grouped by document, and the knowledge bases actually searched | No |
 
 The directory is read on every call rather than cached: a grant revoked since the last look should narrow the picker, and a knowledge base an administrator switched off should leave it.
 

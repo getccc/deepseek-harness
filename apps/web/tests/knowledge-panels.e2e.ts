@@ -208,9 +208,9 @@ describe('web e2e: knowledge panels', () => {
     await box.press('Enter')
 
     // Three passages from two documents: the two sharing a document group
-    // under its better score, which is what the summary counts and the rank
-    // follows. The query's terms are marked inside the text.
-    await page.getByText('共 3 段，来自 2 篇原文').waitFor({ timeout: 15_000 })
+    // under its better score, which is what the rank follows. The query's
+    // terms are marked inside the text.
+    await page.getByText('相关度最高的 2 篇原文').waitFor({ timeout: 15_000 })
     await page.getByText('排名 1').waitFor()
     await page.getByText('相似度 0.87').waitFor()
     await page.getByText('（本段已截断）').waitFor()

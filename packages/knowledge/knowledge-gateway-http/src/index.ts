@@ -344,7 +344,8 @@ export function apply(ctx: Context, config: Config): void {
       const query = opened.body['query']
       const scope = readScope(opened.body['scope'])
       const maxResults = readCount(opened.body['maxResults'])
-      if (typeof query !== 'string' || query === '' || scope === undefined || maxResults === 'invalid') {
+      const maxDocuments = readCount(opened.body['maxDocuments'])
+      if (typeof query !== 'string' || query === '' || scope === undefined || maxResults === 'invalid' || maxDocuments === 'invalid') {
         json(res, 400, { error: 'malformed' })
         return
       }
@@ -354,6 +355,7 @@ export function apply(ctx: Context, config: Config): void {
           scope,
           query,
           ...(maxResults === undefined ? {} : { maxResults }),
+          ...(maxDocuments === undefined ? {} : { maxDocuments }),
         }))
       } catch (error) {
         answerFailure(res, error)

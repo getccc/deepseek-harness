@@ -153,6 +153,13 @@ export interface SearchBody {
     | { readonly mode: 'documents'; readonly ref: string; readonly docRefs: readonly string[] }
   /** At most this many passages; the deployment's own maximum still applies. */
   readonly maxResults?: number
+  /**
+   * Rank documents: the best passages of at most this many distinct
+   * documents. No version marks it — a deployment that predates it ignores
+   * the field and ranks passages, which answers fewer documents and never a
+   * wider scope.
+   */
+  readonly maxDocuments?: number
 }
 
 /**

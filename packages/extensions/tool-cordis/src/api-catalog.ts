@@ -5376,7 +5376,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'GovernedSearchRequest',
-    declaration: 'export interface GovernedSearchRequest extends KnowledgePrincipal {\n    readonly scope: KnowledgeScopeSelection;\n    readonly query: string;\n    readonly maxResults?: number;\n    readonly signal?: AbortSignal;\n}',
+    declaration: 'export interface GovernedSearchRequest extends KnowledgePrincipal {\n    readonly scope: KnowledgeScopeSelection;\n    readonly query: string;\n    readonly maxResults?: number;\n    readonly maxDocuments?: number;\n    readonly signal?: AbortSignal;\n}',
   },
   {
     name: 'GrantId',
@@ -5596,7 +5596,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'KnowledgeSearchRequest',
-    declaration: 'export interface KnowledgeSearchRequest {\n    readonly query: string;\n    readonly scope: KnowledgeScopeSelection;\n    readonly maxResults?: number;\n    readonly signal?: AbortSignal;\n}',
+    declaration: 'export interface KnowledgeSearchRequest {\n    readonly query: string;\n    readonly scope: KnowledgeScopeSelection;\n    readonly maxResults?: number;\n    readonly maxDocuments?: number;\n    readonly signal?: AbortSignal;\n}',
   },
   {
     name: 'KnowledgeSearchResult',
@@ -7664,7 +7664,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'UpstreamSearchRequest',
-    declaration: 'export interface UpstreamSearchRequest {\n    readonly upstreamIds: readonly string[];\n    readonly upstreamDocIds?: readonly string[];\n    readonly query: string;\n    readonly maxResults: number;\n    readonly signal?: AbortSignal;\n}',
+    declaration: 'export interface UpstreamSearchRequest {\n    readonly upstreamIds: readonly string[];\n    readonly upstreamDocIds?: readonly string[];\n    readonly query: string;\n    readonly maxResults: number;\n    readonly maxDocuments?: number;\n    readonly signal?: AbortSignal;\n}',
   },
   {
     name: 'UserGroup',

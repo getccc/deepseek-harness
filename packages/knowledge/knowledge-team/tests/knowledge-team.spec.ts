@@ -166,6 +166,15 @@ describe('what leaves this computer', () => {
     }
   })
 
+  it('asks for a document ranking when the caller wants one', async () => {
+    controlPlane(200, results())
+    const ctx = await mount()
+    await ctx.knowledge.search({ query: '年度报告', scope: { mode: 'all' }, maxDocuments: 10 })
+    expect(calls[0]?.body).toEqual({
+      protocolVersion: KNOWLEDGE_SEARCH_VERSION, query: '年度报告', scope: { mode: 'all' }, maxDocuments: 10,
+    })
+  })
+
   it('leaves an unbounded search unbounded, so the deployment decides', async () => {
     controlPlane(200, results())
     const ctx = await mount()

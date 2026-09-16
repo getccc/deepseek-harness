@@ -48,6 +48,9 @@ kind: "package-reference"
 | `credentialRef` | — | 解析为 WeKnora **空间** Key 的凭据引用 |
 | `requestTimeoutMs` | `30000` | 一次上游调用可用的时长 |
 | `maxSearchResults` | `20` | 一次检索最多返回的段落数 |
+| `maxSearchDocuments` | `20` | 一次按文档排名的检索至多回答的文档数 |
+| `documentSearchCandidates` | `200` | 按文档排名的检索在分组之前向知识源请求的段落数 |
+| `passagesPerDocument` | `3` | 按文档排名的答案中每份文档至多携带的段落数 |
 | `maxPassageChars` | `4000` | 一个段落最多携带的字符数 |
 
 `sourceCode`、`credentialRef` 和 `baseUrl` 在插件加载时校验。数据源代码被限制为审计 token 字符集下的 19 个字符，因为它是 `KnowledgeRef` 中由部署选择的部分，而整个引用必须放得进审计存储会记录的内容。
@@ -59,6 +62,8 @@ WeKnora 以 `X-API-Key` 认证。**空间** Key 固定访问其所属空间；**
 ### 上界与成本
 
 `maxSearchResults` 被应用两次：作为上游的 `match_count`，以及在解码结果之后再应用一次。第二次不是多此一举。在 WeKnora 的上下文增强开启时——本提供方保持它开启，因为周边上下文正是本阶段所没有的文档阅读的部分替代——`match_count` 不是硬上限：端点返回最佳命中及其父级、邻近和关联分片，因此请求十条会返回十一条。
+
+设置了 `maxDocuments` 的检索改为按文档排名。段落会聚集在长文档里——年度报告的每个页眉都匹配「年度报告」，因此在线上部署中，前 10 个段落来自 2 份报告，前 100 个来自 8 份——按段落数设上限所能点出的文档很少。提供方向知识源请求 `documentSearchCandidates` 个段落，让每份文档排在其第一个段落的名次上，每份至多保留 `passagesPerDocument` 个段落并维持其原有顺序，在受 `maxSearchDocuments` 限制的 `maxDocuments` 处停止；答案按文档依次分组。在探测过的查询中，200 个候选在约一秒内覆盖 18 到 39 份不同文档，而离开 Control Plane 的只有分组后的答案。
 
 `match_count` 同时是跨所检索知识库的全局预算而非逐库预算，因此一个知识库可能占满整个结果集，把其余的挤出去。
 

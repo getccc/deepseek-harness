@@ -350,6 +350,8 @@ describe('searching', () => {
     ['a fractional result bound', { maxResults: 1.5 }],
     ['a zero result bound', { maxResults: 0 }],
     ['a result bound that is not a number', { maxResults: 'ten' }],
+    ['a fractional document count', { maxDocuments: 2.5 }],
+    ['a zero document count', { maxDocuments: 0 }],
   ])('refuses %s as malformed', async (_label, patch) => {
     await grantAll()
     // Object.entries drops nothing, so an `undefined` in the patch means
@@ -387,6 +389,14 @@ describe('searching', () => {
     source.hits = []
     await post(KNOWLEDGE_SEARCH_PATH, searchBody({ maxResults: 3 }))
     expect(source.searched[0]?.maxResults).toBe(3)
+    expect(source.searched[0]).not.toHaveProperty('maxDocuments')
+  })
+
+  it('carries a document ranking to the source', async () => {
+    await grantAll()
+    source.hits = []
+    await post(KNOWLEDGE_SEARCH_PATH, searchBody({ maxDocuments: 10 }))
+    expect(source.searched[0]?.maxDocuments).toBe(10)
   })
 })
 

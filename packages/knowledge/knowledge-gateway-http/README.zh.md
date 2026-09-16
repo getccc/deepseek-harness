@@ -41,7 +41,7 @@ kind: "package-reference"
 
 ### 这些路由
 
-`POST /team/knowledge/catalog` 只接受 `protocolVersion`，回答主体的已授权目录。`POST /team/knowledge/documents` 增加 `ref` 以及可选的 `page` 和 `pageSize`。`POST /team/knowledge/document` 增加 `docRef` 和可选的 `maxBytes`。`POST /team/knowledge/search` 增加 `query`、`scope` 和可选的 `maxResults`。没有任何请求体带有组织、主体、设备、数据源、地址、租户、凭据或上游 id 的字段——Runner 说出它想要什么，其余由 Control Plane 解析并授权。
+`POST /team/knowledge/catalog` 只接受 `protocolVersion`，回答主体的已授权目录。`POST /team/knowledge/documents` 增加 `ref` 以及可选的 `page` 和 `pageSize`。`POST /team/knowledge/document` 增加 `docRef` 和可选的 `maxBytes`。`POST /team/knowledge/search` 增加 `query`、`scope`、可选的 `maxResults`，以及请求按文档排名的可选 `maxDocuments`；早于 `maxDocuments` 的部署会忽略它并按段落排名，回答的文档更少，但范围绝不会更宽，因此没有用版本标记它。没有任何请求体带有组织、主体、设备、数据源、地址、租户、凭据或上游 id 的字段——Runner 说出它想要什么，其余由 Control Plane 解析并授权。
 
 每新增一条路由都上调当前协议版本，最低版本保持不变。版本随请求而非随 Runner 传递：一次请求声明的是它自身事实定型时的版本，因此这个区间在两个方向上都成立。在某条路由之前构建的 Runner 仍保有它已知的每条路由，只是没有任何东西去调用更新的那条；比自己所连部署更新的 Runner 也仍保有该部署提供的路由——目录，以及对整个知识库的检索——只在更新的那条请求上被拒绝。收窄到文档的检索之所以声明文档路由的版本，理由与路由相同：早于收窄的部署会以整个知识库作答，那比成员所要的更宽。
 

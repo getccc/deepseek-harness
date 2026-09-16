@@ -301,7 +301,7 @@ describe('the retrieval panel', () => {
     expect(panel.search).toHaveBeenCalledTimes(3)
   })
 
-  it('ranks the answer by document, marks the query in the text, and says how far it goes', async () => {
+  it('ranks the answer by document, marks the query in the text, and says how many documents it ranks', async () => {
     renderSearch({
       search: query => Promise.resolve({
         query,
@@ -325,9 +325,8 @@ describe('the retrieval panel', () => {
     // A fused ranking score is small; two significant figures keep neighbours apart.
     expect(screen.getByText('相似度 0.016')).toBeTruthy()
     expect(screen.getAllByText('故障', { selector: 'mark' }).length).toBeGreaterThan(0)
-    expect(screen.getByText('共 5 段，来自 4 篇原文')).toBeTruthy()
+    expect(screen.getByText('相关度最高的 4 篇原文')).toBeTruthy()
     expect(screen.getByText('（本段已截断）')).toBeTruthy()
-    expect(screen.getByText('结果已达上限，缩小检索范围可以看到更多')).toBeTruthy()
   })
 
   it('goes back to the documents when the query is emptied', async () => {

@@ -266,6 +266,27 @@ export interface Config {
 
 Source: [`packages/api/gateway/src/index.ts:119`](../packages/api/gateway/src/index.ts)
 
+<a id="deepseek-aidsh-api-knowledge-controller"></a>
+
+## `@deepseek-ai/dsh-api-knowledge-controller`
+
+Requires: `agents` · `knowledge` · `typert`
+
+```ts config-catalog
+/** Plugin config for the browser-facing knowledge Remote. */
+export interface Config {
+  /**
+   * How many documents one panel retrieval ranks.
+   *
+   * A member choosing a document reads a document ranking, so the retrieval
+   * panel asks for this many distinct documents rather than for passages.
+   */
+  searchDocuments?: number
+}
+```
+
+Source: [`packages/api/knowledge-controller/src/index.ts:121`](../packages/api/knowledge-controller/src/index.ts)
+
 <a id="deepseek-aidsh-api-session-controller"></a>
 
 ## `@deepseek-ai/dsh-api-session-controller`
@@ -1301,6 +1322,20 @@ export interface Config {
   requestTimeoutMs?: number
   /** The most passages one search may return, after enrichment. */
   maxSearchResults?: number
+  /** The most documents one document-ranked search may answer. */
+  maxSearchDocuments?: number
+  /**
+   * How many passages a document-ranked search asks the source for before
+   * grouping them by document.
+   *
+   * Far more than it returns, because passages cluster: a query every page
+   * header of a report matches answers its first hundred passages from a few
+   * reports. Probed against a live deployment, 200 candidates reached 18 to 39
+   * distinct documents across ordinary queries in about a second.
+   */
+  documentSearchCandidates?: number
+  /** The most passages one document carries in a document-ranked answer. */
+  passagesPerDocument?: number
   /** The most documents one listing page may return. */
   maxDocumentsPerPage?: number
   /**
@@ -4188,7 +4223,6 @@ These load from a `cordis.yml` entry with no `config:` block; they declare no co
 
 - `@deepseek-ai/dsh-acp-app` — requires `cmdlineArgs` ([`packages/bundle/acp-app/src/index.ts`](../packages/bundle/acp-app/src/index.ts))
 - `@deepseek-ai/dsh-agent` ([`packages/core/agent/src/index.ts`](../packages/core/agent/src/index.ts))
-- `@deepseek-ai/dsh-api-knowledge-controller` — requires `agents` · `knowledge` · `typert` ([`packages/api/knowledge-controller/src/index.ts`](../packages/api/knowledge-controller/src/index.ts))
 - `@deepseek-ai/dsh-api-office-controller` — requires `agents` · `typert` ([`packages/api/office-controller/src/index.ts`](../packages/api/office-controller/src/index.ts))
 - `@deepseek-ai/dsh-api-remotes` — requires `typertGateway` ([`packages/api/remotes/src/index.ts`](../packages/api/remotes/src/index.ts))
 - `@deepseek-ai/dsh-api-web-access-controller` — requires `agents` · `typert` · `web` ([`packages/api/web-access-controller/src/index.ts`](../packages/api/web-access-controller/src/index.ts))

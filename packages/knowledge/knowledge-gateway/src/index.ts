@@ -134,6 +134,8 @@ export interface GovernedSearchRequest extends KnowledgePrincipal {
   readonly query: string
   /** At most this many passages; the source's own maximum still applies. */
   readonly maxResults?: number
+  /** Rank documents: the best passages of at most this many distinct documents. */
+  readonly maxDocuments?: number
   readonly signal?: AbortSignal
 }
 

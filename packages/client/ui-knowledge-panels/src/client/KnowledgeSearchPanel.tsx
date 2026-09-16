@@ -261,10 +261,7 @@ export function KnowledgeSearchPanel({ directory, documents, search, discuss, t 
         {phase === 'ready' && groups.length === 0 && <p className={clsx(css.notice, css.column)}>{t('search.empty')}</p>}
         {phase === 'ready' && view !== undefined && groups.length > 0 && (
           <>
-            <p className={clsx(css.summary, css.column)}>
-              {t('search.summary', { passages: view.passages.length, documents: groups.length })}
-              {view.truncated && <span className={css.truncated}>{t('search.truncated')}</span>}
-            </p>
+            <p className={clsx(css.summary, css.column)}>{t('search.summary', { documents: groups.length })}</p>
             <ol className={css.ranked}>
               {groups.map((group, index) => {
                 const rank = index + 1

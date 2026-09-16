@@ -53,7 +53,7 @@ function passage(ref: string, title: string, score: number): KnowledgeSearchResu
 }
 
 /** Mount the controller with one open Session and a scripted knowledge service. */
-async function mount(open = true): Promise<Mounted> {
+async function mount(open = true, config: Parameters<typeof KnowledgeController.Config>[0] = {}): Promise<Mounted> {
   const ctx = new Context()
   const state: Mounted = {
     controller: undefined as unknown as KnowledgeController,
@@ -119,7 +119,7 @@ async function mount(open = true): Promise<Mounted> {
     snapshotEvents: () => state.events,
   }
   ctx.provide('agents', { get: () => open ? { session } : undefined })
-  await ctx.plugin(KnowledgeController).await()
+  await ctx.plugin(KnowledgeController, config).await()
   state.controller = ctx.get('knowledgeController') as KnowledgeController
   return state
 }
@@ -257,7 +257,8 @@ describe('what a member retrieves for themselves', () => {
   it('answers ranked passages, each naming the knowledge base it came from', async () => {
     const mounted = await mount()
     const view = await mounted.controller.search('故障响应时间', 'all')
-    expect(mounted.searched).toEqual([{ query: '故障响应时间', scope: { mode: 'all' } }])
+    // A panel retrieval ranks documents, at the deployment's count.
+    expect(mounted.searched).toEqual([{ query: '故障响应时间', scope: { mode: 'all' }, maxDocuments: 10 }])
     expect(view.query).toBe('故障响应时间')
     expect(view.searched.map(choice => choice.displayName)).toEqual(['临港知识库'])
     expect(view.passages.map(row => [row.title, row.knowledgeName, row.score]))
@@ -276,7 +277,14 @@ describe('what a member retrieves for themselves', () => {
     expect(mounted.searched).toEqual([{
       query: '故障响应时间',
       scope: { mode: 'selected', refs: [REF_A, REF_B] },
+      maxDocuments: 10,
     }])
+  })
+
+  it('ranks as many documents as the deployment configures', async () => {
+    const mounted = await mount(true, { searchDocuments: 25 })
+    await mounted.controller.search('故障响应时间', 'all')
+    expect(mounted.searched).toEqual([{ query: '故障响应时间', scope: { mode: 'all' }, maxDocuments: 25 }])
   })
 
   it('names a passage from a knowledge base the answer did not name at all', async () => {

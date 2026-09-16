@@ -349,9 +349,6 @@
   color: var(--dsw-alias-label-tertiary);
 }
 
-.truncated {
-  color: var(--dsw-alias-state-warn-label);
-}
 
 /* The retrieval panel's head: the heading and the query box, centred the way
    a search page is, above a feed or an answer that takes the full width. */
@@ -376,7 +373,10 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: min(760px, 100%);
+  /* The reading column's width, padding and border included, so the box and
+     the cards under it line up edge to edge. */
+  box-sizing: border-box;
+  width: min(900px, 100%);
   padding: 12px 12px 10px 14px;
   border: 1px solid var(--dsw-alias-border-l3);
   border-radius: 14px;

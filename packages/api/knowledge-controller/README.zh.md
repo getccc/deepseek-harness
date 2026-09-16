@@ -29,7 +29,7 @@ kind: "package-reference"
 
 ### 最小配置
 
-本 controller 没有配置。
+本 controller 不需要配置。`searchDocuments`（默认 `10`）是一次面板检索排名的不同文档数；需要更长排名的部署在这里调高它，提供方自己的文档上限仍然生效。
 
 ```yaml
 - name: '@deepseek-ai/dsh-knowledge-team'
@@ -48,7 +48,7 @@ kind: "package-reference"
 | `directory()` | 该成员此刻可以检索的知识库，并带上 Control Plane 为每个知识库报告的文档数量与创建时间 | 否 |
 | `documents(knowledgeRef, page?)` | 某个知识库中文档的一页，每份都由受治理引用命名 | 否 |
 | `documentContent(docRef)` | 某一份文档的原始文件（base64），或代替它的解析文本 | 否 |
-| `search(query, mode, knowledgeRefs?)` | 排名后的段落，以及实际被检索的知识库 | 否 |
+| `search(query, mode, knowledgeRefs?)` | 相关度最高的 `searchDocuments` 份文档中的最佳段落（按文档分组），以及实际被检索的知识库 | 否 |
 
 目录在每次调用时重新读取而不缓存：上次查看之后被撤销的授权应当让选择器变窄，管理员停用的知识库应当从中消失。
 

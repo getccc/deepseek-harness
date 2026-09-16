@@ -222,6 +222,19 @@ export interface KnowledgeSearchRequest {
   readonly scope: KnowledgeScopeSelection
   /** At most this many passages; the provider's own maximum still applies. */
   readonly maxResults?: number
+  /**
+   * Rank documents rather than passages: answer the best passages of at most
+   * this many distinct documents, the best document first.
+   *
+   * For a reader choosing a document. Passages cluster in long documents — a
+   * query every page header matches ranks a handful of reports first — so a
+   * passage ranking names far fewer documents than it has passages. Absent
+   * ranks passages, which is what a model reading the text wants. The
+   * provider's own document bound still applies, and a Control Plane older
+   * than the field ignores it and ranks passages: fewer documents, never a
+   * wider scope.
+   */
+  readonly maxDocuments?: number
   /** Aborts the operation, including the Control Plane request it produced. */
   readonly signal?: AbortSignal
 }

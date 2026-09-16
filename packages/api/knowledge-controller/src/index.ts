@@ -15,6 +15,7 @@
  */
 
 import { Context } from '@deepseek-ai/cordis'
+import Schema from '@deepseek-ai/schemastery'
 import {
   isKnowledgeDocRef,
   isKnowledgeRef,
@@ -116,13 +117,38 @@ function parseRequest<T>(method: string, schema: z.ZodType<T>, value: unknown): 
   throw new RemoteError('gateway/bad-request', `invalid payload for ${method}`, { issues: parsed.error.issues })
 }
 
+/** Plugin config for the browser-facing knowledge Remote. */
+export interface Config {
+  /**
+   * How many documents one panel retrieval ranks.
+   *
+   * A member choosing a document reads a document ranking, so the retrieval
+   * panel asks for this many distinct documents rather than for passages.
+   */
+  searchDocuments?: number
+}
+
+/** How many documents a panel retrieval ranks when a deployment names no count. */
+const DEFAULT_SEARCH_DOCUMENTS = 10
+
 /** Host service backing the generated `ctx.remote.knowledge` namespace. */
 export class KnowledgeController extends TypertRemoteService {
   static inject = ['agents', 'knowledge', 'typert']
 
-  /** @param ctx - Host context carrying the knowledge service and the agent registry. */
-  constructor(ctx: Context) {
+  static Config: Schema<Config> = Schema.object({
+    searchDocuments: Schema.natural().min(1).default(DEFAULT_SEARCH_DOCUMENTS),
+  })
+
+  /** The document count every panel retrieval asks for, as the schema resolved it. */
+  private readonly searchDocuments: number
+
+  /**
+   * @param ctx - Host context carrying the knowledge service and the agent registry.
+   * @param config - the plugin config, with the schema's defaults applied.
+   */
+  constructor(ctx: Context, config: Config) {
     super(ctx, 'knowledgeController', { namespace: 'knowledge' })
+    this.searchDocuments = (config as Required<Config>).searchDocuments
   }
 
   /**
@@ -305,10 +331,10 @@ export class KnowledgeController extends TypertRemoteService {
       : { mode: 'selected', refs: this.refsOf(request.knowledgeRefs ?? []) }
     let result
     try {
-      // No caller-set bound: the deployment's own maximum is the only one a
-      // browser surface has ever wanted, and a knob nothing sets is a knob
+      // A panel retrieval ranks documents, at a count the deployment sets
+      // rather than the browser: a knob nothing in the browser sets is a knob
       // that only shows up as a wrong argument count at the generated client.
-      result = await this.ctx.knowledge.search({ query: request.query, scope })
+      result = await this.ctx.knowledge.search({ query: request.query, scope, maxDocuments: this.searchDocuments })
     } catch (error) {
       throw this.unavailable(error)
     }

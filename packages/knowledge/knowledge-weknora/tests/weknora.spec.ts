@@ -193,6 +193,55 @@ describe('listing a source', () => {
   })
 })
 
+describe('ranking documents rather than passages', () => {
+  /** One hit inside one document, at a given score. */
+  const hitIn = (doc: string, score: number, patch: Record<string, unknown> = {}) =>
+    wireHit(A, { knowledge_id: doc, knowledge_title: `${doc}.pdf`, score, ...patch })
+
+  it('reads the configured candidate count, whatever the passage bound says', async () => {
+    const { ctx, calls } = await mount([ok([hitIn('doc-1', 0.9)])], { documentSearchCandidates: 150 })
+    await ctx.knowledgeSource.search({ upstreamIds: [A], query: '年度报告', maxResults: 5, maxDocuments: 10 })
+    expect(calls[0]?.body).toEqual({ query_text: '年度报告', match_count: 150, knowledge_base_ids: [A] })
+  })
+
+  it('keeps each document at the rank of its first passage, with its passages in their own order', async () => {
+    const { ctx } = await mount([ok([
+      hitIn('doc-1', 0.9, { content: 'a' }),
+      hitIn('doc-1', 0.8, { content: 'b' }),
+      hitIn('doc-2', 0.7, { content: 'c' }),
+      hitIn('doc-1', 0.6, { content: 'd' }),
+      hitIn('doc-3', 0.5, { content: 'e' }),
+    ])])
+    const passages = await ctx.knowledgeSource.search({ upstreamIds: [A], query: 'q', maxResults: 1, maxDocuments: 10 })
+    // Grouped: every passage of the first document, then the next document's.
+    expect(passages.map(passage => [passage.upstreamDocId, passage.text]))
+      .toEqual([['doc-1', 'a'], ['doc-1', 'b'], ['doc-1', 'd'], ['doc-2', 'c'], ['doc-3', 'e']])
+  })
+
+  it('stops at the documents asked for, the configured ceiling, and the passages each may carry', async () => {
+    const hits = ['doc-1', 'doc-1', 'doc-1', 'doc-1', 'doc-2', 'doc-3', 'doc-4'].map((doc, index) => hitIn(doc, 1 - index / 10))
+    const asked = await mount([ok(hits)], { passagesPerDocument: 2 })
+    const two = await asked.ctx.knowledgeSource.search({ upstreamIds: [A], query: 'q', maxResults: 1, maxDocuments: 2 })
+    expect(two.map(passage => passage.upstreamDocId)).toEqual(['doc-1', 'doc-1', 'doc-2'])
+    const capped = await mount([ok(hits)], { maxSearchDocuments: 3 })
+    const three = await capped.ctx.knowledgeSource.search({ upstreamIds: [A], query: 'q', maxResults: 1, maxDocuments: 50 })
+    expect(new Set(three.map(passage => passage.upstreamDocId))).toEqual(new Set(['doc-1', 'doc-2', 'doc-3']))
+  })
+
+  it('groups a hit naming no document under its title, and skips what a passage search skips', async () => {
+    const { ctx } = await mount([ok([
+      wireHit(A, { knowledge_title: '值班制度', score: 0.9 }),
+      wireHit(A, { knowledge_title: '值班制度', score: 0.8, content: '第二段' }),
+      hitIn('doc-9', 0.7, { chunk_type: 'image' }),
+      wireHit('00000000-0000-0000-0000-000000000000', { knowledge_id: 'doc-8', score: 0.6 }),
+      hitIn('doc-1', 0.5),
+    ])])
+    const passages = await ctx.knowledgeSource.search({ upstreamIds: [A], query: 'q', maxResults: 1, maxDocuments: 10 })
+    expect(passages.map(passage => [passage.upstreamDocId ?? passage.title, passage.text]))
+      .toEqual([['值班制度', '一级故障 30 分钟内响应。'], ['值班制度', '第二段'], ['doc-1', '一级故障 30 分钟内响应。']])
+  })
+})
+
 describe('searching an authorized set', () => {
   it('puts an authorized id in the path and the whole set in the body', async () => {
     const { ctx, calls } = await mount([ok([wireHit(A)])])
