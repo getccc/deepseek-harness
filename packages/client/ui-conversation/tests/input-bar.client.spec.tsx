@@ -92,6 +92,8 @@ interface BenchOptions {
   t?: InputBarProps['t']
   accessory?: React.ReactNode
   overlay?: React.ReactNode
+  /** What the context seat renders at the top of the card. */
+  context?: React.ReactNode
   leftItems?: React.ReactNode
   rightItems?: React.ReactNode
   footer?: React.ReactNode
@@ -159,6 +161,7 @@ function bench(over?: BenchOptions) {
   const renderSlot = ((key: string, owner: object) => {
     slotCalls.push({ key, owner })
     if (key === 'conversation.input.overlay') return over?.overlay ?? null
+    if (key === 'conversation.input.context') return over?.context ?? null
     if (key === 'conversation.input.left') return over?.leftItems ?? null
     if (key === 'conversation.input.right') return over?.rightItems ?? null
     if (key === 'conversation.composer.dock') return over?.footer ?? null
@@ -1575,6 +1578,15 @@ describe('strips and variants', () => {
   })
 })
 
+describe('the composer context seat', () => {
+  it('draws what it holds inside the card, above the draft attachments', () => {
+    const { view } = bench({ context: <span data-testid="composer-context">运维手册.pdf</span> })
+    const card = view.container.querySelector('[data-composer-card]')
+    const context = view.getByTestId('composer-context')
+    expect(card?.contains(context)).toBe(true)
+  })
+})
+
 describe('command launcher chrome and control seats', () => {
   it('renders the command launcher and dispatches every empty control seat', () => {
     const { view, slotCalls } = bench()
@@ -1584,7 +1596,7 @@ describe('command launcher chrome and control seats', () => {
     // Every seat dispatched, nothing rendered (render passes may repeat; the
     // seat set is the contract).
     expect([...new Set(slotCalls.map(c => c.key))]).toEqual([
-      'conversation.input.overlay', 'conversation.input.attachments',
+      'conversation.input.overlay', 'conversation.input.context', 'conversation.input.attachments',
       'conversation.input.permission', 'conversation.input.plan', 'conversation.input.left',
       'conversation.input.right', 'conversation.input.model',
       'conversation.composer.dock',

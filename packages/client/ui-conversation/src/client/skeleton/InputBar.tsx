@@ -366,6 +366,7 @@ export const InputBar = memo(function InputBar({
           <div className={css.overlayAnchor}>{renderSlot('conversation.input.overlay', {})}</div>
         )}
         {accessory !== undefined && <div className={css.accessory}>{accessory}</div>}
+        {sessionId !== undefined && renderSlot('conversation.input.context', {})}
         {renderSlot('conversation.input.attachments', {
           attachments,
           canAcceptDrop,

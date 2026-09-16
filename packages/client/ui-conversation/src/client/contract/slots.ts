@@ -165,6 +165,13 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
     'conversation.input.dock': { kind: 'list'; scope: 'session'; owner: InputZone }
     /** Floating entries rendered inside the resident composer card. */
     'conversation.input.overlay': { kind: 'list'; scope: 'session' }
+    /**
+     * Entries at the top of the composer card, above the draft's own
+     * attachments, naming what the next message is answered from — a
+     * knowledge document a conversation was opened about, for one. A list,
+     * because the draft attachment rail is the single slot one plugin owns.
+     */
+    'conversation.input.context': { kind: 'list'; scope: 'session' }
     /** Ambient entries below the composer card. */
     'conversation.composer.dock': { kind: 'list'; scope: 'session' }
     /** Compact controls at the left of the composer tool row. */
@@ -344,7 +351,7 @@ export type ComposerBarProps =
   PropsRuntime<'conversation.composer.bar'>
   & PropsRenderSlots<
     | 'conversation.input.attachments' | 'conversation.input.overlay'
-    | 'conversation.input.permission'
+    | 'conversation.input.context' | 'conversation.input.permission'
     | 'conversation.input.left' | 'conversation.input.plan'
     | 'conversation.input.right' | 'conversation.input.model'
     | 'conversation.composer.dock'

@@ -27,14 +27,14 @@ import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
-import { KnowledgeDocumentsDock, type KnowledgeDocumentsDockInjected } from './KnowledgeDocumentsDock.tsx'
+import { KnowledgeDocumentCards, type KnowledgeDocumentCardsInjected } from './KnowledgeDocumentCards.tsx'
 import { KnowledgeSelect, type KnowledgeSelectInjected } from './KnowledgeSelect.tsx'
 import { choiceOf, documentsOf, optionsOf, toggleScope, type KnowledgeChoiceRequest } from './scope.ts'
 import { en, zh, type KnowledgeKey } from './locales.ts'
 
 export { ALL_ROW_ID, chipLabel, choiceOf, chosenRows, documentsOf, optionsOf, toggleScope } from './scope.ts'
-export { KnowledgeDocumentsDock } from './KnowledgeDocumentsDock.tsx'
-export type { KnowledgeDocumentsDockInjected, KnowledgeDocumentsDockProps } from './KnowledgeDocumentsDock.tsx'
+export { KnowledgeDocumentCards } from './KnowledgeDocumentCards.tsx'
+export type { KnowledgeDocumentCardsInjected, KnowledgeDocumentCardsProps } from './KnowledgeDocumentCards.tsx'
 export type { KnowledgeChoiceRequest } from './scope.ts'
 export type { KnowledgeKey } from './locales.ts'
 
@@ -142,15 +142,13 @@ function registerUi(ctx: ClientContext): void {
     }),
   }, KnowledgeSelect))
 
-  ctx.slots.inject('conversation.input.dock', () => ctx.slots.register({
-    name: 'conversation.input.dock',
+  ctx.slots.inject('conversation.input.context', () => ctx.slots.register({
+    name: 'conversation.input.context',
     id: 'knowledge-documents',
-    // Directly above the composer card, below the todo and queue docks: it
-    // names what the next message will be answered from.
-    order: 90,
+    order: 0,
     locale: NS,
-    inject: (sessionId: SessionId): KnowledgeDocumentsDockInjected => ({
+    inject: (sessionId: SessionId): KnowledgeDocumentCardsInjected => ({
       remove: docRef => removeDocument(sessionId, docRef),
     }),
-  }, KnowledgeDocumentsDock))
+  }, KnowledgeDocumentCards))
 }

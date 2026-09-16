@@ -13,7 +13,7 @@ import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { KnowledgeRef } from '@deepseek-ai/dsh-knowledge'
 import type { KnowledgeScopeView } from '@deepseek-ai/dsh-api-knowledge-controller/types'
 import type { CommandContribution, SelectOption } from '@deepseek-ai/dsh-client-ui-commands/client'
-import { KnowledgeDocumentsDock, type KnowledgeDocumentsDockInjected } from '../src/client/KnowledgeDocumentsDock.tsx'
+import { KnowledgeDocumentCards, type KnowledgeDocumentCardsInjected } from '../src/client/KnowledgeDocumentCards.tsx'
 import { KnowledgeSelect, type KnowledgeSelectInjected } from '../src/client/KnowledgeSelect.tsx'
 import { ALL_ROW_ID } from '../src/client/scope.ts'
 import { apply, inject } from '../src/client/index.ts'
@@ -93,7 +93,7 @@ async function bench(scope: KnowledgeScopeView | Error = DIRECTORY) {
     name: 'root',
     children: {
       'conversation.input.left': { kind: 'list', scope: 'session' },
-      'conversation.input.dock': { kind: 'list', scope: 'session' },
+      'conversation.input.context': { kind: 'list', scope: 'session' },
     },
   } as never, () => null)
   const locale = new LocaleRuntime(ctx)
@@ -220,14 +220,14 @@ describe('what the composer control is given', () => {
   })
 })
 
-describe('what the documents dock is given', () => {
+describe('what the document cards are given', () => {
   const DOC_A = `${REF}/doc-1`
   const DOC_B = `${REF}/doc-2`
 
-  /** The dock's injected face for one Session. */
-  function face(b: Awaited<ReturnType<typeof bench>>): KnowledgeDocumentsDockInjected {
-    const seat = b.slots.entries('conversation.input.dock')[0]!
-    return (seat.inject as unknown as (id: SessionId) => KnowledgeDocumentsDockInjected)(SID)
+  /** The cards' injected face for one Session. */
+  function face(b: Awaited<ReturnType<typeof bench>>): KnowledgeDocumentCardsInjected {
+    const seat = b.slots.entries('conversation.input.context')[0]!
+    return (seat.inject as unknown as (id: SessionId) => KnowledgeDocumentCardsInjected)(SID)
   }
 
   /** The directory with this Session narrowed to the given documents. */
@@ -238,12 +238,12 @@ describe('what the documents dock is given', () => {
     }
   }
 
-  it('sits in the composer dock, and leaves it on teardown', async () => {
+  it('sit in the composer context seat, and leave it on teardown', async () => {
     const b = await bench()
-    const seat = b.slots.entries('conversation.input.dock')[0]!
-    expect(seat.component).toBe(KnowledgeDocumentsDock)
+    const seat = b.slots.entries('conversation.input.context')[0]!
+    expect(seat.component).toBe(KnowledgeDocumentCards)
     await b.fiber.dispose()
-    expect(b.slots.entries('conversation.input.dock')).toHaveLength(0)
+    expect(b.slots.entries('conversation.input.context')).toHaveLength(0)
   })
 
   it('re-records the documents that remain, with the titles the log holds', async () => {
@@ -264,7 +264,7 @@ describe('what the documents dock is given', () => {
     expect(b.recorded.at(-1)).toEqual({ sessionId: SID, mode: 'off', knowledgeRefs: [] })
   })
 
-  it('carries a refusal to the dock that asked', async () => {
+  it('carries a refusal to the card that asked', async () => {
     const b = await bench(narrowedTo([{ ref: DOC_A, title: '运维手册' }, { ref: DOC_B, title: '值班制度' }]))
     b.refuseNextChoice('that document is not available to this member')
     await expect(face(b).remove(DOC_A)).rejects.toThrow('that document is not available to this member (bad-request)')
