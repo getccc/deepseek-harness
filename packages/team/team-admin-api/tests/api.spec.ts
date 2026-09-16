@@ -87,6 +87,7 @@ class ScriptedKnowledgeSource extends KnowledgeSource {
     upstreamId: KB_A, name: '临港知识库', description: '', kind: 'document',
     documentCount: 1, processingCount: 0,
     embeddingModelId: 'emb-shared', updatedAt: undefined,
+    createdAt: undefined,
   }]
 
   /** What the next listing raises instead of answering, when a test sets one. */

@@ -17,7 +17,6 @@
  * the same Remote.
  */
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
-import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
 import type { MainPanelId } from '@deepseek-ai/dsh-client-ui-layout/client'
 import type { RemoteResult } from '@deepseek-ai/dsh-api-remotes/client'
 import type {
@@ -106,11 +105,6 @@ function registerUi(ctx: ClientContext): void {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'ui-knowledge-panels: dictionaries')
   const t = ctx.locale.bind(NS)
 
-  // What the knowledge-base list asked the retrieval panel to start from. It
-  // is a request rather than a selection: the panel keeps it only while its
-  // own directory read still holds that knowledge base.
-  const requested = createSnapshotStore<readonly string[]>([])
-
   const directory = async (): Promise<readonly KnowledgeChoice[]> =>
     unwrap(await ctx.remote.knowledge.directory())
 
@@ -171,26 +165,13 @@ function registerUi(ctx: ClientContext): void {
       name: 'main',
       key: BASES_PANEL,
       locale: NS,
-      inject: (): KnowledgeBasesInjected => ({
-        directory,
-        documents,
-        content,
-        searchIn: (knowledgeRef) => {
-          requested.set([knowledgeRef])
-          ctx.layout.selectPanel(SEARCH_PANEL)
-        },
-      }),
+      inject: (): KnowledgeBasesInjected => ({ directory, documents, content }),
     }, KnowledgeBasesPanel)
     yield ctx.slots.register({
       name: 'main',
       key: SEARCH_PANEL,
       locale: NS,
-      inject: (): KnowledgeSearchInjected => ({
-        directory,
-        search,
-        discuss,
-        hooks: { requested },
-      }),
+      inject: (): KnowledgeSearchInjected => ({ directory, search, discuss }),
     }, KnowledgeSearchPanel)
   })
 }

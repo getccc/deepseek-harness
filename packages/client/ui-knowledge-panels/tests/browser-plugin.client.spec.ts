@@ -171,15 +171,6 @@ describe('ui-knowledge-panels browser apply', () => {
     await b.fiber.dispose()
   })
 
-  it('carries one knowledge base from the list to the retrieval panel', async () => {
-    const b = await bench()
-    faceOf(b, BASES_PANEL).searchIn(REF_A)
-    expect(b.panels).toEqual([SEARCH_PANEL])
-    const search = faceOf(b, SEARCH_PANEL)
-    expect(search.hooks.requested.getSnapshot()).toEqual([REF_A])
-    await b.fiber.dispose()
-  })
-
   it('asks for everything when nothing is selected, and for the selection when something is', async () => {
     const b = await bench()
     const face = faceOf(b, SEARCH_PANEL)

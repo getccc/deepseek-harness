@@ -22,8 +22,6 @@ export interface KnowledgeBasesInjected {
   documents: (knowledgeRef: string, page: number) => Promise<KnowledgeDocumentsView>
   /** One document's content: the original file, or the parsed text standing in for it. */
   content: (docRef: string) => Promise<KnowledgeDocumentContentView>
-  /** Open the retrieval panel with one knowledge base already chosen. */
-  searchIn: (knowledgeRef: string) => void
 }
 
 /** Full panel props: the main slot's runtime share, the plugin's face, and the locale seat. */
@@ -71,7 +69,7 @@ function titleOf(document: KnowledgeDocumentView): string {
  * @param props - the main slot's runtime share, the plugin's face, and the locale seat.
  * @returns the panel element tree.
  */
-export function KnowledgeBasesPanel({ directory, documents, content, searchIn, t }: KnowledgeBasesPanelProps) {
+export function KnowledgeBasesPanel({ directory, documents, content, t }: KnowledgeBasesPanelProps) {
   const [phase, setPhase] = useState<Phase>('loading')
   const [entries, setEntries] = useState<readonly KnowledgeChoice[]>([])
   const [attempt, setAttempt] = useState(0)
@@ -174,18 +172,28 @@ export function KnowledgeBasesPanel({ directory, documents, content, searchIn, t
             {phase === 'ready' && entries.length > 0 && (
               <ul className={css.grid}>
                 {entries.map(entry => (
-                  <li key={entry.knowledgeRef} className={css.card}>
+                  <li key={entry.knowledgeRef} className={clsx(css.card, css.cardFlush)}>
                     <button type="button" className={css.cardSelect} onClick={() => { open(entry.knowledgeRef) }}>
-                      <span className={css.cardName}>{entry.displayName}</span>
-                      <span className={clsx(css.cardText, entry.description === '' && css.cardMeta)}>
-                        {entry.description === '' ? t('bases.description.empty') : entry.description}
+                      <span className={css.cardHead}>
+                        <span className={css.cardName}>{entry.displayName}</span>
+                        <span className={clsx(css.cardText, entry.description === '' && css.cardMeta)}>
+                          {entry.description === '' ? t('bases.description.empty') : entry.description}
+                        </span>
                       </span>
+                      {/* What the Control Plane recorded about the knowledge
+                          base itself. A deployment that reports neither leaves
+                          the footer out rather than showing a zero. */}
+                      {(entry.documentCount !== undefined || entry.createdAt !== undefined) && (
+                        <span className={css.cardFoot}>
+                          {entry.documentCount !== undefined && (
+                            <span className={css.cardTag}>{t('bases.documents', { count: entry.documentCount })}</span>
+                          )}
+                          {entry.createdAt !== undefined && (
+                            <span className={css.cardTag}>{t('bases.created', { day: dayText(entry.createdAt) })}</span>
+                          )}
+                        </span>
+                      )}
                     </button>
-                    <span className={css.cardActions}>
-                      <Button variant="outline" onClick={() => { searchIn(entry.knowledgeRef) }}>
-                        {t('bases.search')}
-                      </Button>
-                    </span>
                   </li>
                 ))}
               </ul>

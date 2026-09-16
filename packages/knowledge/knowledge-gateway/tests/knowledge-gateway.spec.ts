@@ -52,6 +52,7 @@ class StubGateway extends KnowledgeGateway {
         effectiveEnabled: true,
         lastDiscoveredAt: 1,
         upstreamUpdatedAt: undefined,
+        upstreamCreatedAt: undefined,
       }],
     })
   }
@@ -82,6 +83,7 @@ class StubGateway extends KnowledgeGateway {
         byteSize: 2048,
         state: 'ready',
         updatedAt: undefined,
+        createdAt: undefined,
       }],
       page: 1,
       pageSize: 20,

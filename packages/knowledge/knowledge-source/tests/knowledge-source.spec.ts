@@ -33,6 +33,7 @@ class StubSource extends KnowledgeSource {
       processingCount: 0,
       embeddingModelId: 'emb-1',
       updatedAt: undefined,
+      createdAt: undefined,
     }])
   }
 
@@ -46,6 +47,7 @@ class StubSource extends KnowledgeSource {
         byteSize: 2048,
         state: 'ready',
         updatedAt: undefined,
+        createdAt: undefined,
       }],
       pageSize: request.pageSize,
       total: 1,
@@ -63,6 +65,7 @@ class StubSource extends KnowledgeSource {
         byteSize: 2048,
         state: 'ready',
         updatedAt: undefined,
+        createdAt: undefined,
       },
     })
   }

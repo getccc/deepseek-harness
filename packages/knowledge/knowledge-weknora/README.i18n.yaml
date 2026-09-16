@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/knowledge/knowledge-weknora/README.md
-README.md: 3f9f689279ed6aa61d2d91c20bfa6fea54e84c30
-README.zh.md: e66a6f2ed08f9f7ff224f0b4f8e1227c697f19a0
+README.md: ac42942ffd6b1bcb43075da7f784bbd4c47492ab
+README.zh.md: ca0dd0dc2d7456300f6ac018f4accb7eebe20de4

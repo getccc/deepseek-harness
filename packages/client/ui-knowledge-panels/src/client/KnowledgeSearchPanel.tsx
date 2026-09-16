@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import clsx from 'clsx'
 import { Button, IconSearchOutline16, Input } from '@deepseek-ai/dsh-client-ui-primitives'
-import type { ObservableSnapshot } from '@deepseek-ai/dsh-client-store'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type { KnowledgeChoice, KnowledgeSearchView } from '@deepseek-ai/dsh-api-knowledge-controller/types'
 // Type-only: pulls the layout SlotMap merge (the keyed `main` panel seat).
@@ -21,8 +20,6 @@ export interface KnowledgeSearchInjected {
   search: (query: string, knowledgeRefs: readonly string[]) => Promise<KnowledgeSearchView>
   /** Open a conversation scoped to one document, or to its knowledge base when it named none. */
   discuss: (target: DiscussTarget, draft: string) => Promise<void>
-  /** Private reactive sources bound to framework selector hooks. */
-  hooks: { requested: ObservableSnapshot<readonly string[]> }
 }
 
 /** Full panel props: the main slot's runtime share, the plugin's face, and the locale seat. */
@@ -42,12 +39,6 @@ export interface DiscussTarget {
 /** What the result area is showing right now. */
 type Phase = 'idle' | 'running' | 'ready' | 'failed'
 
-/** The selection a hook snapshot puts in force, bounded to what is authorized. */
-function selectionOf(requested: readonly string[], entries: readonly KnowledgeChoice[]): readonly string[] {
-  const known = new Set(entries.map(entry => entry.knowledgeRef))
-  return requested.filter(ref => known.has(ref))
-}
-
 /**
  * Retrieve from private knowledge without a model.
  *
@@ -58,8 +49,7 @@ function selectionOf(requested: readonly string[], entries: readonly KnowledgeCh
  * @param props - the main slot's runtime share, the plugin's face, and the locale seat.
  * @returns the panel element tree.
  */
-export function KnowledgeSearchPanel({ directory, search, discuss, useRequested, t }: KnowledgeSearchPanelProps) {
-  const requested = useRequested(snapshot => snapshot)
+export function KnowledgeSearchPanel({ directory, search, discuss, t }: KnowledgeSearchPanelProps) {
   const [entries, setEntries] = useState<readonly KnowledgeChoice[]>([])
   const [chosen, setChosen] = useState<readonly string[]>([])
   const [query, setQuery] = useState('')
@@ -72,15 +62,11 @@ export function KnowledgeSearchPanel({ directory, search, discuss, useRequested,
     directory().then((rows) => {
       if (!live) return
       setEntries(rows)
-      // A knowledge base the bases panel asked for only counts while the
-      // directory still holds it: the ask travelled through the browser, and
-      // the directory is what the Control Plane just authorized.
-      setChosen(selectionOf(requested, rows))
     }, () => {
       if (live) setEntries([])
     })
     return () => { live = false }
-  }, [directory, requested])
+  }, [directory])
 
   const toggle = (knowledgeRef: string): void => {
     setChosen(chosen.includes(knowledgeRef)

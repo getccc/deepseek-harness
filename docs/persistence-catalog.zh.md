@@ -2928,7 +2928,7 @@ SHA-256: `dec35810f66b8eda5b53537f7f9232a9d40eb10faf0a4b000673ce0623afb5a2`
 
 SHA-256: `ac44e4667f7f878b329a55172d9619994b18e891428860b8fd2e530fc2490a9c`
 
-来源：[`packages/knowledge/knowledge/src/types.ts:180`](../packages/knowledge/knowledge/src/types.ts)
+来源：[`packages/knowledge/knowledge/src/types.ts:190`](../packages/knowledge/knowledge/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -2941,7 +2941,7 @@ SHA-256: `ac44e4667f7f878b329a55172d9619994b18e891428860b8fd2e530fc2490a9c`
 
 SHA-256: `911cb8dc287709be3e9be4d9e8bee3f62758eca0bdce19b9894c436f5fea7d5f`
 
-来源：[`packages/knowledge/knowledge/src/types.ts:181`](../packages/knowledge/knowledge/src/types.ts)
+来源：[`packages/knowledge/knowledge/src/types.ts:191`](../packages/knowledge/knowledge/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -2954,7 +2954,7 @@ SHA-256: `911cb8dc287709be3e9be4d9e8bee3f62758eca0bdce19b9894c436f5fea7d5f`
 
 SHA-256: `5f4d27180fcd8b1351e44ce2f40f224047c20e93fe9114bf1836623e892eba19`
 
-来源：[`packages/knowledge/knowledge/src/types.ts:182`](../packages/knowledge/knowledge/src/types.ts)
+来源：[`packages/knowledge/knowledge/src/types.ts:192`](../packages/knowledge/knowledge/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -5242,7 +5242,7 @@ SHA-256: `930c1cd289def119d443e19dd90008916bf035f0a4d23e07241e7f050f2b89b7`
 
 SHA-256: `41e6aab360a9f8bf06107b3e4713c41be5e388ada46b84f096f871eb122ae880`
 
-来源：[`packages/knowledge/knowledge/src/types.ts:179`](../packages/knowledge/knowledge/src/types.ts)
+来源：[`packages/knowledge/knowledge/src/types.ts:189`](../packages/knowledge/knowledge/src/types.ts)
 
 以下类型之一：
 
@@ -5256,7 +5256,7 @@ SHA-256: `41e6aab360a9f8bf06107b3e4713c41be5e388ada46b84f096f871eb122ae880`
 
 SHA-256: `f048767814898000fbcdb30d436a397f15188da4eb5c9481c6295c2b49f3bcda`
 
-来源：[`packages/knowledge/knowledge/src/types.ts:143`](../packages/knowledge/knowledge/src/types.ts)
+来源：[`packages/knowledge/knowledge/src/types.ts:153`](../packages/knowledge/knowledge/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|

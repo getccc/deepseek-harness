@@ -335,6 +335,20 @@ describe('what a panel reads before it retrieves', () => {
       ])
   })
 
+  it('passes on what the Control Plane knows about a knowledge base, and omits what it does not', async () => {
+    const mounted = await mount(false)
+    mounted.directory = [
+      { ...entry(REF_A, '临港知识库'), documentCount: 7, createdAt: 1756857600000 },
+      entry(REF_B, '南昌知识库'),
+    ]
+    const choices = await mounted.controller.directory()
+    expect(choices[0]).toEqual({
+      knowledgeRef: REF_A, displayName: '临港知识库', description: '', documentCount: 7, createdAt: 1756857600000,
+    })
+    // Absent, not undefined: the browser reads JSON, where the two differ.
+    expect(Object.keys(choices[1] ?? {}).sort()).toEqual(['description', 'displayName', 'knowledgeRef'])
+  })
+
   it('says why the directory could not be read', async () => {
     const mounted = await mount()
     mounted.directory = new KnowledgeError('control-plane-unreachable')

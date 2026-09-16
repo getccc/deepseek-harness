@@ -44,7 +44,7 @@ kind: "package-reference"
 |---|---|---|
 | `scope(sessionId)` | 某个会话可以从什么中选择、它选了什么，以及已选引用中哪些已不在目录里 | 是 |
 | `choose(sessionId, mode, knowledgeRefs?)` | 记录选择并回答同样的视图 | 是 |
-| `directory()` | 该成员此刻可以检索的知识库 | 否 |
+| `directory()` | 该成员此刻可以检索的知识库，并带上 Control Plane 为每个知识库报告的文档数量与创建时间 | 否 |
 | `documents(knowledgeRef, page?)` | 某个知识库中文档的一页，每份都由受治理引用命名 | 否 |
 | `documentContent(docRef)` | 某一份文档的原始文件（base64），或代替它的解析文本 | 否 |
 | `search(query, mode, knowledgeRefs?)` | 排名后的段落，以及实际被检索的知识库 | 否 |

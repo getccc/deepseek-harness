@@ -83,7 +83,9 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 12px;
-  align-items: start;
+  /* Cards in one row share a height, so a longer description does not leave
+     its neighbours looking unfinished. */
+  align-items: stretch;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -216,8 +218,9 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1 1 auto;
   width: 100%;
-  padding: 0;
+  padding: 12px 14px;
   border: none;
   outline: none;
   background: transparent;
@@ -233,6 +236,40 @@
 
 .cardOn {
   border-color: var(--dsw-alias-state-business-primary);
+}
+
+/* A knowledge-base card is one control end to end, so its padding sits on the
+   control and its rule can reach both edges. */
+.cardFlush {
+  padding: 0;
+}
+
+/* A knowledge-base card: name and description, a rule, then what the Control
+   Plane recorded about the knowledge base itself. */
+.cardHead {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 10px;
+}
+
+.cardFoot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  /* Pinned to the bottom of a stretched card. */
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--dsw-alias-border-l2);
+}
+
+.cardTag {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--dsw-alias-bg-module-platform);
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
 }
 
 /* The preview itself: one document, as large as the drawer will give it. */

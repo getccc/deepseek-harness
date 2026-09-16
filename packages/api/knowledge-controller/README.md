@@ -44,7 +44,7 @@ The controller has no configuration.
 |---|---|---|
 | `scope(sessionId)` | What one Session may choose from, what it has chosen, and which selected references the directory no longer holds | Yes |
 | `choose(sessionId, mode, knowledgeRefs?)` | Records the choice and answers the same view | Yes |
-| `directory()` | The knowledge bases this member may search right now | No |
+| `directory()` | The knowledge bases this member may search right now, each with the document count and creation time the Control Plane reports for it | No |
 | `documents(knowledgeRef, page?)` | One page of one knowledge base's documents, each named by a governed reference | No |
 | `documentContent(docRef)` | One document's original file as base64, or the parsed text standing in for it | No |
 | `search(query, mode, knowledgeRefs?)` | The ranked passages, and the knowledge bases actually searched | No |

@@ -169,6 +169,7 @@ beforeEach(async () => {
     upstreamId: A, name: '临港知识库', description: '', kind: 'document',
     documentCount: 1, processingCount: 0,
     embeddingModelId: 'emb-shared', updatedAt: undefined,
+    createdAt: undefined,
   }]
   await (cp.get('knowledgeGateway') as KnowledgeGateway).sync(orgId)
   accessToken = await mintAccessToken()
@@ -291,10 +292,13 @@ describe('the authorized directory', () => {
     await grantAll()
     const response = await post(KNOWLEDGE_CATALOG_PATH, { protocolVersion: KNOWLEDGE_PROTOCOL_VERSION })
     const entries = (await response.json() as { entries: Record<string, unknown>[] }).entries
-    expect(entries).toEqual([{ ref: REF_A, displayName: '临港知识库', description: '', kind: 'document' }])
+    expect(entries).toEqual([{
+      ref: REF_A, displayName: '临港知识库', description: '', kind: 'document', documentCount: 1,
+    }])
     // The reference embeds the upstream id by construction; what must not
     // appear is a field a Runner could read one out of and address directly.
-    expect(Object.keys(entries[0] ?? {}).sort()).toEqual(['description', 'displayName', 'kind', 'ref'])
+    expect(Object.keys(entries[0] ?? {}).sort())
+      .toEqual(['description', 'displayName', 'documentCount', 'kind', 'ref'])
   })
 
   it('refuses a method that is not POST', async () => {
@@ -412,8 +416,8 @@ describe('failures map onto closed reasons', () => {
   it('answers an incompatible scope with a reason a member can act on', async () => {
     await grantAll()
     source.listing = [
-      { upstreamId: A, name: 'A', description: '', kind: 'document', documentCount: 0, processingCount: 0, embeddingModelId: 'one', updatedAt: undefined },
-      { upstreamId: '08f25606-8876-49cc-b509-70e84828db08', name: 'B', description: '', kind: 'document', documentCount: 0, processingCount: 0, embeddingModelId: 'two', updatedAt: undefined },
+      { upstreamId: A, name: 'A', description: '', kind: 'document', documentCount: 0, processingCount: 0, embeddingModelId: 'one', updatedAt: undefined, createdAt: undefined },
+      { upstreamId: '08f25606-8876-49cc-b509-70e84828db08', name: 'B', description: '', kind: 'document', documentCount: 0, processingCount: 0, embeddingModelId: 'two', updatedAt: undefined, createdAt: undefined },
     ]
     await (cp.get('knowledgeGateway') as KnowledgeGateway).sync(orgId)
     const response = await post(KNOWLEDGE_SEARCH_PATH, searchBody())

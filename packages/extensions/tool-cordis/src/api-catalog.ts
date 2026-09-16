@@ -5536,11 +5536,11 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'KnowledgeBaseEntry',
-    declaration: 'export interface KnowledgeBaseEntry {\n    readonly ref: KnowledgeRef;\n    readonly displayName: string;\n    readonly description: string;\n    readonly kind: KnowledgeKind;\n}',
+    declaration: 'export interface KnowledgeBaseEntry {\n    readonly ref: KnowledgeRef;\n    readonly displayName: string;\n    readonly description: string;\n    readonly kind: KnowledgeKind;\n    readonly documentCount?: number;\n    readonly createdAt?: number;\n}',
   },
   {
     name: 'KnowledgeCatalogEntry',
-    declaration: 'export interface KnowledgeCatalogEntry {\n    readonly ref: KnowledgeRef;\n    readonly resourceId: ResourceId;\n    readonly displayName: string;\n    readonly description: string;\n    readonly kind: KnowledgeKind;\n    readonly documentCount: number;\n    readonly processingCount: number;\n    readonly embeddingModelId: string;\n    readonly adminEnabled: boolean;\n    readonly effectiveEnabled: boolean;\n    readonly lastDiscoveredAt: number;\n    readonly upstreamUpdatedAt: number | undefined;\n}',
+    declaration: 'export interface KnowledgeCatalogEntry {\n    readonly ref: KnowledgeRef;\n    readonly resourceId: ResourceId;\n    readonly displayName: string;\n    readonly description: string;\n    readonly kind: KnowledgeKind;\n    readonly documentCount: number;\n    readonly processingCount: number;\n    readonly embeddingModelId: string;\n    readonly adminEnabled: boolean;\n    readonly effectiveEnabled: boolean;\n    readonly lastDiscoveredAt: number;\n    readonly upstreamUpdatedAt: number | undefined;\n    readonly upstreamCreatedAt: number | undefined;\n}',
   },
   {
     name: 'KnowledgeCatalogView',
@@ -7656,7 +7656,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'UpstreamKnowledgeBase',
-    declaration: 'export interface UpstreamKnowledgeBase {\n    readonly upstreamId: string;\n    readonly name: string;\n    readonly description: string;\n    readonly kind: KnowledgeKind;\n    readonly documentCount: number;\n    readonly processingCount: number;\n    readonly embeddingModelId: string;\n    readonly updatedAt: number | undefined;\n}',
+    declaration: 'export interface UpstreamKnowledgeBase {\n    readonly upstreamId: string;\n    readonly name: string;\n    readonly description: string;\n    readonly kind: KnowledgeKind;\n    readonly documentCount: number;\n    readonly processingCount: number;\n    readonly embeddingModelId: string;\n    readonly updatedAt: number | undefined;\n    readonly createdAt: number | undefined;\n}',
   },
   {
     name: 'UpstreamPassage',

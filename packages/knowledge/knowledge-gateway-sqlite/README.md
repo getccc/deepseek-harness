@@ -99,6 +99,7 @@ These limits define when the provider is incomplete on its own. They are current
 - **Reconciliation is all-or-nothing per listing** — an entry whose reference cannot be minted rolls the whole listing back, so one malformed upstream id blocks the others until the source is fixed.
 - **Retirement is not reversible** — a knowledge base a successful listing stops naming is deleted along with its governed resource and every grant on it. A source that lists a subset of what it holds therefore costs an administrator the grants they made.
 - **Nothing here schedules synchronization** — `sync` runs when a caller asks. Start-up and periodic reconciliation belong to the composition that knows which organization this Control Plane serves, which this package does not.
+- **A schema version strands an existing file** — `SCHEMA_VERSION` is monotonic and refused in both directions, with no migration code. Schema 4 added `knowledge_base.upstream_created_at`, so a deployment holding a schema-3 file must add that nullable column and set `PRAGMA user_version = 4` before this build will open it; the column refills on the next successful listing, and the grants and administrator switches in the file are what make deleting it the wrong answer.
 
 <a id="dev-note"></a>
 ### Dev Note

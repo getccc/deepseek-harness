@@ -263,11 +263,22 @@ function readEntry(value: unknown): KnowledgeBaseEntry {
   if (typeof ref !== 'string' || !isKnowledgeRef(ref) || typeof displayName !== 'string') {
     throw new KnowledgeError('upstream-invalid', 'a knowledge base is missing its reference or name')
   }
+  const documentCount = row['documentCount']
+  const createdAt = row['createdAt']
   return {
     ref: KnowledgeRef(ref),
     displayName,
     description: typeof row['description'] === 'string' ? row['description'] : '',
     kind: row['kind'] === 'faq' ? 'faq' satisfies KnowledgeKind : 'document',
+    // Both are absent from a Control Plane older than them, and a value this
+    // build cannot read is reported as absent rather than as zero: a member
+    // must not be told a knowledge base is empty because a field was odd.
+    ...(typeof documentCount === 'number' && Number.isSafeInteger(documentCount) && documentCount >= 0
+      ? { documentCount }
+      : {}),
+    ...(typeof createdAt === 'number' && Number.isSafeInteger(createdAt) && createdAt > 0
+      ? { createdAt }
+      : {}),
   }
 }
 

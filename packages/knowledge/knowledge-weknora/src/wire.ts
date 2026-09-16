@@ -113,6 +113,7 @@ export interface WireKnowledgeBase {
   readonly processing_count?: unknown
   readonly embedding_model_id?: unknown
   readonly updated_at?: unknown
+  readonly created_at?: unknown
 }
 
 /**

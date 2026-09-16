@@ -20,7 +20,7 @@ import type { DatabaseSync } from 'node:sqlite'
  * database written by any other build is rejected rather than migrated, which
  * is this repository's pre-release stance on durable formats.
  */
-export const SCHEMA_VERSION = 3
+export const SCHEMA_VERSION = 4
 
 /** Application id reserved for DeepSeek Harness SQLite knowledge-catalog databases. */
 export const KNOWLEDGE_GATEWAY_SQLITE_APPLICATION_ID = 0x44534841 + 6
@@ -50,6 +50,7 @@ export interface KnowledgeBaseRow {
   readonly admin_enabled: number
   readonly last_discovered_at: number
   readonly upstream_updated_at: number | null
+  readonly upstream_created_at: number | null
 }
 
 const DDL = `
@@ -87,6 +88,7 @@ CREATE TABLE IF NOT EXISTS knowledge_base (
   admin_enabled      INTEGER NOT NULL CHECK (admin_enabled IN (0, 1)),
   last_discovered_at INTEGER NOT NULL,
   upstream_updated_at INTEGER,
+  upstream_created_at INTEGER,
   PRIMARY KEY (org_id, knowledge_ref)
 ) STRICT;
 

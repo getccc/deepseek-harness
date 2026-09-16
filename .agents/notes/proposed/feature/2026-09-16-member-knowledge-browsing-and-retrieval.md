@@ -19,7 +19,7 @@ Ship a member-facing knowledge surface as two global panels reached from the lef
 ### Product outcome
 
 - A member sees **知识库** and **知识库检索** under **新工作任务** in the left navigation of a Team build. A build without private knowledge shows neither.
-- **知识库** opens a panel showing the knowledge bases the member's roles authorize as cards. Opening one lists its documents under a breadcrumb that goes back up; opening a document draws it in a drawer over the right of the panel.
+- **知识库** opens a panel showing the knowledge bases the member's roles authorize as cards, each naming how many documents it holds and the day the source created it. Opening one lists its documents under a breadcrumb that goes back up; opening a document draws it in a drawer over the right of the panel.
 - **知识库检索** opens a panel that runs one retrieval and shows the passages ranked by score, grouped under the document each came from, with no model turn and no token cost.
 - Selecting a result's document starts a new Session whose knowledge scope is narrowed to that one document, so the conversation that follows retrieves from it and nothing else.
 - Every panel operation is authorized on the Control Plane against current grants, exactly as `knowledge_search` already is. Revoking a role, suspending the member, revoking the device, or disabling the knowledge base changes the next panel operation without a new login.
@@ -39,6 +39,8 @@ The left navigation already has the seat: `sidebar.panellist` is a list slot who
 Both panels are root-scoped and hold no Session. The knowledge panel therefore draws documents itself rather than opening the right Sidebar, whose tabs are session-scoped and whose docking surface exists per Session.
 
 Inside the panel it is two levels and a drawer rather than side-by-side columns: the cards, then one knowledge base's documents with a breadcrumb back up, then one document over the right of the panel. Columns would have given every level a third of the width whether or not a member was reading a document, and a knowledge base's name is what a member needs above the list either way.
+
+A card names its document count and creation day, and both come from the catalog mirror rather than a live upstream read: the directory is an authorization answer, and making it reach the source would put the source's availability in front of a member who only wanted to see what there is. The count was already mirrored; the creation time cost the catalog one nullable column, `knowledge_base.upstream_created_at`, and a `SCHEMA_VERSION` of 4. That bump is the whole price, and it is paid by hand on a deployment holding an older file, because this repository ships no migration code for its SQLite stores.
 
 That cuts the panel off from the right Sidebar's registered document bodies, which is the one thing this shape costs: the renderer slot is declared by the Sidebar's own tab type and scoped to a Session, so the Word, Excel, and PowerPoint bodies cannot be rendered from a panel that has none. The drawer therefore draws what a browser draws from bytes on its own — PDFs, images, anything that is text — plus the parsed text the Control Plane falls back to, and says plainly that an Office file is not shown here yet. Closing that gap means a renderer seat both surfaces can reach, which is its own change to the Sidebar's contract.
 

@@ -197,6 +197,29 @@ describe('what it makes of an answer', () => {
     ])
   })
 
+  it('reads a knowledge base’s document count and creation time when the answer carries them', async () => {
+    controlPlane(200, {
+      entries: [{
+        ref: REF, displayName: '临港知识库', description: '', kind: 'document',
+        documentCount: 3, createdAt: 1756857600000,
+      }],
+    })
+    const ctx = await mount()
+    expect((await ctx.knowledge.catalog())[0]).toMatchObject({ documentCount: 3, createdAt: 1756857600000 })
+  })
+
+  it.each([
+    ['a count that is not a number', { documentCount: 'three', createdAt: 0 }],
+    ['a negative count and a zero time', { documentCount: -1, createdAt: 0 }],
+    ['a fractional count and a time that is text', { documentCount: 1.5, createdAt: 'yesterday' }],
+  ])('reports %s as absent rather than as zero', async (_label, extra) => {
+    controlPlane(200, { entries: [{ ref: REF, displayName: '临港知识库', kind: 'document', ...extra }] })
+    const ctx = await mount()
+    const entry = (await ctx.knowledge.catalog())[0]
+    expect(entry).not.toHaveProperty('documentCount')
+    expect(entry).not.toHaveProperty('createdAt')
+  })
+
   it('reads an FAQ base back as one', async () => {
     controlPlane(200, { entries: [{ ref: REF, displayName: '常见问题', kind: 'faq' }] })
     const ctx = await mount()

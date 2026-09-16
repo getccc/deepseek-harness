@@ -127,7 +127,7 @@ These limits define when the provider is incomplete on its own. They are current
 - **An unknown knowledge base id is silently ignored upstream** — a list mixing a real id with an unknown one answers `success` with results from the real base alone. The provider drops hits from bases the request did not name, but existence and authorization must be settled before the call, not after it.
 - **No paged document text** — the parsed text of one document is assembled in one read and cut to a bound. A document longer than the bound cannot be read past it, because nothing here carries an offset.
 - **No chunk-level addressing** — the text arrives as one string. A passage a search returned cannot be located inside it, because a chunk id never leaves this module.
-- **No chunk count** — the listing's `chunk_count` reads zero on knowledge bases whose chunks a search plainly returns, so this provider does not read it and nothing downstream carries one. `knowledge_count` and `processing_count` are taken as the listing gives them.
+- **No chunk count** — the listing's `chunk_count` reads zero on knowledge bases whose chunks a search plainly returns, so this provider does not read it and nothing downstream carries one. `knowledge_count`, `processing_count`, `created_at`, and `updated_at` are taken as the listing gives them.
 - **No incremental listing** — `list()` fetches every knowledge base; WeKnora offers no paging or change cursor on that endpoint. Only the document listing pages, and it has no change cursor either, so a page read twice can differ.
 
 <a id="dev-note"></a>

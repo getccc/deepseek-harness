@@ -178,6 +178,10 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
       displayName: entry.displayName,
       description: entry.description,
       kind: entry.kind,
+      // What the last reconcile recorded, not a live count: the directory is
+      // an authorization answer and does not reach the source.
+      documentCount: entry.documentCount,
+      ...(entry.upstreamCreatedAt === undefined ? {} : { createdAt: entry.upstreamCreatedAt }),
     }))
   }
 
@@ -509,8 +513,8 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
           `INSERT INTO knowledge_base (
              org_id, knowledge_ref, source_code, upstream_id, display_name, description, kind,
              document_count, processing_count, embedding_model_id,
-             admin_enabled, last_discovered_at, upstream_updated_at
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+             admin_enabled, last_discovered_at, upstream_updated_at, upstream_created_at
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)
            ON CONFLICT (org_id, knowledge_ref) DO UPDATE SET
              display_name = excluded.display_name,
              description = excluded.description,
@@ -519,11 +523,12 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
              processing_count = excluded.processing_count,
              embedding_model_id = excluded.embedding_model_id,
              last_discovered_at = excluded.last_discovered_at,
-             upstream_updated_at = excluded.upstream_updated_at`,
+             upstream_updated_at = excluded.upstream_updated_at,
+             upstream_created_at = excluded.upstream_created_at`,
         ).run(
           orgId, ref, sourceCode, base.upstreamId, base.name, base.description, base.kind,
           base.documentCount, base.processingCount, base.embeddingModelId,
-          now, base.updatedAt ?? null,
+          now, base.updatedAt ?? null, base.createdAt ?? null,
         )
       }
       for (const ref of this.absent(orgId, sourceCode, new Set(named.map(item => item.ref)))) {
@@ -739,5 +744,6 @@ function toEntry(row: KnowledgeBaseRow, resource: ManagedResource): KnowledgeCat
     effectiveEnabled: adminEnabled && resource.enabled,
     lastDiscoveredAt: row.last_discovered_at,
     upstreamUpdatedAt: row.upstream_updated_at ?? undefined,
+    upstreamCreatedAt: row.upstream_created_at ?? undefined,
   }
 }

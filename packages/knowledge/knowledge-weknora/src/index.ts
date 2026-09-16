@@ -508,6 +508,7 @@ function toKnowledgeBase(entry: unknown): UpstreamKnowledgeBase {
     processingCount: count(row['processing_count']),
     embeddingModelId: text(row['embedding_model_id']),
     updatedAt: timestamp(row['updated_at']),
+    createdAt: timestamp(row['created_at']),
   }
 }
 

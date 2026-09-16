@@ -46,6 +46,8 @@ export interface UpstreamKnowledgeBase {
   readonly embeddingModelId: string
   /** Epoch milliseconds, or undefined when the source supplies no timestamp. */
   readonly updatedAt: number | undefined
+  /** When the source created it, in epoch milliseconds, or undefined when it supplies none. */
+  readonly createdAt: number | undefined
 }
 
 /** What the gateway asks a source for one page of a knowledge base's documents. */

@@ -15,6 +15,10 @@ export interface KnowledgeChoice {
   readonly knowledgeRef: string
   readonly displayName: string
   readonly description: string
+  /** Documents the Control Plane recorded at its last reconcile; absent when it reports none. */
+  readonly documentCount?: number
+  /** Epoch milliseconds the source says it was created; absent when the Control Plane reports none. */
+  readonly createdAt?: number
 }
 
 /**

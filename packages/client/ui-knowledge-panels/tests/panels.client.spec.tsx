@@ -7,8 +7,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
-import { bindSnapshotSelector, makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
+import { makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
 import type {
   KnowledgeChoice, KnowledgeDocumentContentView, KnowledgeDocumentView, KnowledgeDocumentsView,
   KnowledgePassageView, KnowledgeSearchView,
@@ -28,8 +27,8 @@ const t = makeTranslate(zh) as KnowledgeBasesPanelProps['t']
 
 /** The authorized directory both panels read. */
 const BASES: readonly KnowledgeChoice[] = [
-  { knowledgeRef: REF_A, displayName: '临港知识库', description: '现场运维资料' },
-  { knowledgeRef: REF_B, displayName: '南昌知识库', description: '' },
+  { knowledgeRef: REF_A, displayName: '临港知识库', description: '现场运维资料', documentCount: 7, createdAt: 1756857600000 },
+  { knowledgeRef: REF_B, displayName: '南昌知识库', description: '', documentCount: 0 },
 ]
 
 /** One passage as the controller answers it. */
@@ -81,14 +80,13 @@ function textContent(patch: Partial<Extract<KnowledgeDocumentContentView, { kind
 /** Render the knowledge-base list over scripted faces. */
 function renderBases(
   directory: () => Promise<readonly KnowledgeChoice[]>,
-  searchIn = vi.fn(),
   documents: (knowledgeRef: string, page: number) => Promise<KnowledgeDocumentsView> = () => Promise.resolve(documentPage()),
   content: (docRef: string) => Promise<KnowledgeDocumentContentView> = () => Promise.resolve(textContent()),
 ) {
   const listed = vi.fn(documents)
   const read = vi.fn(content)
-  const props = { directory, documents: listed, content: read, searchIn, t } as unknown as KnowledgeBasesPanelProps
-  return { searchIn, documents: listed, content: read, view: render(<KnowledgeBasesPanel {...props} />) }
+  const props = { directory, documents: listed, content: read, t } as unknown as KnowledgeBasesPanelProps
+  return { documents: listed, content: read, view: render(<KnowledgeBasesPanel {...props} />) }
 }
 
 /** Open the first knowledge base's card, which is what loads its documents. */
@@ -101,22 +99,18 @@ async function back(): Promise<void> {
   fireEvent.click(await screen.findByRole('button', { name: '知识库' }))
 }
 
-/** Render the retrieval panel over scripted faces and one requested selection. */
+/** Render the retrieval panel over scripted faces. */
 function renderSearch(options: {
   directory?: () => Promise<readonly KnowledgeChoice[]>
   search?: (query: string, refs: readonly string[]) => Promise<KnowledgeSearchView>
   discuss?: (ref: string, draft: string) => Promise<void>
-  requested?: readonly string[]
 } = {}) {
-  const store = createSnapshotStore<readonly string[]>(options.requested ?? [])
   const directory = options.directory ?? (() => Promise.resolve(BASES))
   const search = vi.fn(options.search ?? (query => Promise.resolve(
     { query, searched: [], passages: [passage()], truncated: false },
   )))
   const discuss = vi.fn(options.discuss ?? (() => Promise.resolve()))
-  const props = {
-    directory, search, discuss, t, useRequested: bindSnapshotSelector(store),
-  } as unknown as KnowledgeSearchPanelProps
+  const props = { directory, search, discuss, t } as unknown as KnowledgeSearchPanelProps
   return { search, discuss, view: render(<KnowledgeSearchPanel {...props} />) }
 }
 
@@ -155,7 +149,19 @@ describe('the knowledge-base list', () => {
     expect(screen.getByText('现场运维资料')).toBeTruthy()
     // A knowledge base whose upstream carries no description shows none.
     expect(screen.getByText('南昌知识库')).toBeTruthy()
-    expect(screen.getAllByRole('button', { name: '检索这个知识库' })).toHaveLength(2)
+    // What the Control Plane recorded about each knowledge base: its document
+    // count and the day the source created it.
+    expect(screen.getByText('7 篇文档')).toBeTruthy()
+    expect(screen.getByText('创建于 2025-09-03')).toBeTruthy()
+    // The card is the only control: opening the knowledge base is the gesture.
+    expect(screen.queryByRole('button', { name: '检索这个知识库' })).toBeNull()
+  })
+
+  it('leaves the footer out for a knowledge base the Control Plane reports neither fact for', async () => {
+    renderBases(() => Promise.resolve([{ knowledgeRef: REF_B, displayName: '南昌知识库', description: '' }]))
+    expect(await screen.findByText('南昌知识库')).toBeTruthy()
+    expect(screen.queryByText(/篇文档/u)).toBeNull()
+    expect(screen.queryByText(/创建于/u)).toBeNull()
   })
 
   it('tells a member with no access apart from one whose directory was refused', async () => {
@@ -176,12 +182,6 @@ describe('the knowledge-base list', () => {
     fireEvent.click(await screen.findByRole('button', { name: '重试' }))
     expect(await screen.findByText('临港知识库')).toBeTruthy()
     expect(directory).toHaveBeenCalledTimes(2)
-  })
-
-  it('asks for a retrieval in the knowledge base whose row was clicked', async () => {
-    const bases = renderBases(() => Promise.resolve(BASES))
-    fireEvent.click((await screen.findAllByRole('button', { name: '检索这个知识库' }))[0]!)
-    expect(bases.searchIn).toHaveBeenCalledWith(REF_A)
   })
 
   it.each([
@@ -206,15 +206,6 @@ describe('the retrieval panel', () => {
     renderSearch()
     expect(await screen.findByRole('button', { name: '临港知识库' })).toBeTruthy()
     expect(screen.getByRole('button', { name: '全部知识库' }).getAttribute('aria-pressed')).toBe('true')
-  })
-
-  it('starts from the knowledge base the list asked for, and drops one the directory no longer holds', async () => {
-    const kept = renderSearch({ requested: [REF_A] })
-    await waitFor(() => { expect(screen.getByRole('button', { name: '临港知识库' }).getAttribute('aria-pressed')).toBe('true') })
-    expect(screen.getByRole('button', { name: '全部知识库' }).getAttribute('aria-pressed')).toBe('false')
-    kept.view.unmount()
-    renderSearch({ requested: ['weknora:prod:00000000-0000-4000-8000-000000000000'] })
-    await waitFor(() => { expect(screen.getByRole('button', { name: '全部知识库' }).getAttribute('aria-pressed')).toBe('true') })
   })
 
   it('searches everything until a knowledge base is picked, and only that one afterwards', async () => {
@@ -386,7 +377,6 @@ describe('the documents in one knowledge base', () => {
   it('names a document by its file name when the source holds no title', async () => {
     const bases = renderBases(
       () => Promise.resolve(BASES),
-      undefined,
       () => Promise.resolve(documentPage({ documents: [document({ title: '', fileType: '', byteSize: 0 })] })),
     )
     await choose()
@@ -400,7 +390,6 @@ describe('the documents in one knowledge base', () => {
   ])('says a %s document is not searchable yet', async (state, label) => {
     renderBases(
       () => Promise.resolve(BASES),
-      undefined,
       () => Promise.resolve(documentPage({ documents: [document({ state: state as KnowledgeDocumentView['state'] })] })),
     )
     await choose()
@@ -410,13 +399,12 @@ describe('the documents in one knowledge base', () => {
   it('tells an empty knowledge base apart from a listing it could not read', async () => {
     const empty = renderBases(
       () => Promise.resolve(BASES),
-      undefined,
       () => Promise.resolve(documentPage({ documents: [], total: 0 })),
     )
     await choose()
     expect(await screen.findByText('这个知识库里还没有文档')).toBeTruthy()
     empty.view.unmount()
-    renderBases(() => Promise.resolve(BASES), undefined, () => Promise.reject(new Error('refused')))
+    renderBases(() => Promise.resolve(BASES), () => Promise.reject(new Error('refused')))
     await choose()
     expect(await screen.findByText('文档列表读取失败')).toBeTruthy()
   })
@@ -424,7 +412,6 @@ describe('the documents in one knowledge base', () => {
   it('pages forward while there is more, and back from where it got to', async () => {
     const bases = renderBases(
       () => Promise.resolve(BASES),
-      undefined,
       (_ref, page) => Promise.resolve(documentPage({ page, pageSize: 1, total: 3 })),
     )
     await choose()
@@ -440,7 +427,6 @@ describe('the documents in one knowledge base', () => {
   it('stops paging at the end the total names', async () => {
     renderBases(
       () => Promise.resolve(BASES),
-      undefined,
       (_ref, page) => Promise.resolve(documentPage({ page, pageSize: 2, total: 2 })),
     )
     await choose()
@@ -451,7 +437,6 @@ describe('the documents in one knowledge base', () => {
   it('offers another page on a full one when the source reports no total', async () => {
     renderBases(
       () => Promise.resolve(BASES),
-      undefined,
       (_ref, page) => Promise.resolve({
         knowledgeRef: REF_A,
         documents: [document(), document({ docRef: `${REF_A}/doc-2` })],
@@ -470,7 +455,6 @@ describe('the documents in one knowledge base', () => {
   it('starts the new knowledge base at its first page', async () => {
     const bases = renderBases(
       () => Promise.resolve(BASES),
-      undefined,
       (_ref, page) => Promise.resolve(documentPage({ page, pageSize: 1, total: 9 })),
     )
     await choose()
@@ -489,7 +473,6 @@ describe('the documents in one knowledge base', () => {
     const settle = {} as PageSettle
     const bases = renderBases(
       () => Promise.resolve(BASES),
-      undefined,
       () => new Promise((resolve, reject) => {
         settle.resolve = resolve
         settle.reject = reject
@@ -538,7 +521,7 @@ describe('one document in the drawer', () => {
 
   it('draws parsed text, and says when it was cut', async () => {
     const bases = renderBases(
-      () => Promise.resolve(BASES), undefined, undefined,
+      () => Promise.resolve(BASES), undefined,
       () => Promise.resolve(textContent({ truncated: true })),
     )
     await open()
@@ -549,7 +532,7 @@ describe('one document in the drawer', () => {
 
   it('draws a text file the source served as bytes', async () => {
     renderBases(
-      () => Promise.resolve(BASES), undefined, undefined,
+      () => Promise.resolve(BASES), undefined,
       () => Promise.resolve({
         kind: 'bytes',
         docRef: `${REF_A}/doc-1`,
@@ -577,7 +560,7 @@ describe('one document in the drawer', () => {
     }
     url.revokeObjectURL = (href: string) => { revoked.push(href) }
     const bases = renderBases(
-      () => Promise.resolve(BASES), undefined, undefined,
+      () => Promise.resolve(BASES), undefined,
       () => Promise.resolve({
         kind: 'bytes', docRef: `${REF_A}/doc-1`, fileName: '图.png', contentType, base64: 'AQID',
       }),
@@ -598,7 +581,7 @@ describe('one document in the drawer', () => {
     url.createObjectURL = () => 'blob:office'
     url.revokeObjectURL = () => {}
     renderBases(
-      () => Promise.resolve(BASES), undefined, undefined,
+      () => Promise.resolve(BASES), undefined,
       () => Promise.resolve({
         kind: 'bytes',
         docRef: `${REF_A}/doc-1`,
@@ -615,7 +598,7 @@ describe('one document in the drawer', () => {
 
   it('reports a read it could not complete', async () => {
     renderBases(
-      () => Promise.resolve(BASES), undefined, undefined,
+      () => Promise.resolve(BASES), undefined,
       () => Promise.reject(new Error('refused')),
     )
     await open()
@@ -637,7 +620,7 @@ describe('one document in the drawer', () => {
   ])('ignores a read that %s after the column is gone', async (_label, finish) => {
     const settle = {} as ContentSettle
     const bases = renderBases(
-      () => Promise.resolve(BASES), undefined, undefined,
+      () => Promise.resolve(BASES), undefined,
       () => new Promise((resolve, reject) => {
         settle.resolve = resolve
         settle.reject = reject

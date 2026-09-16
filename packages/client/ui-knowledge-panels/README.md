@@ -41,7 +41,7 @@ The plugin has no configuration.
 
 | Row | Panel | What it does |
 |---|---|---|
-| Knowledge | `knowledge` | Shows the authorized knowledge bases as cards, the documents in the one a member opens, and one document in a drawer beside the list, with an action that searches the knowledge base |
+| Knowledge | `knowledge` | Shows the authorized knowledge bases as cards carrying their document count and creation day, the documents in the one a member opens, and one document in a drawer beside the list |
 | Knowledge search | `knowledge-search` | Runs one retrieval over the chosen knowledge bases and ranks the passages under the document each came from |
 
 Both rows register into the sidebar's `sidebar.panellist` seat and address a `main` panel of the same id, so the sidebar owns the row and this package owns only the glyph and the panel.
@@ -52,7 +52,9 @@ Two levels, not columns: the cards, then that knowledge base's documents. The br
 
 ### What the panels hold
 
-Nothing between reads. The directory is read on every mount, a document list on every knowledge base and page, and a document's content on every document opened, so a revoked grant narrows what a member sees and a disabled knowledge base leaves it; a retrieval answer belongs to the query that asked for it. The one value that crosses the two panels is the knowledge base the list asked the retrieval panel to start from, and the retrieval panel keeps it only while its own directory read still holds that knowledge base.
+Nothing between reads, and nothing crosses between the two panels. The directory is read on every mount, a document list on every knowledge base and page, and a document's content on every document opened, so a revoked grant narrows what a member sees and a disabled knowledge base leaves it; a retrieval answer belongs to the query that asked for it.
+
+A card shows the count and creation day the Control Plane recorded at its last reconcile, not a live reading: the directory is an authorization answer and reaches no source. A deployment that reports neither leaves the card's footer out rather than showing a zero, which is what a Control Plane older than those fields does.
 
 <a id="understand-the-implementation"></a>
 ## Understand the implementation

@@ -377,10 +377,14 @@ export class KnowledgeController extends TypertRemoteService {
   @Remote('directory')
   async directory(): Promise<readonly KnowledgeChoice[]> {
     try {
+      // Conditional spreads, not `?? undefined`: a Remote boundary carries
+      // JSON, where an absent field and one set to undefined are not the same.
       return (await this.ctx.knowledge.catalog()).map(entry => ({
         knowledgeRef: entry.ref,
         displayName: entry.displayName,
         description: entry.description,
+        ...(entry.documentCount === undefined ? {} : { documentCount: entry.documentCount }),
+        ...(entry.createdAt === undefined ? {} : { createdAt: entry.createdAt }),
       }))
     } catch (error) {
       throw this.unavailable(error)

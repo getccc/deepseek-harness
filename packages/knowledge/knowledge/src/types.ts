@@ -23,6 +23,16 @@ export interface KnowledgeBaseEntry {
   /** The upstream description, empty when the source supplies none. */
   readonly description: string
   readonly kind: KnowledgeKind
+  /**
+   * How many documents the source held at the last reconcile.
+   *
+   * Absent when the Control Plane does not report it, which is what a
+   * deployment older than this field does. It is a count to read, never a
+   * bound: a listing says how far it goes on its own.
+   */
+  readonly documentCount?: number
+  /** When the source created it, in epoch milliseconds; absent when the Control Plane reports none. */
+  readonly createdAt?: number
 }
 
 /**

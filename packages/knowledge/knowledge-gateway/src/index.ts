@@ -102,6 +102,8 @@ export interface KnowledgeCatalogEntry {
   readonly lastDiscoveredAt: number
   /** Epoch milliseconds the source reported, when it reports one. */
   readonly upstreamUpdatedAt: number | undefined
+  /** Epoch milliseconds the source says it was created, when it reports one. */
+  readonly upstreamCreatedAt: number | undefined
 }
 
 /** What the administration page reads in one call. */

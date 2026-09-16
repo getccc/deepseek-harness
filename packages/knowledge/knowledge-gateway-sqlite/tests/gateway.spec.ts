@@ -125,6 +125,7 @@ function upstream(upstreamId: string, patch: Partial<UpstreamKnowledgeBase> = {}
     processingCount: 0,
     embeddingModelId: 'emb-shared',
     updatedAt: undefined,
+    createdAt: undefined,
     ...patch,
   }
 }
@@ -317,6 +318,21 @@ describe('who may see what', () => {
     await access.grantType(role.id, KNOWLEDGE_RESOURCE_TYPE, 'knowledge.search')
     const directory = await gateway.directory({ orgId: ORG, principalId: ALICE })
     expect(directory.map(entry => entry.ref).sort()).toEqual([REF_A, REF_B].sort())
+  })
+
+  it('carries the count and creation time the last listing recorded', async () => {
+    source.listing = [upstream(A, { documentCount: 9, createdAt: 1756857600000 }), upstream(B)]
+    await gateway.sync(ORG)
+    const role = await roleFor(ALICE, 'all-knowledge')
+    await access.grantType(role.id, KNOWLEDGE_RESOURCE_TYPE, 'knowledge.search')
+    const directory = await gateway.directory({ orgId: ORG, principalId: ALICE })
+    expect(directory.find(entry => entry.ref === REF_A))
+      .toMatchObject({ documentCount: 9, createdAt: 1756857600000 })
+    // A source that reports no creation time leaves the field out; the count
+    // is always recorded, so it is always answered.
+    const other = directory.find(entry => entry.ref === REF_B)
+    expect(other).toMatchObject({ documentCount: 1 })
+    expect(other).not.toHaveProperty('createdAt')
   })
 
   it('never offers the administration catalog resource as a knowledge base', async () => {

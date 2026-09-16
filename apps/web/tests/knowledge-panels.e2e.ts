@@ -40,7 +40,12 @@ const DRILL = KnowledgeDocRef(`${LINGANG}/doc-3`)
 class FixtureKnowledge extends Knowledge {
   catalog(): Promise<readonly KnowledgeBaseEntry[]> {
     return Promise.resolve([
-      { ref: LINGANG, displayName: '临港智慧园区知识库', description: '园区运维、安防与应急预案', kind: 'document' },
+      {
+        ref: LINGANG, displayName: '临港智慧园区知识库', description: '园区运维、安防与应急预案', kind: 'document',
+        documentCount: 3, createdAt: Date.parse('2026-09-01T06:59:39Z'),
+      },
+      // No count and no creation time: what a Control Plane older than those
+      // fields answers, and the card has to leave its footer out.
       { ref: NANCHANG, displayName: '南昌制造基地知识库', description: '', kind: 'document' },
     ])
   }
@@ -154,6 +159,8 @@ describe('web e2e: knowledge panels', () => {
     await page.getByText('临港智慧园区知识库').waitFor({ timeout: 15_000 })
     await page.getByText('南昌制造基地知识库').waitFor()
     await page.getByText('你有权限的知识库，点击卡片查看其中的文档').waitFor()
+    await page.getByText('3 篇文档').waitFor()
+    await page.getByText('创建于 2026-09-01').waitFor()
 
     await page.getByRole('button', { name: /临港智慧园区知识库/u }).click()
     await page.getByText('园区运维手册 v3').waitFor({ timeout: 15_000 })
