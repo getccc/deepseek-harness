@@ -42,12 +42,12 @@ class StubSource extends KnowledgeSource {
       documents: [{
         upstreamDocId: 'doc-1',
         title: '运维手册',
+        description: '',
         fileName: '运维手册.pdf',
         fileType: 'pdf',
         byteSize: 2048,
         state: 'ready',
         updatedAt: undefined,
-        createdAt: undefined,
       }],
       pageSize: request.pageSize,
       total: 1,
@@ -60,12 +60,12 @@ class StubSource extends KnowledgeSource {
       document: {
         upstreamDocId,
         title: '运维手册',
+        description: '',
         fileName: '运维手册.pdf',
         fileType: 'pdf',
         byteSize: 2048,
         state: 'ready',
         updatedAt: undefined,
-        createdAt: undefined,
       },
     })
   }

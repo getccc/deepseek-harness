@@ -536,6 +536,7 @@ function toDocument(entry: unknown): UpstreamDocument {
   return {
     upstreamDocId: id,
     title: text(knowledge.title),
+    description: text(knowledge.description),
     fileName: text(knowledge.file_name),
     fileType: text(knowledge.file_type),
     byteSize: count(knowledge.file_size),

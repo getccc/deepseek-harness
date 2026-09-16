@@ -5552,7 +5552,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'KnowledgeDocument',
-    declaration: 'export interface KnowledgeDocument {\n    readonly docRef: KnowledgeDocRef;\n    readonly ref: KnowledgeRef;\n    readonly title: string;\n    readonly fileName: string;\n    readonly fileType: string;\n    readonly byteSize: number;\n    readonly state: KnowledgeDocumentState;\n    readonly updatedAt: number | undefined;\n}',
+    declaration: 'export interface KnowledgeDocument {\n    readonly docRef: KnowledgeDocRef;\n    readonly ref: KnowledgeRef;\n    readonly title: string;\n    readonly description: string;\n    readonly fileName: string;\n    readonly fileType: string;\n    readonly byteSize: number;\n    readonly state: KnowledgeDocumentState;\n    readonly updatedAt: number | undefined;\n}',
   },
   {
     name: 'KnowledgeDocumentContent',
@@ -7632,7 +7632,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'UpstreamDocument',
-    declaration: 'export interface UpstreamDocument {\n    readonly upstreamDocId: string;\n    readonly title: string;\n    readonly fileName: string;\n    readonly fileType: string;\n    readonly byteSize: number;\n    readonly state: KnowledgeDocumentState;\n    readonly updatedAt: number | undefined;\n}',
+    declaration: 'export interface UpstreamDocument {\n    readonly upstreamDocId: string;\n    readonly title: string;\n    readonly description: string;\n    readonly fileName: string;\n    readonly fileType: string;\n    readonly byteSize: number;\n    readonly state: KnowledgeDocumentState;\n    readonly updatedAt: number | undefined;\n}',
   },
   {
     name: 'UpstreamDocumentContent',

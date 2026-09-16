@@ -227,6 +227,7 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
         docRef: formatKnowledgeDocRef({ ref: request.ref, upstreamDocId: document.upstreamDocId }),
         ref: request.ref,
         title: document.title,
+        description: document.description,
         fileName: document.fileName,
         fileType: document.fileType,
         byteSize: document.byteSize,

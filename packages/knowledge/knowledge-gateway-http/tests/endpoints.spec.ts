@@ -51,6 +51,7 @@ function documentOf(upstreamDocId: string): UpstreamDocument {
   return {
     upstreamDocId,
     title: '运维手册',
+    description: '',
     fileName: '运维手册.pdf',
     fileType: 'pdf',
     byteSize: 20480,
@@ -453,6 +454,7 @@ describe('one knowledge base’s documents', () => {
     source.documents = [{
       upstreamDocId: 'doc-1',
       title: '运维手册',
+      description: '',
       fileName: '运维手册.pdf',
       fileType: 'pdf',
       byteSize: 20480,

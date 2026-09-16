@@ -317,6 +317,9 @@ function readDocument(value: unknown): KnowledgeDocument {
     docRef: KnowledgeDocRef(docRef),
     ref: KnowledgeRef(ref),
     title: typeof row['title'] === 'string' ? row['title'] : '',
+    // Absent from a Control Plane older than the field, which reads as a
+    // document the source has no summary for.
+    description: typeof row['description'] === 'string' ? row['description'] : '',
     fileName: typeof row['fileName'] === 'string' ? row['fileName'] : '',
     fileType: typeof row['fileType'] === 'string' ? row['fileType'] : '',
     byteSize: typeof row['byteSize'] === 'number' && Number.isSafeInteger(row['byteSize']) && row['byteSize'] >= 0

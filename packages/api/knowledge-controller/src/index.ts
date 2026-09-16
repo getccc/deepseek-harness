@@ -180,6 +180,7 @@ export class KnowledgeController extends TypertRemoteService {
         docRef: document.docRef,
         knowledgeRef: document.ref,
         title: document.title,
+        description: document.description,
         fileName: document.fileName,
         fileType: document.fileType,
         byteSize: document.byteSize,

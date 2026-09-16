@@ -378,6 +378,7 @@ function wireDocument(patch: Record<string, unknown> = {}): Record<string, unkno
   return {
     id: 'doc-1',
     title: '运维手册',
+    description: '园区一级故障的响应时限与处置流程。',
     file_name: '运维手册.pdf',
     file_type: 'pdf',
     file_size: 20480,
@@ -406,6 +407,7 @@ describe('listing one knowledge base’s documents', () => {
       documents: [{
         upstreamDocId: 'doc-1',
         title: '运维手册',
+        description: '园区一级故障的响应时限与处置流程。',
         fileName: '运维手册.pdf',
         fileType: 'pdf',
         byteSize: 20480,
@@ -467,6 +469,7 @@ describe('listing one knowledge base’s documents', () => {
     expect(page.documents[0]).toEqual({
       upstreamDocId: 'doc-2',
       title: '',
+      description: '',
       fileName: '',
       fileType: '',
       byteSize: 0,

@@ -58,6 +58,8 @@ export interface KnowledgeDocument {
   readonly ref: KnowledgeRef
   /** The upstream title, empty when the source supplies none. */
   readonly title: string
+  /** The source's own summary of the document, empty when it supplies none. */
+  readonly description: string
   /** The original file name, empty for a document the source holds no file for. */
   readonly fileName: string
   /** The source's own word for the file kind, such as `pdf`; empty when it supplies none. */

@@ -68,6 +68,7 @@ class FixtureKnowledge extends Knowledge {
         docRef: KnowledgeDocRef(`${request.ref}/${row.id}`),
         ref: request.ref,
         title: row.title,
+        description: '',
         fileName: row.fileName,
         fileType: row.fileType,
         byteSize: row.byteSize,

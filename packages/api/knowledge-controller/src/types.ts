@@ -38,6 +38,8 @@ export interface KnowledgeDocumentView {
   /** The knowledge base it belongs to. */
   readonly knowledgeRef: string
   readonly title: string
+  /** The source's own summary, empty when it supplies none. */
+  readonly description: string
   /** Empty for a document the source holds no file for. */
   readonly fileName: string
   /** The source's own word for the file kind, empty when it supplies none. */

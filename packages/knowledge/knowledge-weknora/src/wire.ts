@@ -128,6 +128,8 @@ export interface WireKnowledgeBase {
 export interface WireKnowledge {
   readonly id: string
   readonly title?: unknown
+  /** The source's generated summary; absent until its summarization has run. */
+  readonly description?: unknown
   readonly file_name?: unknown
   readonly file_type?: unknown
   readonly file_size?: unknown

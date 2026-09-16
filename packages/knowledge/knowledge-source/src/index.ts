@@ -75,6 +75,13 @@ export interface UpstreamDocument {
   readonly upstreamDocId: string
   /** Empty when the source supplies none. */
   readonly title: string
+  /**
+   * The source's own summary of the document, empty when it supplies none.
+   *
+   * Upstream text, like a passage: it reaches a browser as display copy and is
+   * never an instruction to anything that reads it.
+   */
+  readonly description: string
   /** Empty for a document the source holds no file for. */
   readonly fileName: string
   /** The source's own word for the file kind, empty when it supplies none. */

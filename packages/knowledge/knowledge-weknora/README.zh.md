@@ -80,7 +80,7 @@ WeKnora 以 `X-API-Key` 认证。**空间** Key 固定访问其所属空间；**
 
 `GET /api/v1/knowledge-bases` 列出该空间的知识库。`POST /api/v1/knowledge-bases/{id}/hybrid-search` 检索段落；其请求体的 `knowledge_base_ids` 覆盖范围，但路径仍要求一个 id，且该 id 必须是列表的成员——列表之外的路径 id 会以 `ErrNotFound` 被拒。因此提供方把一个已授权 id 放在路径上、把完整已授权集合放在请求体里，使路径永远无法扩大范围。
 
-`GET /api/v1/knowledge-bases/{id}/knowledge?page&page_size` 列出某个知识库中的文档，也是这里唯一在 `data` 旁携带计数的信封。提供方只在 `total` 是整数计数时读取它，用 `maxDocumentsPerPage` 限制 `page_size`，并拒绝 `id` 无法装进受治理文档引用的行。
+`GET /api/v1/knowledge-bases/{id}/knowledge?page&page_size` 列出某个知识库中的文档，也是这里唯一在 `data` 旁携带计数的信封。提供方只在 `total` 是整数计数时读取它，用 `maxDocumentsPerPage` 限制 `page_size`，并拒绝 `id` 无法装进受治理文档引用的行。行上的 `description` 是知识源生成的摘要，在其摘要任务运行之前为空；它作为展示文本携带，与段落相同。
 
 `GET /api/v1/knowledge/{id}` 是一份文档自己的记录，也是持有它的知识库唯一的来源。`GET /api/v1/knowledge/{id}/preview` 提供原始文件，`GET /api/v1/chunks/{id}` 提供在调用方无法接受该文件时代替它的解析文本。用 `preview` 而不是 `download`：两者提供同样的字节，但上游给 `download` 加的是 contributor 加写权限的守卫，而 `preview` 只需读权限，只读的产品界面不应建立在写守卫之上。
 

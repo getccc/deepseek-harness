@@ -264,6 +264,7 @@ describe('the seam', () => {
           docRef: KnowledgeDocRef(`${request.ref}/doc-1`),
           ref: request.ref,
           title: '运维手册',
+          description: '',
           fileName: '运维手册.pdf',
           fileType: 'pdf',
           byteSize: 2048,

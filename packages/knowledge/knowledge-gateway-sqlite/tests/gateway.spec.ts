@@ -52,6 +52,7 @@ function documentOf(upstreamDocId: string): UpstreamDocument {
   return {
     upstreamDocId,
     title: '运维手册',
+    description: '',
     fileName: '运维手册.pdf',
     fileType: 'pdf',
     byteSize: 20480,
@@ -745,6 +746,7 @@ function document(upstreamDocId: string, patch: Partial<UpstreamDocument> = {}):
   return {
     upstreamDocId,
     title: '运维手册',
+    description: '',
     fileName: '运维手册.pdf',
     fileType: 'pdf',
     byteSize: 20480,
