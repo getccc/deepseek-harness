@@ -25,7 +25,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-在 Team 装配中挂载本插件，宿主侧同时挂载 `api-knowledge-controller`；`/knowledge` 指令随即出现在 composer 的指令菜单中，Chip 出现在其工具行里。Team bundle 会挂载两者。
+在 Team 装配中挂载本插件，宿主侧同时挂载 `api-knowledge-controller`；`/knowledge` 指令随即出现在 composer 的指令菜单中——带着 Chip 的图标与本地化名称——Chip 出现在其工具行里。Team bundle 会挂载两者。
 
 ### 选择知识库
 

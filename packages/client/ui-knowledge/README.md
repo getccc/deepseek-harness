@@ -25,7 +25,7 @@ This package is how a member chooses what a conversation may search: the compose
 <a id="use-this-package"></a>
 ## Use this package
 
-Mount this plugin in a Team composition, alongside `api-knowledge-controller` on the Host; the `/knowledge` command then appears in the composer's command menu and the chip in its tool row. The Team bundle mounts both.
+Mount this plugin in a Team composition, alongside `api-knowledge-controller` on the Host; the `/knowledge` command then appears in the composer's command menu — carrying the chip's glyph and its localized name — and the chip in its tool row. The Team bundle mounts both.
 
 ### Choosing knowledge
 

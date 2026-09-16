@@ -2,6 +2,7 @@
 
 /** Simplified Chinese dictionary (the key-set source of truth). */
 export const zh = {
+  'command.label': '知识库',
   'command.description': '选择本次对话可检索的知识库',
   'option.all': '全部已授权知识库',
   'option.all.detail': '包含之后新授权给你的知识库',
@@ -19,6 +20,7 @@ export type KnowledgeKey = keyof typeof zh
 
 /** English dictionary, checked complete against the zh key set. */
 export const en = {
+  'command.label': 'Knowledge',
   'command.description': 'Choose the knowledge this conversation may search',
   'option.all': 'All authorized knowledge bases',
   'option.all.detail': 'Includes knowledge bases granted to you later',

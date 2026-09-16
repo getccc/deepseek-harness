@@ -17,6 +17,7 @@ import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import knowledgeRemote from '@deepseek-ai/dsh-api-knowledge-controller/remote'
 import type { KnowledgeScopeView } from '@deepseek-ai/dsh-api-knowledge-controller/types'
 import type { CommandUiContract } from '@deepseek-ai/dsh-client-ui-commands/client'
+import { IconDataOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
 // Type-only: the assembled Client Remote face this plugin extends.
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
 import type {} from '@deepseek-ai/dsh-api-knowledge-controller/remote'
@@ -66,7 +67,7 @@ export function apply(ctx: ClientContext): void {
 function registerUi(ctx: ClientContext): void {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'ui-knowledge: dictionaries')
 
-  // The command description and the option rows are this plugin's own copy,
+  // The command row copy and the option rows are this plugin's own copy,
   // read through the bound translate; the chip reads the standard seat.
   const t = ctx.locale.bind(NS)
 
@@ -86,7 +87,11 @@ function registerUi(ctx: ClientContext): void {
 
   ctx.effect(() => (ctx.get('commandUi') as CommandUiContract).register({
     name: NS,
+    label: () => t('command.label'),
     description: () => t('command.description'),
+    // The glyph the composer chip wears, so the menu row and the control it
+    // opens name the same surface.
+    icon: IconDataOutline16,
     available: () => true,
     ui: {
       kind: 'popupMultiSelect',
