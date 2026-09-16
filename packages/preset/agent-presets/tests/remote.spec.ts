@@ -133,6 +133,7 @@ describe('the roster a client reads', () => {
     const roster = await ctx.agentPresets.remoteExportList()
 
     expect(roster.authorable).toBe(true)
+    expect(roster.modeSelectionEnabled).toBe(true)
     expect(roster.presets).toEqual([
       { id: 'minimal', trust: 'system', isDefault: true, workspace: 'required' },
       { id: 'standard', trust: 'system', isDefault: false, workspace: 'required' },
@@ -193,7 +194,7 @@ describe('the roster a client reads', () => {
 
     // Composing no presets is a valid deployment: every session then shares
     // the host composition, and nothing can be written either.
-    expect(roster).toEqual({ presets: [], authorable: false })
+    expect(roster).toEqual({ presets: [], authorable: false, modeSelectionEnabled: true })
   })
 })
 

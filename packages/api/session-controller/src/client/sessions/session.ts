@@ -653,6 +653,11 @@ export class Session implements SessionFace {
    * it opens inside of. A message-counted page can cut a long turn; turn-scoped
    * Conversation Definitions ignore every update until their start arrives, so
    * without this a long last turn renders without its turn-level views.
+   * Pages start at one message and double up to {@link JUMP_PAGE_MESSAGES}:
+   * a window cut at a turn's first message reaches its `turn/start` with the
+   * one message before it, and a longer cut takes logarithmically many round
+   * trips while the older history loaded past the start stays smaller than
+   * the last page.
    * @param generation - openGeneration of the open pass that installed the window.
    */
   private async loadOpeningTurnStart(generation: number): Promise<void> {
@@ -663,13 +668,15 @@ export class Session implements SessionFace {
     this.loadingOlder = true
     this.notifier.markDirty()
     try {
+      let maxMessages = 1
       while (this.hasMore && !hasStart()) {
         const events = this.events
         if (generation !== this.openGeneration || events === undefined) return
         const before = this.baseSeq
-        await events.prepend({ beforeSeq: this.baseSeq, maxMessages: JUMP_PAGE_MESSAGES })
+        await events.prepend({ beforeSeq: this.baseSeq, maxMessages })
         // An empty or dropped page that still claims more history ends the loop.
         if (this.baseSeq >= before) return
+        maxMessages = Math.min(maxMessages * 2, JUMP_PAGE_MESSAGES)
       }
     } catch (error) {
       if (!isRemoteFailure(error)) {

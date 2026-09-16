@@ -52,7 +52,7 @@ kind: "package-reference"
 
 #### 模型所见
 
-一个分节 `office:kind`，其文本由会话折叠后的办公选择决定。选择为 `none` 时它整段缺席。每种文档类型命名要用 univer 办公工具生成的格式；`word` 与 `excel` 另加在第一次 univer 调用前加载的已配置技能（`wordSkill`、`excelSkill`），句子与下方 Word 示例相同；`ppt` 另外携带要先加载的已配置技能（设置了模版路径时随后给出该模版文件路径），或仅有已配置的模版路径以导入并保留，或在两者都未配置时携带从会话技能目录加载模版技能并导入其所指模版的指令；该分节绝不断言模版不存在，也不自行给出配色或品牌名。`chart` 要求回答里每张图表一个严格 JSON 的 `echarts` 围栏，由 Team 部署安装的 ECharts 插件就地绘制。每种产出文件的类型都以同样两句收尾：一条工具调用节约规则（每个 Unit 一个 `univer_execute` 脚本、独立调用同一步发出、只查确切的 Facade 方法而不展示整个类、同一错误出现两次即停下报告），以及文件只经 `present` 工具抵达读者、绝不靠写出路径的交付规则。
+一个分节 `office:kind`，其文本由会话折叠后的办公选择决定。选择为 `none` 时它整段缺席。每种文档类型命名要用 univer 办公工具生成的格式；`word` 与 `excel` 另加在第一次 univer 调用前加载的已配置技能（`wordSkill`、`excelSkill`），句子与下方 Word 示例相同；`ppt` 另外携带要先加载的已配置技能（设置了模版路径时随后给出该模版文件路径），或仅有已配置的模版路径以导入并保留，或在两者都未配置时携带从会话技能目录加载模版技能并导入其所指模版的指令；该分节绝不断言模版不存在，也不自行给出配色或品牌名。`chart` 要求回答里每张图表一个严格 JSON 的 `echarts` 围栏，由 Team 部署安装的 ECharts 插件就地绘制，并声明这些围栏就是全部交付物：不得在其旁另写页面、数据文件或构建脚本，不交付文件，也不做渲染校验。每种产出文件的类型都以同样两句收尾：一条工具调用节约规则（每个 Unit 一个 `univer_execute` 脚本、独立调用同一步发出、只查确切的 Facade 方法而不展示整个类、同一错误出现两次即停下报告），以及文件只经 `present` 工具抵达读者、绝不靠写出路径的交付规则。
 
 ##### 选择 Word 或 Excel 类型且未配置技能时
 
@@ -87,7 +87,7 @@ Produce the deliverable as a PowerPoint presentation (.pptx) built from the comp
 ##### 选择可视化类型时
 
 ```markdown
-Produce the deliverable as interactive charts in the answer itself. Write one fenced code block per chart whose info string is exactly `echarts`, holding nothing but a strict-JSON Apache ECharts option: double-quoted keys and strings, no comments, no trailing commas, and no JavaScript functions, expressions, `renderItem`, or event handlers. String formatters such as "{value}%" are supported. Keep the explanation in prose outside the fence.
+Produce the deliverable as interactive charts in the answer itself. Write one fenced code block per chart whose info string is exactly `echarts`, holding nothing but a strict-JSON Apache ECharts option: double-quoted keys and strings, no comments, no trailing commas, and no JavaScript functions, expressions, `renderItem`, or event handlers. String formatters such as "{value}%" are supported. Keep the explanation in prose outside the fence. These fences are the whole deliverable: write no HTML page, dashboard, data file, or build script beside them, deliver no file, and check each option by reading it rather than by rendering it anywhere.
 ```
 
 #### Token effect

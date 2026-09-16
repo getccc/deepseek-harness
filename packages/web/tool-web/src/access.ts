@@ -15,6 +15,8 @@ import type { Session } from '@deepseek-ai/dsh-session'
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 import zod, { type ZodType } from 'zod'
 import type { CommandDefinition } from '@deepseek-ai/dsh-commands'
+import type { CommandDefinitionId } from '@deepseek-ai/dsh-commands/brand'
+import { brandString } from '@deepseek-ai/dsh-brand'
 import { createScope, scopeOf } from '@deepseek-ai/dsh-scope'
 import type {} from '@deepseek-ai/dsh-web'
 import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
@@ -81,6 +83,7 @@ export function installSessionSwitch(ctx: Context, initial: boolean, names: read
 
   /** The `/web` command, registered on each permitted agent's own scope. */
   const command: CommandDefinition = {
+    definitionId: brandString<CommandDefinitionId>('@deepseek-ai/dsh-tool-web'),
     name: WEB_ACCESS_COMMAND,
     description: 'Turn web search and page fetching on or off for this session',
     input: { hint: '[on|off]' },
@@ -88,6 +91,7 @@ export function installSessionSwitch(ctx: Context, initial: boolean, names: read
       const word = rawInput.trim()
       // Registered only after the initial value was logged, so the fold never
       // comes back empty; an empty fold reads as off rather than as a guess.
+      // oxlint-disable-next-line typescript/no-deprecated -- Existing Session history read; migration deferred.
       const current = foldWebAccess(agent.session.snapshotEvents()) === true
       const wanted = word === '' ? !current : word === 'on' ? true : word === 'off' ? false : undefined
       if (wanted === undefined) return { kind: 'error', text: 'Usage: /web [on|off]' }
@@ -133,6 +137,7 @@ export function installSessionSwitch(ctx: Context, initial: boolean, names: read
 
     /** Bring one offered agent's visibility in line with its Session's log, recording the initial value into a log without one. */
     const settle = (agent: Agent, entry: Held): void => {
+      // oxlint-disable-next-line typescript/no-deprecated -- Existing Session history read; migration deferred.
       let enabled = foldWebAccess(agent.session.snapshotEvents())
       if (enabled === null) {
         enabled = initial

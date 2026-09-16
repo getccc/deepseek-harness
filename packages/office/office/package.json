@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-office",
   "description": "The office-deliverable choice vocabulary: which document kind a conversation should produce (Word, Excel, PowerPoint, or charts), its Session log event, fold, and validator",
-  "version": "0.1.5-rc.2",
+  "version": "0.1.6-alpha.1",
   "publishConfig": {
     "access": "public"
   },

@@ -58,7 +58,7 @@ dsh --profile team --port 8080
 
 本包的实质是 `cordis.patch.yml`，由 `dsh.bundle.patch` 清单字段指明。profile 组合器按 profile 列出的顺序应用每个 bundle 的 patch，因此本层看到的是 `dsh-base` 与 `dsh-web-app` 已经插入的配置行，并按 id 覆盖它们。
 
-patch 会替换目标行的整个 `config`，因此这里的 `webserver` 与 `web-runtime` 覆盖会重述各自拥有的每一个键。Runtime 入口为 `/team/open`，它刻意不接收独立 Web 的进程 Token，因为 Team 解锁由本地账户认证负责。
+patch 会替换目标行的整个 `config`，因此这里的 `webserver` 与 `web-runtime` 覆盖会重述各自拥有的每一个键。Runtime 入口为 `/team/open`，它刻意不接收独立 Web 的进程 Token，因为 Team 解锁由本地账户认证负责。本层还关闭 `dsh-base` 默认启用的 `session-log-deepseek` 贡献，因此模型请求（包括 Control Plane 转发给公司提供方的请求）从不附带 Session 日志。
 
 ### 源码地图
 

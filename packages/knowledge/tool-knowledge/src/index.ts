@@ -157,6 +157,7 @@ export function apply(ctx: Context, config: Config): void {
       const agent = ctx.agents.currentInitiator()
       const scope = agent === undefined
         ? { version: 1, mode: 'off' } as KnowledgeScope
+        // oxlint-disable-next-line typescript/no-deprecated -- Existing Session history read; migration deferred.
         : foldKnowledgeScope(agent.session.snapshotEvents())
       const selection = selectionOf(scope)
       if (selection === undefined) {
@@ -179,6 +180,7 @@ export function apply(ctx: Context, config: Config): void {
     order: ctx.systemPrompt.getSectionOrder('KNOWLEDGE_SCOPE'),
     text: (context) => {
       if (context.agent === undefined) return ''
+      // oxlint-disable-next-line typescript/no-deprecated -- Existing Session history read; migration deferred.
       return renderScopeSection(foldKnowledgeScope(context.agent.session.snapshotEvents()))
     },
   }), 'tool-knowledge: scope prompt section')
@@ -230,6 +232,7 @@ function installVisibility(ctx: Context): void {
 
   /** Bring one agent's visibility in line with its Session's scope. */
   const settle = (agent: Agent): void => {
+    // oxlint-disable-next-line typescript/no-deprecated -- Existing Session history read; migration deferred.
     const off = foldKnowledgeScope(agent.session.snapshotEvents()).mode === 'off'
     const current = lifted.get(agent.session)
     if (off === (current !== undefined)) return

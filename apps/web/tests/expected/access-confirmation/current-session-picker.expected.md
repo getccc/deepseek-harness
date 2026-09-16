@@ -1,0 +1,9 @@
+- menu:
+  - menuitem "只读"
+  - menuitem "工作区可写":
+    - text: 工作区可写
+    - img
+  - menuitem "完全访问"
+  - menuitem "Auto review EXP":
+    - text: Auto review
+    - superscript: EXP

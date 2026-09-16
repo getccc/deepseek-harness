@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-web-search-gateway-http",
   "description": "The Control Plane's Runner-facing web search route: device-token verification, a per-member web.search decision, the search through the Control Plane's own web service, and an audit record",
-  "version": "0.1.5-rc.2",
+  "version": "0.1.6-alpha.1",
   "publishConfig": {
     "access": "public"
   },

@@ -14,6 +14,8 @@ The composer's office picker named file formats only — Word, Excel, and PowerP
 
 **Its prompt names the fence contract, not a tool.** The renderer supplies no tool call: it captures settled markdown fences. The section therefore tells the model to write one fenced block per chart whose info string is exactly `echarts`, holding nothing but a strict-JSON ECharts option — the renderer rejects JavaScript functions, expressions, `renderItem`, and event handlers, and parses with `JSON.parse` alone, so the section states those limits where the model reads them.
 
+**The fences are the whole deliverable.** The section closes by ruling out the work a chart request does not need: no HTML page, dashboard, data file, or build script beside the fences, no file delivered, and each option checked by reading it rather than by rendering it. Without those sentences a chart turn built and screenshot-verified a dashboard the member never asked for, spending tens of tool calls and minutes on a page the answer already carried.
+
 **The picker's display order is the order a member reaches for: Word, Excel, PPT, visualization.** `OFFICE_KINDS`, the chip's local mirror of it, and the `renderOfficeSection` switch all carry that one order, so a reader comparing them sees no unexplained asymmetry.
 
 **The chip's copy says deliverable, not document.** A chart is not a document, and the chip now names a set that is not all files.

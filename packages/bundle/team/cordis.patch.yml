@@ -48,6 +48,15 @@
     provider: built-in
     model: deepseek-v4-flash
 
+# A Session log leaves the Runner only as model requests: the base row's
+# default attaches the unaccepted canonical log suffix (message text, tool
+# results, workspace paths) to every DeepSeek request, which on the company
+# route would hand member work to the company's provider through the Control
+# Plane. Team Runners send requests without it.
+- id: session-log-deepseek
+  config:
+    enabled: false
+
 # The base adapter adds the company route only after the Team transport is
 # mounted, and keeps its direct DeepSeek route for the member who stored a key
 # of their own; a member without one is offered company models alone.

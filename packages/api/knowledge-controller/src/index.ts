@@ -159,6 +159,7 @@ export class KnowledgeController extends TypertRemoteService {
 
   /** One Session's folded scope, or the refusal that it is not open here. */
   private scopeOf(sessionId: string): KnowledgeScope {
+    // oxlint-disable-next-line typescript/no-deprecated -- Existing Session history read; migration deferred.
     return foldKnowledgeScope(this.agentOf(sessionId).session.snapshotEvents())
   }
 

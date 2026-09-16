@@ -13,13 +13,16 @@
     - button "Agent 预设":
       - img
       - text: Agent 预设
+    - button "已归档会话":
+      - img
+      - text: 已归档会话
   - button "打开配置文件"
   - button "关闭":
     - img
     - text: 关闭
   - text: 权限 选择新会话的默认权限模式
-  - button "工作区内修改":
-    - text: 工作区内修改
+  - button "工作区可写":
+    - text: 工作区可写
     - img
   - text: 语言
   - button "中文":

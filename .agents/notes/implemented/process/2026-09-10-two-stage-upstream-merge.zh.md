@@ -26,4 +26,4 @@ Team 安装程序随附的第三方 sidebar、办公预览器、Univer 与 EChar
 
 ## 后果
 
-阶段 1 以 `c22bd0a46f` 与 `794ec7891c` 落地；阶段 2 以文本检查点 `beb016e1d6` 与携带本记录的适配提交落地。阶段 2 结束时，typecheck、lint、898 对双语配对与包不变量门禁均为绿色；剩余的单元测试失败是 `dev` 线原本就有的（app-frame 标题、缺少已构建前端的管理控制台、Python 运行时所需的 CPython 3.9）以及两个在 macOS 上以未改动的上游内容失败的上游套件。Web 黄金文件是上游的，需要用 fork 品牌在本地刷新。工具写出的办公文档通过工作区与 Sidebar 的文件树到达成员；`ui-office` 的产出文件识别器随第三方预览器一起离开，经上游 `deliverFile` 接缝交付是后续事项。[交付物卡片](../feature/2026-09-04-deliverable-cards-open-in-the-sidebar.zh.md)与[桌面安装程序](../architecture/2026-09-03-desktop-installer-carries-the-deployment.zh.md)两条记录中描述随附插件树的部分已被取代。
+阶段 1 以 `dsh-v0.1.3-alpha.2` 的文本检查点与适配提交落地；阶段 2 以 `dsh-v0.1.5-rc.1` 的文本检查点与携带本记录的适配提交落地。阶段 2 结束时，typecheck、lint、898 对双语配对与包不变量门禁均为绿色；剩余的单元测试失败是 `dev` 线原本就有的（app-frame 标题、缺少已构建前端的管理控制台、Python 运行时所需的 CPython 3.9）以及两个在 macOS 上以未改动的上游内容失败的上游套件。Web 黄金文件是上游的，需要用 fork 品牌在本地刷新。工具写出的办公文档通过工作区与 Sidebar 的文件树到达成员；`ui-office` 的产出文件识别器随第三方预览器一起离开，经上游 `deliverFile` 接缝交付是后续事项。[交付物卡片](../feature/2026-09-04-deliverable-cards-open-in-the-sidebar.zh.md)与[桌面安装程序](../architecture/2026-09-03-desktop-installer-carries-the-deployment.zh.md)两条记录中描述随附插件树的部分已被取代。

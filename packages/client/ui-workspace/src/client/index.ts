@@ -131,9 +131,6 @@ export function apply(ctx: Context): void {
     insertWorkspaceBefore: async (workspaceId, beforeWorkspaceId) => {
       await workspaces.insertBefore(workspaceId, beforeWorkspaceId)
     },
-    insertSessionBefore: async (workspaceId, sessionId, beforeSessionId) => {
-      await workspaces.insertSessionBefore(workspaceId, sessionId, beforeSessionId)
-    },
     createWorkspace: input => workspaces.create(input),
     hooks: { directoryFlow: browserFlowSource, hostInfo },
   })

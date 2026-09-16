@@ -115,6 +115,7 @@ export class WebAccessController extends TypertRemoteService {
 
   /** The switch the log states, or the refusal that this composition offers none. */
   private enabledOf(agent: Agent): boolean {
+    // oxlint-disable-next-line typescript/no-deprecated -- Existing Session history read; migration deferred.
     const enabled = foldWebAccess(agent.session.snapshotEvents())
     if (enabled === null) {
       throw new RemoteError('web-access/unavailable', 'this conversation has no web switch', {})

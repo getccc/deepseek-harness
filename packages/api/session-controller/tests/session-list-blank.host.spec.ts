@@ -24,15 +24,15 @@ import type {} from '@deepseek-ai/dsh-permission-presets'
 import type {} from '@deepseek-ai/dsh-sandbox-policy'
 import { createSessionTestRemote, type TestSessionRemote } from './test-remote.ts'
 
-async function harness(): Promise<{ ctx: Context; remote: TestSessionRemote; attach: (session: Session) => void }> {
+async function harness(): Promise<{ ctx: Context; remote: TestSessionRemote; attach: (session: Session) => Promise<void> }> {
   const ctx = new Context()
   await ctx.plugin(SessionStore)
   await ctx.plugin(AgentRegistry)
   return {
     ctx,
     remote: createSessionTestRemote(ctx, { defaultModelSelection: () => ({ provider: 'p', model: 'm' }), cwd: '/tmp' }),
-    attach: (session) => {
-      ctx.agents.register({ id: session.id, session, status: 'idle', ctx } as Agent)
+    attach: async (session) => {
+      await ctx.agents.register({ id: session.id, session, status: 'idle', ctx } as Agent)
     },
   }
 }
@@ -68,7 +68,7 @@ describe('summary blank = conversation not started', () => {
   it('standalone events (command lifecycle, plan/mode, title) keep the session blank', async () => {
     const { ctx, remote, attach } = await harness()
     const session = ctx.sessions.create()
-    attach(session)
+    await attach(session)
     expect(await listBlank(remote, session.id)).toBe(true)
     appendStandalone(session)
     expect(await listBlank(remote, session.id)).toBe(true)
@@ -77,7 +77,7 @@ describe('summary blank = conversation not started', () => {
   it('those same events end pristine, so New Session does not hand the setup back', async () => {
     const { ctx, remote, attach } = await harness()
     const session = ctx.sessions.create()
-    attach(session)
+    await attach(session)
     expect(await listPristine(remote, session.id)).toBe(true)
     appendStandalone(session)
     expect(await listPristine(remote, session.id)).toBe(false)
@@ -88,7 +88,7 @@ describe('summary blank = conversation not started', () => {
   it('the facts pinned at creation leave pristine alone', async () => {
     const { ctx, remote, attach } = await harness()
     const session = ctx.sessions.create()
-    attach(session)
+    await attach(session)
     session.append('permission/preset', { preset: 'workspace-write' })
     session.append('sandbox/mode', { mode: 'workspace-write' })
     session.append('approval/policy', { policy: 'ask' })
@@ -101,7 +101,7 @@ describe('summary blank = conversation not started', () => {
   it('the first turn clears blank', async () => {
     const { ctx, remote, attach } = await harness()
     const session = ctx.sessions.create()
-    attach(session)
+    await attach(session)
     appendStandalone(session)
     session.append('turn/start', { turn: 0 })
     expect(await listBlank(remote, session.id)).toBe(false)

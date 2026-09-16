@@ -15,9 +15,8 @@ import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { WorkspaceId } from '@deepseek-ai/dsh-workspace/types'
 import type { ComposerBlock } from './composer-blocks.ts'
-import type {
-  ComposerKeyboard, DraftAttachmentId, EditSelection, InputActions, InputNotice, InputState,
-} from './input.ts'
+import type { DraftAttachmentId, InputActions, InputNotice, InputState } from './input.ts'
+import type { ComposerKeyboard, EditSelection } from './draft-editor.ts'
 import type { createConversationStore } from '../stores.ts'
 import type { BusyEnterBehavior } from './composer-submission.ts'
 import type { ConversationSnapshot } from './snapshot.ts'
@@ -182,6 +181,8 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
     }
     /** Plan control inside the composer tool row. */
     'conversation.input.plan': { kind: 'single'; scope: 'session'; owner: InputControlOwnerProps }
+    /** Current-session permission control inside the composer tool row. */
+    'conversation.input.permission': { kind: 'single'; scope: 'session'; owner: InputControlOwnerProps }
     /** Model selector inside the composer tool row. */
     'conversation.input.model': { kind: 'single'; scope: 'session'; owner: InputControlOwnerProps }
   }
@@ -291,8 +292,8 @@ export interface ComposerBarOwnerProps {
   variant: 'hero' | 'composer'
   /**
    * Which kind of Session the bar serves; absent before a Session exists. A
-   * `chat` Session runs a tool-less preset, so the bar omits the access and
-   * plan controls that only a Workspace-backed Session can act on.
+   * `chat` Session runs a tool-less preset, so the bar dispatches neither the
+   * permission nor the plan seat, which only a Workspace-backed Session can act on.
    */
   kind?: SessionKind
   /** A feature-owned reason that makes message input inert while leaving model selection live. */
@@ -318,7 +319,6 @@ export interface ComposerBarInjected {
   retryFileUpload: ((id: DraftAttachmentId) => void) | undefined
   toggleCommandMenu: ((selection: EditSelection) => void) | undefined
   stop: (() => void) | undefined
-  command: ((line: string) => Promise<boolean>) | undefined
   hooks: {
     /**
      * Live busy-state submission preference: the delivery mode plain Enter
@@ -333,7 +333,7 @@ export interface ComposerBarInjected {
   }
 }
 
-/** Owner share of the named plan and model controls. */
+/** Owner share of the named plan, permission, and model controls. */
 export interface InputControlOwnerProps {
   /** Whether the composer currently refuses interaction. */
   locked: boolean
@@ -344,6 +344,7 @@ export type ComposerBarProps =
   PropsRuntime<'conversation.composer.bar'>
   & PropsRenderSlots<
     | 'conversation.input.attachments' | 'conversation.input.overlay'
+    | 'conversation.input.permission'
     | 'conversation.input.left' | 'conversation.input.plan'
     | 'conversation.input.right' | 'conversation.input.model'
     | 'conversation.composer.dock'

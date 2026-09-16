@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-account-auth",
   "description": "Authentication Service Definition: turn a login name and a secret into an account, independently of how the secret is verified",
-  "version": "0.1.5-rc.2",
+  "version": "0.1.6-alpha.1",
   "publishConfig": {
     "access": "public"
   },

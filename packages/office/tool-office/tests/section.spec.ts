@@ -80,6 +80,13 @@ describe('renderOfficeSection', () => {
     expect(text).not.toMatch(/present tool/)
   })
 
+  it('keeps the chart kind off disk: no built page, no delivered file, no rendering check', () => {
+    const text = renderOfficeSection({ version: 1, kind: 'chart' })
+    expect(text).toMatch(/write no HTML page, dashboard, data file, or build script beside them/)
+    expect(text).toMatch(/deliver no file/)
+    expect(text).toMatch(/reading it rather than by rendering it anywhere/)
+  })
+
   it('ends every file-producing kind with the present-tool delivery rule', () => {
     for (const kind of ['word', 'excel', 'ppt'] as const) {
       const text = renderOfficeSection({ version: 1, kind }, kind === 'ppt' ? { welinkinTemplatePath: '/opt/welinkin/welinkin-ppt.pptx' } : {})

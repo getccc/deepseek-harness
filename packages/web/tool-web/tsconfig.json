@@ -45,6 +45,9 @@
       "path": "../../session/session-projection"
     },
     {
+      "path": "../../util/brand"
+    },
+    {
       "path": "../../core/scope"
     }
   ]

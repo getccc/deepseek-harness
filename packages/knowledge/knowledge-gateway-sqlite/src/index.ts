@@ -155,8 +155,8 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
       passages = upstream.flatMap((passage) => {
         const row = byUpstream.get(passage.upstreamId)
         // The source can answer with a base the request did not name; a hit
-        // this gateway cannot attribute to something it authorized is dropped
-        // rather than shown without provenance.
+        // whose upstream id maps to no authorized knowledge row is dropped
+        // rather than shown without its knowledge ref.
         return row === undefined ? [] : [{
           ref: KnowledgeRef(row.knowledge_ref),
           title: passage.title,

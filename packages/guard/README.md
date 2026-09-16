@@ -1,5 +1,5 @@
 ---
-description: "Package map for the guard family: the advisory repeat-tool reminder, the per-call tool-call timeout policy, and the per-composition tool-catalog restriction, for users and maintainers choosing or composing the guards."
+description: "Package map for the guard family: the advisory repeat-tool reminder, the per-tool-call timeout policy, and the per-composition tool-catalog restriction, for users and maintainers choosing or composing the guards."
 kind: "package-group"
 ---
 
@@ -37,7 +37,7 @@ Three small plugins; each README below explains when to keep, tune, or remove it
 
 Start with the tools subsystem reference for the tool-call pipeline, then the reminder's configuration and the timeout-library decision behind the policy.
 
-- [Tools subsystem reference](../../docs/subsystems/tools.md) — the tool-call pipeline and decisions both guards build on.
+- [Tools subsystem reference](../../docs/subsystems/tools.md) — the tool-call pipeline and decisions the guards build on.
 - [Generated configuration catalog](../../docs/config-catalog.md#deepseek-aidsh-repeat-tool-reminder) — every accepted field of the repeat-call reminder.
 - [Timeout deadline library Agent Note](../../.agents/notes/implemented/architecture/2026-07-06-timeout-deadline-library.md) — the timing/termination split `timeout-policy` enforces.
 
