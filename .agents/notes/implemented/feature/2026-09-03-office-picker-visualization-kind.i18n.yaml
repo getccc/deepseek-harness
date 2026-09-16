@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-03-office-picker-visualization-kind.md
-2026-09-03-office-picker-visualization-kind.md: d795ac8aac2700b18f4b341fc3cb5a43c56673cc
-2026-09-03-office-picker-visualization-kind.zh.md: dd52f8fb5b89d85c5d0c9a1671930f68145d706e
+2026-09-03-office-picker-visualization-kind.md: 9928dae8583dc15d4e85ec63e13eba4884866707
+2026-09-03-office-picker-visualization-kind.zh.md: 2133a7534cad900e317f0087850446c9f7908c09

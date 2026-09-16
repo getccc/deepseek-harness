@@ -147,8 +147,11 @@ export function renderOfficeSection(choice: OfficeChoice, route: OfficeRoute = {
         : `Produce the deliverable as a PowerPoint presentation (.pptx) built from the company template at ${route.welinkinTemplatePath}: import it with the univer office tools as the starting Unit, keep its slide masters, layouts, fonts, and brand colours, and replace only the content. Then ${EXPORT}${ECONOMY}${DELIVERY}`
     case 'chart':
       // The fences are drawn by the ECharts plugin the Team deployment installs;
-      // nothing is written to disk, so the delivery rule does not apply.
-      return 'Produce the deliverable as interactive charts in the answer itself. Write one fenced code block per chart whose info string is exactly `echarts`, holding nothing but a strict-JSON Apache ECharts option: double-quoted keys and strings, no comments, no trailing commas, and no JavaScript functions, expressions, `renderItem`, or event handlers. String formatters such as "{value}%" are supported. Keep the explanation in prose outside the fence.'
+      // nothing is written to disk, so the delivery rule does not apply. The
+      // closing sentences say so to the model, because a chart request answered
+      // with a built dashboard costs a file-writing and rendering round for a
+      // page the reader never asked for.
+      return 'Produce the deliverable as interactive charts in the answer itself. Write one fenced code block per chart whose info string is exactly `echarts`, holding nothing but a strict-JSON Apache ECharts option: double-quoted keys and strings, no comments, no trailing commas, and no JavaScript functions, expressions, `renderItem`, or event handlers. String formatters such as "{value}%" are supported. Keep the explanation in prose outside the fence. These fences are the whole deliverable: write no HTML page, dashboard, data file, or build script beside them, deliver no file, and check each option by reading it rather than by rendering it anywhere.'
   }
 }
 
