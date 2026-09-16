@@ -48,7 +48,11 @@ Both rows register into the sidebar's `sidebar.panellist` seat and address a `ma
 
 ### How a member moves through it
 
-Two levels, not columns: the cards, then that knowledge base's documents. The breadcrumb above them names the path and its earlier step is the control that goes back up; going back drops the document list and closes the drawer, because both belong to the knowledge base that was open. One document opens in a drawer over the right of the panel, which closes on its own control, on a click beside it, or on Escape.
+Two levels, not columns: the cards, then that knowledge base's documents. The breadcrumb above them names the path — the knowledge base is where it ends — and its earlier step is the control that goes back up; going back drops the document list and closes the drawer, because both belong to the knowledge base that was open. One document opens in a drawer over the right of the panel, which closes on its own control, on a click beside it, or on Escape.
+
+A document card's footer carries its type, size, and day. Its state appears only when it is not the ordinary one — 解析中 or 不可检索 — because a searchable document has nothing to say, while one that is not is otherwise indistinguishable from one a retrieval simply did not rank.
+
+The pager holds the panel's bottom right. With a total it names the total and at most seven page slots: the first and last page, the current one with its neighbours, and an ellipsis for the runs between, sliding to either end near it so the pager keeps one width. Without a total it names only the current page and offers the next while the page is full.
 
 ### What the panels hold
 
@@ -74,6 +78,8 @@ Ranking is the provider's. The panel groups passages under their document and sh
 | [`src/client/DocumentPreview.tsx`](src/client/DocumentPreview.tsx) | One document, drawn from what the Control Plane served |
 | [`src/client/KnowledgeSearchPanel.tsx`](src/client/KnowledgeSearchPanel.tsx) | The scope chips, the query, and the ranked results |
 | [`src/client/results.ts`](src/client/results.ts) | Grouping passages under their document, and how a score is written |
+| [`src/client/Pager.tsx`](src/client/Pager.tsx) | The document list's pager |
+| [`src/client/paging.ts`](src/client/paging.ts) | How many pages a total spans, and which of them the pager names |
 
 <a id="further-exploration"></a>
 ## Further Exploration

@@ -12,6 +12,8 @@ import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import { DocumentPreview } from './DocumentPreview.tsx'
+import type { Translate } from './locales.ts'
+import { Pager } from './Pager.tsx'
 import css from './panels.module.css'
 
 /** What this panel needs from the plugin that registered it. */
@@ -52,6 +54,32 @@ function dayText(at: number): string {
 /** What a document card shows beside its name. */
 function titleOf(document: KnowledgeDocumentView): string {
   return document.title === '' ? document.fileName : document.title
+}
+
+/**
+ * A document card's footer: its type, size, and day, and its state only when
+ * that state is one a member has to know.
+ *
+ * A searchable document is the ordinary case and says nothing; one still
+ * parsing, or one the source will not search, says so, because otherwise a
+ * member has no way to tell why a retrieval never reaches it. A document the
+ * source reports none of these for leaves the footer out.
+ * @param props - the document and the locale seat.
+ * @returns the footer, or nothing.
+ */
+function DocumentFacts({ document, t }: { readonly document: KnowledgeDocumentView; readonly t: Translate }) {
+  const tags: string[] = []
+  if (document.state === 'processing') tags.push(t('docs.state.processing'))
+  if (document.state === 'unavailable') tags.push(t('docs.state.unavailable'))
+  if (document.fileType !== '') tags.push(document.fileType)
+  if (document.byteSize > 0) tags.push(fileSizeText(document.byteSize))
+  if (document.updatedAt !== undefined) tags.push(dayText(document.updatedAt))
+  if (tags.length === 0) return null
+  return (
+    <span className={css.cardFoot}>
+      {tags.map((tag, index) => <span key={`${String(index)}:${tag}`} className={css.cardTag}>{tag}</span>)}
+    </span>
+  )
 }
 
 /**
@@ -131,13 +159,6 @@ export function KnowledgeBasesPanel({ directory, documents, content, t }: Knowle
   }
 
   const rows = docs?.documents ?? []
-  // The source reports a total only sometimes, so "there is more" is read from
-  // the total when it says one, and from a full page when it does not.
-  const more = docs === undefined
-    ? false
-    : docs.total === undefined
-      ? rows.length === docs.pageSize
-      : docs.page * docs.pageSize < docs.total
   const chosenName = entries.find(entry => entry.knowledgeRef === chosen)?.displayName ?? ''
 
   return (
@@ -151,8 +172,6 @@ export function KnowledgeBasesPanel({ directory, documents, content, t }: Knowle
               <button type="button" className={css.crumbLink} onClick={back}>{t('bases.title')}</button>
               <span className={css.crumbMark} aria-hidden="true">/</span>
               <h1 className={css.title}>{chosenName}</h1>
-              <span className={css.crumbMark} aria-hidden="true">/</span>
-              <span className={css.crumbTail}>{t('docs.crumb')}</span>
             </>
           )}
       </nav>
@@ -212,15 +231,11 @@ export function KnowledgeBasesPanel({ directory, documents, content, t }: Knowle
             )}
             {docsPhase === 'ready' && docs !== undefined && rows.length > 0 && (
               <>
-                <p className={css.summary}>
-                  {docs.total !== undefined && <span>{t('docs.count', { total: docs.total })}</span>}
-                  <span>{t('docs.page', { page: docs.page })}</span>
-                </p>
                 <ul className={css.grid}>
                   {rows.map(document => (
                     <li
                       key={document.docRef}
-                      className={clsx(css.card, document.docRef === opened?.docRef && css.cardOn)}
+                      className={clsx(css.card, css.cardFlush, document.docRef === opened?.docRef && css.cardOn)}
                     >
                       <button
                         type="button"
@@ -228,30 +243,32 @@ export function KnowledgeBasesPanel({ directory, documents, content, t }: Knowle
                         aria-pressed={document.docRef === opened?.docRef}
                         onClick={() => { setOpened(document) }}
                       >
-                        <span className={css.cardName}>{titleOf(document)}</span>
-                        <span className={css.summary}>
-                          <span>{t(`docs.state.${document.state}`)}</span>
-                          {document.fileType !== '' && <span>{document.fileType}</span>}
-                          {document.byteSize > 0 && <span>{fileSizeText(document.byteSize)}</span>}
-                          {document.updatedAt !== undefined && <span>{dayText(document.updatedAt)}</span>}
+                        <span className={css.cardHead}>
+                          <span className={css.cardName}>{titleOf(document)}</span>
                         </span>
+                        <DocumentFacts document={document} t={t} />
                       </button>
                     </li>
                   ))}
                 </ul>
-                <span className={css.cardActions}>
-                  <Button variant="outline" disabled={docs.page <= 1} onClick={() => { setPage(docs.page - 1) }}>
-                    {t('docs.prev')}
-                  </Button>
-                  <Button variant="outline" disabled={!more} onClick={() => { setPage(docs.page + 1) }}>
-                    {t('docs.next')}
-                  </Button>
-                </span>
               </>
             )}
           </>
         )}
       </div>
+
+      {/* Outside the scrolling body, so the pager holds the panel's bottom
+          right however long or short the page is. */}
+      {chosen !== undefined && docsPhase === 'ready' && docs !== undefined && rows.length > 0 && (
+        <Pager
+          page={docs.page}
+          pageSize={docs.pageSize}
+          total={docs.total}
+          shown={rows.length}
+          go={setPage}
+          t={t}
+        />
+      )}
 
       {opened !== undefined && (
         <>

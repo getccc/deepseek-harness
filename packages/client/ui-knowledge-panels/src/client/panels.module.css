@@ -64,12 +64,6 @@
   color: var(--dsw-alias-label-tertiary);
 }
 
-.crumbTail {
-  font-size: 16px;
-  line-height: 24px;
-  color: var(--dsw-alias-label-secondary);
-}
-
 .subtitle {
   margin: 0;
   font-size: 13px;
@@ -89,6 +83,67 @@
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* The document list's pager: the total, then the steps and pages, at the
+   panel's bottom right. */
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.pagerTotal {
+  margin-inline-end: 8px;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.pagerStep,
+.pagerPage {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  outline: none;
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.pagerStep:hover:not(:disabled),
+.pagerPage:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.pagerStep:focus-visible,
+.pagerPage:focus-visible {
+  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
+}
+
+.pagerStep:disabled {
+  color: var(--dsw-alias-label-caption);
+  cursor: not-allowed;
+}
+
+.pagerPageOn {
+  border-color: var(--dsw-alias-state-business-primary);
+  color: var(--dsw-alias-state-business-primary);
+}
+
+.pagerGap {
+  min-width: 28px;
+  text-align: center;
+  color: var(--dsw-alias-label-tertiary);
 }
 
 /* One document over the list: the drawer takes the panel's right side, and the

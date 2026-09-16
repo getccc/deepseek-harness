@@ -94,6 +94,12 @@ async function choose(name = '临港知识库'): Promise<void> {
   fireEvent.click(await screen.findByRole('button', { name: new RegExp(name, 'u') }))
 }
 
+/** The number on the page button the pager marks as open. */
+function currentPage(): string | null {
+  // `window.document`: this file's `document` is the fixture builder above.
+  return window.document.querySelector('[aria-current="page"]')?.textContent ?? null
+}
+
 /** Take the breadcrumb back up to the knowledge-base cards. */
 async function back(): Promise<void> {
   fireEvent.click(await screen.findByRole('button', { name: '知识库' }))
@@ -348,10 +354,13 @@ describe('the documents in one knowledge base', () => {
     await choose()
     await waitFor(() => { expect(bases.documents).toHaveBeenCalledWith(REF_A, 1) })
     expect(await screen.findByText('运维手册')).toBeTruthy()
-    expect(screen.getByText('可检索')).toBeTruthy()
-    expect(screen.getByText('共 1 篇')).toBeTruthy()
-    expect(screen.getByText('第 1 页')).toBeTruthy()
+    // A searchable document is the ordinary case, so its state is not a tag;
+    // its type, size, and day are.
+    expect(screen.queryByText('可检索')).toBeNull()
+    expect(screen.getByText('pdf')).toBeTruthy()
     expect(screen.getByText('20KB')).toBeTruthy()
+    expect(screen.getByText('共 1 篇')).toBeTruthy()
+    expect(currentPage()).toBe('1')
     // The day comes from the timestamp the source reported, read as this
     // computer's calendar reads it.
     expect(screen.getByText('2025-09-03')).toBeTruthy()
@@ -363,6 +372,8 @@ describe('the documents in one knowledge base', () => {
     // The level a member is on is the heading; the level above it is a control.
     expect((await screen.findByRole('heading')).textContent).toBe('临港知识库')
     expect(screen.getByText('点击一份文档，在右侧查看它的内容')).toBeTruthy()
+    // The path ends at the knowledge base: nothing after its name.
+    expect(screen.queryByText('文档')).toBeNull()
     await back()
     expect((await screen.findByRole('heading')).textContent).toBe('知识库')
     expect(screen.getByText('南昌知识库')).toBeTruthy()
@@ -372,6 +383,19 @@ describe('the documents in one knowledge base', () => {
     renderBases(() => Promise.resolve(BASES))
     expect(await screen.findByText('无描述')).toBeTruthy()
     expect(screen.getByText('现场运维资料')).toBeTruthy()
+  })
+
+  it('draws no footer for a searchable document the source reports nothing else about', async () => {
+    renderBases(
+      () => Promise.resolve(BASES),
+      // No update time: an optional field that is absent, not set to undefined.
+      () => Promise.resolve(documentPage({
+        documents: [(({ updatedAt: _dropped, ...rest }) => rest)(document({ fileType: '', byteSize: 0 }))],
+      })),
+    )
+    await choose()
+    const card = (await screen.findByText('运维手册')).closest('button')
+    expect(card?.children).toHaveLength(1)
   })
 
   it('names a document by its file name when the source holds no title', async () => {
@@ -415,13 +439,22 @@ describe('the documents in one knowledge base', () => {
       (_ref, page) => Promise.resolve(documentPage({ page, pageSize: 1, total: 3 })),
     )
     await choose()
-    expect(await screen.findByText('第 1 页')).toBeTruthy()
+    await screen.findByRole('button', { name: '第 1 页' })
     expect(screen.getByRole('button', { name: '上一页' }).hasAttribute('disabled')).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: '下一页' }))
-    expect(await screen.findByText('第 2 页')).toBeTruthy()
+    await waitFor(() => { expect(currentPage()).toBe('2') })
     expect(bases.documents).toHaveBeenLastCalledWith(REF_A, 2)
     fireEvent.click(screen.getByRole('button', { name: '上一页' }))
     await waitFor(() => { expect(bases.documents).toHaveBeenLastCalledWith(REF_A, 1) })
+    // A page is also reached by its number, and the one already open is not
+    // asked for again.
+    await waitFor(() => { expect(currentPage()).toBe('1') })
+    fireEvent.click(screen.getByRole('button', { name: '第 3 页' }))
+    await waitFor(() => { expect(bases.documents).toHaveBeenLastCalledWith(REF_A, 3) })
+    await waitFor(() => { expect(currentPage()).toBe('3') })
+    const asked = bases.documents.mock.calls.length
+    fireEvent.click(screen.getByRole('button', { name: '第 3 页' }))
+    expect(bases.documents.mock.calls.length).toBe(asked)
   })
 
   it('stops paging at the end the total names', async () => {
@@ -430,7 +463,7 @@ describe('the documents in one knowledge base', () => {
       (_ref, page) => Promise.resolve(documentPage({ page, pageSize: 2, total: 2 })),
     )
     await choose()
-    await screen.findByText('第 1 页')
+    await screen.findByRole('button', { name: '第 1 页' })
     expect(screen.getByRole('button', { name: '下一页' }).hasAttribute('disabled')).toBe(true)
   })
 
@@ -445,10 +478,11 @@ describe('the documents in one knowledge base', () => {
       }),
     )
     await choose()
-    await screen.findByText('第 1 页')
+    await screen.findByRole('button', { name: '第 1 页' })
     // A full page with no total is the one case where "there may be more" is
-    // the honest answer; the count itself is not shown.
+    // the honest answer; neither the count nor any page past this one is named.
     expect(screen.queryByText(/共 .* 篇/u)).toBeNull()
+    expect(screen.getAllByRole('button', { name: /^第 \d+ 页$/u })).toHaveLength(1)
     expect(screen.getByRole('button', { name: '下一页' }).hasAttribute('disabled')).toBe(false)
   })
 
@@ -458,7 +492,7 @@ describe('the documents in one knowledge base', () => {
       (_ref, page) => Promise.resolve(documentPage({ page, pageSize: 1, total: 9 })),
     )
     await choose()
-    await screen.findByText('第 1 页')
+    await screen.findByRole('button', { name: '第 1 页' })
     fireEvent.click(screen.getByRole('button', { name: '下一页' }))
     await waitFor(() => { expect(bases.documents).toHaveBeenLastCalledWith(REF_A, 2) })
     await back()

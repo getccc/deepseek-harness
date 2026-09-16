@@ -48,7 +48,11 @@ kind: "package-reference"
 
 ### 成员如何在其中移动
 
-是两个层级，不是分栏：先是卡片，再是该知识库的文档。上方的面包屑给出路径，其中较早的一段就是回到上一层的控件；回退会丢掉文档列表并关闭抽屉，因为两者都属于刚刚打开的那个知识库。一份文档在面板右侧的抽屉中打开，可通过它自己的控件、点击旁边的区域，或按 Escape 关闭。
+是两个层级，不是分栏：先是卡片，再是该知识库的文档。上方的面包屑给出路径——路径止于知识库——其中较早的一段就是回到上一层的控件；回退会丢掉文档列表并关闭抽屉，因为两者都属于刚刚打开的那个知识库。一份文档在面板右侧的抽屉中打开，可通过它自己的控件、点击旁边的区域，或按 Escape 关闭。
+
+文档卡片底部给出类型、大小与日期。状态只在不是常态时出现——解析中或不可检索——因为可检索的文档没什么要说的，而不可检索的文档若不标出，就与一次检索只是没把它排上来无从区分。
+
+分页器固定在面板右下角。有总数时，它给出总数和至多七个页码位：首页、末页、当前页及其前后各一页，中间省去的部分用省略号表示；靠近两端时窗口滑向那一端，让分页器保持同一宽度。没有总数时，它只给出当前页，并在本页已满时提供下一页。
 
 ### 面板持有什么
 
@@ -74,6 +78,8 @@ kind: "package-reference"
 | [`src/client/DocumentPreview.tsx`](src/client/DocumentPreview.tsx) | 一份文档，按 Control Plane 所提供的内容绘制 |
 | [`src/client/KnowledgeSearchPanel.tsx`](src/client/KnowledgeSearchPanel.tsx) | 范围 chip、查询框和排名结果 |
 | [`src/client/results.ts`](src/client/results.ts) | 把段落按文档分组，以及得分如何书写 |
+| [`src/client/Pager.tsx`](src/client/Pager.tsx) | 文档列表的分页器 |
+| [`src/client/paging.ts`](src/client/paging.ts) | 总数跨多少页，以及分页器给出哪些页码 |
 
 <a id="further-exploration"></a>
 ## 延伸阅读

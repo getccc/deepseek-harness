@@ -51,12 +51,16 @@ class FixtureKnowledge extends Knowledge {
   }
 
   documents(request: KnowledgeDocumentsRequest): Promise<KnowledgeDocumentPage> {
+    const first = [
+      { id: 'doc-1', title: '园区运维手册 v3', fileName: '园区运维手册v3.pdf', fileType: 'pdf', byteSize: 2_340_000, state: 'ready' as const },
+      { id: 'doc-3', title: '2026 年度应急演练实施方案', fileName: '应急演练实施方案.md', fileType: 'md', byteSize: 12_400, state: 'ready' as const },
+      { id: 'doc-4', title: '门禁设备台账', fileName: '门禁设备台账.xlsx', fileType: 'xlsx', byteSize: 240_000, state: 'processing' as const },
+    ]
+    // The Lingang base reports 190 documents at 20 a page, so the pager has
+    // ten pages and folds a run of them; each page carries the same three rows
+    // under its own ids.
     const rows = request.ref === LINGANG
-      ? [
-        { id: 'doc-1', title: '园区运维手册 v3', fileName: '园区运维手册v3.pdf', fileType: 'pdf', byteSize: 2_340_000, state: 'ready' as const },
-        { id: 'doc-3', title: '2026 年度应急演练实施方案', fileName: '应急演练实施方案.md', fileType: 'md', byteSize: 12_400, state: 'ready' as const },
-        { id: 'doc-4', title: '门禁设备台账', fileName: '门禁设备台账.xlsx', fileType: 'xlsx', byteSize: 240_000, state: 'processing' as const },
-      ]
+      ? first.map(row => ({ ...row, id: `${row.id}-p${String(request.page ?? 1)}` }))
       : [{ id: 'doc-9', title: '产线交接规范', fileName: '产线交接规范.docx', fileType: 'docx', byteSize: 54_000, state: 'ready' as const }]
     return Promise.resolve({
       ref: request.ref,
@@ -72,7 +76,7 @@ class FixtureKnowledge extends Knowledge {
       })),
       page: request.page ?? 1,
       pageSize: 20,
-      total: rows.length,
+      total: request.ref === LINGANG ? 190 : rows.length,
     })
   }
 
@@ -164,12 +168,19 @@ describe('web e2e: knowledge panels', () => {
 
     await page.getByRole('button', { name: /临港智慧园区知识库/u }).click()
     await page.getByText('园区运维手册 v3').waitFor({ timeout: 15_000 })
-    // What a member acts on: the state words, the size, and how far the list
-    // goes — all read from the answer, none of it invented in the panel.
-    await page.getByText('共 3 篇').waitFor()
+    // What a member acts on: a state only when it is not the ordinary one, the
+    // size, and how far the list goes — all read from the answer.
     await page.getByText('解析中').waitFor()
-    expect(await page.getByRole('button', { name: '上一页' }).isDisabled()).toBe(true)
-    expect(await page.getByRole('button', { name: '下一页' }).isDisabled()).toBe(true)
+    expect(await page.getByText('可检索').count()).toBe(0)
+    const pager = page.getByRole('navigation', { name: '文档分页' })
+    await pager.getByText('共 190 篇').waitFor()
+    expect(await pager.getByRole('button', { name: '上一页' }).isDisabled()).toBe(true)
+    expect(await pager.getByRole('button', { name: '第 1 页' }).getAttribute('aria-current')).toBe('page')
+    await pager.getByRole('button', { name: '第 10 页' }).click()
+    await expect.poll(async () => await pager.getByRole('button', { name: '第 10 页' }).getAttribute('aria-current')).toBe('page')
+    expect(await pager.getByRole('button', { name: '下一页' }).isDisabled()).toBe(true)
+    await pager.getByRole('button', { name: '第 1 页' }).click()
+    await expect.poll(async () => await pager.getByRole('button', { name: '第 1 页' }).getAttribute('aria-current')).toBe('page')
 
     // A document opens in the drawer beside the list, and the breadcrumb is
     // what takes a member back to the cards.
