@@ -45,9 +45,9 @@ kind: "package-reference"
 | `scope(sessionId)` | 某个会话可以从什么中选择、它选了什么，以及已选引用中哪些已不在目录里 | 是 |
 | `choose(sessionId, mode, knowledgeRefs?)` | 记录选择并回答同样的视图 | 是 |
 | `directory()` | 该成员此刻可以检索的知识库 | 否 |
-| `documents(knowledgeRef, page?, pageSize?)` | 某个知识库中文档的一页，每份都由受治理引用命名 | 否 |
-| `documentContent(docRef, maxBytes?)` | 某一份文档的原始文件（base64），或代替它的解析文本 | 否 |
-| `search(query, mode, knowledgeRefs?, maxResults?)` | 排名后的段落，以及实际被检索的知识库 | 否 |
+| `documents(knowledgeRef, page?)` | 某个知识库中文档的一页，每份都由受治理引用命名 | 否 |
+| `documentContent(docRef)` | 某一份文档的原始文件（base64），或代替它的解析文本 | 否 |
+| `search(query, mode, knowledgeRefs?)` | 排名后的段落，以及实际被检索的知识库 | 否 |
 
 目录在每次调用时重新读取而不缓存：上次查看之后被撤销的授权应当让选择器变窄，管理员停用的知识库应当从中消失。
 
@@ -107,7 +107,7 @@ kind: "package-reference"
 <details>
 <summary>维护者工作上下文 —— 点击展开</summary>
 
-无。
+方法只声明调用方会传的参数。生成的 Remote 客户端按*声明*的参数个数校验，因此浏览器一旦省略末尾的可选参数，调用在到达传输层之前就被拒绝（`expected 3 argument(s), got 2`）。于是没人会传的上界只能作为 Control Plane 的配置项存在，而不是这里一个无人使用的可选参数；分页大小、字节上界与结果条数上界都不在本接口上。能发现这类回归的只有 `apps/web/tests/knowledge-panels.e2e.ts`，因为只有它跑生成的客户端。
 
 </details>
 

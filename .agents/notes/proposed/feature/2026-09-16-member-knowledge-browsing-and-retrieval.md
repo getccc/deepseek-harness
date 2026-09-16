@@ -168,6 +168,8 @@ Four changes, each shippable on its own.
 
 Every knowledge operation goes through a Control Plane, and the recorded-session harness records model traffic alone. No keyless scenario can therefore exercise the prompt section, the tool visibility, or a transcript of a knowledge search, which is why none of these deliveries updates `snapshots/session/`, `snapshots/sdk/`, or the Python SDK projection: there is nothing in them to change.
 
+What the browser flow does get is an assembled tier. `apps/web/tests/knowledge-panels.e2e.ts` boots the shipped rows with a fixture `ctx.knowledge` in the same process, drives both panels in a real browser, and reads back the `knowledge/scope` event the discussion recorded. It is also the only tier that runs the generated Remote client, which counts declared parameters rather than required ones: a panel call that omits a trailing optional is refused before it reaches the wire, and no unit test sees that.
+
 Closing it means teaching the harness to replay a recorded knowledge transport — a fixture for the Runner-facing routes, recorded once against a real Control Plane and replayed keylessly, the way model traffic already is. That is its own change, and until it lands the model-visible surface here is pinned by package tests plus the real-deployment e2e a maintainer runs by hand.
 
 ## Risks

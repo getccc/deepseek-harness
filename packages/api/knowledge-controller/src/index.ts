@@ -61,23 +61,19 @@ const chooseRequestSchema = z.object({
 const documentsRequestSchema = z.object({
   knowledgeRef: z.string().min(1),
   page: z.number().int().min(1).optional(),
-  pageSize: z.number().int().min(1).optional(),
 })
 
-// The same bounds the Control Plane's own request parser applies: a non-empty
-// query and, when given, a positive whole maximum. Everything else about how
-// much may come back is the gateway's and the provider's to decide, and a
-// second opinion here would refuse requests the Control Plane would serve.
+// Every request names its subject and nothing else. How much may come back is
+// the gateway's and the provider's to decide, and a second opinion here would
+// refuse requests the Control Plane would serve.
 const documentRequestSchema = z.object({
   docRef: z.string().min(1),
-  maxBytes: z.number().int().min(1).optional(),
 })
 
 const searchRequestSchema = z.object({
   query: z.string().min(1),
   mode: z.union([z.literal('all'), z.literal('selected')]),
   knowledgeRefs: z.array(z.string()).optional(),
-  maxResults: z.number().int().min(1).optional(),
 })
 
 /**
@@ -162,20 +158,18 @@ export class KnowledgeController extends TypertRemoteService {
    * conversation. The knowledge base is authorized on this call.
    * @param knowledgeRef - the knowledge base to list.
    * @param page - which page, counting from one; the first page when absent.
-   * @param pageSize - how many documents one page holds; the deployment's maximum still applies.
    * @returns the page, empty when the knowledge base holds no document.
    * @throws RemoteError when the request is invalid, the knowledge base is refused, or knowledge cannot be reached.
    */
   @Remote('documents')
-  async documents(knowledgeRef: string, page?: number, pageSize?: number): Promise<KnowledgeDocumentsView> {
-    const request = parseRequest('knowledge.documents', documentsRequestSchema, { knowledgeRef, page, pageSize })
+  async documents(knowledgeRef: string, page?: number): Promise<KnowledgeDocumentsView> {
+    const request = parseRequest('knowledge.documents', documentsRequestSchema, { knowledgeRef, page })
     const ref = this.refOf(request.knowledgeRef)
     let result
     try {
       result = await this.ctx.knowledge.documents({
         ref,
         ...(request.page === undefined ? {} : { page: request.page }),
-        ...(request.pageSize === undefined ? {} : { pageSize: request.pageSize }),
       })
     } catch (error) {
       throw this.unavailable(error)
@@ -207,22 +201,18 @@ export class KnowledgeController extends TypertRemoteService {
    * The bytes are transient UI input. Nothing here writes them anywhere, and
    * the browser that decodes them holds them for as long as it draws them.
    * @param docRef - the document to read.
-   * @param maxBytes - the most bytes the browser accepts; the deployment's maximum applies first.
    * @returns the content, saying which of the two it is.
    * @throws RemoteError when the request is invalid, the document is refused, or knowledge cannot be reached.
    */
   @Remote('documentContent')
-  async documentContent(docRef: string, maxBytes?: number): Promise<KnowledgeDocumentContentView> {
-    const request = parseRequest('knowledge.documentContent', documentRequestSchema, { docRef, maxBytes })
+  async documentContent(docRef: string): Promise<KnowledgeDocumentContentView> {
+    const request = parseRequest('knowledge.documentContent', documentRequestSchema, { docRef })
     if (!isKnowledgeDocRef(request.docRef)) {
       throw new RemoteError('knowledge/not-available', 'that document is not available to this member', { knowledgeRef: request.docRef })
     }
     let content
     try {
-      content = await this.ctx.knowledge.documentContent({
-        docRef: KnowledgeDocRef(request.docRef),
-        ...(request.maxBytes === undefined ? {} : { maxBytes: request.maxBytes }),
-      })
+      content = await this.ctx.knowledge.documentContent({ docRef: KnowledgeDocRef(request.docRef) })
     } catch (error) {
       throw this.unavailable(error)
     }
@@ -253,23 +243,21 @@ export class KnowledgeController extends TypertRemoteService {
    * @param query - the natural-language question.
    * @param mode - `all` for every currently authorized knowledge base, or `selected`.
    * @param knowledgeRefs - the chosen references, required and non-empty for `selected`.
-   * @param maxResults - at most this many passages; the provider's own maximum still applies.
    * @returns the ranked passages and the knowledge bases actually searched.
    * @throws RemoteError when the request is invalid, a named reference is refused, or knowledge cannot be reached.
    */
   @Remote('search')
-  async search(query: string, mode: string, knowledgeRefs?: string[], maxResults?: number): Promise<KnowledgeSearchView> {
-    const request = parseRequest('knowledge.search', searchRequestSchema, { query, mode, knowledgeRefs, maxResults })
+  async search(query: string, mode: string, knowledgeRefs?: string[]): Promise<KnowledgeSearchView> {
+    const request = parseRequest('knowledge.search', searchRequestSchema, { query, mode, knowledgeRefs })
     const scope: KnowledgeScopeSelection = request.mode === 'all'
       ? { mode: 'all' }
       : { mode: 'selected', refs: this.refsOf(request.knowledgeRefs ?? []) }
     let result
     try {
-      result = await this.ctx.knowledge.search({
-        query: request.query,
-        scope,
-        ...(request.maxResults === undefined ? {} : { maxResults: request.maxResults }),
-      })
+      // No caller-set bound: the deployment's own maximum is the only one a
+      // browser surface has ever wanted, and a knob nothing sets is a knob
+      // that only shows up as a wrong argument count at the generated client.
+      result = await this.ctx.knowledge.search({ query: request.query, scope })
     } catch (error) {
       throw this.unavailable(error)
     }

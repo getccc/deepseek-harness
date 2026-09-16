@@ -1,0 +1,13 @@
+# Local look-at-it composition: the Team knowledge rows over the scaffold's
+# stable base, with the Control Plane provider left out — the test process
+# mounts a fixture `ctx.knowledge` instead.
+- insert:
+    - id: api-knowledge-controller
+      name: '@deepseek-ai/dsh-api-knowledge-controller'
+
+- insert:
+    - id: client-ui-knowledge
+      name: '@deepseek-ai/dsh-client-ui-knowledge'
+
+    - id: client-ui-knowledge-panels
+      name: '@deepseek-ai/dsh-client-ui-knowledge-panels'

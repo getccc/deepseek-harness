@@ -87,7 +87,13 @@ export function apply(ctx: ClientContext): void {
   ctx.inject(['conversation', 'layout', 'locale', 'remote.knowledge', 'sessions', 'slots'], registerUi)
 }
 
-/** Read one Remote answer, failing loud enough for a panel to show. */
+/**
+ * Read one Remote answer, failing loud enough for a panel to show.
+ *
+ * Every call below passes every parameter the Remote declares: the generated
+ * client counts declared arguments rather than required ones, so a call that
+ * omits a trailing optional fails before it reaches the wire.
+ */
 function unwrap<T>(result: RemoteResult<T>): T {
   // Failure strings stay English (error-surface policy: not localized); the
   // panels show their own localized notice and never this text.

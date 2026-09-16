@@ -45,9 +45,9 @@ The controller has no configuration.
 | `scope(sessionId)` | What one Session may choose from, what it has chosen, and which selected references the directory no longer holds | Yes |
 | `choose(sessionId, mode, knowledgeRefs?)` | Records the choice and answers the same view | Yes |
 | `directory()` | The knowledge bases this member may search right now | No |
-| `documents(knowledgeRef, page?, pageSize?)` | One page of one knowledge base's documents, each named by a governed reference | No |
-| `documentContent(docRef, maxBytes?)` | One document's original file as base64, or the parsed text standing in for it | No |
-| `search(query, mode, knowledgeRefs?, maxResults?)` | The ranked passages, and the knowledge bases actually searched | No |
+| `documents(knowledgeRef, page?)` | One page of one knowledge base's documents, each named by a governed reference | No |
+| `documentContent(docRef)` | One document's original file as base64, or the parsed text standing in for it | No |
+| `search(query, mode, knowledgeRefs?)` | The ranked passages, and the knowledge bases actually searched | No |
 
 The directory is read on every call rather than cached: a grant revoked since the last look should narrow the picker, and a knowledge base an administrator switched off should leave it.
 
@@ -107,7 +107,7 @@ These limits define when the controller is incomplete on its own. They are curre
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-None.
+A method declares only the parameters a caller sets. The generated Remote client counts *declared* parameters, so a browser call that omits a trailing optional is refused before it reaches the wire (`expected 3 argument(s), got 2`). A bound nobody passes therefore has to be a Control Plane setting rather than an unused optional here; that is why paging size and the byte and result maxima are not on this surface. `apps/web/tests/knowledge-panels.e2e.ts` is the only tier that would catch a regression, because it runs the generated client.
 
 </details>
 

@@ -269,13 +269,12 @@ describe('what a member retrieves for themselves', () => {
     expect(mounted.events).toEqual([])
   })
 
-  it('carries a selection and a requested maximum through unchanged', async () => {
+  it('carries a selection through unchanged', async () => {
     const mounted = await mount()
-    await mounted.controller.search('故障响应时间', 'selected', [REF_A, REF_B], 5)
+    await mounted.controller.search('故障响应时间', 'selected', [REF_A, REF_B])
     expect(mounted.searched).toEqual([{
       query: '故障响应时间',
       scope: { mode: 'selected', refs: [REF_A, REF_B] },
-      maxResults: 5,
     }])
   })
 
@@ -348,8 +347,8 @@ describe('what a panel reads before it retrieves', () => {
 describe('what a member browses', () => {
   it('lists one knowledge base without a Session, naming each document by reference', async () => {
     const mounted = await mount(false)
-    const view = await mounted.controller.documents(REF_A, 2, 5)
-    expect(mounted.listed).toEqual([{ ref: REF_A, page: 2, pageSize: 5 }])
+    const view = await mounted.controller.documents(REF_A, 2)
+    expect(mounted.listed).toEqual([{ ref: REF_A, page: 2 }])
     expect(view).toEqual({
       knowledgeRef: REF_A,
       documents: [{
@@ -435,8 +434,8 @@ describe('what a member opens', () => {
       contentType: 'application/pdf',
       bytes: new Uint8Array([1, 2, 3]),
     }
-    const view = await mounted.controller.documentContent(`${REF_A}/doc-1`, 4096)
-    expect(mounted.read).toEqual([{ docRef: `${REF_A}/doc-1`, maxBytes: 4096 }])
+    const view = await mounted.controller.documentContent(`${REF_A}/doc-1`)
+    expect(mounted.read).toEqual([{ docRef: `${REF_A}/doc-1` }])
     expect(view).toEqual({
       kind: 'bytes',
       docRef: `${REF_A}/doc-1`,
@@ -446,10 +445,9 @@ describe('what a member opens', () => {
     })
   })
 
-  it('carries parsed text as text, and asks for no bound when the caller names none', async () => {
+  it('carries parsed text as text', async () => {
     const mounted = await mount()
     const view = await mounted.controller.documentContent(`${REF_A}/doc-1`)
-    expect(mounted.read).toEqual([{ docRef: `${REF_A}/doc-1` }])
     expect(view).toMatchObject({ kind: 'text', text: '一级故障 30 分钟内响应。', truncated: false })
   })
 
