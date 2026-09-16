@@ -43,6 +43,7 @@ import {
 
 const A = '690c0727-1af5-4b7a-8465-ebd2845f2266'
 const REF_A = `stub:prod:${A}`
+const REF_B = 'stub:prod:08f25606-8876-49cc-b509-70e84828db08'
 
 /** A knowledge source a test scripts. */
 /** One document as a source describes it, for a placement answer. */
@@ -566,5 +567,31 @@ describe('one document’s content', () => {
     })
     expect(wrongMethod.status).toBe(405)
     expect(source.described).toEqual([])
+  })
+})
+
+describe('a search narrowed to documents', () => {
+  it('carries the knowledge base and the documents inside it', async () => {
+    await grantAll()
+    source.hits = []
+    const response = await post(KNOWLEDGE_SEARCH_PATH, searchBody({
+      scope: { mode: 'documents', ref: REF_A, docRefs: [`${REF_A}/doc-1`, `${REF_A}/doc-2`] },
+    }))
+    expect(response.status).toBe(200)
+    expect(source.searched[0]).toMatchObject({ upstreamIds: [A], upstreamDocIds: ['doc-1', 'doc-2'] })
+  })
+
+  it.each([
+    ['a document from another knowledge base', { mode: 'documents', ref: REF_A, docRefs: [`${REF_B}/doc-1`] }],
+    ['no documents', { mode: 'documents', ref: REF_A, docRefs: [] }],
+    ['no knowledge base', { mode: 'documents', docRefs: [`${REF_A}/doc-1`] }],
+    ['a knowledge base that is not one', { mode: 'documents', ref: 'nope', docRefs: [`${REF_A}/doc-1`] }],
+    ['a document reference that is not one', { mode: 'documents', ref: REF_A, docRefs: ['nope'] }],
+    ['documents that are not a list', { mode: 'documents', ref: REF_A, docRefs: 'doc-1' }],
+  ])('refuses %s as malformed', async (_label, scope) => {
+    await grantAll()
+    const response = await post(KNOWLEDGE_SEARCH_PATH, searchBody({ scope }))
+    expect(response.status).toBe(400)
+    expect(source.searched).toEqual([])
   })
 })

@@ -38,7 +38,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import { KnowledgeBasesGlyph, KnowledgeSearchGlyph } from './Glyphs.tsx'
 import { KnowledgeBasesPanel, type KnowledgeBasesInjected } from './KnowledgeBasesPanel.tsx'
-import { KnowledgeSearchPanel, type KnowledgeSearchInjected } from './KnowledgeSearchPanel.tsx'
+import { KnowledgeSearchPanel, type DiscussTarget, type KnowledgeSearchInjected } from './KnowledgeSearchPanel.tsx'
 import { en, zh, type KnowledgePanelsKey } from './locales.ts'
 
 export { formatScore, groupByDocument } from './results.ts'
@@ -46,7 +46,7 @@ export type { DocumentGroup } from './results.ts'
 export type { DocumentPreviewProps } from './DocumentPreview.tsx'
 export { DocumentPreview } from './DocumentPreview.tsx'
 export type { KnowledgeBasesInjected, KnowledgeBasesPanelProps } from './KnowledgeBasesPanel.tsx'
-export type { KnowledgeSearchInjected, KnowledgeSearchPanelProps } from './KnowledgeSearchPanel.tsx'
+export type { DiscussTarget, KnowledgeSearchInjected, KnowledgeSearchPanelProps } from './KnowledgeSearchPanel.tsx'
 export type { KnowledgePanelsKey, Translate } from './locales.ts'
 
 declare module '@deepseek-ai/dsh-client-ui-slots' {
@@ -123,15 +123,21 @@ function registerUi(ctx: ClientContext): void {
 
   /**
    * Open a conversation about one passage: a new Session, scoped to the
-   * knowledge base the passage came from, with the passage in its composer.
+   * document the passage came from, with the passage in its composer.
    *
    * The scope is recorded before the Session is shown, so the conversation a
    * member sees is already the one they asked for; the draft is written after,
    * because the composer's input machine exists once the Session is open.
+   *
+   * A result that named no document — a passage whose source this build could
+   * not address — falls back to its knowledge base, which is the narrowest
+   * scope such a result supports.
    */
-  const discuss = async (knowledgeRef: string, draft: string): Promise<void> => {
+  const discuss = async (target: DiscussTarget, draft: string): Promise<void> => {
     const sessionId = await ctx.sessions.create()
-    unwrap(await ctx.remote.knowledge.choose(sessionId, 'selected', [knowledgeRef]))
+    unwrap(target.docRef === undefined
+      ? await ctx.remote.knowledge.choose(sessionId, 'selected', [target.knowledgeRef])
+      : await ctx.remote.knowledge.choose(sessionId, 'documents', [target.docRef]))
     ctx.sessions.open(sessionId)
     ctx.layout.selectPanel(null)
     const scope = ctx.sessions.scope(sessionId)

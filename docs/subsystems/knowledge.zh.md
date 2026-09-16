@@ -35,14 +35,21 @@
 会话可以检索哪些私有知识，作为 `knowledge/scope` 记录在会话日志中——一个版本化的整值替换，最后一条生效：
 
 ```ts
-import { KnowledgeRef, type KnowledgeScope } from '@deepseek-ai/dsh-knowledge'
+import { KnowledgeDocRef, KnowledgeRef, type KnowledgeScope } from '@deepseek-ai/dsh-knowledge'
+
+const ref = KnowledgeRef('weknora:prod:690c0727-1af5-4b7a-8465-ebd2845f2266')
 
 export const off: KnowledgeScope = { version: 1, mode: 'off' }
 export const all: KnowledgeScope = { version: 1, mode: 'all' }
 export const selected: KnowledgeScope = {
   version: 1,
   mode: 'selected',
-  bases: [{ ref: KnowledgeRef('weknora:prod:690c0727-1af5-4b7a-8465-ebd2845f2266'), displayName: '临港知识库' }],
+  bases: [{ ref, displayName: '临港知识库' }],
+}
+export const documents: KnowledgeScope = {
+  version: 1,
+  mode: 'selected',
+  bases: [{ ref, displayName: '临港知识库', docRefs: [KnowledgeDocRef(`${ref}/doc-7`)] }],
 }
 ```
 
@@ -51,6 +58,8 @@ export const selected: KnowledgeScope = {
 范围在两个层面上都是模型可见输入——它决定写出所选知识库的提示词章节，也决定检索工具是否被提供——因此它存在于日志中，且仅存在于日志中。这也是 `selected` 分支在每个引用旁记录显示名称的原因：只能把日志持有的名字告诉模型。这些名字是选择那一刻的快照，因此管理员之后重命名知识库不会改变已记录会话的提示词所说的内容，而选择器和输入框 Chip 则从已授权目录解析当前名字。
 
 `all` 不记录名字，因为它指代的集合是主体在每次调用时的授权范围，无法诚实地快照。
+
+恰好命名一个知识库的范围，还可以通过该条目的 `docRefs` 进一步收窄到其中的文档。它是一个可选属性而不是独立的 mode：按[持久化规则](../persistence-changes/README.zh.md#compatibility-rules)，联合类型变更要升 Session 格式版本，而新增可选属性属于 same-version（[记录](../persistence-changes/2026-09-16-knowledge-scope-documents.zh.md)）。代价被写在那里而不是被藏起来——早于该字段的构建会忽略它并检索整个知识库，这比成员所选更宽，绝不会更窄。每个文档引用都必须解析到携带它的那个知识库，而命名多个知识库的范围根本不能携带文档，因为上游的收窄只在一个知识库内生效。模型对这种范围被告知的是它的知识库和文档数量；不记录任何文档标题，而检索返回的段落本来就会说出各自的文档。
 
 范围只会收窄当前权限。它绝不新增知识库，陈旧或伪造的引用仍会到达一个无法被会话日志扩大的授权判定。
 

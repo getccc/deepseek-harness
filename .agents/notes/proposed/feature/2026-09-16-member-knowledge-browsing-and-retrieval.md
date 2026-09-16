@@ -21,7 +21,7 @@ Ship a member-facing knowledge surface as two global panels reached from the lef
 - A member sees **知识库** and **知识库检索** under **新工作任务** in the left navigation of a Team build. A build without private knowledge shows neither.
 - **知识库** opens a panel listing the knowledge bases the member's roles authorize. Selecting one lists its documents; selecting a document previews it in the panel's own preview column.
 - **知识库检索** opens a panel that runs one retrieval and shows the passages ranked by score, grouped under the document each came from, with no model turn and no token cost.
-- Selecting a result's document starts a new Session whose knowledge scope is that one document, so the conversation that follows retrieves from it and nothing else.
+- Selecting a result's document starts a new Session whose knowledge scope is narrowed to that one document, so the conversation that follows retrieves from it and nothing else.
 - Every panel operation is authorized on the Control Plane against current grants, exactly as `knowledge_search` already is. Revoking a role, suspending the member, revoking the device, or disabling the knowledge base changes the next panel operation without a new login.
 
 ### Non-goals for this delivery
@@ -36,13 +36,15 @@ Ship a member-facing knowledge surface as two global panels reached from the lef
 
 The left navigation already has the seat: `sidebar.panellist` is a list slot whose rows render directly under the New chat and New work task entries, each row addressing a `main` panel by the same id ([contract/slots.ts](../../../../packages/client/ui-sidebar/src/client/contract/slots.ts)). No production plugin registers into it yet; these two rows are the first, and the sidebar shell needs no change to carry them.
 
-Both panels are root-scoped and hold no Session. The knowledge panel therefore owns its own preview column rather than opening the right Sidebar, whose tabs are session-scoped and whose docking surface exists per Session. The preview column reuses the document bodies the right Sidebar already registers — Markdown, code, PDF, images, and the Team-only Word, Excel, and PowerPoint renderers — by supplying the same `DocumentContent` those bodies read.
+Both panels are root-scoped and hold no Session. The knowledge panel therefore owns its own preview column rather than opening the right Sidebar, whose tabs are session-scoped and whose docking surface exists per Session.
+
+That cuts the panel off from the right Sidebar's registered document bodies, which is the one thing this shape costs: the renderer slot is declared by the Sidebar's own tab type and scoped to a Session, so the Word, Excel, and PowerPoint bodies cannot be rendered from a panel that has none. The preview column therefore draws what a browser draws from bytes on its own — PDFs, images, anything that is text — plus the parsed text the Control Plane falls back to, and says plainly that an Office file is not shown here yet. Closing that gap means a renderer seat both surfaces can reach, which is its own change to the Sidebar's contract.
 
 ## Capability and package topology
 
 | Package | What this delivery adds |
 |---|---|
-| `packages/knowledge/knowledge` | `documents` and `documentContent` on the service, the `KnowledgeDocRef` brand, the document-level Session scope, and the `document-unavailable` failure reason |
+| `packages/knowledge/knowledge` | `documents` and `documentContent` on the service, the `KnowledgeDocRef` brand, the recorded document narrowing, and the `document-unavailable` failure reason |
 | `packages/knowledge/knowledge-source` | `listDocuments` and `fetchDocument` in upstream identifiers, beside the existing `list` and `search` |
 | `packages/knowledge/knowledge-weknora` | Three more fixed endpoints, the document byte bound, and `knowledge_id` retained on every search hit |
 | `packages/knowledge/knowledge-gateway` | The two governed operations, each authorizing the knowledge base the document belongs to |
@@ -91,11 +93,15 @@ Search hits already carry `knowledge_id` and `knowledge_title`; the provider cur
 
 ## Document-level Session scope
 
-`KnowledgeScope` gains a fourth mode, `documents`, carrying the knowledge base reference and display name plus the chosen documents with their titles. It stays at `version: 1`, because the recorded value's structure is unchanged — a mode is added to a union, not a field to a record — and `SESSION_FORMAT_VERSION` therefore does not move. The change is a declared persistence-type change and is acknowledged under [the persistence-type review rules](../../../../docs/cookbook/reviewing-persistence-type-changes.md).
+A `selected` scope naming exactly one knowledge base carries the documents inside it, as an optional `docRefs` on that recorded entry.
 
-Titles are recorded beside the references for the same reason knowledge-base display names already are: the prompt section names the document, so a model-visible name has to be reconstructable from the log alone.
+It is an optional property rather than a mode of its own, and the reason is the persistence mechanism rather than taste. A new union variant is classed as a changed type, which requires a `SESSION_FORMAT_VERSION` bump and the whole adjacent-migration apparatus: a format package, an identity edge with per-artifact stages, snapshot successors, historical-format documents, and a `release/*` integration base. An optional property is a same-version addition. The feature does not earn a format generation, so it takes the shape the rules allow ([record](../../../../docs/persistence-changes/2026-09-16-knowledge-scope-documents.md)).
 
-A build that predates the mode folds the event, finds no selection for it, and behaves as `off` — it retrieves nothing rather than retrieving more than the member chose. `parseKnowledgeScope` refuses the value outright, which leaves a Session's recorded scope alone, as it already does for every value it cannot read.
+That choice has one cost, and it is stated rather than hidden: a build that predates the field ignores it and searches the whole knowledge base — wider than the member chose, never narrower. Reaching it takes a member recording a narrowed scope on a newer build, downgrading their packaged Runner, and resuming that Session. A new mode would instead have made an older build refuse the log outright, which is cleaner and costs a format generation.
+
+No document title is recorded. What the prompt says about such a scope is its knowledge base and how many documents, both of which the log holds; a title would be model-visible text taken from whoever chose, and the passages a search returns name their documents anyway.
+
+Two invariants hold in the validator rather than in convention: every document reference must resolve to the knowledge base carrying it, and a scope naming several knowledge bases may not carry documents at all, because the upstream narrowing applies inside one.
 
 The scope narrows authorization and never widens it, unchanged from the first delivery. A document-level scope is still authorized as its knowledge base on every call; it adds a filter the gateway passes upstream, not a new thing a member may reach.
 
@@ -129,11 +135,11 @@ Four changes, each shippable on its own.
 
 **Document content.** The `documentContent` operation, the content route, the preview column, and the chunk-text fallback.
 
-**Document-level scope.** The `documents` mode, the prompt section and search request that read it, the picker and composer chip that display it, and the retrieval panel's document-scoped Session. Both SDK expected outputs and the recorded-session snapshots move with it.
+**Document-level scope.** The recorded `docRefs`, the prompt section and search request that read it, the picker and composer chip that display it, and the retrieval panel's document-narrowed Session.
 
 ## Alternatives considered
 
-**Preview in the right Sidebar.** The right Sidebar owns document preview today, including the Office renderers, and reusing it would have bought splitting, floating, and multiple tabs. Its tabs are scoped to a Session and its docking surface is created per Session, while these panels are root-scoped and deliberately have no Session; giving the panels one would mean inventing a Session that exists only to hold a preview. The panel owns its preview column instead and reuses the renderers, which is the part with real value in it.
+**Preview in the right Sidebar.** The right Sidebar owns document preview today, including the Office renderers, and reusing it would have bought splitting, floating, and multiple tabs. Its tabs are scoped to a Session and its docking surface is created per Session, while these panels are root-scoped and deliberately have no Session; giving the panels one would mean inventing a Session that exists only to hold a preview. The panel owns its preview column instead, and the price is that the Office bodies stay on the far side of that Session boundary.
 
 **Preview the parsed chunk text only.** Cheapest and safest: no company file leaves the Control Plane, and the retrieved passage can be highlighted in place. It loses the document — layout, tables, images, and page structure are exactly what a member opening a report is looking for. Chunk text remains as the fallback for a document over the byte bound or in a type no renderer claims.
 
@@ -156,7 +162,13 @@ Four changes, each shippable on its own.
 - Revoking the grant, disabling the knowledge base, or revoking the device changes the next panel operation without a new login or a new Session.
 - The audit store records one `knowledge.document.list` or `knowledge.document.read` row per operation against the knowledge base resource, carrying no query, title, file name, or upstream text.
 - A Runner built before this delivery keeps its directory and search against a Control Plane serving the new routes.
-- Both SDK expected outputs and the recorded-session snapshots cover a document-scoped Session's prompt section and tool visibility.
+- A document-narrowed Session's prompt section and tool visibility are covered where they can be: by the owning packages' tests, because no recorded-session tier can reach knowledge at all (see the coverage gap below).
+
+## Named coverage gap: no recorded-session tier reaches knowledge
+
+Every knowledge operation goes through a Control Plane, and the recorded-session harness records model traffic alone. No keyless scenario can therefore exercise the prompt section, the tool visibility, or a transcript of a knowledge search, which is why none of these deliveries updates `snapshots/session/`, `snapshots/sdk/`, or the Python SDK projection: there is nothing in them to change.
+
+Closing it means teaching the harness to replay a recorded knowledge transport — a fixture for the Runner-facing routes, recorded once against a real Control Plane and replayed keylessly, the way model traffic already is. That is its own change, and until it lands the model-visible surface here is pinned by package tests plus the real-deployment e2e a maintainer runs by hand.
 
 ## Risks
 
@@ -168,4 +180,6 @@ Four changes, each shippable on its own.
 
 **A wider surface for the one credential.** Three more upstream endpoints are reachable through the Control Plane's space key. All three are read-level upstream and the provider still calls a fixed set with no caller-supplied path, but the blast radius of a compromised Control Plane grows from retrieval to whole documents.
 
-**The scope change's blast radius.** The fourth change touches a persisted event payload, the prompt, tool visibility, the picker, the chip, both SDKs, and the snapshots. It is last in the sequence for that reason, and everything before it ships without it.
+**The scope change's blast radius.** The fourth change touches a persisted event payload, the prompt, tool visibility, the picker, and the chip. It is last in the sequence for that reason, and everything before it ships without it.
+
+**A downgrade widens a narrowed conversation.** The optional-property shape buys same-version persistence at the price named above: an older build resuming a narrowed Session searches the whole knowledge base. A deployment that cannot accept that has one option — spend a format generation on a mode of its own.

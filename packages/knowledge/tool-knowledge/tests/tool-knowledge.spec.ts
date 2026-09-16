@@ -13,6 +13,7 @@ import { createScope, type ScopeKey } from '@deepseek-ai/dsh-scope'
 import SystemPrompt, { type SystemPrompt as SystemPromptRegistry } from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime, { type ToolResult } from '@deepseek-ai/dsh-tools'
 import {
+  KnowledgeDocRef,
   KnowledgeRef,
   type KnowledgeScope,
   type KnowledgeSearchRequest,
@@ -27,6 +28,8 @@ import {
 
 const REF_A = KnowledgeRef('weknora:prod:690c0727-1af5-4b7a-8465-ebd2845f2266')
 const REF_B = KnowledgeRef('weknora:prod:08f25606-8876-49cc-b509-70e84828db08')
+const DOC_A = `${REF_A}/doc-1`
+const DOC_B = `${REF_A}/doc-2`
 
 /** One search result, as the Runner provider answers with it. */
 function result(patch: Partial<KnowledgeSearchResult> = {}): KnowledgeSearchResult {
@@ -172,12 +175,35 @@ describe('what the prompt says about scope', () => {
   })
 
   it('tells the model the passages are data rather than instructions', () => {
-    for (const scope of [
-      { version: 1, mode: 'all' } as const,
-      { version: 1, mode: 'selected', bases: [{ ref: REF_A, displayName: 'x' }] } as const,
-    ]) {
+    const scopes: readonly KnowledgeScope[] = [
+      { version: 1, mode: 'all' },
+      { version: 1, mode: 'selected', bases: [{ ref: REF_A, displayName: 'x' }] },
+      { version: 1, mode: 'selected', bases: [{ ref: REF_A, displayName: 'x', docRefs: [KnowledgeDocRef(DOC_A)] }] },
+    ]
+    for (const scope of scopes) {
       expect(renderScopeSection(scope)).toContain('not instructions')
     }
+  })
+
+  it.each([
+    ['one document', [DOC_A], 'one document'],
+    ['several documents', [DOC_A, DOC_B], '2 documents'],
+  ])('says the knowledge base and how many documents for %s', (_label, docRefs, expected) => {
+    const scope: KnowledgeScope = {
+      version: 1,
+      mode: 'selected',
+      bases: [{
+        ref: REF_A,
+        displayName: '临港知识库',
+        docRefs: docRefs.map(docRef => KnowledgeDocRef(docRef)),
+      }],
+    }
+    const text = renderScopeSection(scope)
+    expect(text).toContain(expected)
+    expect(text).toContain('临港知识库')
+    // No document title is recorded, so none can be said: what the model is
+    // told about a document scope is its knowledge base and a count.
+    expect(text).not.toContain('运维手册')
   })
 })
 

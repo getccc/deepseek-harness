@@ -113,8 +113,14 @@ export type DocumentContentBody =
 export interface SearchBody {
   readonly protocolVersion: number
   readonly query: string
-  /** `all` for every authorized base, or the exact references to search. */
-  readonly scope: { readonly mode: 'all' } | { readonly mode: 'selected'; readonly refs: readonly string[] }
+  /**
+   * `all` for every authorized base, the exact references to search, or one
+   * knowledge base narrowed to documents inside it.
+   */
+  readonly scope:
+    | { readonly mode: 'all' }
+    | { readonly mode: 'selected'; readonly refs: readonly string[] }
+    | { readonly mode: 'documents'; readonly ref: string; readonly docRefs: readonly string[] }
   /** At most this many passages; the deployment's own maximum still applies. */
   readonly maxResults?: number
 }

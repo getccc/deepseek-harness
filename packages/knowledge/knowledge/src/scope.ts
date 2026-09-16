@@ -11,7 +11,7 @@
  */
 
 import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
-import { isKnowledgeRef, KnowledgeRef } from './brand.ts'
+import { KnowledgeDocRef, isKnowledgeDocRef, isKnowledgeRef, KnowledgeRef, parseKnowledgeDocRef } from './brand.ts'
 import type { KnowledgeScope, KnowledgeScopeBase, KnowledgeScopeSelection } from './types.ts'
 
 declare module '@deepseek-ai/dsh-session/types' {
@@ -74,15 +74,42 @@ export function parseKnowledgeScope(value: unknown): KnowledgeScope | undefined 
   if (!Array.isArray(bases) || bases.length === 0) return undefined
   const parsed: KnowledgeScopeBase[] = []
   for (const base of bases as unknown[]) {
-    if (typeof base !== 'object' || base === null) return undefined
-    const entry = base as Record<string, unknown>
-    const ref = entry['ref']
-    const displayName = entry['displayName']
-    if (typeof ref !== 'string' || !isKnowledgeRef(ref)) return undefined
-    if (typeof displayName !== 'string' || displayName === '') return undefined
-    parsed.push({ ref: KnowledgeRef(ref), displayName })
+    const entry = parseScopeBase(base)
+    if (entry === undefined) return undefined
+    parsed.push(entry)
   }
+  // Documents narrow inside one knowledge base, so a scope naming several
+  // cannot carry them: such a value would describe a search nobody can run.
+  if (parsed.length > 1 && parsed.some(base => base.docRefs !== undefined)) return undefined
   return { version: 1, mode: 'selected', bases: parsed }
+}
+
+/**
+ * Read one recorded knowledge base: its reference, its name, and the documents
+ * a narrowed scope names inside it.
+ *
+ * Every document reference has to sit in that knowledge base. A base whose
+ * documents point elsewhere would search a knowledge base its recorded name
+ * does not describe, which is the one way this value could promise something
+ * a later search would not do.
+ */
+function parseScopeBase(value: unknown): KnowledgeScopeBase | undefined {
+  if (typeof value !== 'object' || value === null) return undefined
+  const entry = value as Record<string, unknown>
+  const ref = entry['ref']
+  const displayName = entry['displayName']
+  if (typeof ref !== 'string' || !isKnowledgeRef(ref)) return undefined
+  if (typeof displayName !== 'string' || displayName === '') return undefined
+  const docRefs = entry['docRefs']
+  if (docRefs === undefined) return { ref: KnowledgeRef(ref), displayName }
+  if (!Array.isArray(docRefs) || docRefs.length === 0) return undefined
+  const parsed: KnowledgeDocRef[] = []
+  for (const docRef of docRefs as unknown[]) {
+    if (typeof docRef !== 'string' || !isKnowledgeDocRef(docRef)) return undefined
+    if (parseKnowledgeDocRef(docRef)?.ref !== ref) return undefined
+    parsed.push(KnowledgeDocRef(docRef))
+  }
+  return { ref: KnowledgeRef(ref), displayName, docRefs: parsed }
 }
 
 /**
@@ -96,7 +123,14 @@ export function selectionOf(scope: KnowledgeScope): KnowledgeScopeSelection | un
       return undefined
     case 'all':
       return { mode: 'all' }
-    case 'selected':
+    case 'selected': {
+      // One knowledge base carrying documents is the narrowed operation; the
+      // parser already refused a multi-base scope that carries any.
+      const [only] = scope.bases
+      if (scope.bases.length === 1 && only?.docRefs !== undefined) {
+        return { mode: 'documents', ref: only.ref, docRefs: only.docRefs }
+      }
       return { mode: 'selected', refs: scope.bases.map(base => base.ref) }
+    }
   }
 }

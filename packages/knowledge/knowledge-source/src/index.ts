@@ -135,6 +135,13 @@ export interface UpstreamSearchRequest {
    * making a decision the gateway already made.
    */
   readonly upstreamIds: readonly string[]
+  /**
+   * Narrow the search to these documents inside the single knowledge base
+   * `upstreamIds` names. Absent searches the whole knowledge base; present and
+   * empty is not a thing a caller may ask for, because it would read as "no
+   * documents" and answer as "every document".
+   */
+  readonly upstreamDocIds?: readonly string[]
   readonly query: string
   /** The most passages to return, after the provider's own bounds apply. */
   readonly maxResults: number
@@ -145,6 +152,12 @@ export interface UpstreamSearchRequest {
 export interface UpstreamPassage {
   /** Which knowledge base produced it, so the gateway can map it back. */
   readonly upstreamId: string
+  /**
+   * The document it came from, absent when the source named none the governed
+   * document reference could carry. A provider answers it when it can: it is
+   * what lets a reader open the document a passage is in.
+   */
+  readonly upstreamDocId?: string
   /** The source document's title, empty when the source supplies none. */
   readonly title: string
   /** Passage text with any unresolvable source reference neutralized. */

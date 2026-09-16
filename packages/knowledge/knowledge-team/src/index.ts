@@ -28,6 +28,7 @@ import {
   type KnowledgeFailureReason,
   type KnowledgeKind,
   type KnowledgePassage,
+  type KnowledgeScopeSelection,
   type KnowledgeSearchRequest,
   type KnowledgeSearchResult,
 } from '@deepseek-ai/dsh-knowledge'
@@ -155,9 +156,7 @@ export default class TeamKnowledge extends Knowledge {
   async search(request: KnowledgeSearchRequest): Promise<KnowledgeSearchResult> {
     const body = await this.call(KNOWLEDGE_SEARCH_PATH, {
       query: request.query,
-      scope: request.scope.mode === 'all'
-        ? { mode: 'all' }
-        : { mode: 'selected', refs: [...request.scope.refs] },
+      scope: scopeOf(request.scope),
       ...(request.maxResults === undefined ? {} : { maxResults: request.maxResults }),
     }, request.signal)
     const searched = body['searched']
@@ -262,6 +261,25 @@ function readEntry(value: unknown): KnowledgeBaseEntry {
   }
 }
 
+/**
+ * The scope one search request carries on the wire.
+ *
+ * Built by hand rather than forwarded, so a field this protocol does not have
+ * cannot reach the Control Plane by riding along inside a selection.
+ * @param scope - the selection this operation resolved to.
+ * @returns the wire scope.
+ */
+function scopeOf(scope: KnowledgeScopeSelection): Record<string, unknown> {
+  switch (scope.mode) {
+    case 'all':
+      return { mode: 'all' }
+    case 'selected':
+      return { mode: 'selected', refs: [...scope.refs] }
+    case 'documents':
+      return { mode: 'documents', ref: scope.ref, docRefs: [...scope.docRefs] }
+  }
+}
+
 /** Every document state the Control Plane may answer with, for decoding one back. */
 const KNOWN_DOCUMENT_STATES: readonly string[] = ['ready', 'processing', 'unavailable']
 
@@ -302,8 +320,12 @@ function readPassage(value: unknown): KnowledgePassage {
   if (typeof ref !== 'string' || !isKnowledgeRef(ref) || typeof text !== 'string') {
     throw new KnowledgeError('upstream-invalid', 'a passage is missing its reference or text')
   }
+  const docRef = row['docRef']
   return {
     ref: KnowledgeRef(ref),
+    // A document reference this build cannot read is dropped, not refused: the
+    // passage still names its knowledge base, and only "open it" is lost.
+    ...(typeof docRef === 'string' && isKnowledgeDocRef(docRef) ? { docRef: KnowledgeDocRef(docRef) } : {}),
     title: typeof row['title'] === 'string' ? row['title'] : '',
     text,
     truncated: row['truncated'] === true,

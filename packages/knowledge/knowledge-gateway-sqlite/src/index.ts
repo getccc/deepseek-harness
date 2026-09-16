@@ -23,6 +23,7 @@ import {
   formatKnowledgeDocRef,
   formatKnowledgeRef,
   parseKnowledgeDocRef,
+  upstreamDocIdOf,
   type KnowledgeBaseEntry,
   type KnowledgeDocumentContent,
   type KnowledgeDocumentPage,
@@ -290,6 +291,7 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
 
   async search(request: GovernedSearchRequest): Promise<KnowledgeSearchResult> {
     const scoped = await this.resolveScope(request)
+    const upstreamDocIds = this.documentsOf(request)
     if (scoped.length === 0) {
       // `all` for a principal holding nothing, which is a refusal rather than
       // an empty search: calling the source with no scope would let its own
@@ -304,6 +306,7 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
     try {
       const upstream = await this.ctx.knowledgeSource.search({
         upstreamIds: scoped.map(row => row.upstream_id),
+        ...(upstreamDocIds === undefined ? {} : { upstreamDocIds }),
         query: request.query,
         maxResults,
         ...(request.signal === undefined ? {} : { signal: request.signal }),
@@ -313,8 +316,13 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
         // The source can answer with a base the request did not name; a hit
         // whose upstream id maps to no authorized knowledge row is dropped
         // rather than shown without its knowledge ref.
-        return row === undefined ? [] : [{
-          ref: KnowledgeRef(row.knowledge_ref),
+        if (row === undefined) return []
+        const ref = KnowledgeRef(row.knowledge_ref)
+        return [{
+          ref,
+          ...(passage.upstreamDocId === undefined
+            ? {}
+            : { docRef: formatKnowledgeDocRef({ ref, upstreamDocId: passage.upstreamDocId }) }),
           title: passage.title,
           text: passage.text,
           truncated: passage.truncated,
@@ -342,6 +350,19 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
   }
 
   /**
+   * The upstream document ids a document-scoped request narrows to.
+   *
+   * The scope's own validation already proved every document sits inside the
+   * knowledge base it names, and that knowledge base is authorized like any
+   * other; what is left here is translating references the Control Plane owns
+   * into the ids only the source understands.
+   */
+  private documentsOf(request: GovernedSearchRequest): readonly string[] | undefined {
+    if (request.scope.mode !== 'documents') return undefined
+    return request.scope.docRefs.map(docRef => upstreamDocIdOf(docRef))
+  }
+
+  /**
    * Turn one request's scope into the catalog rows it may search.
    *
    * `all` expands to what the principal currently holds; `selected` authorizes
@@ -350,14 +371,32 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
    * member holding nothing cannot learn that a knowledge base exists.
    */
   private async resolveScope(request: GovernedSearchRequest): Promise<readonly KnowledgeBaseRow[]> {
+    if (request.scope.mode === 'documents') {
+      // One knowledge base, authorized exactly as a selection of one would be:
+      // narrowing to documents inside it is a filter, never an admission.
+      return this.resolveSelected(request, [request.scope.ref])
+    }
     if (request.scope.mode === 'all') {
       // Every authorized entry came from a catalog row, so the lookup cannot
       // miss: `authorizedEntries` enumerates the same table.
       const authorized = new Set<string>((await this.authorizedEntries(request)).map(entry => entry.ref))
       return this.rows(request.orgId).filter(row => authorized.has(row.knowledge_ref))
     }
+    return this.resolveSelected(request, request.scope.refs)
+  }
+
+  /**
+   * Authorize each named knowledge base, refusing the whole request on the
+   * first failure. An unknown reference and an unauthorized one produce the
+   * same refusal, so a member holding nothing cannot learn that a knowledge
+   * base exists.
+   */
+  private async resolveSelected(
+    request: GovernedSearchRequest,
+    refs: readonly KnowledgeRef[],
+  ): Promise<readonly KnowledgeBaseRow[]> {
     const rows: KnowledgeBaseRow[] = []
-    for (const ref of request.scope.refs) {
+    for (const ref of refs) {
       const row = this.row(request.orgId, ref)
       const usable = row !== undefined && row.admin_enabled === 1
       const allowed = usable && await this.may(request, ref, SEARCH_ACTION)

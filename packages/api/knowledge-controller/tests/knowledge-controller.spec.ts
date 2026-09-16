@@ -471,3 +471,63 @@ describe('what a member opens', () => {
     })
   })
 })
+
+describe('what a discussion records', () => {
+  const DOC_A = `${REF_A}/doc-1`
+  const DOC_B = `${REF_A}/doc-2`
+
+  it('records the knowledge base by name and the documents by reference', async () => {
+    const mounted = await mount()
+    await mounted.controller.choose('session-1', 'documents', [DOC_A, DOC_B])
+    // Recorded as a one-knowledge-base selection carrying its documents: the
+    // name is earned from the directory at the moment of choice, and no
+    // document title is recorded, because the prompt says the knowledge base
+    // and a count — both of which the log now holds.
+    expect(mounted.events.at(-1)).toEqual({
+      type: 'knowledge/scope',
+      data: {
+        version: 1,
+        mode: 'selected',
+        bases: [{ ref: REF_A, displayName: '临港知识库', docRefs: [DOC_A, DOC_B] }],
+      },
+    })
+  })
+
+  it.each([
+    ['documents from two knowledge bases', [DOC_A, `${REF_B}/doc-9`], 'knowledge/not-available'],
+    ['a document reference that is not one', ['not-a-reference'], 'knowledge/not-available'],
+    ['no documents at all', [], 'knowledge/empty-selection'],
+  ])('refuses %s, recording nothing', async (_label, docRefs, code) => {
+    const mounted = await mount()
+    await expect(mounted.controller.choose('session-1', 'documents', docRefs))
+      .rejects.toMatchObject({ code })
+    expect(mounted.events).toEqual([])
+  })
+
+  it('refuses documents in a knowledge base this member is not authorized for', async () => {
+    const mounted = await mount()
+    mounted.directory = [entry(REF_B, '南昌知识库')]
+    await expect(mounted.controller.choose('session-1', 'documents', [DOC_A]))
+      .rejects.toMatchObject({ code: 'knowledge/not-available', details: { knowledgeRef: REF_A } })
+    expect(mounted.events).toEqual([])
+  })
+
+  it('answers with the document scope as it now stands', async () => {
+    const mounted = await mount()
+    const view = await mounted.controller.choose('session-1', 'documents', [DOC_A])
+    expect(view.scope).toMatchObject({ mode: 'selected', bases: [{ docRefs: [DOC_A] }] })
+    expect(view.unavailable).toEqual([])
+  })
+
+  it('names the document on a passage that came from one', async () => {
+    const mounted = await mount()
+    mounted.result = {
+      query: '故障响应时间',
+      searched: [entry(REF_A, '临港知识库')],
+      passages: [{ ...passage(REF_A, '运维手册', 0.81), docRef: KnowledgeDocRef(DOC_A) }],
+      truncated: false,
+    }
+    const view = await mounted.controller.search('故障响应时间', 'all')
+    expect(view.passages[0]).toMatchObject({ docRef: DOC_A, knowledgeRef: REF_A })
+  })
+})

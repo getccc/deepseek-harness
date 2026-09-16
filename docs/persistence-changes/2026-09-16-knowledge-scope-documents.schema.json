@@ -1,0 +1,171 @@
+{
+  "formatVersion": 1,
+  "roots": [
+    {
+      "key": "event:knowledge/scope",
+      "kind": "event",
+      "event": "knowledge/scope",
+      "surface": false,
+      "digest": "dec35810f66b8eda5b53537f7f9232a9d40eb10faf0a4b000673ce0623afb5a2",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 13,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 14,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 14,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 15,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              2,
+              9,
+              11
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "bases",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "mode",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "version",
+                "type": 8,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 4
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "displayName",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "docRefs",
+                "type": 6,
+                "optional": true
+              },
+              {
+                "name": "ref",
+                "type": 5,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "array",
+            "element": 5
+          },
+          {
+            "kind": "literal",
+            "value": "selected"
+          },
+          {
+            "kind": "literal",
+            "value": 1
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "mode",
+                "type": 10,
+                "optional": false
+              },
+              {
+                "name": "version",
+                "type": 8,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "all"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "mode",
+                "type": 12,
+                "optional": false
+              },
+              {
+                "name": "version",
+                "type": 8,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "off"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "literal",
+            "value": "knowledge/scope"
+          }
+        ]
+      }
+    }
+  ],
+  "types": []
+}

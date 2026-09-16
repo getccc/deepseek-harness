@@ -427,3 +427,30 @@ describe('reading one document', () => {
       .rejects.toMatchObject({ reason: 'document-unavailable' })
   })
 })
+
+describe('a search narrowed to documents', () => {
+  it('sends the knowledge base and the documents, and reads the document off each hit', async () => {
+    controlPlane(200, {
+      query: '故障响应',
+      searched: [{ ref: REF, displayName: '临港知识库', description: '', kind: 'document' }],
+      passages: [
+        { ref: REF, docRef: `${REF}/doc-1`, title: '运维手册', text: '一级故障 30 分钟内响应。', truncated: false, score: 0.8 },
+        { ref: REF, docRef: 'not-a-reference', title: '值班制度', text: '二级故障 2 小时内响应。', truncated: false, score: 0.4 },
+      ],
+      truncated: false,
+    })
+    const ctx = await mount()
+    const result = await ctx.knowledge.search({
+      query: '故障响应',
+      scope: { mode: 'documents', ref: KnowledgeRef(REF), docRefs: [KnowledgeDocRef(`${REF}/doc-1`)] },
+    })
+    expect(calls[0]?.body).toEqual({
+      protocolVersion: KNOWLEDGE_PROTOCOL_VERSION,
+      query: '故障响应',
+      scope: { mode: 'documents', ref: REF, docRefs: [`${REF}/doc-1`] },
+    })
+    // A document reference this build cannot read is dropped rather than
+    // refused: the passage still names its knowledge base.
+    expect(result.passages.map(row => row.docRef)).toEqual([`${REF}/doc-1`, undefined])
+  })
+})

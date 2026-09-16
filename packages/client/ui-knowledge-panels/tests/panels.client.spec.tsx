@@ -36,6 +36,7 @@ const BASES: readonly KnowledgeChoice[] = [
 function passage(patch: Partial<KnowledgePassageView> = {}): KnowledgePassageView {
   return {
     knowledgeRef: REF_A,
+    docRef: `${REF_A}/doc-1`,
     knowledgeName: '临港知识库',
     title: '运维手册',
     text: '一级故障 30 分钟内响应。',
@@ -272,12 +273,32 @@ describe('the retrieval panel', () => {
     expect(panel.search).not.toHaveBeenCalled()
   })
 
+  it('narrows a discussion to the knowledge base for a result that named no document', async () => {
+    const panel = renderSearch({
+      search: (query) => {
+        const { docRef: _docRef, ...noDocument } = passage()
+        return Promise.resolve({ query, searched: [], passages: [noDocument], truncated: false })
+      },
+    })
+    ask()
+    fireEvent.click(await screen.findByRole('button', { name: '讨论这篇原文' }))
+    await waitFor(() => {
+      expect(panel.discuss).toHaveBeenCalledWith(
+        { knowledgeRef: REF_A },
+        '关于《运维手册》中的这段内容：\n\n> 一级故障 30 分钟内响应。\n\n',
+      )
+    })
+  })
+
   it('opens a discussion with the passage quoted, and reports one it could not open', async () => {
     const panel = renderSearch()
     ask()
     fireEvent.click(await screen.findByRole('button', { name: '讨论这篇原文' }))
     await waitFor(() => {
-      expect(panel.discuss).toHaveBeenCalledWith(REF_A, '关于《运维手册》中的这段内容：\n\n> 一级故障 30 分钟内响应。\n\n')
+      expect(panel.discuss).toHaveBeenCalledWith(
+        { knowledgeRef: REF_A, docRef: `${REF_A}/doc-1` },
+        '关于《运维手册》中的这段内容：\n\n> 一级故障 30 分钟内响应。\n\n',
+      )
     })
     panel.view.unmount()
     renderSearch({ discuss: () => Promise.reject(new Error('no session')) })

@@ -35,14 +35,21 @@ The document id is bounded at 64 characters over the same alphabet. `formatKnowl
 Which private knowledge a Session may search is recorded in the Session log as `knowledge/scope`, a versioned whole-value replace where the last event wins:
 
 ```ts
-import { KnowledgeRef, type KnowledgeScope } from '@deepseek-ai/dsh-knowledge'
+import { KnowledgeDocRef, KnowledgeRef, type KnowledgeScope } from '@deepseek-ai/dsh-knowledge'
+
+const ref = KnowledgeRef('weknora:prod:690c0727-1af5-4b7a-8465-ebd2845f2266')
 
 export const off: KnowledgeScope = { version: 1, mode: 'off' }
 export const all: KnowledgeScope = { version: 1, mode: 'all' }
 export const selected: KnowledgeScope = {
   version: 1,
   mode: 'selected',
-  bases: [{ ref: KnowledgeRef('weknora:prod:690c0727-1af5-4b7a-8465-ebd2845f2266'), displayName: '临港知识库' }],
+  bases: [{ ref, displayName: '临港知识库' }],
+}
+export const documents: KnowledgeScope = {
+  version: 1,
+  mode: 'selected',
+  bases: [{ ref, displayName: '临港知识库', docRefs: [KnowledgeDocRef(`${ref}/doc-7`)] }],
 }
 ```
 
@@ -51,6 +58,8 @@ A log with no such event folds to `off`, so every Session starts with knowledge 
 Scope is model-visible input twice over — it decides the prompt section that names the chosen knowledge bases, and whether the search tool is offered at all — so it lives in the log and nowhere else. That is also why the `selected` arm records a display name beside each reference: a model may only be told names the log holds. The names are a snapshot of the moment of choice, so an administrator who renames a knowledge base afterwards does not change what an already-recorded Session's prompt says, while the picker and the input chip resolve current names from the authorized directory.
 
 `all` records no names, because the set it denotes is whatever the principal is authorized for at each call and cannot be snapshotted honestly.
+
+A scope naming exactly one knowledge base may narrow further, to documents inside it, through that entry's `docRefs`. It is an optional property rather than a mode of its own: a union change is a Session format-version bump under the [persistence rules](../persistence-changes/README.md#compatibility-rules), while an optional property is a same-version addition ([record](../persistence-changes/2026-09-16-knowledge-scope-documents.md)). The cost is stated there rather than hidden — a build that predates the field ignores it and searches the whole knowledge base, which is wider than the member chose and never narrower. Every document reference must resolve to the knowledge base carrying it, and a scope naming several knowledge bases may not carry documents at all, because the upstream narrowing applies inside one. What the model is told about such a scope is its knowledge base and how many documents; no document title is recorded, and the passages a search returns name their documents anyway.
 
 Scope only ever narrows current authorization. It never adds a knowledge base, and a stale or forged reference still reaches an authorization decision that cannot be widened from a Session log.
 

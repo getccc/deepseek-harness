@@ -216,6 +216,20 @@ export function parseKnowledgeDocRef(value: string): KnowledgeDocRefParts | unde
 }
 
 /**
+ * The upstream document id inside a reference already proved to be one.
+ *
+ * Total rather than optional: the brand is the proof, so a caller holding a
+ * `KnowledgeDocRef` has already been through {@link parseKnowledgeDocRef} or
+ * {@link formatKnowledgeDocRef}, and a second "or undefined" here would be a
+ * branch no caller could reach and every caller would have to handle.
+ * @param docRef - the document reference.
+ * @returns the upstream document id it carries.
+ */
+export function upstreamDocIdOf(docRef: KnowledgeDocRef): string {
+  return docRef.slice(docRef.indexOf('/') + 1)
+}
+
+/**
  * Whether a string is a document reference this build accepts.
  * @param value - the candidate reference.
  * @returns true when {@link parseKnowledgeDocRef} reads it, narrowing the argument.

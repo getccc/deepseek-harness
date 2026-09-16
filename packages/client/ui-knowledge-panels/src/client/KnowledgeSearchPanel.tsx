@@ -5,14 +5,12 @@ import clsx from 'clsx'
 import { Button, IconSearchOutline16, Input } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { ObservableSnapshot } from '@deepseek-ai/dsh-client-store'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
-import type {
-  KnowledgeChoice, KnowledgePassageView, KnowledgeSearchView,
-} from '@deepseek-ai/dsh-api-knowledge-controller/types'
+import type { KnowledgeChoice, KnowledgeSearchView } from '@deepseek-ai/dsh-api-knowledge-controller/types'
 // Type-only: pulls the layout SlotMap merge (the keyed `main` panel seat).
 import type {} from '@deepseek-ai/dsh-client-ui-layout/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
-import { formatScore, groupByDocument } from './results.ts'
+import { formatScore, groupByDocument, type DocumentGroup } from './results.ts'
 import css from './panels.module.css'
 
 /** What this panel needs from the plugin that registered it. */
@@ -21,8 +19,8 @@ export interface KnowledgeSearchInjected {
   directory: () => Promise<readonly KnowledgeChoice[]>
   /** Run one retrieval; an empty selection searches every authorized knowledge base. */
   search: (query: string, knowledgeRefs: readonly string[]) => Promise<KnowledgeSearchView>
-  /** Open a conversation scoped to one knowledge base, with a passage in its composer. */
-  discuss: (knowledgeRef: string, draft: string) => Promise<void>
+  /** Open a conversation scoped to one document, or to its knowledge base when it named none. */
+  discuss: (target: DiscussTarget, draft: string) => Promise<void>
   /** Private reactive sources bound to framework selector hooks. */
   hooks: { requested: ObservableSnapshot<readonly string[]> }
 }
@@ -32,6 +30,14 @@ export type KnowledgeSearchPanelProps =
   PropsRuntime<'main'>
   & InjectFace<KnowledgeSearchInjected>
   & PropsLocale<'knowledgePanels'>
+
+/** What a discussion is opened about: one document, or the knowledge base holding it. */
+export interface DiscussTarget {
+  /** The knowledge base, which is the widest a discussion narrows to. */
+  readonly knowledgeRef: string
+  /** The document, when the result named one. */
+  readonly docRef?: string
+}
 
 /** What the result area is showing right now. */
 type Phase = 'idle' | 'running' | 'ready' | 'failed'
@@ -95,10 +101,12 @@ export function KnowledgeSearchPanel({ directory, search, discuss, useRequested,
     })
   }
 
-  const open = (passage: KnowledgePassageView): void => {
+  const open = (group: DocumentGroup): void => {
     setDiscussFailed(false)
-    discuss(passage.knowledgeRef, t('draft.template', { title: passage.title, text: passage.text }))
-      .catch(() => { setDiscussFailed(true) })
+    discuss(
+      { knowledgeRef: group.knowledgeRef, ...(group.docRef === undefined ? {} : { docRef: group.docRef }) },
+      t('draft.template', { title: group.lead.title, text: group.lead.text }),
+    ).catch(() => { setDiscussFailed(true) })
   }
 
   const groups = view === undefined ? [] : groupByDocument(view)
@@ -170,10 +178,7 @@ export function KnowledgeSearchPanel({ directory, search, discuss, useRequested,
                   </span>
                 ))}
                 <span className={css.cardActions}>
-                  <Button
-                    variant="outline"
-                    onClick={() => { open(group.passages[0] as KnowledgePassageView) }}
-                  >
+                  <Button variant="outline" onClick={() => { open(group) }}>
                     {t('search.discuss')}
                   </Button>
                 </span>

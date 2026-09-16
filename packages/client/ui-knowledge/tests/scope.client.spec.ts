@@ -145,3 +145,38 @@ describe('what one click on a menu row changes', () => {
     expect(chosenRows(chosen([REF_A, REF_B]))).toEqual([REF_A, REF_B])
   })
 })
+
+describe('a conversation narrowed to documents', () => {
+  const documents = (count: number): KnowledgeScope => ({
+    version: 1,
+    mode: 'selected',
+    bases: [{
+      ref: REF_A,
+      displayName: '临港知识库',
+      docRefs: Array.from({ length: count }, (_value, index) => `${REF_A}/doc-${String(index)}` as never),
+    }],
+  })
+
+  it('says the knowledge base and how many documents', () => {
+    // No document title is recorded, so the chip has none to show either.
+    expect(chipLabel(documents(1), t)).toBe('临港知识库 · 1 篇文档')
+    expect(scopeNames(documents(3), t)).toBe('临港知识库 · 3 篇文档')
+  })
+
+  it('marks the knowledge base holding them, which is what widens the scope back', () => {
+    expect(chosenRows(documents(2))).toEqual([REF_A])
+  })
+
+  it('widens to the whole knowledge base when its own row is clicked', () => {
+    // The rows choose knowledge bases; the narrower choice was made elsewhere,
+    // and a click here is a member asking for the whole knowledge base again.
+    expect(toggleScope(documents(2), REF_A)).toEqual({ mode: 'selected', knowledgeRefs: [REF_A] })
+    expect(toggleScope(documents(2), ALL_ROW_ID)).toEqual({ mode: 'all', knowledgeRefs: [] })
+    expect(toggleScope(documents(2), REF_B)).toEqual({ mode: 'selected', knowledgeRefs: [REF_A, REF_B] })
+  })
+
+  it('offers the same rows a member would see with nothing chosen', () => {
+    const rows = optionsOf(view(documents(1)), t)
+    expect(rows.map(row => row.id)).toEqual([ALL_ROW_ID, REF_A, REF_B])
+  })
+})

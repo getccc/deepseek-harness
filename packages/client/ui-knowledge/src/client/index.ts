@@ -31,7 +31,7 @@ import { KnowledgeSelect, type KnowledgeSelectInjected } from './KnowledgeSelect
 import { choiceOf, optionsOf, toggleScope, type KnowledgeChoiceRequest } from './scope.ts'
 import { en, zh, type KnowledgeKey } from './locales.ts'
 
-export { ALL_ROW_ID, chipLabel, choiceOf, chosenRows, optionsOf, toggleScope } from './scope.ts'
+export { ALL_ROW_ID, chipLabel, choiceOf, chosenRows, documentsOf, optionsOf, toggleScope } from './scope.ts'
 export type { KnowledgeChoiceRequest } from './scope.ts'
 export type { KnowledgeKey } from './locales.ts'
 

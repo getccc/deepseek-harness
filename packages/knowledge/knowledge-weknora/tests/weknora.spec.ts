@@ -757,3 +757,37 @@ describe('the byte bound holds at both places it can', () => {
     expect(content).toMatchObject({ kind: 'bytes' })
   })
 })
+
+describe('a hit names the document it came from', () => {
+  it('carries the upstream document id, and narrows a search to documents', async () => {
+    const mounted = await mount([ok([wireHit(A, { knowledge_id: 'doc-7' })])])
+    const passages = await mounted.ctx.knowledgeSource.search({
+      upstreamIds: [A], upstreamDocIds: ['doc-7'], query: '故障', maxResults: 5,
+    })
+    // `knowledge_ids` means "inside these documents"; it is sent only when the
+    // caller narrowed, because an empty array would mean the opposite.
+    expect(mounted.calls[0]?.body).toMatchObject({ knowledge_base_ids: [A], knowledge_ids: ['doc-7'] })
+    expect(passages[0]).toMatchObject({ upstreamId: A, upstreamDocId: 'doc-7' })
+  })
+
+  it('sends no document field for a search over whole knowledge bases', async () => {
+    const mounted = await mount([ok([wireHit(A)])])
+    await mounted.ctx.knowledgeSource.search({ upstreamIds: [A], query: '故障', maxResults: 5 })
+    expect(Object.keys(mounted.calls[0]?.body ?? {})).not.toContain('knowledge_ids')
+  })
+
+  it.each([
+    ['names no document', undefined],
+    ['names one this build could not address', 'doc/1'],
+    ['names one over the reference maximum', 'd'.repeat(65)],
+  ])('drops the document reference for a hit that %s', async (_label, knowledgeId) => {
+    const mounted = await mount([ok([wireHit(A, { knowledge_id: knowledgeId })])])
+    const passages = await mounted.ctx.knowledgeSource.search({
+      upstreamIds: [A], query: '故障', maxResults: 5,
+    })
+    // The passage is still attributable to its knowledge base, which is what a
+    // result needs; only the "open it" step is lost.
+    expect(passages[0]).toMatchObject({ upstreamId: A })
+    expect(passages[0]).not.toHaveProperty('upstreamDocId')
+  })
+})

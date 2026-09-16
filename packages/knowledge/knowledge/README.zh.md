@@ -55,7 +55,7 @@ kind: "package-reference"
 
 ### 读取会话范围
 
-`foldKnowledgeScope(events)` 从会话日志恢复当前范围，其 `end` 参数折叠一个前缀，使 rewind 和 fork 读到日志当时所说的内容。没有 `knowledge/scope` 事件的日志折叠为 `off`，也就是每个会话的起点。`selectionOf` 把范围转换成一次操作所携带的选择，对 `off` 返回 `undefined`，使调用方不去构造没人要的请求。
+`foldKnowledgeScope(events)` 从会话日志恢复当前范围，其 `end` 参数折叠一个前缀，使 rewind 和 fork 读到日志当时所说的内容。没有 `knowledge/scope` 事件的日志折叠为 `off`，也就是每个会话的起点。`selectionOf` 把范围转换成一次操作所携带的选择，对 `off` 返回 `undefined`，使调用方不去构造没人要的请求；对其记录条目携带文档引用的那一个知识库，返回 `documents` 选择。
 
 `all` 一路到 Control Plane 都保持为一个模式，而不是展开后的列表，因为展开它是一次授权行为：只有 Control Plane 知道主体当前持有什么。
 
@@ -83,7 +83,7 @@ kind: "package-reference"
 
 ### 数据模型
 
-`KnowledgeBaseEntry` 是主体可以检索的东西，以可读方式命名。`KnowledgeDocument` 是其中的一份文档，携带它的受治理引用、源对该文件所持有的信息，以及一个 `KnowledgeDocumentState`——`ready`、`processing` 或 `unavailable`——即把源自己的解析与启用用词，读成成员可以据此行动的三件事。`KnowledgeDocumentContent` 是一份文档所持有的内容，并说明它是两者中的哪一个：原始文件，或者在调用方无法接受该文件时代替它的源解析文本。字节从不是部分的——装不下的文档会改为以文本作答，因此半个文件永远不会到达一个会把它当作完整文件来绘制的渲染器。`KnowledgePassage` 携带产生它的引用，因此转录可以在不做第二次查找的情况下标注出处。`KnowledgeScope` 是版本化的可区分联合；其 `selected` 分支在每个引用旁记录一个显示名称，在选择的那一刻快照下来，因为模型可见的名字必须能从日志重建。
+`KnowledgeBaseEntry` 是主体可以检索的东西，以可读方式命名。`KnowledgeDocument` 是其中的一份文档，携带它的受治理引用、源对该文件所持有的信息，以及一个 `KnowledgeDocumentState`——`ready`、`processing` 或 `unavailable`——即把源自己的解析与启用用词，读成成员可以据此行动的三件事。`KnowledgeDocumentContent` 是一份文档所持有的内容，并说明它是两者中的哪一个：原始文件，或者在调用方无法接受该文件时代替它的源解析文本。字节从不是部分的——装不下的文档会改为以文本作答，因此半个文件永远不会到达一个会把它当作完整文件来绘制的渲染器。`KnowledgePassage` 携带产生它的引用，因此转录可以在不做第二次查找的情况下标注出处。`KnowledgeScope` 是版本化的可区分联合；其 `selected` 分支在每个引用旁记录一个显示名称，在选择的那一刻快照下来，因为模型可见的名字必须能从日志重建。命名单个知识库的范围还可以携带会话被收窄到的那些文档——这是一个可选字段而不是独立的 mode，因为联合类型变更会要求升 Session 格式版本，而新增可选属性属于 same-version（[记录](../../../docs/persistence-changes/2026-09-16-knowledge-scope-documents.zh.md)）。它的代价是早于该字段的构建：恢复这样的会话时，它会检索整个知识库——比成员所选更宽，绝不会更窄。
 
 <a id="further-exploration"></a>
 ## 延伸阅读

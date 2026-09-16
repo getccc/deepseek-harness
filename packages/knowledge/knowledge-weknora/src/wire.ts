@@ -155,6 +155,7 @@ export interface WireSearchResult {
   readonly id: string
   readonly content: string
   readonly knowledge_base_id: string
+  readonly knowledge_id?: unknown
   readonly score?: unknown
   readonly chunk_type?: unknown
   readonly knowledge_title?: unknown

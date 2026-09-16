@@ -244,6 +244,9 @@ export default class WeknoraKnowledgeSource extends KnowledgeSource {
       query_text: request.query,
       match_count: bound,
       knowledge_base_ids: [...request.upstreamIds],
+      // Present only when the caller narrowed to documents: the field means
+      // "inside these", and an empty array would mean the opposite upstream.
+      ...(request.upstreamDocIds === undefined ? {} : { knowledge_ids: [...request.upstreamDocIds] }),
     }, request.signal)
     const authorized = new Set(request.upstreamIds)
     const passages: UpstreamPassage[] = []
@@ -271,6 +274,7 @@ export default class WeknoraKnowledgeSource extends KnowledgeSource {
     const truncated = cleaned.length > this.resolved.maxPassageChars
     return {
       upstreamId: result.upstreamId,
+      ...(result.upstreamDocId === '' ? {} : { upstreamDocId: result.upstreamDocId }),
       title: result.title,
       text: truncated ? cleaned.slice(0, this.resolved.maxPassageChars) : cleaned,
       truncated,
@@ -456,6 +460,8 @@ export default class WeknoraKnowledgeSource extends KnowledgeSource {
 /** The fields one search result contributes, once validated. */
 interface SearchFields {
   readonly upstreamId: string
+  /** Empty when the hit named no document this build could address. */
+  readonly upstreamDocId: string
   readonly title: string
   readonly content: string
   readonly score: number
@@ -570,8 +576,14 @@ function toSearchResult(entry: unknown): SearchFields {
     throw new KnowledgeError('upstream-invalid', 'a search result is missing its knowledge base or content')
   }
   const result: WireSearchResult = row as unknown as WireSearchResult
+  // A document id the governed reference could not carry is dropped rather
+  // than refused: the passage is still attributable to its knowledge base,
+  // which is what a result needs, and only the "open it" step is lost.
+  const docId = text(result.knowledge_id)
+  const addressable = docId !== '' && KNOWLEDGE_REF_SEGMENT.test(docId) && docId.length <= KNOWLEDGE_DOC_ID_MAX_LENGTH
   return {
     upstreamId,
+    upstreamDocId: addressable ? docId : '',
     content,
     title: text(result.knowledge_title),
     score: typeof result.score === 'number' && Number.isFinite(result.score) ? result.score : 0,

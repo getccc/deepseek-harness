@@ -21,6 +21,7 @@ import {
   KnowledgeDocRef,
   KnowledgeRef,
   KnowledgeError,
+  parseKnowledgeDocRef,
   foldKnowledgeScope,
   type KnowledgeScope,
   type KnowledgeScopeSelection,
@@ -53,7 +54,7 @@ const sessionRequestSchema = z.object({ sessionId: z.string().min(1) })
 
 const chooseRequestSchema = z.object({
   sessionId: z.string().min(1),
-  mode: z.union([z.literal('off'), z.literal('all'), z.literal('selected')]),
+  mode: z.union([z.literal('off'), z.literal('all'), z.literal('selected'), z.literal('documents')]),
   knowledgeRefs: z.array(z.string()).optional(),
 })
 
@@ -136,8 +137,9 @@ export class KnowledgeController extends TypertRemoteService {
    * would refuse it at search time anyway, and recording it would put a
    * promise in the log that no search can keep.
    * @param sessionId - the Session to record the choice in.
-   * @param mode - `off`, `all`, or `selected`.
-   * @param knowledgeRefs - the chosen references, required and non-empty for `selected`.
+   * @param mode - `off`, `all`, `selected`, or `documents`.
+   * @param knowledgeRefs - the chosen references: knowledge bases for `selected`,
+   *   documents for `documents`, required and non-empty for both.
    * @returns the Session's scope as it now stands.
    * @throws RemoteError when the request is invalid, the Session is unknown, or a reference is not currently authorized.
    */
@@ -284,6 +286,7 @@ export class KnowledgeController extends TypertRemoteService {
       })),
       passages: result.passages.map(passage => ({
         knowledgeRef: passage.ref,
+        ...(passage.docRef === undefined ? {} : { docRef: passage.docRef }),
         knowledgeName: names.get(passage.ref) ?? '',
         title: passage.title,
         text: passage.text,
@@ -319,9 +322,10 @@ export class KnowledgeController extends TypertRemoteService {
 
   /** Turn one requested mode into the scope value a Session records. */
   private async buildScope(
-    mode: 'off' | 'all' | 'selected',
+    mode: 'off' | 'all' | 'selected' | 'documents',
     refs: readonly string[],
   ): Promise<KnowledgeScope> {
+    if (mode === 'documents') return this.buildDocumentScope(refs)
     if (mode !== 'selected') return { version: 1, mode }
     if (refs.length === 0) {
       throw new RemoteError('knowledge/empty-selection', 'a knowledge selection names at least one knowledge base', {})
@@ -335,6 +339,42 @@ export class KnowledgeController extends TypertRemoteService {
       return { ref: KnowledgeRef(ref), displayName }
     })
     return { version: 1, mode: 'selected', bases }
+  }
+
+  /**
+   * Turn a document selection into the scope value a Session records.
+   *
+   * Every document has to sit in one knowledge base, and that knowledge base
+   * has to be one the directory holds now — the same rule a knowledge-base
+   * selection follows, for the same reason: the recorded name reaches a
+   * prompt, so it has to have been earned at the moment of choice.
+   */
+  private async buildDocumentScope(docRefs: readonly string[]): Promise<KnowledgeScope> {
+    const [head] = docRefs
+    if (head === undefined) {
+      throw new RemoteError('knowledge/empty-selection', 'a document selection names at least one document', {})
+    }
+    const ref = parseKnowledgeDocRef(head)?.ref
+    if (ref === undefined) {
+      throw new RemoteError('knowledge/not-available', 'that document is not available to this member', { knowledgeRef: head })
+    }
+    const chosen = docRefs.map((docRef) => {
+      // Every document has to be in the knowledge base the first one named:
+      // that knowledge base is what gets authorized, and a document from
+      // elsewhere would ride an admission nobody asked for.
+      if (parseKnowledgeDocRef(docRef)?.ref !== ref) {
+        throw new RemoteError('knowledge/not-available', 'that document is not available to this member', { knowledgeRef: docRef })
+      }
+      return KnowledgeDocRef(docRef)
+    })
+    const displayName = (await this.directory()).find(choice => choice.knowledgeRef === ref)?.displayName
+    if (displayName === undefined) {
+      throw new RemoteError('knowledge/not-available', 'that knowledge base is not available to this member', { knowledgeRef: ref })
+    }
+    // Recorded as a one-knowledge-base selection carrying its documents: an
+    // optional field is a same-version persistence addition, where a mode of
+    // its own would have been a format-version bump.
+    return { version: 1, mode: 'selected', bases: [{ ref, displayName, docRefs: chosen }] }
   }
 
   /**

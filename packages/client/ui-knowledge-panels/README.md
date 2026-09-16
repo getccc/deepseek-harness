@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-client-ui-knowledge-panels` is private knowledge outside a conversation: two rows under the sidebar's New work task entry, the authorized knowledge bases with their documents and the one a member opens, and a retrieval they run for themselves and read ranked. A retrieval here starts no model turn and costs no tokens; what reaches a model is only what a member asks for by selecting a result, which opens a conversation scoped to that document's knowledge base with the passage in its composer. The panels mount in the Team browser composition alone, beside the `/knowledge` picker whose Remote namespace they share.
+`dsh-client-ui-knowledge-panels` is private knowledge outside a conversation: two rows under the sidebar's New work task entry, the authorized knowledge bases with their documents and the one a member opens, and a retrieval they run for themselves and read ranked. A retrieval here starts no model turn and costs no tokens; what reaches a model is only what a member asks for by selecting a result, which opens a conversation narrowed to that document with the passage in its composer. The panels mount in the Team browser composition alone, beside the `/knowledge` picker whose Remote namespace they share.
 
 ## Table of Contents
 
@@ -79,7 +79,7 @@ Ranking is the provider's. The panel groups passages under their document and sh
 <a id="model-experience"></a>
 ## Model Experience
 
-Indirectly, through `dsh-tool-knowledge`: a retrieval run in these panels reaches no model, and the scope a selected result records is what its prompt section names and what gates its search tool.
+Indirectly, through `dsh-tool-knowledge`: a retrieval run in these panels reaches no model, and the document-narrowed scope a selected result records is what its prompt section names and what gates its search tool.
 
 #### KV Cache effect
 
@@ -95,7 +95,7 @@ These limits define when the panels are incomplete on their own. They are curren
 - **A document list is a page at a time** — there is no search within a knowledge base, no sort, and no folder tree, so finding one document in thousands means paging to it.
 - **A preview is re-read, never kept** — opening the same document twice reads it twice, and nothing is cached between panels or reloads. That is deliberate for a file whose authorization is decided per call.
 - **A document is identified by its title** — passages carry no document reference yet, so two documents sharing one title inside one knowledge base group as one result.
-- **A discussion is scoped to the knowledge base, not the document** — the Session scope has no document-level form, so a conversation opened from a result may retrieve from the rest of that knowledge base too.
+- **A result that named no document is discussed at knowledge-base scope** — a passage whose source this build could not address narrows a conversation only as far as its knowledge base, which is the narrowest such a result supports.
 - **No change notification** — a panel left open does not learn that a grant changed; it sees the narrowed directory the next time it is opened.
 
 <a id="dev-note"></a>

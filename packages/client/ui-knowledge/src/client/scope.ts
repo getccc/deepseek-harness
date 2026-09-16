@@ -8,7 +8,7 @@
 
 import type { KnowledgeChoice, KnowledgeScopeView } from '@deepseek-ai/dsh-api-knowledge-controller/types'
 import type { SelectOption } from '@deepseek-ai/dsh-client-ui-commands/client'
-import type { KnowledgeScope } from '@deepseek-ai/dsh-knowledge'
+import type { KnowledgeScope, KnowledgeScopeBase } from '@deepseek-ai/dsh-knowledge'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 
 /**
@@ -22,7 +22,7 @@ export const ALL_ROW_ID = 'all'
 
 /** One recorded choice, as the Remote takes it. */
 export interface KnowledgeChoiceRequest {
-  readonly mode: 'off' | 'all' | 'selected'
+  readonly mode: 'off' | 'all' | 'selected' | 'documents'
   readonly knowledgeRefs: string[]
 }
 
@@ -112,9 +112,27 @@ export function scopeNames(scope: KnowledgeScope, t: TranslateNS<'knowledge'>): 
       return t('chip.label')
     case 'all':
       return t('chip.all')
-    case 'selected':
+    case 'selected': {
+      const narrowed = documentsOf(scope)
+      // The knowledge base and how many documents, which is everything the
+      // log holds: no document title is recorded, so none can be shown.
+      if (narrowed !== undefined) {
+        return t('chip.documents', { name: narrowed.base.displayName, count: narrowed.docRefs.length })
+      }
       return scope.bases.map(base => base.displayName).join('、')
+    }
   }
+}
+
+/**
+ * The one knowledge base a scope narrowed to documents, when it did.
+ * @param scope - the Session's folded knowledge scope.
+ * @returns the knowledge base and its documents, or undefined for any wider scope.
+ */
+export function documentsOf(scope: KnowledgeScope): { base: KnowledgeScopeBase; docRefs: readonly string[] } | undefined {
+  if (scope.mode !== 'selected' || scope.bases.length !== 1) return undefined
+  const [only] = scope.bases
+  return only?.docRefs === undefined ? undefined : { base: only, docRefs: only.docRefs }
 }
 
 /**
@@ -131,6 +149,11 @@ export function toggleScope(scope: KnowledgeScope, clicked: string): KnowledgeCh
   if (clicked === ALL_ROW_ID) {
     return scope.mode === 'all' ? { mode: 'off', knowledgeRefs: [] } : { mode: 'all', knowledgeRefs: [] }
   }
+  // Clicking the knowledge base a narrowed scope names widens the conversation
+  // back to the whole knowledge base rather than turning knowledge off: the
+  // rows choose knowledge bases, and this member is asking for all of one.
+  const narrowed = documentsOf(scope)
+  if (narrowed?.base.ref === clicked) return { mode: 'selected', knowledgeRefs: [clicked] }
   const chosen = scope.mode === 'selected' ? scope.bases.map(base => base.ref as string) : []
   const refs = chosen.includes(clicked) ? chosen.filter(ref => ref !== clicked) : [...chosen, clicked]
   return refs.length === 0 ? { mode: 'off', knowledgeRefs: [] } : { mode: 'selected', knowledgeRefs: refs }
@@ -148,6 +171,8 @@ export function chosenRows(scope: KnowledgeScope): readonly string[] {
     case 'all':
       return [ALL_ROW_ID]
     case 'selected':
+      // A narrowed scope marks the knowledge base holding its documents,
+      // because clicking that row is what widens the conversation back to it.
       return scope.bases.map(base => base.ref as string)
   }
 }

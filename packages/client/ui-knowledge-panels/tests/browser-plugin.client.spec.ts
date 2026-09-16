@@ -192,10 +192,12 @@ describe('ui-knowledge-panels browser apply', () => {
     await b.fiber.dispose()
   })
 
-  it('opens a discussion as one Session, scoped before it is shown and drafted after', async () => {
+  it('opens a discussion as one Session, scoped to the document before it is shown', async () => {
     const b = await bench()
-    await faceOf(b, SEARCH_PANEL).discuss(REF_A, '关于《运维手册》')
-    expect(b.recorded).toEqual([{ call: 'choose', sessionId: SID, mode: 'selected', knowledgeRefs: [REF_A] }])
+    await faceOf(b, SEARCH_PANEL).discuss({ knowledgeRef: REF_A, docRef: `${REF_A}/doc-1` }, '关于《运维手册》')
+    expect(b.recorded).toEqual([{
+      call: 'choose', sessionId: SID, mode: 'documents', knowledgeRefs: [`${REF_A}/doc-1`],
+    }])
     expect(b.opened).toEqual([SID])
     // Leaving the panel is what puts the member in the conversation they just opened.
     expect(b.panels).toEqual([null])
@@ -203,10 +205,19 @@ describe('ui-knowledge-panels browser apply', () => {
     await b.fiber.dispose()
   })
 
+  it('falls back to the knowledge base for a result that named no document', async () => {
+    const b = await bench()
+    await faceOf(b, SEARCH_PANEL).discuss({ knowledgeRef: REF_A }, '关于《运维手册》')
+    // The narrowest scope such a result supports: without a document
+    // reference there is nothing narrower to record.
+    expect(b.recorded).toEqual([{ call: 'choose', sessionId: SID, mode: 'selected', knowledgeRefs: [REF_A] }])
+    await b.fiber.dispose()
+  })
+
   it('opens the conversation even when its input machine is not resolvable yet', async () => {
     const b = await bench()
     b.unscope()
-    await faceOf(b, SEARCH_PANEL).discuss(REF_A, '关于《运维手册》')
+    await faceOf(b, SEARCH_PANEL).discuss({ knowledgeRef: REF_A, docRef: `${REF_A}/doc-1` }, '关于《运维手册》')
     expect(b.opened).toEqual([SID])
     expect(b.drafts).toEqual([])
     await b.fiber.dispose()
@@ -215,7 +226,7 @@ describe('ui-knowledge-panels browser apply', () => {
   it('records no scope and opens nothing when the choice is refused', async () => {
     const b = await bench()
     b.refuseNext('that knowledge base is not available to this member')
-    await expect(faceOf(b, SEARCH_PANEL).discuss(REF_A, '关于《运维手册》'))
+    await expect(faceOf(b, SEARCH_PANEL).discuss({ knowledgeRef: REF_A, docRef: `${REF_A}/doc-1` }, '关于《运维手册》'))
       .rejects.toThrow('that knowledge base is not available to this member (knowledge/unavailable)')
     expect(b.opened).toEqual([])
     expect(b.drafts).toEqual([])

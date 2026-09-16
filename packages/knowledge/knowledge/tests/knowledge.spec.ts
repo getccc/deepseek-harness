@@ -304,3 +304,63 @@ describe('the seam', () => {
     expect(result.query).toBe('年假')
   })
 })
+
+describe('a document-narrowed scope', () => {
+  const DOC_A = `${ref()}/doc-1`
+  const DOC_B = `${ref()}/doc-2`
+
+  /** A document-narrowed scope over the given references. */
+  function documentScope(base: string, docRefs: unknown): unknown {
+    return { version: 1, mode: 'selected', bases: [{ ref: base, displayName: '临港知识库', docRefs }] }
+  }
+
+  it('reads back as one knowledge base carrying the documents inside it', () => {
+    const scope = parseKnowledgeScope(documentScope(ref(), [DOC_A, DOC_B]))
+    expect(scope).toEqual({
+      version: 1,
+      mode: 'selected',
+      bases: [{ ref: ref(), displayName: '临港知识库', docRefs: [DOC_A, DOC_B] }],
+    })
+  })
+
+  it('carries its knowledge base and its documents into one operation', () => {
+    const scope = parseKnowledgeScope(documentScope(ref(), [DOC_A]))
+    expect(selectionOf(scope as KnowledgeScope)).toEqual({
+      mode: 'documents', ref: ref(), docRefs: [DOC_A],
+    })
+  })
+
+  it('carries a knowledge base with no documents as the whole knowledge base', () => {
+    const scope = parseKnowledgeScope({
+      version: 1, mode: 'selected', bases: [{ ref: ref(), displayName: '临港知识库' }],
+    })
+    expect(selectionOf(scope as KnowledgeScope)).toEqual({ mode: 'selected', refs: [ref()] })
+  })
+
+  it('folds out of a log like any other scope', () => {
+    const scope = parseKnowledgeScope(documentScope(ref(), [DOC_A])) as KnowledgeScope
+    expect(foldKnowledgeScope([scopeEvent({ version: 1, mode: 'all' }, 1), scopeEvent(scope, 2)]))
+      .toEqual(scope)
+  })
+
+  it.each([
+    ['a document from another knowledge base', documentScope(ref(), [`${ref('other')}/doc-1`])],
+    ['an empty document list', documentScope(ref(), [])],
+    ['a document reference that is not one', documentScope(ref(), ['not-a-reference'])],
+    ['a knowledge base that is not one', documentScope('weknora:prod', [DOC_A])],
+    ['documents that are not a list', documentScope(ref(), 'doc-1')],
+    ['documents on one of several knowledge bases', {
+      version: 1,
+      mode: 'selected',
+      bases: [
+        { ref: ref(), displayName: '临港知识库', docRefs: [DOC_A] },
+        { ref: ref('other'), displayName: '南昌知识库' },
+      ],
+    }],
+  ])('refuses %s', (_label, value) => {
+    // A scope whose halves disagree would search a knowledge base its recorded
+    // name does not describe, which is the one way it could promise something
+    // a later search would not do.
+    expect(parseKnowledgeScope(value)).toBeUndefined()
+  })
+})

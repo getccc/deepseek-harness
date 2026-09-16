@@ -5782,7 +5782,7 @@
       "kind": "event",
       "event": "knowledge/scope",
       "surface": false,
-      "digest": "51d9917929b4023f847ccbee830de86514c344c4da57a4a5da3f12b0940247a4",
+      "digest": "dec35810f66b8eda5b53537f7f9232a9d40eb10faf0a4b000673ce0623afb5a2",
       "schema": {
         "root": 0,
         "nodes": [
@@ -5796,22 +5796,22 @@
               },
               {
                 "name": "ignorable",
-                "type": 12,
+                "type": 13,
                 "optional": true
               },
               {
                 "name": "seq",
-                "type": 13,
+                "type": 14,
                 "optional": false
               },
               {
                 "name": "time",
-                "type": 13,
+                "type": 14,
                 "optional": false
               },
               {
                 "name": "type",
-                "type": 14,
+                "type": 15,
                 "optional": false
               }
             ],
@@ -5821,8 +5821,8 @@
             "kind": "union",
             "types": [
               2,
-              8,
-              10
+              9,
+              11
             ]
           },
           {
@@ -5835,12 +5835,12 @@
               },
               {
                 "name": "mode",
-                "type": 6,
+                "type": 7,
                 "optional": false
               },
               {
                 "name": "version",
-                "type": 7,
+                "type": 8,
                 "optional": false
               }
             ],
@@ -5859,6 +5859,11 @@
                 "optional": false
               },
               {
+                "name": "docRefs",
+                "type": 6,
+                "optional": true
+              },
+              {
                 "name": "ref",
                 "type": 5,
                 "optional": false
@@ -5869,6 +5874,10 @@
           {
             "kind": "primitive",
             "type": "string"
+          },
+          {
+            "kind": "array",
+            "element": 5
           },
           {
             "kind": "literal",
@@ -5883,12 +5892,12 @@
             "properties": [
               {
                 "name": "mode",
-                "type": 9,
+                "type": 10,
                 "optional": false
               },
               {
                 "name": "version",
-                "type": 7,
+                "type": 8,
                 "optional": false
               }
             ],
@@ -5903,12 +5912,12 @@
             "properties": [
               {
                 "name": "mode",
-                "type": 11,
+                "type": 12,
                 "optional": false
               },
               {
                 "name": "version",
-                "type": 7,
+                "type": 8,
                 "optional": false
               }
             ],
@@ -14918,6 +14927,51 @@
       "sources": []
     },
     {
+      "digest": "092dd52fe947ca45c96a43c6dbeb5bded460a3b152f3f7ea52098df84baa57e3",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "array",
+            "element": 1
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "displayName",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "docRefs",
+                "type": 3,
+                "optional": true
+              },
+              {
+                "name": "ref",
+                "type": 2,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "array",
+            "element": 2
+          }
+        ]
+      },
+      "names": [
+        "event:knowledge/scope.data[2].bases"
+      ],
+      "sources": []
+    },
+    {
       "digest": "0a30c3be336cdd4f8f34e66543a3d46d611c43986edd9b3ce6cbb9b721d3b5d3",
       "schema": {
         "root": 0,
@@ -20362,42 +20416,6 @@
       "sources": [
         "packages/experimental/agent-team/src/types.ts:115"
       ]
-    },
-    {
-      "digest": "22384fbcdf3b56d470080e45417ce35a6f19ab7d4aa28799f3cc10f0376e4275",
-      "schema": {
-        "root": 0,
-        "nodes": [
-          {
-            "kind": "array",
-            "element": 1
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "displayName",
-                "type": 2,
-                "optional": false
-              },
-              {
-                "name": "ref",
-                "type": 2,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "primitive",
-            "type": "string"
-          }
-        ]
-      },
-      "names": [
-        "event:knowledge/scope.data[2].bases"
-      ],
-      "sources": []
     },
     {
       "digest": "234142ee4f996f38cc9fa3b8b3e3de29b03c9aefe5ebf6c224eddd564505aa85",
@@ -27587,121 +27605,6 @@
       "sources": []
     },
     {
-      "digest": "3559774c893232fdcde2de3365e38cf1f56e744d74c40d94f472520a36d071d9",
-      "schema": {
-        "root": 0,
-        "nodes": [
-          {
-            "kind": "union",
-            "types": [
-              1,
-              7,
-              9
-            ]
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "bases",
-                "type": 2,
-                "optional": false
-              },
-              {
-                "name": "mode",
-                "type": 5,
-                "optional": false
-              },
-              {
-                "name": "version",
-                "type": 6,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "array",
-            "element": 3
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "displayName",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "ref",
-                "type": 4,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "primitive",
-            "type": "string"
-          },
-          {
-            "kind": "literal",
-            "value": "selected"
-          },
-          {
-            "kind": "literal",
-            "value": 1
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "mode",
-                "type": 8,
-                "optional": false
-              },
-              {
-                "name": "version",
-                "type": 6,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "literal",
-            "value": "all"
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "mode",
-                "type": 10,
-                "optional": false
-              },
-              {
-                "name": "version",
-                "type": 6,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "literal",
-            "value": "off"
-          }
-        ]
-      },
-      "names": [
-        "packages/knowledge/knowledge/src/types.ts#KnowledgeScope"
-      ],
-      "sources": [
-        "packages/knowledge/knowledge/src/types.ts:156"
-      ]
-    },
-    {
       "digest": "356aad27134a0e31af67c994ff8b9e4b91acfb6c4917b3bc1f7a62bbf82794d5",
       "schema": {
         "root": 0,
@@ -29654,6 +29557,130 @@
       },
       "names": [],
       "sources": []
+    },
+    {
+      "digest": "41e6aab360a9f8bf06107b3e4713c41be5e388ada46b84f096f871eb122ae880",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "union",
+            "types": [
+              1,
+              8,
+              10
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "bases",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "mode",
+                "type": 6,
+                "optional": false
+              },
+              {
+                "name": "version",
+                "type": 7,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 3
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "displayName",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "docRefs",
+                "type": 5,
+                "optional": true
+              },
+              {
+                "name": "ref",
+                "type": 4,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "array",
+            "element": 4
+          },
+          {
+            "kind": "literal",
+            "value": "selected"
+          },
+          {
+            "kind": "literal",
+            "value": 1
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "mode",
+                "type": 9,
+                "optional": false
+              },
+              {
+                "name": "version",
+                "type": 7,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "all"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "mode",
+                "type": 11,
+                "optional": false
+              },
+              {
+                "name": "version",
+                "type": 7,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "off"
+          }
+        ]
+      },
+      "names": [
+        "packages/knowledge/knowledge/src/types.ts#KnowledgeScope"
+      ],
+      "sources": [
+        "packages/knowledge/knowledge/src/types.ts:179"
+      ]
     },
     {
       "digest": "42e0916e0dda5f6d1e7bb05d8514717147c036a79c9f36085683469516c1fd3f",
@@ -32635,6 +32662,7 @@
         "packages/goal/goal/src/types.ts#GoalId",
         "packages/interaction/commands/src/brand.ts#CommandId",
         "packages/interaction/user-approval/src/types.ts#ApprovalRequestId",
+        "packages/knowledge/knowledge/src/brand.ts#KnowledgeDocRef",
         "packages/knowledge/knowledge/src/brand.ts#KnowledgeRef",
         "packages/llm/llm-retry/src/brand.ts#RetryId",
         "packages/llm/llm/src/brand.ts#MessageId",
@@ -32661,6 +32689,7 @@
         "packages/goal/goal/src/types.ts:17",
         "packages/interaction/commands/src/brand.ts:31",
         "packages/interaction/user-approval/src/types.ts:17",
+        "packages/knowledge/knowledge/src/brand.ts:145",
         "packages/knowledge/knowledge/src/brand.ts:16",
         "packages/llm/llm-retry/src/brand.ts:4",
         "packages/llm/llm/src/brand.ts:16",
@@ -34340,162 +34369,6 @@
       },
       "names": [
         "event:web/access"
-      ],
-      "sources": []
-    },
-    {
-      "digest": "51d9917929b4023f847ccbee830de86514c344c4da57a4a5da3f12b0940247a4",
-      "schema": {
-        "root": 0,
-        "nodes": [
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "data",
-                "type": 1,
-                "optional": false
-              },
-              {
-                "name": "ignorable",
-                "type": 12,
-                "optional": true
-              },
-              {
-                "name": "seq",
-                "type": 13,
-                "optional": false
-              },
-              {
-                "name": "time",
-                "type": 13,
-                "optional": false
-              },
-              {
-                "name": "type",
-                "type": 14,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "union",
-            "types": [
-              2,
-              8,
-              10
-            ]
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "bases",
-                "type": 3,
-                "optional": false
-              },
-              {
-                "name": "mode",
-                "type": 6,
-                "optional": false
-              },
-              {
-                "name": "version",
-                "type": 7,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "array",
-            "element": 4
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "displayName",
-                "type": 5,
-                "optional": false
-              },
-              {
-                "name": "ref",
-                "type": 5,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "primitive",
-            "type": "string"
-          },
-          {
-            "kind": "literal",
-            "value": "selected"
-          },
-          {
-            "kind": "literal",
-            "value": 1
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "mode",
-                "type": 9,
-                "optional": false
-              },
-              {
-                "name": "version",
-                "type": 7,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "literal",
-            "value": "all"
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "mode",
-                "type": 11,
-                "optional": false
-              },
-              {
-                "name": "version",
-                "type": 7,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "literal",
-            "value": "off"
-          },
-          {
-            "kind": "literal",
-            "value": true
-          },
-          {
-            "kind": "primitive",
-            "type": "number"
-          },
-          {
-            "kind": "literal",
-            "value": "knowledge/scope"
-          }
-        ]
-      },
-      "names": [
-        "event:knowledge/scope"
       ],
       "sources": []
     },
@@ -36322,6 +36195,82 @@
         "event:tool-workflow/agent-start"
       ],
       "sources": []
+    },
+    {
+      "digest": "5f4d27180fcd8b1351e44ce2f40f224047c20e93fe9114bf1836623e892eba19",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "bases",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "mode",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "version",
+                "type": 6,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 2
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "displayName",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "docRefs",
+                "type": 4,
+                "optional": true
+              },
+              {
+                "name": "ref",
+                "type": 3,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "array",
+            "element": 3
+          },
+          {
+            "kind": "literal",
+            "value": "selected"
+          },
+          {
+            "kind": "literal",
+            "value": 1
+          }
+        ]
+      },
+      "names": [
+        "event:knowledge/scope.data[2]"
+      ],
+      "sources": [
+        "packages/knowledge/knowledge/src/types.ts:182"
+      ]
     },
     {
       "digest": "5f758f3de5f00c18968a7c6d347083aac5c9ae13f6a79c78f6611b23c4973564",
@@ -40945,73 +40894,6 @@
       ]
     },
     {
-      "digest": "78892d54cf630043ce67731d8c508de648ceb0a67d63491a006c0718a2d6f0d2",
-      "schema": {
-        "root": 0,
-        "nodes": [
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "bases",
-                "type": 1,
-                "optional": false
-              },
-              {
-                "name": "mode",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "version",
-                "type": 5,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "array",
-            "element": 2
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "displayName",
-                "type": 3,
-                "optional": false
-              },
-              {
-                "name": "ref",
-                "type": 3,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "primitive",
-            "type": "string"
-          },
-          {
-            "kind": "literal",
-            "value": "selected"
-          },
-          {
-            "kind": "literal",
-            "value": 1
-          }
-        ]
-      },
-      "names": [
-        "event:knowledge/scope.data[2]"
-      ],
-      "sources": [
-        "packages/knowledge/knowledge/src/types.ts:159"
-      ]
-    },
-    {
       "digest": "79650cfa10aa3c52440328d85e8a25f0ffadc8d7efd784e3c0819d8bb74a1985",
       "schema": {
         "root": 0,
@@ -45006,7 +44888,7 @@
         "event:knowledge/scope.data[1]"
       ],
       "sources": [
-        "packages/knowledge/knowledge/src/types.ts:158"
+        "packages/knowledge/knowledge/src/types.ts:181"
       ]
     },
     {
@@ -45242,6 +45124,7 @@
         "event:assistant/attempt.data.stream[0][0].texts",
         "event:assistant/attempt.data.stream[0][1].texts",
         "event:assistant/attempt.data.stream[0][2].args",
+        "event:knowledge/scope.data[2].bases[0].docRefs",
         "event:request/header.data.header.config.stop",
         "event:subagent/descriptor.data[1].toolFilter.allow",
         "event:subagent/descriptor.data[1].toolFilter.deny",
@@ -50043,7 +49926,7 @@
         "event:knowledge/scope.data[0]"
       ],
       "sources": [
-        "packages/knowledge/knowledge/src/types.ts:157"
+        "packages/knowledge/knowledge/src/types.ts:180"
       ]
     },
     {
@@ -57916,6 +57799,171 @@
       "sources": []
     },
     {
+      "digest": "dec35810f66b8eda5b53537f7f9232a9d40eb10faf0a4b000673ce0623afb5a2",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 13,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 14,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 14,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 15,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              2,
+              9,
+              11
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "bases",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "mode",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "version",
+                "type": 8,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "array",
+            "element": 4
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "displayName",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "docRefs",
+                "type": 6,
+                "optional": true
+              },
+              {
+                "name": "ref",
+                "type": 5,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "array",
+            "element": 5
+          },
+          {
+            "kind": "literal",
+            "value": "selected"
+          },
+          {
+            "kind": "literal",
+            "value": 1
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "mode",
+                "type": 10,
+                "optional": false
+              },
+              {
+                "name": "version",
+                "type": 8,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "all"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "mode",
+                "type": 12,
+                "optional": false
+              },
+              {
+                "name": "version",
+                "type": 8,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "off"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "literal",
+            "value": "knowledge/scope"
+          }
+        ]
+      },
+      "names": [
+        "event:knowledge/scope"
+      ],
+      "sources": []
+    },
+    {
       "digest": "df5d9709b7db2a72510dc52052a23f0c38f39730af1504bab8bccabc14fae528",
       "schema": {
         "root": 0,
@@ -60429,40 +60477,6 @@
       "sources": []
     },
     {
-      "digest": "e7b9271f26f0cae70218b256b456f0bb4c37a1908499fc2d970c7ce08c6fe3c1",
-      "schema": {
-        "root": 0,
-        "nodes": [
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "displayName",
-                "type": 1,
-                "optional": false
-              },
-              {
-                "name": "ref",
-                "type": 1,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "primitive",
-            "type": "string"
-          }
-        ]
-      },
-      "names": [
-        "packages/knowledge/knowledge/src/types.ts#KnowledgeScopeBase"
-      ],
-      "sources": [
-        "packages/knowledge/knowledge/src/types.ts:143"
-      ]
-    },
-    {
       "digest": "e7ce49f12953583fad217bf80fb9f1463acff2c3e9471a823782661675fb124c",
       "schema": {
         "root": 0,
@@ -60817,6 +60831,49 @@
       },
       "names": [],
       "sources": []
+    },
+    {
+      "digest": "f048767814898000fbcdb30d436a397f15188da4eb5c9481c6295c2b49f3bcda",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "displayName",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "docRefs",
+                "type": 2,
+                "optional": true
+              },
+              {
+                "name": "ref",
+                "type": 1,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "array",
+            "element": 1
+          }
+        ]
+      },
+      "names": [
+        "packages/knowledge/knowledge/src/types.ts#KnowledgeScopeBase"
+      ],
+      "sources": [
+        "packages/knowledge/knowledge/src/types.ts:143"
+      ]
     },
     {
       "digest": "f05fb85e715af4ab4de0b6ba111166dd0435bd8bb74a0fa0f32b9d174113fc7c",

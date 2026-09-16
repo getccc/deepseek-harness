@@ -143,6 +143,23 @@ export interface KnowledgeDocumentRequest {
 export interface KnowledgeScopeBase {
   readonly ref: KnowledgeRef
   readonly displayName: string
+  /**
+   * Documents inside this knowledge base, when the member narrowed the
+   * conversation to them; absent means the whole knowledge base.
+   *
+   * An optional field on the recorded knowledge base rather than a mode of its
+   * own: a new mode is a union change, which the persistence rules class as a
+   * format-version bump, while an optional property is a same-version
+   * addition. What it costs is a build that predates the field: resuming such
+   * a Session, it ignores the narrowing and searches the whole knowledge base
+   * — wider than the member chose, never narrower.
+   *
+   * Present only on a scope naming exactly one knowledge base, which
+   * {@link parseKnowledgeScope} enforces: the upstream narrowing applies
+   * inside one knowledge base, so a second one carrying documents would
+   * describe a search nobody can perform.
+   */
+  readonly docRefs?: readonly KnowledgeDocRef[]
 }
 
 /**
@@ -152,6 +169,12 @@ export interface KnowledgeScopeBase {
  * scope event folds to. Scope narrows authorization and never widens it: `all`
  * means every knowledge base the principal is authorized for at the moment of
  * each call, not every knowledge base that exists.
+ *
+ * A `selected` scope naming one knowledge base may narrow further, to
+ * documents inside it, through {@link KnowledgeScopeBase.docRefs}. No document
+ * title is recorded: what the prompt says about such a scope is its knowledge
+ * base and how many documents, both of which the log already holds, and the
+ * passages a search returns name their documents anyway.
  */
 export type KnowledgeScope =
   | { readonly version: 1; readonly mode: 'off' }
@@ -188,11 +211,24 @@ export interface KnowledgeSearchRequest {
 export type KnowledgeScopeSelection =
   | { readonly mode: 'all' }
   | { readonly mode: 'selected'; readonly refs: readonly KnowledgeRef[] }
+  | {
+    readonly mode: 'documents'
+    /** The one knowledge base to search, authorized as any other. */
+    readonly ref: KnowledgeRef
+    /** The documents inside it to search; never empty. */
+    readonly docRefs: readonly KnowledgeDocRef[]
+  }
 
 /** One retrieved passage, already bounded by the provider. */
 export interface KnowledgePassage {
   /** Which knowledge base produced it, so a reader can attribute the text. */
   readonly ref: KnowledgeRef
+  /**
+   * The document it came from, absent when the source named none this build
+   * could address. Present, it is what a reader opens and what a conversation
+   * narrows to; absent, the knowledge base is as far as either can go.
+   */
+  readonly docRef?: KnowledgeDocRef
   /** The source document's title, empty when the upstream supplies none. */
   readonly title: string
   /** The passage text, with unresolvable upstream references neutralized. */

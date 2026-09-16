@@ -926,3 +926,48 @@ describe('reading one document', () => {
     })
   })
 })
+
+describe('a search narrowed to documents', () => {
+  it('authorizes the one knowledge base and passes the document ids on', async () => {
+    await syncBoth()
+    const role = await roleFor(ALICE, 'reader')
+    await access.grantResource(role.id, await resourceOf(REF_A), 'knowledge.search')
+    source.hits = [{ ...passage(A), upstreamDocId: 'doc-1' }]
+    const result = await gateway.search({
+      orgId: ORG,
+      principalId: ALICE,
+      scope: { mode: 'documents', ref: KnowledgeRef(REF_A), docRefs: [KnowledgeDocRef(`${REF_A}/doc-1`)] },
+      query: '故障响应',
+    })
+    // Narrowing to documents is a filter, never an admission: the knowledge
+    // base is authorized exactly as a selection of one would be.
+    expect(source.searched).toEqual([{
+      upstreamIds: [A], upstreamDocIds: ['doc-1'], query: '故障响应', maxResults: 10,
+    }])
+    expect(result.searched.map(entry => entry.ref)).toEqual([REF_A])
+    expect(result.passages[0]?.docRef).toBe(`${REF_A}/doc-1`)
+  })
+
+  it('refuses a document scope on a knowledge base no grant admits', async () => {
+    await syncBoth()
+    await roleFor(ALICE, 'reader')
+    await expect(gateway.search({
+      orgId: ORG,
+      principalId: ALICE,
+      scope: { mode: 'documents', ref: KnowledgeRef(REF_A), docRefs: [KnowledgeDocRef(`${REF_A}/doc-1`)] },
+      query: '故障响应',
+    })).rejects.toMatchObject({ reason: 'not-allowed' })
+    expect(source.searched).toEqual([])
+  })
+
+  it('names the document on every hit that came from one', async () => {
+    await syncBoth()
+    const role = await roleFor(ALICE, 'reader')
+    await access.grantType(role.id, KNOWLEDGE_RESOURCE_TYPE, 'knowledge.search')
+    source.hits = [{ ...passage(A), upstreamDocId: 'doc-1' }, passage(B)]
+    const result = await gateway.search({
+      orgId: ORG, principalId: ALICE, scope: selected(REF_A, REF_B), query: '故障响应',
+    })
+    expect(result.passages.map(row => row.docRef)).toEqual([`${REF_A}/doc-1`, undefined])
+  })
+})

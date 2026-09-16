@@ -91,6 +91,12 @@ export interface KnowledgePassageView {
   /** Which knowledge base produced it. */
   readonly knowledgeRef: string
   /**
+   * The document it came from; absent when the source named none this build
+   * could address, which is also when a discussion can only narrow as far as
+   * the knowledge base.
+   */
+  readonly docRef?: string
+  /**
    * That knowledge base's display name, resolved against the directory read
    * for the same retrieval, so a row names its source without a second read.
    */

@@ -5580,7 +5580,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'KnowledgePassage',
-    declaration: 'export interface KnowledgePassage {\n    readonly ref: KnowledgeRef;\n    readonly title: string;\n    readonly text: string;\n    readonly truncated: boolean;\n    readonly score: number;\n}',
+    declaration: 'export interface KnowledgePassage {\n    readonly ref: KnowledgeRef;\n    readonly docRef?: KnowledgeDocRef;\n    readonly title: string;\n    readonly text: string;\n    readonly truncated: boolean;\n    readonly score: number;\n}',
   },
   {
     name: 'KnowledgePrincipal',
@@ -5592,7 +5592,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'KnowledgeScopeSelection',
-    declaration: 'export type KnowledgeScopeSelection = {\n    readonly mode: \'all\';\n} | {\n    readonly mode: \'selected\';\n    readonly refs: readonly KnowledgeRef[];\n};',
+    declaration: 'export type KnowledgeScopeSelection = {\n    readonly mode: \'all\';\n} | {\n    readonly mode: \'selected\';\n    readonly refs: readonly KnowledgeRef[];\n} | {\n    readonly mode: \'documents\';\n    readonly ref: KnowledgeRef;\n    readonly docRefs: readonly KnowledgeDocRef[];\n};',
   },
   {
     name: 'KnowledgeSearchRequest',
@@ -7660,11 +7660,11 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'UpstreamPassage',
-    declaration: 'export interface UpstreamPassage {\n    readonly upstreamId: string;\n    readonly title: string;\n    readonly text: string;\n    readonly truncated: boolean;\n    readonly score: number;\n}',
+    declaration: 'export interface UpstreamPassage {\n    readonly upstreamId: string;\n    readonly upstreamDocId?: string;\n    readonly title: string;\n    readonly text: string;\n    readonly truncated: boolean;\n    readonly score: number;\n}',
   },
   {
     name: 'UpstreamSearchRequest',
-    declaration: 'export interface UpstreamSearchRequest {\n    readonly upstreamIds: readonly string[];\n    readonly query: string;\n    readonly maxResults: number;\n    readonly signal?: AbortSignal;\n}',
+    declaration: 'export interface UpstreamSearchRequest {\n    readonly upstreamIds: readonly string[];\n    readonly upstreamDocIds?: readonly string[];\n    readonly query: string;\n    readonly maxResults: number;\n    readonly signal?: AbortSignal;\n}',
   },
   {
     name: 'UserGroup',

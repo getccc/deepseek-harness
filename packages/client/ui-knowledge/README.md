@@ -39,7 +39,7 @@ A selected knowledge base the directory no longer holds is still listed in the `
 
 ### The composer control
 
-The control reads the conversation's scope: it says `Knowledge` in the composer's own ink while nothing is chosen, and turns to the business tint once something is, naming the whole set or a single chosen base and counting several (`2 knowledge bases`), because their joined names would push the model and send controls onto a second line. Its accessible name always lists every chosen base. On a composer row narrower than 460px it shows only its icon, as the permission control does. Clicking it opens the same choice the command does.
+The control reads the conversation's scope: it says `Knowledge` in the composer's own ink while nothing is chosen, and turns to the business tint once something is, naming the whole set or a single chosen base and counting several (`2 knowledge bases`), because their joined names would push the model and send controls onto a second line. A conversation narrowed to documents — one opened from a knowledge search result — reads as its knowledge base and a count (`临港知识库 · 3 documents`), which is everything the log records about it; clicking that knowledge base's row widens the conversation back to the whole knowledge base rather than turning knowledge off. Its accessible name always lists every chosen base. On a composer row narrower than 460px it shows only its icon, as the permission control does. Clicking it opens the same choice the command does.
 
 -----
 

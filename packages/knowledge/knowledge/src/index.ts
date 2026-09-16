@@ -33,6 +33,7 @@ export {
   isKnowledgeRef,
   parseKnowledgeDocRef,
   parseKnowledgeRef,
+  upstreamDocIdOf,
   type KnowledgeDocRefParts,
   type KnowledgeRefParts,
 } from './brand.ts'

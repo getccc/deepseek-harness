@@ -24,6 +24,7 @@ import {
   KnowledgeRef,
   isKnowledgeDocRef,
   isKnowledgeRef,
+  parseKnowledgeDocRef,
   type KnowledgeFailureReason,
   type KnowledgeScopeSelection,
 } from '@deepseek-ai/dsh-knowledge'
@@ -165,6 +166,7 @@ export function readScope(value: unknown): KnowledgeScopeSelection | undefined {
   if (typeof value !== 'object' || value === null) return undefined
   const record = value as Record<string, unknown>
   if (record['mode'] === 'all') return { mode: 'all' }
+  if (record['mode'] === 'documents') return readDocumentScope(record)
   if (record['mode'] !== 'selected') return undefined
   const refs = record['refs']
   if (!Array.isArray(refs) || refs.length === 0) return undefined
@@ -174,6 +176,30 @@ export function readScope(value: unknown): KnowledgeScopeSelection | undefined {
     parsed.push(KnowledgeRef(ref))
   }
   return { mode: 'selected', refs: parsed }
+}
+
+/**
+ * Read a document-narrowed scope, which is one knowledge base and the
+ * documents inside it.
+ *
+ * Every document reference has to sit in the knowledge base the scope names:
+ * the knowledge base is what gets authorized, so a document from elsewhere
+ * would be searched under an admission that was never asked for.
+ * @param record - the decoded `scope` object.
+ * @returns the selection, or undefined when the field is not a document scope.
+ */
+function readDocumentScope(record: Record<string, unknown>): KnowledgeScopeSelection | undefined {
+  const ref = record['ref']
+  const docRefs = record['docRefs']
+  if (typeof ref !== 'string' || !isKnowledgeRef(ref)) return undefined
+  if (!Array.isArray(docRefs) || docRefs.length === 0) return undefined
+  const parsed: KnowledgeDocRef[] = []
+  for (const docRef of docRefs as unknown[]) {
+    if (typeof docRef !== 'string' || !isKnowledgeDocRef(docRef)) return undefined
+    if (parseKnowledgeDocRef(docRef)?.ref !== ref) return undefined
+    parsed.push(KnowledgeDocRef(docRef))
+  }
+  return { mode: 'documents', ref: KnowledgeRef(ref), docRefs: parsed }
 }
 
 /**

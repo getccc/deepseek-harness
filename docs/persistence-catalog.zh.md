@@ -43,7 +43,7 @@
 | `event:hook/invoked` | event | `8a6e1ec9e8db346b0e02f027db73c07a94f067a26d40c1aef1abd09c47ce7ba0` | [`event:hook/invoked`](#persistence-type-eventhookinvoked) |
 | `event:hook/result` | event | `e75916628f3f10c2d50658bd143052a46285fbf1a9a700ba54947614603d26b4` | [`event:hook/result`](#persistence-type-eventhookresult) |
 | `event:image/offload` | event | `b222069eea2d768065161c1147b1f2c78c1b54328c84b3586ae5c8f91b8ed35e` | [`event:image/offload`](#persistence-type-eventimageoffload) |
-| `event:knowledge/scope` | event | `51d9917929b4023f847ccbee830de86514c344c4da57a4a5da3f12b0940247a4` | [`event:knowledge/scope`](#persistence-type-eventknowledgescope) |
+| `event:knowledge/scope` | event | `dec35810f66b8eda5b53537f7f9232a9d40eb10faf0a4b000673ce0623afb5a2` | [`event:knowledge/scope`](#persistence-type-eventknowledgescope) |
 | `event:llm/retry` | event | `525254db03b1d1e6b74cf55aced52817568331ac1f96c0818728910b6692e336` | [`event:llm/retry`](#persistence-type-eventllmretry) |
 | `event:llm/retry-started` | event | `48e5c9861f16ac07e78cb7b5ae9dabdf7bb85c58baed5a51b4ad275050ea58e3` | [`event:llm/retry-started`](#persistence-type-eventllmretry-started) |
 | `event:model/selection` | event | `35203ba7ad5ef6f97d556b85df20ae98f04f09c65748cecdf8eefdb8b6405ffc` | [`event:model/selection`](#persistence-type-eventmodelselection) |
@@ -2912,7 +2912,7 @@ SHA-256: `9e2c06d8653585b33d72d5c1a80da79c8a24a88c284409bca15cc0f0ead5ebfb`
 
 ### `event:knowledge/scope`
 
-SHA-256: `51d9917929b4023f847ccbee830de86514c344c4da57a4a5da3f12b0940247a4`
+SHA-256: `dec35810f66b8eda5b53537f7f9232a9d40eb10faf0a4b000673ce0623afb5a2`
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -2928,7 +2928,7 @@ SHA-256: `51d9917929b4023f847ccbee830de86514c344c4da57a4a5da3f12b0940247a4`
 
 SHA-256: `ac44e4667f7f878b329a55172d9619994b18e891428860b8fd2e530fc2490a9c`
 
-来源：[`packages/knowledge/knowledge/src/types.ts:157`](../packages/knowledge/knowledge/src/types.ts)
+来源：[`packages/knowledge/knowledge/src/types.ts:180`](../packages/knowledge/knowledge/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -2941,7 +2941,7 @@ SHA-256: `ac44e4667f7f878b329a55172d9619994b18e891428860b8fd2e530fc2490a9c`
 
 SHA-256: `911cb8dc287709be3e9be4d9e8bee3f62758eca0bdce19b9894c436f5fea7d5f`
 
-来源：[`packages/knowledge/knowledge/src/types.ts:158`](../packages/knowledge/knowledge/src/types.ts)
+来源：[`packages/knowledge/knowledge/src/types.ts:181`](../packages/knowledge/knowledge/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -2952,9 +2952,9 @@ SHA-256: `911cb8dc287709be3e9be4d9e8bee3f62758eca0bdce19b9894c436f5fea7d5f`
 
 ### `event:knowledge/scope.data[2]`
 
-SHA-256: `78892d54cf630043ce67731d8c508de648ceb0a67d63491a006c0718a2d6f0d2`
+SHA-256: `5f4d27180fcd8b1351e44ce2f40f224047c20e93fe9114bf1836623e892eba19`
 
-来源：[`packages/knowledge/knowledge/src/types.ts:159`](../packages/knowledge/knowledge/src/types.ts)
+来源：[`packages/knowledge/knowledge/src/types.ts:182`](../packages/knowledge/knowledge/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
@@ -2966,7 +2966,7 @@ SHA-256: `78892d54cf630043ce67731d8c508de648ceb0a67d63491a006c0718a2d6f0d2`
 
 ### `event:knowledge/scope.data[2].bases`
 
-SHA-256: `22384fbcdf3b56d470080e45417ce35a6f19ab7d4aa28799f3cc10f0376e4275`
+SHA-256: `092dd52fe947ca45c96a43c6dbeb5bded460a3b152f3f7ea52098df84baa57e3`
 
 [`packages/knowledge/knowledge/src/types.ts#KnowledgeScopeBase`](#persistence-type-packagesknowledgeknowledgesrctypestsknowledgescopebase) 的数组。
 
@@ -5240,9 +5240,9 @@ SHA-256: `930c1cd289def119d443e19dd90008916bf035f0a4d23e07241e7f050f2b89b7`
 
 ### `packages/knowledge/knowledge/src/types.ts#KnowledgeScope`
 
-SHA-256: `3559774c893232fdcde2de3365e38cf1f56e744d74c40d94f472520a36d071d9`
+SHA-256: `41e6aab360a9f8bf06107b3e4713c41be5e388ada46b84f096f871eb122ae880`
 
-来源：[`packages/knowledge/knowledge/src/types.ts:156`](../packages/knowledge/knowledge/src/types.ts)
+来源：[`packages/knowledge/knowledge/src/types.ts:179`](../packages/knowledge/knowledge/src/types.ts)
 
 以下类型之一：
 
@@ -5254,13 +5254,14 @@ SHA-256: `3559774c893232fdcde2de3365e38cf1f56e744d74c40d94f472520a36d071d9`
 
 ### `packages/knowledge/knowledge/src/types.ts#KnowledgeScopeBase`
 
-SHA-256: `e7b9271f26f0cae70218b256b456f0bb4c37a1908499fc2d970c7ce08c6fe3c1`
+SHA-256: `f048767814898000fbcdb30d436a397f15188da4eb5c9481c6295c2b49f3bcda`
 
 来源：[`packages/knowledge/knowledge/src/types.ts:143`](../packages/knowledge/knowledge/src/types.ts)
 
 | 属性 | 存在性 | 类型 |
 |---|---|---|
 | `displayName` | 必需 | `string` |
+| `docRefs` | 可选 | [`event:assistant/attempt.data.stream[0][0].texts`](#persistence-type-eventassistantattemptdatastream00texts) |
 | `ref` | 必需 | `string` |
 
 <a id="persistence-type-packagesllmllm-retrysrctypestsllmretryeventdata"></a>
@@ -6601,7 +6602,7 @@ SHA-256: `57f3f606ff8b6c84d9c443faace9d1dd10cca0354f37a4f515ef075f7c351b90`
 
 SHA-256: `4cd48f3e5108bd6ebedf7301c3638839b8b2b9db8dbd493974177fbdeb91a01b`
 
-来源：[`packages/api/session-controller/src/types.ts:412`](../packages/api/session-controller/src/types.ts) · [`packages/attachment/attachment/src/brand.ts:6`](../packages/attachment/attachment/src/brand.ts) · [`packages/compaction/compaction/src/brand.ts:4`](../packages/compaction/compaction/src/brand.ts) · [`packages/core/session/src/types.ts:19`](../packages/core/session/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:20`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:32`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:8`](../packages/experimental/agent-team/src/types.ts) · [`packages/feedback/message-feedback/src/types.ts:14`](../packages/feedback/message-feedback/src/types.ts) · [`packages/goal/goal/src/types.ts:17`](../packages/goal/goal/src/types.ts) · [`packages/interaction/commands/src/brand.ts:31`](../packages/interaction/commands/src/brand.ts) · [`packages/interaction/user-approval/src/types.ts:17`](../packages/interaction/user-approval/src/types.ts) · [`packages/knowledge/knowledge/src/brand.ts:16`](../packages/knowledge/knowledge/src/brand.ts) · [`packages/llm/llm-retry/src/brand.ts:4`](../packages/llm/llm-retry/src/brand.ts) · [`packages/llm/llm/src/brand.ts:16`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:31`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:43`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:67`](../packages/llm/llm/src/brand.ts) · [`packages/schedule/schedule/src/types.ts:10`](../packages/schedule/schedule/src/types.ts) · [`packages/session/session-title/src/index.ts:42`](../packages/session/session-title/src/index.ts) · [`packages/session/session-title/src/types.ts:17`](../packages/session/session-title/src/types.ts) · [`packages/webhook/webhook/src/brand.ts:12`](../packages/webhook/webhook/src/brand.ts) · [`packages/webhook/webhook/src/brand.ts:6`](../packages/webhook/webhook/src/brand.ts) · [`packages/webhook/webhook/src/brand.ts:9`](../packages/webhook/webhook/src/brand.ts) · [`packages/workflow/workflow/src/types.ts:13`](../packages/workflow/workflow/src/types.ts)
+来源：[`packages/api/session-controller/src/types.ts:412`](../packages/api/session-controller/src/types.ts) · [`packages/attachment/attachment/src/brand.ts:6`](../packages/attachment/attachment/src/brand.ts) · [`packages/compaction/compaction/src/brand.ts:4`](../packages/compaction/compaction/src/brand.ts) · [`packages/core/session/src/types.ts:19`](../packages/core/session/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:20`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:32`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:8`](../packages/experimental/agent-team/src/types.ts) · [`packages/feedback/message-feedback/src/types.ts:14`](../packages/feedback/message-feedback/src/types.ts) · [`packages/goal/goal/src/types.ts:17`](../packages/goal/goal/src/types.ts) · [`packages/interaction/commands/src/brand.ts:31`](../packages/interaction/commands/src/brand.ts) · [`packages/interaction/user-approval/src/types.ts:17`](../packages/interaction/user-approval/src/types.ts) · [`packages/knowledge/knowledge/src/brand.ts:145`](../packages/knowledge/knowledge/src/brand.ts) · [`packages/knowledge/knowledge/src/brand.ts:16`](../packages/knowledge/knowledge/src/brand.ts) · [`packages/llm/llm-retry/src/brand.ts:4`](../packages/llm/llm-retry/src/brand.ts) · [`packages/llm/llm/src/brand.ts:16`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:31`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:43`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:67`](../packages/llm/llm/src/brand.ts) · [`packages/schedule/schedule/src/types.ts:10`](../packages/schedule/schedule/src/types.ts) · [`packages/session/session-title/src/index.ts:42`](../packages/session/session-title/src/index.ts) · [`packages/session/session-title/src/types.ts:17`](../packages/session/session-title/src/types.ts) · [`packages/webhook/webhook/src/brand.ts:12`](../packages/webhook/webhook/src/brand.ts) · [`packages/webhook/webhook/src/brand.ts:6`](../packages/webhook/webhook/src/brand.ts) · [`packages/webhook/webhook/src/brand.ts:9`](../packages/webhook/webhook/src/brand.ts) · [`packages/workflow/workflow/src/types.ts:13`](../packages/workflow/workflow/src/types.ts)
 
 `string`
 
