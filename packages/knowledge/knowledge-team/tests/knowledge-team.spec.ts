@@ -14,7 +14,11 @@ import { KnowledgeDocRef, KnowledgeError, KnowledgeRef } from '@deepseek-ai/dsh-
 import {
   KNOWLEDGE_CATALOG_PATH,
   KNOWLEDGE_DOCUMENTS_PATH,
-  KNOWLEDGE_PROTOCOL_VERSION,
+  KNOWLEDGE_CATALOG_VERSION,
+  KNOWLEDGE_DOCUMENTS_VERSION,
+  KNOWLEDGE_DOCUMENT_VERSION,
+  KNOWLEDGE_SEARCH_DOCUMENTS_VERSION,
+  KNOWLEDGE_SEARCH_VERSION,
 } from '@deepseek-ai/dsh-knowledge-gateway-http'
 import TeamKnowledge from '@deepseek-ai/dsh-knowledge-team'
 
@@ -70,6 +74,36 @@ async function mount(token: string | Error = TOKEN): Promise<Context> {
   return ctx
 }
 
+/**
+ * A Control Plane serving only version 1, the way a deployment that predates
+ * the document routes answers: the version check runs before the route, so
+ * every request declaring more is refused whatever it asks for.
+ */
+function oldDeployment(): void {
+  calls = []
+  plane.removeAllListeners('request')
+  plane.on('request', (req: IncomingMessage, res: ServerResponse) => {
+    const chunks: Buffer[] = []
+    req.on('data', (chunk) => { chunks.push(chunk as Buffer) })
+    req.on('end', () => {
+      const body = JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>
+      calls.push({
+        url: new URL(req.url ?? '/', ORIGIN).href,
+        method: req.method ?? 'GET',
+        headers: { ...req.headers } as Record<string, string>,
+        body,
+      })
+      if (body['protocolVersion'] !== 1) {
+        res.writeHead(426, { 'content-type': 'application/json' })
+        res.end(JSON.stringify({ error: 'knowledge', reason: 'update-required', minimum: 1, current: 1 }))
+        return
+      }
+      res.writeHead(200, { 'content-type': 'application/json' })
+      res.end(JSON.stringify(req.url === KNOWLEDGE_CATALOG_PATH ? directory() : results()))
+    })
+  })
+}
+
 /** A well-formed directory answer. */
 function directory(): unknown {
   return { entries: [{ ref: REF, displayName: '临港知识库', description: '', kind: 'document' }] }
@@ -108,7 +142,7 @@ describe('what leaves this computer', () => {
     expect(calls[0]).toMatchObject({
       url: `${ORIGIN}${KNOWLEDGE_CATALOG_PATH}`,
       method: 'POST',
-      body: { protocolVersion: KNOWLEDGE_PROTOCOL_VERSION },
+      body: { protocolVersion: KNOWLEDGE_CATALOG_VERSION },
     })
     expect(Object.keys(calls[0]?.body ?? {})).toEqual(['protocolVersion'])
     expect(calls[0]?.headers['authorization']).toBe(`Bearer ${TOKEN}`)
@@ -121,7 +155,7 @@ describe('what leaves this computer', () => {
       query: '年假', scope: { mode: 'selected', refs: [KnowledgeRef(REF)] }, maxResults: 5,
     })
     expect(calls[0]?.body).toEqual({
-      protocolVersion: KNOWLEDGE_PROTOCOL_VERSION,
+      protocolVersion: KNOWLEDGE_SEARCH_VERSION,
       query: '年假',
       scope: { mode: 'selected', refs: [REF] },
       maxResults: 5,
@@ -137,7 +171,7 @@ describe('what leaves this computer', () => {
     const ctx = await mount()
     await ctx.knowledge.search({ query: '年假', scope: { mode: 'all' } })
     expect(calls[0]?.body).toEqual({
-      protocolVersion: KNOWLEDGE_PROTOCOL_VERSION, query: '年假', scope: { mode: 'all' },
+      protocolVersion: KNOWLEDGE_SEARCH_VERSION, query: '年假', scope: { mode: 'all' },
     })
   })
 
@@ -305,7 +339,7 @@ describe('listing one knowledge base’s documents', () => {
     const page = await ctx.knowledge.documents({ ref: KnowledgeRef(REF), page: 2, pageSize: 5 })
     expect(calls[0]?.url).toBe(`${ORIGIN}${KNOWLEDGE_DOCUMENTS_PATH}`)
     expect(calls[0]?.body).toEqual({
-      protocolVersion: KNOWLEDGE_PROTOCOL_VERSION, ref: REF, page: 2, pageSize: 5,
+      protocolVersion: KNOWLEDGE_DOCUMENTS_VERSION, ref: REF, page: 2, pageSize: 5,
     })
     expect(calls[0]?.headers['authorization']).toBe(`Bearer ${TOKEN}`)
     expect(page.documents).toEqual([{
@@ -325,7 +359,7 @@ describe('listing one knowledge base’s documents', () => {
     controlPlane(200, documentPage())
     const ctx = await mount()
     await ctx.knowledge.documents({ ref: KnowledgeRef(REF) })
-    expect(calls[0]?.body).toEqual({ protocolVersion: KNOWLEDGE_PROTOCOL_VERSION, ref: REF })
+    expect(calls[0]?.body).toEqual({ protocolVersion: KNOWLEDGE_DOCUMENTS_VERSION, ref: REF })
   })
 
   it('reads a document the answer holds less about, and a state it does not know, conservatively', async () => {
@@ -383,7 +417,7 @@ describe('reading one document', () => {
       docRef: KnowledgeDocRef(`${REF}/doc-1`), maxBytes: 4096,
     })
     expect(calls[0]?.body).toEqual({
-      protocolVersion: KNOWLEDGE_PROTOCOL_VERSION, docRef: `${REF}/doc-1`, maxBytes: 4096,
+      protocolVersion: KNOWLEDGE_DOCUMENT_VERSION, docRef: `${REF}/doc-1`, maxBytes: 4096,
     })
     expect(content).toEqual({
       kind: 'bytes',
@@ -398,7 +432,7 @@ describe('reading one document', () => {
     controlPlane(200, { kind: 'text', docRef: `${REF}/doc-1`, text: '一级故障 30 分钟内响应。', truncated: true })
     const ctx = await mount()
     const content = await ctx.knowledge.documentContent({ docRef: KnowledgeDocRef(`${REF}/doc-1`) })
-    expect(calls[0]?.body).toEqual({ protocolVersion: KNOWLEDGE_PROTOCOL_VERSION, docRef: `${REF}/doc-1` })
+    expect(calls[0]?.body).toEqual({ protocolVersion: KNOWLEDGE_DOCUMENT_VERSION, docRef: `${REF}/doc-1` })
     expect(content).toEqual({
       kind: 'text',
       docRef: `${REF}/doc-1`,
@@ -428,6 +462,19 @@ describe('reading one document', () => {
   })
 })
 
+describe('a deployment older than this build', () => {
+  it('keeps the directory and the search, and refuses only the newer route', async () => {
+    oldDeployment()
+    const ctx = await mount()
+    expect((await ctx.knowledge.catalog()).map(entry => entry.displayName)).toEqual(['临港知识库'])
+    expect((await ctx.knowledge.search({ query: '年假', scope: { mode: 'all' } })).passages).toHaveLength(1)
+    await expect(ctx.knowledge.documents({ ref: KnowledgeRef(REF) }))
+      .rejects.toMatchObject({ reason: 'update-required' })
+    await expect(ctx.knowledge.documentContent({ docRef: KnowledgeDocRef(`${REF}/doc-1`) }))
+      .rejects.toMatchObject({ reason: 'update-required' })
+  })
+})
+
 describe('a search narrowed to documents', () => {
   it('sends the knowledge base and the documents, and reads the document off each hit', async () => {
     controlPlane(200, {
@@ -444,11 +491,14 @@ describe('a search narrowed to documents', () => {
       query: '故障响应',
       scope: { mode: 'documents', ref: KnowledgeRef(REF), docRefs: [KnowledgeDocRef(`${REF}/doc-1`)] },
     })
+    // Narrowing declares its own version: a Control Plane that predates it
+    // would search the whole knowledge base, so it has to refuse instead.
     expect(calls[0]?.body).toEqual({
-      protocolVersion: KNOWLEDGE_PROTOCOL_VERSION,
+      protocolVersion: KNOWLEDGE_SEARCH_DOCUMENTS_VERSION,
       query: '故障响应',
       scope: { mode: 'documents', ref: REF, docRefs: [`${REF}/doc-1`] },
     })
+    expect(KNOWLEDGE_SEARCH_DOCUMENTS_VERSION).toBeGreaterThan(KNOWLEDGE_SEARCH_VERSION)
     // A document reference this build cannot read is dropped rather than
     // refused: the passage still names its knowledge base.
     expect(result.passages.map(row => row.docRef)).toEqual([`${REF}/doc-1`, undefined])

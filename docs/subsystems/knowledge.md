@@ -91,7 +91,7 @@ Every failure is a `KnowledgeError` carrying one reason from a closed set, so a 
 | `upstream-unavailable` | The knowledge service did not answer in time or at all |
 | `upstream-invalid` | The knowledge service answered something this build cannot read |
 | `control-plane-unreachable` | The Control Plane could not be reached from this computer |
-| `update-required` | This Runner speaks a knowledge protocol version the Control Plane refuses |
+| `update-required` | The Control Plane refuses this operation's protocol version; operations it does serve keep working |
 | `cancelled` | The caller aborted the operation |
 
 `not-allowed` deliberately covers an unknown reference as well as an unauthorized one, so a refusal never confirms that a knowledge base exists to a principal holding nothing on it. No upstream response body reaches any of these: the reason is the whole diagnosis a product surface receives.

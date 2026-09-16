@@ -91,7 +91,7 @@ export const documents: KnowledgeScope = {
 | `upstream-unavailable` | 知识服务未在限时内应答或完全没有应答 |
 | `upstream-invalid` | 知识服务的应答是本构建无法读取的内容 |
 | `control-plane-unreachable` | 从这台电脑无法到达 Control Plane |
-| `update-required` | 本 Runner 使用的知识协议版本被 Control Plane 拒绝 |
+| `update-required` | 本次操作的协议版本被 Control Plane 拒绝；它确实提供的操作照常可用 |
 | `cancelled` | 调用方中止了操作 |
 
 `not-allowed` 有意同时覆盖未知引用与未授权引用，因此拒绝绝不向持有零权限的主体确认某个知识库存在。任何上游响应体都不会进入其中任何一项：理由就是产品界面收到的全部诊断。

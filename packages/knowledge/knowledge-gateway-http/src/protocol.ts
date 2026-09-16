@@ -24,7 +24,7 @@ export const KNOWLEDGE_SEARCH_PATH = '/team/knowledge/search'
 export const ACCESS_TOKEN_HEADER = 'authorization'
 
 /**
- * The knowledge protocol version this build speaks.
+ * The newest knowledge protocol version this Control Plane answers.
  *
  * Knowledge owns its own version rather than sharing the device-binding one.
  * The two protocols evolve independently: a knowledge-only change must not
@@ -35,6 +35,31 @@ export const ACCESS_TOKEN_HEADER = 'authorization'
 export const KNOWLEDGE_PROTOCOL_VERSION = 3
 
 /**
+ * The version a directory request declares. It is the first version, and the
+ * route's facts have not changed since.
+ */
+export const KNOWLEDGE_CATALOG_VERSION = 1
+
+/** The version a search over whole knowledge bases declares. */
+export const KNOWLEDGE_SEARCH_VERSION = 1
+
+/**
+ * The version a search narrowed to named documents declares.
+ *
+ * Narrowing arrived with the document routes, and a Control Plane that
+ * predates it would read the request as a search of the whole knowledge base —
+ * a wider answer than the member asked for, which is why this is a version and
+ * not an extra field an older deployment may ignore.
+ */
+export const KNOWLEDGE_SEARCH_DOCUMENTS_VERSION = 3
+
+/** The version a document-listing request declares. */
+export const KNOWLEDGE_DOCUMENTS_VERSION = 2
+
+/** The version a document-content request declares. */
+export const KNOWLEDGE_DOCUMENT_VERSION = 3
+
+/**
  * The oldest knowledge protocol version this Control Plane still answers.
  *
  * Raising it is how a deployment stops serving Runners too old to be trusted
@@ -42,6 +67,11 @@ export const KNOWLEDGE_PROTOCOL_VERSION = 3
  * fails for a reason it cannot distinguish from its own mistake. Adding a route
  * does not raise it: a Runner that speaks version 1 keeps its directory and its
  * search, and simply has nothing that calls the newer route.
+ *
+ * The version comes per request, not per Runner, so the range holds in both
+ * directions: a Runner updated ahead of its deployment keeps the routes that
+ * deployment has, and only the request declaring a version past
+ * {@link KNOWLEDGE_PROTOCOL_VERSION} is refused with `update-required`.
  */
 export const MINIMUM_KNOWLEDGE_PROTOCOL_VERSION = 1
 

@@ -35,10 +35,14 @@ import {
 import {
   ACCESS_TOKEN_HEADER,
   KNOWLEDGE_CATALOG_PATH,
+  KNOWLEDGE_CATALOG_VERSION,
   KNOWLEDGE_DOCUMENTS_PATH,
+  KNOWLEDGE_DOCUMENTS_VERSION,
   KNOWLEDGE_DOCUMENT_PATH,
-  KNOWLEDGE_PROTOCOL_VERSION,
+  KNOWLEDGE_DOCUMENT_VERSION,
+  KNOWLEDGE_SEARCH_DOCUMENTS_VERSION,
   KNOWLEDGE_SEARCH_PATH,
+  KNOWLEDGE_SEARCH_VERSION,
 } from '@deepseek-ai/dsh-knowledge-gateway-http'
 import {
   controlPlaneConfigFields,
@@ -97,14 +101,14 @@ export default class TeamKnowledge extends Knowledge {
   }
 
   async catalog(signal?: AbortSignal): Promise<readonly KnowledgeBaseEntry[]> {
-    const body = await this.call(KNOWLEDGE_CATALOG_PATH, {}, signal)
+    const body = await this.call(KNOWLEDGE_CATALOG_PATH, KNOWLEDGE_CATALOG_VERSION, {}, signal)
     const entries = body['entries']
     if (!Array.isArray(entries)) throw new KnowledgeError('upstream-invalid', 'directory is not a list')
     return entries.map(entry => readEntry(entry))
   }
 
   async documents(request: KnowledgeDocumentsRequest): Promise<KnowledgeDocumentPage> {
-    const body = await this.call(KNOWLEDGE_DOCUMENTS_PATH, {
+    const body = await this.call(KNOWLEDGE_DOCUMENTS_PATH, KNOWLEDGE_DOCUMENTS_VERSION, {
       ref: request.ref,
       ...(request.page === undefined ? {} : { page: request.page }),
       ...(request.pageSize === undefined ? {} : { pageSize: request.pageSize }),
@@ -128,7 +132,7 @@ export default class TeamKnowledge extends Knowledge {
   }
 
   async documentContent(request: KnowledgeDocumentRequest): Promise<KnowledgeDocumentContent> {
-    const body = await this.call(KNOWLEDGE_DOCUMENT_PATH, {
+    const body = await this.call(KNOWLEDGE_DOCUMENT_PATH, KNOWLEDGE_DOCUMENT_VERSION, {
       docRef: request.docRef,
       ...(request.maxBytes === undefined ? {} : { maxBytes: request.maxBytes }),
     }, request.signal)
@@ -154,7 +158,8 @@ export default class TeamKnowledge extends Knowledge {
   }
 
   async search(request: KnowledgeSearchRequest): Promise<KnowledgeSearchResult> {
-    const body = await this.call(KNOWLEDGE_SEARCH_PATH, {
+    const version = request.scope.mode === 'documents' ? KNOWLEDGE_SEARCH_DOCUMENTS_VERSION : KNOWLEDGE_SEARCH_VERSION
+    const body = await this.call(KNOWLEDGE_SEARCH_PATH, version, {
       query: request.query,
       scope: scopeOf(request.scope),
       ...(request.maxResults === undefined ? {} : { maxResults: request.maxResults }),
@@ -175,6 +180,10 @@ export default class TeamKnowledge extends Knowledge {
   /**
    * Perform one Control Plane call and return its decoded object.
    *
+   * The version is the operation's own, not this build's newest: a deployment
+   * that predates one route keeps serving the others, so a Runner updated
+   * first still reads its directory and still searches ([rule](../../knowledge-gateway-http/README.md#the-version-is-decided-first)).
+   *
    * Every failure that is not an answer this build can read becomes
    * `control-plane-unreachable`: from a member's seat, a DNS failure, a TLS
    * failure, a proxy that ate the request, and a Control Plane that is down
@@ -183,6 +192,7 @@ export default class TeamKnowledge extends Knowledge {
    */
   private async call(
     path: string,
+    protocolVersion: number,
     fields: Record<string, unknown>,
     signal: AbortSignal | undefined,
   ): Promise<Record<string, unknown>> {
@@ -195,7 +205,7 @@ export default class TeamKnowledge extends Knowledge {
           [ACCESS_TOKEN_HEADER]: `Bearer ${token}`,
           'content-type': 'application/json',
         },
-        body: JSON.stringify({ protocolVersion: KNOWLEDGE_PROTOCOL_VERSION, ...fields }),
+        body: JSON.stringify({ protocolVersion, ...fields }),
         ...(signal === undefined ? {} : { signal }),
       })
     } catch {

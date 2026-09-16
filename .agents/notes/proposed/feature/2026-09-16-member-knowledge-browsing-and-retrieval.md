@@ -71,7 +71,7 @@ Every operation taking a document reference resolves the document upstream and r
 | `POST /team/knowledge/documents` | Document listing | Verifies the device token, authorizes the named knowledge base, lists one page of its documents, and returns document references, titles, file types, sizes, and parse state |
 | `POST /team/knowledge/document` | Document content | Verifies the device token, resolves the document's knowledge base and authorizes it, then returns the original file bytes with a content type and file name, or the parsed text when bytes are unavailable |
 
-Both routes carry `protocolVersion` and are refused before any other field is decoded when the Runner speaks a version this build does not, exactly as the existing two do. Adding routes raises the current knowledge protocol version and leaves the minimum alone, so a Runner built before this delivery keeps searching and keeps its directory; it simply has no panels to call the new routes from.
+Both routes carry `protocolVersion` and are refused before any other field is decoded when the request declares a version this build does not serve, exactly as the existing two do. Adding routes raises the current knowledge protocol version and leaves the minimum alone. The version is the request's, not the Runner's: a Runner built before this delivery keeps searching and keeps its directory and has no panels to call the new routes from, and a Runner updated ahead of its Control Plane keeps the same two operations and is refused only where it asks for a route that deployment has never had.
 
 A request body still names no organization, principal, device, origin, tenant, credential, or upstream identifier. The document reference is the only new field, and it is a DSH reference the gateway resolves itself.
 
@@ -162,6 +162,7 @@ Four changes, each shippable on its own.
 - Revoking the grant, disabling the knowledge base, or revoking the device changes the next panel operation without a new login or a new Session.
 - The audit store records one `knowledge.document.list` or `knowledge.document.read` row per operation against the knowledge base resource, carrying no query, title, file name, or upstream text.
 - A Runner built before this delivery keeps its directory and search against a Control Plane serving the new routes.
+- A Runner updated ahead of its Control Plane keeps its directory and its whole-knowledge-base search, and is refused `update-required` only on the document operations and a document-narrowed search. The protocol version therefore travels per request, not per Runner.
 - A document-narrowed Session's prompt section and tool visibility are covered where they can be: by the owning packages' tests, because no recorded-session tier can reach knowledge at all (see the coverage gap below).
 
 ## Named coverage gap: no recorded-session tier reaches knowledge

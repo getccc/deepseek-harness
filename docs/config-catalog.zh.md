@@ -1221,7 +1221,7 @@ export interface Config {
 }
 ```
 
-来源：[`packages/knowledge/knowledge-gateway-http/src/index.ts:65`](../packages/knowledge/knowledge-gateway-http/src/index.ts)
+来源：[`packages/knowledge/knowledge-gateway-http/src/index.ts:70`](../packages/knowledge/knowledge-gateway-http/src/index.ts)
 
 <a id="deepseek-aidsh-knowledge-gateway-sqlite"></a>
 
@@ -1274,7 +1274,7 @@ export interface Config {
 }
 ```
 
-来源：[`packages/knowledge/knowledge-team/src/index.ts:58`](../packages/knowledge/knowledge-team/src/index.ts)
+来源：[`packages/knowledge/knowledge-team/src/index.ts:62`](../packages/knowledge/knowledge-team/src/index.ts)
 
 <a id="deepseek-aidsh-knowledge-weknora"></a>
 
