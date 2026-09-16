@@ -371,3 +371,117 @@ describe('failures carry a closed reason and no upstream prose', () => {
     await expect(ctx.knowledgeSource.list()).rejects.toMatchObject({ reason: 'upstream-unavailable' })
   })
 })
+
+/** One document row as a knowledge listing returns one. */
+function wireDocument(patch: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    id: 'doc-1',
+    title: '运维手册',
+    file_name: '运维手册.pdf',
+    file_type: 'pdf',
+    file_size: 20480,
+    parse_status: 'completed',
+    enable_status: 'enabled',
+    created_at: '2026-08-01T00:00:00Z',
+    processed_at: '2026-08-02T00:00:00Z',
+    updated_at: '2026-08-03T00:00:00Z',
+    ...patch,
+  }
+}
+
+/** The paginated envelope the listing endpoint answers with. */
+function okPage(data: readonly unknown[], total?: unknown): unknown {
+  return { data, page: 1, page_size: 20, ...(total === undefined ? {} : { total }), success: true }
+}
+
+describe('listing one knowledge base’s documents', () => {
+  it('asks the knowledge-base path with the page it was given, and reads the row', async () => {
+    const mounted = await mount([okPage([wireDocument()], 3)])
+    const page = await mounted.ctx.knowledgeSource.listDocuments({ upstreamId: A, page: 2, pageSize: 5 })
+    expect(mounted.calls[0]?.method).toBe('GET')
+    expect(mounted.calls[0]?.url).toBe(`http://127.0.0.1:8080/api/v1/knowledge-bases/${A}/knowledge?page=2&page_size=5`)
+    expect(mounted.calls[0]?.headers[API_KEY_HEADER]).toBe(KEY)
+    expect(page).toEqual({
+      documents: [{
+        upstreamDocId: 'doc-1',
+        title: '运维手册',
+        fileName: '运维手册.pdf',
+        fileType: 'pdf',
+        byteSize: 20480,
+        state: 'ready',
+        updatedAt: Date.parse('2026-08-03T00:00:00Z'),
+      }],
+      pageSize: 5,
+      total: 3,
+    })
+  })
+
+  it('bounds the page to what this deployment allows', async () => {
+    const mounted = await mount([okPage([])], { maxDocumentsPerPage: 2 })
+    const page = await mounted.ctx.knowledgeSource.listDocuments({ upstreamId: A, page: 1, pageSize: 500 })
+    expect(mounted.calls[0]?.url).toContain('page_size=2')
+    expect(page.pageSize).toBe(2)
+  })
+
+  it.each([
+    ['completed and enabled', 'completed', 'enabled', 'ready'],
+    ['completed but switched off', 'completed', 'disabled', 'unavailable'],
+    ['queued', 'pending', 'disabled', 'processing'],
+    ['being parsed', 'processing', 'disabled', 'processing'],
+    ['finishing', 'finalizing', 'disabled', 'processing'],
+    ['failed', 'failed', 'enabled', 'unavailable'],
+    ['cancelled', 'cancelled', 'enabled', 'unavailable'],
+    ['being removed', 'deleting', 'enabled', 'unavailable'],
+    ['a state this build does not know', 'reticulating', 'enabled', 'unavailable'],
+  ])('reads %s as %s', async (_label, parseStatus, enableStatus, state) => {
+    const mounted = await mount([okPage([wireDocument({ parse_status: parseStatus, enable_status: enableStatus })])])
+    const page = await mounted.ctx.knowledgeSource.listDocuments({ upstreamId: A, page: 1, pageSize: 20 })
+    expect(page.documents[0]?.state).toBe(state)
+  })
+
+  it('falls back through the timestamps the source reports', async () => {
+    const mounted = await mount([
+      okPage([wireDocument({ updated_at: null })]),
+      okPage([wireDocument({ updated_at: null, processed_at: null })]),
+      okPage([wireDocument({ updated_at: null, processed_at: null, created_at: null })]),
+    ])
+    const first = await mounted.ctx.knowledgeSource.listDocuments({ upstreamId: A, page: 1, pageSize: 20 })
+    expect(first.documents[0]?.updatedAt).toBe(Date.parse('2026-08-02T00:00:00Z'))
+    const second = await mounted.ctx.knowledgeSource.listDocuments({ upstreamId: A, page: 1, pageSize: 20 })
+    expect(second.documents[0]?.updatedAt).toBe(Date.parse('2026-08-01T00:00:00Z'))
+    const third = await mounted.ctx.knowledgeSource.listDocuments({ upstreamId: A, page: 1, pageSize: 20 })
+    expect(third.documents[0]?.updatedAt).toBeUndefined()
+  })
+
+  it('reports an unreadable total as unknown rather than as zero', async () => {
+    const mounted = await mount([okPage([wireDocument()], 'many')])
+    const page = await mounted.ctx.knowledgeSource.listDocuments({ upstreamId: A, page: 1, pageSize: 20 })
+    // A total a member cannot trust must not read as "the list ends here".
+    expect(page.total).toBeUndefined()
+  })
+
+  it('holds what a source holds less about, and refuses what it could not address', async () => {
+    const sparse = await mount([okPage([{ id: 'doc-2' }])])
+    const page = await sparse.ctx.knowledgeSource.listDocuments({ upstreamId: A, page: 1, pageSize: 20 })
+    expect(page.documents[0]).toEqual({
+      upstreamDocId: 'doc-2',
+      title: '',
+      fileName: '',
+      fileType: '',
+      byteSize: 0,
+      state: 'unavailable',
+      updatedAt: undefined,
+    })
+    for (const id of [undefined, '', 'doc/1', 'doc:1', 'd'.repeat(65)]) {
+      const mounted = await mount([okPage([wireDocument({ id })])])
+      await expect(mounted.ctx.knowledgeSource.listDocuments({ upstreamId: A, page: 1, pageSize: 20 }))
+        .rejects.toMatchObject({ reason: 'upstream-invalid' })
+    }
+  })
+
+  it('refuses a listing the source did not answer as a success envelope', async () => {
+    const mounted = await mount([fail(ERROR_CODES.notFound)], {}, 404)
+    await expect(mounted.ctx.knowledgeSource.listDocuments({ upstreamId: B, page: 1, pageSize: 20 }))
+      .rejects.toBeInstanceOf(KnowledgeError)
+  })
+})

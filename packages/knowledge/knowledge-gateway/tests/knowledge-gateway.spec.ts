@@ -7,7 +7,10 @@ import { describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import { ResourceId } from '@deepseek-ai/dsh-access-control'
 import { OrgId } from '@deepseek-ai/dsh-account-store'
-import { KnowledgeRef, type KnowledgeBaseEntry, type KnowledgeSearchResult } from '@deepseek-ai/dsh-knowledge'
+import {
+  KnowledgeDocRef, KnowledgeRef,
+  type KnowledgeBaseEntry, type KnowledgeDocumentPage, type KnowledgeSearchResult,
+} from '@deepseek-ai/dsh-knowledge'
 import {
   KNOWLEDGE_CATALOG_RESOURCE,
   KNOWLEDGE_RESOURCE_TYPE,
@@ -54,6 +57,25 @@ class StubGateway extends KnowledgeGateway {
 
   setEnabled(): Promise<void> {
     return Promise.resolve()
+  }
+
+  documents(): Promise<KnowledgeDocumentPage> {
+    return Promise.resolve({
+      ref: REF,
+      documents: [{
+        docRef: KnowledgeDocRef(`${REF}/doc-1`),
+        ref: REF,
+        title: '运维手册',
+        fileName: '运维手册.pdf',
+        fileType: 'pdf',
+        byteSize: 2048,
+        state: 'ready',
+        updatedAt: undefined,
+      }],
+      page: 1,
+      pageSize: 20,
+      total: 1,
+    })
   }
 
   directory(): Promise<readonly KnowledgeBaseEntry[]> {

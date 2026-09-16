@@ -2,7 +2,7 @@
 
 [English](knowledge.md) | 中文
 
-私有知识接缝——一个横跨**两个操作**（目录与检索）、位于同一个 `ctx.knowledge` 服务上的[能力接缝](../../.agents/notes/implemented/architecture/2026-06-13-capability-seams.zh.md)。Service Definition 是 [dsh-knowledge](../../packages/knowledge/knowledge)；它的 Team 提供方和面向模型的工具随 [Control Plane 知识能力](../../.agents/notes/proposed/feature/2026-09-01-team-private-knowledge-control-plane.zh.md)一起到来。知识是**一个可选能力**，不属于 agent-loop 主干，因此它的词汇在这里，而不在 [core.zh.md](core.zh.md)。
+私有知识接缝——一个横跨**三个操作**（目录、文档列表与检索）、位于同一个 `ctx.knowledge` 服务上的[能力接缝](../../.agents/notes/implemented/architecture/2026-06-13-capability-seams.zh.md)。Service Definition 是 [dsh-knowledge](../../packages/knowledge/knowledge)；它的 Team 提供方和面向模型的工具随 [Control Plane 知识能力](../../.agents/notes/proposed/feature/2026-09-01-team-private-knowledge-control-plane.zh.md)一起到来。知识是**一个可选能力**，不属于 agent-loop 主干，因此它的词汇在这里，而不在 [core.zh.md](core.zh.md)。
 
 接缝命名产品操作，绝不命名上游操作。持有 `ctx.knowledge` 的 Runner 无法指名地址、租户、凭据或上游文档 id，因为没有任何操作为它们留下位置。正是这一点，使受治理的部署能够把每一个知识判定——哪位成员、哪台设备、哪些知识库、此时此刻——放在成员自己的进程绕不过去的服务背后。
 
@@ -23,6 +23,12 @@
 `formatKnowledgeRef` 抛出 `InvalidKnowledgeRefError` 并指名是哪条上界失败。`parseKnowledgeRef` 则回答 `undefined`，因为它的调用方——wire 解码器、日志读取器、存储行验证器——是在决定是否接受一个值，而不是在诊断它。
 
 来源：[`packages/knowledge/knowledge/src/brand.ts`](../../packages/knowledge/knowledge/src/brand.ts)
+
+## 命名一份文档
+
+`KnowledgeDocRef` 是一个知识引用、一个 `/` 和上游文档 id——`weknora:prod:690c0727-…/doc-7`。它是独立的品牌而不是更长的 `KnowledgeRef`，因为两者受不同的东西约束：知识引用必须装进审计 token，而文档从不是审计资源。对文档的操作所记录的是它所属的知识库，那也正是授权所命名、管理员所停用的对象。
+
+文档 id 以同一套字符表限制在 64 个字符内。`formatKnowledgeDocRef` 抛出 `InvalidKnowledgeRefError`；`parseKnowledgeDocRef` 返回 `undefined`，理由与它的知识库对应物相同。
 
 ## 会话知识范围
 
@@ -50,13 +56,15 @@ export const selected: KnowledgeScope = {
 
 来源：[`packages/knowledge/knowledge/src/scope.ts`](../../packages/knowledge/knowledge/src/scope.ts)
 
-## 目录与检索
+## 目录、文档与检索
 
 `catalog()` 回答当前主体此刻可以检索的知识库——引用、显示名称、描述和类型。它是一个按权限成形的视图，而不是存在物的清单：主体零权限的知识库是缺席，而不是被标记。
 
+`documents()` 回答某个知识库中文档的一页，每份都携带它的受治理引用、源对该文件所持有的信息，以及一个 `KnowledgeDocumentState`——`ready`、`processing` 或 `unavailable`。该状态是把源自己的解析与启用用词，读成成员可以据此行动的三件事：用它、等待，或者去问管理员。本次构建不认识的状态读作 `unavailable`，即承诺最少的那个。这一页只在源给出 `total` 时报告它；缺失意味着「源没有说」，不能被读成零。
+
 `search()` 接受查询、从会话解析出的范围，以及调用方的上界。`KnowledgeScopeSelection` 把 `all` 保留为一个模式而不是展开后的列表，因为展开是只有 Control Plane 能执行的授权行为；展开它的 Runner 等于在断言它算不出来的授权。
 
-两个操作都不返回部分答案。无法完成授权的目录和范围被拒的检索都会抛出，因为对读到它的模型而言，被悄悄收窄的结果与正确结果无法区分。
+所有操作都不返回部分答案。无法完成授权的目录、在被拒知识库上的列表，以及范围被拒的检索都会抛出，因为对读到它的模型而言，被悄悄收窄的结果与正确结果无法区分。
 
 ## 失败
 
@@ -100,6 +108,18 @@ Both methods fail with KnowledgeError carrying a closed reason. Neither returns 
  * @throws {KnowledgeError} when the principal cannot be established or the directory cannot be read.
  */
 abstract catalog(signal?: AbortSignal): Promise<readonly KnowledgeBaseEntry[]>
+
+/**
+ * One page of the documents in one authorized knowledge base.
+ *
+ * The knowledge base is authorized on this call, like every other operation:
+ * a reference that was in the directory a moment ago is not standing
+ * permission to list it now.
+ * @param request - the knowledge base, and which page of it.
+ * @returns the page, empty when the knowledge base holds no document.
+ * @throws {KnowledgeError} when the knowledge base is refused or the upstream does not answer usably.
+ */
+abstract documents(request: KnowledgeDocumentsRequest): Promise<KnowledgeDocumentPage>
 
 /**
  * Search the knowledge bases one operation names.
@@ -162,6 +182,19 @@ abstract setEnabled(orgId: OrgId, ref: KnowledgeRef, enabled: boolean): Promise<
 abstract directory(principal: KnowledgePrincipal): Promise<readonly KnowledgeBaseEntry[]>
 
 /**
+ * Authorize one document listing and perform it.
+ *
+ * The knowledge base is evaluated on this call, as a search's is. A member
+ * who may retrieve from a knowledge base may list what is in it: the
+ * decision is the same permission, asked separately so it can be tightened
+ * without a new authorization path.
+ * @param request - who is asking, which knowledge base, and which page.
+ * @returns the page, with the documents addressed by governed references.
+ * @throws {KnowledgeError} with the reason the operation was refused or failed.
+ */
+abstract documents(request: GovernedDocumentsRequest): Promise<KnowledgeDocumentPage>
+
+/**
  * Authorize one search and perform it.
  *
  * Every knowledge base the scope resolves to is evaluated before the source
@@ -194,6 +227,14 @@ Failures are raised as `KnowledgeError` with `upstream-unavailable` or `upstream
  * @throws {KnowledgeError} `upstream-unavailable` or `upstream-invalid`.
  */
 abstract list(signal?: AbortSignal): Promise<readonly UpstreamKnowledgeBase[]>
+
+/**
+ * One page of the documents in one already-authorized knowledge base.
+ * @param request - the authorized upstream id, and which page of it.
+ * @returns the page, empty when the knowledge base holds no document.
+ * @throws {KnowledgeError} `upstream-unavailable` or `upstream-invalid`.
+ */
+abstract listDocuments(request: UpstreamDocumentsRequest): Promise<UpstreamDocumentPage>
 
 /**
  * Search an explicit, already-authorized set of knowledge bases.

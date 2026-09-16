@@ -3,11 +3,12 @@
  * governed gateway in front of it.
  *
  * This is the only place an upstream knowledge product is spoken to, and it is
- * mounted in the Control Plane alone. The two operations are the two the
- * gateway can authorize: enumerate what a source holds, and search an explicit
- * set of its knowledge bases. There is no operation that takes a URL, a
- * caller-chosen header, or an arbitrary upstream path, so the gateway cannot
- * be talked into an operation the permission catalog does not govern.
+ * mounted in the Control Plane alone. Every operation is one the gateway can
+ * authorize: enumerate what a source holds, list one knowledge base's
+ * documents, and search an explicit set of its knowledge bases. There is no
+ * operation that takes a URL, a caller-chosen header, or an arbitrary upstream
+ * path, so the gateway cannot be talked into an operation the permission
+ * catalog does not govern.
  *
  * Everything here is in upstream terms — upstream ids, not `KnowledgeRef`s —
  * because mapping between the two is the catalog's job, and a provider that
@@ -16,7 +17,7 @@
  */
 
 import { Service, type Context } from '@deepseek-ai/cordis'
-import type { KnowledgeKind } from '@deepseek-ai/dsh-knowledge'
+import type { KnowledgeDocumentState, KnowledgeKind } from '@deepseek-ai/dsh-knowledge'
 
 declare module '@deepseek-ai/cordis' {
   interface Context {
@@ -45,6 +46,52 @@ export interface UpstreamKnowledgeBase {
   readonly embeddingModelId: string
   /** Epoch milliseconds, or undefined when the source supplies no timestamp. */
   readonly updatedAt: number | undefined
+}
+
+/** What the gateway asks a source for one page of a knowledge base's documents. */
+export interface UpstreamDocumentsRequest {
+  /** The knowledge base to list, already authorized. */
+  readonly upstreamId: string
+  /** Which page, counting from one. */
+  readonly page: number
+  /** How many documents to return, before the provider's own maximum applies. */
+  readonly pageSize: number
+  readonly signal?: AbortSignal
+}
+
+/** One document as its upstream source describes it. */
+export interface UpstreamDocument {
+  /**
+   * The source's own document identifier, meaningful only to this provider.
+   *
+   * A provider returns only ids the governed reference grammar accepts —
+   * within `KNOWLEDGE_DOC_ID_MAX_LENGTH` and over the reference alphabet — and
+   * refuses a row with anything else as `upstream-invalid`. That is what lets
+   * the gateway mint a reference from one without a second guard: a document
+   * it could not address is one no later operation could name.
+   */
+  readonly upstreamDocId: string
+  /** Empty when the source supplies none. */
+  readonly title: string
+  /** Empty for a document the source holds no file for. */
+  readonly fileName: string
+  /** The source's own word for the file kind, empty when it supplies none. */
+  readonly fileType: string
+  /** Zero when the source supplies none. */
+  readonly byteSize: number
+  /** The provider's reading of the source's ingestion and enablement state. */
+  readonly state: KnowledgeDocumentState
+  /** Epoch milliseconds, or undefined when the source supplies no timestamp. */
+  readonly updatedAt: number | undefined
+}
+
+/** One page of documents, with the total the source reports. */
+export interface UpstreamDocumentPage {
+  readonly documents: readonly UpstreamDocument[]
+  /** The page size the provider applied, after its own maximum. */
+  readonly pageSize: number
+  /** Undefined when the source reports no total; never inferred from a page. */
+  readonly total: number | undefined
 }
 
 /** What the gateway asks a source to search. */
@@ -109,6 +156,14 @@ export abstract class KnowledgeSource extends Service {
    * @throws {KnowledgeError} `upstream-unavailable` or `upstream-invalid`.
    */
   abstract list(signal?: AbortSignal): Promise<readonly UpstreamKnowledgeBase[]>
+
+  /**
+   * One page of the documents in one already-authorized knowledge base.
+   * @param request - the authorized upstream id, and which page of it.
+   * @returns the page, empty when the knowledge base holds no document.
+   * @throws {KnowledgeError} `upstream-unavailable` or `upstream-invalid`.
+   */
+  abstract listDocuments(request: UpstreamDocumentsRequest): Promise<UpstreamDocumentPage>
 
   /**
    * Search an explicit, already-authorized set of knowledge bases.

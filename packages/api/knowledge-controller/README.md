@@ -38,18 +38,19 @@ The controller has no configuration.
 - name: '@deepseek-ai/dsh-api-knowledge-controller'
 ```
 
-### The four methods
+### The five methods
 
 | Method | Answers | Needs a Session |
 |---|---|---|
 | `scope(sessionId)` | What one Session may choose from, what it has chosen, and which selected references the directory no longer holds | Yes |
 | `choose(sessionId, mode, knowledgeRefs?)` | Records the choice and answers the same view | Yes |
 | `directory()` | The knowledge bases this member may search right now | No |
+| `documents(knowledgeRef, page?, pageSize?)` | One page of one knowledge base's documents, each named by a governed reference | No |
 | `search(query, mode, knowledgeRefs?, maxResults?)` | The ranked passages, and the knowledge bases actually searched | No |
 
 The directory is read on every call rather than cached: a grant revoked since the last look should narrow the picker, and a knowledge base an administrator switched off should leave it.
 
-`search` is the one method that touches no Session: it appends no event, starts no model turn, and needs no conversation to be open. That is what makes it safe for a panel a member opens on its own — and it is why authorization is unchanged rather than relaxed, because the Control Plane evaluates every knowledge base the call names, on that call. A well-formed reference is passed through rather than checked against a directory read here: the answer that matters is the Control Plane's, and anticipating it would cost a directory read per query and could still disagree.
+`directory`, `documents`, and `search` touch no Session: they append no event, start no model turn, and need no conversation to be open. That is what makes them safe for a panel a member opens on their own — and it is why authorization is unchanged rather than relaxed, because the Control Plane evaluates every knowledge base the call names, on that call. A well-formed reference is passed through rather than checked against a directory read here: the answer that matters is the Control Plane's, and anticipating it would cost a directory read per query and could still disagree.
 
 ### Why a choice carries names
 
@@ -68,7 +69,7 @@ Nothing here authorizes. The directory this controller offers is one the Control
 
 | File | Holds |
 |---|---|
-| [`src/index.ts`](src/index.ts) | The `knowledge` Remote namespace, its request validation, the scope projection, and the member-run retrieval |
+| [`src/index.ts`](src/index.ts) | The `knowledge` Remote namespace, its request validation, the scope projection, the document listing, and the member-run retrieval |
 
 <a id="further-exploration"></a>
 ## Further Exploration
@@ -81,7 +82,7 @@ Nothing here authorizes. The directory this controller offers is one the Control
 <a id="model-experience"></a>
 ## Model Experience
 
-Indirectly, through `dsh-tool-knowledge`: the scope this records is what its prompt section names and what decides whether its tool is offered. This controller contributes no prompt and registers no schema. A retrieval run through `search` reaches no model at all — its passages are answered to the browser and end there.
+Indirectly, through `dsh-tool-knowledge`: the scope this records is what its prompt section names and what decides whether its tool is offered. This controller contributes no prompt and registers no schema. A retrieval run through `search`, and a listing run through `documents`, reach no model at all — what they answer goes to the browser and ends there.
 
 #### KV Cache effect
 

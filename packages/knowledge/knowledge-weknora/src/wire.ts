@@ -1,6 +1,6 @@
 /**
- * The WeKnora HTTP contract this provider speaks: the two endpoints it calls,
- * the envelopes it decodes, and the fields it reads.
+ * The WeKnora HTTP contract this provider speaks: the endpoints it calls, the
+ * envelopes it decodes, and the fields it reads.
  *
  * Pinned against a live deployment's own OpenAPI document and responses rather
  * than the upstream repository's published Markdown, which describes a
@@ -29,6 +29,19 @@ export const LIST_PATH = `${API_PREFIX}/knowledge-bases`
  */
 export function hybridSearchPath(upstreamId: string): string {
   return `${API_PREFIX}/knowledge-bases/${encodeURIComponent(upstreamId)}/hybrid-search`
+}
+
+/**
+ * One page of the documents in one knowledge base.
+ *
+ * Paginated with `page` (counting from one) and `page_size`, and its envelope
+ * carries `total` beside `data` — the only endpoint here whose answer says how
+ * much more there is.
+ * @param upstreamId - an authorized knowledge base id.
+ * @returns the path to GET, without its query.
+ */
+export function documentsPath(upstreamId: string): string {
+  return `${API_PREFIX}/knowledge-bases/${encodeURIComponent(upstreamId)}/knowledge`
 }
 
 /** The header WeKnora authenticates with. */
@@ -69,6 +82,28 @@ export interface WireKnowledgeBase {
   readonly updated_at?: unknown
 }
 
+/**
+ * One document as a knowledge listing returns it.
+ *
+ * `parse_status` is `pending`, `processing`, `finalizing`, `completed`,
+ * `failed`, `cancelled`, or `deleting`; `enable_status` is `enabled` or
+ * `disabled`. Both are read as words rather than validated as enums: a source
+ * that adds a state must not make a listing unreadable, and a state this build
+ * does not know is the one it promises least about.
+ */
+export interface WireKnowledge {
+  readonly id: string
+  readonly title?: unknown
+  readonly file_name?: unknown
+  readonly file_type?: unknown
+  readonly file_size?: unknown
+  readonly parse_status?: unknown
+  readonly enable_status?: unknown
+  readonly updated_at?: unknown
+  readonly processed_at?: unknown
+  readonly created_at?: unknown
+}
+
 /** One retrieved chunk as `hybrid-search` returns it. */
 export interface WireSearchResult {
   readonly id: string
@@ -82,10 +117,11 @@ export interface WireSearchResult {
 /**
  * Read a successful envelope's `data` array.
  *
- * Both endpoints answer `{ data: [...], success: true }`. A body that is not
- * that — including one whose `success` is false without an `error` this build
- * maps — is `upstream-invalid` rather than an empty result, because a reader
- * cannot tell a source with nothing from a source it failed to understand.
+ * Every endpoint answers `{ data: [...], success: true }`, the paginated one
+ * with counts beside it. A body that is not that — including one whose
+ * `success` is false without an `error` this build maps — is
+ * `upstream-invalid` rather than an empty result, because a reader cannot tell
+ * a source with nothing from a source it failed to understand.
  * @param body - the decoded JSON body.
  * @returns the data array, or undefined when the envelope is not a success envelope.
  */
@@ -95,6 +131,26 @@ export function successData(body: unknown): readonly unknown[] | undefined {
   if (record['success'] !== true) return undefined
   const data = record['data']
   return Array.isArray(data) ? data : undefined
+}
+
+/**
+ * Read a paginated envelope's `data` array and the total beside it.
+ *
+ * The listing endpoint answers `{ data: [...], page, page_size, total,
+ * success: true }`. The total is read only when it is a whole count: a missing
+ * or unreadable one means "the source did not say", which a reader must not
+ * mistake for zero.
+ * @param body - the decoded JSON body.
+ * @returns the data array with the reported total, or undefined when the envelope is not a success envelope.
+ */
+export function successPage(body: unknown): { readonly data: readonly unknown[]; readonly total: number | undefined } | undefined {
+  const data = successData(body)
+  if (data === undefined) return undefined
+  const total = (body as Record<string, unknown>)['total']
+  return {
+    data,
+    total: typeof total === 'number' && Number.isSafeInteger(total) && total >= 0 ? total : undefined,
+  }
 }
 
 /**

@@ -17,6 +17,51 @@ export interface KnowledgeChoice {
   readonly description: string
 }
 
+/**
+ * Whether the source will retrieve from one document right now, as the browser
+ * reads it.
+ *
+ * The same three words the knowledge seam uses, carried as a wire union rather
+ * than imported, so the generated Remote face stays readable without the Host
+ * types behind it.
+ */
+export type KnowledgeDocumentStateView = 'ready' | 'processing' | 'unavailable'
+
+/** One document in a knowledge base, as the browser draws it. */
+export interface KnowledgeDocumentView {
+  /** The reference a later operation names this document by. */
+  readonly docRef: string
+  /** The knowledge base it belongs to. */
+  readonly knowledgeRef: string
+  readonly title: string
+  /** Empty for a document the source holds no file for. */
+  readonly fileName: string
+  /** The source's own word for the file kind, empty when it supplies none. */
+  readonly fileType: string
+  /** Zero when the source supplies no size. */
+  readonly byteSize: number
+  readonly state: KnowledgeDocumentStateView
+  /** Epoch milliseconds; absent when the source supplies no timestamp. */
+  readonly updatedAt?: number
+}
+
+/** One page of a knowledge base's documents. */
+export interface KnowledgeDocumentsView {
+  /** The knowledge base listed, echoed so a page reads without its request. */
+  readonly knowledgeRef: string
+  readonly documents: readonly KnowledgeDocumentView[]
+  /** The page returned, counting from one. */
+  readonly page: number
+  /** The page size actually applied, after the deployment's bounds. */
+  readonly pageSize: number
+  /**
+   * How many documents the knowledge base holds; absent when the source does
+   * not say. Absent rather than zero: a total a reader cannot trust must not
+   * tell them the list ends where it does not.
+   */
+  readonly total?: number
+}
+
 /** One retrieved passage, as a member-run retrieval draws it. */
 export interface KnowledgePassageView {
   /** Which knowledge base produced it. */

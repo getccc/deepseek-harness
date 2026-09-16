@@ -8,6 +8,8 @@ import { describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import {
   KnowledgeSource,
+  type UpstreamDocumentPage,
+  type UpstreamDocumentsRequest,
   type UpstreamKnowledgeBase,
   type UpstreamPassage,
   type UpstreamSearchRequest,
@@ -29,6 +31,22 @@ class StubSource extends KnowledgeSource {
       embeddingModelId: 'emb-1',
       updatedAt: undefined,
     }])
+  }
+
+  listDocuments(request: UpstreamDocumentsRequest): Promise<UpstreamDocumentPage> {
+    return Promise.resolve({
+      documents: [{
+        upstreamDocId: 'doc-1',
+        title: '运维手册',
+        fileName: '运维手册.pdf',
+        fileType: 'pdf',
+        byteSize: 2048,
+        state: 'ready',
+        updatedAt: undefined,
+      }],
+      pageSize: request.pageSize,
+      total: 1,
+    })
   }
 
   search(request: UpstreamSearchRequest): Promise<readonly UpstreamPassage[]> {

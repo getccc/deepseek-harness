@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-knowledge-gateway-http` 提供 Team Runner 访问私有知识所调用的两条路由：读取已授权目录，以及在其中检索。它做的一切都围绕一个事实展开——请求不得能够声明是谁在问、答案从哪里来。主体从已验证的设备 Access Token 恢复，绝不从请求体读取；数据源由目录解析，在请求中根本没有位置。在 Control Plane 中与它所前置的受治理网关并排挂载。
+`dsh-knowledge-gateway-http` 提供 Team Runner 访问私有知识所调用的这些路由：读取已授权目录、列出某个知识库中的文档，以及在其中检索。它做的一切都围绕一个事实展开——请求不得能够声明是谁在问、答案从哪里来。主体从已验证的设备 Access Token 恢复，绝不从请求体读取；数据源由目录解析，在请求中根本没有位置。在 Control Plane 中与它所前置的受治理网关并排挂载。
 
 ## 目录
 
@@ -39,9 +39,11 @@ kind: "package-reference"
 |---|---|---|
 | `maxRequestBodyBytes` | `65536` | 接受的最大请求体；一个查询加一个范围用不了多少 |
 
-### 两条路由
+### 这些路由
 
-`POST /team/knowledge/catalog` 只接受 `protocolVersion`，回答主体的已授权目录。`POST /team/knowledge/search` 增加 `query`、`scope` 和可选的 `maxResults`。两个请求体都没有组织、主体、设备、数据源、地址、租户、凭据或上游 id 的字段——Runner 说出它想要什么，其余由 Control Plane 解析并授权。
+`POST /team/knowledge/catalog` 只接受 `protocolVersion`，回答主体的已授权目录。`POST /team/knowledge/documents` 增加 `ref` 以及可选的 `page` 和 `pageSize`。`POST /team/knowledge/search` 增加 `query`、`scope` 和可选的 `maxResults`。没有任何请求体带有组织、主体、设备、数据源、地址、租户、凭据或上游 id 的字段——Runner 说出它想要什么，其余由 Control Plane 解析并授权。
+
+新增一条路由上调了当前协议版本，最低版本保持不变：在它之前构建的 Runner 仍保有目录与检索，只是没有任何东西去调用这条更新的路由。
 
 ### 版本最先判定
 
@@ -70,25 +72,25 @@ kind: "package-reference"
 
 ### 设计理念
 
-这两条路由对知识不做任何判定。它们确立是谁在问、证明请求格式良好，然后把两者交给网关；每一个授权结果和每一个上游事实都属于网关。这正是为什么畸形引用在这里是 `400`，而未授权引用是来自网关的 `403`：前者是协议错误，后者是一次判定。
+这些路由对知识不做任何判定。它们确立是谁在问、证明请求格式良好，然后把两者交给网关；每一个授权结果和每一个上游事实都属于网关。这正是为什么畸形引用在这里是 `400`，而未授权引用是来自网关的 `403`：前者是协议错误，后者是一次判定。
 
 ### 源码地图
 
 | 文件 | 内容 |
 |---|---|
 | [`src/protocol.ts`](src/protocol.ts) | 路径、版本常量，以及双方共同 import 的请求体 |
-| [`src/index.ts`](src/index.ts) | 两条路由、共享的开场序列，以及拒绝映射 |
+| [`src/index.ts`](src/index.ts) | 这些路由、共享的开场序列，以及拒绝映射 |
 
 <a id="further-exploration"></a>
 ## 延伸阅读
 
-- [知识子系统](../../../docs/subsystems/knowledge.zh.md) —— 这两条路由承载的受治理词汇。
+- [知识子系统](../../../docs/subsystems/knowledge.zh.md) —— 这些路由承载的受治理词汇。
 - [Team 私有知识 Agent Note](../../../.agents/notes/proposed/feature/2026-09-01-team-private-knowledge-control-plane.zh.md) —— Runner 请求为何没有地址或主体的位置。
 
 <a id="model-experience"></a>
 ## 模型体验
 
-无，因为这两条路由运行在 Control Plane，而 Control Plane 不挂载 agent 也不挂载工具注册表，模型永远到不了它们。
+无，因为这些路由运行在 Control Plane，而 Control Plane 不挂载 agent 也不挂载工具注册表，模型永远到不了它们。
 
 #### KV Cache 影响
 
@@ -101,7 +103,7 @@ kind: "package-reference"
 这些限制界定了本适配器自身在何处不完整。它们是当前的包约束。
 
 - **不转发取消** —— 客户端在检索中途断开不会中止上游调用；结束它的是网关自身的上界。把请求的 abort 信号串下去，需要一个能携带它的路由契约。
-- **没有文档阅读路由** —— 在阅读文档全文交付之前，这两条路由就是面向 Runner 的全部接口面。
+- **没有文档内容路由** —— Runner 可以列出文档但从不取回任何一份，因此接口面止于一份文档「是什么」。
 - **没有限流** —— 一台设备可以多频繁检索的上界属于这里，而目前没有任何地方施加；当前的答案是前置的反向代理。
 - **`cancelled` 映射到非标准的 499** —— 没有已注册的状态码描述被客户端放弃的请求，而 Runner 读的是理由词；状态码是给日志看的。
 

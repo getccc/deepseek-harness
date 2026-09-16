@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-knowledge-team` provides `ctx.knowledge` on a Team Runner by reaching the company Control Plane. What it sends is a query and the references a Session's scope resolved to; what it does not send — and could not, because the protocol has no place for it — is a knowledge address, a credential, a tenant, or an upstream id. The decision about who may read what is made on the other side, on every call. Mount it in the `team` profile beside the account client whose token it reads.
+`dsh-knowledge-team` provides `ctx.knowledge` on a Team Runner by reaching the company Control Plane. What it sends is a query, or a governed reference, and nothing more; what it does not send — and could not, because the protocol has no place for it — is a knowledge address, a credential, a tenant, or an upstream id. The decision about who may read what is made on the other side, on every call. Mount it in the `team` profile beside the account client whose token it reads.
 
 ## Table of Contents
 
@@ -66,7 +66,7 @@ Every field of an answer is validated at the wire before it becomes a knowledge 
 
 | File | Holds |
 |---|---|
-| [`src/index.ts`](src/index.ts) | The provider: the two calls, the wire validation, and the failure mapping |
+| [`src/index.ts`](src/index.ts) | The provider: the calls, the wire validation, and the failure mapping |
 
 <a id="further-exploration"></a>
 ## Further Exploration
@@ -92,7 +92,7 @@ These limits define when the provider is incomplete on its own. They are current
 - **No offline cache** — a Runner that cannot reach the Control Plane has no knowledge at all, deliberately: a cached private passage would be one served without a current authorization decision.
 - **No deadline of its own** — a caller's signal is forwarded and the Control Plane owns the operation's bound. A Runner whose Control Plane accepts a connection and never answers waits on the caller's own timeout.
 - **No retry** — one attempt per call. Whether a transient failure is worth retrying belongs to the caller that knows what the member is waiting for.
-- **No document read** — the seam has no such operation yet, so neither does this.
+- **No document content** — the seam has no such operation yet, so neither does this; documents can be listed and named, and nothing fetches one.
 
 <a id="dev-note"></a>
 ### Dev Note

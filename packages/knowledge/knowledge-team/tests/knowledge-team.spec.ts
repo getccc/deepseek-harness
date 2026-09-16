@@ -13,6 +13,7 @@ import { Context } from '@deepseek-ai/cordis'
 import { KnowledgeError, KnowledgeRef } from '@deepseek-ai/dsh-knowledge'
 import {
   KNOWLEDGE_CATALOG_PATH,
+  KNOWLEDGE_DOCUMENTS_PATH,
   KNOWLEDGE_PROTOCOL_VERSION,
 } from '@deepseek-ai/dsh-knowledge-gateway-http'
 import TeamKnowledge from '@deepseek-ai/dsh-knowledge-team'
@@ -273,5 +274,100 @@ describe('failures a member can act on', () => {
     // The provider passes the signal straight to fetch; there is no second
     // deadline here, because the Control Plane owns the operation's own bound.
     expect(calls).toHaveLength(1)
+  })
+})
+
+/** One document page as the Control Plane answers it. */
+function documentPage(patch: Record<string, unknown> = {}): unknown {
+  return {
+    ref: REF,
+    documents: [{
+      docRef: `${REF}/doc-1`,
+      ref: REF,
+      title: '运维手册',
+      fileName: '运维手册.pdf',
+      fileType: 'pdf',
+      byteSize: 20480,
+      state: 'ready',
+      updatedAt: 1756857600000,
+    }],
+    page: 1,
+    pageSize: 20,
+    total: 7,
+    ...patch,
+  }
+}
+
+describe('listing one knowledge base’s documents', () => {
+  it('names the knowledge base and the page, and nothing else', async () => {
+    controlPlane(200, documentPage())
+    const ctx = await mount()
+    const page = await ctx.knowledge.documents({ ref: KnowledgeRef(REF), page: 2, pageSize: 5 })
+    expect(calls[0]?.url).toBe(`${ORIGIN}${KNOWLEDGE_DOCUMENTS_PATH}`)
+    expect(calls[0]?.body).toEqual({
+      protocolVersion: KNOWLEDGE_PROTOCOL_VERSION, ref: REF, page: 2, pageSize: 5,
+    })
+    expect(calls[0]?.headers['authorization']).toBe(`Bearer ${TOKEN}`)
+    expect(page.documents).toEqual([{
+      docRef: `${REF}/doc-1`,
+      ref: REF,
+      title: '运维手册',
+      fileName: '运维手册.pdf',
+      fileType: 'pdf',
+      byteSize: 20480,
+      state: 'ready',
+      updatedAt: 1756857600000,
+    }])
+    expect(page.total).toBe(7)
+  })
+
+  it('sends no page fields when the caller names none', async () => {
+    controlPlane(200, documentPage())
+    const ctx = await mount()
+    await ctx.knowledge.documents({ ref: KnowledgeRef(REF) })
+    expect(calls[0]?.body).toEqual({ protocolVersion: KNOWLEDGE_PROTOCOL_VERSION, ref: REF })
+  })
+
+  it('reads a document the answer holds less about, and a state it does not know, conservatively', async () => {
+    controlPlane(200, documentPage({
+      documents: [{ docRef: `${REF}/doc-2`, ref: REF, state: 'reticulating' }],
+      total: 'many',
+    }))
+    const ctx = await mount()
+    const page = await ctx.knowledge.documents({ ref: KnowledgeRef(REF) })
+    expect(page.documents).toEqual([{
+      docRef: `${REF}/doc-2`,
+      ref: REF,
+      title: '',
+      fileName: '',
+      fileType: '',
+      byteSize: 0,
+      state: 'unavailable',
+      updatedAt: undefined,
+    }])
+    // An unreadable total is unknown, never zero.
+    expect(page.total).toBeUndefined()
+  })
+
+  it.each([
+    ['a document with no reference', { documents: [{ ref: REF }] }],
+    ['a document whose reference is not one', { documents: [{ docRef: 'nope', ref: REF }] }],
+    ['a document naming a knowledge base that is not one', { documents: [{ docRef: `${REF}/doc-1`, ref: 'nope' }] }],
+    ['a page with no documents list', { documents: 'all of them' }],
+    ['a page with no page number', { page: 'first' }],
+    ['a page with no page size', { pageSize: null }],
+    ['a document that is not an object', { documents: ['doc-1'] }],
+  ])('refuses %s', async (_label, patch) => {
+    controlPlane(200, documentPage(patch))
+    const ctx = await mount()
+    await expect(ctx.knowledge.documents({ ref: KnowledgeRef(REF) }))
+      .rejects.toMatchObject({ reason: 'upstream-invalid' })
+  })
+
+  it('carries a refusal back as its closed reason', async () => {
+    controlPlane(403, { error: 'knowledge', reason: 'not-allowed' })
+    const ctx = await mount()
+    await expect(ctx.knowledge.documents({ ref: KnowledgeRef(REF) }))
+      .rejects.toMatchObject({ reason: 'not-allowed' })
   })
 })

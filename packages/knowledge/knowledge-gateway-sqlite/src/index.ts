@@ -20,8 +20,10 @@ import type { OrgId } from '@deepseek-ai/dsh-account-store'
 import {
   KnowledgeError,
   KnowledgeRef,
+  formatKnowledgeDocRef,
   formatKnowledgeRef,
   type KnowledgeBaseEntry,
+  type KnowledgeDocumentPage,
   type KnowledgeKind,
   type KnowledgePassage,
   type KnowledgeSearchResult,
@@ -30,6 +32,7 @@ import {
   KNOWLEDGE_CATALOG_RESOURCE,
   KNOWLEDGE_RESOURCE_TYPE,
   KnowledgeGateway,
+  type GovernedDocumentsRequest,
   type GovernedSearchRequest,
   type KnowledgeCatalogEntry,
   type KnowledgeCatalogView,
@@ -45,12 +48,14 @@ export {
   SCHEMA_VERSION,
 } from './schema.ts'
 
-/** Plugin config: where the catalog lives, and what one search may return. */
+/** Plugin config: where the catalog lives, and what one operation may return. */
 export interface Config {
   /** Path to the catalog database. */
   path: string
   /** The most passages one search returns when a caller names no bound. */
   defaultMaxResults?: number
+  /** How many documents one listing page holds when a caller names no size. */
+  defaultDocumentPageSize?: number
 }
 
 /** {@link Config} once schemastery has filled every defaulted field. */
@@ -58,6 +63,23 @@ type ResolvedConfig = Required<Config>
 
 /** The most passages one search returns when a caller names no bound. */
 const DEFAULT_MAX_RESULTS = 10
+
+/** How many documents one listing page holds when a caller names no size. */
+const DEFAULT_DOCUMENT_PAGE_SIZE = 20
+
+/** The permission a search is evaluated against. */
+const SEARCH_ACTION = 'knowledge.search'
+
+/**
+ * The permission a document listing is evaluated against.
+ *
+ * The same permission as a search, by product decision: a member who may
+ * retrieve passages from a knowledge base may also see which documents are in
+ * it. It is a constant of its own so that tightening the decision to
+ * `knowledge.read` is this line plus a role-editor mode, rather than a second
+ * authorization path grown beside the first.
+ */
+const DOCUMENT_LIST_ACTION = 'knowledge.search'
 
 /** Cordis plugin name. */
 export const name = 'knowledge-gateway-sqlite'
@@ -76,6 +98,7 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
   static Config: z<Config> = z.object({
     path: z.string().required(),
     defaultMaxResults: z.natural().default(DEFAULT_MAX_RESULTS),
+    defaultDocumentPageSize: z.natural().min(1).default(DEFAULT_DOCUMENT_PAGE_SIZE),
   })
 
   private readonly db: DatabaseSync
@@ -130,6 +153,60 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
       description: entry.description,
       kind: entry.kind,
     }))
+  }
+
+  async documents(request: GovernedDocumentsRequest): Promise<KnowledgeDocumentPage> {
+    const row = this.row(request.orgId, request.ref)
+    const usable = row !== undefined && row.admin_enabled === 1
+    const allowed = usable && await this.may(request, request.ref, DOCUMENT_LIST_ACTION)
+    if (!allowed) {
+      // An unknown, disabled, and unauthorized knowledge base are one refusal,
+      // so a member holding nothing cannot learn that one exists.
+      await this.record(
+        { ...request, resourceRef: request.ref }, 'denied', undefined, 'no-grant',
+        undefined, 'knowledge.document.list',
+      )
+      throw new KnowledgeError('not-allowed', 'that knowledge base is not available')
+    }
+    const page = request.page ?? 1
+    let upstream
+    try {
+      upstream = await this.ctx.knowledgeSource.listDocuments({
+        upstreamId: row.upstream_id,
+        page,
+        pageSize: request.pageSize ?? this.resolved.defaultDocumentPageSize,
+        ...(request.signal === undefined ? {} : { signal: request.signal }),
+      })
+    } catch (error) {
+      await this.record(
+        { ...request, resourceRef: request.ref }, 'error', undefined, undefined,
+        upstreamLabel(error), 'knowledge.document.list',
+      )
+      throw error
+    }
+    await this.record(
+      { ...request, resourceRef: request.ref }, 'allowed', upstream.documents.length,
+      undefined, undefined, 'knowledge.document.list',
+    )
+    return {
+      ref: request.ref,
+      // The provider answers only ids a governed reference can carry, so
+      // minting one here cannot fail; a source that broke that promise was
+      // refused as unreadable before this line.
+      documents: upstream.documents.map(document => ({
+        docRef: formatKnowledgeDocRef({ ref: request.ref, upstreamDocId: document.upstreamDocId }),
+        ref: request.ref,
+        title: document.title,
+        fileName: document.fileName,
+        fileType: document.fileType,
+        byteSize: document.byteSize,
+        state: document.state,
+        updatedAt: document.updatedAt,
+      })),
+      page,
+      pageSize: upstream.pageSize,
+      total: upstream.total,
+    }
   }
 
   async search(request: GovernedSearchRequest): Promise<KnowledgeSearchResult> {
@@ -204,7 +281,7 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
     for (const ref of request.scope.refs) {
       const row = this.row(request.orgId, ref)
       const usable = row !== undefined && row.admin_enabled === 1
-      const allowed = usable && await this.maySearch(request, ref)
+      const allowed = usable && await this.may(request, ref, SEARCH_ACTION)
       if (!allowed) {
         await this.record({ ...request, resourceRef: ref }, 'denied', undefined, 'no-grant')
         throw new KnowledgeError('not-allowed', 'a knowledge base in scope is not available')
@@ -240,19 +317,19 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
       if (row.admin_enabled !== 1) continue
       const resource = resources.get(row.knowledge_ref)
       if (resource === undefined) continue
-      if (!await this.maySearch(principal, KnowledgeRef(row.knowledge_ref))) continue
+      if (!await this.may(principal, KnowledgeRef(row.knowledge_ref), SEARCH_ACTION)) continue
       entries.push(toEntry(row, resource))
     }
     return entries
   }
 
   /** One access decision, asked fresh so a revoked grant lands on this call. */
-  private async maySearch(principal: KnowledgePrincipal, ref: KnowledgeRef): Promise<boolean> {
+  private async may(principal: KnowledgePrincipal, ref: KnowledgeRef, action: string): Promise<boolean> {
     const decision = await this.ctx.accessControl.authorize({
       orgId: principal.orgId,
       principalId: principal.principalId,
       ...(principal.deviceId === undefined ? {} : { deviceId: principal.deviceId }),
-      action: 'knowledge.search',
+      action,
       resourceType: KNOWLEDGE_RESOURCE_TYPE,
       resourceId: ref,
       ...(principal.correlationId === undefined
@@ -476,17 +553,18 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
     })
   }
 
-  /** Record one search outcome against one governed knowledge resource. */
+  /** Record one member-facing outcome against one governed knowledge resource. */
   private async record(
     principal: KnowledgePrincipal & { resourceRef?: string },
     outcome: 'allowed' | 'denied' | 'error',
     itemCount: number | undefined,
     reason?: 'no-grant',
     failure?: string,
+    action: 'knowledge.search' | 'knowledge.document.list' = 'knowledge.search',
   ): Promise<void> {
     await this.ctx.audit.record({
       orgId: principal.orgId,
-      action: 'knowledge.search',
+      action,
       outcome,
       principalId: principal.principalId,
       ...(principal.resourceRef === undefined ? {} : { resourceId: principal.resourceRef }),
@@ -506,15 +584,23 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
     scoped: readonly KnowledgeBaseRow[],
     error: unknown,
   ): Promise<void> {
-    const reason = error instanceof KnowledgeError ? error.reason : 'upstream-invalid'
-    // Only the closed upstream classes are recordable metadata; a cancellation
-    // or an authorization reason arriving here would be a caller's, not the
-    // source's, and carries no failure label.
-    const label = reason === 'upstream-unavailable' || reason === 'upstream-invalid' ? reason : undefined
+    const label = upstreamLabel(error)
     for (const row of scoped) {
       await this.record({ ...request, resourceRef: row.knowledge_ref }, 'error', undefined, undefined, label)
     }
   }
+}
+
+/**
+ * The failure label one upstream error is recorded under.
+ *
+ * Only the closed upstream classes are recordable metadata: a cancellation or
+ * an authorization reason arriving here would be a caller's, not the source's,
+ * and carries no failure label.
+ */
+function upstreamLabel(error: unknown): string | undefined {
+  const reason = error instanceof KnowledgeError ? error.reason : 'upstream-invalid'
+  return reason === 'upstream-unavailable' || reason === 'upstream-invalid' ? reason : undefined
 }
 
 /** Project one catalog row for a reader, with its governed resource state. */

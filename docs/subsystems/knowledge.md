@@ -2,7 +2,7 @@
 
 English | [中文](knowledge.zh.md)
 
-The private-knowledge seam — a [capability seam](../../.agents/notes/implemented/architecture/2026-06-13-capability-seams.md) spanning **two operations** (directory and search) on one `ctx.knowledge` service. The Service Definition is [dsh-knowledge](../../packages/knowledge/knowledge); its Team providers and the model-facing tool arrive with the [Control Plane knowledge capability](../../.agents/notes/proposed/feature/2026-09-01-team-private-knowledge-control-plane.md). Knowledge is **one optional capability**, not part of the agent-loop spine, so its vocabulary lives here rather than in [core.md](core.md).
+The private-knowledge seam — a [capability seam](../../.agents/notes/implemented/architecture/2026-06-13-capability-seams.md) spanning **three operations** (directory, document listing, and search) on one `ctx.knowledge` service. The Service Definition is [dsh-knowledge](../../packages/knowledge/knowledge); its Team providers and the model-facing tool arrive with the [Control Plane knowledge capability](../../.agents/notes/proposed/feature/2026-09-01-team-private-knowledge-control-plane.md). Knowledge is **one optional capability**, not part of the agent-loop spine, so its vocabulary lives here rather than in [core.md](core.md).
 
 The seam names product operations, never upstream ones. A Runner holding `ctx.knowledge` cannot name an address, a tenant, a credential, or an upstream document id, because no operation has a place for one. That is what lets a governed deployment put every knowledge decision — which member, which device, which knowledge bases, right now — behind a service the member's own process cannot bypass.
 
@@ -23,6 +23,12 @@ Three bounds hold, and all three fail where a reference is built rather than whe
 `formatKnowledgeRef` throws `InvalidKnowledgeRefError` naming which bound failed. `parseKnowledgeRef` answers `undefined` instead, because its callers — a wire decoder, a log reader, a stored-row validator — are deciding whether to accept a value rather than diagnosing one.
 
 Source: [`packages/knowledge/knowledge/src/brand.ts`](../../packages/knowledge/knowledge/src/brand.ts)
+
+## Naming a document
+
+A `KnowledgeDocRef` is a knowledge reference, a `/`, and the upstream document id — `weknora:prod:690c0727-…/doc-7`. It is a separate brand rather than a longer `KnowledgeRef` because the two are bounded by different things: a knowledge reference has to fit the audit token, and a document is never an audit resource. What an operation on a document records is the knowledge base it belongs to, which is also what a grant names and what an administrator disables.
+
+The document id is bounded at 64 characters over the same alphabet. `formatKnowledgeDocRef` throws `InvalidKnowledgeRefError`; `parseKnowledgeDocRef` answers `undefined`, for the same reason its knowledge-base counterpart does.
 
 ## The Session knowledge scope
 
@@ -50,13 +56,15 @@ Scope only ever narrows current authorization. It never adds a knowledge base, a
 
 Source: [`packages/knowledge/knowledge/src/scope.ts`](../../packages/knowledge/knowledge/src/scope.ts)
 
-## Directory and search
+## Directory, documents, and search
 
 `catalog()` answers the knowledge bases the current principal may search right now — reference, display name, description, and kind. It is a permission-shaped view, not a listing of what exists: a knowledge base the principal holds nothing on is absent rather than marked.
 
+`documents()` answers one page of one knowledge base's documents, each carrying its governed reference, what the source holds about the file, and a `KnowledgeDocumentState` — `ready`, `processing`, or `unavailable`. The state is the source's own parse and enablement words read as the three things a member can act on: use it, wait, or ask an administrator. A state this build does not know reads as `unavailable`, which promises least. The page reports the source's `total` only when the source gives one; absent means "the source did not say" and must not be read as zero.
+
 `search()` takes the query, the scope resolved from the Session, and the caller's bounds. `KnowledgeScopeSelection` keeps `all` as a mode rather than an expanded list, because expanding it is an authorization act only the Control Plane can perform; a Runner that expanded it would be asserting authorization it cannot compute.
 
-Neither operation returns a partial answer. A directory that could not be authorized and a search whose scope was refused both raise, because a quietly narrowed result is indistinguishable from a correct one to the model that reads it.
+No operation returns a partial answer. A directory that could not be authorized, a listing on a refused knowledge base, and a search whose scope was refused all raise, because a quietly narrowed result is indistinguishable from a correct one to the model that reads it.
 
 ## Failures
 
@@ -100,6 +108,18 @@ Both methods fail with KnowledgeError carrying a closed reason. Neither returns 
  * @throws {KnowledgeError} when the principal cannot be established or the directory cannot be read.
  */
 abstract catalog(signal?: AbortSignal): Promise<readonly KnowledgeBaseEntry[]>
+
+/**
+ * One page of the documents in one authorized knowledge base.
+ *
+ * The knowledge base is authorized on this call, like every other operation:
+ * a reference that was in the directory a moment ago is not standing
+ * permission to list it now.
+ * @param request - the knowledge base, and which page of it.
+ * @returns the page, empty when the knowledge base holds no document.
+ * @throws {KnowledgeError} when the knowledge base is refused or the upstream does not answer usably.
+ */
+abstract documents(request: KnowledgeDocumentsRequest): Promise<KnowledgeDocumentPage>
 
 /**
  * Search the knowledge bases one operation names.
@@ -162,6 +182,19 @@ abstract setEnabled(orgId: OrgId, ref: KnowledgeRef, enabled: boolean): Promise<
 abstract directory(principal: KnowledgePrincipal): Promise<readonly KnowledgeBaseEntry[]>
 
 /**
+ * Authorize one document listing and perform it.
+ *
+ * The knowledge base is evaluated on this call, as a search's is. A member
+ * who may retrieve from a knowledge base may list what is in it: the
+ * decision is the same permission, asked separately so it can be tightened
+ * without a new authorization path.
+ * @param request - who is asking, which knowledge base, and which page.
+ * @returns the page, with the documents addressed by governed references.
+ * @throws {KnowledgeError} with the reason the operation was refused or failed.
+ */
+abstract documents(request: GovernedDocumentsRequest): Promise<KnowledgeDocumentPage>
+
+/**
  * Authorize one search and perform it.
  *
  * Every knowledge base the scope resolves to is evaluated before the source
@@ -194,6 +227,14 @@ Failures are raised as `KnowledgeError` with `upstream-unavailable` or `upstream
  * @throws {KnowledgeError} `upstream-unavailable` or `upstream-invalid`.
  */
 abstract list(signal?: AbortSignal): Promise<readonly UpstreamKnowledgeBase[]>
+
+/**
+ * One page of the documents in one already-authorized knowledge base.
+ * @param request - the authorized upstream id, and which page of it.
+ * @returns the page, empty when the knowledge base holds no document.
+ * @throws {KnowledgeError} `upstream-unavailable` or `upstream-invalid`.
+ */
+abstract listDocuments(request: UpstreamDocumentsRequest): Promise<UpstreamDocumentPage>
 
 /**
  * Search an explicit, already-authorized set of knowledge bases.

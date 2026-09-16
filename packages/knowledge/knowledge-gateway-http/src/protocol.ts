@@ -11,6 +11,9 @@
 /** Path the Control Plane serves the current principal's authorized directory under. */
 export const KNOWLEDGE_CATALOG_PATH = '/team/knowledge/catalog'
 
+/** Path the Control Plane serves one knowledge base's document listing under. */
+export const KNOWLEDGE_DOCUMENTS_PATH = '/team/knowledge/documents'
+
 /** Path the Control Plane serves governed knowledge search under. */
 export const KNOWLEDGE_SEARCH_PATH = '/team/knowledge/search'
 
@@ -26,14 +29,16 @@ export const ACCESS_TOKEN_HEADER = 'authorization'
  * lock an old Runner out of binding, which is the one operation it would need
  * in order to recover.
  */
-export const KNOWLEDGE_PROTOCOL_VERSION = 1
+export const KNOWLEDGE_PROTOCOL_VERSION = 2
 
 /**
  * The oldest knowledge protocol version this Control Plane still answers.
  *
  * Raising it is how a deployment stops serving Runners too old to be trusted
  * with a change — a refusal a Runner can act on, rather than a request that
- * fails for a reason it cannot distinguish from its own mistake.
+ * fails for a reason it cannot distinguish from its own mistake. Adding a route
+ * does not raise it: a Runner that speaks version 1 keeps its directory and its
+ * search, and simply has nothing that calls the newer route.
  */
 export const MINIMUM_KNOWLEDGE_PROTOCOL_VERSION = 1
 
@@ -46,6 +51,23 @@ export const MINIMUM_KNOWLEDGE_PROTOCOL_VERSION = 1
  */
 export interface CatalogBody {
   readonly protocolVersion: number
+}
+
+/**
+ * What a Runner sends to list one knowledge base's documents.
+ *
+ * The reference is the only thing a Runner names, and it is a governed
+ * reference rather than an upstream id: the Control Plane resolves which source
+ * holds it, and authorizes the knowledge base before it asks.
+ */
+export interface DocumentsBody {
+  readonly protocolVersion: number
+  /** The governed knowledge-base reference to list. */
+  readonly ref: string
+  /** Which page, counting from one; the first page when absent. */
+  readonly page?: number
+  /** How many documents one page holds; the deployment's own maximum still applies. */
+  readonly pageSize?: number
 }
 
 /**

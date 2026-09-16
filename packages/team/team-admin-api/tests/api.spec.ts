@@ -27,6 +27,7 @@ import SqliteKnowledgeGateway from '@deepseek-ai/dsh-knowledge-gateway-sqlite'
 import { KNOWLEDGE_CATALOG_RESOURCE } from '@deepseek-ai/dsh-knowledge-gateway'
 import {
   KnowledgeSource,
+  type UpstreamDocumentPage,
   type UpstreamKnowledgeBase,
   type UpstreamPassage,
 } from '@deepseek-ai/dsh-knowledge-source'
@@ -91,6 +92,10 @@ class ScriptedKnowledgeSource extends KnowledgeSource {
 
   list(): Promise<readonly UpstreamKnowledgeBase[]> {
     return this.failure === undefined ? Promise.resolve(this.listing) : Promise.reject(this.failure)
+  }
+
+  listDocuments(): Promise<UpstreamDocumentPage> {
+    return Promise.resolve({ documents: [], pageSize: 20, total: 0 })
   }
 
   search(): Promise<readonly UpstreamPassage[]> {

@@ -1,5 +1,5 @@
 ---
-description: "The WeKnora knowledge-source provider: the two fixed endpoints a Control Plane calls, per-operation credential resolution, result bounds, and closed failure mapping."
+description: "The WeKnora knowledge-source provider: the fixed endpoints a Control Plane calls, per-operation credential resolution, result bounds, and closed failure mapping."
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-knowledge-weknora` provides `ctx.knowledgeSource` over a WeKnora deployment. It is the one place in a Control Plane that holds a knowledge credential and speaks a knowledge product's protocol: it calls two fixed endpoints, resolves the API key per operation, bounds what comes back, and maps every failure onto a closed reason. It knows nothing about who is asking; the governed gateway in front of it has already decided that. Mount it in the Control Plane only. Its contract is pinned against a live deployment's own OpenAPI document and responses, not the upstream Markdown, which describes an endpoint deployments do not serve.
+`dsh-knowledge-weknora` provides `ctx.knowledgeSource` over a WeKnora deployment. It is the one place in a Control Plane that holds a knowledge credential and speaks a knowledge product's protocol: it calls a fixed set of endpoints, resolves the API key per operation, bounds what comes back, and maps every failure onto a closed reason. It knows nothing about who is asking; the governed gateway in front of it has already decided that. Mount it in the Control Plane only. Its contract is pinned against a live deployment's own responses, not the upstream Markdown, which describes an endpoint deployments do not serve.
 
 ## Table of Contents
 
@@ -73,12 +73,16 @@ Nothing upstream is forwarded that a decision did not put there. The provider re
 
 | File | Holds |
 |---|---|
-| [`src/wire.ts`](src/wire.ts) | The endpoints, envelopes, error codes, and the two envelope readers |
-| [`src/index.ts`](src/index.ts) | The provider: config validation, the two operations, bounds, and failure mapping |
+| [`src/wire.ts`](src/wire.ts) | The endpoints, envelopes, error codes, and the envelope readers |
+| [`src/index.ts`](src/index.ts) | The provider: config validation, the operations, bounds, and failure mapping |
 
-### The two endpoints
+### The endpoints
 
 `GET /api/v1/knowledge-bases` lists the space's knowledge bases. `POST /api/v1/knowledge-bases/{id}/hybrid-search` retrieves passages; its body's `knowledge_base_ids` overrides the scope, but the path still requires an id and that id must be a member of the list — a path id outside it is refused with `ErrNotFound`. The provider therefore puts an authorized id in the path and the full authorized set in the body, so the path can never widen scope.
+
+`GET /api/v1/knowledge-bases/{id}/knowledge?page&page_size` lists one knowledge base's documents, and is the only endpoint here whose envelope carries counts beside `data`. The provider reads `total` only when it is a whole count, bounds `page_size` by `maxDocumentsPerPage`, and refuses a row whose `id` a governed document reference could not carry.
+
+`parse_status` is `pending`, `processing`, `finalizing`, `completed`, `failed`, `cancelled`, or `deleting`, and `enable_status` is `enabled` or `disabled`. The provider claims `ready` only for a document that is both `completed` and enabled, reads the three in-progress words as `processing`, and reads everything else — including a word this build does not know — as `unavailable`, which is the state that promises least.
 
 ### No loadable URL can come back
 
@@ -115,9 +119,9 @@ These limits define when the provider is incomplete on its own. They are current
 
 - **Multi-base retrieval needs one embedding model** — WeKnora's `knowledge_base_ids` spans several knowledge bases only when they share an embedding model, and the API declares no error for a set that does not. The provider reports `embeddingModelId` so the gateway can refuse a mixed set before calling; it does not fan out per model and merge, because scores from separate calls are normalized within their own rerank and are not comparable.
 - **An unknown knowledge base id is silently ignored upstream** — a list mixing a real id with an unknown one answers `success` with results from the real base alone. The provider drops hits from bases the request did not name, but existence and authorization must be settled before the call, not after it.
-- **No document read** — `list` and `search` are the whole surface. WeKnora's chunk endpoints are not called.
+- **No document content** — the provider lists documents and never fetches one. WeKnora's preview, download, and chunk endpoints are not called.
 - **No chunk count** — the listing's `chunk_count` reads zero on knowledge bases whose chunks a search plainly returns, so this provider does not read it and nothing downstream carries one. `knowledge_count` and `processing_count` are taken as the listing gives them.
-- **No incremental listing** — `list()` fetches everything; WeKnora offers no paging or change cursor on this endpoint.
+- **No incremental listing** — `list()` fetches every knowledge base; WeKnora offers no paging or change cursor on that endpoint. Only the document listing pages, and it has no change cursor either, so a page read twice can differ.
 
 <a id="dev-note"></a>
 ### Dev Note

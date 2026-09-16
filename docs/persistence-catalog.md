@@ -2926,7 +2926,7 @@ SHA-256: `51d9917929b4023f847ccbee830de86514c344c4da57a4a5da3f12b0940247a4`
 
 SHA-256: `ac44e4667f7f878b329a55172d9619994b18e891428860b8fd2e530fc2490a9c`
 
-Sources: [`packages/knowledge/knowledge/src/types.ts:52`](../packages/knowledge/knowledge/src/types.ts)
+Sources: [`packages/knowledge/knowledge/src/types.ts:114`](../packages/knowledge/knowledge/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -2939,7 +2939,7 @@ Sources: [`packages/knowledge/knowledge/src/types.ts:52`](../packages/knowledge/
 
 SHA-256: `911cb8dc287709be3e9be4d9e8bee3f62758eca0bdce19b9894c436f5fea7d5f`
 
-Sources: [`packages/knowledge/knowledge/src/types.ts:53`](../packages/knowledge/knowledge/src/types.ts)
+Sources: [`packages/knowledge/knowledge/src/types.ts:115`](../packages/knowledge/knowledge/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -2952,7 +2952,7 @@ Sources: [`packages/knowledge/knowledge/src/types.ts:53`](../packages/knowledge/
 
 SHA-256: `78892d54cf630043ce67731d8c508de648ceb0a67d63491a006c0718a2d6f0d2`
 
-Sources: [`packages/knowledge/knowledge/src/types.ts:54`](../packages/knowledge/knowledge/src/types.ts)
+Sources: [`packages/knowledge/knowledge/src/types.ts:116`](../packages/knowledge/knowledge/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -5240,7 +5240,7 @@ One of:
 
 SHA-256: `3559774c893232fdcde2de3365e38cf1f56e744d74c40d94f472520a36d071d9`
 
-Sources: [`packages/knowledge/knowledge/src/types.ts:51`](../packages/knowledge/knowledge/src/types.ts)
+Sources: [`packages/knowledge/knowledge/src/types.ts:113`](../packages/knowledge/knowledge/src/types.ts)
 
 One of:
 
@@ -5254,7 +5254,7 @@ One of:
 
 SHA-256: `e7b9271f26f0cae70218b256b456f0bb4c37a1908499fc2d970c7ce08c6fe3c1`
 
-Sources: [`packages/knowledge/knowledge/src/types.ts:38`](../packages/knowledge/knowledge/src/types.ts)
+Sources: [`packages/knowledge/knowledge/src/types.ts:100`](../packages/knowledge/knowledge/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|

@@ -22,6 +22,9 @@ import { KNOWLEDGE_RESOURCE_TYPE, type KnowledgeGateway } from '@deepseek-ai/dsh
 import SqliteKnowledgeGateway from '@deepseek-ai/dsh-knowledge-gateway-sqlite'
 import {
   KnowledgeSource,
+  type UpstreamDocument,
+  type UpstreamDocumentPage,
+  type UpstreamDocumentsRequest,
   type UpstreamKnowledgeBase,
   type UpstreamPassage,
   type UpstreamSearchRequest,
@@ -29,6 +32,7 @@ import {
 import * as knowledgeHttp from '@deepseek-ai/dsh-knowledge-gateway-http'
 import {
   KNOWLEDGE_CATALOG_PATH,
+  KNOWLEDGE_DOCUMENTS_PATH,
   KNOWLEDGE_PROTOCOL_VERSION,
   KNOWLEDGE_SEARCH_PATH,
 } from '@deepseek-ai/dsh-knowledge-gateway-http'
@@ -43,9 +47,18 @@ class ScriptedSource extends KnowledgeSource {
   listing: readonly UpstreamKnowledgeBase[] = []
   readonly searched: UpstreamSearchRequest[] = []
   hits: readonly UpstreamPassage[] | Error = []
+  /** The listings `listDocuments` was called with, so a test can assert what left. */
+  readonly listed: UpstreamDocumentsRequest[] = []
+  /** What the next document listing returns. */
+  documents: readonly UpstreamDocument[] = []
 
   list(): Promise<readonly UpstreamKnowledgeBase[]> {
     return Promise.resolve(this.listing)
+  }
+
+  listDocuments(request: UpstreamDocumentsRequest): Promise<UpstreamDocumentPage> {
+    this.listed.push(request)
+    return Promise.resolve({ documents: this.documents, pageSize: request.pageSize, total: this.documents.length })
   }
 
   search(request: UpstreamSearchRequest): Promise<readonly UpstreamPassage[]> {
@@ -388,5 +401,63 @@ describe('failures map onto closed reasons', () => {
     expect(response.status).toBe(503)
     expect(await response.json()).toEqual({ error: 'knowledge', reason: 'control-plane-unreachable' })
     await isolated.fiber.dispose()
+  })
+})
+
+describe('one knowledge base’s documents', () => {
+  it('lists an authorized knowledge base, naming documents by governed reference', async () => {
+    await grantAll()
+    source.documents = [{
+      upstreamDocId: 'doc-1',
+      title: '运维手册',
+      fileName: '运维手册.pdf',
+      fileType: 'pdf',
+      byteSize: 20480,
+      state: 'ready',
+      updatedAt: undefined,
+    }]
+    const response = await post(KNOWLEDGE_DOCUMENTS_PATH, {
+      protocolVersion: KNOWLEDGE_PROTOCOL_VERSION, ref: REF_A, page: 1, pageSize: 5,
+    })
+    expect(response.status).toBe(200)
+    expect(await response.json()).toMatchObject({
+      ref: REF_A,
+      documents: [{ docRef: `${REF_A}/doc-1`, ref: REF_A, fileName: '运维手册.pdf', state: 'ready' }],
+      page: 1,
+      pageSize: 5,
+    })
+    expect(source.listed).toEqual([{ upstreamId: A, page: 1, pageSize: 5 }])
+  })
+
+  it('refuses a knowledge base this principal holds nothing on, and asks the source nothing', async () => {
+    const response = await post(KNOWLEDGE_DOCUMENTS_PATH, {
+      protocolVersion: KNOWLEDGE_PROTOCOL_VERSION, ref: REF_A,
+    })
+    expect(response.status).toBe(403)
+    expect(await response.json()).toEqual({ error: 'knowledge', reason: 'not-allowed' })
+    expect(source.listed).toEqual([])
+  })
+
+  it.each([
+    ['no reference', {}],
+    ['a reference that is not one', { ref: 'not-a-reference' }],
+    ['a page that is not a whole number', { ref: REF_A, page: 1.5 }],
+    ['a page below one', { ref: REF_A, page: 0 }],
+    ['a page size that is not a number', { ref: REF_A, pageSize: 'ten' }],
+  ])('refuses %s as malformed', async (_label, patch) => {
+    await grantAll()
+    const response = await post(KNOWLEDGE_DOCUMENTS_PATH, {
+      protocolVersion: KNOWLEDGE_PROTOCOL_VERSION, ...patch,
+    })
+    expect(response.status).toBe(400)
+    expect(source.listed).toEqual([])
+  })
+
+  it('refuses a method that is not POST', async () => {
+    const response = await fetch(`${origin}${KNOWLEDGE_DOCUMENTS_PATH}`, {
+      method: 'GET',
+      headers: { authorization: `Bearer ${accessToken}` },
+    })
+    expect(response.status).toBe(405)
   })
 })

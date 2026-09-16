@@ -130,3 +130,96 @@ export function parseKnowledgeRef(value: string): KnowledgeRefParts | undefined 
 export function isKnowledgeRef(value: string): value is KnowledgeRef {
   return parseKnowledgeRef(value) !== undefined
 }
+
+/**
+ * Identifies one document inside one governed knowledge base, stable for as
+ * long as the source keeps the document.
+ *
+ * A reference is `<KnowledgeRef>/<upstreamDocumentId>`. It is a brand of its
+ * own rather than a longer {@link KnowledgeRef} because the two are bounded by
+ * different things: a knowledge reference has to fit the audit store's
+ * `resource_id` token, and a document is never an audit resource — what an
+ * operation on a document records is the knowledge base it belongs to, which
+ * is also what a grant names.
+ */
+export type KnowledgeDocRef = Branded<'KnowledgeDocRef'>
+
+/**
+ * Brand a string as a {@link KnowledgeDocRef}.
+ *
+ * A plain cast: callers holding a value from a wire, a log, or a database use
+ * {@link parseKnowledgeDocRef} instead, which proves the grammar.
+ * @param ref - the raw reference.
+ * @returns the same string, branded (a compile-time cast — no runtime cost).
+ */
+export function KnowledgeDocRef(ref: string): KnowledgeDocRef {
+  return ref as KnowledgeDocRef
+}
+
+/**
+ * The longest an upstream document id may be.
+ *
+ * Not a taste and not an audit bound: it is what keeps a Runner-facing request
+ * field bounded, so a reference no operation could resolve is refused where it
+ * is read rather than after a call. The widest id this build has seen is a
+ * 36-character UUID.
+ */
+export const KNOWLEDGE_DOC_ID_MAX_LENGTH = 64
+
+/** The parts a {@link KnowledgeDocRef} is assembled from and parsed back into. */
+export interface KnowledgeDocRefParts {
+  /** The knowledge base the document is in. */
+  readonly ref: KnowledgeRef
+  /** The upstream service's own document identifier. */
+  readonly upstreamDocId: string
+}
+
+/**
+ * Assemble a document reference from its parts.
+ * @param parts - the knowledge base reference and the upstream document id.
+ * @returns the branded reference.
+ * @throws {InvalidKnowledgeRefError} when the knowledge reference is not one, or the
+ * document id is empty, holds a character outside {@link KNOWLEDGE_REF_SEGMENT},
+ * or exceeds {@link KNOWLEDGE_DOC_ID_MAX_LENGTH}.
+ */
+export function formatKnowledgeDocRef(parts: KnowledgeDocRefParts): KnowledgeDocRef {
+  if (!isKnowledgeRef(parts.ref)) {
+    throw new InvalidKnowledgeRefError(`knowledge reference ${JSON.stringify(parts.ref)} is not one`)
+  }
+  if (!KNOWLEDGE_REF_SEGMENT.test(parts.upstreamDocId)) {
+    throw new InvalidKnowledgeRefError(`document id ${JSON.stringify(parts.upstreamDocId)} is empty or holds a character outside the reference alphabet`)
+  }
+  if (parts.upstreamDocId.length > KNOWLEDGE_DOC_ID_MAX_LENGTH) {
+    throw new InvalidKnowledgeRefError(`document id is ${String(parts.upstreamDocId.length)} characters, over the maximum of ${String(KNOWLEDGE_DOC_ID_MAX_LENGTH)}`)
+  }
+  return KnowledgeDocRef(`${parts.ref}/${parts.upstreamDocId}`)
+}
+
+/**
+ * Read a document reference back into its parts.
+ * @param value - the candidate reference, from a wire, a log, or a database.
+ * @returns the parts, or undefined when the value is not a reference this build accepts.
+ */
+export function parseKnowledgeDocRef(value: string): KnowledgeDocRefParts | undefined {
+  const separator = value.indexOf('/')
+  if (separator < 0) return undefined
+  const ref = KnowledgeRef(value.slice(0, separator))
+  const upstreamDocId = value.slice(separator + 1)
+  try {
+    formatKnowledgeDocRef({ ref, upstreamDocId })
+  } catch {
+    // The only throw here is InvalidKnowledgeRefError, and this function
+    // answers "is it usable" rather than "why not".
+    return undefined
+  }
+  return { ref, upstreamDocId }
+}
+
+/**
+ * Whether a string is a document reference this build accepts.
+ * @param value - the candidate reference.
+ * @returns true when {@link parseKnowledgeDocRef} reads it, narrowing the argument.
+ */
+export function isKnowledgeDocRef(value: string): value is KnowledgeDocRef {
+  return parseKnowledgeDocRef(value) !== undefined
+}

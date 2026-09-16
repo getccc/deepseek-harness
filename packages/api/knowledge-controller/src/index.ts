@@ -1,14 +1,15 @@
 /**
  * Host Remote owner for private knowledge: the authorized directory a browser
- * reads, the Session scope choice it records, and the retrieval a member runs
- * for themselves.
+ * reads, the documents in one of its knowledge bases, the Session scope choice
+ * it records, and the retrieval a member runs for themselves.
  *
  * The browser cannot reach `ctx.knowledge` directly — the knowledge service
  * lives on the Host, and its provider is what holds the device token — so the
- * `/knowledge` picker and the knowledge panels ask here instead. This is a Team-only namespace: a
- * composition without private knowledge does not mount it, which is why it is
- * its own package rather than more surface on the session controller, where an
- * absent service would have to read as an empty directory.
+ * `/knowledge` picker and the knowledge panels ask here instead. This is a
+ * Team-only namespace: a composition without private knowledge does not mount
+ * it, which is why it is its own package rather than more surface on the
+ * session controller, where an absent service would have to read as an empty
+ * directory.
  * @module @deepseek-ai/dsh-api-knowledge-controller
  */
 
@@ -25,7 +26,9 @@ import type { Agent } from '@deepseek-ai/dsh-agent'
 import { SessionId } from '@deepseek-ai/dsh-session'
 import { Remote, RemoteError, TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
 import { z } from 'zod'
-import type { KnowledgeChoice, KnowledgeScopeView, KnowledgeSearchView } from './types.ts'
+import type {
+  KnowledgeChoice, KnowledgeDocumentsView, KnowledgeScopeView, KnowledgeSearchView,
+} from './types.ts'
 
 export type * from './types.ts'
 
@@ -48,6 +51,12 @@ const chooseRequestSchema = z.object({
   sessionId: z.string().min(1),
   mode: z.union([z.literal('off'), z.literal('all'), z.literal('selected')]),
   knowledgeRefs: z.array(z.string()).optional(),
+})
+
+const documentsRequestSchema = z.object({
+  knowledgeRef: z.string().min(1),
+  page: z.number().int().min(1).optional(),
+  pageSize: z.number().int().min(1).optional(),
 })
 
 // The same bounds the Control Plane's own request parser applies: a non-empty
@@ -135,6 +144,52 @@ export class KnowledgeController extends TypertRemoteService {
   }
 
   /**
+   * One page of the documents in one authorized knowledge base.
+   *
+   * Needs no Session, for the same reason the directory does not: what a
+   * member may browse is a current authorization question, not a property of a
+   * conversation. The knowledge base is authorized on this call.
+   * @param knowledgeRef - the knowledge base to list.
+   * @param page - which page, counting from one; the first page when absent.
+   * @param pageSize - how many documents one page holds; the deployment's maximum still applies.
+   * @returns the page, empty when the knowledge base holds no document.
+   * @throws RemoteError when the request is invalid, the knowledge base is refused, or knowledge cannot be reached.
+   */
+  @Remote('documents')
+  async documents(knowledgeRef: string, page?: number, pageSize?: number): Promise<KnowledgeDocumentsView> {
+    const request = parseRequest('knowledge.documents', documentsRequestSchema, { knowledgeRef, page, pageSize })
+    const ref = this.refOf(request.knowledgeRef)
+    let result
+    try {
+      result = await this.ctx.knowledge.documents({
+        ref,
+        ...(request.page === undefined ? {} : { page: request.page }),
+        ...(request.pageSize === undefined ? {} : { pageSize: request.pageSize }),
+      })
+    } catch (error) {
+      throw this.unavailable(error)
+    }
+    return {
+      knowledgeRef: result.ref,
+      documents: result.documents.map(document => ({
+        docRef: document.docRef,
+        knowledgeRef: document.ref,
+        title: document.title,
+        fileName: document.fileName,
+        fileType: document.fileType,
+        byteSize: document.byteSize,
+        state: document.state,
+        // Absent rather than undefined: the Remote boundary carries JSON, and
+        // a field whose value is undefined is a field that is not there.
+        ...(document.updatedAt === undefined ? {} : { updatedAt: document.updatedAt }),
+      })),
+      page: result.page,
+      pageSize: result.pageSize,
+      ...(result.total === undefined ? {} : { total: result.total }),
+    }
+  }
+
+  /**
    * Run one retrieval for the member, outside any Session.
    *
    * The panel calling this starts no model turn and appends no Session event:
@@ -199,12 +254,15 @@ export class KnowledgeController extends TypertRemoteService {
     if (refs.length === 0) {
       throw new RemoteError('knowledge/empty-selection', 'a knowledge selection names at least one knowledge base', {})
     }
-    return refs.map((ref) => {
-      if (!isKnowledgeRef(ref)) {
-        throw new RemoteError('knowledge/not-available', 'that knowledge base is not available to this member', { knowledgeRef: ref })
-      }
-      return KnowledgeRef(ref)
-    })
+    return refs.map(ref => this.refOf(ref))
+  }
+
+  /** One reference, refused as unavailable when it is not one at all. */
+  private refOf(value: string): KnowledgeRef {
+    if (!isKnowledgeRef(value)) {
+      throw new RemoteError('knowledge/not-available', 'that knowledge base is not available to this member', { knowledgeRef: value })
+    }
+    return KnowledgeRef(value)
   }
 
   /** Turn one requested mode into the scope value a Session records. */

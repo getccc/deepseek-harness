@@ -1648,6 +1648,13 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         throws: ['{KnowledgeError} when the principal cannot be established or the directory cannot be read.'],
       },
       {
+        signature: 'abstract documents(request: KnowledgeDocumentsRequest): Promise<KnowledgeDocumentPage>',
+        description: 'One page of the documents in one authorized knowledge base.\n\nThe knowledge base is authorized on this call, like every other operation: a reference that was in the directory a moment ago is not standing permission to list it now.',
+        parameters: [{ name: 'request', description: 'the knowledge base, and which page of it.' }],
+        returns: 'the page, empty when the knowledge base holds no document.',
+        throws: ['{KnowledgeError} when the knowledge base is refused or the upstream does not answer usably.'],
+      },
+      {
         signature: 'abstract search(request: KnowledgeSearchRequest): Promise<KnowledgeSearchResult>',
         description: 'Search the knowledge bases one operation names.',
         parameters: [{ name: 'request', description: 'the query, the scope resolved from the Session, and the caller\'s bounds.' }],
@@ -1686,6 +1693,13 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the authorized directory, empty when the principal holds nothing.',
       },
       {
+        signature: 'abstract documents(request: GovernedDocumentsRequest): Promise<KnowledgeDocumentPage>',
+        description: 'Authorize one document listing and perform it.\n\nThe knowledge base is evaluated on this call, as a search\'s is. A member who may retrieve from a knowledge base may list what is in it: the decision is the same permission, asked separately so it can be tightened without a new authorization path.',
+        parameters: [{ name: 'request', description: 'who is asking, which knowledge base, and which page.' }],
+        returns: 'the page, with the documents addressed by governed references.',
+        throws: ['{KnowledgeError} with the reason the operation was refused or failed.'],
+      },
+      {
         signature: 'abstract search(request: GovernedSearchRequest): Promise<KnowledgeSearchResult>',
         description: 'Authorize one search and perform it.\n\nEvery knowledge base the scope resolves to is evaluated before the source is called, and one refusal fails the whole request: a partial result is indistinguishable from a complete one to the model that reads it.',
         parameters: [{ name: 'request', description: 'who is asking, the scope, the query, and the caller\'s bounds.' }],
@@ -1714,6 +1728,13 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Everything the configured source holds.',
         parameters: [{ name: 'signal', description: 'aborts the operation.' }],
         returns: 'every knowledge base, in whatever order the source lists them.',
+        throws: ['{KnowledgeError} `upstream-unavailable` or `upstream-invalid`.'],
+      },
+      {
+        signature: 'abstract listDocuments(request: UpstreamDocumentsRequest): Promise<UpstreamDocumentPage>',
+        description: 'One page of the documents in one already-authorized knowledge base.',
+        parameters: [{ name: 'request', description: 'the authorized upstream id, and which page of it.' }],
+        returns: 'the page, empty when the knowledge base holds no document.',
         throws: ['{KnowledgeError} `upstream-unavailable` or `upstream-invalid`.'],
       },
       {
@@ -5318,6 +5339,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface GoalView extends GoalSnapshot {\n    readonly roundsStarted: number;\n    readonly createdAt: number;\n    readonly updatedAt: number;\n    readonly activation: GoalActivation;\n}',
   },
   {
+    name: 'GovernedDocumentsRequest',
+    declaration: 'export interface GovernedDocumentsRequest extends KnowledgePrincipal {\n    readonly ref: KnowledgeRef;\n    readonly page?: number;\n    readonly pageSize?: number;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
     name: 'GovernedSearchRequest',
     declaration: 'export interface GovernedSearchRequest extends KnowledgePrincipal {\n    readonly scope: KnowledgeScopeSelection;\n    readonly query: string;\n    readonly maxResults?: number;\n    readonly signal?: AbortSignal;\n}',
   },
@@ -5488,6 +5513,26 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'KnowledgeCatalogView',
     declaration: 'export interface KnowledgeCatalogView {\n    readonly source: KnowledgeSourceStatus;\n    readonly entries: readonly KnowledgeCatalogEntry[];\n}',
+  },
+  {
+    name: 'KnowledgeDocRef',
+    declaration: 'export type KnowledgeDocRef = Branded<\'KnowledgeDocRef\'>;',
+  },
+  {
+    name: 'KnowledgeDocument',
+    declaration: 'export interface KnowledgeDocument {\n    readonly docRef: KnowledgeDocRef;\n    readonly ref: KnowledgeRef;\n    readonly title: string;\n    readonly fileName: string;\n    readonly fileType: string;\n    readonly byteSize: number;\n    readonly state: KnowledgeDocumentState;\n    readonly updatedAt: number | undefined;\n}',
+  },
+  {
+    name: 'KnowledgeDocumentPage',
+    declaration: 'export interface KnowledgeDocumentPage {\n    readonly ref: KnowledgeRef;\n    readonly documents: readonly KnowledgeDocument[];\n    readonly page: number;\n    readonly pageSize: number;\n    readonly total: number | undefined;\n}',
+  },
+  {
+    name: 'KnowledgeDocumentsRequest',
+    declaration: 'export interface KnowledgeDocumentsRequest {\n    readonly ref: KnowledgeRef;\n    readonly page?: number;\n    readonly pageSize?: number;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
+    name: 'KnowledgeDocumentState',
+    declaration: 'export type KnowledgeDocumentState = \'ready\' | \'processing\' | \'unavailable\';',
   },
   {
     name: 'KnowledgeKind',
@@ -7544,6 +7589,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'UpdateTeamTaskRequest',
     declaration: 'export interface UpdateTeamTaskRequest {\n    readonly taskId: TeamTaskId;\n    readonly expectedRevision: number;\n    readonly action: TeamTaskAction;\n    readonly subject?: string;\n    readonly description?: string;\n    readonly blockedBy?: readonly TeamTaskId[];\n    readonly writeScopes?: readonly string[];\n    readonly owner?: string;\n}',
+  },
+  {
+    name: 'UpstreamDocument',
+    declaration: 'export interface UpstreamDocument {\n    readonly upstreamDocId: string;\n    readonly title: string;\n    readonly fileName: string;\n    readonly fileType: string;\n    readonly byteSize: number;\n    readonly state: KnowledgeDocumentState;\n    readonly updatedAt: number | undefined;\n}',
+  },
+  {
+    name: 'UpstreamDocumentPage',
+    declaration: 'export interface UpstreamDocumentPage {\n    readonly documents: readonly UpstreamDocument[];\n    readonly pageSize: number;\n    readonly total: number | undefined;\n}',
+  },
+  {
+    name: 'UpstreamDocumentsRequest',
+    declaration: 'export interface UpstreamDocumentsRequest {\n    readonly upstreamId: string;\n    readonly page: number;\n    readonly pageSize: number;\n    readonly signal?: AbortSignal;\n}',
   },
   {
     name: 'UpstreamKnowledgeBase',

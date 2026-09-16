@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-knowledge-source` (`ctx.knowledgeSource`) is the seam a governed knowledge gateway speaks to an upstream knowledge product through. Its two operations — list what a source holds, search an explicit set of its knowledge bases — are in upstream terms: upstream ids, not `KnowledgeRef`s, because mapping between the two is the catalog's job. It mounts in the Control Plane alone, never in a Runner. No operation takes a URL, a caller-chosen header, or an arbitrary upstream path, so a gateway in front of it cannot be talked into an operation the permission catalog does not govern.
+`dsh-knowledge-source` (`ctx.knowledgeSource`) is the seam a governed knowledge gateway speaks to an upstream knowledge product through. Its operations — list what a source holds, list one knowledge base's documents, search an explicit set of its knowledge bases — are in upstream terms: upstream ids, not `KnowledgeRef`s, because mapping between the two is the catalog's job. It mounts in the Control Plane alone, never in a Runner. No operation takes a URL, a caller-chosen header, or an arbitrary upstream path, so a gateway in front of it cannot be talked into an operation the permission catalog does not govern.
 
 ## Table of Contents
 
@@ -48,6 +48,8 @@ The seam has no configuration. A provider row supplies whatever a deployment var
 `providerKind` and `sourceCode` are the first two segments of every `KnowledgeRef` the catalog mints from this source. The kind is a constant of the provider, because it names the code that speaks the protocol; the source code is configuration, because one company's `prod` is another's `kb`.
 
 `search` receives an explicit, already-authorized set of upstream ids and must never widen it. An empty set is not a request for everything: a provider that treated it as one would search whatever its own configuration pointed at, which is the single way a request could reach a knowledge base nobody authorized.
+
+`listDocuments` receives one authorized upstream id and a page, and owes the gateway one more promise: every `upstreamDocId` it answers fits the governed document reference — within `KNOWLEDGE_DOC_ID_MAX_LENGTH`, over the reference alphabet — and a row with anything else is refused as `upstream-invalid`. That is what lets the gateway mint a reference from one without a second guard. A total it cannot read is reported as absent rather than as zero, because a reader must not be told the list ends where it does not.
 
 Failures are raised as `KnowledgeError` with `upstream-unavailable` or `upstream-invalid`. A provider never raises an authorization reason — it does not know who is asking, which is the point.
 
@@ -89,10 +91,10 @@ No request prefix changes here; the Runner-side consumer of a governed result ow
 
 These limits define when the seam is incomplete on its own. They are current package constraints.
 
-- **No document read** — a source can be listed and searched, and nothing returns a document's full text. The operation arrives with the signed document reference that would address it.
+- **No document content** — a source can be listed, paged, and searched; nothing returns what one document holds. The operation arrives with the delivery that adds it.
 - **No provider registry** — one provider mounts the service. Several sources in one Control Plane would need a registry and a selection policy; the `KnowledgeRef` source-code segment leaves room for it, but nothing consumes that room yet.
 - **No ingestion or mutation** — nothing here creates, uploads, edits, or deletes upstream knowledge.
-- **No incremental listing** — `list()` returns everything a source holds, with no paging or change cursor. A source with many thousands of knowledge bases would need one.
+- **No incremental listing** — `list()` returns every knowledge base a source holds, with no paging or change cursor; only the document listing pages. A source with many thousands of knowledge bases would need one.
 
 <a id="dev-note"></a>
 ### Dev Note

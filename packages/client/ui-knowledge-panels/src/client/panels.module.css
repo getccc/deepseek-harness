@@ -8,6 +8,9 @@
   gap: 12px;
   height: 100%;
   min-width: 0;
+  /* Its own container, so the column query below is against the panel's width
+     rather than whatever the frame happens to declare above it. */
+  container-type: inline-size;
   padding: 24px 24px 32px;
   overflow-y: auto;
   background: var(--dsw-alias-bg-primary);
@@ -90,6 +93,54 @@
   display: flex;
   gap: 8px;
   margin-top: 2px;
+}
+
+/* The knowledge panel's two columns: what a member may search, and what is in
+   the one they chose. It collapses to one column where the frame's centre
+   track cannot hold both. */
+.columns {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(0, 2fr);
+  gap: 16px;
+  align-items: start;
+  min-height: 0;
+}
+
+@container (max-width: 760px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.documents {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* The selectable part of a knowledge-base card: the row itself, with its
+   actions kept outside so one control never nests inside another. */
+.cardSelect {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.cardSelect:focus-visible {
+  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
+}
+
+.cardOn {
+  border-color: var(--dsw-alias-state-business-primary);
 }
 
 .scope {

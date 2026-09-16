@@ -10,7 +10,7 @@
  * @module @deepseek-ai/dsh-knowledge/types
  */
 
-import type { KnowledgeRef } from './brand.ts'
+import type { KnowledgeDocRef, KnowledgeRef } from './brand.ts'
 
 /** What an upstream knowledge base holds, as its catalog classifies it. */
 export type KnowledgeKind = 'document' | 'faq'
@@ -23,6 +23,68 @@ export interface KnowledgeBaseEntry {
   /** The upstream description, empty when the source supplies none. */
   readonly description: string
   readonly kind: KnowledgeKind
+}
+
+/**
+ * Whether a source will retrieve from one document right now.
+ *
+ * Three states rather than the source's own words, because those are what a
+ * member can act on: wait, ask an administrator, or use it. A parse state this
+ * build does not know folds to `unavailable`, which is the reading that
+ * promises least.
+ */
+export type KnowledgeDocumentState =
+  /** The source retrieves from it. */
+  | 'ready'
+  /** The source is still ingesting it, so retrieval does not reach it yet. */
+  | 'processing'
+  /** The source will not retrieve from it: it failed, was cancelled, is being removed, or is switched off. */
+  | 'unavailable'
+
+/** One document in a knowledge base, as the document directory presents it. */
+export interface KnowledgeDocument {
+  readonly docRef: KnowledgeDocRef
+  /** The knowledge base it belongs to, which is what authorized reading it. */
+  readonly ref: KnowledgeRef
+  /** The upstream title, empty when the source supplies none. */
+  readonly title: string
+  /** The original file name, empty for a document the source holds no file for. */
+  readonly fileName: string
+  /** The source's own word for the file kind, such as `pdf`; empty when it supplies none. */
+  readonly fileType: string
+  /** The original file's size, zero when the source supplies none. */
+  readonly byteSize: number
+  readonly state: KnowledgeDocumentState
+  /** Epoch milliseconds the source last changed it, or undefined when it supplies no timestamp. */
+  readonly updatedAt: number | undefined
+}
+
+/** What a consumer asks for one page of a knowledge base's documents. */
+export interface KnowledgeDocumentsRequest {
+  /** The knowledge base to list; authorized on every call. */
+  readonly ref: KnowledgeRef
+  /** Which page, counting from one; the first page when absent. */
+  readonly page?: number
+  /** How many documents one page holds; the provider's own maximum still applies. */
+  readonly pageSize?: number
+  readonly signal?: AbortSignal
+}
+
+/** One page of a knowledge base's documents. */
+export interface KnowledgeDocumentPage {
+  /** The knowledge base listed, echoed so a page reads without its request. */
+  readonly ref: KnowledgeRef
+  readonly documents: readonly KnowledgeDocument[]
+  /** The page returned, counting from one. */
+  readonly page: number
+  /** The page size actually applied, after the provider's bounds. */
+  readonly pageSize: number
+  /**
+   * How many documents the knowledge base holds in total, or undefined when
+   * the source does not say. Absent rather than guessed: a total inferred from
+   * one page would tell a member the list ends where it does not.
+   */
+  readonly total: number | undefined
 }
 
 /**

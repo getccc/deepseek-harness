@@ -1219,7 +1219,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/knowledge/knowledge-gateway-http/src/index.ts:55`](../packages/knowledge/knowledge-gateway-http/src/index.ts)
+Source: [`packages/knowledge/knowledge-gateway-http/src/index.ts:58`](../packages/knowledge/knowledge-gateway-http/src/index.ts)
 
 <a id="deepseek-aidsh-knowledge-gateway-sqlite"></a>
 
@@ -1228,16 +1228,18 @@ Source: [`packages/knowledge/knowledge-gateway-http/src/index.ts:55`](../package
 Requires: `accessControl` · `audit` · `knowledgeSource`
 
 ```ts config-catalog
-/** Plugin config: where the catalog lives, and what one search may return. */
+/** Plugin config: where the catalog lives, and what one operation may return. */
 export interface Config {
   /** Path to the catalog database. */
   path: string
   /** The most passages one search returns when a caller names no bound. */
   defaultMaxResults?: number
+  /** How many documents one listing page holds when a caller names no size. */
+  defaultDocumentPageSize?: number
 }
 ```
 
-Source: [`packages/knowledge/knowledge-gateway-sqlite/src/index.ts:49`](../packages/knowledge/knowledge-gateway-sqlite/src/index.ts)
+Source: [`packages/knowledge/knowledge-gateway-sqlite/src/index.ts:52`](../packages/knowledge/knowledge-gateway-sqlite/src/index.ts)
 
 <a id="deepseek-aidsh-knowledge-team"></a>
 
@@ -1266,7 +1268,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/knowledge/knowledge-team/src/index.ts:47`](../packages/knowledge/knowledge-team/src/index.ts)
+Source: [`packages/knowledge/knowledge-team/src/index.ts:54`](../packages/knowledge/knowledge-team/src/index.ts)
 
 <a id="deepseek-aidsh-knowledge-weknora"></a>
 
@@ -1295,12 +1297,14 @@ export interface Config {
   requestTimeoutMs?: number
   /** The most passages one search may return, after enrichment. */
   maxSearchResults?: number
+  /** The most documents one listing page may return. */
+  maxDocumentsPerPage?: number
   /** The most characters one passage may carry. */
   maxPassageChars?: number
 }
 ```
 
-Source: [`packages/knowledge/knowledge-weknora/src/index.ts:65`](../packages/knowledge/knowledge-weknora/src/index.ts)
+Source: [`packages/knowledge/knowledge-weknora/src/index.ts:74`](../packages/knowledge/knowledge-weknora/src/index.ts)
 
 <a id="deepseek-aidsh-llm-deepseek"></a>
 

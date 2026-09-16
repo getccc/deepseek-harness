@@ -11,8 +11,9 @@
 import { describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import {
-  KnowledgeError, KnowledgeRef,
-  type KnowledgeBaseEntry, type KnowledgeSearchRequest, type KnowledgeSearchResult,
+  KnowledgeDocRef, KnowledgeError, KnowledgeRef,
+  type KnowledgeBaseEntry, type KnowledgeDocumentPage, type KnowledgeDocumentsRequest,
+  type KnowledgeSearchRequest, type KnowledgeSearchResult,
 } from '@deepseek-ai/dsh-knowledge'
 import { KnowledgeController, type KnowledgeScopeView } from '@deepseek-ai/dsh-api-knowledge-controller'
 
@@ -35,6 +36,10 @@ interface Mounted {
   result: KnowledgeSearchResult | Error
   /** Every retrieval the controller asked for, in order. */
   searched: KnowledgeSearchRequest[]
+  /** What the next document listing answers, or the failure it raises. */
+  page: KnowledgeDocumentPage | Error
+  /** Every document listing the controller asked for, in order. */
+  listed: KnowledgeDocumentsRequest[]
 }
 
 /** One retrieved passage. */
@@ -56,12 +61,33 @@ async function mount(open = true): Promise<Mounted> {
       truncated: false,
     },
     searched: [],
+    page: {
+      ref: KnowledgeRef(REF_A),
+      documents: [{
+        docRef: KnowledgeDocRef(`${REF_A}/doc-1`),
+        ref: KnowledgeRef(REF_A),
+        title: '运维手册',
+        fileName: '运维手册.pdf',
+        fileType: 'pdf',
+        byteSize: 20480,
+        state: 'ready',
+        updatedAt: 1756857600000,
+      }],
+      page: 1,
+      pageSize: 20,
+      total: 7,
+    },
+    listed: [],
   }
   ctx.provide('typert', { register: () => () => {} })
   ctx.provide('knowledge', {
     catalog: () => state.directory instanceof Error
       ? Promise.reject(state.directory)
       : Promise.resolve(state.directory),
+    documents: (request: KnowledgeDocumentsRequest) => {
+      state.listed.push(request)
+      return state.page instanceof Error ? Promise.reject(state.page) : Promise.resolve(state.page)
+    },
     search: (request: KnowledgeSearchRequest) => {
       state.searched.push(request)
       return state.result instanceof Error ? Promise.reject(state.result) : Promise.resolve(state.result)
@@ -298,6 +324,86 @@ describe('what a panel reads before it retrieves', () => {
     mounted.directory = new KnowledgeError('control-plane-unreachable')
     await expect(mounted.controller.directory()).rejects.toMatchObject({
       code: 'knowledge/unavailable', details: { reason: 'control-plane-unreachable' },
+    })
+  })
+})
+
+describe('what a member browses', () => {
+  it('lists one knowledge base without a Session, naming each document by reference', async () => {
+    const mounted = await mount(false)
+    const view = await mounted.controller.documents(REF_A, 2, 5)
+    expect(mounted.listed).toEqual([{ ref: REF_A, page: 2, pageSize: 5 }])
+    expect(view).toEqual({
+      knowledgeRef: REF_A,
+      documents: [{
+        docRef: `${REF_A}/doc-1`,
+        knowledgeRef: REF_A,
+        title: '运维手册',
+        fileName: '运维手册.pdf',
+        fileType: 'pdf',
+        byteSize: 20480,
+        state: 'ready',
+        updatedAt: 1756857600000,
+      }],
+      page: 1,
+      pageSize: 20,
+      total: 7,
+    })
+    expect(mounted.events).toEqual([])
+  })
+
+  it('asks for no page when the caller names none', async () => {
+    const mounted = await mount()
+    await mounted.controller.documents(REF_A)
+    expect(mounted.listed).toEqual([{ ref: REF_A }])
+  })
+
+  it('leaves out a timestamp and a total the source did not report', async () => {
+    const mounted = await mount()
+    mounted.page = {
+      ref: KnowledgeRef(REF_A),
+      documents: [{
+        docRef: KnowledgeDocRef(`${REF_A}/doc-2`),
+        ref: KnowledgeRef(REF_A),
+        title: '值班制度',
+        fileName: '',
+        fileType: '',
+        byteSize: 0,
+        state: 'processing',
+        updatedAt: undefined,
+      }],
+      page: 1,
+      pageSize: 20,
+      total: undefined,
+    }
+    const view = await mounted.controller.documents(REF_A)
+    // The Remote boundary carries JSON: a field whose value is undefined is a
+    // field that is not there, which is what "the source did not say" means.
+    expect('total' in view).toBe(false)
+    expect('updatedAt' in (view.documents[0] ?? {})).toBe(false)
+  })
+
+  it('refuses a reference that is not one, before reaching the Control Plane', async () => {
+    const mounted = await mount()
+    await expect(mounted.controller.documents('not-a-reference'))
+      .rejects.toMatchObject({ code: 'knowledge/not-available' })
+    expect(mounted.listed).toEqual([])
+  })
+
+  it.each([
+    ['an empty reference', '', 1],
+    ['a page below one', REF_A, 0],
+  ])('refuses %s as a malformed request', async (_label, ref, page) => {
+    const mounted = await mount()
+    await expect(mounted.controller.documents(ref, page)).rejects.toMatchObject({ code: 'gateway/bad-request' })
+    expect(mounted.listed).toEqual([])
+  })
+
+  it('reports the closed reason a refused listing carries', async () => {
+    const mounted = await mount()
+    mounted.page = new KnowledgeError('not-allowed')
+    await expect(mounted.controller.documents(REF_A)).rejects.toMatchObject({
+      code: 'knowledge/unavailable', details: { reason: 'not-allowed' },
     })
   })
 })

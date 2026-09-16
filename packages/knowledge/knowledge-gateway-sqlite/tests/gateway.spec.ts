@@ -25,6 +25,9 @@ import {
 } from '@deepseek-ai/dsh-knowledge-gateway'
 import {
   KnowledgeSource,
+  type UpstreamDocument,
+  type UpstreamDocumentPage,
+  type UpstreamDocumentsRequest,
   type UpstreamKnowledgeBase,
   type UpstreamPassage,
   type UpstreamSearchRequest,
@@ -50,9 +53,22 @@ class ScriptedSource extends KnowledgeSource {
   readonly searched: UpstreamSearchRequest[] = []
   /** What the next search returns, or the failure it raises. */
   hits: readonly UpstreamPassage[] | Error = []
+  /** The listings `listDocuments` was called with, so a test can assert what left. */
+  readonly listed: UpstreamDocumentsRequest[] = []
+  /** What the next document listing returns, or the failure it raises. */
+  documents: readonly UpstreamDocument[] | Error = []
+  /** The total the next document listing reports. */
+  documentTotal: number | undefined = undefined
 
   list(): Promise<readonly UpstreamKnowledgeBase[]> {
     return this.listing instanceof Error ? Promise.reject(this.listing) : Promise.resolve(this.listing)
+  }
+
+  listDocuments(request: UpstreamDocumentsRequest): Promise<UpstreamDocumentPage> {
+    this.listed.push(request)
+    return this.documents instanceof Error
+      ? Promise.reject(this.documents)
+      : Promise.resolve({ documents: this.documents, pageSize: request.pageSize, total: this.documentTotal })
   }
 
   search(request: UpstreamSearchRequest): Promise<readonly UpstreamPassage[]> {
@@ -670,3 +686,109 @@ function rendered(row: unknown): string {
 function byRef(left: { ref: string }, right: { ref: string }): number {
   return left.ref.localeCompare(right.ref)
 }
+
+/** One document, as a source answers with it. */
+function document(upstreamDocId: string, patch: Partial<UpstreamDocument> = {}): UpstreamDocument {
+  return {
+    upstreamDocId,
+    title: '运维手册',
+    fileName: '运维手册.pdf',
+    fileType: 'pdf',
+    byteSize: 20480,
+    state: 'ready',
+    updatedAt: undefined,
+    ...patch,
+  }
+}
+
+describe('listing one knowledge base’s documents', () => {
+  it('addresses every document by a governed reference over its knowledge base', async () => {
+    await syncBoth()
+    const role = await roleFor(ALICE, 'reader')
+    await access.grantResource(role.id, await resourceOf(REF_A), 'knowledge.search')
+    source.documents = [document('doc-1'), document('doc-2', { state: 'processing' })]
+    source.documentTotal = 7
+    const page = await gateway.documents({ orgId: ORG, principalId: ALICE, ref: KnowledgeRef(REF_A), page: 2 })
+    expect(page.documents.map(row => row.docRef)).toEqual([`${REF_A}/doc-1`, `${REF_A}/doc-2`])
+    expect(page.documents.map(row => row.state)).toEqual(['ready', 'processing'])
+    expect(page).toMatchObject({ ref: REF_A, page: 2, total: 7 })
+    // The upstream id is what leaves the Control Plane for the source, and the
+    // governed reference is what comes back; neither crosses the other way.
+    expect(source.listed).toEqual([{ upstreamId: A, page: 2, pageSize: 20 }])
+  })
+
+  it('applies the deployment page size when a caller names none', async () => {
+    await syncBoth()
+    const role = await roleFor(ALICE, 'reader')
+    await access.grantResource(role.id, await resourceOf(REF_A), 'knowledge.search')
+    source.documents = []
+    await gateway.documents({ orgId: ORG, principalId: ALICE, ref: KnowledgeRef(REF_A) })
+    expect(source.listed).toEqual([{ upstreamId: A, page: 1, pageSize: 20 }])
+  })
+
+  it('carries the caller\u2019s cancellation to the source', async () => {
+    await syncBoth()
+    const role = await roleFor(ALICE, 'reader')
+    await access.grantResource(role.id, await resourceOf(REF_A), 'knowledge.search')
+    source.documents = []
+    const controller = new AbortController()
+    await gateway.documents({
+      orgId: ORG, principalId: ALICE, ref: KnowledgeRef(REF_A), signal: controller.signal,
+    })
+    expect(source.listed[0]?.signal).toBe(controller.signal)
+  })
+
+  it.each([
+    ['a knowledge base no grant admits', async () => { await syncBoth() }],
+    ['a knowledge base an administrator switched off', async () => {
+      await syncBoth()
+      await gateway.setEnabled(ORG, KnowledgeRef(REF_A), false)
+    }],
+    ['a knowledge base the catalog does not hold', async () => { /* nothing synced */ }],
+  ])('refuses %s identically, and asks the source nothing', async (_label, arrange) => {
+    await arrange()
+    // The grant, where one exists at all, is on the other knowledge base.
+    const role = await roleFor(ALICE, 'reader')
+    if ((await access.listResources(ORG, KNOWLEDGE_RESOURCE_TYPE)).length > 0) {
+      await access.grantResource(role.id, await resourceOf(REF_B), 'knowledge.search')
+    }
+    await expect(gateway.documents({ orgId: ORG, principalId: ALICE, ref: KnowledgeRef(REF_A) }))
+      .rejects.toMatchObject({ reason: 'not-allowed' })
+    expect(source.listed).toEqual([])
+    const [row] = await audit.query({ orgId: ORG, action: 'knowledge.document.list' })
+    expect(row).toMatchObject({ outcome: 'denied', reason: 'no-grant', resourceId: REF_A })
+  })
+
+  it('records the listing against the knowledge base, with what it answered', async () => {
+    await syncBoth()
+    const role = await roleFor(ALICE, 'reader')
+    await access.grantResource(role.id, await resourceOf(REF_A), 'knowledge.search')
+    source.documents = [document('doc-1')]
+    await gateway.documents({ orgId: ORG, principalId: ALICE, ref: KnowledgeRef(REF_A) })
+    const [row] = await audit.query({ orgId: ORG, action: 'knowledge.document.list' })
+    // The knowledge base is the audited resource; no document, title, or file
+    // name reaches the store.
+    expect(row).toMatchObject({ outcome: 'allowed', resourceId: REF_A, metadata: { itemCount: 1 } })
+    expect(rendered(row)).not.toContain('doc-1')
+  })
+
+  it('records an upstream failure under its closed class and raises it unchanged', async () => {
+    await syncBoth()
+    const role = await roleFor(ALICE, 'reader')
+    await access.grantResource(role.id, await resourceOf(REF_A), 'knowledge.search')
+    source.documents = new KnowledgeError('upstream-unavailable', 'the source did not answer')
+    await expect(gateway.documents({ orgId: ORG, principalId: ALICE, ref: KnowledgeRef(REF_A) }))
+      .rejects.toMatchObject({ reason: 'upstream-unavailable' })
+    const [row] = await audit.query({ orgId: ORG, action: 'knowledge.document.list' })
+    expect(row).toMatchObject({ outcome: 'error', metadata: { knowledgeFailure: 'upstream-unavailable' } })
+  })
+
+  it('admits a listing on a knowledge base a type grant covers', async () => {
+    await syncBoth()
+    const role = await roleFor(BOB, 'everything')
+    await access.grantType(role.id, KNOWLEDGE_RESOURCE_TYPE, 'knowledge.search')
+    source.documents = [document('doc-1')]
+    const page = await gateway.documents({ orgId: ORG, principalId: BOB, ref: KnowledgeRef(REF_A) })
+    expect(page.documents).toHaveLength(1)
+  })
+})

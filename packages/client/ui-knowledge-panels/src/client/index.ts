@@ -1,7 +1,8 @@
 /**
  * Knowledge panels plugin, browser half: two rows under the sidebar's New work
  * task entry, and the two main panels they address — the knowledge bases this
- * member may search, and the retrieval they run over them.
+ * member may search with the documents in one of them, and the retrieval they
+ * run over them.
  *
  * Both panels read the Team-only `knowledge` Remote namespace, which
  * `@deepseek-ai/dsh-client-ui-knowledge` mounts; this plugin waits for it
@@ -19,7 +20,9 @@ import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
 import type { MainPanelId } from '@deepseek-ai/dsh-client-ui-layout/client'
 import type { RemoteResult } from '@deepseek-ai/dsh-api-remotes/client'
-import type { KnowledgeChoice, KnowledgeSearchView } from '@deepseek-ai/dsh-api-knowledge-controller/types'
+import type {
+  KnowledgeChoice, KnowledgeDocumentsView, KnowledgeSearchView,
+} from '@deepseek-ai/dsh-api-knowledge-controller/types'
 // Type-only: the assembled Client Remote face these panels call.
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
 import type {} from '@deepseek-ai/dsh-api-knowledge-controller/remote'
@@ -103,6 +106,9 @@ function registerUi(ctx: ClientContext): void {
   const directory = async (): Promise<readonly KnowledgeChoice[]> =>
     unwrap(await ctx.remote.knowledge.directory())
 
+  const documents = async (knowledgeRef: string, page: number): Promise<KnowledgeDocumentsView> =>
+    unwrap(await ctx.remote.knowledge.documents(knowledgeRef, page))
+
   const search = async (query: string, knowledgeRefs: readonly string[]): Promise<KnowledgeSearchView> =>
     unwrap(await ctx.remote.knowledge.search(
       query,
@@ -150,6 +156,7 @@ function registerUi(ctx: ClientContext): void {
       locale: NS,
       inject: (): KnowledgeBasesInjected => ({
         directory,
+        documents,
         searchIn: (knowledgeRef) => {
           requested.set([knowledgeRef])
           ctx.layout.selectPanel(SEARCH_PANEL)

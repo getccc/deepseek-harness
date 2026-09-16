@@ -4,18 +4,25 @@ import type { SessionEvent } from '@deepseek-ai/dsh-session/types'
 import {
   DEFAULT_KNOWLEDGE_SCOPE,
   InvalidKnowledgeRefError,
+  KNOWLEDGE_DOC_ID_MAX_LENGTH,
   KNOWLEDGE_REF_MAX_LENGTH,
   KNOWLEDGE_SOURCE_CODE_MAX_LENGTH,
   Knowledge,
+  KnowledgeDocRef,
   KnowledgeError,
   KnowledgeRef,
   foldKnowledgeScope,
+  formatKnowledgeDocRef,
   formatKnowledgeRef,
+  isKnowledgeDocRef,
   isKnowledgeRef,
+  parseKnowledgeDocRef,
   parseKnowledgeRef,
   parseKnowledgeScope,
   selectionOf,
   type KnowledgeBaseEntry,
+  type KnowledgeDocumentPage,
+  type KnowledgeDocumentsRequest,
   type KnowledgeScope,
   type KnowledgeSearchRequest,
   type KnowledgeSearchResult,
@@ -98,6 +105,48 @@ describe('knowledge references', () => {
   ])('reads %s back as undefined', (_label, value) => {
     expect(parseKnowledgeRef(value)).toBeUndefined()
     expect(isKnowledgeRef(value)).toBe(false)
+  })
+})
+
+describe('document references', () => {
+  it('carries its knowledge base and the upstream document id, and reads back into both', () => {
+    const docRef = formatKnowledgeDocRef({ ref: KnowledgeRef(ref()), upstreamDocId: 'doc-7' })
+    expect(docRef).toBe(`${ref()}/doc-7`)
+    expect(parseKnowledgeDocRef(docRef)).toEqual({ ref: ref(), upstreamDocId: 'doc-7' })
+    expect(isKnowledgeDocRef(docRef)).toBe(true)
+  })
+
+  it('is longer than an audit token, which is why it is its own brand', () => {
+    // Two UUIDs do not fit KNOWLEDGE_REF_MAX_LENGTH. A document is never the
+    // audited resource — what an operation on one records is its knowledge base
+    // — so the audit bound does not apply to it.
+    const docRef = formatKnowledgeDocRef({ ref: KnowledgeRef(ref()), upstreamDocId: UUID })
+    expect(docRef.length).toBeGreaterThan(KNOWLEDGE_REF_MAX_LENGTH)
+    expect(isKnowledgeDocRef(docRef)).toBe(true)
+  })
+
+  it.each([
+    ['a knowledge base that is not a reference', 'weknora:prod', 'doc-1'],
+    ['an empty document id', ref(), ''],
+    ['a document id holding the separator', ref(), 'a/b'],
+    ['a document id holding a colon', ref(), 'a:b'],
+    ['a document id over the maximum', ref(), 'd'.repeat(KNOWLEDGE_DOC_ID_MAX_LENGTH + 1)],
+  ])('refuses %s', (_label, base, upstreamDocId) => {
+    expect(() => formatKnowledgeDocRef({ ref: KnowledgeRef(base), upstreamDocId }))
+      .toThrow(InvalidKnowledgeRefError)
+  })
+
+  it.each([
+    ['a value with no separator', 'weknora:prod:kb-1'],
+    ['a value whose knowledge base is not one', 'weknora:prod/doc-1'],
+    ['a value with nothing after the separator', `${ref()}/`],
+  ])('reads %s as not a document reference', (_label, value) => {
+    expect(parseKnowledgeDocRef(value)).toBeUndefined()
+    expect(isKnowledgeDocRef(value)).toBe(false)
+  })
+
+  it('brands a raw string without checking it, for a caller that already proved the grammar', () => {
+    expect(KnowledgeDocRef('anything')).toBe('anything')
   })
 })
 
@@ -206,16 +255,37 @@ describe('the seam', () => {
       }])
     }
 
+    documents(request: KnowledgeDocumentsRequest): Promise<KnowledgeDocumentPage> {
+      return Promise.resolve({
+        ref: request.ref,
+        documents: [{
+          docRef: KnowledgeDocRef(`${request.ref}/doc-1`),
+          ref: request.ref,
+          title: '运维手册',
+          fileName: '运维手册.pdf',
+          fileType: 'pdf',
+          byteSize: 2048,
+          state: 'ready',
+          updatedAt: undefined,
+        }],
+        page: request.page ?? 1,
+        pageSize: 20,
+        total: 1,
+      })
+    }
+
     search(request: KnowledgeSearchRequest): Promise<KnowledgeSearchResult> {
       return Promise.resolve({ query: request.query, searched: [], passages: [], truncated: false })
     }
   }
 
-  it('mounts under ctx.knowledge and answers both operations', async () => {
+  it('mounts under ctx.knowledge and answers every operation', async () => {
     const ctx = new Context()
     await ctx.plugin(StubKnowledge)
     const entries = await ctx.knowledge.catalog()
     expect(entries.map(entry => entry.displayName)).toEqual(['临港知识库'])
+    const page = await ctx.knowledge.documents({ ref: KnowledgeRef(ref()) })
+    expect(page.documents.map(document => document.docRef)).toEqual([`${ref()}/doc-1`])
     const result = await ctx.knowledge.search({ query: '年假', scope: { mode: 'all' } })
     expect(result.query).toBe('年假')
   })

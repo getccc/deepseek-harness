@@ -38,18 +38,19 @@ kind: "package-reference"
 - name: '@deepseek-ai/dsh-api-knowledge-controller'
 ```
 
-### 四个方法
+### 五个方法
 
 | 方法 | 回答什么 | 需要会话 |
 |---|---|---|
 | `scope(sessionId)` | 某个会话可以从什么中选择、它选了什么，以及已选引用中哪些已不在目录里 | 是 |
 | `choose(sessionId, mode, knowledgeRefs?)` | 记录选择并回答同样的视图 | 是 |
 | `directory()` | 该成员此刻可以检索的知识库 | 否 |
+| `documents(knowledgeRef, page?, pageSize?)` | 某个知识库中文档的一页，每份都由受治理引用命名 | 否 |
 | `search(query, mode, knowledgeRefs?, maxResults?)` | 排名后的段落，以及实际被检索的知识库 | 否 |
 
 目录在每次调用时重新读取而不缓存：上次查看之后被撤销的授权应当让选择器变窄，管理员停用的知识库应当从中消失。
 
-`search` 是唯一不触及会话的方法：它不追加事件、不启动模型轮次，也不需要有会话处于打开状态。这正是它可以服务于成员自行打开的面板的原因——也正因如此，授权只是保持不变而非被放宽：Control Plane 会在这次调用上判定它所命名的每一个知识库。格式正确的引用会被原样传递，而不是先与这里读到的目录比对：真正作数的答案在 Control Plane，提前判断既要为每次查询多读一次目录，又仍可能与那个答案不一致。
+`directory`、`documents` 和 `search` 都不触及会话：它们不追加事件、不启动模型轮次，也不需要有会话处于打开状态。这正是它们可以服务于成员自行打开的面板的原因——也正因如此，授权只是保持不变而非被放宽：Control Plane 会在这次调用上判定它所命名的每一个知识库。格式正确的引用会被原样传递，而不是先与这里读到的目录比对：真正作数的答案在 Control Plane，提前判断既要为每次查询多读一次目录，又仍可能与那个答案不一致。
 
 ### 选择为何携带名字
 
@@ -68,7 +69,7 @@ kind: "package-reference"
 
 | 文件 | 内容 |
 |---|---|
-| [`src/index.ts`](src/index.ts) | `knowledge` Remote 命名空间、其请求校验、范围投影，以及成员自行运行的检索 |
+| [`src/index.ts`](src/index.ts) | `knowledge` Remote 命名空间、其请求校验、范围投影、文档列表，以及成员自行运行的检索 |
 
 <a id="further-exploration"></a>
 ## 延伸阅读
@@ -81,7 +82,7 @@ kind: "package-reference"
 <a id="model-experience"></a>
 ## 模型体验
 
-间接影响，通过 `dsh-tool-knowledge`：本包记录的范围决定它的提示词章节写出什么，也决定它的工具是否被提供。本 controller 不贡献提示词，也不注册 schema。通过 `search` 运行的检索完全不到达模型——它的段落回答给浏览器，到此为止。
+间接影响，通过 `dsh-tool-knowledge`：本包记录的范围决定它的提示词章节写出什么，也决定它的工具是否被提供。本 controller 不贡献提示词，也不注册 schema。通过 `search` 运行的检索，以及通过 `documents` 运行的列表，都完全不到达模型——它们回答的内容交给浏览器，到此为止。
 
 #### KV Cache 影响
 

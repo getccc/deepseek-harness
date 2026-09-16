@@ -10,7 +10,8 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
 import { bindSnapshotSelector, makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
 import type {
-  KnowledgeChoice, KnowledgePassageView, KnowledgeSearchView,
+  KnowledgeChoice, KnowledgeDocumentView, KnowledgeDocumentsView,
+  KnowledgePassageView, KnowledgeSearchView,
 } from '@deepseek-ai/dsh-api-knowledge-controller/types'
 import { KnowledgeBasesGlyph, KnowledgeSearchGlyph } from '../src/client/Glyphs.tsx'
 import { KnowledgeBasesPanel, type KnowledgeBasesPanelProps } from '../src/client/KnowledgeBasesPanel.tsx'
@@ -44,10 +45,40 @@ function passage(patch: Partial<KnowledgePassageView> = {}): KnowledgePassageVie
   }
 }
 
-/** Render the knowledge-base list over one scripted directory. */
-function renderBases(directory: () => Promise<readonly KnowledgeChoice[]>, searchIn = vi.fn()) {
-  const props = { directory, searchIn, t } as unknown as KnowledgeBasesPanelProps
-  return { searchIn, view: render(<KnowledgeBasesPanel {...props} />) }
+/** One document as the controller answers it. */
+function document(patch: Partial<KnowledgeDocumentView> = {}): KnowledgeDocumentView {
+  return {
+    docRef: `${REF_A}/doc-1`,
+    knowledgeRef: REF_A,
+    title: '运维手册',
+    fileName: '运维手册.pdf',
+    fileType: 'pdf',
+    byteSize: 20480,
+    state: 'ready',
+    updatedAt: 1756857600000,
+    ...patch,
+  }
+}
+
+/** One page as the controller answers it. */
+function documentPage(patch: Partial<KnowledgeDocumentsView> = {}): KnowledgeDocumentsView {
+  return { knowledgeRef: REF_A, documents: [document()], page: 1, pageSize: 20, total: 1, ...patch }
+}
+
+/** Render the knowledge-base list over scripted faces. */
+function renderBases(
+  directory: () => Promise<readonly KnowledgeChoice[]>,
+  searchIn = vi.fn(),
+  documents: (knowledgeRef: string, page: number) => Promise<KnowledgeDocumentsView> = () => Promise.resolve(documentPage()),
+) {
+  const listed = vi.fn(documents)
+  const props = { directory, documents: listed, searchIn, t } as unknown as KnowledgeBasesPanelProps
+  return { searchIn, documents: listed, view: render(<KnowledgeBasesPanel {...props} />) }
+}
+
+/** Choose the first knowledge base, which is what loads its documents. */
+async function choose(name = '临港知识库'): Promise<void> {
+  fireEvent.click(await screen.findByRole('button', { name: new RegExp(name, 'u') }))
 }
 
 /** Render the retrieval panel over scripted faces and one requested selection. */
@@ -72,6 +103,12 @@ function renderSearch(options: {
 /** The two ways a pending directory read finishes, held for a test to fire late. */
 interface Settle {
   resolve: (rows: readonly KnowledgeChoice[]) => void
+  reject: (reason: Error) => void
+}
+
+/** The same, for a pending document listing. */
+interface PageSettle {
+  resolve: (page: KnowledgeDocumentsView) => void
   reject: (reason: Error) => void
 }
 
@@ -263,5 +300,139 @@ describe('the navigation rows', () => {
     cleanup()
     const search = render(<KnowledgeSearchGlyph {...props} />)
     expect(search.container.querySelector('svg')?.getAttribute('width')).toBe('18')
+  })
+})
+
+describe('the documents in one knowledge base', () => {
+  it('asks for nothing until a knowledge base is chosen, then lists its first page', async () => {
+    const bases = renderBases(() => Promise.resolve(BASES))
+    expect(await screen.findByText('选择左侧的知识库，查看其中的文档')).toBeTruthy()
+    expect(bases.documents).not.toHaveBeenCalled()
+    await choose()
+    await waitFor(() => { expect(bases.documents).toHaveBeenCalledWith(REF_A, 1) })
+    expect(await screen.findByText('运维手册')).toBeTruthy()
+    expect(screen.getByText('可检索')).toBeTruthy()
+    expect(screen.getByText('共 1 篇')).toBeTruthy()
+    expect(screen.getByText('第 1 页')).toBeTruthy()
+    expect(screen.getByText('20KB')).toBeTruthy()
+  })
+
+  it('names a document by its file name when the source holds no title', async () => {
+    const bases = renderBases(
+      () => Promise.resolve(BASES),
+      undefined,
+      () => Promise.resolve(documentPage({ documents: [document({ title: '', fileType: '', byteSize: 0 })] })),
+    )
+    await choose()
+    expect(await screen.findByText('运维手册.pdf')).toBeTruthy()
+    expect(bases.documents).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    ['processing', '解析中'],
+    ['unavailable', '不可检索'],
+  ])('says a %s document is not searchable yet', async (state, label) => {
+    renderBases(
+      () => Promise.resolve(BASES),
+      undefined,
+      () => Promise.resolve(documentPage({ documents: [document({ state: state as KnowledgeDocumentView['state'] })] })),
+    )
+    await choose()
+    expect(await screen.findByText(label)).toBeTruthy()
+  })
+
+  it('tells an empty knowledge base apart from a listing it could not read', async () => {
+    const empty = renderBases(
+      () => Promise.resolve(BASES),
+      undefined,
+      () => Promise.resolve(documentPage({ documents: [], total: 0 })),
+    )
+    await choose()
+    expect(await screen.findByText('这个知识库里还没有文档')).toBeTruthy()
+    empty.view.unmount()
+    renderBases(() => Promise.resolve(BASES), undefined, () => Promise.reject(new Error('refused')))
+    await choose()
+    expect(await screen.findByText('文档列表读取失败')).toBeTruthy()
+  })
+
+  it('pages forward while there is more, and back from where it got to', async () => {
+    const bases = renderBases(
+      () => Promise.resolve(BASES),
+      undefined,
+      (_ref, page) => Promise.resolve(documentPage({ page, pageSize: 1, total: 3 })),
+    )
+    await choose()
+    expect(await screen.findByText('第 1 页')).toBeTruthy()
+    expect(screen.getByRole('button', { name: '上一页' }).hasAttribute('disabled')).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: '下一页' }))
+    expect(await screen.findByText('第 2 页')).toBeTruthy()
+    expect(bases.documents).toHaveBeenLastCalledWith(REF_A, 2)
+    fireEvent.click(screen.getByRole('button', { name: '上一页' }))
+    await waitFor(() => { expect(bases.documents).toHaveBeenLastCalledWith(REF_A, 1) })
+  })
+
+  it('stops paging at the end the total names', async () => {
+    renderBases(
+      () => Promise.resolve(BASES),
+      undefined,
+      (_ref, page) => Promise.resolve(documentPage({ page, pageSize: 2, total: 2 })),
+    )
+    await choose()
+    await screen.findByText('第 1 页')
+    expect(screen.getByRole('button', { name: '下一页' }).hasAttribute('disabled')).toBe(true)
+  })
+
+  it('offers another page on a full one when the source reports no total', async () => {
+    renderBases(
+      () => Promise.resolve(BASES),
+      undefined,
+      (_ref, page) => Promise.resolve({
+        knowledgeRef: REF_A,
+        documents: [document(), document({ docRef: `${REF_A}/doc-2` })],
+        page,
+        pageSize: 2,
+      }),
+    )
+    await choose()
+    await screen.findByText('第 1 页')
+    // A full page with no total is the one case where "there may be more" is
+    // the honest answer; the count itself is not shown.
+    expect(screen.queryByText(/共 .* 篇/u)).toBeNull()
+    expect(screen.getByRole('button', { name: '下一页' }).hasAttribute('disabled')).toBe(false)
+  })
+
+  it('starts the new knowledge base at its first page', async () => {
+    const bases = renderBases(
+      () => Promise.resolve(BASES),
+      undefined,
+      (_ref, page) => Promise.resolve(documentPage({ page, pageSize: 1, total: 9 })),
+    )
+    await choose()
+    await screen.findByText('第 1 页')
+    fireEvent.click(screen.getByRole('button', { name: '下一页' }))
+    await waitFor(() => { expect(bases.documents).toHaveBeenLastCalledWith(REF_A, 2) })
+    await choose('南昌知识库')
+    await waitFor(() => { expect(bases.documents).toHaveBeenLastCalledWith(REF_B, 1) })
+  })
+
+  it.each([
+    ['answers', (settle: PageSettle) => { settle.resolve(documentPage()) }],
+    ['is refused', (settle: PageSettle) => { settle.reject(new Error('too late')) }],
+  ])('ignores a listing that %s after the panel is gone', async (_label, finish) => {
+    const settle = {} as PageSettle
+    const bases = renderBases(
+      () => Promise.resolve(BASES),
+      undefined,
+      () => new Promise((resolve, reject) => {
+        settle.resolve = resolve
+        settle.reject = reject
+      }),
+    )
+    await choose()
+    bases.view.unmount()
+    finish(settle)
+    await settled()
+    expect(screen.queryByText('运维手册')).toBeNull()
+    expect(screen.queryByText('文档列表读取失败')).toBeNull()
   })
 })

@@ -1,5 +1,5 @@
 ---
-description: "WeKnora 知识源提供方：Control Plane 调用的两个固定端点、逐操作凭据解析、结果上界，以及封闭失败映射。"
+description: "WeKnora 知识源提供方：Control Plane 调用的那组固定端点、逐操作凭据解析、结果上界，以及封闭失败映射。"
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-knowledge-weknora` 在一个 WeKnora 部署之上提供 `ctx.knowledgeSource`。它是 Control Plane 中唯一持有知识凭据并讲知识产品协议的地方：调用两个固定端点，按操作解析 API 密钥，限定返回内容的规模，并把每个失败映射到封闭的原因。它对提问者一无所知；前面受治理的 gateway 已经做出了决定。只在 Control Plane 中挂载它。它的契约钉在一个真实部署自己的 OpenAPI 文档与响应上，而不是上游的 Markdown——后者描述了部署并不提供的端点。
+`dsh-knowledge-weknora` 在一个 WeKnora 部署之上提供 `ctx.knowledgeSource`。它是 Control Plane 中唯一持有知识凭据并讲知识产品协议的地方：调用一组固定端点，按操作解析 API 密钥，限定返回内容的规模，并把每个失败映射到封闭的原因。它对提问者一无所知；前面受治理的 gateway 已经做出了决定。只在 Control Plane 中挂载它。它的契约钉在一个真实部署自己的响应上，而不是上游的 Markdown——后者描述了部署并不提供的端点。
 
 ## 目录
 
@@ -73,12 +73,16 @@ WeKnora 以 `X-API-Key` 认证。**空间** Key 固定访问其所属空间；**
 
 | 文件 | 内容 |
 |---|---|
-| [`src/wire.ts`](src/wire.ts) | 端点、信封、错误码和两个信封读取器 |
-| [`src/index.ts`](src/index.ts) | 提供方：配置校验、两个操作、上界和失败映射 |
+| [`src/wire.ts`](src/wire.ts) | 端点、信封、错误码和这些信封读取器 |
+| [`src/index.ts`](src/index.ts) | 提供方：配置校验、各个操作、上界和失败映射 |
 
-### 两个端点
+### 这些端点
 
 `GET /api/v1/knowledge-bases` 列出该空间的知识库。`POST /api/v1/knowledge-bases/{id}/hybrid-search` 检索段落；其请求体的 `knowledge_base_ids` 覆盖范围，但路径仍要求一个 id，且该 id 必须是列表的成员——列表之外的路径 id 会以 `ErrNotFound` 被拒。因此提供方把一个已授权 id 放在路径上、把完整已授权集合放在请求体里，使路径永远无法扩大范围。
+
+`GET /api/v1/knowledge-bases/{id}/knowledge?page&page_size` 列出某个知识库中的文档，也是这里唯一在 `data` 旁携带计数的信封。提供方只在 `total` 是整数计数时读取它，用 `maxDocumentsPerPage` 限制 `page_size`，并拒绝 `id` 无法装进受治理文档引用的行。
+
+`parse_status` 取值 `pending`、`processing`、`finalizing`、`completed`、`failed`、`cancelled` 或 `deleting`，`enable_status` 取值 `enabled` 或 `disabled`。提供方只对既 `completed` 又已启用的文档宣称 `ready`，把三个进行中的词读作 `processing`，其余一切——包括本次构建不认识的词——读作 `unavailable`，即承诺最少的那个状态。
 
 ### 不可能返回可加载 URL
 
@@ -115,9 +119,9 @@ WeKnora 以 `X-API-Key` 认证。**空间** Key 固定访问其所属空间；**
 
 - **多库检索需要同一个 embedding 模型** —— WeKnora 的 `knowledge_base_ids` 只在各知识库共享同一 embedding 模型时跨越多个库，而 API 没有为不满足该条件的集合声明任何错误。提供方上报 `embeddingModelId`，使网关能在调用之前拒绝混合集合；它不按模型扇出再合并，因为不同调用的分数各自在自己的 rerank 内归一化，不可比较。
 - **未知知识库 id 在上游被静默忽略** —— 一个真实 id 与一个未知 id 混在一起的列表会以 `success` 返回，且结果只来自那个真实知识库。提供方会丢弃请求未指名的知识库的命中，但存在性与授权必须在调用之前定下来，而不是之后。
-- **没有文档阅读** —— `list` 与 `search` 就是全部接口面。WeKnora 的分片端点不会被调用。
+- **没有文档内容** —— 提供方会列出文档，但从不取回其中任何一份。WeKnora 的预览、下载和分片端点都不会被调用。
 - **不带分片计数** —— 列表接口的 `chunk_count` 在检索明明能返回分片的知识库上读作零，因此本提供方不再读取它，下游也不再携带该计数。`knowledge_count` 与 `processing_count` 按列表给出的值原样采用。
-- **没有增量列表** —— `list()` 取回全部内容；WeKnora 在该端点上不提供分页或变更游标。
+- **没有增量列表** —— `list()` 取回全部知识库；WeKnora 在该端点上不提供分页或变更游标。只有文档列表分页，而它同样没有变更游标，因此同一页读两次可能不同。
 
 <a id="dev-note"></a>
 ### 开发备注

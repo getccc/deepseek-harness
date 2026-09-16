@@ -27698,7 +27698,7 @@
         "packages/knowledge/knowledge/src/types.ts#KnowledgeScope"
       ],
       "sources": [
-        "packages/knowledge/knowledge/src/types.ts:51"
+        "packages/knowledge/knowledge/src/types.ts:113"
       ]
     },
     {
@@ -41008,7 +41008,7 @@
         "event:knowledge/scope.data[2]"
       ],
       "sources": [
-        "packages/knowledge/knowledge/src/types.ts:54"
+        "packages/knowledge/knowledge/src/types.ts:116"
       ]
     },
     {
@@ -45006,7 +45006,7 @@
         "event:knowledge/scope.data[1]"
       ],
       "sources": [
-        "packages/knowledge/knowledge/src/types.ts:53"
+        "packages/knowledge/knowledge/src/types.ts:115"
       ]
     },
     {
@@ -50043,7 +50043,7 @@
         "event:knowledge/scope.data[0]"
       ],
       "sources": [
-        "packages/knowledge/knowledge/src/types.ts:52"
+        "packages/knowledge/knowledge/src/types.ts:114"
       ]
     },
     {
@@ -60459,7 +60459,7 @@
         "packages/knowledge/knowledge/src/types.ts#KnowledgeScopeBase"
       ],
       "sources": [
-        "packages/knowledge/knowledge/src/types.ts:38"
+        "packages/knowledge/knowledge/src/types.ts:100"
       ]
     },
     {

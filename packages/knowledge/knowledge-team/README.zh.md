@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-knowledge-team` 通过访问公司 Control Plane，在 Team Runner 上提供 `ctx.knowledge`。它发送的是一个查询和本会话范围解析出的引用；它不发送——也不可能发送，因为协议没有位置——知识地址、凭据、租户或上游 id。谁可以读什么，由另一侧在每次调用时判定。在 `team` profile 中，与它读取 Token 的账户客户端并排挂载。
+`dsh-knowledge-team` 通过访问公司 Control Plane，在 Team Runner 上提供 `ctx.knowledge`。它发送的是一个查询，或一个受治理引用，仅此而已；它不发送——也不可能发送，因为协议没有位置——知识地址、凭据、租户或上游 id。谁可以读什么，由另一侧在每次调用时判定。在 `team` profile 中，与它读取 Token 的账户客户端并排挂载。
 
 ## 目录
 
@@ -66,7 +66,7 @@ kind: "package-reference"
 
 | 文件 | 内容 |
 |---|---|
-| [`src/index.ts`](src/index.ts) | 提供方：两个调用、wire 校验和失败映射 |
+| [`src/index.ts`](src/index.ts) | 提供方：这些调用、wire 校验和失败映射 |
 
 <a id="further-exploration"></a>
 ## 延伸阅读
@@ -92,7 +92,7 @@ kind: "package-reference"
 - **没有离线缓存** —— 到不了 Control Plane 的 Runner 完全没有知识，这是有意的：缓存的私有段落是一份未经当前授权判定就交付出去的内容。
 - **没有自己的截止时间** —— 调用方的信号会被转发，操作的上界由 Control Plane 拥有。若 Control Plane 接受连接却永不应答，Runner 等待的是调用方自己的超时。
 - **不重试** —— 每次调用只尝试一次。一次瞬时失败是否值得重试，属于知道成员在等什么的那个调用方。
-- **没有文档阅读** —— 接缝还没有这个操作，因此这里也没有。
+- **没有文档内容** —— 接缝还没有这个操作，因此这里也没有；文档可以被列出和命名，但没有任何东西取回其中一份。
 
 <a id="dev-note"></a>
 ### 开发备注

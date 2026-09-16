@@ -4,7 +4,7 @@
  *
  * It mounts in the Control Plane only. Nothing here knows who is asking — the
  * gateway in front of it has already decided that — so the provider's whole
- * job is to call two fixed endpoints, bound what comes back, and refuse
+ * job is to call a fixed set of endpoints, bound what comes back, and refuse
  * anything it cannot read.
  * @module @deepseek-ai/dsh-knowledge-weknora
  */
@@ -14,13 +14,18 @@ import z from '@deepseek-ai/schemastery'
 import { credentialRef, isCredentialRefName } from '@deepseek-ai/dsh-credentials'
 import { randomUUID } from '@deepseek-ai/dsh-util-crypto'
 import {
+  KNOWLEDGE_DOC_ID_MAX_LENGTH,
   KNOWLEDGE_REF_SEGMENT,
   KNOWLEDGE_SOURCE_CODE_MAX_LENGTH,
   KnowledgeError,
+  type KnowledgeDocumentState,
   type KnowledgeKind,
 } from '@deepseek-ai/dsh-knowledge'
 import {
   KnowledgeSource,
+  type UpstreamDocument,
+  type UpstreamDocumentPage,
+  type UpstreamDocumentsRequest,
   type UpstreamKnowledgeBase,
   type UpstreamPassage,
   type UpstreamSearchRequest,
@@ -30,9 +35,12 @@ import {
   ERROR_CODES,
   LIST_PATH,
   REQUEST_ID_HEADER,
+  documentsPath,
   errorCode,
   hybridSearchPath,
   successData,
+  successPage,
+  type WireKnowledge,
   type WireKnowledgeBase,
   type WireSearchResult,
 } from './wire.ts'
@@ -43,6 +51,7 @@ export {
   ERROR_CODES,
   LIST_PATH,
   REQUEST_ID_HEADER,
+  documentsPath,
   hybridSearchPath,
 } from './wire.ts'
 
@@ -81,6 +90,8 @@ export interface Config {
   requestTimeoutMs?: number
   /** The most passages one search may return, after enrichment. */
   maxSearchResults?: number
+  /** The most documents one listing page may return. */
+  maxDocumentsPerPage?: number
   /** The most characters one passage may carry. */
   maxPassageChars?: number
 }
@@ -97,6 +108,8 @@ const DEFAULT_REQUEST_TIMEOUT_MS = 30_000
 const DEFAULT_MAX_SEARCH_RESULTS = 20
 /** The most characters one passage carries when a deployment names no bound. */
 const DEFAULT_MAX_PASSAGE_CHARS = 4_000
+/** The most documents one listing page carries when a deployment names no bound. */
+const DEFAULT_MAX_DOCUMENTS_PER_PAGE = 100
 
 /**
  * A WeKnora deployment, as a knowledge source.
@@ -115,6 +128,7 @@ export default class WeknoraKnowledgeSource extends KnowledgeSource {
     requestTimeoutMs: z.natural().default(DEFAULT_REQUEST_TIMEOUT_MS),
     maxSearchResults: z.natural().default(DEFAULT_MAX_SEARCH_RESULTS),
     maxPassageChars: z.natural().default(DEFAULT_MAX_PASSAGE_CHARS),
+    maxDocumentsPerPage: z.natural().min(1).default(DEFAULT_MAX_DOCUMENTS_PER_PAGE),
   })
 
   override readonly providerKind = 'weknora'
@@ -156,6 +170,17 @@ export default class WeknoraKnowledgeSource extends KnowledgeSource {
   async list(signal?: AbortSignal): Promise<readonly UpstreamKnowledgeBase[]> {
     const data = await this.call(LIST_PATH, undefined, signal)
     return data.map(entry => toKnowledgeBase(entry))
+  }
+
+  async listDocuments(request: UpstreamDocumentsRequest): Promise<UpstreamDocumentPage> {
+    const pageSize = Math.min(request.pageSize, this.resolved.maxDocumentsPerPage)
+    const query = new URLSearchParams({ page: String(request.page), page_size: String(pageSize) })
+    const page = await this.page(`${documentsPath(request.upstreamId)}?${query.toString()}`, request.signal)
+    return {
+      documents: page.data.map(entry => toDocument(entry)),
+      pageSize,
+      total: page.total,
+    }
   }
 
   async search(request: UpstreamSearchRequest): Promise<readonly UpstreamPassage[]> {
@@ -204,6 +229,20 @@ export default class WeknoraKnowledgeSource extends KnowledgeSource {
   }
 
   /**
+   * Perform one upstream GET and return its page, total included.
+   *
+   * Separate from {@link call} because only this envelope carries counts, and a
+   * caller that read them off the other one would be reading a field the
+   * endpoint does not send.
+   */
+  private async page(
+    path: string,
+    signal: AbortSignal | undefined,
+  ): Promise<{ readonly data: readonly unknown[]; readonly total: number | undefined }> {
+    return this.request(path, undefined, signal, successPage)
+  }
+
+  /**
    * Perform one upstream call and return its `data` array.
    *
    * The credential is resolved per operation rather than held, so a rotation
@@ -214,6 +253,20 @@ export default class WeknoraKnowledgeSource extends KnowledgeSource {
     body: Record<string, unknown> | undefined,
     signal: AbortSignal | undefined,
   ): Promise<readonly unknown[]> {
+    return this.request(path, body, signal, successData)
+  }
+
+  /**
+   * One upstream request, decoded by the envelope reader its endpoint answers
+   * with. Everything both readers share — the credential, the deadline, the
+   * failure mapping — happens here once.
+   */
+  private async request<T>(
+    path: string,
+    body: Record<string, unknown> | undefined,
+    signal: AbortSignal | undefined,
+    read: (decoded: unknown) => T | undefined,
+  ): Promise<T> {
     const credential = await this.ctx.credentials.resolve(credentialRef(this.config.credentialRef))
     if (credential === undefined) {
       throw new KnowledgeError('upstream-unavailable', 'no knowledge credential is configured')
@@ -253,8 +306,8 @@ export default class WeknoraKnowledgeSource extends KnowledgeSource {
       // way this build cannot read it, and its text is not ours to forward.
       throw new KnowledgeError('upstream-invalid', `${this.providerKind} answered a body this build cannot read`)
     }
-    const data = successData(decoded)
-    if (data !== undefined) return data
+    const value = read(decoded)
+    if (value !== undefined) return value
     throw new KnowledgeError(reasonOf(errorCode(decoded), response.status), `${this.providerKind} refused the operation`)
   }
 }
@@ -311,6 +364,62 @@ function toKnowledgeBase(entry: unknown): UpstreamKnowledgeBase {
   }
 }
 
+/**
+ * Validate one document row, refusing one this build could not address.
+ *
+ * The id is the only required field, and it has to be one a governed reference
+ * can carry: a row without such an id is a document no later operation could
+ * name, while a missing title or file name is a document the source simply
+ * holds less about.
+ */
+function toDocument(entry: unknown): UpstreamDocument {
+  const row = asRecord(entry)
+  const id = row['id']
+  if (typeof id !== 'string' || id === '') {
+    throw new KnowledgeError('upstream-invalid', 'a document is missing its id')
+  }
+  // The governed reference grammar, checked here so the gateway can mint a
+  // reference from this id without a second guard. A source that answered an
+  // id outside it is a source this build cannot address.
+  if (!KNOWLEDGE_REF_SEGMENT.test(id) || id.length > KNOWLEDGE_DOC_ID_MAX_LENGTH) {
+    throw new KnowledgeError('upstream-invalid', 'a document id is not one this build can address')
+  }
+  const knowledge: WireKnowledge = row as unknown as WireKnowledge
+  return {
+    upstreamDocId: id,
+    title: text(knowledge.title),
+    fileName: text(knowledge.file_name),
+    fileType: text(knowledge.file_type),
+    byteSize: count(knowledge.file_size),
+    state: documentState(text(knowledge.parse_status), text(knowledge.enable_status)),
+    // The source reports three timestamps and they answer different questions;
+    // the most recent change a member cares about is when it was last written,
+    // then when it finished parsing, then when it arrived.
+    updatedAt: timestamp(knowledge.updated_at) ?? timestamp(knowledge.processed_at) ?? timestamp(knowledge.created_at),
+  }
+}
+
+/**
+ * Read a source's parse and enablement words as one product state.
+ *
+ * `ready` is claimed only for a document the source both finished parsing and
+ * has switched on, because that is the pair that decides whether retrieval
+ * reaches it. Everything else is either still in progress or will not be
+ * retrieved, and a word this build does not know takes the second reading.
+ */
+function documentState(parseStatus: string, enableStatus: string): KnowledgeDocumentState {
+  switch (parseStatus) {
+    case 'completed':
+      return enableStatus === 'disabled' ? 'unavailable' : 'ready'
+    case 'pending':
+    case 'processing':
+    case 'finalizing':
+      return 'processing'
+    default:
+      return 'unavailable'
+  }
+}
+
 /** Validate one search result, refusing a row this build cannot attribute. */
 function toSearchResult(entry: unknown): SearchFields {
   const row = asRecord(entry)
@@ -354,5 +463,5 @@ function timestamp(value: unknown): number | undefined {
   return Number.isNaN(parsed) ? undefined : parsed
 }
 
-/** The listing row shape this provider reads, for a fixture author. */
-export type { WireKnowledgeBase, WireSearchResult }
+/** The row shapes this provider reads, for a fixture author. */
+export type { WireKnowledge, WireKnowledgeBase, WireSearchResult }

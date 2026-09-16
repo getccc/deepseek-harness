@@ -1,4 +1,7 @@
-/** `knowledgePanels` namespace dictionaries: the two navigation rows, the knowledge-base list, and the retrieval panel. */
+/**
+ * `knowledgePanels` namespace dictionaries: the two navigation rows, the
+ * knowledge-base list with its documents, and the retrieval panel.
+ */
 
 /** Simplified Chinese dictionary (the key-set source of truth). */
 export const zh = {
@@ -8,6 +11,17 @@ export const zh = {
   'bases.failed': '知识库读取失败',
   'bases.retry': '重试',
   'bases.search': '检索这个知识库',
+  'docs.select': '选择左侧的知识库，查看其中的文档',
+  'docs.loading': '正在读取文档',
+  'docs.empty': '这个知识库里还没有文档',
+  'docs.failed': '文档列表读取失败',
+  'docs.count': '共 {total} 篇',
+  'docs.page': '第 {page} 页',
+  'docs.prev': '上一页',
+  'docs.next': '下一页',
+  'docs.state.ready': '可检索',
+  'docs.state.processing': '解析中',
+  'docs.state.unavailable': '不可检索',
   'search.title': '知识库检索',
   'search.scope': '检索范围',
   'search.scope.all': '全部知识库',
@@ -36,6 +50,17 @@ export const en = {
   'bases.failed': 'Knowledge bases could not be read',
   'bases.retry': 'Retry',
   'bases.search': 'Search this knowledge base',
+  'docs.select': 'Choose a knowledge base to see its documents',
+  'docs.loading': 'Reading documents',
+  'docs.empty': 'This knowledge base holds no document yet',
+  'docs.failed': 'The documents could not be read',
+  'docs.count': '{total} documents',
+  'docs.page': 'Page {page}',
+  'docs.prev': 'Previous',
+  'docs.next': 'Next',
+  'docs.state.ready': 'Searchable',
+  'docs.state.processing': 'Processing',
+  'docs.state.unavailable': 'Not searchable',
   'search.title': 'Knowledge search',
   'search.scope': 'Search in',
   'search.scope.all': 'All knowledge bases',

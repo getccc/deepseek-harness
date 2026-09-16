@@ -1,8 +1,8 @@
 /**
  * The Control Plane's Runner-facing knowledge endpoints.
  *
- * Two routes, and everything they do is arranged around one fact: a request
- * must not be able to say who is asking or where the answer comes from. The
+ * Every route is arranged around one fact: a request must not be able to say
+ * who is asking or where the answer comes from. The
  * principal is recovered from a verified device token and never read from a
  * body; the source is resolved from the catalog and has no place in a request
  * at all.
@@ -29,6 +29,7 @@ import type { KnowledgePrincipal } from '@deepseek-ai/dsh-knowledge-gateway'
 import {
   ACCESS_TOKEN_HEADER,
   KNOWLEDGE_CATALOG_PATH,
+  KNOWLEDGE_DOCUMENTS_PATH,
   KNOWLEDGE_PROTOCOL_VERSION,
   KNOWLEDGE_SEARCH_PATH,
   MINIMUM_KNOWLEDGE_PROTOCOL_VERSION,
@@ -37,10 +38,12 @@ import {
 export {
   ACCESS_TOKEN_HEADER,
   KNOWLEDGE_CATALOG_PATH,
+  KNOWLEDGE_DOCUMENTS_PATH,
   KNOWLEDGE_PROTOCOL_VERSION,
   KNOWLEDGE_SEARCH_PATH,
   MINIMUM_KNOWLEDGE_PROTOCOL_VERSION,
   type CatalogBody,
+  type DocumentsBody,
   type KnowledgeProtocolRefusal,
   type KnowledgeRefusal,
   type SearchBody,
@@ -125,6 +128,21 @@ async function readJson(req: IncomingMessage, limit: number): Promise<Record<str
     // describes our parse rather than the caller's mistake.
     return undefined
   }
+}
+
+/**
+ * Read a whole page number or page size, when the field carries one.
+ *
+ * Absent is a valid request — the gateway supplies its own default — so the
+ * answer distinguishes "not given" from "not a number this build accepts",
+ * which is a protocol error rather than an authorization outcome.
+ * @param value - the decoded field.
+ * @returns the number, `undefined` when the field is absent, or `'invalid'`.
+ */
+export function readCount(value: unknown): number | undefined | 'invalid' {
+  if (value === undefined) return undefined
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 1) return 'invalid'
+  return value
 }
 
 /**
@@ -220,6 +238,32 @@ export function apply(ctx: Context, config: Config): void {
     },
   }
 
+  const documents: WebRoute = {
+    kind: 'exact',
+    path: KNOWLEDGE_DOCUMENTS_PATH,
+    handler: async (req, res) => {
+      const opened = await open(req, res)
+      if (opened === undefined) return
+      const ref = opened.body['ref']
+      const page = readCount(opened.body['page'])
+      const pageSize = readCount(opened.body['pageSize'])
+      if (typeof ref !== 'string' || !isKnowledgeRef(ref) || page === 'invalid' || pageSize === 'invalid') {
+        json(res, 400, { error: 'malformed' })
+        return
+      }
+      try {
+        json(res, 200, await ctx.knowledgeGateway.documents({
+          ...opened.principal,
+          ref: KnowledgeRef(ref),
+          ...(page === undefined ? {} : { page }),
+          ...(pageSize === undefined ? {} : { pageSize }),
+        }))
+      } catch (error) {
+        answerFailure(res, error)
+      }
+    },
+  }
+
   const search: WebRoute = {
     kind: 'exact',
     path: KNOWLEDGE_SEARCH_PATH,
@@ -228,12 +272,8 @@ export function apply(ctx: Context, config: Config): void {
       if (opened === undefined) return
       const query = opened.body['query']
       const scope = readScope(opened.body['scope'])
-      const maxResults = opened.body['maxResults']
-      if (typeof query !== 'string' || query === '' || scope === undefined) {
-        json(res, 400, { error: 'malformed' })
-        return
-      }
-      if (maxResults !== undefined && (typeof maxResults !== 'number' || !Number.isSafeInteger(maxResults) || maxResults < 1)) {
+      const maxResults = readCount(opened.body['maxResults'])
+      if (typeof query !== 'string' || query === '' || scope === undefined || maxResults === 'invalid') {
         json(res, 400, { error: 'malformed' })
         return
       }
@@ -251,6 +291,7 @@ export function apply(ctx: Context, config: Config): void {
   }
 
   ctx.effect(() => ctx.webServer.register(catalog), 'knowledge-gateway-http: catalog route')
+  ctx.effect(() => ctx.webServer.register(documents), 'knowledge-gateway-http: documents route')
   ctx.effect(() => ctx.webServer.register(search), 'knowledge-gateway-http: search route')
 }
 

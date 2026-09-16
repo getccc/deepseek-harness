@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-knowledge-gateway-http` serves the two routes a Team Runner calls for private knowledge: read the authorized directory, and search it. Everything it does is arranged around one fact — a request must not be able to say who is asking or where the answer comes from. The principal is recovered from a verified device access token and never read from a body; the source is resolved from the catalog and has no place in a request at all. Mount it in the Control Plane beside the governed gateway it fronts.
+`dsh-knowledge-gateway-http` serves the routes a Team Runner calls for private knowledge: read the authorized directory, list one knowledge base's documents, and search it. Everything it does is arranged around one fact — a request must not be able to say who is asking or where the answer comes from. The principal is recovered from a verified device access token and never read from a body; the source is resolved from the catalog and has no place in a request at all. Mount it in the Control Plane beside the governed gateway it fronts.
 
 ## Table of Contents
 
@@ -39,9 +39,11 @@ Mount it in a `team-control-plane` composition after the web server, the governe
 |---|---|---|
 | `maxRequestBodyBytes` | `65536` | Largest request body accepted; a query and a scope need little |
 
-### The two routes
+### The routes
 
-`POST /team/knowledge/catalog` takes `protocolVersion` alone and answers the principal's authorized directory. `POST /team/knowledge/search` adds `query`, `scope`, and an optional `maxResults`. Neither body has a field for an organization, a principal, a device, a source, an address, a tenant, a credential, or an upstream id — a Runner names what it wants, and the Control Plane resolves and authorizes the rest.
+`POST /team/knowledge/catalog` takes `protocolVersion` alone and answers the principal's authorized directory. `POST /team/knowledge/documents` adds `ref` and an optional `page` and `pageSize`. `POST /team/knowledge/search` adds `query`, `scope`, and an optional `maxResults`. No body has a field for an organization, a principal, a device, a source, an address, a tenant, a credential, or an upstream id — a Runner names what it wants, and the Control Plane resolves and authorizes the rest.
+
+Adding a route raised the current protocol version and left the minimum alone: a Runner built before it keeps its directory and its search, and simply has nothing that calls the newer route.
 
 ### The version is decided first
 
@@ -77,7 +79,7 @@ The routes decide nothing about knowledge. They establish who is asking, prove t
 | File | Holds |
 |---|---|
 | [`src/protocol.ts`](src/protocol.ts) | The paths, the version constants, and the bodies both sides import |
-| [`src/index.ts`](src/index.ts) | The two routes, the shared opening sequence, and the refusal mapping |
+| [`src/index.ts`](src/index.ts) | The routes, the shared opening sequence, and the refusal mapping |
 
 <a id="further-exploration"></a>
 ## Further Exploration
@@ -101,7 +103,7 @@ No request prefix changes here. Passages become model-visible only after a Runne
 These limits define when the adapter is incomplete on its own. They are current package constraints.
 
 - **No cancellation forwarding** — a client that disconnects mid-search does not abort the upstream call; the gateway's own bounds are what end it. Threading the request's abort signal through needs a route contract that carries one.
-- **No document read route** — the two routes are the whole Runner-facing surface until full-document reading ships.
+- **No document content route** — a Runner can list documents and never fetch one, so the surface ends at what a document *is*.
 - **No rate limiting** — a bound on how often one device may search belongs here, and nothing imposes one yet; the reverse proxy in front is the current answer.
 - **`cancelled` maps to a non-standard 499** — no registered status describes a client-abandoned request, and the reason word is what a Runner reads; the status is for logs.
 

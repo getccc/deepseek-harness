@@ -2,7 +2,7 @@
  * Private knowledge, as a Team Runner reaches it: an outbound request to the
  * company Control Plane carrying the current device token and nothing else.
  *
- * What this sends is a query and the references a Session scope resolved to.
+ * What this sends is a query, or a governed reference, and nothing more.
  * What it does not send — and could not, because the protocol has no place for
  * it — is a knowledge address, a credential, a tenant, or an upstream id. The
  * decision about who may read what is made on the other side, on every call.
@@ -13,10 +13,16 @@ import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import {
   Knowledge,
+  KnowledgeDocRef,
   KnowledgeError,
   KnowledgeRef,
+  isKnowledgeDocRef,
   isKnowledgeRef,
   type KnowledgeBaseEntry,
+  type KnowledgeDocument,
+  type KnowledgeDocumentPage,
+  type KnowledgeDocumentState,
+  type KnowledgeDocumentsRequest,
   type KnowledgeFailureReason,
   type KnowledgeKind,
   type KnowledgePassage,
@@ -26,6 +32,7 @@ import {
 import {
   ACCESS_TOKEN_HEADER,
   KNOWLEDGE_CATALOG_PATH,
+  KNOWLEDGE_DOCUMENTS_PATH,
   KNOWLEDGE_PROTOCOL_VERSION,
   KNOWLEDGE_SEARCH_PATH,
 } from '@deepseek-ai/dsh-knowledge-gateway-http'
@@ -90,6 +97,30 @@ export default class TeamKnowledge extends Knowledge {
     const entries = body['entries']
     if (!Array.isArray(entries)) throw new KnowledgeError('upstream-invalid', 'directory is not a list')
     return entries.map(entry => readEntry(entry))
+  }
+
+  async documents(request: KnowledgeDocumentsRequest): Promise<KnowledgeDocumentPage> {
+    const body = await this.call(KNOWLEDGE_DOCUMENTS_PATH, {
+      ref: request.ref,
+      ...(request.page === undefined ? {} : { page: request.page }),
+      ...(request.pageSize === undefined ? {} : { pageSize: request.pageSize }),
+    }, request.signal)
+    const documents = body['documents']
+    const page = body['page']
+    const pageSize = body['pageSize']
+    if (!Array.isArray(documents) || typeof page !== 'number' || typeof pageSize !== 'number') {
+      throw new KnowledgeError('upstream-invalid', 'document page is missing its fields')
+    }
+    const total = body['total']
+    return {
+      ref: request.ref,
+      documents: documents.map(document => readDocument(document)),
+      page,
+      pageSize,
+      // A total this build cannot read is reported as unknown rather than as
+      // zero: a member must not be told the list ends where it does not.
+      total: typeof total === 'number' && Number.isSafeInteger(total) && total >= 0 ? total : undefined,
+    }
   }
 
   async search(request: KnowledgeSearchRequest): Promise<KnowledgeSearchResult> {
@@ -199,6 +230,38 @@ function readEntry(value: unknown): KnowledgeBaseEntry {
     displayName,
     description: typeof row['description'] === 'string' ? row['description'] : '',
     kind: row['kind'] === 'faq' ? 'faq' satisfies KnowledgeKind : 'document',
+  }
+}
+
+/** Every document state the Control Plane may answer with, for decoding one back. */
+const KNOWN_DOCUMENT_STATES: readonly string[] = ['ready', 'processing', 'unavailable']
+
+/** Validate one document at the wire. */
+function readDocument(value: unknown): KnowledgeDocument {
+  const row = asRecord(value)
+  const docRef = row['docRef']
+  const ref = row['ref']
+  if (typeof docRef !== 'string' || !isKnowledgeDocRef(docRef) || typeof ref !== 'string' || !isKnowledgeRef(ref)) {
+    throw new KnowledgeError('upstream-invalid', 'a document is missing its reference')
+  }
+  const state = row['state']
+  return {
+    docRef: KnowledgeDocRef(docRef),
+    ref: KnowledgeRef(ref),
+    title: typeof row['title'] === 'string' ? row['title'] : '',
+    fileName: typeof row['fileName'] === 'string' ? row['fileName'] : '',
+    fileType: typeof row['fileType'] === 'string' ? row['fileType'] : '',
+    byteSize: typeof row['byteSize'] === 'number' && Number.isSafeInteger(row['byteSize']) && row['byteSize'] >= 0
+      ? row['byteSize']
+      : 0,
+    // A state this build does not know is read as unavailable, the reading
+    // that promises least, rather than as the one it happens to resemble.
+    state: typeof state === 'string' && KNOWN_DOCUMENT_STATES.includes(state)
+      ? state as KnowledgeDocumentState
+      : 'unavailable',
+    updatedAt: typeof row['updatedAt'] === 'number' && Number.isFinite(row['updatedAt'])
+      ? row['updatedAt']
+      : undefined,
   }
 }
 

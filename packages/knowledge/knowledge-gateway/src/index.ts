@@ -4,7 +4,8 @@
  * which knowledge bases a principal may reach.
  *
  * Two audiences, one owner. An administrator reads and curates the durable
- * catalog; a Runner reads an authorized directory and searches it. Both go
+ * catalog; a Runner reads an authorized directory, lists one knowledge base's
+ * documents, and searches it. Both go
  * through here because the catalog and the authorization decision have to agree
  * — a directory that showed a knowledge base a search would refuse, or the
  * reverse, would be worse than either alone.
@@ -20,6 +21,7 @@ import type { ResourceId } from '@deepseek-ai/dsh-access-control'
 import type { OrgId, UserId } from '@deepseek-ai/dsh-account-store'
 import type {
   KnowledgeBaseEntry,
+  KnowledgeDocumentPage,
   KnowledgeKind,
   KnowledgeRef,
   KnowledgeScopeSelection,
@@ -131,6 +133,17 @@ export interface GovernedSearchRequest extends KnowledgePrincipal {
   readonly signal?: AbortSignal
 }
 
+/** One governed document listing: who is asking, and which knowledge base. */
+export interface GovernedDocumentsRequest extends KnowledgePrincipal {
+  /** The knowledge base to list, authorized on this call. */
+  readonly ref: KnowledgeRef
+  /** Which page, counting from one; the first page when absent. */
+  readonly page?: number
+  /** How many documents one page holds; the source's own maximum still applies. */
+  readonly pageSize?: number
+  readonly signal?: AbortSignal
+}
+
 /**
  * The governed catalog and the decision in front of it. A provider mounts this
  * service; consumers inject `knowledgeGateway`.
@@ -183,6 +196,19 @@ export abstract class KnowledgeGateway extends Service {
    * @returns the authorized directory, empty when the principal holds nothing.
    */
   abstract directory(principal: KnowledgePrincipal): Promise<readonly KnowledgeBaseEntry[]>
+
+  /**
+   * Authorize one document listing and perform it.
+   *
+   * The knowledge base is evaluated on this call, as a search's is. A member
+   * who may retrieve from a knowledge base may list what is in it: the
+   * decision is the same permission, asked separately so it can be tightened
+   * without a new authorization path.
+   * @param request - who is asking, which knowledge base, and which page.
+   * @returns the page, with the documents addressed by governed references.
+   * @throws {KnowledgeError} with the reason the operation was refused or failed.
+   */
+  abstract documents(request: GovernedDocumentsRequest): Promise<KnowledgeDocumentPage>
 
   /**
    * Authorize one search and perform it.

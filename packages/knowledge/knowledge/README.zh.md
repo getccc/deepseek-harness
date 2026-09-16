@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-knowledge`（`ctx.knowledge`）是 Team Runner 向其索取已登录成员可触达的私有公司知识的接缝。它定义两个操作——读取经授权的目录、在其中搜索段落——外加 `KnowledgeRef`、`knowledge/scope` Session 事件与封闭的 `KnowledgeFailureReason` 集合。它不发起任何网络调用：由挂载的提供方发起，而在 Team Edition 中该提供方转发给对每个操作进行授权的 Control Plane。没有命名源或传递上游 id 的操作，因此持有该服务的插件仍然只能经由别处做出的决定触达知识源。
+`dsh-knowledge`（`ctx.knowledge`）是 Team Runner 向其索取已登录成员可触达的私有公司知识的接缝。它定义三个操作——读取经授权的目录、列出某个知识库中的文档、在其中搜索段落——外加两个受治理引用、`knowledge/scope` Session 事件与封闭的失败集合。它不发起任何网络调用：由挂载的提供方发起，而在 Team Edition 中该提供方转发给对每个操作进行授权的 Control Plane。没有任何操作命名源或传递上游 id，因此仅凭这个服务触达不了任何东西。
 
 ## 目录
 
@@ -29,7 +29,7 @@ kind: "package-reference"
 
 ### 何时选用
 
-在实现知识提供方、面向模型的知识工具，或任何需要读取会话知识范围的东西时引入它。只想要既有行为的部署通过 Team profile 获得它即可。本服务不注册面向模型的工具，也不贡献自己的提示词：没有挂载提供方时，两个操作是不存在，而不是返回空。
+在实现知识提供方、面向模型的知识工具，或任何需要读取会话知识范围的东西时引入它。只想要既有行为的部署通过 Team profile 获得它即可。本服务不注册面向模型的工具，也不贡献自己的提示词：没有挂载提供方时，每个操作都是不存在，而不是返回空。
 
 ### 最小配置
 
@@ -46,6 +46,12 @@ kind: "package-reference"
 `KnowledgeRef` 是 `<providerKind>:<sourceCode>:<upstreamId>`，也是唯一会离开 Control Plane 的知识标识符。用 `formatKnowledgeRef` 构造，用 `parseKnowledgeRef` 读回；后者返回 `undefined` 而不抛出，因为它的调用方是在决定是否接受一个值，而不是在诊断它。
 
 该引用被限制为审计 token 字符集下的 64 个字符，这也是 `formatKnowledgeRef` 拒绝超过 19 个字符的数据源代码的原因。这不是风格上的上限：审计存储的 `resource_id` 遵循同一条规则，因此更长的引用会是任何操作都无法记录的引用。该失败因此落在构造引用的地方。
+
+### 命名一份文档
+
+`KnowledgeDocRef` 是 `<KnowledgeRef>/<上游文档 id>`，用 `formatKnowledgeDocRef` 构造、用 `parseKnowledgeDocRef` 读回。它是独立的品牌而不是更长的 `KnowledgeRef`，因为两者受不同的东西约束：知识引用必须装进审计 token，而文档从不是审计资源——对文档的操作所记录的是它所属的知识库，那也正是授权所命名的对象。
+
+文档 id 以同一套字符表限制在 64 个字符内，因此任何操作都无法解析的引用会在构造处被拒绝，而不是在调用之后。
 
 ### 读取会话范围
 
@@ -77,7 +83,7 @@ kind: "package-reference"
 
 ### 数据模型
 
-`KnowledgeBaseEntry` 是主体可以检索的东西，以可读方式命名。`KnowledgePassage` 携带产生它的引用，因此转录可以在不做第二次查找的情况下标注出处。`KnowledgeScope` 是版本化的可区分联合；其 `selected` 分支在每个引用旁记录一个显示名称，在选择的那一刻快照下来，因为模型可见的名字必须能从日志重建。
+`KnowledgeBaseEntry` 是主体可以检索的东西，以可读方式命名。`KnowledgeDocument` 是其中的一份文档，携带它的受治理引用、源对该文件所持有的信息，以及一个 `KnowledgeDocumentState`——`ready`、`processing` 或 `unavailable`——即把源自己的解析与启用用词，读成成员可以据此行动的三件事。`KnowledgePassage` 携带产生它的引用，因此转录可以在不做第二次查找的情况下标注出处。`KnowledgeScope` 是版本化的可区分联合；其 `selected` 分支在每个引用旁记录一个显示名称，在选择的那一刻快照下来，因为模型可见的名字必须能从日志重建。
 
 <a id="further-exploration"></a>
 ## 延伸阅读
@@ -100,7 +106,7 @@ kind: "package-reference"
 
 这些限制界定了本接缝自身在何处不完整。它们是当前的包约束。
 
-- **没有文档全文阅读** —— 接缝只有目录和检索，没有任何返回文档正文的东西。阅读连同为其寻址的签名文档引用一起延后，权限目录在那之前保持 `knowledge.read` 不被授予（[Agent Note](../../../.agents/notes/proposed/feature/2026-09-01-team-private-knowledge-control-plane.zh.md)）。
+- **没有文档内容** —— 接缝会列出并命名文档，但不返回一份文档所持有的任何内容。内容随新增它的那个阶段一起到来（[Agent Note](../../../.agents/notes/proposed/feature/2026-09-16-member-knowledge-browsing-and-retrieval.zh.md)）。
 - **没有提供方注册表** —— 由一个提供方挂载本服务，不存在选择策略、可用性查询或提供方变更事件。第二种提供方类型会需要这些，而 `KnowledgeRef` 语法为此留了位置。
 - **没有录入或修改** —— 这里没有任何东西创建、上传、编辑或删除知识。这些操作需要权限目录尚未承载的授权与审计决策。
 - **范围无法表达排除** —— 范围要么收窄到具名知识库，要么是全部，没有「除某某之外」的分支，因为授权没有可与之组合的拒绝规则。
