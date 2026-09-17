@@ -33,7 +33,7 @@ You do not mount this bundle directly. Select the profile that names it:
 dsh --profile team-control-plane
 ```
 
-The profile composes this bundle alone and listens on `127.0.0.1:3095`. Ordinary members do not browse this port; administrators reach `/team/admin/`, while Runners call the device, model, knowledge, and web search endpoints.
+The profile composes this bundle alone and listens on `127.0.0.1:3095`. Ordinary members do not browse this port; administrators reach `/team/admin/`, while Runners call the device, model, knowledge, BI, and web search endpoints.
 
 ### Production binding
 
@@ -48,6 +48,10 @@ The credential must resolve to a WeKnora **space** key, not a platform key. A sp
 Run the knowledge deployment on this host and give `baseUrl` its loopback address. Reaching it over loopback is what makes "a member cannot read company knowledge except through a decision made here" a network fact rather than a policy: there is no origin for a member to discover, and no credential in flight across a segment. A deployment that must separate the two hosts restores the equivalent restriction — a private segment and a service identity — before it moves the address off loopback.
 
 The `sourceCode` is bounded at 19 characters over the audit token alphabet. It is the part of a knowledge reference a deployment chooses, and the reference as a whole has to fit what the audit store will record, so a longer one fails at load rather than at the first refused search.
+
+### Deploying BI analysis
+
+The BI source takes the same three rows with no default: `sourceCode`, `baseUrl`, and `credentialRef` on the webi provider, bounded and refused at load for the same reasons. The credential must resolve to the personal access token of a webi organization administrator created for this deployment, not to a person's: a project grant covers the project's private spaces too, and a token that reached less would make a grant silently narrower than the administrator made it. webi is reached over the network address the deployment gives `baseUrl`; the token never leaves this process, and a Runner request carries a project reference and a keyword at most.
 
 ### Storage and instance count
 

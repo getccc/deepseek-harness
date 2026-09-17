@@ -22,7 +22,7 @@ The `bi/` group gives the harness the company's BI system through one provider-n
 <a id="packages"></a>
 ## Packages
 
-Five packages play the BI roles; the subsystem reference owns the exhaustive vocabulary and contracts, and the Agent Note names the packages the rest of the capability adds.
+Six packages play the BI roles; the subsystem reference owns the exhaustive vocabulary and contracts, and the Agent Note names the packages the rest of the capability adds.
 
 | Package | Role | ctx key |
 |---|---|---|
@@ -31,6 +31,7 @@ Five packages play the BI roles; the subsystem reference owns the exhaustive voc
 | [`bi-webi/`](bi-webi/README.md) | Speaks webi's four fixed routes, holding the personal access token in the Control Plane | registers on `ctx.biSource` |
 | [`bi-gateway/`](bi-gateway/README.md) | Governed gateway seam: the durable project catalog, and the authorized directory, chart listing, and chart run | `ctx.biGateway` |
 | [`bi-gateway-sqlite/`](bi-gateway-sqlite/README.md) | Durable catalog over SQLite, with synchronization, per-project authorization, and audit | registers on `ctx.biGateway` |
+| [`bi-gateway-http/`](bi-gateway-http/README.md) | The three routes a Runner calls, with token verification and protocol-version negotiation | registers routes on `ctx.webServer` |
 
 -----
 

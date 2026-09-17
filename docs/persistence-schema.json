@@ -21920,7 +21920,7 @@
         "event:bi/scope.data[1]"
       ],
       "sources": [
-        "packages/bi/bi/src/types.ts:181"
+        "packages/bi/bi/src/types.ts:182"
       ]
     },
     {
@@ -50295,7 +50295,7 @@
         "event:knowledge/scope.data[0]"
       ],
       "sources": [
-        "packages/bi/bi/src/types.ts:180",
+        "packages/bi/bi/src/types.ts:181",
         "packages/knowledge/knowledge/src/types.ts:206"
       ]
     },
@@ -61059,7 +61059,7 @@
         "packages/bi/bi/src/types.ts#BiScopeProject"
       ],
       "sources": [
-        "packages/bi/bi/src/types.ts:166"
+        "packages/bi/bi/src/types.ts:167"
       ]
     },
     {
@@ -62587,7 +62587,7 @@
         "packages/bi/bi/src/types.ts#BiScope"
       ],
       "sources": [
-        "packages/bi/bi/src/types.ts:179"
+        "packages/bi/bi/src/types.ts:180"
       ]
     },
     {

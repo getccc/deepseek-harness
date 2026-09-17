@@ -129,6 +129,37 @@
         path: !!js dshHomePath('control-plane', 'knowledge.sqlite')
         defaultMaxResults: 10
 
+    # ── which BI projects a member may analyze ───────────────────────────
+    # The same arrangement as knowledge: the webi provider holds the personal
+    # access token and speaks webi's four routes; the governed gateway owns the
+    # durable project catalog and authorizes every listing and run against
+    # current grants. Only the gateway is reachable from outside this process.
+    #
+    # `sourceCode`, `baseUrl`, and `credentialRef` are deliberately absent, and
+    # the row fails to load without them. The credential must resolve to the
+    # token of a webi organization administrator created for this deployment:
+    # a project grant covers the project's private spaces too, and a token that
+    # reached less would make a grant silently narrower than the administrator
+    # made it.
+    - id: bi-source
+      name: '@deepseek-ai/dsh-bi-webi'
+      config:
+        requestTimeoutMs: 30000
+        # Rows are charged as prompt tokens on the member's next model request,
+        # so the bound that matters is what a deployment is willing to put in
+        # front of a model rather than a transport limit.
+        maxRows: 500
+        maxCellChars: 200
+        maxCharts: 500
+        pollIntervalMs: 500
+        queryTimeoutMs: 60000
+    - id: bi-gateway
+      name: '@deepseek-ai/dsh-bi-gateway-sqlite'
+      config:
+        path: !!js dshHomePath('control-plane', 'bi.sqlite')
+        defaultChartPageSize: 20
+        defaultMaxRows: 200
+
     # ── the two HTTP surfaces ────────────────────────────────────────────
     # Runner-facing: account authentication approves a transaction, then PKCE,
     # a device signature, and a one-time code bind the credential to the Runner.
@@ -158,6 +189,14 @@
       name: '@deepseek-ai/dsh-knowledge-gateway-http'
       config:
         maxRequestBodyBytes: 65536
+    # Company BI traffic: authorized by the device access token, and refused
+    # before any other field is read when the Runner speaks a BI protocol
+    # version this build does not. A request names a reference and a keyword
+    # at most, so the body bound is small.
+    - id: bi-gateway-http
+      name: '@deepseek-ai/dsh-bi-gateway-http'
+      config:
+        maxRequestBodyBytes: 16384
 
     # ── company web search ───────────────────────────────────────────────
     # The search seam and its DeepSeek provider run here, where the company

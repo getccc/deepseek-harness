@@ -2492,7 +2492,7 @@ SHA-256: `c562d5e0c836a6fc700a936ade4bfcb7774967aa5b8aebcf26e903db22dc0253`
 
 SHA-256: `ac44e4667f7f878b329a55172d9619994b18e891428860b8fd2e530fc2490a9c`
 
-Sources: [`packages/bi/bi/src/types.ts:180`](../packages/bi/bi/src/types.ts) · [`packages/knowledge/knowledge/src/types.ts:206`](../packages/knowledge/knowledge/src/types.ts)
+Sources: [`packages/bi/bi/src/types.ts:181`](../packages/bi/bi/src/types.ts) · [`packages/knowledge/knowledge/src/types.ts:206`](../packages/knowledge/knowledge/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -2505,7 +2505,7 @@ Sources: [`packages/bi/bi/src/types.ts:180`](../packages/bi/bi/src/types.ts) · 
 
 SHA-256: `2492716f63fc1fdfcb4c54825fbc44cec2a9c09d044e112e9c3d67d8f66a8479`
 
-Sources: [`packages/bi/bi/src/types.ts:181`](../packages/bi/bi/src/types.ts)
+Sources: [`packages/bi/bi/src/types.ts:182`](../packages/bi/bi/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -4735,7 +4735,7 @@ One of:
 
 SHA-256: `fae59e2611bbabb5e5790b68d3375b29f5afd748f72ce5d7532f27216f4e170f`
 
-Sources: [`packages/bi/bi/src/types.ts:179`](../packages/bi/bi/src/types.ts)
+Sources: [`packages/bi/bi/src/types.ts:180`](../packages/bi/bi/src/types.ts)
 
 One of:
 
@@ -4748,7 +4748,7 @@ One of:
 
 SHA-256: `e7b9271f26f0cae70218b256b456f0bb4c37a1908499fc2d970c7ce08c6fe3c1`
 
-Sources: [`packages/bi/bi/src/types.ts:166`](../packages/bi/bi/src/types.ts)
+Sources: [`packages/bi/bi/src/types.ts:167`](../packages/bi/bi/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|

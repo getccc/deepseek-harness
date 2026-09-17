@@ -51,6 +51,15 @@ import {
   type ModelInputModality,
   type ModelStatus,
 } from '@deepseek-ai/dsh-model-gateway'
+import { BiError, BiProjectRef, isBiProjectRef } from '@deepseek-ai/dsh-bi'
+import {
+  BI_CATALOG_RESOURCE,
+  BI_QUERY_ACTION,
+  BI_RESOURCE_TYPE,
+  type BiCatalogEntry,
+  type BiCatalogView,
+  type BiGateway,
+} from '@deepseek-ai/dsh-bi-gateway'
 import { KnowledgeError, isKnowledgeRef, KnowledgeRef } from '@deepseek-ai/dsh-knowledge'
 import {
   KNOWLEDGE_CATALOG_RESOURCE,
@@ -82,6 +91,8 @@ import {
 import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
 import { CSRF_HEADER, json, patchBoolean, patchInteger, patchText, readJson, refuse, text } from './http.ts'
 import type {
+  WireBiCatalog,
+  WireBiProject,
   WireDepartment,
   WireDevice,
   WireGrant,
@@ -98,6 +109,10 @@ import type {
 export { CSRF_HEADER } from './http.ts'
 export type {
   SecretCharacterClass,
+  WireBiAccess,
+  WireBiCatalog,
+  WireBiProject,
+  WireBiSource,
   WireDepartment,
   WireDevice,
   WireGrant,
@@ -368,6 +383,36 @@ function wireCatalog(view: KnowledgeCatalogView): WireKnowledgeCatalog {
   }
 }
 
+/**
+ * Project the BI project catalog for the console.
+ *
+ * The upstream id is absent by construction, the gateway never returns one,
+ * so this projection drops nothing; it renames for a reader.
+ */
+function wireBiCatalog(view: BiCatalogView): WireBiCatalog {
+  return {
+    source: {
+      sourceCode: view.source.sourceCode,
+      providerKind: view.source.providerKind,
+      health: view.source.health,
+      ...(view.source.lastAttemptAt === undefined ? {} : { lastAttemptAt: view.source.lastAttemptAt }),
+      ...(view.source.lastSuccessAt === undefined ? {} : { lastSuccessAt: view.source.lastSuccessAt }),
+      ...(view.source.lastFailure === undefined ? {} : { lastFailure: view.source.lastFailure }),
+    },
+    projects: view.entries.map((entry): WireBiProject => ({
+      projectRef: entry.ref,
+      resourceId: entry.resourceId,
+      displayName: entry.displayName,
+      description: entry.description,
+      projectType: entry.projectType,
+      warehouseType: entry.warehouseType,
+      adminEnabled: entry.adminEnabled,
+      effectiveEnabled: entry.effectiveEnabled,
+      lastDiscoveredAt: entry.lastDiscoveredAt,
+    })),
+  }
+}
+
 /** Project one catalog entry. */
 function wireModel(entry: ModelEntry, resourceId: ResourceId): WireModel {
   return {
@@ -464,6 +509,7 @@ async function heldPermissions(
 function adminResourceOf(resourceType: string, orgId: OrgId): string {
   if (resourceType === 'model') return MODEL_CATALOG_RESOURCE
   if (resourceType === KNOWLEDGE_RESOURCE_TYPE) return KNOWLEDGE_CATALOG_RESOURCE
+  if (resourceType === BI_RESOURCE_TYPE) return BI_CATALOG_RESOURCE
   return orgId
 }
 
@@ -523,6 +569,20 @@ export function apply(ctx: Context, config: Config): void {
       })
       return () => {}
     }, 'team-admin-api: govern the knowledge catalog')
+  })
+
+  // The BI catalog, on the same terms: governed only where a BI gateway
+  // mounts, and through an injection so the console never races it.
+  ctx.inject(['biGateway'], (bi: Context) => {
+    bi.effect(async () => {
+      await bi.accessControl.registerResource({
+        orgId: organizationId,
+        type: BI_RESOURCE_TYPE,
+        externalRef: BI_CATALOG_RESOURCE,
+        displayName: 'BI catalog administration',
+      })
+      return () => {}
+    }, 'team-admin-api: govern the BI catalog')
   })
 
   /** Record one administrative act, naming who performed it. */
@@ -999,6 +1059,16 @@ export function apply(ctx: Context, config: Config): void {
       }
       if (!await mayProceed(res, signed, 'knowledge.catalog.read', KNOWLEDGE_RESOURCE_TYPE, KNOWLEDGE_CATALOG_RESOURCE)) return
       json(res, 200, wireCatalog(await gateway.catalogView(org)))
+      return
+    }
+    if (segments[0] === 'bi-projects' && segments.length === 1) {
+      const gateway = biGateway()
+      if (gateway === undefined) {
+        refuse(res, 404, 'not-found')
+        return
+      }
+      if (!await mayProceed(res, signed, 'bi.catalog.read', BI_RESOURCE_TYPE, BI_CATALOG_RESOURCE)) return
+      json(res, 200, wireBiCatalog(await gateway.catalogView(org)))
       return
     }
     refuse(res, 404, 'not-found')
@@ -1696,6 +1766,59 @@ export function apply(ctx: Context, config: Config): void {
       return
     }
 
+    if (segments[0] === 'bi-projects' && segments[1] === 'sync' && method === 'POST' && segments.length === 2) {
+      const gateway = biGateway()
+      if (gateway === undefined) {
+        refuse(res, 404, 'not-found')
+        return
+      }
+      if (!await mayProceed(res, signed, 'bi.catalog.manage', BI_RESOURCE_TYPE, BI_CATALOG_RESOURCE)) return
+      // The gateway records its own sync audit row and serializes concurrent
+      // callers, so this route neither repeats the record nor guards the race.
+      json(res, 200, wireBiCatalog(await gateway.sync(org)))
+      return
+    }
+
+    if (segments[0] === 'bi-projects' && method === 'PATCH' && segments.length === 2) {
+      const gateway = biGateway()
+      if (gateway === undefined) {
+        refuse(res, 404, 'not-found')
+        return
+      }
+      if (!await mayProceed(res, signed, 'bi.catalog.manage', BI_RESOURCE_TYPE, BI_CATALOG_RESOURCE)) return
+      const ref = decodeURIComponent(segments[1] as string)
+      const enabled = body['enabled']
+      if (typeof enabled !== 'boolean' || !isBiProjectRef(ref)) {
+        refuse(res, 400, 'malformed', { reason: 'fields', detail: 'A BI project is switched by reference and a boolean.' })
+        return
+      }
+      try {
+        await gateway.setEnabled(org, BiProjectRef(ref), enabled)
+      } catch (error) {
+        // The one refusal this raises is an entry the catalog does not hold.
+        if (!(error instanceof BiError)) throw error
+        refuse(res, 404, 'not-found')
+        return
+      }
+      await record(enabled ? 'resource.enable' : 'resource.disable', signed, 'allowed', { resourceId: ref })
+      json(res, 200, wireBiCatalog(await gateway.catalogView(org)))
+      return
+    }
+
+    if (segments[0] === 'roles' && segments[2] === 'bi-projects' && method === 'POST' && segments.length === 3) {
+      const gateway = biGateway()
+      if (gateway === undefined) {
+        refuse(res, 404, 'not-found')
+        return
+      }
+      if (!await mayProceed(res, signed, 'role.grant.manage', 'role', org)) return
+      const applied = await setRoleBi(res, gateway, org, RoleId(segments[1] as string), body)
+      if (!applied) return
+      await record('grant.add', signed, 'allowed', { resourceId: segments[1] as string })
+      json(res, 200, await readRoles(org))
+      return
+    }
+
     if (segments[0] === 'models' && segments.length === 2 && method === 'DELETE') {
       if (!await mayProceed(res, signed, 'model.catalog.manage', 'model', MODEL_CATALOG_RESOURCE)) return
       const modelRef = segments[1] as string
@@ -1766,6 +1889,70 @@ export function apply(ctx: Context, config: Config): void {
     }
     for (const entry of selected as KnowledgeCatalogEntry[]) {
       await ctx.accessControl.grantResource(roleId, entry.resourceId, 'knowledge.search')
+    }
+    // Anything narrower than the whole permission catalog means the role no
+    // longer covers it, so start-up must stop bringing it back up to one.
+    if (mode !== 'all') await ctx.accessControl.updateRole(roleId, { coversCatalog: false })
+    return true
+  }
+
+  /**
+   * The BI gateway, when this Control Plane governs BI.
+   *
+   * Read per request rather than injected, for the reason the knowledge
+   * gateway is: a deployment without BI is a complete Control Plane.
+   */
+  const biGateway = (): BiGateway | undefined => ctx.get('biGateway')
+
+  /**
+   * Make one role's BI grants exactly what the editor asked for.
+   *
+   * The mode is explicit rather than inferred from the set, because "none" and
+   * "an empty selection" are the same list and different intentions, and a
+   * silent read of one as the other would either widen or revoke access nobody
+   * asked to change.
+   * @returns true when the grants were written.
+   */
+  async function setRoleBi(
+    res: ServerResponse,
+    gateway: BiGateway,
+    orgId: OrgId,
+    roleId: RoleId,
+    body: Record<string, unknown>,
+  ): Promise<boolean> {
+    const mode = body['mode']
+    const refs = body['projectRefs']
+    if (mode !== 'none' && mode !== 'all' && mode !== 'selected') {
+      refuse(res, 400, 'malformed', { reason: 'fields', detail: 'BI access is none, all, or selected.' })
+      return false
+    }
+    if (mode === 'selected' && (!Array.isArray(refs) || refs.some(ref => typeof ref !== 'string'))) {
+      refuse(res, 400, 'malformed', { reason: 'fields', detail: 'Selected BI access is a list of project references.' })
+      return false
+    }
+    if (!(await ctx.accessControl.listRoles(orgId)).some(role => role.id === roleId)) {
+      refuse(res, 404, 'not-found')
+      return false
+    }
+    // The durable catalog decides what is selectable, never `listResources`:
+    // the catalog administration resource shares this resource type, and
+    // offering it as a project would let a role be granted a run on it.
+    const entries = new Map((await gateway.catalogView(orgId)).entries.map(entry => [entry.ref as string, entry]))
+    const wanted = mode === 'selected' ? (refs as string[]) : []
+    const selected = wanted.map(ref => entries.get(ref))
+    if (selected.includes(undefined)) {
+      refuse(res, 400, 'malformed', { reason: 'fields', detail: 'That BI project is not in this organization.' })
+      return false
+    }
+    for (const grant of await ctx.accessControl.listRoleGrants(roleId)) {
+      if (grant.resourceType !== BI_RESOURCE_TYPE || grant.action !== BI_QUERY_ACTION) continue
+      await ctx.accessControl.revokeGrant(grant.id)
+    }
+    if (mode === 'all') {
+      await ctx.accessControl.grantType(roleId, BI_RESOURCE_TYPE, BI_QUERY_ACTION)
+    }
+    for (const entry of selected as BiCatalogEntry[]) {
+      await ctx.accessControl.grantResource(roleId, entry.resourceId, BI_QUERY_ACTION)
     }
     // Anything narrower than the whole permission catalog means the role no
     // longer covers it, so start-up must stop bringing it back up to one.

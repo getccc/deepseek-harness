@@ -25,6 +25,15 @@ import SqliteQuota from '@deepseek-ai/dsh-quota-sqlite'
 import SqliteConsoleMenuStore from '@deepseek-ai/dsh-team-console-menu-sqlite'
 import SqliteKnowledgeGateway from '@deepseek-ai/dsh-knowledge-gateway-sqlite'
 import { KNOWLEDGE_CATALOG_RESOURCE } from '@deepseek-ai/dsh-knowledge-gateway'
+import SqliteBiGateway from '@deepseek-ai/dsh-bi-gateway-sqlite'
+import { BI_CATALOG_RESOURCE } from '@deepseek-ai/dsh-bi-gateway'
+import {
+  BiSource,
+  type UpstreamChartListing,
+  type UpstreamChartPlacement,
+  type UpstreamProject,
+  type UpstreamRun,
+} from '@deepseek-ai/dsh-bi-source'
 import {
   KnowledgeSource,
   type UpstreamDocumentContent,
@@ -72,6 +81,8 @@ let apiFiber: ReturnType<Context['plugin']>
 let knowledgeHome: string
 /** The scripted upstream this assembly's gateway reads. */
 let source: ScriptedKnowledgeSource
+/** The scripted BI upstream this assembly's project catalog reads. */
+let biSource: ScriptedBiSource
 
 const PASSWORD = 'Correct-Horse-Battery-1'
 
@@ -114,6 +125,37 @@ class ScriptedKnowledgeSource extends KnowledgeSource {
   }
 }
 
+const PROJECT_A = '55d61de1-ed86-4ad4-b96e-205114de5245'
+const BI_REF_A = `stub:prod:${PROJECT_A}`
+
+/** A BI source a test scripts, so the project catalog has something to hold. */
+class ScriptedBiSource extends BiSource {
+  override readonly providerKind = 'stub'
+  override readonly sourceCode = 'prod'
+  listing: readonly UpstreamProject[] = [{
+    upstreamId: PROJECT_A, name: 'Demo YH', description: '演示项目', projectType: 'DEFAULT', warehouseType: 'postgres',
+  }]
+
+  /** What the next listing raises instead of answering, when a test sets one. */
+  failure: Error | undefined
+
+  listProjects(): Promise<readonly UpstreamProject[]> {
+    return this.failure === undefined ? Promise.resolve(this.listing) : Promise.reject(this.failure)
+  }
+
+  listCharts(): Promise<UpstreamChartListing> {
+    return Promise.resolve({ charts: [], truncated: false })
+  }
+
+  describeChart(): Promise<UpstreamChartPlacement> {
+    return Promise.reject(new Error('the administration API runs no chart'))
+  }
+
+  runChart(): Promise<UpstreamRun> {
+    return Promise.reject(new Error('the administration API runs no chart'))
+  }
+}
+
 const ADMIN_PERMISSIONS = [
   ['organization', 'organization.admin.access'],
   ['organization', 'organization.read'], ['organization', 'organization.settings.manage'],
@@ -127,6 +169,7 @@ const ADMIN_PERMISSIONS = [
   ['device', 'device.inventory.read'], ['device', 'device.revoke'],
   ['model', 'model.catalog.read'], ['model', 'model.catalog.manage'],
   ['knowledge_scope', 'knowledge.catalog.read'], ['knowledge_scope', 'knowledge.catalog.manage'],
+  ['bi_project', 'bi.catalog.read'], ['bi_project', 'bi.catalog.manage'],
 ] as const
 
 /** A model registration the catalog accepts, for tests that break one field. */
@@ -284,6 +327,9 @@ beforeEach(async () => {
   await ctx.plugin(ScriptedKnowledgeSource).await()
   source = ctx.get('knowledgeSource') as ScriptedKnowledgeSource
   await ctx.plugin(SqliteKnowledgeGateway, { path: join(knowledgeHome, 'knowledge.sqlite') }).await()
+  await ctx.plugin(ScriptedBiSource).await()
+  biSource = ctx.get('biSource') as ScriptedBiSource
+  await ctx.plugin(SqliteBiGateway, { path: join(knowledgeHome, 'bi.sqlite') }).await()
 
   store = ctx.get('accountStore') as AccountStore
   access = ctx.get('accessControl') as AccessControl
@@ -2179,5 +2225,191 @@ describe('knowledge administration refuses what it should', () => {
     // naming something that does not exist.
     expect(answer.status).toBe(500)
     await faulty.fiber.dispose()
+  })
+})
+
+describe('administering the BI project catalog', () => {
+  /** One catalog read, projected the way the console receives it. */
+  interface WireCatalog {
+    source: { health: string; lastFailure?: string }
+    projects: {
+      projectRef: string
+      resourceId: string
+      displayName: string
+      description: string
+      warehouseType: string
+      adminEnabled: boolean
+      effectiveEnabled: boolean
+    }[]
+  }
+
+  it('answers an empty catalog before anyone synchronizes', async () => {
+    const held = await signIn()
+    const answer = await send('/team/api/bi-projects', { headers: { cookie: held.cookie } })
+    expect(answer.status).toBe(200)
+    const view = payload(answer) as WireCatalog
+    expect(view.projects).toEqual([])
+    expect(view.source.health).toBe('never-synced')
+  })
+
+  it('synchronizes, shows what the catalog now governs, and keeps it through a failed listing', async () => {
+    const held = await signIn()
+    const synced = await write('POST', '/team/api/bi-projects/sync', held, {})
+    expect(synced.status).toBe(200)
+    expect((payload(synced) as WireCatalog).projects).toEqual([expect.objectContaining({
+      projectRef: BI_REF_A, displayName: 'Demo YH', description: '演示项目', warehouseType: 'postgres',
+      adminEnabled: true, effectiveEnabled: true,
+    })])
+    // No upstream identifier field: the reference is the only project id
+    // that leaves this Control Plane.
+    expect(Object.keys((payload(synced) as WireCatalog).projects[0] ?? {})).not.toContain('upstreamId')
+    biSource.failure = new Error('the BI host is unreachable')
+    const failed = await write('POST', '/team/api/bi-projects/sync', held, {})
+    biSource.failure = undefined
+    const view = payload(failed) as WireCatalog
+    expect(view.source).toMatchObject({ health: 'failing' })
+    expect(view.source.lastFailure).toBeTypeOf('string')
+    expect(view.projects).toHaveLength(1)
+  })
+
+  it('switches one entry off and records it', async () => {
+    const held = await signIn()
+    await write('POST', '/team/api/bi-projects/sync', held, {})
+    const patched = await write('PATCH', `/team/api/bi-projects/${encodeURIComponent(BI_REF_A)}`, held, { enabled: false })
+    expect(patched.status).toBe(200)
+    expect((payload(patched) as WireCatalog).projects[0]).toMatchObject({ adminEnabled: false, effectiveEnabled: false })
+    expect((await audit.query({ orgId, action: 'resource.disable' }))[0]).toMatchObject({ resourceId: BI_REF_A })
+    const restored = await write('PATCH', `/team/api/bi-projects/${encodeURIComponent(BI_REF_A)}`, held, { enabled: true })
+    expect((payload(restored) as WireCatalog).projects[0]).toMatchObject({ adminEnabled: true, effectiveEnabled: true })
+    expect((await audit.query({ orgId, action: 'resource.enable' }))[0]).toMatchObject({ resourceId: BI_REF_A })
+  })
+
+  it.each([
+    ['a reference the catalog does not hold', 'stub:prod:00000000-0000-0000-0000-000000000000', { enabled: false }, 404],
+    ['a reference that is not one', 'not-a-reference', { enabled: false }, 400],
+    ['a switch that is not a boolean', BI_REF_A, { enabled: 'off' }, 400],
+  ])('refuses %s', async (_label, ref, body, status) => {
+    const held = await signIn()
+    await write('POST', '/team/api/bi-projects/sync', held, {})
+    const answer = await write('PATCH', `/team/api/bi-projects/${encodeURIComponent(ref)}`, held, body)
+    expect(answer.status).toBe(status)
+  })
+
+  it('gives a role none, all, or selected BI — and nothing else changes', async () => {
+    const held = await signIn()
+    await write('POST', '/team/api/bi-projects/sync', held, {})
+    const analysts = (await access.createRole({ orgId, name: 'analysts' })).id
+    await access.grantType(analysts, 'model', 'model.invoke')
+
+    const all = await write('POST', `/team/api/roles/${analysts}/bi-projects`, held, { mode: 'all' })
+    expect(all.status).toBe(200)
+    expect((await access.listRoleGrants(analysts)).filter(grant => grant.action === 'bi.query'))
+      .toEqual([expect.objectContaining({ kind: 'type', resourceType: 'bi_project' })])
+
+    const resourceId = (await access.listResources(orgId, 'bi_project')).find(resource => resource.externalRef === BI_REF_A)?.id
+    const some = await write('POST', `/team/api/roles/${analysts}/bi-projects`, held, { mode: 'selected', projectRefs: [BI_REF_A] })
+    expect(some.status).toBe(200)
+    expect((await access.listRoleGrants(analysts)).filter(grant => grant.action === 'bi.query'))
+      .toEqual([expect.objectContaining({ kind: 'resource', resourceId })])
+
+    const none = await write('POST', `/team/api/roles/${analysts}/bi-projects`, held, { mode: 'none' })
+    expect(none.status).toBe(200)
+    const afterNone = await access.listRoleGrants(analysts)
+    expect(afterNone.filter(grant => grant.action === 'bi.query')).toEqual([])
+    // The unrelated model grant survived every one of those replacements.
+    expect(afterNone.some(grant => grant.action === 'model.invoke')).toBe(true)
+  })
+
+  it('refuses to grant a run on the catalog administration resource', async () => {
+    const held = await signIn()
+    await write('POST', '/team/api/bi-projects/sync', held, {})
+    const analysts = (await access.createRole({ orgId, name: 'analysts' })).id
+    const answer = await write('POST', `/team/api/roles/${analysts}/bi-projects`, held, {
+      mode: 'selected', projectRefs: [BI_CATALOG_RESOURCE],
+    })
+    expect(answer.status).toBe(400)
+    expect(await access.listRoleGrants(analysts)).toEqual([])
+  })
+
+  it.each([
+    ['no mode', {}],
+    ['an unknown mode', { mode: 'everything' }],
+    ['a selection that is not a list', { mode: 'selected', projectRefs: 'all of them' }],
+    ['a selection holding a non-string', { mode: 'selected', projectRefs: [7] }],
+    ['a project this organization does not govern', { mode: 'selected', projectRefs: ['stub:prod:nope'] }],
+  ])('refuses a role BI editor sent %s', async (_label, body) => {
+    const held = await signIn()
+    await write('POST', '/team/api/bi-projects/sync', held, {})
+    const analysts = (await access.createRole({ orgId, name: 'analysts' })).id
+    const answer = await write('POST', `/team/api/roles/${analysts}/bi-projects`, held, body)
+    expect(answer.status).toBe(400)
+  })
+
+  it('refuses a role this organization does not administer', async () => {
+    const held = await signIn()
+    const elsewhere = (await store.createOrganization('Other')).id
+    const outsiders = (await access.createRole({ orgId: elsewhere, name: 'outsiders' })).id
+    const answer = await write('POST', `/team/api/roles/${outsiders}/bi-projects`, held, { mode: 'all' })
+    expect(answer.status).toBe(404)
+  })
+
+  it('refuses every BI route to a member without the permission', async () => {
+    const bob = (await store.createUser({ orgId, loginName: 'bob', displayName: 'Bob' })).id
+    await ctx.accountAuth.setSecret(bob, PASSWORD)
+    const console_ = (await access.createRole({ orgId, name: 'console-only' })).id
+    await access.grantType(console_, 'organization', 'organization.admin.access')
+    await access.bindUserRole(bob, console_)
+    const held = await signIn('bob')
+    expect((await send('/team/api/bi-projects', { headers: { cookie: held.cookie } })).status).toBe(403)
+    expect((await write('POST', '/team/api/bi-projects/sync', held, {})).status).toBe(403)
+    expect((await write('PATCH', `/team/api/bi-projects/${encodeURIComponent(BI_REF_A)}`, held, { enabled: false })).status).toBe(403)
+  })
+
+  it('projects the BI permissions a console member actually holds', async () => {
+    const held = await signIn()
+    const session = await send('/team/api/session', { headers: { cookie: held.cookie } })
+    expect((payload(session) as { permissions: string[] }).permissions)
+      .toEqual(expect.arrayContaining(['bi_project|bi.catalog.read', 'bi_project|bi.catalog.manage']))
+  })
+
+  it('answers every BI route as not found on a Control Plane that governs no BI', async () => {
+    // A deployment without a BI gateway is a complete Control Plane: the
+    // routes are absent rather than broken.
+    const bare = new Context()
+    await bare.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
+    await bare.plugin(SqliteAccountStore, { path: ':memory:' }).await()
+    await bare.plugin(PasswordAccountAuth, {
+      minSecretLength: 8, requiredClasses: ['uppercase', 'lowercase', 'digit'],
+      maxFailedAttempts: 5, lockDurationMs: 60_000,
+      cost: 2, blockSize: 8, parallelization: 1,
+    }).await()
+    await bare.plugin(SqliteAccessControl, { path: ':memory:' }).await()
+    await bare.plugin(SqliteAudit, { path: ':memory:', maxQueryRows: 100 }).await()
+    await bare.plugin(SqliteDeviceAuthorization, {
+      path: ':memory:', transactionTtlMs: 300_000, codeTtlMs: 60_000,
+      accessTokenTtlMs: 900_000, refreshTokenTtlMs: 2_592_000_000,
+    }).await()
+    await bare.plugin(SqliteQuota, { path: ':memory:', reservationTtlMs: 900_000 }).await()
+    await bare.plugin(SqliteModelGateway, { path: ':memory:' }).await()
+    await bare.plugin(SqliteConsoleMenuStore, { path: ':memory:' }).await()
+    const bareStore = bare.get('accountStore') as AccountStore
+    const bareOrg = (await bareStore.createOrganization('Bare')).id
+    const carol = (await bareStore.createUser({ orgId: bareOrg, loginName: 'carol', displayName: 'Carol' })).id
+    await bare.accountAuth.setSecret(carol, PASSWORD)
+    await bare.plugin(api, api.Config({ organizationId: bareOrg, secureCookie: false } as never)).await()
+    const bareAccess = bare.get('accessControl') as AccessControl
+    const role = (await bareAccess.createRole({ orgId: bareOrg, name: 'admin' })).id
+    await bareAccess.grantType(role, 'organization', 'organization.admin.access')
+    await bareAccess.bindUserRole(carol, role)
+    const bareOrigin = `http://127.0.0.1:${String(bare.webServer.port)}`
+    const landed = await sendTo(bareOrigin, '/team/api/session', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', origin: bareOrigin },
+      body: JSON.stringify({ loginName: 'carol', secret: PASSWORD }),
+    })
+    const cookie = (head(landed, 'set-cookie') ?? '').split(';')[0] ?? ''
+    const answer = await sendTo(bareOrigin, '/team/api/bi-projects', { headers: { cookie } })
+    expect(answer.status).toBe(404)
+    await bare.fiber.dispose()
   })
 })
