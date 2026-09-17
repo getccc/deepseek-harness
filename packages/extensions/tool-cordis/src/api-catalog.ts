@@ -939,6 +939,34 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'bi',
+    summary: 'BI analysis, as a Runner sees it.',
+    description: 'BI analysis, as a Runner sees it. A provider mounts this service; consumers inject `bi`.\n\nEvery method fails with BiError carrying a closed reason. None returns a partial answer: a directory that could not be authorized, a listing on a refused project, and a run on a chart outside its project all raise, because a quietly narrowed result is indistinguishable from a correct one to the model that reads it.',
+    methods: [
+      {
+        signature: 'abstract catalog(signal?: AbortSignal): Promise<readonly BiProjectEntry[]>',
+        description: 'The projects the current principal may analyze right now.',
+        parameters: [{ name: 'signal', description: 'aborts the operation.' }],
+        returns: 'the authorized directory, empty when the principal holds nothing.',
+        throws: ['{BiError} when the principal cannot be established or the directory cannot be read.'],
+      },
+      {
+        signature: 'abstract charts(request: BiChartsRequest): Promise<BiChartPage>',
+        description: 'One page of the saved charts in one authorized project.\n\nThe project is authorized on this call, like every other operation: a reference that was in the directory a moment ago is not standing permission to list it now.',
+        parameters: [{ name: 'request', description: 'the project, an optional keyword, and which page.' }],
+        returns: 'the page, empty when the project holds no matching chart.',
+        throws: ['{BiError} when the project is refused or the upstream does not answer usably.'],
+      },
+      {
+        signature: 'abstract query(request: BiQueryRequest): Promise<BiQueryResult>',
+        description: 'Run one saved chart as it was saved and answer its rows.\n\nThe chart\'s project is resolved from the source and authorized on this call, and a chart the source places in another project is refused before any row is read: holding a reference proves nothing.',
+        parameters: [{ name: 'request', description: 'the chart, and the most rows the caller wants.' }],
+        returns: 'the chart\'s definition summary, its fields, and its bounded rows.',
+        throws: ['{BiError} when the project is refused, the chart is unknown or misplaced (`chart-unavailable`), the warehouse fails (`query-failed`), or the upstream does not answer usably.'],
+      },
+    ],
+  },
+  {
     key: 'browserUse',
     summary: 'Owns one optional provider registration in the shared browser-use service.',
     description: 'Owns one optional provider registration in the shared browser-use service.',
@@ -4767,8 +4795,52 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface BashEnvVariableInfo extends BashEnvVariable {\n    contributor: string;\n    key: DshEnvironmentKey;\n}',
   },
   {
+    name: 'BiCell',
+    declaration: 'export type BiCell = string | number | boolean | null;',
+  },
+  {
+    name: 'BiChartKind',
+    declaration: 'export type BiChartKind = \'line\' | \'horizontal_bar\' | \'vertical_bar\' | \'scatter\' | \'bubble\' | \'waterfall\' | \'area\' | \'mixed\' | \'pie\' | \'table\' | \'big_number\' | \'funnel\' | \'map\' | \'sankey\' | \'radar\' | \'gauge\' | \'gantt\' | \'custom\' | \'other\';',
+  },
+  {
+    name: 'BiChartPage',
+    declaration: 'export interface BiChartPage {\n    readonly ref: BiProjectRef;\n    readonly charts: readonly BiChartSummary[];\n    readonly page: number;\n    readonly pageSize: number;\n    readonly total: number | undefined;\n}',
+  },
+  {
+    name: 'BiChartRef',
+    declaration: 'export type BiChartRef = Branded<\'BiChartRef\'>;',
+  },
+  {
+    name: 'BiChartsRequest',
+    declaration: 'export interface BiChartsRequest {\n    readonly ref: BiProjectRef;\n    readonly query?: string;\n    readonly page?: number;\n    readonly pageSize?: number;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
+    name: 'BiChartSummary',
+    declaration: 'export interface BiChartSummary {\n    readonly chartRef: BiChartRef;\n    readonly ref: BiProjectRef;\n    readonly name: string;\n    readonly spaceName: string;\n    readonly description: string;\n    readonly kind: BiChartKind;\n    readonly updatedAt: number | undefined;\n}',
+  },
+  {
+    name: 'BiField',
+    declaration: 'export interface BiField {\n    readonly id: string;\n    readonly label: string;\n    readonly role: \'dimension\' | \'metric\';\n    readonly type: string;\n}',
+  },
+  {
     name: 'BindingHandle',
     declaration: 'export interface BindingHandle {\n    readonly transactionId: TransactionId;\n    readonly pairingCode: string;\n    readonly expiresAt: number;\n    readonly confirmUrl: string;\n}',
+  },
+  {
+    name: 'BiProjectEntry',
+    declaration: 'export interface BiProjectEntry {\n    readonly ref: BiProjectRef;\n    readonly displayName: string;\n}',
+  },
+  {
+    name: 'BiProjectRef',
+    declaration: 'export type BiProjectRef = Branded<\'BiProjectRef\'>;',
+  },
+  {
+    name: 'BiQueryRequest',
+    declaration: 'export interface BiQueryRequest {\n    readonly chartRef: BiChartRef;\n    readonly limit?: number;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
+    name: 'BiQueryResult',
+    declaration: 'export interface BiQueryResult {\n    readonly chartRef: BiChartRef;\n    readonly ref: BiProjectRef;\n    readonly name: string;\n    readonly kind: BiChartKind;\n    readonly description: string;\n    readonly fields: readonly BiField[];\n    readonly filters: string;\n    readonly rows: readonly (readonly BiCell[])[];\n    readonly rowCount: number | undefined;\n    readonly truncated: boolean;\n    readonly cellsTruncated: boolean;\n}',
   },
   {
     name: 'Branded',

@@ -16,9 +16,19 @@ import {
 describe('the permission catalog', () => {
   it('governs exactly the resource types Team Edition authorizes', () => {
     expect([...GOVERNED_RESOURCE_TYPES].sort()).toEqual([
-      'department', 'device', 'knowledge_scope', 'mcp_server', 'mcp_tool',
+      'bi_project', 'department', 'device', 'knowledge_scope', 'mcp_server', 'mcp_tool',
       'member', 'menu', 'model', 'organization', 'plugin', 'role', 'skill', 'usage', 'web_search',
     ])
+  })
+
+  it('separates administering the BI project catalog from running its charts', () => {
+    // All three live on bi_project, so a role granted catalog administration
+    // runs no chart in any project, and a role granted a project gains no way
+    // to change what the catalog holds.
+    expect(isRegisteredPermission('bi_project', 'bi.query')).toBe(true)
+    expect(isRegisteredPermission('bi_project', 'bi.catalog.read')).toBe(true)
+    expect(isRegisteredPermission('bi_project', 'bi.catalog.manage')).toBe(true)
+    expect(isRegisteredPermission('knowledge_scope', 'bi.query')).toBe(false)
   })
 
   it('separates administering the knowledge catalog from searching knowledge', () => {

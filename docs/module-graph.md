@@ -149,6 +149,9 @@ flowchart TD
     pkg_attachment["attachment"]
     pkg_attachment_local["attachment-local"]
   end
+  subgraph group_bi["packages/bi"]
+    pkg_bi["bi"]
+  end
   subgraph group_boot["packages/boot"]
     pkg_app_boot["app-boot"]
     pkg_cmdline["cmdline"]
@@ -188,6 +191,7 @@ flowchart TD
     pkg_client_ui_input_trigger["client-ui-input-trigger"]
     pkg_client_ui_jobs["client-ui-jobs"]
     pkg_client_ui_knowledge["client-ui-knowledge"]
+    pkg_client_ui_knowledge_panels["client-ui-knowledge-panels"]
     pkg_client_ui_layout["client-ui-layout"]
     pkg_client_ui_message_feedback["client-ui-message-feedback"]
     pkg_client_ui_model_selection["client-ui-model-selection"]
@@ -526,6 +530,7 @@ flowchart TD
   pkg_spill --> pkg_brand
   pkg_spill --> pkg_llm
   pkg_spill --> pkg_session
+  pkg_bi --> pkg_session
   pkg_app_boot --> pkg_home_paths
   pkg_app_boot --> pkg_launch_environment
   pkg_app_boot --> pkg_system_prompt
@@ -1466,6 +1471,7 @@ flowchart TD
 | [`client-ui-input-trigger`](../packages/client/ui-input-trigger) | `client` | — |
 | [`client-ui-jobs`](../packages/client/ui-jobs) | `client` | — |
 | [`client-ui-knowledge`](../packages/client/ui-knowledge) | `client` | — |
+| [`client-ui-knowledge-panels`](../packages/client/ui-knowledge-panels) | `client` | — |
 | [`client-ui-layout`](../packages/client/ui-layout) | `client` | — |
 | [`client-ui-message-feedback`](../packages/client/ui-message-feedback) | `client` | — |
 | [`client-ui-model-selection`](../packages/client/ui-model-selection) | `client` | — |
@@ -1569,6 +1575,7 @@ flowchart TD
 | [`skill-badge`](../packages/skill/skill-badge) | `skill` | [`skill`](../packages/skill/skill) |
 | [`web-search-team`](../packages/web/web-search-team) | `web` | [`team-account-client`](../packages/team/team-account-client), [`web`](../packages/web/web), [`web-search-gateway-http`](../packages/web/web-search-gateway-http) |
 | [`spill`](../packages/spill/spill) | `spill` | [`brand`](../packages/util/brand), [`llm`](../packages/llm/llm), [`session`](../packages/core/session) |
+| [`bi`](../packages/bi/bi) | `bi` | [`session`](../packages/core/session) |
 | [`app-boot`](../packages/boot/app-boot) | `boot` | [`home-paths`](../packages/util/home-paths), [`launch-environment`](../packages/util/launch-environment), [`system-prompt`](../packages/core/system-prompt) |
 | [`knowledge`](../packages/knowledge/knowledge) | `knowledge` | [`session`](../packages/core/session) |
 | [`office`](../packages/office/office) | `office` | [`session`](../packages/core/session) |
