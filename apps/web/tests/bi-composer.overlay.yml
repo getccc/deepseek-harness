@@ -1,0 +1,13 @@
+# Local look-at-it composition: the Team BI rows over the scaffold's stable
+# base, with the Control Plane provider left out — the test process mounts a
+# fixture `ctx.bi` instead.
+- insert:
+    - id: tool-bi
+      name: '@deepseek-ai/dsh-tool-bi'
+
+    - id: api-bi-controller
+      name: '@deepseek-ai/dsh-api-bi-controller'
+
+- insert:
+    - id: client-ui-bi
+      name: '@deepseek-ai/dsh-client-ui-bi'

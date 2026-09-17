@@ -1,5 +1,5 @@
 ---
-description: "Web GUI 的 BI 分析 chip：位于办公 chip 右侧、在分析能力落地前保持不可用的控件；供构建该能力的维护者阅读。"
+description: "在输入框中选择本次对话分析哪个 BI 项目的控件：对成员可分析项目的单选，通过仅 Team 的 bi Remote 记录。"
 kind: "package-reference"
 ---
 
@@ -9,15 +9,13 @@ kind: "package-reference"
 
 ## 概述
 
-本包持有 Web GUI 的 BI 分析 chip：composer 工具行中位于办公 chip 右侧的「BI分析」控件。它已就位但不可用——它确定的是席位、在同排 chip 中的次序与文案，并通过 `aria-disabled` 与工具提示说明该能力尚未构建。它不持有状态、不读取投影、也不调用 Remote；分析行为将在之后落到本包。
+`dsh-client-ui-bi` 是成员用来说明本次对话分析哪个 BI 项目的输入框控件。它是对成员此刻可分析项目的单选，在菜单打开时读取目录，再次点击已选项目则清除。控件从 `bi` 投影读取所选项目，并通过仅 Team 的 `bi` Remote 记录点击，因此刷新或第二个浏览器显示同样的选择，模型则通过 `dsh-tool-bi` 拥有的提示词段和两个工具读到它。
 
 ## 目录
 
 - [使用本包](#use-this-package)
-- [理解实现](#understand-the-implementation)
-- [进一步探索](#further-exploration)
 - [模型体验](#model-experience)
-- [已知限制与延期工作](#known-limitations-and-deferred-work)
+- [已知限制与延后工作](#known-limitations-and-deferred-work)
 - [开发备注](#dev-note)
 
 -----
@@ -25,56 +23,30 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-与 `ui-conversation` 一起挂载本插件；chip 随即出现在每个工作任务对话中。无需配置：不想显示该席位的部署，把本插件从其组装中去掉即可。Team bundle 把它挂载在它所跟随的办公 chip 旁边。
+在 Team 浏览器组合中挂载它；它在输入框左侧区域、办公 chip 右边安放一个控件，并挂载它所调用的 `bi` Remote 命名空间。无需配置。Host 不折叠 BI 范围的构建不渲染任何东西，聊天 Session（通过标准套件的 `useSessions` 读作 `kind`）也一样，因为其无工具预设没有可执行的图表。输入框行窄于 460px 时控件只显示图标，与权限控件相同；其无障碍名称仍然说明所选项目。
 
 ### 成员看到什么
 
-chip 以 composer 自身的墨色显示趋势字形与文案，位于联网、知识与办公 chip 之后；composer 窄于 460px 时它像同排 chip 一样收缩为纯字形。它为无障碍技术提供名称、被播报为不可用、并带有说明功能仍在开发的工具提示。点击它不会发生任何事。它不出现在聊天对话中——那里没有可供分析的工作区。
-
------
-
-<a id="understand-the-implementation"></a>
-## 理解实现
-
-<details>
-<summary>实现细节——点击展开</summary>
-
-chip 以 order 120 加入由 conversation 声明的 `conversation.input.left` 列表——在 50 的联网开关、60 的录音转写 chip、100 的知识 chip 与 110 的办公 chip 之后。它通过标准套件的 `useSessions` 读取会话种类，在工作会话之外不渲染任何内容。node 半边是空 apply（名册行）。
-
-</details>
-
------
-
-<a id="further-exploration"></a>
-## 进一步探索
-
-当这个 chip 不够用时阅读以下页面。它们从席位走向声明席位的 composer 以及它所跟随的 chip。
-
-- [ui-conversation](../ui-conversation/README.zh.md)——声明 composer 的 `conversation.input.left` 区域。
-- [ui-office](../ui-office/README.zh.md)——本 chip 紧邻的 chip，也是一个可用 composer 选择的形态。
-- [ui-voice](../ui-voice/README.zh.md)——另一组先于能力放好的席位。
-- [客户端包映射](../README.zh.md)——相邻的浏览器 UI 包。
+未选择时 chip 显示 `BI分析`，选定后显示记录下来的项目名，并像已选办公类型一样着色。打开它会读取已授权目录并列出项目；没有项目的成员会被告知，记录的项目此后被收回的成员也会被告知，chip 在他们重新选择之前仍显示日志记录的名字。Host 拒绝的更改让菜单保持打开并显示原因。
 
 -----
 
 <a id="model-experience"></a>
 ## 模型体验
 
-无，因为该 chip 是不可用的占位控件：不渲染任何模型可见文本，也不在会话日志中记录任何内容。
+间接地，通过控件记录的 `bi/scope` 事件——`dsh-tool-bi` 把它变成指名项目的提示词段以及两个 BI 工具的可见性。
 
 #### KV Cache 影响
 
-chip 不增加提示内容，也不改变请求前缀，因此没有任何请求前缀发生移动。
+每次选择都会改变 `dsh-tool-bi` 拥有的 `bi:scope` 系统提示词段与工具列表，因此下一次请求的前缀从该段起不同；打开控件在点击项目之前不产生任何开销。
 
-## 已知限制与延期工作
+## 已知限制与延后工作
 
 <a id="known-limitations-and-deferred-work"></a>
 
-这些限制界定了当前的包。它们说明这个席位尚未承载什么。
-
-- **没有分析**——chip 背后的能力尚未构建：它不打开任何界面、不读取任何数据、也不产出任何报告。构建它属于本包，建立在拥有数据源与所运行分析的宿主 seam 之上。
-- **仅限工作任务对话**——聊天对话中不显示该 chip。
-- **chip 属于默认 composer**——plan 评审等待处理的整 composer 交互会临时替换 InputBar 及其席位。
+- **选择只属于一个对话**——没有记住的默认值，每个新对话都从未选择项目开始。
+- **没有 `/bi` 命令**——控件是记录选择的唯一途径；只有成员提出需要时才会加入命令行。
+- **执行没有 Web 卡片**——模型执行的图表以模型自己的回答进入对话记录，通过部署的 `echarts` 围栏绘制；直接绘制行数据的卡片是后续增量。
 
 <a id="dev-note"></a>
 ### 开发备注
@@ -82,8 +54,10 @@ chip 不增加提示内容，也不改变请求前缀，因此没有任何请求
 <details>
 <summary>维护者工作上下文——点击展开</summary>
 
-无。
+控件从同一个报告记录项目是否失效的 `scope` 调用读取目录，因此一次打开只花一次 Remote 调用，两个事实也不可能不一致。
+
+触发按钮与知识和办公控件绘制的是同一套 chip 外观；克隆检测器会报告这段共享片段。三者共用的输入框 chip 触发器原语是后续工作，它会触及那两个包，这正是它没有随添加本控件的变更一起进行的原因。
 
 </details>
 
-**运行时不变量：** 未发布伴随件。本包拥有一个 slot effect，其声明、注册与拆除由本包自身的测试覆盖，且不存在两个观察者可能看法不同的关系。
+**运行时不变量：** 不发布伴随包：一个由 HMR 安全测试证明可销毁的输入框席位通过 Host 读取 Session 的 BI 选择，不发出 cordis 事件，也不拥有跨插件的可变状态。

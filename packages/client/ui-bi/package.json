@@ -1,6 +1,6 @@
 {
   "name": "@deepseek-ai/dsh-client-ui-bi",
-  "description": "BI analysis composer chip: the conversation.input.left control seated beside the office chip",
+  "description": "BI analysis composer control: the single-select naming which BI project this conversation analyzes, recorded through the Team-only bi Remote",
   "version": "0.1.6-alpha.1",
   "publishConfig": {
     "access": "public"
@@ -28,8 +28,9 @@
   "dsh": {
     "client": {
       "inject": [
-        "@deepseek-ai/dsh-client-locale",
-        "@deepseek-ai/dsh-client-ui-conversation"
+        "@deepseek-ai/dsh-api-bi-controller",
+        "@deepseek-ai/dsh-api-session-controller",
+        "@deepseek-ai/dsh-client-locale"
       ],
       "platform": "web"
     }
@@ -44,6 +45,10 @@
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "workspace:^",
+    "@deepseek-ai/dsh-api-bi-controller": "workspace:^",
+    "@deepseek-ai/dsh-api-remotes": "workspace:^",
+    "@deepseek-ai/dsh-api-session-controller": "workspace:^",
+    "@deepseek-ai/dsh-bi": "workspace:^",
     "@deepseek-ai/dsh-client-locale": "workspace:^",
     "@deepseek-ai/dsh-client-store": "workspace:^",
     "@deepseek-ai/dsh-client-test-runtime": "workspace:^",
@@ -53,7 +58,9 @@
     "@deepseek-ai/dsh-client-ui-session": "workspace:^",
     "@deepseek-ai/dsh-client-ui-slots": "workspace:^",
     "@deepseek-ai/dsh-session": "workspace:^",
+    "@deepseek-ai/dsh-tool-bi": "workspace:^",
     "@types/react": "~18.3.1",
+    "clsx": "^2.1.1",
     "react": "^18.2.0"
   },
   "files": [

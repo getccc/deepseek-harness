@@ -108,7 +108,7 @@ describe('dsh-team bundle', () => {
     }
   })
 
-  it('adds both halves of BI analysis, the provider and the tools that spend it', () => {
+  it('adds every half of BI analysis: the provider, the tools, the Remote, and the control', () => {
     const inserted = new Map(patchRows().flatMap(row => row.insert ?? [])
       .map(row => [row.id as string, row.name as string]))
     const manifest = JSON.parse(
@@ -117,6 +117,8 @@ describe('dsh-team bundle', () => {
     for (const [id, name] of [
       ['bi', '@deepseek-ai/dsh-bi-team'],
       ['tool-bi', '@deepseek-ai/dsh-tool-bi'],
+      ['api-bi-controller', '@deepseek-ai/dsh-api-bi-controller'],
+      ['client-ui-bi', '@deepseek-ai/dsh-client-ui-bi'],
     ] as const) {
       expect(inserted.get(id), id).toBe(name)
       expect(manifest.dependencies ?? {}, id).toHaveProperty(name)

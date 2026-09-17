@@ -2425,6 +2425,9 @@ importers:
 
   packages/bundle/team:
     dependencies:
+      '@deepseek-ai/dsh-api-bi-controller':
+        specifier: workspace:^
+        version: link:../../api/bi-controller
       '@deepseek-ai/dsh-api-knowledge-controller':
         specifier: workspace:^
         version: link:../../api/knowledge-controller
@@ -3170,6 +3173,18 @@ importers:
       '@deepseek-ai/cordis':
         specifier: workspace:^
         version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-api-bi-controller':
+        specifier: workspace:^
+        version: link:../../api/bi-controller
+      '@deepseek-ai/dsh-api-remotes':
+        specifier: workspace:^
+        version: link:../../api/remotes
+      '@deepseek-ai/dsh-api-session-controller':
+        specifier: workspace:^
+        version: link:../../api/session-controller
+      '@deepseek-ai/dsh-bi':
+        specifier: workspace:^
+        version: link:../../bi/bi
       '@deepseek-ai/dsh-client-locale':
         specifier: workspace:^
         version: link:../locale
@@ -3197,9 +3212,15 @@ importers:
       '@deepseek-ai/dsh-session':
         specifier: workspace:^
         version: link:../../core/session
+      '@deepseek-ai/dsh-tool-bi':
+        specifier: workspace:^
+        version: link:../../bi/tool-bi
       '@types/react':
         specifier: ~18.3.1
         version: 18.3.31
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       react:
         specifier: ^18.2.0
         version: 18.3.1

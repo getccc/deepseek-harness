@@ -42,6 +42,7 @@
     "@deepseek-ai/cordis-plugin-loader": "workspace:^"
   },
   "dependencies": {
+    "@deepseek-ai/dsh-api-bi-controller": "workspace:^",
     "@deepseek-ai/dsh-api-knowledge-controller": "workspace:^",
     "@deepseek-ai/dsh-api-office-controller": "workspace:^",
     "@deepseek-ai/dsh-bi-team": "workspace:^",

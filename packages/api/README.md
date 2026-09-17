@@ -30,6 +30,7 @@ The packages below provide the Remote layer; the package READMEs own the exhaust
 | [`gateway/`](gateway/README.md) | Carries typed unary calls, multiplexed streams, and forwarded Host events. | `ctx.typertGateway` / `ctx.remote` |
 | [`session-controller/`](session-controller/README.md) | Owns Session commands, history streams, live control state, and Agent/Session identity policy. | `ctx.sessionController` / `ctx.remote.session` |
 | [`web-access-controller/`](web-access-controller/README.md) | Reads and sets one Session's web switch for the composer chip, recording `web/access` without a command in the transcript. | `ctx.webAccessController` / `ctx.remote.webAccess` |
+| [`bi-controller/`](bi-controller/README.md) | Team-only: reads the BI projects a member may analyze and records one Session's project choice as `bi/scope` for the composer control. | `ctx.biController` / `ctx.remote.bi` |
 | [`settings-controller/`](settings-controller/README.md) | Owns the configuration-surface reads and writes over the settings-domain seams. | `ctx.settingsController`, `ctx.credentialsController` / `ctx.remote.settings`, `ctx.remote.credentials` |
 | [`workspace-controller/`](workspace-controller/README.md) | Owns Workspace mutations and the complete Client Workspace projection. | `ctx.workspaceController` / `ctx.remote.workspace` |
 | [`terminal-controller/`](terminal-controller/README.md) | Session-owned interactive shells, screen recovery and browser terminal control. | `ctx.terminalController` / `ctx.remote.terminal` |
