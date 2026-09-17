@@ -22,7 +22,7 @@ const SHEETJS_NODE_REQUIRES = /require\((['"])(?:fs|stream)\1\)/gu
 const sheetjsBrowserOnly: NonNullable<UserConfig['plugins']> = [{
   name: 'dsh-office-sheetjs-browser-only',
   transform(code, id) {
-    if (!id.includes('/node_modules/xlsx/')) return null
+    if (!id.replaceAll('\\', '/').includes('/node_modules/xlsx/')) return null
     return { code: code.replace(SHEETJS_NODE_REQUIRES, 'undefined'), map: null }
   },
 }]

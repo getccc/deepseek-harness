@@ -75,7 +75,7 @@ kind: "package-reference"
 <details>
 <summary>维护者工作上下文——点击展开</summary>
 
-渲染库（`docx-preview`、`xlsx`、`@univerjs/presets` 及其 sheets 预设、`@aiden0z/pptx-renderer` 及其 `echarts` 与 `jszip`）由共享的客户端 bundle 预设内联进 `lib/client.js`；它们的 Apache-2.0 声明经 `gen-third-party-notices` 进入 `THIRD_PARTY_NOTICES.md`。sheets 预设的样式表由 `tsdown.config.ts` 里的一个解析器内联为文本（预设自带的内联加载器只按导入者的相对路径读样式表），并由 `apply` 中的一个效应挂载，因此随插件一起卸下；Univer 从 `<html lang>` 读取文档语言，locale 运行时会保持它是最新的。PowerPoint 文档体在打开前把字节复制为独立的 `ArrayBuffer`，因为查看器会接管它收到的缓冲区；渲染库按滚动容器的 `clientWidth` 给每张幻灯片定尺寸，所以幻灯片周围的留白放在舞台上而不是滚动容器上。每个文档体占满共享文档体的整个高度，并通过 `scrollportRef` 上报自己的滚动容器，这样 Word 的缩放条与 PowerPoint 的工具栏在页面或幻灯片滚动时保持固定。
+渲染库（`docx-preview`、`xlsx`、`@univerjs/presets` 及其 sheets 预设、`@aiden0z/pptx-renderer` 及其 `echarts` 与 `jszip`）由共享的客户端 bundle 预设内联进 `lib/client.js`；它们的 Apache-2.0 声明经 `gen-third-party-notices` 进入 `THIRD_PARTY_NOTICES.md`。sheets 预设的样式表由 `tsdown.config.ts` 里的一个解析器内联为文本（预设自带的内联加载器只按导入者的相对路径读样式表），并由 `apply` 中的一个效应挂载，因此随插件一起卸下。SheetJS 带条件判断的 `require('fs')` 与 `require('stream')` 调用由同一文件里的一个 transform 改为 `undefined`，它把模块 id 中的 `\` 当作 `/` 来匹配 SheetJS 模块，因为 Windows 上的 single-exe 构建给出反斜杠 id，而残留的调用会在 bundle 加载时于模块加载器的 `require` 中抛错。Univer 从 `<html lang>` 读取文档语言，locale 运行时会保持它是最新的。PowerPoint 文档体在打开前把字节复制为独立的 `ArrayBuffer`，因为查看器会接管它收到的缓冲区；渲染库按滚动容器的 `clientWidth` 给每张幻灯片定尺寸，所以幻灯片周围的留白放在舞台上而不是滚动容器上。每个文档体占满共享文档体的整个高度，并通过 `scrollportRef` 上报自己的滚动容器，这样 Word 的缩放条与 PowerPoint 的工具栏在页面或幻灯片滚动时保持固定。
 
 </details>
 

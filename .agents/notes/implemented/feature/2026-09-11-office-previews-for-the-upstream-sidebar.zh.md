@@ -21,4 +21,4 @@ Status: implemented
 
 ## 后果
 
-成员重新可以就地阅读办公文档，文件卡片的打开与定位动作不变。Excel 预览把值、公式、数字格式、合并单元格与尺寸带进 Univer，但不带字体、填充与边框，bundle 增至约 21 MB；PowerPoint 的还原度取决于渲染库，需要 PDF.js 的 SmartArt 与 EMF 回退没有打包。注册与每个文档体由本包的测试覆盖，以生成的 Word 包与工作簿为 fixture，PowerPoint 查看器则被 mock；Web e2e 车道新增一个办公场景：在随附组合外加挂载本插件的 overlay 之上驱动一段录制的轮次，然后从"文件"打开生成的 Word 文档与工作簿。
+成员重新可以就地阅读办公文档，文件卡片的打开与定位动作不变。Excel 预览把值、公式、数字格式、合并单元格与尺寸带进 Univer，但不带字体、填充与边框，bundle 增至约 21 MB；PowerPoint 的还原度取决于渲染库，需要 PDF.js 的 SmartArt 与 EMF 回退没有打包。bundle 中的 SheetJS transform 在两种路径分隔符下都能匹配模块 id，因为 Windows 上的 single-exe 构建在 Windows 上编译该 bundle；本包的一个测试固定了这两种形式。注册与每个文档体由本包的测试覆盖，以生成的 Word 包与工作簿为 fixture，PowerPoint 查看器则被 mock；Web e2e 车道新增一个办公场景：在随附组合外加挂载本插件的 overlay 之上驱动一段录制的轮次，然后从"文件"打开生成的 Word 文档与工作簿。
