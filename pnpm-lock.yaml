@@ -1688,6 +1688,89 @@ importers:
         specifier: workspace:^
         version: link:../../core/session
 
+  packages/bi/bi-gateway:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:^
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:^
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-bi':
+        specifier: workspace:^
+        version: link:../bi
+
+  packages/bi/bi-gateway-sqlite:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:^
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-access-control-sqlite':
+        specifier: workspace:^
+        version: link:../../access/access-control-sqlite
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:^
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:^
+        version: link:../../account/account-store-sqlite
+      '@deepseek-ai/dsh-audit':
+        specifier: workspace:^
+        version: link:../../access/audit
+      '@deepseek-ai/dsh-audit-sqlite':
+        specifier: workspace:^
+        version: link:../../access/audit-sqlite
+      '@deepseek-ai/dsh-bi':
+        specifier: workspace:^
+        version: link:../bi
+      '@deepseek-ai/dsh-bi-gateway':
+        specifier: workspace:^
+        version: link:../bi-gateway
+      '@deepseek-ai/dsh-bi-source':
+        specifier: workspace:^
+        version: link:../bi-source
+
+  packages/bi/bi-source:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-bi':
+        specifier: workspace:^
+        version: link:../bi
+
+  packages/bi/bi-webi:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-bi':
+        specifier: workspace:^
+        version: link:../bi
+      '@deepseek-ai/dsh-bi-source':
+        specifier: workspace:^
+        version: link:../bi-source
+      '@deepseek-ai/dsh-credentials':
+        specifier: workspace:^
+        version: link:../../credentials/credentials
+      '@deepseek-ai/dsh-util-crypto':
+        specifier: workspace:^
+        version: link:../../util/crypto
+
   packages/boot/app-boot:
     dependencies:
       '@deepseek-ai/dsh-atomic-write':

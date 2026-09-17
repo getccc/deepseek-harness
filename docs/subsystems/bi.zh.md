@@ -139,4 +139,133 @@ abstract query(request: BiQueryRequest): Promise<BiQueryResult>
 ```
 
 Source: [`packages/bi/bi/src/index.ts`](../../packages/bi/bi/src/index.ts)
+
+<a id="ctxbigateway--bigateway-abstract-seam"></a>
+
+### `ctx.biGateway` — `BiGateway` (abstract seam)
+
+The governed catalog and the decision in front of it. A provider mounts this service; consumers inject `biGateway`.
+
+Administration methods take an organization because an administrator has already been authorized by the route that called them. Member-facing methods take a principal because they authorize it themselves, per project, on every call.
+
+```ts cordis-catalog
+/**
+ * Reconcile the durable catalog against one successful full listing.
+ *
+ * Serialized: concurrent callers join the operation already in flight rather
+ * than racing two reconciliations over the same rows. A source that does not
+ * answer leaves the last successful snapshot in place and records the
+ * failure, because one failed listing must not disable every project an
+ * organization governs.
+ * @param orgId - the organization whose catalog is reconciled.
+ * @returns the catalog as it stands after the attempt, successful or not.
+ */
+abstract sync(orgId: OrgId): Promise<BiCatalogView>
+
+/**
+ * Read the durable catalog without contacting the source.
+ * @param orgId - the organization to read.
+ * @returns every governed entry and the source's health.
+ */
+abstract catalogView(orgId: OrgId): Promise<BiCatalogView>
+
+/**
+ * Switch one entry on or off for the whole organization.
+ *
+ * Synchronization never overrides this choice: an administrator who disabled
+ * a project finds it still disabled after the next listing.
+ * @param orgId - the organization the entry belongs to.
+ * @param ref - the entry to change.
+ * @param enabled - whether it may be analyzed at all.
+ * @throws {BiError} `not-allowed` when the catalog holds no such entry.
+ */
+abstract setEnabled(orgId: OrgId, ref: BiProjectRef, enabled: boolean): Promise<void>
+
+/**
+ * The projects this principal may analyze right now.
+ * @param principal - who is asking, from a verified token.
+ * @returns the authorized directory, empty when the principal holds nothing.
+ */
+abstract directory(principal: BiPrincipal): Promise<readonly BiProjectEntry[]>
+
+/**
+ * Authorize one chart listing and perform it.
+ *
+ * The project is evaluated on this call, as a run's is. A member who may
+ * run a project's charts may see which charts are in it: the decision is
+ * the same permission, asked separately so it can be tightened without a
+ * new authorization path.
+ * @param request - who is asking, which project, a keyword, and which page.
+ * @returns the page, with the charts addressed by governed references.
+ * @throws {BiError} with the reason the operation was refused or failed.
+ */
+abstract charts(request: GovernedChartsRequest): Promise<BiChartPage>
+
+/**
+ * Authorize one chart run and perform it.
+ *
+ * Two things are proved before any row is read: the project the reference
+ * names admits this principal now, and the source agrees that the chart
+ * belongs to that project. The second is what makes an unsigned reference
+ * safe: a reference whose halves disagree is refused, and possession of one
+ * is never authority.
+ * @param request - who is asking, which chart, and the caller's row bound.
+ * @returns the chart's definition summary, its fields, and its bounded rows.
+ * @throws {BiError} with the reason the operation was refused or failed.
+ */
+abstract query(request: GovernedQueryRequest): Promise<BiQueryResult>
+```
+
+Types: [OrgId](account.zh.md)
+
+Source: [`packages/bi/bi-gateway/src/index.ts`](../../packages/bi/bi-gateway/src/index.ts)
+
+<a id="ctxbisource--bisource-abstract-seam"></a>
+
+### `ctx.biSource` — `BiSource` (abstract seam)
+
+One upstream BI product. A provider mounts this service; the governed gateway injects `biSource`.
+
+Failures are raised as `BiError` with `upstream-unavailable`, `upstream-invalid`, `chart-unavailable`, or `query-failed`. A provider never raises an authorization reason: it does not know who is asking, which is the point.
+
+```ts cordis-catalog
+/**
+ * Every project the configured source holds.
+ * @param signal - aborts the operation.
+ * @returns every project, in whatever order the source lists them.
+ * @throws {BiError} `upstream-unavailable` or `upstream-invalid`.
+ */
+abstract listProjects(signal?: AbortSignal): Promise<readonly UpstreamProject[]>
+
+/**
+ * The saved charts of one already-authorized project.
+ * @param request - the authorized upstream id.
+ * @returns the listing, empty when the project holds no chart.
+ * @throws {BiError} `upstream-unavailable` or `upstream-invalid`.
+ */
+abstract listCharts(request: UpstreamChartsRequest): Promise<UpstreamChartListing>
+
+/**
+ * Where one chart sits, so the gateway can authorize the project that holds
+ * it before running anything in it.
+ * @param upstreamChartId - the source's own chart id.
+ * @param signal - aborts the operation.
+ * @returns the project it belongs to, and the chart.
+ * @throws {BiError} `upstream-unavailable`, `upstream-invalid`, or
+ * `chart-unavailable` when the source holds no such chart.
+ */
+abstract describeChart(upstreamChartId: string, signal?: AbortSignal): Promise<UpstreamChartPlacement>
+
+/**
+ * Run one already-authorized saved chart as it was saved.
+ * @param request - the project, the chart, and the caller's row bound.
+ * @returns the fields, the saved filters, and the bounded rows.
+ * @throws {BiError} `upstream-unavailable`, `upstream-invalid`,
+ * `chart-unavailable` when the source no longer holds the chart, or
+ * `query-failed` when the source ran it and the warehouse refused or failed.
+ */
+abstract runChart(request: UpstreamRunRequest): Promise<UpstreamRun>
+```
+
+Source: [`packages/bi/bi-source/src/index.ts`](../../packages/bi/bi-source/src/index.ts)
 <!-- END GENERATED cordis-surface -->

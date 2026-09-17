@@ -244,6 +244,12 @@ flowchart LR
   pkg_tool_jobs["tool-jobs"]
   pkg_bi["bi"]
   svc_bi["ctx.bi<br/>BI analysis seam"]
+  pkg_bi_gateway["bi-gateway"]
+  svc_biGateway["ctx.biGateway<br/>Governed BI gateway"]
+  pkg_bi_gateway_sqlite["bi-gateway-sqlite"]
+  pkg_bi_source["bi-source"]
+  svc_biSource["ctx.biSource<br/>Upstream BI source seam"]
+  pkg_bi_webi["bi-webi"]
   pkg_knowledge["knowledge"]
   svc_knowledge["ctx.knowledge<br/>Private knowledge seam"]
   pkg_knowledge_team["knowledge-team"]
@@ -314,6 +320,10 @@ flowchart LR
   pkg_bash_local --> svc_shell
   pkg_bash_sandbox --> svc_shell
   pkg_bi --> svc_bi
+  pkg_bi_gateway --> svc_biGateway
+  pkg_bi_gateway_sqlite --> svc_biGateway
+  pkg_bi_source --> svc_biSource
+  pkg_bi_webi --> svc_biSource
   pkg_browser_use --> svc_browserUse
   pkg_client_file_upload --> svc_fileUploads
   pkg_client_modules --> svc_clientModules
@@ -680,6 +690,8 @@ flowchart LR
 | `ctx.inspector` | `core` | `inspector` | - | - | - | Owns the Worker-hosted CDP target and the transport-independent Host and Client observation and Cordis-tree query API. |
 | `ctx.jobs` | `seam` | [`jobs`](../packages/jobs/jobs) | [`jobs-local`](../packages/jobs/jobs-local) | [`tool-bash`](../packages/shell/tool-bash), [`tool-terminal`](../packages/terminal/tool-terminal), [`tool-subagent`](../packages/subagent/tool-subagent), [`tool-jobs`](../packages/jobs/tool-jobs) | - | Producers (background bash, PTY sends, and subagent delegations) register running work; tool-jobs is the model-facing controller that reads, lists, and kills it; jobs-local is the process-local registry. |
 | `ctx.bi` | `seam` | [`bi`](../packages/bi/bi) | - | - | - | The project directory, saved-chart listing, and chart-run operations a governed deployment authorizes; its Team provider and model-facing tools arrive with the Control Plane BI capability. |
+| `ctx.biGateway` | `seam` | [`bi-gateway`](../packages/bi/bi-gateway) | [`bi-gateway-sqlite`](../packages/bi/bi-gateway-sqlite) | - | - | Stands between a member's Runner and a BI source: an administrator curates the durable project catalog through it, and every member-facing directory, chart listing, and chart run is authorized per project by it. |
+| `ctx.biSource` | `seam` | [`bi-source`](../packages/bi/bi-source) | [`bi-webi`](../packages/bi/bi-webi) | - | - | The Control Plane half: a provider speaks one BI product's protocol and holds its credential, while the governed gateway in front of it decides who may run what. |
 | `ctx.knowledge` | `seam` | [`knowledge`](../packages/knowledge/knowledge) | [`knowledge-team`](../packages/knowledge/knowledge-team) | [`tool-knowledge`](../packages/knowledge/tool-knowledge) | - | The directory and passage-search operations a governed deployment authorizes; knowledge-team reaches the Control Plane that authorizes them, and tool-knowledge is what a model sees of the result. |
 | `ctx.knowledgeGateway` | `seam` | [`knowledge-gateway`](../packages/knowledge/knowledge-gateway) | [`knowledge-gateway-sqlite`](../packages/knowledge/knowledge-gateway-sqlite) | - | - | Stands between a member's Runner and a knowledge source: an administrator curates the durable catalog through it, and every member-facing directory and search is authorized per knowledge base by it. |
 | `ctx.knowledgeSource` | `seam` | [`knowledge-source`](../packages/knowledge/knowledge-source) | [`knowledge-weknora`](../packages/knowledge/knowledge-weknora) | - | - | The Control Plane half: a provider speaks one knowledge product's protocol and holds its credential, while the governed gateway in front of it decides who may search what. |

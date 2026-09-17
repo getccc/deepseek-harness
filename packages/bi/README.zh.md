@@ -22,11 +22,15 @@ kind: "package-group"
 <a id="packages"></a>
 ## 包
 
-今天只有一个包扮演 BI 角色；子系统参考拥有穷尽的词汇与契约，Agent Note 列出了这项能力其余部分要加入的包。
+五个包扮演 BI 相关角色；子系统参考拥有穷尽的词汇与契约，Agent Note 列出了这项能力其余部分要加入的包。
 
 | 包 | 角色 | ctx key |
 |---|---|---|
 | [`bi/`](bi/README.zh.md) | BI 服务：已授权项目目录、已保存图表列表、图表执行、稳定引用和会话范围 | `ctx.bi` |
+| [`bi-source/`](bi-source/README.zh.md) | 上游数据源接缝：列出数据源的项目与某个项目的图表、定位图表、执行一张已授权的图表 | `ctx.biSource` |
+| [`bi-webi/`](bi-webi/README.zh.md) | 说 webi 的四条固定路由，把个人访问令牌留在 Control Plane | 注册到 `ctx.biSource` |
+| [`bi-gateway/`](bi-gateway/README.zh.md) | 受治理网关接缝：持久项目目录，以及已授权目录、图表列表与图表执行 | `ctx.biGateway` |
+| [`bi-gateway-sqlite/`](bi-gateway-sqlite/README.zh.md) | 基于 SQLite 的持久目录，带同步、逐项目授权与审计 | 注册到 `ctx.biGateway` |
 
 -----
 

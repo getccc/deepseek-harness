@@ -967,6 +967,96 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'biGateway',
+    summary: 'The governed catalog and the decision in front of it.',
+    description: 'The governed catalog and the decision in front of it. A provider mounts this service; consumers inject `biGateway`.\n\nAdministration methods take an organization because an administrator has already been authorized by the route that called them. Member-facing methods take a principal because they authorize it themselves, per project, on every call.',
+    methods: [
+      {
+        signature: 'abstract sync(orgId: OrgId): Promise<BiCatalogView>',
+        description: 'Reconcile the durable catalog against one successful full listing.\n\nSerialized: concurrent callers join the operation already in flight rather than racing two reconciliations over the same rows. A source that does not answer leaves the last successful snapshot in place and records the failure, because one failed listing must not disable every project an organization governs.',
+        parameters: [{ name: 'orgId', description: 'the organization whose catalog is reconciled.' }],
+        returns: 'the catalog as it stands after the attempt, successful or not.',
+      },
+      {
+        signature: 'abstract catalogView(orgId: OrgId): Promise<BiCatalogView>',
+        description: 'Read the durable catalog without contacting the source.',
+        parameters: [{ name: 'orgId', description: 'the organization to read.' }],
+        returns: 'every governed entry and the source\'s health.',
+      },
+      {
+        signature: 'abstract setEnabled(orgId: OrgId, ref: BiProjectRef, enabled: boolean): Promise<void>',
+        description: 'Switch one entry on or off for the whole organization.\n\nSynchronization never overrides this choice: an administrator who disabled a project finds it still disabled after the next listing.',
+        parameters: [{ name: 'orgId', description: 'the organization the entry belongs to.' }, { name: 'ref', description: 'the entry to change.' }, { name: 'enabled', description: 'whether it may be analyzed at all.' }],
+        throws: ['{BiError} `not-allowed` when the catalog holds no such entry.'],
+      },
+      {
+        signature: 'abstract directory(principal: BiPrincipal): Promise<readonly BiProjectEntry[]>',
+        description: 'The projects this principal may analyze right now.',
+        parameters: [{ name: 'principal', description: 'who is asking, from a verified token.' }],
+        returns: 'the authorized directory, empty when the principal holds nothing.',
+      },
+      {
+        signature: 'abstract charts(request: GovernedChartsRequest): Promise<BiChartPage>',
+        description: 'Authorize one chart listing and perform it.\n\nThe project is evaluated on this call, as a run\'s is. A member who may run a project\'s charts may see which charts are in it: the decision is the same permission, asked separately so it can be tightened without a new authorization path.',
+        parameters: [{ name: 'request', description: 'who is asking, which project, a keyword, and which page.' }],
+        returns: 'the page, with the charts addressed by governed references.',
+        throws: ['{BiError} with the reason the operation was refused or failed.'],
+      },
+      {
+        signature: 'abstract query(request: GovernedQueryRequest): Promise<BiQueryResult>',
+        description: 'Authorize one chart run and perform it.\n\nTwo things are proved before any row is read: the project the reference names admits this principal now, and the source agrees that the chart belongs to that project. The second is what makes an unsigned reference safe: a reference whose halves disagree is refused, and possession of one is never authority.',
+        parameters: [{ name: 'request', description: 'who is asking, which chart, and the caller\'s row bound.' }],
+        returns: 'the chart\'s definition summary, its fields, and its bounded rows.',
+        throws: ['{BiError} with the reason the operation was refused or failed.'],
+      },
+    ],
+  },
+  {
+    key: 'biSource',
+    summary: 'One upstream BI product.',
+    description: 'One upstream BI product. A provider mounts this service; the governed gateway injects `biSource`.\n\nFailures are raised as `BiError` with `upstream-unavailable`, `upstream-invalid`, `chart-unavailable`, or `query-failed`. A provider never raises an authorization reason: it does not know who is asking, which is the point.',
+    methods: [
+      {
+        signature: 'abstract readonly providerKind: string',
+        description: 'Which upstream product this is, as the first segment of a `BiProjectRef`.\n\nA constant of the provider rather than configuration: it names the code that speaks the protocol, and a deployment renaming it would change the identity of every project already governed.',
+        parameters: [],
+      },
+      {
+        signature: 'abstract readonly sourceCode: string',
+        description: 'The deployment\'s code for this source, as the second `BiProjectRef` segment. Configuration, because one company\'s `prod` is another\'s `bi`.',
+        parameters: [],
+      },
+      {
+        signature: 'abstract listProjects(signal?: AbortSignal): Promise<readonly UpstreamProject[]>',
+        description: 'Every project the configured source holds.',
+        parameters: [{ name: 'signal', description: 'aborts the operation.' }],
+        returns: 'every project, in whatever order the source lists them.',
+        throws: ['{BiError} `upstream-unavailable` or `upstream-invalid`.'],
+      },
+      {
+        signature: 'abstract listCharts(request: UpstreamChartsRequest): Promise<UpstreamChartListing>',
+        description: 'The saved charts of one already-authorized project.',
+        parameters: [{ name: 'request', description: 'the authorized upstream id.' }],
+        returns: 'the listing, empty when the project holds no chart.',
+        throws: ['{BiError} `upstream-unavailable` or `upstream-invalid`.'],
+      },
+      {
+        signature: 'abstract describeChart(upstreamChartId: string, signal?: AbortSignal): Promise<UpstreamChartPlacement>',
+        description: 'Where one chart sits, so the gateway can authorize the project that holds it before running anything in it.',
+        parameters: [{ name: 'upstreamChartId', description: 'the source\'s own chart id.' }, { name: 'signal', description: 'aborts the operation.' }],
+        returns: 'the project it belongs to, and the chart.',
+        throws: ['{BiError} `upstream-unavailable`, `upstream-invalid`, or `chart-unavailable` when the source holds no such chart.'],
+      },
+      {
+        signature: 'abstract runChart(request: UpstreamRunRequest): Promise<UpstreamRun>',
+        description: 'Run one already-authorized saved chart as it was saved.',
+        parameters: [{ name: 'request', description: 'the project, the chart, and the caller\'s row bound.' }],
+        returns: 'the fields, the saved filters, and the bounded rows.',
+        throws: ['{BiError} `upstream-unavailable`, `upstream-invalid`, `chart-unavailable` when the source no longer holds the chart, or `query-failed` when the source ran it and the warehouse refused or failed.'],
+      },
+    ],
+  },
+  {
     key: 'browserUse',
     summary: 'Owns one optional provider registration in the shared browser-use service.',
     description: 'Owns one optional provider registration in the shared browser-use service.',
@@ -4795,12 +4885,20 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface BashEnvVariableInfo extends BashEnvVariable {\n    contributor: string;\n    key: DshEnvironmentKey;\n}',
   },
   {
+    name: 'BiCatalogEntry',
+    declaration: 'export interface BiCatalogEntry {\n    readonly ref: BiProjectRef;\n    readonly resourceId: ResourceId;\n    readonly displayName: string;\n    readonly description: string;\n    readonly projectType: string;\n    readonly warehouseType: string;\n    readonly adminEnabled: boolean;\n    readonly effectiveEnabled: boolean;\n    readonly lastDiscoveredAt: number;\n}',
+  },
+  {
+    name: 'BiCatalogView',
+    declaration: 'export interface BiCatalogView {\n    readonly source: BiSourceStatus;\n    readonly entries: readonly BiCatalogEntry[];\n}',
+  },
+  {
     name: 'BiCell',
     declaration: 'export type BiCell = string | number | boolean | null;',
   },
   {
     name: 'BiChartKind',
-    declaration: 'export type BiChartKind = \'line\' | \'horizontal_bar\' | \'vertical_bar\' | \'scatter\' | \'bubble\' | \'waterfall\' | \'area\' | \'mixed\' | \'pie\' | \'table\' | \'big_number\' | \'funnel\' | \'map\' | \'sankey\' | \'radar\' | \'gauge\' | \'gantt\' | \'custom\' | \'other\';',
+    declaration: 'export type BiChartKind = \'line\' | \'horizontal_bar\' | \'vertical_bar\' | \'scatter\' | \'bubble\' | \'waterfall\' | \'area\' | \'mixed\' | \'pie\' | \'table\' | \'big_number\' | \'funnel\' | \'map\' | \'sankey\' | \'radar\' | \'gauge\' | \'gantt\' | \'safety_cross\' | \'custom\' | \'other\';',
   },
   {
     name: 'BiChartPage',
@@ -4827,6 +4925,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface BindingHandle {\n    readonly transactionId: TransactionId;\n    readonly pairingCode: string;\n    readonly expiresAt: number;\n    readonly confirmUrl: string;\n}',
   },
   {
+    name: 'BiPrincipal',
+    declaration: 'export interface BiPrincipal {\n    readonly orgId: OrgId;\n    readonly principalId: UserId;\n    readonly deviceId?: string;\n    readonly correlationId?: string;\n}',
+  },
+  {
     name: 'BiProjectEntry',
     declaration: 'export interface BiProjectEntry {\n    readonly ref: BiProjectRef;\n    readonly displayName: string;\n}',
   },
@@ -4841,6 +4943,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'BiQueryResult',
     declaration: 'export interface BiQueryResult {\n    readonly chartRef: BiChartRef;\n    readonly ref: BiProjectRef;\n    readonly name: string;\n    readonly kind: BiChartKind;\n    readonly description: string;\n    readonly fields: readonly BiField[];\n    readonly filters: string;\n    readonly rows: readonly (readonly BiCell[])[];\n    readonly rowCount: number | undefined;\n    readonly truncated: boolean;\n    readonly cellsTruncated: boolean;\n}',
+  },
+  {
+    name: 'BiSourceHealth',
+    declaration: 'export type BiSourceHealth = \'never-synced\' | \'healthy\' | \'failing\';',
+  },
+  {
+    name: 'BiSourceStatus',
+    declaration: 'export interface BiSourceStatus {\n    readonly sourceCode: string;\n    readonly providerKind: string;\n    readonly health: BiSourceHealth;\n    readonly lastAttemptAt: number | undefined;\n    readonly lastSuccessAt: number | undefined;\n    readonly lastFailure: string | undefined;\n}',
   },
   {
     name: 'Branded',
@@ -5439,12 +5549,20 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface GoalView extends GoalSnapshot {\n    readonly roundsStarted: number;\n    readonly createdAt: number;\n    readonly updatedAt: number;\n    readonly activation: GoalActivation;\n}',
   },
   {
+    name: 'GovernedChartsRequest',
+    declaration: 'export interface GovernedChartsRequest extends BiPrincipal {\n    readonly ref: BiProjectRef;\n    readonly query?: string;\n    readonly page?: number;\n    readonly pageSize?: number;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
     name: 'GovernedDocumentRequest',
     declaration: 'export interface GovernedDocumentRequest extends KnowledgePrincipal {\n    readonly docRef: KnowledgeDocRef;\n    readonly maxBytes?: number;\n    readonly signal?: AbortSignal;\n}',
   },
   {
     name: 'GovernedDocumentsRequest',
     declaration: 'export interface GovernedDocumentsRequest extends KnowledgePrincipal {\n    readonly ref: KnowledgeRef;\n    readonly page?: number;\n    readonly pageSize?: number;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
+    name: 'GovernedQueryRequest',
+    declaration: 'export interface GovernedQueryRequest extends BiPrincipal {\n    readonly chartRef: BiChartRef;\n    readonly limit?: number;\n    readonly signal?: AbortSignal;\n}',
   },
   {
     name: 'GovernedSearchRequest',
@@ -7703,6 +7821,22 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface UpdateTeamTaskRequest {\n    readonly taskId: TeamTaskId;\n    readonly expectedRevision: number;\n    readonly action: TeamTaskAction;\n    readonly subject?: string;\n    readonly description?: string;\n    readonly blockedBy?: readonly TeamTaskId[];\n    readonly writeScopes?: readonly string[];\n    readonly owner?: string;\n}',
   },
   {
+    name: 'UpstreamChart',
+    declaration: 'export interface UpstreamChart {\n    readonly upstreamChartId: string;\n    readonly name: string;\n    readonly spaceName: string;\n    readonly description: string;\n    readonly kind: BiChartKind;\n    readonly updatedAt: number | undefined;\n}',
+  },
+  {
+    name: 'UpstreamChartListing',
+    declaration: 'export interface UpstreamChartListing {\n    readonly charts: readonly UpstreamChart[];\n    readonly truncated: boolean;\n}',
+  },
+  {
+    name: 'UpstreamChartPlacement',
+    declaration: 'export interface UpstreamChartPlacement {\n    readonly upstreamId: string;\n    readonly chart: UpstreamChart;\n}',
+  },
+  {
+    name: 'UpstreamChartsRequest',
+    declaration: 'export interface UpstreamChartsRequest {\n    readonly upstreamId: string;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
     name: 'UpstreamDocument',
     declaration: 'export interface UpstreamDocument {\n    readonly upstreamDocId: string;\n    readonly title: string;\n    readonly description: string;\n    readonly fileName: string;\n    readonly fileType: string;\n    readonly byteSize: number;\n    readonly state: KnowledgeDocumentState;\n    readonly updatedAt: number | undefined;\n}',
   },
@@ -7733,6 +7867,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'UpstreamPassage',
     declaration: 'export interface UpstreamPassage {\n    readonly upstreamId: string;\n    readonly upstreamDocId?: string;\n    readonly title: string;\n    readonly text: string;\n    readonly truncated: boolean;\n    readonly score: number;\n}',
+  },
+  {
+    name: 'UpstreamProject',
+    declaration: 'export interface UpstreamProject {\n    readonly upstreamId: string;\n    readonly name: string;\n    readonly description: string;\n    readonly projectType: string;\n    readonly warehouseType: string;\n}',
+  },
+  {
+    name: 'UpstreamRun',
+    declaration: 'export interface UpstreamRun {\n    readonly fields: readonly BiField[];\n    readonly filters: string;\n    readonly rows: readonly (readonly BiCell[])[];\n    readonly rowCount: number | undefined;\n    readonly truncated: boolean;\n    readonly cellsTruncated: boolean;\n}',
+  },
+  {
+    name: 'UpstreamRunRequest',
+    declaration: 'export interface UpstreamRunRequest {\n    readonly upstreamId: string;\n    readonly upstreamChartId: string;\n    readonly limit: number;\n    readonly signal?: AbortSignal;\n}',
   },
   {
     name: 'UpstreamSearchRequest',
