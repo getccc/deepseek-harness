@@ -20,6 +20,7 @@ export const CONSOLE_COMPONENTS = [
   'system/MenusPage',
   'resources/ModelsPage',
   'resources/KnowledgeBasesPage',
+  'resources/BiProjectsPage',
 ] as const
 
 /** One page component this build ships. */
@@ -27,7 +28,7 @@ export type ConsoleComponent = typeof CONSOLE_COMPONENTS[number]
 
 /** The icons this build draws, as a stored entry names them. */
 export const MENU_ICONS = [
-  'dashboard', 'setting', 'bank', 'team', 'safety', 'menu', 'appstore', 'laptop', 'api', 'read',
+  'dashboard', 'setting', 'bank', 'team', 'safety', 'menu', 'appstore', 'laptop', 'api', 'read', 'chart',
 ] as const
 
 /** One icon this build draws. */

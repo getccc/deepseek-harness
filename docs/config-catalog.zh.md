@@ -488,6 +488,22 @@ export type Config = LocalConfig
 
 来源：[`packages/shell/bash-sandbox/src/index.ts:36`](../packages/shell/bash-sandbox/src/index.ts)
 
+<a id="deepseek-aidsh-bi-gateway-http"></a>
+
+## `@deepseek-ai/dsh-bi-gateway-http`
+
+需要：`webServer` · `biGateway` · `deviceAuthorization`
+
+```ts config-catalog
+/** Plugin config: how much of a request the endpoints read. */
+export interface Config {
+  /** Largest request body accepted, in bytes. */
+  maxRequestBodyBytes?: number
+}
+```
+
+来源：[`packages/bi/bi-gateway-http/src/index.ts:51`](../packages/bi/bi-gateway-http/src/index.ts)
+
 <a id="deepseek-aidsh-bi-gateway-sqlite"></a>
 
 ## `@deepseek-ai/dsh-bi-gateway-sqlite`
@@ -3225,7 +3241,7 @@ export interface Config {
 }
 ```
 
-来源：[`packages/team/team-admin-api/src/index.ts:158`](../packages/team/team-admin-api/src/index.ts)
+来源：[`packages/team/team-admin-api/src/index.ts:173`](../packages/team/team-admin-api/src/index.ts)
 
 <a id="deepseek-aidsh-team-console-menu-sqlite"></a>
 

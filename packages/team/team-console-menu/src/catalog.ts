@@ -137,4 +137,19 @@ export const SHIPPED_CONSOLE_MENUS: readonly ShippedConsoleMenu[] = [
     icon: 'global',
     sortOrder: 3,
   },
+  {
+    key: 'bi-projects',
+    parentKey: 'resources',
+    name: 'BI projects',
+    labelKey: 'nav.biProjects',
+    kind: 'menu',
+    routePath: '/resources/bi-projects',
+    componentPath: 'resources/BiProjectsPage',
+    // Registered only when this Control Plane governs BI, like the knowledge
+    // catalog, so a deployment without it grants this to nobody and the entry
+    // stays hidden.
+    permission: 'bi_project|bi.catalog.read',
+    icon: 'chart',
+    sortOrder: 4,
+  },
 ]

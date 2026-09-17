@@ -38,6 +38,8 @@
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:^",
     "@deepseek-ai/dsh-account-auth": "workspace:^",
+    "@deepseek-ai/dsh-bi": "workspace:^",
+    "@deepseek-ai/dsh-bi-gateway": "workspace:^",
     "@deepseek-ai/dsh-host-webserver": "workspace:^",
     "@deepseek-ai/dsh-knowledge": "workspace:^",
     "@deepseek-ai/dsh-knowledge-gateway": "workspace:^"
@@ -45,6 +47,10 @@
   "devDependencies": {
     "@deepseek-ai/cordis": "workspace:^",
     "@deepseek-ai/dsh-account-auth": "workspace:^",
+    "@deepseek-ai/dsh-bi": "workspace:^",
+    "@deepseek-ai/dsh-bi-gateway": "workspace:^",
+    "@deepseek-ai/dsh-bi-gateway-sqlite": "workspace:^",
+    "@deepseek-ai/dsh-bi-source": "workspace:^",
     "@deepseek-ai/dsh-host-webserver": "workspace:^",
     "@deepseek-ai/dsh-knowledge": "workspace:^",
     "@deepseek-ai/dsh-knowledge-gateway": "workspace:^",

@@ -18,6 +18,7 @@ import {
   ReadOutlined,
   AppstoreOutlined,
   BankOutlined,
+  BarChartOutlined,
   DashboardOutlined,
   DownOutlined,
   GlobalOutlined,
@@ -42,6 +43,7 @@ import { Departments } from './pages/Departments.tsx'
 import { Login } from './pages/Login.tsx'
 import { Members } from './pages/Members.tsx'
 import { Menus } from './pages/Menus.tsx'
+import { BiProjects } from './pages/BiProjects.tsx'
 import { KnowledgeBases } from './pages/KnowledgeBases.tsx'
 import { Models } from './pages/Models.tsx'
 import { Overview } from './pages/Overview.tsx'
@@ -74,6 +76,7 @@ const VIEWS: Record<ConsoleComponent, (props: ViewProps) => ReactNode> = {
   'system/MenusPage': ({ held }) => <Menus held={held} />,
   'resources/ModelsPage': ({ held }) => <Models held={held} />,
   'resources/KnowledgeBasesPage': ({ held }) => <KnowledgeBases held={held} />,
+  'resources/BiProjectsPage': ({ held }) => <BiProjects held={held} />,
 }
 
 /** The icons this build draws, by the name a stored entry gives. */
@@ -88,6 +91,7 @@ const ICONS: Record<MenuIcon, ReactNode> = {
   laptop: <LaptopOutlined />,
   api: <ApiOutlined />,
   read: <ReadOutlined />,
+  chart: <BarChartOutlined />,
 }
 
 /** Width below which the sider is an icon rail, matching Ant Design's `lg`. */

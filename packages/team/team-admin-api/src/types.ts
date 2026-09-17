@@ -241,6 +241,55 @@ export type WireKnowledgeAccess =
   | { readonly mode: 'all' }
   | { readonly mode: 'selected'; readonly knowledgeRefs: readonly string[] }
 
+/** One governed BI project, as the console reads the catalog. */
+export interface WireBiProject {
+  /** The stable reference that names it across upstream renames. */
+  readonly projectRef: string
+  /** Access-control resource id used when a role is granted this exact project. */
+  readonly resourceId: string
+  readonly displayName: string
+  /** The administrator's description of the project, empty when the source supplies none. */
+  readonly description: string
+  /** The source's own word for what kind of project it is, empty when it supplies none. */
+  readonly projectType: string
+  /** The source's own word for the warehouse behind it, empty when it supplies none. */
+  readonly warehouseType: string
+  /** Whether an administrator has switched this entry on. */
+  readonly adminEnabled: boolean
+  /** Whether it can be analyzed at all. */
+  readonly effectiveEnabled: boolean
+  /** Epoch milliseconds when a successful listing last named it. */
+  readonly lastDiscoveredAt: number
+}
+
+/** How the configured BI source is doing. */
+export interface WireBiSource {
+  readonly sourceCode: string
+  readonly providerKind: string
+  readonly health: string
+  readonly lastAttemptAt?: number
+  readonly lastSuccessAt?: number
+  /**
+   * Why the last attempt failed, as a closed word.
+   *
+   * A category rather than the source's own message: an operator diagnoses the
+   * detail in the BI deployment's logs, not in a console page.
+   */
+  readonly lastFailure?: string
+}
+
+/** What the BI catalog page reads in one call. */
+export interface WireBiCatalog {
+  readonly source: WireBiSource
+  readonly projects: readonly WireBiProject[]
+}
+
+/** How much BI one role is given. */
+export type WireBiAccess =
+  | { readonly mode: 'none' }
+  | { readonly mode: 'all' }
+  | { readonly mode: 'selected'; readonly projectRefs: readonly string[] }
+
 /** One `(resourceType, action)` pair a grant may name. */
 export interface WirePermission {
   readonly resourceType: string

@@ -9,6 +9,8 @@ import type { ColumnsType } from 'antd/es/table'
 import type { TreeDataNode } from 'antd'
 import {
   api,
+  type WireBiAccess,
+  type WireBiCatalog,
   type WireGrant,
   type WireKnowledgeAccess,
   type WireKnowledgeCatalog,
@@ -35,6 +37,9 @@ const MODEL_ROOT_KEY = 'model-resources'
  */
 const KNOWLEDGE_ALL_KEY = 'knowledge-all'
 
+/** The tree row standing for whole-catalog BI access, on the knowledge row's terms. */
+const BI_ALL_KEY = 'bi-all'
+
 /** Which dialog is open, and what it is about. */
 type Dialog =
   | { readonly kind: 'add' }
@@ -42,6 +47,7 @@ type Dialog =
   | { readonly kind: 'menus'; readonly role: WireRole }
   | { readonly kind: 'models'; readonly role: WireRole }
   | { readonly kind: 'knowledge'; readonly role: WireRole }
+  | { readonly kind: 'bi'; readonly role: WireRole }
   | { readonly kind: 'revoke'; readonly grant: WireGrant }
   | { readonly kind: 'delete'; readonly role: WireRole }
 
@@ -94,6 +100,14 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
       ? api.knowledgeBases()
       : Promise.resolve({ source: { sourceCode: '', providerKind: '', health: 'never-synced' }, knowledgeBases: [] })),
     [mayReadKnowledge]),
+    report,
+  )
+  const mayReadBi = held.has('bi_project|bi.catalog.read')
+  const bi = useLoaded<WireBiCatalog>(
+    useMemo(() => (): Promise<WireBiCatalog> => (mayReadBi
+      ? api.biProjects()
+      : Promise.resolve({ source: { sourceCode: '', providerKind: '', health: 'never-synced' }, projects: [] })),
+    [mayReadBi]),
     report,
   )
   const [dialog, setDialog] = useState<Dialog | undefined>(undefined)
@@ -207,6 +221,24 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
     setDialog({ kind: 'knowledge', role })
   }
 
+  /** Open BI access with the mode this role's grants already describe. */
+  const openBi = (role: WireRole): void => {
+    const all = role.grants.some(grant =>
+      grant.scope === 'type'
+      && grant.resourceType === 'bi_project'
+      && grant.action === 'bi.query')
+    const exact = role.grants.flatMap(grant =>
+      grant.scope === 'resource'
+      && grant.resourceType === 'bi_project'
+      && grant.action === 'bi.query'
+      && grant.resourceId !== undefined
+        ? [grant.resourceId]
+        : [])
+    setChosen(all ? (bi.data?.projects ?? []).map(project => project.resourceId) : exact)
+    setOpened([BI_ALL_KEY])
+    setDialog({ kind: 'bi', role })
+  }
+
   const columns: ColumnsType<WireRole> = [
     { title: t('roles.name'), key: 'name', render: (_value, role) => role.name },
     {
@@ -278,6 +310,12 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
               onClick: () => { openKnowledge(role) },
             },
             {
+              key: 'bi',
+              label: t('bi.access.title'),
+              disabled: !mayManageGrants || !mayReadBi,
+              onClick: () => { openBi(role) },
+            },
+            {
               key: 'delete',
               label: t('action.delete'),
               danger: true,
@@ -342,6 +380,22 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
       knowledgeRefs: selectableKnowledge
         .filter(base => chosen.includes(base.resourceId))
         .map(base => base.knowledgeRef),
+    }
+  }
+
+  const showingBi = dialog?.kind === 'bi' ? dialog.role : undefined
+  /** Every BI project a role may be given: the catalog holds only what the source still lists. */
+  const selectableBi = bi.data?.projects ?? []
+
+  /** What the ticked rows ask the Control Plane to store, on the knowledge dialog's terms. */
+  const biChoice = (): WireBiAccess => {
+    if (chosen.length === 0) return { mode: 'none' }
+    if (selectableBi.every(project => chosen.includes(project.resourceId))) return { mode: 'all' }
+    return {
+      mode: 'selected',
+      projectRefs: selectableBi
+        .filter(project => chosen.includes(project.resourceId))
+        .map(project => project.projectRef),
     }
   }
 
@@ -510,6 +564,35 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
             children: selectableKnowledge.map(base => ({
               key: base.resourceId,
               title: base.displayName,
+            })),
+          }]}
+        />
+      </FormModal>
+
+      <FormModal<Record<string, never>>
+        title={t('bi.access.title')}
+        open={dialog?.kind === 'bi'}
+        okText={t('action.save')}
+        onCancel={() => { setDialog(undefined) }}
+        onSubmit={() => act(() => api.setRoleBi(showingBi?.id ?? '', biChoice()))}
+      >
+        <Typography.Paragraph type="secondary">{t('bi.access.hint')}</Typography.Paragraph>
+        <Tree
+          checkable
+          selectable={false}
+          expandedKeys={[...opened]}
+          onExpand={(keys) => { setOpened(keys as string[]) }}
+          checkedKeys={[...chosen]}
+          onCheck={(keys) => {
+            const checked = Array.isArray(keys) ? keys : keys.checked
+            setChosen((checked as string[]).filter(key => key !== BI_ALL_KEY))
+          }}
+          treeData={[{
+            key: BI_ALL_KEY,
+            title: t('bi.access.all'),
+            children: selectableBi.map(project => ({
+              key: project.resourceId,
+              title: project.displayName,
             })),
           }]}
         />

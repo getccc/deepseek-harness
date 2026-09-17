@@ -486,6 +486,22 @@ Depends on: [`LocalConfig`](#deepseek-aidsh-bash-local)
 
 Source: [`packages/shell/bash-sandbox/src/index.ts:36`](../packages/shell/bash-sandbox/src/index.ts)
 
+<a id="deepseek-aidsh-bi-gateway-http"></a>
+
+## `@deepseek-ai/dsh-bi-gateway-http`
+
+Requires: `webServer` · `biGateway` · `deviceAuthorization`
+
+```ts config-catalog
+/** Plugin config: how much of a request the endpoints read. */
+export interface Config {
+  /** Largest request body accepted, in bytes. */
+  maxRequestBodyBytes?: number
+}
+```
+
+Source: [`packages/bi/bi-gateway-http/src/index.ts:51`](../packages/bi/bi-gateway-http/src/index.ts)
+
 <a id="deepseek-aidsh-bi-gateway-sqlite"></a>
 
 ## `@deepseek-ai/dsh-bi-gateway-sqlite`
@@ -3223,7 +3239,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/team/team-admin-api/src/index.ts:158`](../packages/team/team-admin-api/src/index.ts)
+Source: [`packages/team/team-admin-api/src/index.ts:173`](../packages/team/team-admin-api/src/index.ts)
 
 <a id="deepseek-aidsh-team-console-menu-sqlite"></a>
 

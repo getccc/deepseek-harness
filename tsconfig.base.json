@@ -321,6 +321,7 @@
       "@deepseek-ai/dsh-bash-sandbox": ["./packages/shell/bash-sandbox/src"],
       "@deepseek-ai/dsh-bi": ["./packages/bi/bi/src"],
       "@deepseek-ai/dsh-bi-gateway": ["./packages/bi/bi-gateway/src"],
+      "@deepseek-ai/dsh-bi-gateway-http": ["./packages/bi/bi-gateway-http/src"],
       "@deepseek-ai/dsh-bi-gateway-sqlite": ["./packages/bi/bi-gateway-sqlite/src"],
       "@deepseek-ai/dsh-bi-source": ["./packages/bi/bi-source/src"],
       "@deepseek-ai/dsh-bi-webi": ["./packages/bi/bi-webi/src"],

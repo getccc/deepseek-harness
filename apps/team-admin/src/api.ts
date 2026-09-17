@@ -7,6 +7,8 @@
  */
 
 import type {
+  WireBiAccess,
+  WireBiCatalog,
   WireDepartment,
   WireDevice,
   WireMember,
@@ -24,7 +26,8 @@ import type {
 } from '@deepseek-ai/dsh-team-admin-api'
 
 export type {
-  SecretCharacterClass, WireDepartment, WireDevice, WireGrant, WireKnowledgeAccess,
+  SecretCharacterClass, WireBiAccess, WireBiCatalog, WireBiProject,
+  WireDepartment, WireDevice, WireGrant, WireKnowledgeAccess,
   WireKnowledgeBase, WireKnowledgeCatalog, WireMember, WireMenu, WireModel,
   WireOrganization, WireOverview, WirePermission, WireRole, WireSecretPolicy, WireSession,
 } from '@deepseek-ai/dsh-team-admin-api'
@@ -242,6 +245,9 @@ export const api = {
   /** Make one role's knowledge grants exactly what this mode describes. */
   setRoleKnowledge: (id: string, access: WireKnowledgeAccess): Promise<WireRole[]> =>
     call('POST', `/roles/${encodeURIComponent(id)}/knowledge-bases`, access),
+  /** Make one role's BI grants exactly what this mode describes. */
+  setRoleBi: (id: string, access: WireBiAccess): Promise<WireRole[]> =>
+    call('POST', `/roles/${encodeURIComponent(id)}/bi-projects`, access),
   /** Make one role's model grants match these exact managed models. */
   setRoleModels: (id: string, modelIds: readonly string[]): Promise<WireRole[]> =>
     call('POST', `/roles/${encodeURIComponent(id)}/models`, { modelIds }),
@@ -276,6 +282,13 @@ export const api = {
   /** Switch one knowledge base on or off for the whole organization. */
   setKnowledgeBaseEnabled: (knowledgeRef: string, enabled: boolean): Promise<WireKnowledgeCatalog> =>
     call('PATCH', `/knowledge-bases/${encodeURIComponent(knowledgeRef)}`, { enabled }),
+  /** The governed BI project catalog and how its source is doing. */
+  biProjects: (): Promise<WireBiCatalog> => call('GET', '/bi-projects'),
+  /** Reconcile the BI catalog against the source and answer the result. */
+  syncBiProjects: (): Promise<WireBiCatalog> => call('POST', '/bi-projects/sync', {}),
+  /** Switch one BI project on or off for the whole organization. */
+  setBiProjectEnabled: (projectRef: string, enabled: boolean): Promise<WireBiCatalog> =>
+    call('PATCH', `/bi-projects/${encodeURIComponent(projectRef)}`, { enabled }),
   /**
    * Put one model in the catalog, or update the one already there. The stable
    * ref is the identity, so a write naming a stored one is the edit.

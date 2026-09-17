@@ -1703,6 +1703,52 @@ importers:
         specifier: workspace:^
         version: link:../bi
 
+  packages/bi/bi-gateway-http:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:^
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-access-control-sqlite':
+        specifier: workspace:^
+        version: link:../../access/access-control-sqlite
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:^
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:^
+        version: link:../../account/account-store-sqlite
+      '@deepseek-ai/dsh-audit-sqlite':
+        specifier: workspace:^
+        version: link:../../access/audit-sqlite
+      '@deepseek-ai/dsh-bi':
+        specifier: workspace:^
+        version: link:../bi
+      '@deepseek-ai/dsh-bi-gateway':
+        specifier: workspace:^
+        version: link:../bi-gateway
+      '@deepseek-ai/dsh-bi-gateway-sqlite':
+        specifier: workspace:^
+        version: link:../bi-gateway-sqlite
+      '@deepseek-ai/dsh-bi-source':
+        specifier: workspace:^
+        version: link:../bi-source
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:^
+        version: link:../../account/device-authorization
+      '@deepseek-ai/dsh-device-authorization-sqlite':
+        specifier: workspace:^
+        version: link:../../account/device-authorization-sqlite
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:^
+        version: link:../../host/webserver
+
   packages/bi/bi-gateway-sqlite:
     dependencies:
       '@deepseek-ai/schemastery':
@@ -2368,6 +2414,15 @@ importers:
       '@deepseek-ai/dsh-audit-sqlite':
         specifier: workspace:^
         version: link:../../access/audit-sqlite
+      '@deepseek-ai/dsh-bi-gateway-http':
+        specifier: workspace:^
+        version: link:../../bi/bi-gateway-http
+      '@deepseek-ai/dsh-bi-gateway-sqlite':
+        specifier: workspace:^
+        version: link:../../bi/bi-gateway-sqlite
+      '@deepseek-ai/dsh-bi-webi':
+        specifier: workspace:^
+        version: link:../../bi/bi-webi
       '@deepseek-ai/dsh-device-authorization-sqlite':
         specifier: workspace:^
         version: link:../../account/device-authorization-sqlite
@@ -11979,6 +12034,18 @@ importers:
       '@deepseek-ai/dsh-account-auth':
         specifier: workspace:^
         version: link:../../account/account-auth
+      '@deepseek-ai/dsh-bi':
+        specifier: workspace:^
+        version: link:../../bi/bi
+      '@deepseek-ai/dsh-bi-gateway':
+        specifier: workspace:^
+        version: link:../../bi/bi-gateway
+      '@deepseek-ai/dsh-bi-gateway-sqlite':
+        specifier: workspace:^
+        version: link:../../bi/bi-gateway-sqlite
+      '@deepseek-ai/dsh-bi-source':
+        specifier: workspace:^
+        version: link:../../bi/bi-source
       '@deepseek-ai/dsh-host-webserver':
         specifier: workspace:^
         version: link:../../host/webserver

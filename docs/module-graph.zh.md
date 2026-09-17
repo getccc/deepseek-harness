@@ -154,6 +154,7 @@ flowchart TD
   subgraph group_bi["packages/bi"]
     pkg_bi["bi"]
     pkg_bi_gateway["bi-gateway"]
+    pkg_bi_gateway_http["bi-gateway-http"]
     pkg_bi_gateway_sqlite["bi-gateway-sqlite"]
     pkg_bi_source["bi-source"]
     pkg_bi_webi["bi-webi"]
@@ -668,6 +669,10 @@ flowchart TD
   pkg_api_office_controller --> pkg_office
   pkg_api_office_controller --> pkg_session
   pkg_api_office_controller --> pkg_typert_protocol
+  pkg_bi_gateway_http --> pkg_bi
+  pkg_bi_gateway_http --> pkg_bi_gateway
+  pkg_bi_gateway_http --> pkg_device_authorization
+  pkg_bi_gateway_http --> pkg_host_webserver
   pkg_bi_gateway_sqlite --> pkg_access_control
   pkg_bi_gateway_sqlite --> pkg_account_store
   pkg_bi_gateway_sqlite --> pkg_audit
@@ -761,6 +766,8 @@ flowchart TD
   pkg_pwsh_local --> pkg_subprocess
   pkg_pwsh_local --> pkg_timeout
   pkg_team_admin_api --> pkg_account_auth
+  pkg_team_admin_api --> pkg_bi
+  pkg_team_admin_api --> pkg_bi_gateway
   pkg_team_admin_api --> pkg_host_webserver
   pkg_team_admin_api --> pkg_knowledge
   pkg_team_admin_api --> pkg_knowledge_gateway
@@ -1636,6 +1643,7 @@ flowchart TD
 | [`hook-protocol`](../packages/hooks/hook-protocol) | `hooks` | [`invariants`](../packages/runtime-diagnostics/invariants), [`session`](../packages/core/session), [`shell`](../packages/shell/shell) |
 | [`api-knowledge-controller`](../packages/api/knowledge-controller) | `api` | [`agent`](../packages/core/agent), [`knowledge`](../packages/knowledge/knowledge), [`session`](../packages/core/session), [`typert-protocol`](../packages/typert/protocol) |
 | [`api-office-controller`](../packages/api/office-controller) | `api` | [`agent`](../packages/core/agent), [`office`](../packages/office/office), [`session`](../packages/core/session), [`typert-protocol`](../packages/typert/protocol) |
+| [`bi-gateway-http`](../packages/bi/bi-gateway-http) | `bi` | [`bi`](../packages/bi/bi), [`bi-gateway`](../packages/bi/bi-gateway), [`device-authorization`](../packages/account/device-authorization), [`host-webserver`](../packages/host/webserver) |
 | [`bi-gateway-sqlite`](../packages/bi/bi-gateway-sqlite) | `bi` | [`access-control`](../packages/access/access-control), [`account-store`](../packages/account/account-store), [`audit`](../packages/access/audit), [`bi`](../packages/bi/bi), [`bi-gateway`](../packages/bi/bi-gateway), [`bi-source`](../packages/bi/bi-source) |
 | [`bi-webi`](../packages/bi/bi-webi) | `bi` | [`bi`](../packages/bi/bi), [`bi-source`](../packages/bi/bi-source), [`credentials`](../packages/credentials/credentials), [`util-crypto`](../packages/util/crypto) |
 | [`file-reference`](../packages/context/file-reference) | `context` | [`agent`](../packages/core/agent) |
@@ -1656,7 +1664,7 @@ flowchart TD
 | [`session-title`](../packages/session/session-title) | `session` | [`agent`](../packages/core/agent), [`brand`](../packages/util/brand), [`invariants`](../packages/runtime-diagnostics/invariants), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`session-projection`](../packages/session/session-projection) |
 | [`bash-local`](../packages/shell/bash-local) | `shell` | [`settings`](../packages/settings/settings), [`shell`](../packages/shell/shell), [`subprocess`](../packages/subprocess/subprocess), [`timeout`](../packages/util/timeout) |
 | [`pwsh-local`](../packages/shell/pwsh-local) | `shell` | [`settings`](../packages/settings/settings), [`shell`](../packages/shell/shell), [`subprocess`](../packages/subprocess/subprocess), [`timeout`](../packages/util/timeout) |
-| [`team-admin-api`](../packages/team/team-admin-api) | `team` | [`account-auth`](../packages/account/account-auth), [`host-webserver`](../packages/host/webserver), [`knowledge`](../packages/knowledge/knowledge), [`knowledge-gateway`](../packages/knowledge/knowledge-gateway) |
+| [`team-admin-api`](../packages/team/team-admin-api) | `team` | [`account-auth`](../packages/account/account-auth), [`bi`](../packages/bi/bi), [`bi-gateway`](../packages/bi/bi-gateway), [`host-webserver`](../packages/host/webserver), [`knowledge`](../packages/knowledge/knowledge), [`knowledge-gateway`](../packages/knowledge/knowledge-gateway) |
 | [`terminal`](../packages/terminal/terminal) | `terminal` | [`agent`](../packages/core/agent), [`brand`](../packages/util/brand) |
 | [`loader-smoke`](../packages/test-support/loader-smoke) | `test-support` | [`agent`](../packages/core/agent), [`http-proxy`](../packages/util/http-proxy), [`llm`](../packages/llm/llm), [`session`](../packages/core/session) |
 | [`workflow`](../packages/workflow/workflow) | `workflow` | [`agent`](../packages/core/agent), [`brand`](../packages/util/brand), [`invariants`](../packages/runtime-diagnostics/invariants), [`llm`](../packages/llm/llm), [`session`](../packages/core/session) |

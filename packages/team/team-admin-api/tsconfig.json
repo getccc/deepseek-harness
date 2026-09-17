@@ -37,6 +37,12 @@
       "path": "../team-browser-session"
     },
     {
+      "path": "../../bi/bi"
+    },
+    {
+      "path": "../../bi/bi-gateway"
+    },
+    {
       "path": "../../knowledge/knowledge"
     },
     {

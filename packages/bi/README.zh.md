@@ -22,7 +22,7 @@ kind: "package-group"
 <a id="packages"></a>
 ## 包
 
-五个包扮演 BI 相关角色；子系统参考拥有穷尽的词汇与契约，Agent Note 列出了这项能力其余部分要加入的包。
+六个包扮演 BI 相关角色；子系统参考拥有穷尽的词汇与契约，Agent Note 列出了这项能力其余部分要加入的包。
 
 | 包 | 角色 | ctx key |
 |---|---|---|
@@ -31,6 +31,7 @@ kind: "package-group"
 | [`bi-webi/`](bi-webi/README.zh.md) | 说 webi 的四条固定路由，把个人访问令牌留在 Control Plane | 注册到 `ctx.biSource` |
 | [`bi-gateway/`](bi-gateway/README.zh.md) | 受治理网关接缝：持久项目目录，以及已授权目录、图表列表与图表执行 | `ctx.biGateway` |
 | [`bi-gateway-sqlite/`](bi-gateway-sqlite/README.zh.md) | 基于 SQLite 的持久目录，带同步、逐项目授权与审计 | 注册到 `ctx.biGateway` |
+| [`bi-gateway-http/`](bi-gateway-http/README.zh.md) | Runner 调用的三条路由，带令牌校验与协议版本协商 | 在 `ctx.webServer` 上注册路由 |
 
 -----
 
