@@ -194,6 +194,19 @@
     - id: client-ui-office
       name: '@deepseek-ai/dsh-client-ui-office'
 
+    # The Remote the BI control calls: the projects a member may analyze and
+    # the one this conversation chose, recorded as the `bi/scope` event the
+    # tools and the prompt section fold.
+    - id: api-bi-controller
+      name: '@deepseek-ai/dsh-api-bi-controller'
+
+    # The BI-analysis control, to the right of the office chip in the work
+    # composer: a single-select over the authorized projects. The plugin
+    # carries no Host behavior; mounting it here is what puts its browser half
+    # in the boot graph, and only a Team build has a `bi` namespace to serve it.
+    - id: client-ui-bi
+      name: '@deepseek-ai/dsh-client-ui-bi'
+
     # Word, Excel, and PowerPoint previews for the right Sidebar's document
     # tab. Registered as external renderers of the shipped preview registry,
     # so removing this row hands those suffixes back to the builtin fallback

@@ -106,6 +106,8 @@
     { "path": "./packages/client/ui-permission-presets" },
     { "path": "./packages/client/ui-plan" },
     { "path": "./packages/client/ui-web-access" },
+    { "path": "./packages/client/ui-bi" },
+    { "path": "./packages/client/ui-voice" },
     { "path": "./packages/client/ui-settings-plugins" },
     { "path": "./packages/client/ui-user-questions" },
     { "path": "./packages/client/ui-trajectory" },

@@ -28,6 +28,8 @@
     // not declaration path aliases, keep each package/vendor source compiled
     // under its own tsconfig boundary.
     "paths": {
+      "@deepseek-ai/dsh-api-bi-controller": ["./packages/api/bi-controller/src/index.ts"],
+      "@deepseek-ai/dsh-api-bi-controller/types": ["./packages/api/bi-controller/src/types.ts"],
       "@deepseek-ai/dsh-api-knowledge-controller": ["./packages/api/knowledge-controller/src/index.ts"],
       "@deepseek-ai/dsh-api-knowledge-controller/types": ["./packages/api/knowledge-controller/src/types.ts"],
       "@deepseek-ai/dsh-api-office-controller": ["./packages/api/office-controller/src/index.ts"],
@@ -249,6 +251,8 @@
       "@deepseek-ai/dsh-client-ui-schedule/client": ["./packages/client/ui-schedule/src/client/index.ts"],
       "@deepseek-ai/dsh-client-ui-plan": ["./packages/client/ui-plan/src"],
       "@deepseek-ai/dsh-client-ui-web-access": ["./packages/client/ui-web-access/src"],
+      "@deepseek-ai/dsh-client-ui-bi": ["./packages/client/ui-bi/src"],
+      "@deepseek-ai/dsh-client-ui-voice": ["./packages/client/ui-voice/src"],
       "@deepseek-ai/dsh-client-ui-user-questions": ["./packages/client/ui-user-questions/src"],
       "@deepseek-ai/dsh-client-ui-trajectory": ["./packages/client/ui-trajectory/src"],
       "@deepseek-ai/dsh-client-ui-workspace": ["./packages/client/ui-workspace/src"],

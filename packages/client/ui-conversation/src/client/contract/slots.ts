@@ -192,6 +192,8 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
     'conversation.input.permission': { kind: 'single'; scope: 'session'; owner: InputControlOwnerProps }
     /** Model selector inside the composer tool row. */
     'conversation.input.model': { kind: 'single'; scope: 'session'; owner: InputControlOwnerProps }
+    /** Voice-input control between the composer's context meter and its submit action. */
+    'conversation.input.voice': { kind: 'single'; scope: 'session'; owner: InputControlOwnerProps }
   }
 
   interface GlobalStandardProps {
@@ -354,6 +356,7 @@ export type ComposerBarProps =
     | 'conversation.input.context' | 'conversation.input.permission'
     | 'conversation.input.left' | 'conversation.input.plan'
     | 'conversation.input.right' | 'conversation.input.model'
+    | 'conversation.input.voice'
     | 'conversation.composer.dock'
   >
   & InjectFace<ComposerBarInjected>

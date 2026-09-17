@@ -134,6 +134,7 @@ flowchart TD
     pkg_device_authorization_sqlite["device-authorization-sqlite"]
   end
   subgraph group_api["packages/api"]
+    pkg_api_bi_controller["api-bi-controller"]
     pkg_api_gateway["api-gateway"]
     pkg_api_knowledge_controller["api-knowledge-controller"]
     pkg_api_office_controller["api-office-controller"]
@@ -187,6 +188,7 @@ flowchart TD
     pkg_client_ui_agent_preset["client-ui-agent-preset"]
     pkg_client_ui_approval["client-ui-approval"]
     pkg_client_ui_attachment["client-ui-attachment"]
+    pkg_client_ui_bi["client-ui-bi"]
     pkg_client_ui_chat["client-ui-chat"]
     pkg_client_ui_commands["client-ui-commands"]
     pkg_client_ui_conversation["client-ui-conversation"]
@@ -230,6 +232,7 @@ flowchart TD
     pkg_client_ui_tool["client-ui-tool"]
     pkg_client_ui_trajectory["client-ui-trajectory"]
     pkg_client_ui_user_questions["client-ui-user-questions"]
+    pkg_client_ui_voice["client-ui-voice"]
     pkg_client_ui_web_access["client-ui-web-access"]
     pkg_client_ui_workflow_run["client-ui-workflow-run"]
     pkg_client_ui_workspace["client-ui-workspace"]
@@ -661,6 +664,10 @@ flowchart TD
   pkg_hook_protocol --> pkg_invariants
   pkg_hook_protocol --> pkg_session
   pkg_hook_protocol --> pkg_shell
+  pkg_api_bi_controller --> pkg_agent
+  pkg_api_bi_controller --> pkg_bi
+  pkg_api_bi_controller --> pkg_session
+  pkg_api_bi_controller --> pkg_typert_protocol
   pkg_api_knowledge_controller --> pkg_agent
   pkg_api_knowledge_controller --> pkg_knowledge
   pkg_api_knowledge_controller --> pkg_session
@@ -1496,6 +1503,7 @@ flowchart TD
 | [`client-ui-agent-preset`](../packages/client/ui-agent-preset) | `client` | — |
 | [`client-ui-approval`](../packages/client/ui-approval) | `client` | — |
 | [`client-ui-attachment`](../packages/client/ui-attachment) | `client` | — |
+| [`client-ui-bi`](../packages/client/ui-bi) | `client` | — |
 | [`client-ui-chat`](../packages/client/ui-chat) | `client` | — |
 | [`client-ui-commands`](../packages/client/ui-commands) | `client` | — |
 | [`client-ui-conversation`](../packages/client/ui-conversation) | `client` | — |
@@ -1539,6 +1547,7 @@ flowchart TD
 | [`client-ui-tool`](../packages/client/ui-tool) | `client` | — |
 | [`client-ui-trajectory`](../packages/client/ui-trajectory) | `client` | — |
 | [`client-ui-user-questions`](../packages/client/ui-user-questions) | `client` | — |
+| [`client-ui-voice`](../packages/client/ui-voice) | `client` | — |
 | [`client-ui-web-access`](../packages/client/ui-web-access) | `client` | — |
 | [`client-ui-workflow-run`](../packages/client/ui-workflow-run) | `client` | — |
 | [`client-ui-workspace`](../packages/client/ui-workspace) | `client` | — |
@@ -1650,6 +1659,7 @@ flowchart TD
 | [`skill-filesystem`](../packages/skill/skill-filesystem) | `skill` | [`fs`](../packages/fs/fs), [`home-paths`](../packages/util/home-paths), [`skill`](../packages/skill/skill) |
 | [`web-search-deepseek`](../packages/web/web-search-deepseek) | `web` | [`agent`](../packages/core/agent), [`credentials`](../packages/credentials/credentials), [`launch-environment`](../packages/util/launch-environment), [`session`](../packages/core/session), [`settings`](../packages/settings/settings), [`web`](../packages/web/web) |
 | [`hook-protocol`](../packages/hooks/hook-protocol) | `hooks` | [`invariants`](../packages/runtime-diagnostics/invariants), [`session`](../packages/core/session), [`shell`](../packages/shell/shell) |
+| [`api-bi-controller`](../packages/api/bi-controller) | `api` | [`agent`](../packages/core/agent), [`bi`](../packages/bi/bi), [`session`](../packages/core/session), [`typert-protocol`](../packages/typert/protocol) |
 | [`api-knowledge-controller`](../packages/api/knowledge-controller) | `api` | [`agent`](../packages/core/agent), [`knowledge`](../packages/knowledge/knowledge), [`session`](../packages/core/session), [`typert-protocol`](../packages/typert/protocol) |
 | [`api-office-controller`](../packages/api/office-controller) | `api` | [`agent`](../packages/core/agent), [`office`](../packages/office/office), [`session`](../packages/core/session), [`typert-protocol`](../packages/typert/protocol) |
 | [`bi-gateway-http`](../packages/bi/bi-gateway-http) | `bi` | [`bi`](../packages/bi/bi), [`bi-gateway`](../packages/bi/bi-gateway), [`device-authorization`](../packages/account/device-authorization), [`host-webserver`](../packages/host/webserver) |

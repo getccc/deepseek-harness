@@ -36,10 +36,13 @@
 - button "Add files or run commands":
   - img
 - button "Web access on, press to turn off" [pressed]: Web
+- button "Transcribe" [disabled]
 - button "Select model, current DeepSeek-V4-Flash":
   - text: DeepSeek-V4-Flash
   - img
 - button "0% of context used"
+- button "Voice input" [disabled]:
+  - img
 - button "Send message" [disabled]
 - button "1 turns 1 steps · {{throughput}} tok/s":
   - img
