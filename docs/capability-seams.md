@@ -244,6 +244,8 @@ flowchart LR
   pkg_tool_jobs["tool-jobs"]
   pkg_bi["bi"]
   svc_bi["ctx.bi<br/>BI analysis seam"]
+  pkg_bi_team["bi-team"]
+  pkg_tool_bi["tool-bi"]
   pkg_bi_gateway["bi-gateway"]
   svc_biGateway["ctx.biGateway<br/>Governed BI gateway"]
   pkg_bi_gateway_sqlite["bi-gateway-sqlite"]
@@ -323,6 +325,7 @@ flowchart LR
   pkg_bi_gateway --> svc_biGateway
   pkg_bi_gateway_sqlite --> svc_biGateway
   pkg_bi_source --> svc_biSource
+  pkg_bi_team --> svc_bi
   pkg_bi_webi --> svc_biSource
   pkg_browser_use --> svc_browserUse
   pkg_client_file_upload --> svc_fileUploads
@@ -481,6 +484,7 @@ flowchart LR
   svc_audit --> pkg_team_control_plane_http
   svc_audit --> pkg_team_shell
   svc_authorization --> pkg_llm_pi_ai
+  svc_bi --> pkg_tool_bi
   svc_browserUse --> pkg_experimental_browser_use_chrome_devtools_mcp
   svc_browserUse --> pkg_experimental_browser_use_playwright_mcp
   svc_browserUse --> pkg_experimental_browser_use_stagehand_native
@@ -689,7 +693,7 @@ flowchart LR
 | `ctx.agentTeams` | `core` | [`experimental-agent-team`](../packages/experimental/agent-team) | - | [`experimental-tool-agent-team`](../packages/experimental/tool-agent-team), [`experimental-client-ui-agent-team`](../packages/experimental/client-ui-agent-team) | - | Owns the implicit-root roster, durable peer mailbox, shared task DAG, continuable-child lifecycle, and generated Team Remote methods; tool-agent-team contributes model controls and client-ui-agent-team mounts the browser contribution. |
 | `ctx.inspector` | `core` | `inspector` | - | - | - | Owns the Worker-hosted CDP target and the transport-independent Host and Client observation and Cordis-tree query API. |
 | `ctx.jobs` | `seam` | [`jobs`](../packages/jobs/jobs) | [`jobs-local`](../packages/jobs/jobs-local) | [`tool-bash`](../packages/shell/tool-bash), [`tool-terminal`](../packages/terminal/tool-terminal), [`tool-subagent`](../packages/subagent/tool-subagent), [`tool-jobs`](../packages/jobs/tool-jobs) | - | Producers (background bash, PTY sends, and subagent delegations) register running work; tool-jobs is the model-facing controller that reads, lists, and kills it; jobs-local is the process-local registry. |
-| `ctx.bi` | `seam` | [`bi`](../packages/bi/bi) | - | - | - | The project directory, saved-chart listing, and chart-run operations a governed deployment authorizes; its Team provider and model-facing tools arrive with the Control Plane BI capability. |
+| `ctx.bi` | `seam` | [`bi`](../packages/bi/bi) | [`bi-team`](../packages/bi/bi-team) | [`tool-bi`](../packages/bi/tool-bi) | - | The project directory, saved-chart listing, and chart-run operations a governed deployment authorizes; bi-team reaches the Control Plane that authorizes them, and tool-bi is what a model sees of the result. |
 | `ctx.biGateway` | `seam` | [`bi-gateway`](../packages/bi/bi-gateway) | [`bi-gateway-sqlite`](../packages/bi/bi-gateway-sqlite) | - | - | Stands between a member's Runner and a BI source: an administrator curates the durable project catalog through it, and every member-facing directory, chart listing, and chart run is authorized per project by it. |
 | `ctx.biSource` | `seam` | [`bi-source`](../packages/bi/bi-source) | [`bi-webi`](../packages/bi/bi-webi) | - | - | The Control Plane half: a provider speaks one BI product's protocol and holds its credential, while the governed gateway in front of it decides who may run what. |
 | `ctx.knowledge` | `seam` | [`knowledge`](../packages/knowledge/knowledge) | [`knowledge-team`](../packages/knowledge/knowledge-team) | [`tool-knowledge`](../packages/knowledge/tool-knowledge) | - | The directory and passage-search operations a governed deployment authorizes; knowledge-team reaches the Control Plane that authorizes them, and tool-knowledge is what a model sees of the result. |

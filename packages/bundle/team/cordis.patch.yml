@@ -143,6 +143,22 @@
         maxResults: 10
         timeoutMs: 60000
 
+    # BI analysis over the same Control Plane: the provider is one request per
+    # directory read, chart listing, or chart run, carrying the device token
+    # and a governed reference, never a BI address or credential.
+    - id: bi
+      name: '@deepseek-ai/dsh-bi-team'
+
+    # What a model sees of it: two tools and one prompt section, all folded
+    # from the Session log, and none present while the member has chosen no
+    # BI project for this conversation.
+    - id: tool-bi
+      name: '@deepseek-ai/dsh-tool-bi'
+      config:
+        maxRows: 200
+        chartPageSize: 20
+        timeoutMs: 90000
+
     # What the browser sees of it: the authorized directory the `/knowledge`
     # picker offers, and the choice it records. Team-only, so it is mounted
     # here rather than on the session controller every Web build carries.

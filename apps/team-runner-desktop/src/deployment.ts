@@ -127,6 +127,7 @@ export function deploymentPatch(deployment: DesktopDeployment): string {
     },
     { id: 'llm-http-transport', config: address },
     { id: 'knowledge', config: address },
+    { id: 'bi', config: address },
     { id: 'web-search-team', config: address },
     ...Object.keys(office).length === 0 ? [] : [{ id: 'office', config: office }],
     // `dsh-web-app` disables the host `skill-filesystem` row because presets own

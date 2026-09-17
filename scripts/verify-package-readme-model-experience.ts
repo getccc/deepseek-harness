@@ -61,6 +61,7 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/bi/bi-gateway': { kind: 'none', reason: 'Control Plane seam; the Control Plane mounts no agent or tool registry, so a model never reaches it.' },
   'packages/bi/bi-gateway-sqlite': { kind: 'none', reason: 'Control Plane provider; rows become model-visible only after a Runner-side tool renders them.' },
   'packages/bi/bi-gateway-http': { kind: 'none', reason: 'Control Plane routes; rows become model-visible only after a Runner-side tool renders them.' },
+  'packages/bi/bi-team': { kind: 'indirect', reason: 'The transport registers no prompt or schema; dsh-tool-bi renders chart listings and rows and owns the scope prompt section.' },
   'packages/bi/bi-webi': { kind: 'none', reason: 'Control Plane provider; chart rows become model-visible only after a gateway authorizes them and a Runner-side tool renders them.' },
   'packages/knowledge/knowledge': { kind: 'indirect', reason: 'The seam registers no prompt or schema; the knowledge tool package renders passages and owns the scope prompt section.' },
   'packages/knowledge/knowledge-source': { kind: 'none', reason: 'Control Plane seam; the Control Plane mounts no agent or tool registry, so a model never reaches it.' },

@@ -22,7 +22,7 @@ kind: "package-group"
 <a id="packages"></a>
 ## 包
 
-六个包扮演 BI 相关角色；子系统参考拥有穷尽的词汇与契约，Agent Note 列出了这项能力其余部分要加入的包。
+八个包扮演 BI 相关角色；子系统参考拥有穷尽的词汇与契约，Agent Note 列出了这项能力其余部分要加入的浏览器包。
 
 | 包 | 角色 | ctx key |
 |---|---|---|
@@ -32,6 +32,8 @@ kind: "package-group"
 | [`bi-gateway/`](bi-gateway/README.zh.md) | 受治理网关接缝：持久项目目录，以及已授权目录、图表列表与图表执行 | `ctx.biGateway` |
 | [`bi-gateway-sqlite/`](bi-gateway-sqlite/README.zh.md) | 基于 SQLite 的持久目录，带同步、逐项目授权与审计 | 注册到 `ctx.biGateway` |
 | [`bi-gateway-http/`](bi-gateway-http/README.zh.md) | Runner 调用的三条路由，带令牌校验与协议版本协商 | 在 `ctx.webServer` 上注册路由 |
+| [`bi-team/`](bi-team/README.zh.md) | Runner 侧提供方：每次目录读取、图表列表或图表执行一次 Control Plane 请求，携带设备令牌 | 注册到 `ctx.bi` |
+| [`tool-bi/`](tool-bi/README.zh.md) | 模型所见：两个工具、范围提示词段与范围驱动的可见性 | 注册到 `ctx.tools` 与 `ctx.systemPrompt` |
 
 -----
 

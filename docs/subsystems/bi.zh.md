@@ -2,7 +2,7 @@
 
 [English](bi.md) | 中文
 
-BI 分析接缝——一个横跨**三个操作**（项目目录、图表列表与图表执行）、位于同一个 `ctx.bi` 服务上的[能力接缝](../../.agents/notes/implemented/architecture/2026-06-13-capability-seams.zh.md)。Service Definition 是 [dsh-bi](../../packages/bi/bi)；它的 Team 提供方和面向模型的工具随 [Control Plane BI 能力](../../.agents/notes/proposed/feature/2026-09-17-team-bi-analysis-through-the-control-plane.zh.md)一起到来。BI 是**一个可选能力**，不属于 agent-loop 主干，因此它的词汇在这里，而不在 [core.zh.md](core.zh.md)。
+BI 分析接缝——一个横跨**三个操作**（项目目录、图表列表与图表执行）、位于同一个 `ctx.bi` 服务上的[能力接缝](../../.agents/notes/implemented/architecture/2026-06-13-capability-seams.zh.md)。Service Definition 是 [dsh-bi](../../packages/bi/bi)；它的 Team 提供方是 [dsh-bi-team](../../packages/bi/bi-team)，面向模型的工具是 [dsh-tool-bi](../../packages/bi/tool-bi)，两者都在 [Control Plane BI 能力](../../.agents/notes/proposed/feature/2026-09-17-team-bi-analysis-through-the-control-plane.zh.md)中设计。BI 是**一个可选能力**，不属于 agent-loop 主干，因此它的词汇在这里，而不在 [core.zh.md](core.zh.md)。
 
 接缝命名产品操作，绝不命名上游操作。持有 `ctx.bi` 的 Runner 无法指名地址、凭据、自己的查询或上游项目与图表 id，因为没有任何操作为它们留下位置。正是这一点，使受治理的部署能够把每一个 BI 判定——哪位成员、哪台设备、哪个项目、此时此刻——放在成员自己的进程绕不过去的服务背后。
 

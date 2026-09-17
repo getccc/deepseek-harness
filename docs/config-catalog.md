@@ -522,6 +522,35 @@ export interface Config {
 
 Source: [`packages/bi/bi-gateway-sqlite/src/index.ts:52`](../packages/bi/bi-gateway-sqlite/src/index.ts)
 
+<a id="deepseek-aidsh-bi-team"></a>
+
+## `@deepseek-ai/dsh-bi-team`
+
+Requires: `teamAccountClient`
+
+```ts config-catalog
+/** Plugin config: which Control Plane this Runner belongs to. */
+export interface Config {
+  /**
+   * Origin of the company Control Plane, such as `https://dsh.company.com`.
+   *
+   * Carried per row rather than read from the account client, matching the
+   * company model transport. The desktop installer's generated profile patch
+   * writes every row from one deployment fact, which is where a single source
+   * of truth belongs.
+   */
+  controlPlaneUrl: string
+  /**
+   * Path to a PEM file whose certificates are the only ones this Runner
+   * accepts for the Control Plane, carried per row for the same reason
+   * `controlPlaneUrl` is.
+   */
+  controlPlaneCa?: string
+}
+```
+
+Source: [`packages/bi/bi-team/src/index.ts:60`](../packages/bi/bi-team/src/index.ts)
+
 <a id="deepseek-aidsh-bi-webi"></a>
 
 ## `@deepseek-ai/dsh-bi-webi`
@@ -3177,7 +3206,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/core/system-prompt/src/index.ts:250`](../packages/core/system-prompt/src/index.ts)
+Source: [`packages/core/system-prompt/src/index.ts:251`](../packages/core/system-prompt/src/index.ts)
 
 <a id="deepseek-aidsh-team-account-client"></a>
 
@@ -3464,6 +3493,26 @@ export interface Config {
 ```
 
 Source: [`packages/shell/tool-bash-persistent/src/index.ts:435`](../packages/shell/tool-bash-persistent/src/index.ts)
+
+<a id="deepseek-aidsh-tool-bi"></a>
+
+## `@deepseek-ai/dsh-tool-bi`
+
+Requires: `tools` · `bi` · `systemPrompt` · `agents`
+
+```ts config-catalog
+/** Plugin config: what one call may ask for. */
+export interface Config {
+  /** The most rows one run may request; the deployment's own bound still applies. */
+  maxRows?: number
+  /** How many charts one listing page holds; the deployment's own size still applies. */
+  chartPageSize?: number
+  /** How long one call may take before it is abandoned. */
+  timeoutMs?: number
+}
+```
+
+Source: [`packages/bi/tool-bi/src/index.ts:54`](../packages/bi/tool-bi/src/index.ts)
 
 <a id="deepseek-aidsh-tool-fs"></a>
 
