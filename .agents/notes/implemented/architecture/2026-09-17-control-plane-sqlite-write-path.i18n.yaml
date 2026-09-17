@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-17-control-plane-sqlite-write-path.md
+2026-09-17-control-plane-sqlite-write-path.md: 9e5145aee687edb70724d0a55a84b934a47b00b3
+2026-09-17-control-plane-sqlite-write-path.zh.md: 782e110e06623ec267a9922f1ef6686e203664b1

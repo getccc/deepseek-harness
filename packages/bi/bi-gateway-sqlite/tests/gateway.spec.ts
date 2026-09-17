@@ -580,3 +580,23 @@ describe('the catalog outlives the process', () => {
     expect(view.source.health).toBe('healthy')
   })
 })
+
+describe('the database file', () => {
+  it('writes ahead of the database unless a rollback journal is configured', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'bi-gateway-sqlite-journal-'))
+    try {
+      for (const journalMode of ['wal', 'delete'] as const) {
+        const path = join(root, `${journalMode}.sqlite`)
+        const mode = journalMode === 'wal' ? {} : { journalMode }
+        const opened = await dependencies(root)
+        await opened.plugin(SqliteBiGateway, { path, ...mode }).await()
+        const probe = new DatabaseSync(path)
+        expect(probe.prepare('PRAGMA journal_mode').get()).toMatchObject({ journal_mode: journalMode })
+        probe.close()
+        await opened.fiber.dispose()
+      }
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+})

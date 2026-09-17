@@ -57,6 +57,8 @@ The BI source takes the same three rows with no default: `sourceCode`, `baseUrl`
 
 Every store is a SQLite file under the DSH home, which limits a deployment to one active Control Plane process with durable storage and backup. That is a real constraint rather than a default: two processes over copies of these files would disagree about grants and about which knowledge bases exist. Horizontal replicas need a shared-database design, not copies.
 
+The stores run in write-ahead logging by default. A committed transaction can remain in `<file>-wal` until a checkpoint writes it into the database file, so back a store up with `sqlite3 <file> ".backup <target>"`, not by copying the database file alone. A build with this default switches an existing file to WAL at its first start. A `sqlite3` session holding a write lock makes a request wait up to `busyTimeoutMs` (1 second by default) and then fail, and the whole process waits with it. A filesystem that cannot hold WAL's shared-memory file needs `journalMode` set to a rollback journal on each store's row.
+
 ### Running beside a Runner
 
 The port is distinct from the Team Runner's `3090` and `dsh web`'s `3080`, so a maintainer can run all three on one machine while developing without hitting a bind conflict.

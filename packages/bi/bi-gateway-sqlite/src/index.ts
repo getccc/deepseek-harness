@@ -52,6 +52,19 @@ export {
 export interface Config {
   /** Path to the catalog database. */
   path: string
+  /**
+   * SQLite journal mode. `wal` lets readers run beside the one writer and
+   * commits with a single sync of the log; a rollback journal (`delete`,
+   * `truncate`, `persist`) serves filesystems where WAL's shared-memory file
+   * does not work, such as network mounts.
+   */
+  journalMode?: 'wal' | 'delete' | 'truncate' | 'persist'
+  /**
+   * How long a statement waits for another connection's lock before failing
+   * with `SQLITE_BUSY`, in milliseconds. The driver is synchronous, so the
+   * wait blocks every request this process serves.
+   */
+  busyTimeoutMs?: number
   /** How many charts one listing page holds when a caller names no size. */
   defaultChartPageSize?: number
   /** The most rows one run returns when a caller names no bound. */
@@ -86,6 +99,8 @@ export default class SqliteBiGateway extends BiGateway {
 
   static Config: z<Config> = z.object({
     path: z.string().required(),
+    journalMode: z.union(['wal', 'delete', 'truncate', 'persist'] as const).default('wal'),
+    busyTimeoutMs: z.natural().default(1_000),
     defaultChartPageSize: z.natural().min(1).default(DEFAULT_CHART_PAGE_SIZE),
     defaultMaxRows: z.natural().min(1).default(DEFAULT_MAX_ROWS),
   })
@@ -97,8 +112,11 @@ export default class SqliteBiGateway extends BiGateway {
 
   constructor(ctx: Context, public config: Config) {
     super(ctx)
-    this.db = new DatabaseSync(config.path)
+    this.db = new DatabaseSync(config.path, { timeout: config.busyTimeoutMs })
     applySchema(this.db)
+    this.db.exec(`PRAGMA journal_mode = ${(config as Required<Config>).journalMode}`)
+    // SQLite builds may default WAL to NORMAL, which can lose a resolved write to power loss.
+    this.db.exec('PRAGMA synchronous = FULL')
     // schemastery (Config) has already filled every defaulted field.
     this.resolved = config as ResolvedConfig
     ctx.effect(() => () => { this.db.close() }, 'bi-gateway-sqlite: close the catalog')

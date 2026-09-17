@@ -1014,3 +1014,23 @@ describe('a search narrowed to documents', () => {
     expect(result.passages.map(row => row.docRef)).toEqual([`${REF_A}/doc-1`, undefined])
   })
 })
+
+describe('the database file', () => {
+  it('writes ahead of the database unless a rollback journal is configured', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'knowledge-gateway-sqlite-journal-'))
+    try {
+      for (const journalMode of ['wal', 'delete'] as const) {
+        const path = join(root, `${journalMode}.sqlite`)
+        const mode = journalMode === 'wal' ? {} : { journalMode }
+        const opened = await dependencies(root)
+        await opened.plugin(SqliteKnowledgeGateway, { path, ...mode }).await()
+        const probe = new DatabaseSync(path)
+        expect(probe.prepare('PRAGMA journal_mode').get()).toMatchObject({ journal_mode: journalMode })
+        probe.close()
+        await opened.fiber.dispose()
+      }
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+})

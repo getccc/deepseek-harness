@@ -43,6 +43,19 @@ export { ACCESS_CONTROL_SQLITE_APPLICATION_ID, SCHEMA_VERSION } from './schema.t
 export interface Config {
   /** SQLite database path, or `:memory:` for an in-process database. */
   path: string
+  /**
+   * SQLite journal mode. `wal` lets readers run beside the one writer and
+   * commits with a single sync of the log; a rollback journal (`delete`,
+   * `truncate`, `persist`) serves filesystems where WAL's shared-memory file
+   * does not work, such as network mounts.
+   */
+  journalMode?: 'wal' | 'delete' | 'truncate' | 'persist'
+  /**
+   * How long a statement waits for another connection's lock before failing
+   * with `SQLITE_BUSY`, in milliseconds. The driver is synchronous, so the
+   * wait blocks every request this process serves.
+   */
+  busyTimeoutMs?: number
 }
 
 const DUPLICATE_ROLE = /UNIQUE constraint failed: role\.org_id, role\.name/u
@@ -90,6 +103,8 @@ export class SqliteAccessControl extends AccessControl {
 
   static Config: z<Config> = z.object({
     path: z.string().required(),
+    journalMode: z.union(['wal', 'delete', 'truncate', 'persist'] as const).default('wal'),
+    busyTimeoutMs: z.natural().default(1_000),
   })
 
   private db!: DatabaseSync
@@ -100,8 +115,11 @@ export class SqliteAccessControl extends AccessControl {
 
   /** Open, bring the database to the current schema, and seed the catalog. */
   protected async [Service.init](): Promise<void> {
-    const db = new DatabaseSync(this.config.path)
+    const db = new DatabaseSync(this.config.path, { timeout: this.config.busyTimeoutMs })
     applySchema(db)
+    db.exec(`PRAGMA journal_mode = ${(this.config as Required<Config>).journalMode}`)
+    // SQLite builds may default WAL to NORMAL, which can lose a resolved write to power loss.
+    db.exec('PRAGMA synchronous = FULL')
     this.db = db
     this.ctx.effect(() => () => { db.close() }, 'access-control-sqlite.close')
     await Promise.resolve()

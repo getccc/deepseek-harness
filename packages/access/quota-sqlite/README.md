@@ -45,7 +45,7 @@ plugins:
 
 ### Balances are derived, never stored
 
-Settled tokens sum the settlements; reserved tokens sum the reservations nothing has answered. A stored running total would be a second place for the truth to live, and the two would eventually disagree in a way only an audit could catch.
+Settled tokens sum the settlements; reserved tokens sum the reservations nothing has answered. A stored running total would be a second place for the truth to live, and the two would eventually disagree in a way only an audit could catch. `reserve` reads the budget first and sums the period only under a limit, because without one the sum could not refuse the request.
 
 ### The reconciler charges, and marks that it did
 
@@ -85,6 +85,7 @@ These are current constraints of the contract, not a task backlog.
 - **Nothing prunes settled reservations** — the rows are the evidence that budget was held and what answered it, so a retention pass needs its own design rather than a `DELETE`.
 - **`reconcile` scans by expiry, and a caller decides when to run it** — there is no schedule here, and none of this runs on its own.
 - **A reconciled settlement charges the full reservation** — for a request that really did fail early, that overcharges; the `estimated` mark is what makes it findable, and this ledger deliberately does not try to correct it.
+- **Under a limit, `reserve` reads the whole period** — the balance check sums every reservation the period holds, so a limited organization's calls slow down as the period fills. The [write-path Agent Note](../../../.agents/notes/implemented/architecture/2026-09-17-control-plane-sqlite-write-path.md) records the measurement and the trigger-maintained total that would remove the scan.
 
 <a id="dev-note"></a>
 ### Dev Note
