@@ -486,6 +486,65 @@ Depends on: [`LocalConfig`](#deepseek-aidsh-bash-local)
 
 Source: [`packages/shell/bash-sandbox/src/index.ts:36`](../packages/shell/bash-sandbox/src/index.ts)
 
+<a id="deepseek-aidsh-bi-gateway-sqlite"></a>
+
+## `@deepseek-ai/dsh-bi-gateway-sqlite`
+
+Requires: `accessControl` · `audit` · `biSource`
+
+```ts config-catalog
+/** Plugin config: where the catalog lives, and what one operation may return. */
+export interface Config {
+  /** Path to the catalog database. */
+  path: string
+  /** How many charts one listing page holds when a caller names no size. */
+  defaultChartPageSize?: number
+  /** The most rows one run returns when a caller names no bound. */
+  defaultMaxRows?: number
+}
+```
+
+Source: [`packages/bi/bi-gateway-sqlite/src/index.ts:52`](../packages/bi/bi-gateway-sqlite/src/index.ts)
+
+<a id="deepseek-aidsh-bi-webi"></a>
+
+## `@deepseek-ai/dsh-bi-webi`
+
+Requires: `credentials`
+
+```ts config-catalog
+/** Plugin config: which source, where it is, and what it may return. */
+export interface Config {
+  /** This deployment's code for the source, the second `BiProjectRef` segment. */
+  sourceCode: string
+  /** Origin the webi API is served from, such as `http://127.0.0.1:8100`. */
+  baseUrl: string
+  /**
+   * Credential reference resolving to a webi personal access token.
+   *
+   * The token's reach is its owner's: a project grant covers every space in
+   * the project, private ones included, so the token belongs to a webi
+   * organization administrator created for this deployment rather than to a
+   * person.
+   */
+  credentialRef: string
+  /** How long one upstream HTTP call may take before it is abandoned. */
+  requestTimeoutMs?: number
+  /** The most rows one run may return. */
+  maxRows?: number
+  /** The most characters one text cell may carry. */
+  maxCellChars?: number
+  /** The most charts one project listing may read. */
+  maxCharts?: number
+  /** How long to wait between two reads of a run that is not ready yet. */
+  pollIntervalMs?: number
+  /** How long one run may take, from start to its first ready page, before it is abandoned. */
+  queryTimeoutMs?: number
+}
+```
+
+Source: [`packages/bi/bi-webi/src/index.ts:67`](../packages/bi/bi-webi/src/index.ts)
+
 <a id="deepseek-aidsh-client-connection"></a>
 
 ## `@deepseek-ai/dsh-client-connection`
@@ -4357,6 +4416,8 @@ Imported as libraries by other packages; a `cordis.yml` cannot load them.
 - `@deepseek-ai/dsh-audit` ([`packages/access/audit/src/index.ts`](../packages/access/audit/src/index.ts))
 - `@deepseek-ai/dsh-base` ([`packages/bundle/base/src/index.ts`](../packages/bundle/base/src/index.ts))
 - `@deepseek-ai/dsh-bi` ([`packages/bi/bi/src/index.ts`](../packages/bi/bi/src/index.ts))
+- `@deepseek-ai/dsh-bi-gateway` ([`packages/bi/bi-gateway/src/index.ts`](../packages/bi/bi-gateway/src/index.ts))
+- `@deepseek-ai/dsh-bi-source` ([`packages/bi/bi-source/src/index.ts`](../packages/bi/bi-source/src/index.ts))
 - `@deepseek-ai/dsh-brand` ([`packages/util/brand/src/index.ts`](../packages/util/brand/src/index.ts))
 - `@deepseek-ai/dsh-chunked-list` ([`packages/util/chunked-list/src/index.ts`](../packages/util/chunked-list/src/index.ts))
 - `@deepseek-ai/dsh-client-store` ([`packages/client/store/src/index.ts`](../packages/client/store/src/index.ts))

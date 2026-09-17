@@ -22,11 +22,15 @@ The `bi/` group gives the harness the company's BI system through one provider-n
 <a id="packages"></a>
 ## Packages
 
-One package plays the BI role today; the subsystem reference owns the exhaustive vocabulary and contracts, and the Agent Note names the packages the rest of the capability adds.
+Five packages play the BI roles; the subsystem reference owns the exhaustive vocabulary and contracts, and the Agent Note names the packages the rest of the capability adds.
 
 | Package | Role | ctx key |
 |---|---|---|
 | [`bi/`](bi/README.md) | BI service: the authorized project directory, saved-chart listing, chart run, the stable references, and the Session scope | `ctx.bi` |
+| [`bi-source/`](bi-source/README.md) | Upstream source seam: listing a source's projects and one project's charts, placing a chart, and running one already-authorized chart | `ctx.biSource` |
+| [`bi-webi/`](bi-webi/README.md) | Speaks webi's four fixed routes, holding the personal access token in the Control Plane | registers on `ctx.biSource` |
+| [`bi-gateway/`](bi-gateway/README.md) | Governed gateway seam: the durable project catalog, and the authorized directory, chart listing, and chart run | `ctx.biGateway` |
+| [`bi-gateway-sqlite/`](bi-gateway-sqlite/README.md) | Durable catalog over SQLite, with synchronization, per-project authorization, and audit | registers on `ctx.biGateway` |
 
 -----
 

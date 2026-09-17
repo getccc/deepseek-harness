@@ -1,0 +1,39 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/types"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../../../vendor/cosmokit"
+    },
+    {
+      "path": "../../../vendor/cordis"
+    },
+    {
+      "path": "../../../vendor/schemastery"
+    },
+    {
+      "path": "../bi"
+    },
+    {
+      "path": "../bi-gateway"
+    },
+    {
+      "path": "../bi-source"
+    },
+    {
+      "path": "../../access/access-control"
+    },
+    {
+      "path": "../../access/audit"
+    },
+    {
+      "path": "../../account/account-store"
+    }
+  ]
+}

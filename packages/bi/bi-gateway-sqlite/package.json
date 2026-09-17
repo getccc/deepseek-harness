@@ -1,0 +1,53 @@
+{
+  "name": "@deepseek-ai/dsh-bi-gateway-sqlite",
+  "description": "SQLite-backed governed BI gateway (ctx.biGateway) for the DeepSeek Harness Control Plane — the durable project catalog, synchronization against a BI source, per-project authorization, and audit",
+  "version": "0.1.6-alpha.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "packages/bi/bi-gateway-sqlite"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/types/**/*.d.ts"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "workspace:^",
+    "@deepseek-ai/dsh-access-control": "workspace:^",
+    "@deepseek-ai/dsh-account-store": "workspace:^",
+    "@deepseek-ai/dsh-audit": "workspace:^",
+    "@deepseek-ai/dsh-bi": "workspace:^",
+    "@deepseek-ai/dsh-bi-gateway": "workspace:^",
+    "@deepseek-ai/dsh-bi-source": "workspace:^"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "workspace:^",
+    "@deepseek-ai/dsh-access-control": "workspace:^",
+    "@deepseek-ai/dsh-access-control-sqlite": "workspace:^",
+    "@deepseek-ai/dsh-account-store": "workspace:^",
+    "@deepseek-ai/dsh-account-store-sqlite": "workspace:^",
+    "@deepseek-ai/dsh-audit": "workspace:^",
+    "@deepseek-ai/dsh-audit-sqlite": "workspace:^",
+    "@deepseek-ai/dsh-bi": "workspace:^",
+    "@deepseek-ai/dsh-bi-gateway": "workspace:^",
+    "@deepseek-ai/dsh-bi-source": "workspace:^"
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "workspace:^"
+  }
+}

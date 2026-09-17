@@ -153,6 +153,10 @@ flowchart TD
   end
   subgraph group_bi["packages/bi"]
     pkg_bi["bi"]
+    pkg_bi_gateway["bi-gateway"]
+    pkg_bi_gateway_sqlite["bi-gateway-sqlite"]
+    pkg_bi_source["bi-source"]
+    pkg_bi_webi["bi-webi"]
   end
   subgraph group_boot["packages/boot"]
     pkg_app_boot["app-boot"]
@@ -569,6 +573,10 @@ flowchart TD
   pkg_spill_local --> pkg_spill
   pkg_session_log_export --> pkg_session
   pkg_session_log_export --> pkg_session_persistence
+  pkg_bi_gateway --> pkg_access_control
+  pkg_bi_gateway --> pkg_account_store
+  pkg_bi_gateway --> pkg_bi
+  pkg_bi_source --> pkg_bi
   pkg_knowledge_gateway --> pkg_access_control
   pkg_knowledge_gateway --> pkg_account_store
   pkg_knowledge_gateway --> pkg_knowledge
@@ -660,6 +668,16 @@ flowchart TD
   pkg_api_office_controller --> pkg_office
   pkg_api_office_controller --> pkg_session
   pkg_api_office_controller --> pkg_typert_protocol
+  pkg_bi_gateway_sqlite --> pkg_access_control
+  pkg_bi_gateway_sqlite --> pkg_account_store
+  pkg_bi_gateway_sqlite --> pkg_audit
+  pkg_bi_gateway_sqlite --> pkg_bi
+  pkg_bi_gateway_sqlite --> pkg_bi_gateway
+  pkg_bi_gateway_sqlite --> pkg_bi_source
+  pkg_bi_webi --> pkg_bi
+  pkg_bi_webi --> pkg_bi_source
+  pkg_bi_webi --> pkg_credentials
+  pkg_bi_webi --> pkg_util_crypto
   pkg_file_reference --> pkg_agent
   pkg_time_context --> pkg_agent
   pkg_time_context --> pkg_invariants
@@ -1593,6 +1611,8 @@ flowchart TD
 | [`fs`](../packages/fs/fs) | `fs` | [`brand`](../packages/util/brand), [`invariants`](../packages/runtime-diagnostics/invariants), [`llm`](../packages/llm/llm), [`sandbox`](../packages/sandbox/sandbox) |
 | [`spill-local`](../packages/spill/spill-local) | `spill` | [`spill`](../packages/spill/spill) |
 | [`session-log-export`](../packages/session-query/session-log-export) | `session-query` | [`session`](../packages/core/session), [`session-persistence`](../packages/session/session-persistence) |
+| [`bi-gateway`](../packages/bi/bi-gateway) | `bi` | [`access-control`](../packages/access/access-control), [`account-store`](../packages/account/account-store), [`bi`](../packages/bi/bi) |
+| [`bi-source`](../packages/bi/bi-source) | `bi` | [`bi`](../packages/bi/bi) |
 | [`knowledge-gateway`](../packages/knowledge/knowledge-gateway) | `knowledge` | [`access-control`](../packages/access/access-control), [`account-store`](../packages/account/account-store), [`knowledge`](../packages/knowledge/knowledge) |
 | [`knowledge-source`](../packages/knowledge/knowledge-source) | `knowledge` | [`knowledge`](../packages/knowledge/knowledge) |
 | [`ptc-runtime`](../packages/ptc-runtime/ptc-runtime) | `ptc-runtime` | [`sandbox`](../packages/sandbox/sandbox) |
@@ -1616,6 +1636,8 @@ flowchart TD
 | [`hook-protocol`](../packages/hooks/hook-protocol) | `hooks` | [`invariants`](../packages/runtime-diagnostics/invariants), [`session`](../packages/core/session), [`shell`](../packages/shell/shell) |
 | [`api-knowledge-controller`](../packages/api/knowledge-controller) | `api` | [`agent`](../packages/core/agent), [`knowledge`](../packages/knowledge/knowledge), [`session`](../packages/core/session), [`typert-protocol`](../packages/typert/protocol) |
 | [`api-office-controller`](../packages/api/office-controller) | `api` | [`agent`](../packages/core/agent), [`office`](../packages/office/office), [`session`](../packages/core/session), [`typert-protocol`](../packages/typert/protocol) |
+| [`bi-gateway-sqlite`](../packages/bi/bi-gateway-sqlite) | `bi` | [`access-control`](../packages/access/access-control), [`account-store`](../packages/account/account-store), [`audit`](../packages/access/audit), [`bi`](../packages/bi/bi), [`bi-gateway`](../packages/bi/bi-gateway), [`bi-source`](../packages/bi/bi-source) |
+| [`bi-webi`](../packages/bi/bi-webi) | `bi` | [`bi`](../packages/bi/bi), [`bi-source`](../packages/bi/bi-source), [`credentials`](../packages/credentials/credentials), [`util-crypto`](../packages/util/crypto) |
 | [`file-reference`](../packages/context/file-reference) | `context` | [`agent`](../packages/core/agent) |
 | [`time-context`](../packages/context/time-context) | `context` | [`agent`](../packages/core/agent), [`invariants`](../packages/runtime-diagnostics/invariants), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`session-projection`](../packages/session/session-projection) |
 | [`tmux-context`](../packages/context/tmux-context) | `context` | [`agent`](../packages/core/agent), [`session`](../packages/core/session), [`session-projection`](../packages/session/session-projection), [`shell`](../packages/shell/shell) |

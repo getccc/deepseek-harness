@@ -64,6 +64,8 @@ export const METADATA_KEYS = {
    * exists. Metadata keys are re-seeded on every open.
    */
   knowledgeFailure: { kind: 'label', members: ['upstream-unavailable', 'upstream-invalid', 'scope-incompatible'] },
+  /** Why a BI operation failed upstream of the authorization decision; a label for the reason `knowledgeFailure` is one. */
+  biFailure: { kind: 'label', members: ['upstream-unavailable', 'upstream-invalid', 'chart-unavailable', 'query-failed'] },
   webFailure: { kind: 'label', members: ['upstream-unavailable', 'upstream-invalid', 'cancelled'] },
 } as const satisfies Record<string, MetadataSpec>
 
