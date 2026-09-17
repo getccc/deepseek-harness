@@ -22,7 +22,7 @@ The `bi/` group gives the harness the company's BI system through one provider-n
 <a id="packages"></a>
 ## Packages
 
-Six packages play the BI roles; the subsystem reference owns the exhaustive vocabulary and contracts, and the Agent Note names the packages the rest of the capability adds.
+Eight packages play the BI roles; the subsystem reference owns the exhaustive vocabulary and contracts, and the Agent Note names the browser packages the rest of the capability adds.
 
 | Package | Role | ctx key |
 |---|---|---|
@@ -32,6 +32,8 @@ Six packages play the BI roles; the subsystem reference owns the exhaustive voca
 | [`bi-gateway/`](bi-gateway/README.md) | Governed gateway seam: the durable project catalog, and the authorized directory, chart listing, and chart run | `ctx.biGateway` |
 | [`bi-gateway-sqlite/`](bi-gateway-sqlite/README.md) | Durable catalog over SQLite, with synchronization, per-project authorization, and audit | registers on `ctx.biGateway` |
 | [`bi-gateway-http/`](bi-gateway-http/README.md) | The three routes a Runner calls, with token verification and protocol-version negotiation | registers routes on `ctx.webServer` |
+| [`bi-team/`](bi-team/README.md) | Runner-side provider: one Control Plane request per directory read, chart listing, or chart run, carrying the device token | registers on `ctx.bi` |
+| [`tool-bi/`](tool-bi/README.md) | What a model sees: the two tools, the scope prompt section, and scope-driven visibility | registers on `ctx.tools` and `ctx.systemPrompt` |
 
 -----
 

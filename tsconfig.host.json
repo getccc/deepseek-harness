@@ -310,6 +310,8 @@
     { "path": "./packages/bi/bi-webi" },
     { "path": "./packages/bi/bi-gateway-sqlite" },
     { "path": "./packages/bi/bi-gateway-http" },
+    { "path": "./packages/bi/bi-team" },
+    { "path": "./packages/bi/tool-bi" },
     { "path": "./packages/knowledge/knowledge" },
     { "path": "./packages/knowledge/knowledge-source" },
     { "path": "./packages/knowledge/knowledge-weknora" },

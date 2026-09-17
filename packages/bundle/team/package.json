@@ -44,6 +44,7 @@
   "dependencies": {
     "@deepseek-ai/dsh-api-knowledge-controller": "workspace:^",
     "@deepseek-ai/dsh-api-office-controller": "workspace:^",
+    "@deepseek-ai/dsh-bi-team": "workspace:^",
     "@deepseek-ai/dsh-client-ui-knowledge": "workspace:^",
     "@deepseek-ai/dsh-client-ui-knowledge-panels": "workspace:^",
     "@deepseek-ai/dsh-client-ui-office": "workspace:^",
@@ -54,6 +55,7 @@
     "@deepseek-ai/dsh-office": "workspace:^",
     "@deepseek-ai/dsh-team-account-client": "workspace:^",
     "@deepseek-ai/dsh-team-local-login": "workspace:^",
+    "@deepseek-ai/dsh-tool-bi": "workspace:^",
     "@deepseek-ai/dsh-tool-knowledge": "workspace:^",
     "@deepseek-ai/dsh-tool-office": "workspace:^"
   }

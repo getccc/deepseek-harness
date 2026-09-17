@@ -730,9 +730,9 @@ const SERVICE_ROLES: ServiceRole[] = [
     pkg: 'bi',
     title: 'BI analysis seam',
     mode: 'seam',
-    implementations: [],
-    consumers: [],
-    note: 'The project directory, saved-chart listing, and chart-run operations a governed deployment authorizes; its Team provider and model-facing tools arrive with the Control Plane BI capability.',
+    implementations: ['bi-team'],
+    consumers: ['tool-bi'],
+    note: 'The project directory, saved-chart listing, and chart-run operations a governed deployment authorizes; bi-team reaches the Control Plane that authorizes them, and tool-bi is what a model sees of the result.',
   },
   {
     key: 'biGateway',

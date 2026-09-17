@@ -2,7 +2,7 @@
 
 English | [中文](bi.zh.md)
 
-The BI-analysis seam — a [capability seam](../../.agents/notes/implemented/architecture/2026-06-13-capability-seams.md) spanning **three operations** (project directory, chart listing, and chart run) on one `ctx.bi` service. The Service Definition is [dsh-bi](../../packages/bi/bi); its Team providers and the model-facing tools arrive with the [Control Plane BI capability](../../.agents/notes/proposed/feature/2026-09-17-team-bi-analysis-through-the-control-plane.md). BI is **one optional capability**, not part of the agent-loop spine, so its vocabulary lives here rather than in [core.md](core.md).
+The BI-analysis seam — a [capability seam](../../.agents/notes/implemented/architecture/2026-06-13-capability-seams.md) spanning **three operations** (project directory, chart listing, and chart run) on one `ctx.bi` service. The Service Definition is [dsh-bi](../../packages/bi/bi); its Team provider is [dsh-bi-team](../../packages/bi/bi-team) and the model-facing tools are [dsh-tool-bi](../../packages/bi/tool-bi), both designed in the [Control Plane BI capability](../../.agents/notes/proposed/feature/2026-09-17-team-bi-analysis-through-the-control-plane.md). BI is **one optional capability**, not part of the agent-loop spine, so its vocabulary lives here rather than in [core.md](core.md).
 
 The seam names product operations, never upstream ones. A Runner holding `ctx.bi` cannot name an address, a credential, a query of its own, or an upstream project or chart id, because no operation has a place for one. That is what lets a governed deployment put every BI decision — which member, which device, which project, right now — behind a service the member's own process cannot bypass.
 
