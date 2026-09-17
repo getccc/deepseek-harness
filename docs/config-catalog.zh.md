@@ -22,6 +22,19 @@
 export interface Config {
   /** SQLite database path, or `:memory:` for an in-process database. */
   path: string
+  /**
+   * SQLite journal mode. `wal` lets readers run beside the one writer and
+   * commits with a single sync of the log; a rollback journal (`delete`,
+   * `truncate`, `persist`) serves filesystems where WAL's shared-memory file
+   * does not work, such as network mounts.
+   */
+  journalMode?: 'wal' | 'delete' | 'truncate' | 'persist'
+  /**
+   * How long a statement waits for another connection's lock before failing
+   * with `SQLITE_BUSY`, in milliseconds. The driver is synchronous, so the
+   * wait blocks every request this process serves.
+   */
+  busyTimeoutMs?: number
 }
 ```
 
@@ -66,6 +79,19 @@ export interface Config {
 export interface Config {
   /** SQLite database path, or `:memory:` for an in-process database. */
   path: string
+  /**
+   * SQLite journal mode. `wal` lets readers run beside the one writer and
+   * commits with a single sync of the log; a rollback journal (`delete`,
+   * `truncate`, `persist`) serves filesystems where WAL's shared-memory file
+   * does not work, such as network mounts.
+   */
+  journalMode?: 'wal' | 'delete' | 'truncate' | 'persist'
+  /**
+   * How long a statement waits for another connection's lock before failing
+   * with `SQLITE_BUSY`, in milliseconds. The driver is synchronous, so the
+   * wait blocks every request this process serves.
+   */
+  busyTimeoutMs?: number
 }
 ```
 
@@ -431,6 +457,19 @@ export interface Config {
   /** SQLite database path, or `:memory:` for an in-process database. */
   path: string
   /**
+   * SQLite journal mode. `wal` lets readers run beside the one writer and
+   * commits with a single sync of the log; a rollback journal (`delete`,
+   * `truncate`, `persist`) serves filesystems where WAL's shared-memory file
+   * does not work, such as network mounts.
+   */
+  journalMode?: 'wal' | 'delete' | 'truncate' | 'persist'
+  /**
+   * How long a statement waits for another connection's lock before failing
+   * with `SQLITE_BUSY`, in milliseconds. The driver is synchronous, so the
+   * wait blocks every request this process serves.
+   */
+  busyTimeoutMs?: number
+  /**
    * The most events one {@link SqliteAudit.query} may return. A reader asking
    * for more is served this many; a reader asking for fewer is served what it
    * asked for.
@@ -515,6 +554,19 @@ export interface Config {
 export interface Config {
   /** Path to the catalog database. */
   path: string
+  /**
+   * SQLite journal mode. `wal` lets readers run beside the one writer and
+   * commits with a single sync of the log; a rollback journal (`delete`,
+   * `truncate`, `persist`) serves filesystems where WAL's shared-memory file
+   * does not work, such as network mounts.
+   */
+  journalMode?: 'wal' | 'delete' | 'truncate' | 'persist'
+  /**
+   * How long a statement waits for another connection's lock before failing
+   * with `SQLITE_BUSY`, in milliseconds. The driver is synchronous, so the
+   * wait blocks every request this process serves.
+   */
+  busyTimeoutMs?: number
   /** How many charts one listing page holds when a caller names no size. */
   defaultChartPageSize?: number
   /** The most rows one run returns when a caller names no bound. */
@@ -765,6 +817,19 @@ export interface Config {
 export interface Config {
   /** SQLite database path, or `:memory:` for an in-process database. */
   path: string
+  /**
+   * SQLite journal mode. `wal` lets readers run beside the one writer and
+   * commits with a single sync of the log; a rollback journal (`delete`,
+   * `truncate`, `persist`) serves filesystems where WAL's shared-memory file
+   * does not work, such as network mounts.
+   */
+  journalMode?: 'wal' | 'delete' | 'truncate' | 'persist'
+  /**
+   * How long a statement waits for another connection's lock before failing
+   * with `SQLITE_BUSY`, in milliseconds. The driver is synchronous, so the
+   * wait blocks every request this process serves.
+   */
+  busyTimeoutMs?: number
   /** How long a member has to compare the pairing code and confirm, in milliseconds. */
   transactionTtlMs: number
   /**
@@ -1359,6 +1424,19 @@ export interface Config {
 export interface Config {
   /** Path to the catalog database. */
   path: string
+  /**
+   * SQLite journal mode. `wal` lets readers run beside the one writer and
+   * commits with a single sync of the log; a rollback journal (`delete`,
+   * `truncate`, `persist`) serves filesystems where WAL's shared-memory file
+   * does not work, such as network mounts.
+   */
+  journalMode?: 'wal' | 'delete' | 'truncate' | 'persist'
+  /**
+   * How long a statement waits for another connection's lock before failing
+   * with `SQLITE_BUSY`, in milliseconds. The driver is synchronous, so the
+   * wait blocks every request this process serves.
+   */
+  busyTimeoutMs?: number
   /** The most passages one search returns when a caller names no bound. */
   defaultMaxResults?: number
   /** How many documents one listing page holds when a caller names no size. */
@@ -2114,6 +2192,19 @@ export interface Config {
 export interface Config {
   /** SQLite database path, or `:memory:` for an in-process database. */
   path: string
+  /**
+   * SQLite journal mode. `wal` lets readers run beside the one writer and
+   * commits with a single sync of the log; a rollback journal (`delete`,
+   * `truncate`, `persist`) serves filesystems where WAL's shared-memory file
+   * does not work, such as network mounts.
+   */
+  journalMode?: 'wal' | 'delete' | 'truncate' | 'persist'
+  /**
+   * How long a statement waits for another connection's lock before failing
+   * with `SQLITE_BUSY`, in milliseconds. The driver is synchronous, so the
+   * wait blocks every request this process serves.
+   */
+  busyTimeoutMs?: number
 }
 ```
 
@@ -2320,6 +2411,19 @@ export type Config = LocalConfig
 export interface Config {
   /** SQLite database path, or `:memory:` for an in-process database. */
   path: string
+  /**
+   * SQLite journal mode. `wal` lets readers run beside the one writer and
+   * commits with a single sync of the log; a rollback journal (`delete`,
+   * `truncate`, `persist`) serves filesystems where WAL's shared-memory file
+   * does not work, such as network mounts.
+   */
+  journalMode?: 'wal' | 'delete' | 'truncate' | 'persist'
+  /**
+   * How long a statement waits for another connection's lock before failing
+   * with `SQLITE_BUSY`, in milliseconds. The driver is synchronous, so the
+   * wait blocks every request this process serves.
+   */
+  busyTimeoutMs?: number
   /**
    * How long a reservation may stay open before the reconciler settles it, in
    * milliseconds. It bounds how long a crashed request can hold budget, so it
@@ -3281,6 +3385,19 @@ export interface Config {
 export interface Config {
   /** SQLite database path, or `:memory:` for an in-process database. */
   path: string
+  /**
+   * SQLite journal mode. `wal` lets readers run beside the one writer and
+   * commits with a single sync of the log; a rollback journal (`delete`,
+   * `truncate`, `persist`) serves filesystems where WAL's shared-memory file
+   * does not work, such as network mounts.
+   */
+  journalMode?: 'wal' | 'delete' | 'truncate' | 'persist'
+  /**
+   * How long a statement waits for another connection's lock before failing
+   * with `SQLITE_BUSY`, in milliseconds. The driver is synchronous, so the
+   * wait blocks every request this process serves.
+   */
+  busyTimeoutMs?: number
 }
 ```
 

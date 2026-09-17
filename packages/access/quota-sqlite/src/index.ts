@@ -38,6 +38,19 @@ export interface Config {
   /** SQLite database path, or `:memory:` for an in-process database. */
   path: string
   /**
+   * SQLite journal mode. `wal` lets readers run beside the one writer and
+   * commits with a single sync of the log; a rollback journal (`delete`,
+   * `truncate`, `persist`) serves filesystems where WAL's shared-memory file
+   * does not work, such as network mounts.
+   */
+  journalMode?: 'wal' | 'delete' | 'truncate' | 'persist'
+  /**
+   * How long a statement waits for another connection's lock before failing
+   * with `SQLITE_BUSY`, in milliseconds. The driver is synchronous, so the
+   * wait blocks every request this process serves.
+   */
+  busyTimeoutMs?: number
+  /**
    * How long a reservation may stay open before the reconciler settles it, in
    * milliseconds. It bounds how long a crashed request can hold budget, so it
    * belongs above the slowest completion a deployment expects and nowhere near
@@ -71,6 +84,17 @@ function toSettlement(row: SettlementRow): SettlementRecord {
   }
 }
 
+/** A period's settled tokens and the tokens its unsettled reservations hold. */
+interface PeriodTotals {
+  settled: number
+  reserved: number
+}
+
+/** What a limit leaves after the settled and the held tokens, never below zero. */
+function availableTokens(limitTokens: number, totals: PeriodTotals): number {
+  return Math.max(limitTokens - totals.settled - totals.reserved, 0)
+}
+
 /** Whether a value is a token count this ledger can hold. */
 function isTokenCount(value: number): boolean {
   return Number.isSafeInteger(value) && value >= 0
@@ -87,6 +111,8 @@ function isTokenCount(value: number): boolean {
 export class SqliteQuota extends Quota {
   static Config: z<Config> = z.object({
     path: z.string().required(),
+    journalMode: z.union(['wal', 'delete', 'truncate', 'persist'] as const).default('wal'),
+    busyTimeoutMs: z.natural().default(1_000),
     reservationTtlMs: z.natural().min(1).required(),
   })
 
@@ -98,8 +124,11 @@ export class SqliteQuota extends Quota {
 
   /** Open and bring the database to the current schema. */
   protected async [Service.init](): Promise<void> {
-    const db = new DatabaseSync(this.config.path)
+    const db = new DatabaseSync(this.config.path, { timeout: this.config.busyTimeoutMs })
     applySchema(db)
+    db.exec(`PRAGMA journal_mode = ${(this.config as Required<Config>).journalMode}`)
+    // SQLite builds may default WAL to NORMAL, which can lose a resolved write to power loss.
+    db.exec('PRAGMA synchronous = FULL')
     this.db = db
     this.ctx.effect(() => () => { db.close() }, 'quota-sqlite.close')
     await Promise.resolve()
@@ -123,10 +152,13 @@ export class SqliteQuota extends Quota {
     if (!isTokenCount(request.inputTokens) || !isTokenCount(request.maxOutputTokens) || wanted <= 0) {
       return Promise.reject(new ReservationRefusedError('malformed'))
     }
-    const standing = this.standing(request.orgId, request.period)
+    const limitTokens = this.limitOf(request.orgId, request.period)
     // No limit means no ceiling to run into: an organization an administrator
-    // has not limited is not silently limited to zero.
-    if (standing.availableTokens !== undefined && wanted > standing.availableTokens) {
+    // has not limited is not silently limited to zero. The period's balance is
+    // summed only under a limit, because the sum reads every reservation the
+    // period holds.
+    if (limitTokens !== undefined
+      && wanted > availableTokens(limitTokens, this.totals(request.orgId, request.period))) {
       return Promise.reject(new ReservationRefusedError('exceeded'))
     }
     const now = Date.now()
@@ -234,27 +266,35 @@ export class SqliteQuota extends Quota {
 
   /** Derive an organization's standing from the rows, never from a running total. */
   private standing(orgId: OrgIdType, period: PeriodKey): QuotaUsage {
-    const budget = this.db.prepare('SELECT * FROM budget WHERE org_id = ? AND period = ?')
-      .get(orgId, period) as BudgetRow | undefined
-    const totals = this.db.prepare(
-      `SELECT
-         COALESCE(SUM(s.charged_tokens), 0) AS settled,
-         COALESCE(SUM(CASE WHEN s.reservation_id IS NULL THEN r.reserved_tokens ELSE 0 END), 0) AS reserved
-       FROM reservation r
-       LEFT JOIN settlement s ON s.reservation_id = r.id
-       WHERE r.org_id = ? AND r.period = ?`,
-    ).get(orgId, period) as { settled: number; reserved: number }
-    const limitTokens = budget?.limit_tokens
+    const limitTokens = this.limitOf(orgId, period)
+    const totals = this.totals(orgId, period)
     return {
       orgId: OrgId(orgId),
       period,
       ...(limitTokens === undefined ? {} : { limitTokens }),
       settledTokens: totals.settled,
       reservedTokens: totals.reserved,
-      ...(limitTokens === undefined
-        ? {}
-        : { availableTokens: Math.max(limitTokens - totals.settled - totals.reserved, 0) }),
+      ...(limitTokens === undefined ? {} : { availableTokens: availableTokens(limitTokens, totals) }),
     }
+  }
+
+  /** The limit an administrator set for a period, when there is one. */
+  private limitOf(orgId: OrgIdType, period: PeriodKey): number | undefined {
+    const budget = this.db.prepare('SELECT * FROM budget WHERE org_id = ? AND period = ?')
+      .get(orgId, period) as BudgetRow | undefined
+    return budget?.limit_tokens
+  }
+
+  /** Sum a period's settled tokens and the tokens its open reservations hold. */
+  private totals(orgId: OrgIdType, period: PeriodKey): PeriodTotals {
+    return this.db.prepare(
+      `SELECT
+         COALESCE(SUM(s.charged_tokens), 0) AS settled,
+         COALESCE(SUM(CASE WHEN s.reservation_id IS NULL THEN r.reserved_tokens ELSE 0 END), 0) AS reserved
+       FROM reservation r
+       LEFT JOIN settlement s ON s.reservation_id = r.id
+       WHERE r.org_id = ? AND r.period = ?`,
+    ).get(orgId, period) as unknown as PeriodTotals
   }
 }
 

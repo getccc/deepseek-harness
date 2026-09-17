@@ -317,3 +317,23 @@ describe('the database file', () => {
     db.close()
   })
 })
+
+describe('the database file', () => {
+  it('writes ahead of the database unless a rollback journal is configured', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'team-console-menu-sqlite-journal-'))
+    try {
+      for (const journalMode of ['wal', 'delete'] as const) {
+        const path = join(root, `${journalMode}.sqlite`)
+        const mode = journalMode === 'wal' ? {} : { journalMode }
+        const opened = new Context()
+        await opened.plugin(SqliteConsoleMenuStore, { path, ...mode }).await()
+        const probe = new DatabaseSync(path)
+        expect(probe.prepare('PRAGMA journal_mode').get()).toMatchObject({ journal_mode: journalMode })
+        probe.close()
+        await opened.fiber.dispose()
+      }
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+})

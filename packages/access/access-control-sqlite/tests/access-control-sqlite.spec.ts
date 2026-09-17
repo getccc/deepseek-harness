@@ -694,3 +694,24 @@ describe('a database an earlier schema wrote', () => {
     await mounted.fiber.dispose()
   })
 })
+
+describe('the database file', () => {
+  it('writes ahead of the database unless a rollback journal is configured', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'access-control-sqlite-journal-'))
+    try {
+      for (const journalMode of ['wal', 'delete'] as const) {
+        const path = join(root, `${journalMode}.sqlite`)
+        const mode = journalMode === 'wal' ? {} : { journalMode }
+        const opened = new Context()
+        await opened.plugin(SqliteAccountStore, { path: ':memory:' }).await()
+        await opened.plugin(SqliteAccessControl, { path, ...mode }).await()
+        const probe = new DatabaseSync(path)
+        expect(probe.prepare('PRAGMA journal_mode').get()).toMatchObject({ journal_mode: journalMode })
+        probe.close()
+        await opened.fiber.dispose()
+      }
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
+  })
+})

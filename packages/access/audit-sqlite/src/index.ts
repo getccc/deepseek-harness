@@ -32,6 +32,19 @@ export interface Config {
   /** SQLite database path, or `:memory:` for an in-process database. */
   path: string
   /**
+   * SQLite journal mode. `wal` lets readers run beside the one writer and
+   * commits with a single sync of the log; a rollback journal (`delete`,
+   * `truncate`, `persist`) serves filesystems where WAL's shared-memory file
+   * does not work, such as network mounts.
+   */
+  journalMode?: 'wal' | 'delete' | 'truncate' | 'persist'
+  /**
+   * How long a statement waits for another connection's lock before failing
+   * with `SQLITE_BUSY`, in milliseconds. The driver is synchronous, so the
+   * wait blocks every request this process serves.
+   */
+  busyTimeoutMs?: number
+  /**
    * The most events one {@link SqliteAudit.query} may return. A reader asking
    * for more is served this many; a reader asking for fewer is served what it
    * asked for.
@@ -65,6 +78,8 @@ function metadataValue(row: AuditMetadataRow): number | string {
 export class SqliteAudit extends Audit {
   static Config: z<Config> = z.object({
     path: z.string().required(),
+    journalMode: z.union(['wal', 'delete', 'truncate', 'persist'] as const).default('wal'),
+    busyTimeoutMs: z.natural().default(1_000),
     maxQueryRows: z.natural().min(1).required(),
   })
 
@@ -76,8 +91,11 @@ export class SqliteAudit extends Audit {
 
   /** Open, bring the database to the current schema, and seed the catalogs. */
   protected async [Service.init](): Promise<void> {
-    const db = new DatabaseSync(this.config.path)
+    const db = new DatabaseSync(this.config.path, { timeout: this.config.busyTimeoutMs })
     applySchema(db)
+    db.exec(`PRAGMA journal_mode = ${(this.config as Required<Config>).journalMode}`)
+    // SQLite builds may default WAL to NORMAL, which can lose a resolved write to power loss.
+    db.exec('PRAGMA synchronous = FULL')
     this.db = db
     this.ctx.effect(() => () => { db.close() }, 'audit-sqlite.close')
     await Promise.resolve()
