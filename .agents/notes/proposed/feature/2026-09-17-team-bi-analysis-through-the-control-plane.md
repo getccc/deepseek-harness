@@ -15,7 +15,7 @@ Ship BI analysis as a built-in Team capability shaped like private knowledge. Th
 ### Product outcome
 
 - An administrator writes one webi personal access token into the Control Plane's credential store and names it from the `bi-webi` row's `credentialRef`, as the WeKnora row does. The token belongs to a dedicated webi organization administrator created for DSH, so it reaches every project and every space, private ones included, and no person's key is at stake.
-- An administrator sees every webi project under **Resource management → BI projects**, refreshes the catalog, and enables or disables each project.
+- An administrator sees every webi project under **Resource management → BI management**, refreshes the catalog, and enables or disables each project.
 - An administrator opens one role's **BI access** editor and grants all projects, selected projects, or none. A project grant covers every saved chart in the project, in public and private spaces alike.
 - A member of a granted role opens a work conversation, picks one project from the composer's BI control, and asks an ordinary question. The agent lists the project's saved charts, picks the closest, runs it, and answers from the rows: a chart as an `echarts` fence the deployment's renderer draws, a table as Markdown, a single number as prose.
 - A conversation starts with BI off. Until the member picks a project, no BI tool is visible to the model and no BI request leaves the computer.
@@ -217,7 +217,7 @@ A refused credential reads as `upstream-unavailable` at the member's seat and as
 
 ## Administration UI
 
-The shipped console navigation gains **BI projects** under resource management, of kind `menu`, opening `resources/BiProjectsPage` and guarded by `bi_project|bi.catalog.read`. The page lists each project's name, reference, project and warehouse type, and enablement, with the sync button and the enable or disable action the knowledge page has. The role editor gains a **BI access** dialog with the knowledge dialog's tree: one whole-catalog row ticking every project, stored as `all`.
+The shipped console navigation gains **BI management** under resource management, of kind `menu`, opening `resources/BiProjectsPage` and guarded by `bi_project|bi.catalog.read`. The page lists each project's name, reference, project and warehouse type, and enablement, with the sync button and the enable or disable action the knowledge page has. The role editor gains a **BI access** dialog with the knowledge dialog's tree: one whole-catalog row ticking every project, stored as `all`.
 
 ## Delivery plan
 

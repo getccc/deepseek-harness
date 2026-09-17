@@ -304,7 +304,7 @@ export const zh = {
   'knowledge.access.hint': '勾选该角色可以检索哪些知识库；勾选顶层一行即授予全部已启用知识库，含之后新增的。多个角色取并集；这里只授予检索，不授予下载或管理。',
   'knowledge.access.all': '全部已启用知识库',
 
-  'nav.biProjects': 'BI 项目',
+  'nav.biProjects': 'BI 管理',
   'bi.description': '本 Control Plane 治理的 BI 项目。被授予项目的成员可以查询该项目下全部已保存的图表，公共空间和私有空间一视同仁；令牌和地址只存在于服务端。',
   'bi.refresh': '刷新目录',
   'bi.name': '项目',
@@ -689,7 +689,7 @@ export const en: Record<keyof typeof zh, string> = {
   'knowledge.access.hint': 'Tick the knowledge bases this role may search; ticking the top row grants every enabled knowledge base, including ones added later. Several roles union; this grants search alone, not download or administration.',
   'knowledge.access.all': 'All enabled knowledge bases',
 
-  'nav.biProjects': 'BI projects',
+  'nav.biProjects': 'BI management',
   'bi.description': 'The BI projects this Control Plane governs. A member granted a project may run every saved chart in it, in public and private spaces alike; the token and the address exist only on the server.',
   'bi.refresh': 'Refresh catalog',
   'bi.name': 'Project',

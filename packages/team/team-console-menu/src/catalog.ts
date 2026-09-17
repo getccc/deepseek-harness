@@ -140,7 +140,7 @@ export const SHIPPED_CONSOLE_MENUS: readonly ShippedConsoleMenu[] = [
   {
     key: 'bi-projects',
     parentKey: 'resources',
-    name: 'BI projects',
+    name: 'BI management',
     labelKey: 'nav.biProjects',
     kind: 'menu',
     routePath: '/resources/bi-projects',

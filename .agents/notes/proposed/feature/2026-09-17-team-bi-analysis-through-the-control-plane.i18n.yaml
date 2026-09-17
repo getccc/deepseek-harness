@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/proposed/feature/2026-09-17-team-bi-analysis-through-the-control-plane.md
-2026-09-17-team-bi-analysis-through-the-control-plane.md: ea3a524c8548b3e734323f10825b392763a801ba
-2026-09-17-team-bi-analysis-through-the-control-plane.zh.md: ce07387c7a6227fa316e92dbc6cff9b7587bf6f4
+2026-09-17-team-bi-analysis-through-the-control-plane.md: c5d3344d486fcd43af5f04ddfec15f3e8d947394
+2026-09-17-team-bi-analysis-through-the-control-plane.zh.md: a9879c5220a1a58d054dec5a7ab4b3ab4e007400
