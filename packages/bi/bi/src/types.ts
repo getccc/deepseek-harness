@@ -43,6 +43,7 @@ export type BiChartKind =
   | 'radar'
   | 'gauge'
   | 'gantt'
+  | 'safety_cross'
   | 'custom'
   | 'other'
 

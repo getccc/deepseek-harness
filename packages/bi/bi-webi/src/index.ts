@@ -114,7 +114,7 @@ const DEFAULT_QUERY_TIMEOUT_MS = 60_000
 /** The words the content listing and the saved-chart record use for a picture, as this build reads them. */
 const CHART_KINDS: ReadonlySet<BiChartKind> = new Set<BiChartKind>([
   'line', 'horizontal_bar', 'vertical_bar', 'scatter', 'bubble', 'waterfall', 'area', 'mixed',
-  'pie', 'table', 'big_number', 'funnel', 'map', 'sankey', 'radar', 'gauge', 'gantt', 'custom',
+  'pie', 'table', 'big_number', 'funnel', 'map', 'sankey', 'radar', 'gauge', 'gantt', 'safety_cross', 'custom',
 ])
 
 /**
@@ -403,7 +403,17 @@ function toProject(entry: unknown): UpstreamProject {
   if (!BI_REF_SEGMENT.test(id) || id.length > BI_REF_MAX_LENGTH) {
     throw new BiError('upstream-invalid', 'a project id is not one this build can govern')
   }
-  return { upstreamId: id, name: projectName, projectType: text(row.type), warehouseType: text(row.warehouseType) }
+  // The deployment answers the warehouse inside `warehouseConnection`, beside
+  // its host and user, which this provider does not read; `warehouseType` is
+  // where the same word sits on the organization's project summary.
+  const warehouse = asRecord(row.warehouseConnection)?.['type'] ?? row.warehouseType
+  return {
+    upstreamId: id,
+    name: projectName,
+    description: text(row.description),
+    projectType: text(row.type),
+    warehouseType: text(warehouse),
+  }
 }
 
 /** Validate one listing entry, refusing a chart this build could not address. */

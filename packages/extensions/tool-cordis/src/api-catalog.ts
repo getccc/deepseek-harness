@@ -4886,7 +4886,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'BiCatalogEntry',
-    declaration: 'export interface BiCatalogEntry {\n    readonly ref: BiProjectRef;\n    readonly resourceId: ResourceId;\n    readonly displayName: string;\n    readonly projectType: string;\n    readonly warehouseType: string;\n    readonly adminEnabled: boolean;\n    readonly effectiveEnabled: boolean;\n    readonly lastDiscoveredAt: number;\n}',
+    declaration: 'export interface BiCatalogEntry {\n    readonly ref: BiProjectRef;\n    readonly resourceId: ResourceId;\n    readonly displayName: string;\n    readonly description: string;\n    readonly projectType: string;\n    readonly warehouseType: string;\n    readonly adminEnabled: boolean;\n    readonly effectiveEnabled: boolean;\n    readonly lastDiscoveredAt: number;\n}',
   },
   {
     name: 'BiCatalogView',
@@ -4898,7 +4898,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'BiChartKind',
-    declaration: 'export type BiChartKind = \'line\' | \'horizontal_bar\' | \'vertical_bar\' | \'scatter\' | \'bubble\' | \'waterfall\' | \'area\' | \'mixed\' | \'pie\' | \'table\' | \'big_number\' | \'funnel\' | \'map\' | \'sankey\' | \'radar\' | \'gauge\' | \'gantt\' | \'custom\' | \'other\';',
+    declaration: 'export type BiChartKind = \'line\' | \'horizontal_bar\' | \'vertical_bar\' | \'scatter\' | \'bubble\' | \'waterfall\' | \'area\' | \'mixed\' | \'pie\' | \'table\' | \'big_number\' | \'funnel\' | \'map\' | \'sankey\' | \'radar\' | \'gauge\' | \'gantt\' | \'safety_cross\' | \'custom\' | \'other\';',
   },
   {
     name: 'BiChartPage',
@@ -7870,7 +7870,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'UpstreamProject',
-    declaration: 'export interface UpstreamProject {\n    readonly upstreamId: string;\n    readonly name: string;\n    readonly projectType: string;\n    readonly warehouseType: string;\n}',
+    declaration: 'export interface UpstreamProject {\n    readonly upstreamId: string;\n    readonly name: string;\n    readonly description: string;\n    readonly projectType: string;\n    readonly warehouseType: string;\n}',
   },
   {
     name: 'UpstreamRun',

@@ -75,6 +75,8 @@ export interface BiCatalogEntry {
   /** The managed resource a role grant names, so a role editor can offer it. */
   readonly resourceId: ResourceId
   readonly displayName: string
+  /** The administrator's description of the project, empty when the source supplies none. */
+  readonly description: string
   /** The source's own word for what kind of project it is, empty when it supplies none. */
   readonly projectType: string
   /** The source's own word for the warehouse behind it, empty when it supplies none. */

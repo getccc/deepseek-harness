@@ -30,6 +30,8 @@ export interface UpstreamProject {
   /** The source's own identifier, meaningful only to this provider. */
   readonly upstreamId: string
   readonly name: string
+  /** The administrator's description of the project, empty when the source supplies none. */
+  readonly description: string
   /** The source's own word for what kind of project it is, empty when it supplies none. */
   readonly projectType: string
   /** The source's own word for the warehouse behind it, empty when it supplies none. */

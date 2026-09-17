@@ -100,6 +100,7 @@ function upstream(upstreamId: string, patch: Partial<UpstreamProject> = {}): Ups
   return {
     upstreamId,
     name: upstreamId === A ? 'Demo YH' : 'Teaching Project',
+    description: upstreamId === A ? '演示项目' : '',
     projectType: 'DEFAULT',
     warehouseType: 'postgres',
     ...patch,
@@ -190,7 +191,8 @@ describe('synchronizing the catalog', () => {
     const view = await gateway.catalogView(ORG)
     expect(view.entries.map(entry => entry.ref)).toEqual([REF_B, REF_A].sort())
     expect(view.entries.find(entry => entry.ref === REF_A)).toMatchObject({
-      displayName: 'Demo YH', projectType: 'DEFAULT', warehouseType: 'postgres', adminEnabled: true, effectiveEnabled: true,
+      displayName: 'Demo YH', description: '演示项目', projectType: 'DEFAULT', warehouseType: 'postgres',
+      adminEnabled: true, effectiveEnabled: true,
     })
     expect(view.source).toMatchObject({ sourceCode: 'prod', providerKind: 'stub', health: 'healthy', lastFailure: undefined })
     const resources = await access.listResources(ORG, BI_RESOURCE_TYPE)

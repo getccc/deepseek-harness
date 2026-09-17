@@ -42,6 +42,7 @@ export interface ProjectRow {
   readonly source_code: string
   readonly upstream_id: string
   readonly display_name: string
+  readonly description: string
   readonly project_type: string
   readonly warehouse_type: string
   readonly admin_enabled: number
@@ -75,6 +76,7 @@ CREATE TABLE IF NOT EXISTS bi_project (
   source_code        TEXT    NOT NULL,
   upstream_id        TEXT    NOT NULL,
   display_name       TEXT    NOT NULL,
+  description        TEXT    NOT NULL,
   project_type       TEXT    NOT NULL,
   warehouse_type     TEXT    NOT NULL,
   admin_enabled      INTEGER NOT NULL CHECK (admin_enabled IN (0, 1)),

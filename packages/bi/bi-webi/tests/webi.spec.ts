@@ -98,19 +98,29 @@ function fail(statusCode: number): unknown {
   return { status: 'error', error: { statusCode, name: 'Error', message: 'connect ECONNREFUSED 10.0.0.4:5432' } }
 }
 
-/** One project as `GET /org/projects` returns it. */
+/**
+ * One project as `GET /org/projects` returns it, recorded from the deployment
+ * with the connection's host, user, and database left out: the provider does
+ * not read them, and a fixture should not carry an address either.
+ */
 function wireProject(patch: Record<string, unknown> = {}): Record<string, unknown> {
-  return { projectUuid: PROJECT, name: 'Demo YH', type: 'DEFAULT', warehouseType: 'postgres', requireUserCredentials: false, ...patch }
+  return {
+    organizationUuid: 'o', projectUuid: PROJECT, name: 'Demo YH', type: 'DEFAULT',
+    dbtConnection: { type: 'none', hideRefreshButton: false },
+    warehouseConnection: { type: 'postgres', sslmode: 'disable', startOfWeek: 0 },
+    pinnedListUuid: null, dbtVersion: 'v1.8', description: '演示项目', ...patch,
+  }
 }
 
-/** One chart as the content listing returns it. */
+/** One chart as the content listing returns it, recorded from the deployment. */
 function wireContent(patch: Record<string, unknown> = {}): Record<string, unknown> {
   return {
-    contentType: 'chart', uuid: CHART, slug: 'sales', name: '销售总览', description: null,
-    createdAt: '2026-07-01T00:00:00.000Z', lastUpdatedAt: '2026-09-10T08:00:00.000Z',
-    project: { uuid: PROJECT, name: 'Demo YH' }, organization: { uuid: 'o', name: 'Acme' },
-    space: { uuid: 's', name: '销售分析' }, pinnedList: null, views: 126, firstViewedAt: null,
-    source: 'dbt_explore', chartKind: 'vertical_bar', dashboard: null, ...patch,
+    contentType: 'chart', uuid: CHART, slug: '销售总览 1751964553922', name: '销售总览', description: '',
+    createdAt: '2026-07-01T00:00:00.000Z', createdBy: null,
+    lastUpdatedAt: '2026-09-10T08:00:00.000Z', lastUpdatedBy: { uuid: 'u', firstName: 'wks', lastName: 'thing3dv.com' },
+    project: { uuid: PROJECT, name: 'Demo YH' }, organization: { uuid: 'o', name: 'Jaffle Shop' },
+    source: 'dbt_explore', chartKind: 'vertical_bar', space: { uuid: 's', name: '销售分析' },
+    dashboard: null, pinnedList: null, views: 126, firstViewedAt: '2026-07-02T00:00:00.000Z', ...patch,
   }
 }
 
@@ -119,13 +129,26 @@ function contentPage(data: readonly unknown[], totalResults = data.length): unkn
   return ok({ data, pagination: { page: 1, pageSize: 500, totalPageCount: 1, totalResults } })
 }
 
-/** One saved chart as `GET /saved/{uuid}` returns it. */
+/** One saved chart as `GET /saved/{uuid}` returns it, recorded from the deployment. */
 function wireSaved(patch: Record<string, unknown> = {}): Record<string, unknown> {
   return {
-    uuid: CHART, projectUuid: PROJECT, name: '销售总览', description: '按区域', tableName: 'orders',
-    spaceName: '销售分析', updatedAt: '2026-09-10T08:00:00.000Z',
-    chartConfig: { type: 'cartesian', config: { layout: { flipAxes: false }, eChartsConfig: { series: [{ type: 'bar' }] } } },
-    metricQuery: { exploreName: 'orders', dimensions: ['orders_region'], metrics: ['orders_total'], filters: {}, sorts: [], limit: 500, tableCalculations: [] },
+    uuid: CHART, projectUuid: PROJECT, organizationUuid: 'o', name: '销售总览', description: '按区域',
+    tableName: 'orders', modelName: 'orders', slug: '销售总览 1751964553922', spaceUuid: 's', spaceName: '销售分析',
+    updatedAt: '2026-09-10T08:00:00.000Z', updatedByUser: { userUuid: 'u', firstName: 'wks', lastName: 'thing3dv.com' },
+    isPrivate: true, access: [], pinnedListUuid: null, pinnedListOrder: null, dashboardUuid: null, dashboardName: null,
+    colorPalette: [], tableConfig: { columnOrder: ['orders_region', 'orders_total'] },
+    chartConfig: {
+      type: 'cartesian',
+      config: {
+        layout: { xField: 'orders_region', yField: ['orders_total'], flipAxes: false, isBubble: false, isSolidBar: false, isWaterfall: false },
+        eChartsConfig: { series: [{ type: 'bar', encode: { xRef: { field: 'orders_region' }, yRef: { field: 'orders_total' } }, yAxisIndex: 0 }] },
+      },
+    },
+    metricQuery: {
+      exploreName: 'orders', dimensions: ['orders_region'], metrics: ['orders_total'], filters: {},
+      sorts: [{ fieldId: 'orders_total', descending: true }], limit: 500, tableCalculations: [],
+      additionalMetrics: [], customDimensions: [], timezone: 'Asia/Shanghai',
+    },
     ...patch,
   }
 }
@@ -162,9 +185,20 @@ function wireStarted(patch: Record<string, unknown> = {}): unknown {
   })
 }
 
-/** One results page, ready or not. */
+/**
+ * One results page, ready or not, recorded from the deployment: a ready page
+ * carries its rows, typed columns, and paging counts, and no field map.
+ */
 function wirePage(status: string, rows: readonly unknown[] = [], patch: Record<string, unknown> = {}): unknown {
-  return ok({ status, queryUuid: QUERY, rows, totalResults: rows.length, ...patch })
+  if (status !== 'ready') return ok({ status, queryUuid: QUERY, ...patch })
+  return ok({
+    status, queryUuid: QUERY, rows, totalResults: rows.length, page: 1, pageSize: rows.length, totalPageCount: 1, nextPage: undefined,
+    columns: {
+      orders_region: { type: 'string', reference: 'orders_region' },
+      orders_total: { type: 'number', reference: 'orders_total' },
+    },
+    initialQueryExecutionMs: 42, resultsPageExecutionMs: 3, pivotDetails: null, ...patch,
+  })
 }
 
 /** One row as a ready page carries it. */
@@ -201,7 +235,7 @@ describe('listing projects', () => {
   it('reads the fields the catalog needs and attaches the token under the ApiKey scheme', async () => {
     const { ctx, calls } = await mount([ok([wireProject()])])
     const projects = await ctx.biSource.listProjects()
-    expect(projects).toEqual([{ upstreamId: PROJECT, name: 'Demo YH', projectType: 'DEFAULT', warehouseType: 'postgres' }])
+    expect(projects).toEqual([{ upstreamId: PROJECT, name: 'Demo YH', description: '演示项目', projectType: 'DEFAULT', warehouseType: 'postgres' }])
     expect(calls[0]?.url).toBe(`http://127.0.0.1:8100${PROJECTS_PATH}`)
     expect(calls[0]?.method).toBe('GET')
     expect(calls[0]?.headers[AUTHORIZATION_HEADER]).toBe(`${API_KEY_SCHEME} ${KEY}`)
@@ -209,8 +243,13 @@ describe('listing projects', () => {
   })
 
   it('fills in what a source omits rather than refusing the row', async () => {
-    const { ctx } = await mount([ok([wireProject({ type: undefined, warehouseType: 7 })])])
-    expect((await ctx.biSource.listProjects())[0]).toMatchObject({ projectType: '', warehouseType: '' })
+    const { ctx } = await mount([ok([wireProject({ type: undefined, description: null, warehouseConnection: 7 })])])
+    expect((await ctx.biSource.listProjects())[0]).toMatchObject({ projectType: '', description: '', warehouseType: '' })
+  })
+
+  it('reads the flat warehouse word the project summary carries when no connection is answered', async () => {
+    const { ctx } = await mount([ok([wireProject({ warehouseConnection: undefined, warehouseType: 'bigquery' })])])
+    expect((await ctx.biSource.listProjects())[0]?.warehouseType).toBe('bigquery')
   })
 
   it.each([
@@ -245,6 +284,7 @@ describe('listing one project’s charts', () => {
   it.each([
     ['the source’s own misspelling', 'watefall', 'waterfall'],
     ['a kind this build knows', 'big_number', 'big_number'],
+    ['the deployment’s own safety cross', 'safety_cross', 'safety_cross'],
     ['a kind this build does not know', 'hologram', 'other'],
     ['no kind at all', undefined, 'other'],
   ])('reads %s as a kind of its own vocabulary', async (_label, chartKind, expected) => {

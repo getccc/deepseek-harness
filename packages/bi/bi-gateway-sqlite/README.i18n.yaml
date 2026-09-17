@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/bi/bi-gateway-sqlite/README.md
-README.md: 38b00a71524a3add2ade2cd695788628fed2ef75
-README.zh.md: f698d2331f2a17a3b42bb8390006d88c3d4b981b
+README.md: 4f709d1c24bc6c80a07d841dbe7cd0b32f895afb
+README.zh.md: fd08416f40c632bc9dc7a767e7ce0b6db564c87c

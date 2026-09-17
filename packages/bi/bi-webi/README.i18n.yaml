@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/bi/bi-webi/README.md
-README.md: 8619ba542bd3a2838eb81a34045d4255ae6d34cd
-README.zh.md: 8535a7cb9c74a21f1a6750a9763c68cb92f0c31f
+README.md: 1696113f245f61909f5babdf534fe00101c1ff91
+README.zh.md: 42876830eaa1a90f49aa27ca2dd6d78e27622185

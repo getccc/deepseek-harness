@@ -318,15 +318,19 @@ export default class SqliteBiGateway extends BiGateway {
       for (const { ref, project } of named) {
         this.db.prepare(
           `INSERT INTO bi_project (
-             org_id, project_ref, source_code, upstream_id, display_name, project_type, warehouse_type,
+             org_id, project_ref, source_code, upstream_id, display_name, description, project_type, warehouse_type,
              admin_enabled, last_discovered_at
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
            ON CONFLICT (org_id, project_ref) DO UPDATE SET
              display_name = excluded.display_name,
+             description = excluded.description,
              project_type = excluded.project_type,
              warehouse_type = excluded.warehouse_type,
              last_discovered_at = excluded.last_discovered_at`,
-        ).run(orgId, ref, sourceCode, project.upstreamId, project.name, project.projectType, project.warehouseType, now)
+        ).run(
+          orgId, ref, sourceCode, project.upstreamId, project.name, project.description,
+          project.projectType, project.warehouseType, now,
+        )
       }
       for (const ref of this.absent(orgId, sourceCode, new Set(named.map(item => item.ref)))) {
         this.db.prepare('DELETE FROM bi_project WHERE org_id = ? AND project_ref = ?').run(orgId, ref)
@@ -519,6 +523,7 @@ function toEntry(row: ProjectRow, resource: ManagedResource): BiCatalogEntry {
     ref: BiProjectRef(row.project_ref),
     resourceId: resource.id,
     displayName: row.display_name,
+    description: row.description,
     projectType: row.project_type,
     warehouseType: row.warehouse_type,
     adminEnabled,

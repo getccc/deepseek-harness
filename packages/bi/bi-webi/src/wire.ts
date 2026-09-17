@@ -77,12 +77,21 @@ export const AUTHORIZATION_HEADER = 'Authorization'
 /** The scheme that header carries a personal access token under. */
 export const API_KEY_SCHEME = 'ApiKey'
 
-/** One project as `GET /org/projects` returns it. */
+/**
+ * One project as `GET /org/projects` returns it.
+ *
+ * The deployment answers each project with its `warehouseConnection`, a
+ * record whose `type` names the warehouse and whose other fields name its
+ * host, user, and database; only `type` is read. `warehouseType` is the
+ * flat form the organization's project summary uses.
+ */
 export interface WireProject {
   readonly projectUuid: string
   readonly name: string
   readonly type?: unknown
+  readonly description?: unknown
   readonly warehouseType?: unknown
+  readonly warehouseConnection?: unknown
 }
 
 /** One chart as the content listing returns it. */

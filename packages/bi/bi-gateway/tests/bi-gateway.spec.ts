@@ -27,7 +27,7 @@ class StubGateway extends BiGateway {
         lastAttemptAt: 1, lastSuccessAt: 1, lastFailure: undefined,
       },
       entries: [{
-        ref: REF, resourceId: 'r-1' as ResourceId, displayName: 'Demo YH', projectType: 'DEFAULT',
+        ref: REF, resourceId: 'r-1' as ResourceId, displayName: 'Demo YH', description: '', projectType: 'DEFAULT',
         warehouseType: 'postgres', adminEnabled: this.enabled, effectiveEnabled: this.enabled, lastDiscoveredAt: 1,
       }],
     }

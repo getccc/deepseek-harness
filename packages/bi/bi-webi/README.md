@@ -114,7 +114,7 @@ No request prefix changes here. Rows become model-visible only after a gateway a
 
 These limits define when the provider is incomplete on its own. They are current package constraints.
 
-- **Fixtures are written from the deployed server's source, not recorded from it** — the contract tests carry envelopes and rows shaped by webi's own type declarations at the deployed version. A recording pass against the live deployment with its token is still owed, and a webi upgrade needs a named owner who re-reads the routes.
+- **Fixtures are a recording, not a contract the source promises** — the unit fixtures carry the envelopes and rows the deployment answered when they were recorded, and the real e2e (`tests/webi.e2e.ts`, gated on `WEBI_BASE_URL` and `WEBI_API_KEY`) replays the four routes against it. A webi upgrade needs a named owner who runs that e2e and re-reads the routes.
 - **A run reads one page** — rows past `maxRows` are reported as a count, never read; nothing here carries an offset.
 - **The saved chart's own limit still runs** — the warehouse executes the chart as saved, however many rows that is, and this provider reads a bounded page of the result. A chart saved without a limit costs the warehouse what it costs.
 - **No dashboards, parameters, or ad-hoc queries** — the run route accepts a chart id alone; dashboard-scoped runs, parameter values, and metric queries of the caller's own are separate authorization decisions this delivery does not make.

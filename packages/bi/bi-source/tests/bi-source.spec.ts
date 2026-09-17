@@ -19,7 +19,7 @@ class StubSource extends BiSource {
   override readonly sourceCode = 'prod'
 
   listProjects(): Promise<readonly UpstreamProject[]> {
-    return Promise.resolve([{ upstreamId: PROJECT, name: 'Demo YH', projectType: 'DEFAULT', warehouseType: 'postgres' }])
+    return Promise.resolve([{ upstreamId: PROJECT, name: 'Demo YH', description: '', projectType: 'DEFAULT', warehouseType: 'postgres' }])
   }
 
   listCharts(request: UpstreamChartsRequest): Promise<UpstreamChartListing> {

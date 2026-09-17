@@ -43,7 +43,7 @@ Mount it in a `team-control-plane` composition after access control, audit, and 
 
 ### Synchronization
 
-One successful full listing is applied in a single transaction, then reconciled against access control. A new upstream id creates a row and registers an enabled governed resource. A known id updates the display name and the project's kind and warehouse without changing the reference, the resource id, or any grant. An id missing from a successful listing is retired: its governed resource is deleted first, taking every grant that named it, and then the row. A manual disable is never overridden by a sync.
+One successful full listing is applied in a single transaction, then reconciled against access control. A new upstream id creates a row and registers an enabled governed resource. A known id updates the display name, the description, and the project's kind and warehouse without changing the reference, the resource id, or any grant. An id missing from a successful listing is retired: its governed resource is deleted first, taking every grant that named it, and then the row. A manual disable is never overridden by a sync.
 
 A source that does not answer leaves the last successful snapshot in place and records the failure. One outage must not disable every project an organization governs. Concurrent callers join the reconciliation already in flight rather than racing two over the same rows.
 
