@@ -304,6 +304,7 @@
     { "path": "./packages/compaction/compaction-basic" },
     { "path": "./packages/compaction/command-compact" },
     { "path": "./packages/compaction/compaction-tool-result-pruner" },
+    { "path": "./packages/bi/bi" },
     { "path": "./packages/knowledge/knowledge" },
     { "path": "./packages/knowledge/knowledge-source" },
     { "path": "./packages/knowledge/knowledge-weknora" },

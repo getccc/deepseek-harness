@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The harness is assembled from npm packages under `packages/`, grouped by capability family: sessions and the agent loop, model-facing tools, shell and filesystem execution, web access, subagents, and the rest. Use this page as the top-level map: find the owning group, then open its README for the package list. Every package is scoped `@deepseek-ai/dsh-*` and lives in exactly one group; each group README is the authoritative package map for its family.
+The harness is assembled from npm packages under `packages/`, grouped by capability family: sessions and the agent loop, model-facing tools, shell and filesystem execution, web access, subagents, and the rest. Find the owning group here, then open its README, the authoritative package map for its family. Every package is scoped `@deepseek-ai/dsh-*`.
 
 ## Table of Contents
 
@@ -58,6 +58,7 @@ Every package lives in exactly one group; new packages join existing groups, and
 | [`workflow/`](workflow/README.md) | Workflow seam, PTC process engine, and model-facing `workflow`/`ralph` tools |
 | [`webhook/`](webhook/README.md) | Verified external events, trusted rules, and fire-and-forget Workspace Sessions |
 | [`knowledge/`](knowledge/README.md) | Private knowledge family: authorized directory, passage search, Session scope |
+| [`bi/`](bi/README.md) | BI analysis family: project directory, saved-chart listing and run, Session scope |
 | [`office/`](office/README.md) | Office-deliverable choice family: the document kind a conversation should produce, its prompt section and picker |
 | [`web/`](web/README.md) | Web capability family: seam, search/fetch providers, model-facing web tools |
 | [`attachment/`](attachment/README.md) | Durable attachment identity, validation, local content-addressed storage |

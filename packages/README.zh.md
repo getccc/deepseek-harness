@@ -9,7 +9,7 @@ kind: "package-group"
 
 ## 概述
 
-harness 由 `packages/` 下的 npm 包组装而成，按能力系列分组：会话与 agent loop（智能体循环）、面向模型的工具、shell 与文件系统执行、Web 访问、subagent 等等。把本页当作顶层地图使用：先找到拥有某能力的组，再打开其 README 查看包列表。每个包都以 `@deepseek-ai/dsh-*` 为作用域、只属于一个组；每个组的 README 都是该能力系列的权威包映射。
+harness 由 `packages/` 下的 npm 包组装而成，按能力系列分组：会话与 agent loop（智能体循环）、面向模型的工具、shell 与文件系统执行、Web 访问、subagent 等等。在这里找到拥有某能力的组，再打开其 README，那是该能力系列的权威包映射。每个包都以 `@deepseek-ai/dsh-*` 为作用域。
 
 ## 目录
 
@@ -58,6 +58,7 @@ harness 由 `packages/` 下的 npm 包组装而成，按能力系列分组：会
 | [`workflow/`](workflow/README.zh.md) | 工作流 seam、PTC 进程引擎、面向模型的 `workflow`／`ralph` 工具 |
 | [`webhook/`](webhook/README.zh.md) | 已验证外部事件、受信规则与即发即弃 Workspace 会话 |
 | [`knowledge/`](knowledge/README.zh.md) | 私有知识系列：已授权目录、段落检索、会话范围 |
+| [`bi/`](bi/README.zh.md) | BI 分析系列：项目目录、已保存图表的列表与执行、会话范围 |
 | [`office/`](office/README.zh.md) | 办公交付物选择系列：一次对话应生成的文档类型，及其提示词分节与选择器 |
 | [`web/`](web/README.zh.md) | Web 能力系列：seam、搜索／获取提供方、面向模型的 Web 工具 |
 | [`attachment/`](attachment/README.zh.md) | 持久附件标识、校验、本地内容寻址存储 |

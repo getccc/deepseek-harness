@@ -726,6 +726,15 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'Producers (background bash, PTY sends, and subagent delegations) register running work; tool-jobs is the model-facing controller that reads, lists, and kills it; jobs-local is the process-local registry.',
   },
   {
+    key: 'bi',
+    pkg: 'bi',
+    title: 'BI analysis seam',
+    mode: 'seam',
+    implementations: [],
+    consumers: [],
+    note: 'The project directory, saved-chart listing, and chart-run operations a governed deployment authorizes; its Team provider and model-facing tools arrive with the Control Plane BI capability.',
+  },
+  {
     key: 'knowledge',
     pkg: 'knowledge',
     title: 'Private knowledge seam',

@@ -3753,6 +3753,137 @@
       }
     },
     {
+      "key": "event:bi/scope",
+      "kind": "event",
+      "event": "bi/scope",
+      "surface": false,
+      "digest": "c562d5e0c836a6fc700a936ade4bfcb7774967aa5b8aebcf26e903db22dc0253",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 9,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 10,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 10,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 11,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              2,
+              7
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "mode",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "project",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "version",
+                "type": 6,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "selected"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "displayName",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "ref",
+                "type": 5,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "literal",
+            "value": 1
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "mode",
+                "type": 8,
+                "optional": false
+              },
+              {
+                "name": "version",
+                "type": 6,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "off"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "literal",
+            "value": "bi/scope"
+          }
+        ]
+      }
+    },
+    {
       "key": "event:command/done",
       "kind": "event",
       "event": "command/done",
@@ -21730,6 +21861,69 @@
       "sources": []
     },
     {
+      "digest": "2492716f63fc1fdfcb4c54825fbc44cec2a9c09d044e112e9c3d67d8f66a8479",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "mode",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "project",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "version",
+                "type": 4,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "selected"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "displayName",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "ref",
+                "type": 3,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "literal",
+            "value": 1
+          }
+        ]
+      },
+      "names": [
+        "event:bi/scope.data[1]"
+      ],
+      "sources": [
+        "packages/bi/bi/src/types.ts:181"
+      ]
+    },
+    {
       "digest": "2517ba143a271508d3ca35126d5aca8f7f1facf5aaddce4adf011832042fa2b9",
       "schema": {
         "root": 0,
@@ -32773,6 +32967,7 @@
       "names": [
         "packages/api/session-controller/src/types.ts#SessionRequestId",
         "packages/attachment/attachment/src/brand.ts#AttachmentId",
+        "packages/bi/bi/src/brand.ts#BiProjectRef",
         "packages/compaction/compaction/src/brand.ts#CompactionId",
         "packages/core/session/src/types.ts#SessionId",
         "packages/experimental/agent-team/src/types.ts#TeamId",
@@ -32800,6 +32995,7 @@
       "sources": [
         "packages/api/session-controller/src/types.ts:412",
         "packages/attachment/attachment/src/brand.ts:6",
+        "packages/bi/bi/src/brand.ts:17",
         "packages/compaction/compaction/src/brand.ts:4",
         "packages/core/session/src/types.ts:19",
         "packages/experimental/agent-team/src/types.ts:20",
@@ -35972,9 +36168,9 @@
         ]
       },
       "names": [
-        "SessionEventEnvelope[41].sourceEventSeqs",
-        "SessionEventEnvelope[54].sourceEventSeqs",
-        "SessionEventEnvelope[57].sourceEventSeqs",
+        "SessionEventEnvelope[42].sourceEventSeqs",
+        "SessionEventEnvelope[55].sourceEventSeqs",
+        "SessionEventEnvelope[58].sourceEventSeqs",
         "event:assistant/attempt.data.stream[0][0].dt",
         "event:assistant/attempt.data.stream[0][1].dt",
         "event:assistant/attempt.data.stream[0][2].dt",
@@ -45632,9 +45828,9 @@
         ]
       },
       "names": [
-        "SessionEventEnvelope[41]",
-        "SessionEventEnvelope[54]",
-        "SessionEventEnvelope[57]"
+        "SessionEventEnvelope[42]",
+        "SessionEventEnvelope[55]",
+        "SessionEventEnvelope[58]"
       ],
       "sources": []
     },
@@ -50095,9 +50291,11 @@
         ]
       },
       "names": [
+        "event:bi/scope.data[0]",
         "event:knowledge/scope.data[0]"
       ],
       "sources": [
+        "packages/bi/bi/src/types.ts:180",
         "packages/knowledge/knowledge/src/types.ts:206"
       ]
     },
@@ -53849,6 +54047,20 @@
       ]
     },
     {
+      "digest": "c375f4fa7eb26c6431e415b54aed58741accb2f5d47738b52c82d6bb15129c44",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "literal",
+            "value": "bi/scope"
+          }
+        ]
+      },
+      "names": [],
+      "sources": []
+    },
+    {
       "digest": "c43b119ce579b3e9983a0d3adc4ba402ebb9ba773d89738a2dab01ecf5813943",
       "schema": {
         "root": 0,
@@ -54003,6 +54215,137 @@
       "sources": [
         "packages/core/session/src/types.ts:232"
       ]
+    },
+    {
+      "digest": "c562d5e0c836a6fc700a936ade4bfcb7774967aa5b8aebcf26e903db22dc0253",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "data",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ignorable",
+                "type": 9,
+                "optional": true
+              },
+              {
+                "name": "seq",
+                "type": 10,
+                "optional": false
+              },
+              {
+                "name": "time",
+                "type": 10,
+                "optional": false
+              },
+              {
+                "name": "type",
+                "type": 11,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "union",
+            "types": [
+              2,
+              7
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "mode",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "project",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "version",
+                "type": 6,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "selected"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "displayName",
+                "type": 5,
+                "optional": false
+              },
+              {
+                "name": "ref",
+                "type": 5,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "literal",
+            "value": 1
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "mode",
+                "type": 8,
+                "optional": false
+              },
+              {
+                "name": "version",
+                "type": 6,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "off"
+          },
+          {
+            "kind": "literal",
+            "value": true
+          },
+          {
+            "kind": "primitive",
+            "type": "number"
+          },
+          {
+            "kind": "literal",
+            "value": "bi/scope"
+          }
+        ]
+      },
+      "names": [
+        "event:bi/scope"
+      ],
+      "sources": []
     },
     {
       "digest": "c589e938cc0e4989df8b82abef6339de621f0dc4fe62c230d145b94996af7f92",
@@ -59921,7 +60264,7 @@
         "SessionEventEnvelope[39]",
         "SessionEventEnvelope[3]",
         "SessionEventEnvelope[40]",
-        "SessionEventEnvelope[42]",
+        "SessionEventEnvelope[41]",
         "SessionEventEnvelope[43]",
         "SessionEventEnvelope[44]",
         "SessionEventEnvelope[45]",
@@ -59934,11 +60277,12 @@
         "SessionEventEnvelope[51]",
         "SessionEventEnvelope[52]",
         "SessionEventEnvelope[53]",
-        "SessionEventEnvelope[55]",
+        "SessionEventEnvelope[54]",
         "SessionEventEnvelope[56]",
-        "SessionEventEnvelope[58]",
+        "SessionEventEnvelope[57]",
         "SessionEventEnvelope[59]",
         "SessionEventEnvelope[5]",
+        "SessionEventEnvelope[60]",
         "SessionEventEnvelope[7]",
         "SessionEventEnvelope[8]",
         "SessionEventEnvelope[9]"
@@ -60683,6 +61027,40 @@
         "event:hook/result"
       ],
       "sources": []
+    },
+    {
+      "digest": "e7b9271f26f0cae70218b256b456f0bb4c37a1908499fc2d970c7ce08c6fe3c1",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "displayName",
+                "type": 1,
+                "optional": false
+              },
+              {
+                "name": "ref",
+                "type": 1,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          }
+        ]
+      },
+      "names": [
+        "packages/bi/bi/src/types.ts#BiScopeProject"
+      ],
+      "sources": [
+        "packages/bi/bi/src/types.ts:166"
+      ]
     },
     {
       "digest": "e7ce49f12953583fad217bf80fb9f1463acff2c3e9471a823782661675fb124c",
@@ -62121,6 +62499,96 @@
       },
       "names": [],
       "sources": []
+    },
+    {
+      "digest": "fae59e2611bbabb5e5790b68d3375b29f5afd748f72ce5d7532f27216f4e170f",
+      "schema": {
+        "root": 0,
+        "nodes": [
+          {
+            "kind": "union",
+            "types": [
+              1,
+              6
+            ]
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "mode",
+                "type": 2,
+                "optional": false
+              },
+              {
+                "name": "project",
+                "type": 3,
+                "optional": false
+              },
+              {
+                "name": "version",
+                "type": 5,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "selected"
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "displayName",
+                "type": 4,
+                "optional": false
+              },
+              {
+                "name": "ref",
+                "type": 4,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "primitive",
+            "type": "string"
+          },
+          {
+            "kind": "literal",
+            "value": 1
+          },
+          {
+            "kind": "object",
+            "properties": [
+              {
+                "name": "mode",
+                "type": 7,
+                "optional": false
+              },
+              {
+                "name": "version",
+                "type": 5,
+                "optional": false
+              }
+            ],
+            "indices": []
+          },
+          {
+            "kind": "literal",
+            "value": "off"
+          }
+        ]
+      },
+      "names": [
+        "packages/bi/bi/src/types.ts#BiScope"
+      ],
+      "sources": [
+        "packages/bi/bi/src/types.ts:179"
+      ]
     },
     {
       "digest": "fb5e0517050d2c6d40e5b8145db1f7c5ca7044d5d50fada6ff80e0b22c6ca973",
