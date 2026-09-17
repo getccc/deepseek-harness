@@ -1,0 +1,27 @@
+/* Composer voice-input button: a quiet 28px circle in the trailing group,
+   between the model selector and the send circle. */
+
+.trigger {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 999px;
+  corner-shape: round;
+  outline: none;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  /* No pointer: the button states its own unavailability rather than inviting
+     a click that would do nothing. */
+  cursor: default;
+}
+
+.trigger:focus-visible {
+  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
+}
+
+.trigger:disabled {
+  opacity: 0.4;
+}

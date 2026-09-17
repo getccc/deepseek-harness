@@ -1104,3 +1104,56 @@ export const IconShieldOutline16 = ({ size = 16, className }: IconProps) => (
     <path d={SHIELD_OUTLINE_PATH} stroke="currentColor" strokeWidth={SHIELD_OUTLINE_STROKE} strokeLinejoin="round" />
   </svg>
 )
+
+/**
+ * Voice-input microphone on the 16 grid (hand-authored): a stroked capsule
+ * over the pickup arc and its stand, so the glyph reads at the composer's
+ * 16px action size beside the send button.
+ */
+export const IconMicrophoneOutline16 = ({ size = 16, className }: IconProps) => (
+  <svg width={size} height={size} className={className} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="5.9" y="1.6" width="4.2" height="8" rx="2.1" stroke="currentColor" strokeWidth="1.3" />
+    <path d="M3.6 7.6V8.4a4.4 4.4 0 0 0 8.8 0V7.6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    <path d="M8 12.8v1.6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+  </svg>
+)
+
+/**
+ * Recording waveform on the 14 grid (hand-authored): five capped bars rising
+ * to the middle, at the size the composer's tool-row chips draw their glyphs.
+ */
+export const IconWaveformOutline14 = ({ size = 14, className }: IconProps) => (
+  <svg width={size} height={size} className={className} viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M1.75 5.95v2.1M4.375 3.85v6.3M7 1.75v10.5M9.625 3.85v6.3M12.25 5.95v2.1"
+      stroke="currentColor"
+      strokeWidth="1.3"
+      strokeLinecap="round"
+    />
+  </svg>
+)
+
+/**
+ * Rising trend line with its arrow corner on the 14 grid (hand-authored): the
+ * BI-analysis chip's mark, a stroked line rather than {@link IconChartOutline16}'s
+ * filled bars, so the two read apart where they sit side by side in the
+ * composer tool row.
+ */
+export const IconTrendOutline14 = ({ size = 14, className }: IconProps) => (
+  <svg width={size} height={size} className={className} viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M1.75 9.8 5.25 6.3 7.7 8.75 12.25 4.2"
+      stroke="currentColor"
+      strokeWidth="1.3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <path
+      d="M9.15 4.2h3.1v3.1"
+      stroke="currentColor"
+      strokeWidth="1.3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+)

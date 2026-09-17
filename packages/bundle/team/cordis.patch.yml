@@ -194,6 +194,11 @@
     - id: client-ui-office
       name: '@deepseek-ai/dsh-client-ui-office'
 
+    # The BI-analysis chip, to the right of the office chip in the work
+    # composer. Placed and inert until the analysis capability lands.
+    - id: client-ui-bi
+      name: '@deepseek-ai/dsh-client-ui-bi'
+
     # Word, Excel, and PowerPoint previews for the right Sidebar's document
     # tab. Registered as external renderers of the shipped preview registry,
     # so removing this row hands those suffixes back to the builtin fallback

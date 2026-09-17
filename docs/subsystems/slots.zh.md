@@ -154,7 +154,8 @@ root
 │     │  ├─ conversation.input.attachments
 │     │  ├─ conversation.input.permission
 │     │  ├─ conversation.input.plan
-│     │  └─ conversation.input.model
+│     │  ├─ conversation.input.model
+│     │  └─ conversation.input.voice
 │     ├─ conversation.input.overlay
 │     ├─ conversation.input.dock
 │     ├─ conversation.composer.dock

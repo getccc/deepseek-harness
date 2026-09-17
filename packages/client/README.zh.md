@@ -69,6 +69,8 @@ kind: "package-group"
 | [`ui-permission-presets/`](ui-permission-presets/README.zh.md) | 配置默认权限并切换当前会话的访问模式 | — |
 | [`ui-plan/`](ui-plan/README.zh.md) | 展示生效中的 plan mode 状态及其退出控件 | — |
 | [`ui-web-access/`](ui-web-access/README.zh.md) | 为 preset 提供该开关的对话开启或关闭网页搜索与抓取 | — |
+| [`ui-bi/`](ui-bi/README.zh.md) | 占据 composer 的 BI 分析 chip 席位，在能力落地前保持不可用 | — |
+| [`ui-voice/`](ui-voice/README.zh.md) | 占据 composer 的录音转写 chip 与语音输入按钮席位，在能力落地前保持不可用 | — |
 | [`ui-settings-plugins/`](ui-settings-plugins/README.zh.md) | 负责「插件」设置分区、其标签页扩展点与可配置的宿主平面插件卡片 | — |
 | [`ui-user-questions/`](ui-user-questions/README.zh.md) | 展示 agent 请求的交互式问题 | — |
 | [`ui-agent-preset/`](ui-agent-preset/README.zh.md) | 选择会话的 agent 预设并编写预设组合 | — |

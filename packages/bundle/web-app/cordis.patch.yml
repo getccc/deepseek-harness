@@ -353,6 +353,12 @@
     - id: ui-web-access
       name: '@deepseek-ai/dsh-client-ui-web-access'
 
+    # Composer voice controls: the transcribe chip beside the web switch and
+    # the microphone beside the send action. Both are placed and inert until
+    # the recording capability lands.
+    - id: ui-voice
+      name: '@deepseek-ai/dsh-client-ui-voice'
+
     - id: ui-user-questions
       name: '@deepseek-ai/dsh-client-ui-user-questions'
 
