@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-17-the-runtime-closure-check-follows-every-workspace-member.md
+2026-09-17-the-runtime-closure-check-follows-every-workspace-member.md: e8ad4d4433aef114e2174701bdd0af59c3b71070
+2026-09-17-the-runtime-closure-check-follows-every-workspace-member.zh.md: d3ff69ab8de75657bd94a961144d974a71ea5c8d

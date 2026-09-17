@@ -6,10 +6,12 @@ import { verifyRuntimeClosure } from './verify-runtime-closure.ts'
 
 const roots: string[] = []
 
+const workspaceMembers = 'packages:\n  - packages/*/*\n  - apps/*\n'
+
 function fixture(files: Record<string, string | Record<string, unknown>>): string {
   const root = mkdtempSync(join(tmpdir(), 'dsh-runtime-closure-'))
   roots.push(root)
-  for (const [relative, value] of Object.entries(files)) {
+  for (const [relative, value] of Object.entries({ 'pnpm-workspace.yaml': workspaceMembers, ...files })) {
     const path = join(root, relative)
     mkdirSync(dirname(path), { recursive: true })
     writeFileSync(path, typeof value === 'string' ? value : `${JSON.stringify(value, null, 2)}\n`)
@@ -25,9 +27,9 @@ const platforms = {
   'win-x64': { tag: 'win_amd64', executable: 'runtime-win-x64.exe' },
 }
 
-function workspace(root: string, name: string, manifest: Record<string, unknown>): void {
+function workspace(root: string, name: string, manifest: Record<string, unknown>, area = 'packages/core'): void {
   const packageName = name.replace('@scope/', '')
-  const path = join(root, 'packages/core', packageName, 'package.json')
+  const path = join(root, area, packageName, 'package.json')
   mkdirSync(dirname(path), { recursive: true })
   writeFileSync(path, `${JSON.stringify({ name, ...manifest }, null, 2)}\n`)
 }
@@ -167,5 +169,32 @@ describe('verifyRuntimeClosure', () => {
 
     expect(result.workspacePackageCount).toBe(1)
     expect(result.failures).toEqual(['runtime -> @scope/root -> @scope/required'])
+  })
+
+  it('checks peers reached through every declared workspace member area', async () => {
+    const root = fixture({
+      'python/sdk-runtime/package.json': { name: 'runtime', dependencies: { '@scope/cli': 'workspace:^' } },
+      'python/sdk-runtime/platforms.json': platforms,
+      'packages/preset/agent-presets/presets/minimal/agent.cordis.yml': '[]\n',
+    })
+    workspace(root, '@scope/cli', { dependencies: { '@scope/team': 'workspace:^' } }, 'apps')
+    workspace(root, '@scope/team', { peerDependencies: { '@scope/domain': 'workspace:^' } })
+    workspace(root, '@scope/domain', {})
+
+    const result = await verifyRuntimeClosure(root)
+
+    expect(result.workspacePackageCount).toBe(2)
+    expect(result.failures).toEqual(['runtime -> @scope/cli -> @scope/team -> @scope/domain'])
+  })
+
+  it('fails when the workspace file declares no member areas', async () => {
+    const root = fixture({
+      'pnpm-workspace.yaml': 'packages: []\n',
+      'python/sdk-runtime/package.json': { name: 'runtime', dependencies: {} },
+      'python/sdk-runtime/platforms.json': platforms,
+      'packages/preset/agent-presets/presets/minimal/agent.cordis.yml': '[]\n',
+    })
+
+    await expect(verifyRuntimeClosure(root)).rejects.toThrow('pnpm-workspace.yaml declares no workspace members')
   })
 })

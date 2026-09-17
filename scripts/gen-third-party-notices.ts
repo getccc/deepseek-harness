@@ -14,6 +14,7 @@ import * as yaml from 'js-yaml'
 import { parse as parseToml, type TomlTableWithoutBigInt, type TomlValueWithoutBigInt } from 'smol-toml'
 import parseSpdx from 'spdx-expression-parse'
 import { browserBundledExternals } from './browser-bundled-externals.ts'
+import { manifestPatterns, workspaceMembers } from './workspace-members.ts'
 
 const root = resolve(import.meta.dirname, '..')
 const OUT = 'THIRD_PARTY_NOTICES.md'
@@ -120,27 +121,6 @@ function readManifest(rel: string): Manifest {
 }
 
 /**
- * Manifest globs, derived from the workspace declarations rather than listed
- * here, so a new member area (`tools/*`) is read the day it is declared.
- * @returns one glob per manifest-bearing location, repository-relative.
- */
-export function manifestPatterns(rootMembers: readonly string[]): string[] {
-  return [
-    'package.json',
-    ...rootMembers.map(member => `${member}/package.json`),
-  ]
-}
-
-/** The `packages:` member globs declared by one pnpm workspace file. */
-function workspaceMembers(rel: string): string[] {
-  const declared = (yaml.load(readFileSync(resolve(root, rel), 'utf8')) as { packages?: unknown }).packages
-  if (!Array.isArray(declared) || declared.length === 0) {
-    throw new Error(`gen-third-party-notices: ${rel} declares no workspace members; the manifest set cannot be derived.`)
-  }
-  return declared.map(member => String(member))
-}
-
-/**
  * Every workspace manifest, keyed by repository-relative path, plus the set of
  * workspace package names. Paths are normalized to `/` at ingestion: Node's
  * `fs.globSync` returns OS-native separators, and the area matching in
@@ -148,7 +128,7 @@ function workspaceMembers(rel: string): string[] {
  * would silently push dev-area manifests into the runtime tier.
  */
 function loadWorkspaceManifests(): { manifests: Map<string, Manifest>; names: Set<string> } {
-  const patterns = manifestPatterns(workspaceMembers('pnpm-workspace.yaml'))
+  const patterns = manifestPatterns(workspaceMembers(root))
   const manifests = new Map<string, Manifest>()
   const names = new Set<string>()
   for (const pattern of patterns) {
