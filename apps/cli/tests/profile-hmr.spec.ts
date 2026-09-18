@@ -49,13 +49,12 @@ describe('YAML-owned profile HMR', () => {
 
   it('leaves the base row untouched through the team layer', () => {
     // Team stacks base then web-app then its own layer, so it inherits the
-    // disabled row rather than restating it; an override here would enable
-    // source-module reload for a long-lived background service.
+    // configuration-only row rather than restating it; naming a module root
+    // here would enable source-module reload for a long-lived background service.
     const teamPatches = bundle('team')
     expect(teamPatches.some(patch => patch.id === 'hmr')).toBe(false)
     expect(hmr([bundle('base'), bundle('web-app'), teamPatches])).toMatchObject({
-      disabled: true,
-      config: { root: ['.'] },
+      config: { root: [] },
     })
   })
 })

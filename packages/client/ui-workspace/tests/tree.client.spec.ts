@@ -238,7 +238,7 @@ describe('deriveGroups', () => {
     const forkChild = {
       ...summary('fork-child', 5), parentId: fork.id, origin: 'subagent' as const, running: true,
     }
-    const sessions = { ...list(parent, fork, subagent, grandchild, forkChild), current: subagent.id }
+    const sessions = withMain(list(parent, fork, subagent, grandchild, forkChild), subagent.id)
     const groups = deriveGroups(
       sessions,
       [workspace('first', ['parent', 'fork', 'subagent', 'grandchild', 'fork-child'])],
@@ -400,7 +400,7 @@ describe('deriveRecent', () => {
     const gone = chat('gone', 7)
     const subagent = { ...chat('subagent', 6), parentId: sid('kept'), origin: 'subagent' as const }
     const kept = chat('kept', 5)
-    const sessions = { ...list(kept, currentBlank, staleBlank, gone, subagent), current: currentBlank.id }
+    const sessions = withMain(list(kept, currentBlank, staleBlank, gone, subagent), currentBlank.id)
     const rows = deriveRecent(sessions, archived('gone'), noAttention, 'chat')
     expect(rows.map(row => [row.id, row.blank, row.title])).toEqual([
       [currentBlank.id, true, ''], [kept.id, false, 'kept'],

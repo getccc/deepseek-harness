@@ -102,7 +102,11 @@ describe('sidebar shell snapshots', () => {
       const slot = runtime.renderSlot('sidebar', { collapsed: false, width: 300 })
       expect(slot.container).toMatchSnapshot('windows expanded')
       slot.update({ collapsed: true, width: 0 })
-      expect(slot.view.getAllByRole('button', { name: 'New session' })).toHaveLength(1)
+      // The collapsed Windows rail keeps its toggle; the two start entries ride
+      // the panel list, which the titlebar stylesheet hides at this width.
+      expect(slot.view.getAllByRole('button', { name: 'Open sidebar' })).toHaveLength(1)
+      expect(slot.view.getAllByRole('button', { name: 'New chat' })).toHaveLength(1)
+      expect(slot.view.getAllByRole('button', { name: 'New work task' })).toHaveLength(1)
       expect(slot.container).toMatchSnapshot('windows collapsed')
     } finally {
       await runtime.dispose()

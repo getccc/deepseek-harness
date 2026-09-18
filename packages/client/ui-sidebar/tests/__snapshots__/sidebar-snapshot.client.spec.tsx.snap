@@ -32,26 +32,65 @@ exports[`sidebar shell snapshots > renders Windows caption controls in expanded 
         />
       </button>
     </div>
-    <button
-      aria-label="New session"
-      class="newSession"
-      type="button"
-    >
-      <svg
-        data-content="c0ce4dcc"
-        fill="none"
-        height="16"
-        viewBox="0 0 16 16"
-        width="16"
-        xmlns="http://www.w3.org/2000/svg"
-      />
-    </button>
     <div
-      class="regionArea"
+      class="panelList"
+    >
+      <button
+        aria-label="New chat"
+        class="panelRow"
+        type="button"
+      >
+        <span
+          aria-hidden="true"
+          class="panelGlyph"
+        >
+          <svg
+            data-content="c0ce4dcc"
+            fill="none"
+            height="18"
+            viewBox="0 0 16 16"
+            width="18"
+            xmlns="http://www.w3.org/2000/svg"
+          />
+        </span>
+      </button>
+      <button
+        aria-label="New work task"
+        class="panelRow"
+        type="button"
+      >
+        <span
+          aria-hidden="true"
+          class="panelGlyph"
+        >
+          <svg
+            data-content="7d0b657c"
+            fill="none"
+            height="18"
+            viewBox="0 0 16 16"
+            width="18"
+          />
+        </span>
+      </button>
+    </div>
+    <div
+      class="regionFrame"
     >
       <div
-        data-slot="sidebar.workspaces"
-        style="display: contents;"
+        class="regionArea"
+      >
+        <div
+          data-slot="sidebar.workspaces"
+          style="display: contents;"
+        />
+        <div
+          data-slot="sidebar.recent"
+          style="display: contents;"
+        />
+      </div>
+      <span
+        aria-hidden="true"
+        class="regionFade"
       />
     </div>
     <div
@@ -91,7 +130,7 @@ exports[`sidebar shell snapshots > renders Windows caption controls in expanded 
       class="logoRow"
     >
       <button
-        aria-label="New session"
+        aria-label="New work task"
         class="brand wide"
         type="button"
       >
@@ -106,13 +145,12 @@ exports[`sidebar shell snapshots > renders Windows caption controls in expanded 
               data-slot="sidebar.brand.mark"
               style="display: contents;"
             >
-              <svg
+              <img
+                alt=""
                 aria-hidden="true"
-                data-content="965fe321"
-                fill="none"
-                height="17.6580310880829"
-                viewBox="0 0 23.16 17.04"
-                width="24"
+                height="27.75"
+                src="data:image/webp;base64#8f3efb7e"
+                width="32"
               />
             </div>
           </span>
@@ -124,18 +162,9 @@ exports[`sidebar shell snapshots > renders Windows caption controls in expanded 
               style="display: contents;"
             >
               <span
-                class="localBuildBrand"
+                class="fallbackBrandName"
               >
-                <span
-                  class="localBuildTitle"
-                >
-                  DSH Local Build
-                </span>
-                <span
-                  class="buildVersion"
-                >
-                  1.2.3-rc.4-abc1234-dirty
-                </span>
+                WeWork
               </span>
             </div>
           </span>
@@ -157,31 +186,75 @@ exports[`sidebar shell snapshots > renders Windows caption controls in expanded 
         />
       </button>
     </div>
-    <button
-      aria-label="New session"
-      class="newSession"
-      type="button"
-    >
-      <svg
-        data-content="c0ce4dcc"
-        fill="none"
-        height="14"
-        viewBox="0 0 16 16"
-        width="14"
-        xmlns="http://www.w3.org/2000/svg"
-      />
-      <span
-        class="newSessionLabel wide"
-      >
-        New Session
-      </span>
-    </button>
     <div
-      class="regionArea"
+      class="panelList"
+    >
+      <button
+        aria-label="New chat"
+        class="panelRow"
+        type="button"
+      >
+        <span
+          aria-hidden="true"
+          class="panelGlyph"
+        >
+          <svg
+            data-content="c0ce4dcc"
+            fill="none"
+            height="16"
+            viewBox="0 0 16 16"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          />
+        </span>
+        <span
+          class="panelTitle wide"
+        >
+          New chat
+        </span>
+      </button>
+      <button
+        aria-label="New work task"
+        class="panelRow"
+        type="button"
+      >
+        <span
+          aria-hidden="true"
+          class="panelGlyph"
+        >
+          <svg
+            data-content="7d0b657c"
+            fill="none"
+            height="16"
+            viewBox="0 0 16 16"
+            width="16"
+          />
+        </span>
+        <span
+          class="panelTitle wide"
+        >
+          New work task
+        </span>
+      </button>
+    </div>
+    <div
+      class="regionFrame"
     >
       <div
-        data-slot="sidebar.workspaces"
-        style="display: contents;"
+        class="regionArea"
+      >
+        <div
+          data-slot="sidebar.workspaces"
+          style="display: contents;"
+        />
+        <div
+          data-slot="sidebar.recent"
+          style="display: contents;"
+        />
+      </div>
+      <span
+        aria-hidden="true"
+        class="regionFade"
       />
     </div>
     <div

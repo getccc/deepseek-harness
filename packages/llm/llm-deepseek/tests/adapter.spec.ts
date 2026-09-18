@@ -1842,7 +1842,7 @@ describe('plugin registration and config', () => {
       { id: 'deepseek-official', name: 'DeepSeek' },
       { id: 'built-in', name: 'Built-in Models', category: 'built-in' },
     ])
-    await expect(ctx.llm.listModels('deepseek-official')).resolves.toHaveLength(4)
+    await expect(ctx.llm.listModels('deepseek-official')).resolves.toHaveLength(2)
     await expect(ctx.llm.listModels('built-in')).resolves.toEqual([{
       provider: 'built-in',
       id: 'testModel',
@@ -1895,6 +1895,9 @@ describe('plugin registration and config', () => {
   })
 
   it('keeps deepseek-v4-pro available with its V4 capabilities', async () => {
+    // The fork registers the official route from a credential, not from the
+    // bare configuration, so the catalog read needs one present.
+    vi.stubEnv('DEEPSEEK_API_KEY', 'ambient-key')
     const ctx = new Context()
     await ctx.plugin(LlmRuntime)
     await ctx.plugin(LlmDeepSeek, { protocol: 'chat-completions', baseURL: 'http://127.0.0.1:1' })
@@ -2564,6 +2567,7 @@ describe('plugin registration and config', () => {
     await ctx.plugin(LlmDeepSeek, { protocol: 'chat-completions', baseURL: 'http://127.0.0.1:1' })
     expect(ctx.llm.listProviders()).toEqual([{ id: 'deepseek-official', name: 'DeepSeek' }])
     await expect(ctx.llm.listModels('deepseek-official')).resolves.toHaveLength(2)
+    vi.stubEnv('DEEPSEEK_API_KEY', '')
     const first = await assemble(ctx, { model: 'deepseek-flash', messages: [] })
     expect(first.finish).toMatchObject({ kind: 'error', failure: { code: 'MISSING_CREDENTIAL' } })
     // The guidance leads with the managed credential store.
