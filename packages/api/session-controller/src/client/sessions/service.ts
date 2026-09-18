@@ -704,7 +704,9 @@ export class ClientSessions implements ISessions {
       const snapshot = record.session.getSnapshot()
       const address = this.manager.subagentAddress(id)
       byId[id] = {
-        ...(previous ?? { id, displayTitle: id, updatedAt: 0 }),
+        // A live Client generation with no catalog row yet: `work` until the
+        // Host row lands, because a locally created Session names a cwd.
+        ...(previous ?? { id, displayTitle: id, kind: 'work' as const, updatedAt: 0 }),
         running: snapshot.running,
         retainedBy: record.retention.retainedBy,
         blank: snapshot.blank,

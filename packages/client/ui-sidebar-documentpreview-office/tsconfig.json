@@ -7,7 +7,7 @@
     { "path": "../locale" },
     { "path": "../ui-primitives" },
     { "path": "../ui-renderer" },
-    { "path": "../ui-sidebar-documentpreview" },
+    { "path": "../ui-sidebar-documentpreview/tsconfig.client.json" },
     { "path": "../ui-sidebar-right" },
     { "path": "../ui-slots" }
   ]

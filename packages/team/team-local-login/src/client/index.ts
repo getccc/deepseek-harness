@@ -10,8 +10,8 @@ import type {} from '@deepseek-ai/dsh-client-ui-settings-general/client'
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 // Type-only: pulls the conversation.chat.assistant-identity slot declaration into this program.
 import type {} from '@deepseek-ai/dsh-client-ui-chat/client'
-// Type-only: pulls ctx.sessions into the client Context.
-import type {} from '@deepseek-ai/dsh-api-session-controller/client'
+// Type-only: pulls ctx.uiWorkspace into the client Context.
+import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
 import { ACCOUNT_PATH, LOGOUT_PATH, SIGNED_IN_PARAM } from '../paths.ts'
 import { AssistantIdentity } from './AssistantIdentity.tsx'
 import { HeroGreeting } from './HeroGreeting.tsx'
@@ -31,7 +31,7 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
 export const NS = 'team.account'
 
 /** Required browser services for the localized Settings launcher and the sign-in landing. */
-export const inject = ['slots', 'locale', 'sessions']
+export const inject = ['slots', 'locale', 'uiWorkspace']
 
 /** Validate the intentionally small identity response from the local Host. */
 function isMemberIdentity(value: unknown): value is TeamMemberIdentity {
@@ -64,7 +64,7 @@ async function loadAccount(): Promise<TeamMemberIdentity> {
 function landOnEmptyConversation(ctx: ClientContext): void {
   const url = new URL(window.location.href)
   if (!url.searchParams.has(SIGNED_IN_PARAM)) return
-  ctx.sessions.clear()
+  ctx.uiWorkspace.clearSession()
   url.searchParams.delete(SIGNED_IN_PARAM)
   window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`)
 }

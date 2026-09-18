@@ -10,7 +10,7 @@
 import { useMemo, useState } from 'react'
 import { IconPersonalizationOutline16, Menu, Tooltip } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { RecentBrowserProps } from '../contract/slots.ts'
-import { deriveRecent, type RecentFilter, type SessionNode } from '../tree.ts'
+import { deriveRecent, mainSessionId, type RecentFilter, type SessionNode } from '../tree.ts'
 import { SessionNodeItem } from './Rows.tsx'
 import { SessionRenameDialog, type SessionRenameTarget } from './SessionRenameDialog.tsx'
 import css from './RecentBrowser.module.css'
@@ -66,7 +66,7 @@ export function RecentBrowser({
   wide,
   usePanelInfo,
   useSessions,
-  useSessionPendingInteraction,
+  useSessionStatus,
   useWorkspaces,
   useStore,
   actions,
@@ -78,12 +78,12 @@ export function RecentBrowser({
 }: RecentBrowserProps) {
   const panelActive = usePanelInfo(info => info.activePanelId !== null)
   const list = useSessions(s => s)
-  const pendingInteractions = useSessionPendingInteraction(s => s)
+  const statuses = useSessionStatus(s => s)
   const archivedSessionIds = useWorkspaces(state => state.archivedSessionIds)
   const filter = useStore(s => s.recentFilter)
   const rows = useMemo(
-    () => deriveRecent(list, archivedSessionIds, pendingInteractions, filter),
-    [list, archivedSessionIds, pendingInteractions, filter],
+    () => deriveRecent(list, archivedSessionIds, statuses, filter),
+    [list, archivedSessionIds, statuses, filter],
   )
   // Rename dialog is list-owned so it outlives the row an archive removes.
   const [renameTarget, setRenameTarget] = useState<SessionRenameTarget | null>(null)
@@ -111,7 +111,7 @@ export function RecentBrowser({
           <SessionNodeItem
             key={node.id}
             node={node}
-            currentId={panelActive ? undefined : list.current}
+            currentId={panelActive ? undefined : mainSessionId(list)}
             now={now}
             onOpen={open}
             onRename={onRename}

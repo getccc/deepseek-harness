@@ -39,7 +39,12 @@ export function owningGroupKey(
 export type SessionPendingInteractionStatus = 'approval' | 'plan-review' | 'question'
 type SessionStatuses = SessionStatusSnapshot
 
-function mainSessionId(list: SessionListState): SessionId | undefined {
+/**
+ * The Session the main view holds, read from local reference counts.
+ * @param list - sessions list snapshot.
+ * @returns that Session's id, or undefined while the main view holds none.
+ */
+export function mainSessionId(list: SessionListState): SessionId | undefined {
   return Object.values(list.byId)
     .find(session => (session.retainedBy.mainView ?? 0) > 0)?.id
 }
@@ -443,20 +448,20 @@ export function deriveFlat(
  * (see {@link deriveSearchResults}).
  * @param list - sessions list snapshot.
  * @param archivedSessionIds - registry-global archive set.
- * @param pendingInteractions - pending UI interactions by Session.
+ * @param statuses - live Session status snapshot.
  * @param filter - the Session kinds admitted.
  * @returns rows in render order.
  */
 export function deriveRecent(
   list: SessionListState,
   archivedSessionIds: readonly SessionId[],
-  pendingInteractions: SessionPendingInteractions,
+  statuses: SessionStatuses,
   filter: RecentFilter,
 ): SessionNode[] {
   return deriveFlat(
     list,
     orderByRecency(visibleSessionIds(list, archivedSessionIds, filter), list.byId),
-    pendingInteractions,
+    statuses,
   )
 }
 

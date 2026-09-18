@@ -123,7 +123,7 @@ describe('Session queue commands', () => {
     const error = new RemoteError('session/agent-busy', 'owned by a child', { reason: 'subagent-owned' })
     const controller = new SessionCommandController(ctx, {
       resolveAgent: () => Promise.resolve({ error }),
-    } as unknown as ApiSessionAgentController, '/workspace')
+    } as unknown as ApiSessionAgentController)
     try {
       await expect(controller.updateQueue({
         sessionId: SessionId('cold-child'), itemId: MessageId('pending'), action: { kind: 'remove' },

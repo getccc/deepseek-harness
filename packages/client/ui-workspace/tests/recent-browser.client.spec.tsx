@@ -5,7 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { bindSnapshotSelector, makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
 import type { SessionListState, SessionSummary } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { WorkspaceSnapshot } from '@deepseek-ai/dsh-api-workspace-controller/client'
-import type { SessionPendingInteractionSnapshot } from '@deepseek-ai/dsh-client-ui-session/client'
+import type { SessionStatusSnapshot } from '@deepseek-ai/dsh-client-ui-session/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { MainPanelId } from '@deepseek-ai/dsh-client-ui-layout/client'
 import { zh as commonZh } from '@deepseek-ai/dsh-client-locale/src/locales/zh.ts'
@@ -26,19 +26,18 @@ const t: RecentBrowserProps['t'] = makeTranslate(zh, commonZh)
 const sid = (id: string) => id as SessionId
 const summary = (id: string, updatedAt: number, overrides: Partial<SessionSummary> = {}): SessionSummary => ({
   id: sid(id), displayTitle: id, kind: 'chat', running: false, blank: false, updatedAt, ...overrides,
+  retainedBy: overrides.retainedBy ?? {},
 })
 const sessionState = (items: readonly SessionSummary[], overrides: Partial<SessionListState> = {}): SessionListState => ({
   ids: items.map(item => item.id),
   byId: Object.fromEntries(items.map(item => [item.id, item])),
-  current: undefined,
   phase: 'ready',
   subagentsByParent: {}, jobsBySession: {},
-  currentAddress: undefined,
   ...overrides,
 })
 const workspaceState = (archivedSessionIds: readonly SessionId[] = []): WorkspaceSnapshot =>
   ({ items: [], archivedSessionIds, state: 'idle', phase: 'ready', error: null })
-const noPendingInteraction: SessionPendingInteractionSnapshot = new Map()
+const noStatus: SessionStatusSnapshot = new Map()
 function hook<T>(snapshot: T) {
   return function select<S>(selector: (state: T) => S): S { return selector(snapshot) }
 }
@@ -46,10 +45,10 @@ function hook<T>(snapshot: T) {
 /** A chat, a blank current chat, a stale blank chat, and a work session. */
 const mixed = sessionState([
   summary('chat-a', 2),
-  summary('chat-blank', 3, { blank: true, pristine: true }),
+  summary('chat-blank', 3, { blank: true, pristine: true, retainedBy: { mainView: 1 } }),
   summary('stale-blank', 1, { blank: true }),
   summary('work-w', 5, { kind: 'work', cwd: '/projects/w' }),
-], { current: sid('chat-blank') })
+])
 
 function mount(overrides: Partial<RecentBrowserProps> = {}) {
   const store = createWorkspaceViewStore().create()
@@ -57,7 +56,8 @@ function mount(overrides: Partial<RecentBrowserProps> = {}) {
     wide: true,
     expandSidebar: vi.fn(),
     useSessions: hook(mixed),
-    useSessionPendingInteraction: hook(noPendingInteraction),
+    useSessionStatus: hook(noStatus),
+    useSessionRetainInfo: () => undefined,
     usePanelInfo, useResource,
     useWorkspaces: hook(workspaceState()),
     useStore: bindSnapshotSelector(store),

@@ -110,7 +110,7 @@ describe('desktop deployment facts', () => {
 describe('desktop profile composition', () => {
   it('layers the shipped plugins over the Runner-carried bundles', () => {
     const manifest = JSON.parse(profileManifest(true)) as {
-      dsh: { profile: { bundles: string[]; patchReload: string } }
+      dsh: { profile: { bundles: string[] } }
     }
     expect(manifest.dsh.profile.bundles).toEqual([
       '@deepseek-ai/dsh-base',
@@ -119,7 +119,6 @@ describe('desktop profile composition', () => {
       'dsh-univer-office',
       '@dsh-external/dsh-echarts',
     ])
-    expect(manifest.dsh.profile.patchReload).toBe('live')
   })
 
   it('names only resolvable bundles when a build carried no plugin tree', () => {

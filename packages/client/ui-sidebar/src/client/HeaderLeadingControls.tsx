@@ -1,6 +1,6 @@
 /** macOS-desktop conversation-header controls for the fully hidden sidebar. */
 import {
-  IconNewChatOutline16, IconPanelLeftOutline16, isDarwinDesktop, Tooltip,
+  IconFolderOpenOutline16, IconNewChatOutline16, IconPanelLeftOutline16, isDarwinDesktop, Tooltip,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 // Type-only: pulls the conversation header slot declarations.
@@ -15,16 +15,16 @@ export type HeaderLeadingControlsProps =
   & PropsLocale<'sidebar'>
 
 /**
- * Sidebar-open and New Session controls in the conversation header's leading
- * seat. On macOS desktop a collapsed sidebar hides entirely (no rail), taking
+ * Sidebar-open, New chat, and New work task controls in the conversation
+ * header's leading seat. On macOS desktop a collapsed sidebar hides entirely (no rail), taking
  * both controls off screen; this occupant puts them back beside the traffic
  * lights. Mounted whenever the platform matches; visibility rides the
  * AppFrame-published `data-sidebar-collapsed` attribute in CSS, so no
  * collapse-state pipe is added here.
  * @param props - Injected sidebar actions plus the sidebar locale seat.
- * @returns the two header controls, or null off macOS desktop.
+ * @returns the header controls, or null off macOS desktop.
  */
-export function HeaderLeadingControls({ toggleSidebar, startSession, t }: HeaderLeadingControlsProps) {
+export function HeaderLeadingControls({ toggleSidebar, startChat, startSession, t }: HeaderLeadingControlsProps) {
   if (!isDarwinDesktop()) return null
   return (
     <div className={css.controls}>
@@ -38,14 +38,24 @@ export function HeaderLeadingControls({ toggleSidebar, startSession, t }: Header
           <IconPanelLeftOutline16 size={16} />
         </button>
       </Tooltip>
-      <Tooltip label={t('session.new.label')} delayMs={500}>
+      <Tooltip label={t('chat.new.label')} delayMs={500}>
         <button
           type="button"
           className={css.iconButton}
-          aria-label={t('session.new.label')}
-          onClick={() => { startSession() }}
+          aria-label={t('chat.new.label')}
+          onClick={() => { startChat() }}
         >
           <IconNewChatOutline16 size={16} />
+        </button>
+      </Tooltip>
+      <Tooltip label={t('work.new.label')} delayMs={500}>
+        <button
+          type="button"
+          className={css.iconButton}
+          aria-label={t('work.new.label')}
+          onClick={() => { startSession() }}
+        >
+          <IconFolderOpenOutline16 size={16} />
         </button>
       </Tooltip>
     </div>

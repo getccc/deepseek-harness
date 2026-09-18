@@ -83,6 +83,7 @@ function mount({
       [activeId]: {
         id: activeId,
         displayTitle: 'Active',
+        kind: 'work',
         blank: onboardingActive,
         running: false,
         retainedBy: mainView ? { mainView: 1 } : {},

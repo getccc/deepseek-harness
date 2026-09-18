@@ -60,6 +60,12 @@ export interface UiWorkspace {
    */
   startChat(): void
   /**
+   * Drop the main view's Session and its persisted selection, landing on the
+   * no-Session hero. A deployment that hands the browser to another member
+   * uses it so the next sign-in does not resume the previous conversation.
+   */
+  clearSession(): void
+  /**
    * Archive a Session and clear it when it is the current selection.
    * @param sessionId - Session to archive.
    */
@@ -237,6 +243,10 @@ class UiWorkspaceService extends Service implements UiWorkspace {
     void this.openChat().catch(
       (reason: unknown) => { console.warn('new chat failed:', reason) },
     )
+  }
+
+  clearSession(): void {
+    this.clearMain()
   }
 
   async archiveSession(sessionId: SessionId): Promise<void> {

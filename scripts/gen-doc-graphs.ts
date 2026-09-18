@@ -188,6 +188,8 @@ const SERVICE_ROLES: ServiceRole[] = [
     implementations: [],
     consumers: ['team-local-login', 'team-local-handoff'],
     note: 'Holds the device key and the credential on the member computer and calls the Control Plane over HTTPS. No company provider credential ever reaches it.',
+  },
+  {
     key: 'hmr',
     pkg: 'hmr',
     title: 'Serialized module and configuration reloads',

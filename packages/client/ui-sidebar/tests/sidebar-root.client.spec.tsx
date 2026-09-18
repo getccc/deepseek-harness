@@ -199,7 +199,7 @@ describe('SidebarRoot shell', () => {
       useSessions={neverHook} useSessionStatus={useSessionStatus} useSessionRetainInfo={neverHook}
       usePanelInfo={usePanelInfo} selectPanel={() => {}} usePanels={selector => selector([])}
       useResource={useResource} useWorkspaces={neverHook}
-      startSession={vi.fn()} toggleSidebar={vi.fn()} t={t}
+      startSession={vi.fn()} startChat={vi.fn()} toggleSidebar={vi.fn()} t={t}
       renderSlot={((key: string) => key === 'sidebar.toggle.badge'
         ? <Tooltip label="Update — V1.2.3"><span data-testid="badge" /></Tooltip>
         : null) as SidebarRootComponentProps['renderSlot']}
@@ -231,15 +231,18 @@ it.each([undefined, 'win32', 'linux', 'darwin'])('shows header sidebar controls 
   if (platform !== undefined) document.documentElement.dataset.platform = platform
   const toggleSidebar = vi.fn()
   const startSession = vi.fn()
-  // This occupant only consumes its two actions and locale, not Session hooks.
-  const props = { toggleSidebar, startSession, t } as HeaderLeadingControlsProps
+  const startChat = vi.fn()
+  // This occupant only consumes its three actions and locale, not Session hooks.
+  const props = { toggleSidebar, startChat, startSession, t } as HeaderLeadingControlsProps
   const view = render(<HeaderLeadingControls {...props} />)
   if (platform !== 'darwin') {
     expect(view.container.innerHTML).toBe('')
     return
   }
   fireEvent.click(screen.getByRole('button', { name: en['toggle.open'] }))
-  fireEvent.click(screen.getByRole('button', { name: en['session.new.label'] }))
+  fireEvent.click(screen.getByRole('button', { name: en['chat.new.label'] }))
+  fireEvent.click(screen.getByRole('button', { name: en['work.new.label'] }))
   expect(toggleSidebar).toHaveBeenCalledOnce()
+  expect(startChat).toHaveBeenCalledOnce()
   expect(startSession).toHaveBeenCalledOnce()
 })

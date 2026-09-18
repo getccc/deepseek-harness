@@ -40,9 +40,6 @@ export function profileManifest(shippedPlugins: boolean): string {
     dsh: {
       profile: {
         bundles: [...RUNNER_BUNDLES, ...shippedPlugins ? SHIPPED_PLUGIN_BUNDLES : []],
-        // The member's own patch file stays live-reloadable, matching the
-        // shipped `team` template; the deployment patch is a launcher layer.
-        patchReload: 'live',
       },
     },
   }, null, 2)}\n`

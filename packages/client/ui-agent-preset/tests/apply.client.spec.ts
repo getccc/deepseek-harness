@@ -824,7 +824,7 @@ describe('ui-agent-preset apply', () => {
 describe('AgentPresetSeatController reconciliation', () => {
   it('does not capture a non-blank Session', () => {
     const controller = new AgentPresetSeatController({} as never, () => ({
-      id: SessionId('started'), blank: false,
+      id: SessionId('started'), kind: 'work', blank: false,
     }))
 
     expect(controller.blankSessionId()).toBeUndefined()

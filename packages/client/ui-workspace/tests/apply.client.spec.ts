@@ -186,7 +186,7 @@ describe('ui-workspace apply', () => {
     const recent = (b.slots.entries('sidebar.recent')[0]!.inject as () => RecentBrowserInjected)()
     expect(Object.keys(recent)).toEqual(['open', 'renameSession', 'forkSession', 'archiveSession'])
     recent.open('other' as never)
-    expect(b.open).toHaveBeenLastCalledWith('other')
+    expect(b.retain).toHaveBeenLastCalledWith('other', { source: 'mainView' })
     await recent.archiveSession('other' as never)
     expect(b.archiveSession).toHaveBeenCalledWith('other')
   })
