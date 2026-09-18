@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-18-upstream-office-preview-replaces-the-fork-renderers.md
+2026-09-18-upstream-office-preview-replaces-the-fork-renderers.md: 4fe7cbfbd40c40910e683aaa29d0a8378575c6e2
+2026-09-18-upstream-office-preview-replaces-the-fork-renderers.zh.md: c317df98548f304c126033596e1a42149621e3ea

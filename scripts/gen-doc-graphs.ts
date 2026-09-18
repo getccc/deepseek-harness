@@ -222,6 +222,14 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'Owns browser authentication and shared HTTP request dispatch; API adapters register endpoints and streams.',
   },
   {
+    key: 'browserSession',
+    pkg: 'client-connection',
+    title: 'Browser sign-in cookies for Team surfaces',
+    mode: 'core',
+    consumers: ['team-local-login', 'team-local-handoff'],
+    note: 'The same browser authentication the transport enforces, exposed to the Team login and handoff routes so they can issue, read, and end a signed-in browser session.',
+  },
+  {
     key: 'mcpResources',
     pkg: 'mcp-resources',
     title: 'Scoped MCP resource access',

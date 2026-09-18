@@ -60,6 +60,44 @@ A request whose handling throws (a malformed %-escape hitting `decodeURIComponen
 
 Generated from source by `scripts/gen-cordis-catalog.ts` (verified fresh by `pnpm run verify-cordis-catalog` in doc-sync; regenerate with `pnpm run gen-cordis-catalog`) — the language sides differ only in locale-specific paired document paths. Signature blocks use a `ts cordis-catalog` fence and keep the original source JSDoc; dispatch modes are defined in the [primer](../cordis-primer.md#dispatch-modes), and the framework-inherited `ctx` API lives in [cordis-api/inherited.md](../cordis-api/inherited.md).
 
+<a id="ctxbrowsersession--browsersession"></a>
+
+### `ctx.browserSession` — `BrowserSession`
+
+The local browser session, as a navigation endpoint outside this package needs it.
+
+Only two operations are published: ask whether this browser already holds the session, and hand it one. Everything else about the cookie — its name, its signature, its lifetime — stays here, so a second plugin cannot mint a session this package would then have to keep compatible with.
+
+```ts cordis-catalog
+/**
+ * Whether the request carries this activation's valid session cookie.
+ * @param request - request headers carrying Host and Cookie.
+ * @returns true only for an unexpired cookie signed by this activation's secret.
+ */
+isAuthenticated(request: ConnectionTrustRequest): boolean
+
+/**
+ * Issue the session and hand the browser to `destination` without a redirect,
+ * which a `SameSite=Strict` cookie would not survive on a cross-site arrival.
+ * @param req - the navigation request, which must carry a Host header.
+ * @param res - the response, owned by this method when it returns true.
+ * @param destination - same-origin path to hand the browser to, such as `/`.
+ * @returns true when the session was issued.
+ */
+issueSession(req: ConnectionIndexRequest, res: ConnectionIndexResponse, destination: string): boolean
+
+/**
+ * Expire the request's valid session cookie and redirect to a same-origin destination.
+ * @param req - the navigation request carrying the browser session.
+ * @param res - the response, owned by this method.
+ * @param destination - same-origin path opened after the session ends.
+ * @returns whether an authenticated session was ended.
+ */
+endSession(req: ConnectionIndexRequest, res: ConnectionIndexResponse, destination: string): boolean
+```
+
+Source: [`packages/client/connection/src/index.ts`](../../packages/client/connection/src/index.ts)
+
 <a id="ctxconnection--hostconnectionhandle"></a>
 
 ### `ctx.connection` — `HostConnectionHandle`
