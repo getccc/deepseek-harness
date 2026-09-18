@@ -3,8 +3,11 @@
  * by a shipped agent preset and every required workspace peer in its dependency
  * graph. The graph spans every member area `pnpm-workspace.yaml` declares, so a
  * peer reached through an application package such as `@deepseek-ai/dsh` is
- * checked too. With auto peer installation disabled, either omission can
- * otherwise fail only when Cordis loads the packaged plugin.
+ * checked too. An optional bundle stops the walk: the installation ships it for
+ * a person to switch on, no shipped template selects it, and its own peers
+ * arrive with that choice rather than with the packaged runtime. With auto peer
+ * installation disabled, any other omission can fail only when Cordis loads the
+ * packaged plugin.
  */
 import { globSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
@@ -12,6 +15,7 @@ import { basename, dirname, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { isCordisGroupEntry, loadCordisYaml } from './cordis-yaml.ts'
 import { manifestPatterns, workspaceMembers } from './workspace-members.ts'
+import { OPTIONAL_BUNDLES } from '@deepseek-ai/dsh-app-boot'
 
 interface PackageManifest {
   name?: string
@@ -61,8 +65,9 @@ export async function verifyRuntimeClosure(
   const parents = new Map<string, string | undefined>()
   const queue: string[] = []
 
+  const optional = new Set<string>(OPTIONAL_BUNDLES)
   for (const dependency of Object.keys(runtimeDependencies).sort()) {
-    if (!workspace.has(dependency)) continue
+    if (!workspace.has(dependency) || optional.has(dependency)) continue
     parents.set(dependency, undefined)
     queue.push(dependency)
   }
@@ -88,7 +93,7 @@ export async function verifyRuntimeClosure(
       ...current.manifest.optionalDependencies,
     }
     for (const dependency of Object.keys(dependencies).sort()) {
-      if (!workspace.has(dependency) || parents.has(dependency)) continue
+      if (!workspace.has(dependency) || parents.has(dependency) || optional.has(dependency)) continue
       parents.set(dependency, packageName)
       queue.push(dependency)
     }

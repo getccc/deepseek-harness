@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-client-ui-knowledge-panels",
   "description": "Member-facing knowledge panels: the left-navigation rows, the authorized knowledge-base list, and the ranked retrieval a member runs for themselves",
-  "version": "0.1.6-alpha.1",
+  "version": "0.1.6-alpha.2",
   "publishConfig": {
     "access": "public"
   },

@@ -29,6 +29,8 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@deepseek-ai/dsh-experimental-agent-team-profile": "workspace:^",
+    "@deepseek-ai/dsh-experimental-agent-team-web-profile": "workspace:^",
     "@deepseek-ai/cordis": "workspace:^",
     "@deepseek-ai/dsh-hmr": "workspace:^",
     "@deepseek-ai/cordis-plugin-include": "workspace:^",
@@ -47,8 +49,6 @@
     "@deepseek-ai/dsh-compaction-basic": "workspace:^",
     "@deepseek-ai/dsh-compaction-tool-result-pruner": "workspace:^",
     "@deepseek-ai/dsh-cordis-client-runner": "workspace:^",
-    "@deepseek-ai/dsh-experimental-agent-team-profile": "workspace:^",
-    "@deepseek-ai/dsh-experimental-agent-team-web-profile": "workspace:^",
     "@deepseek-ai/dsh-fs-local": "workspace:^",
     "@deepseek-ai/dsh-goal": "workspace:^",
     "@deepseek-ai/dsh-goal-round-driver": "workspace:^",
