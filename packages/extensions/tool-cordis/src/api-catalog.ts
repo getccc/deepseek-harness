@@ -82,323 +82,6 @@ export interface TypeApiEntry {
 /** Every harness `ctx.<key>` service, sorted by key. */
 export const SERVICE_API: readonly ServiceApiEntry[] = [
   {
-    key: 'accessControl',
-    summary: 'Authorization and the records it reads.',
-    description: 'Authorization and the records it reads. A provider mounts this service; consumers inject `accessControl`.\n\nEvery mutation that can change an outcome advances the organization\'s policy revision, which is the value authorization caches key on, so a stale cache is detectable rather than merely old.',
-    methods: [
-      {
-        signature: 'abstract authorize(request: AccessRequest): Promise<AccessDecision>',
-        description: 'Decide one request.',
-        parameters: [{ name: 'request', description: 'who is asking, for what action, on which resource.' }],
-        returns: 'the outcome, the revision it was computed against, and the grants that admitted it.',
-      },
-      {
-        signature: 'abstract createRole(input: CreateRole): Promise<Role>',
-        description: 'Create a role.',
-        parameters: [{ name: 'input', description: 'the role\'s organization, name, and optional description and kind.' }],
-        returns: 'the stored role.',
-        throws: ['{DuplicateRoleNameError} when the name is taken in that organization.'],
-      },
-      {
-        signature: 'abstract updateRole(roleId: RoleId, changes: UpdateRole): Promise<void>',
-        description: 'Change a role\'s readable fields, leaving every field the caller did not name as stored.',
-        parameters: [{ name: 'roleId', description: 'the role to change.' }, { name: 'changes', description: 'the fields to write.' }],
-        throws: ['{UnknownRoleError} when the store holds no such role.', '{DuplicateRoleNameError} when the new name is taken in that organization.', '{DuplicateRoleCodeError} when the new code is taken in that organization.'],
-      },
-      {
-        signature: 'abstract deleteRole(roleId: RoleId): Promise<void>',
-        description: 'Delete one role, with the grants that compose it and the bindings that carry it. Members holding it lose what it admitted at once.',
-        parameters: [{ name: 'roleId', description: 'the role to delete.' }],
-        throws: ['{UnknownRoleError} when the store holds no such role.', '{SystemRoleError} when the role ships with the product.'],
-      },
-      {
-        signature: 'abstract syncCatalogRole(roleId: RoleId): Promise<string[]>',
-        description: 'Give one role every permission the catalog governs that it does not already hold.\n\nIdempotent, and additive only: a pair the catalog no longer names stays where it is, because the grant may still be the reason something works. Callers run this for a role that covers the catalog as the process starts, which is what keeps such a role current as this build\'s catalog grows.',
-        parameters: [{ name: 'roleId', description: 'the role to bring up to the catalog.' }],
-        returns: 'the pairs this call granted, as `resourceType|action`.',
-        throws: ['{UnknownRoleError} when the store holds no such role.'],
-      },
-      {
-        signature: 'abstract listCatalogRoles(orgId: OrgId): Promise<Role[]>',
-        description: 'Every role of one organization that covers the catalog.',
-        parameters: [{ name: 'orgId', description: 'the organization to list.' }],
-        returns: 'those roles, in creation order.',
-      },
-      {
-        signature: 'abstract listRoles(orgId: OrgId): Promise<Role[]>',
-        description: 'List an organization\'s roles in creation order.',
-        parameters: [{ name: 'orgId', description: 'the organization to list.' }],
-        returns: 'every role the organization holds.',
-      },
-      {
-        signature: 'abstract listRoleGrants(roleId: RoleId): Promise<RoleGrant[]>',
-        description: 'List the permissions one role holds, with type grants before resource grants.',
-        parameters: [{ name: 'roleId', description: 'the role whose grants are read.' }],
-        returns: 'every grant held by the role.',
-        throws: ['{UnknownRoleError} when the store holds no such role.'],
-      },
-      {
-        signature: 'abstract registerResource(input: RegisterResource): Promise<ManagedResource>',
-        description: 'Put a resource under governance, or update the display name of one already governed. Idempotent on `(orgId, type, externalRef)`, because the owning subsystem re-registers its catalog on every start.',
-        parameters: [{ name: 'input', description: 'the resource\'s organization, type, external ref, and display name.' }],
-        returns: 'the stored resource.',
-        throws: ['{UnknownPermissionError} when no permission governs that resource type.'],
-      },
-      {
-        signature: 'abstract setResourceEnabled(id: ResourceId, enabled: boolean): Promise<void>',
-        description: 'Enable or disable a governed resource. A disabled resource is refused for every action, whatever any grant says.',
-        parameters: [{ name: 'id', description: 'the resource to change.' }, { name: 'enabled', description: 'whether the resource may be used at all.' }],
-      },
-      {
-        signature: 'abstract deleteResource(id: ResourceId): Promise<void>',
-        description: 'Stop governing a resource, taking every grant that names it with it.\n\nThe grants go too because a resource id is not reused: leaving them would keep rows pointing at nothing, and a resource later registered under the same external ref takes a new id and starts with no access. Disabling a resource is the reversible act; this one is for a resource its owning subsystem no longer has.',
-        parameters: [{ name: 'id', description: 'the resource to stop governing.' }],
-      },
-      {
-        signature: 'abstract listResources(orgId: OrgId, type: string): Promise<ManagedResource[]>',
-        description: 'List an organization\'s governed resources of one type, in creation order.',
-        parameters: [{ name: 'orgId', description: 'the organization to list.' }, { name: 'type', description: 'the resource type to list.' }],
-        returns: 'the governed resources of that type.',
-      },
-      {
-        signature: 'abstract grantType(roleId: RoleId, resourceType: string, action: string): Promise<GrantId>',
-        description: 'Let a role perform one action on every enabled resource of a type.',
-        parameters: [{ name: 'roleId', description: 'the role that gains the grant.' }, { name: 'resourceType', description: 'the governed resource type.' }, { name: 'action', description: 'the fully-qualified action.' }],
-        returns: 'the grant\'s id, so a decision can name it.',
-        throws: ['{UnknownPermissionError} when the catalog does not govern that pair.', '{UnknownRoleError} when the store holds no such role.'],
-      },
-      {
-        signature: 'abstract grantResource(roleId: RoleId, resourceId: ResourceId, action: string): Promise<GrantId>',
-        description: 'Let a role perform one action on one named resource.',
-        parameters: [{ name: 'roleId', description: 'the role that gains the grant.' }, { name: 'resourceId', description: 'the governed resource.' }, { name: 'action', description: 'the fully-qualified action.' }],
-        returns: 'the grant\'s id, so a decision can name it.',
-        throws: ['{UnknownPermissionError} when the catalog does not govern the resource\'s type with that action.', '{UnknownRoleError} when the store holds no such role.'],
-      },
-      {
-        signature: 'abstract revokeGrant(grantId: GrantId): Promise<void>',
-        description: 'Withdraw a grant. Withdrawing one that is already absent is not an error: the caller\'s intent is that it not be there.',
-        parameters: [{ name: 'grantId', description: 'the grant to withdraw.' }],
-      },
-      {
-        signature: 'abstract bindUserRole(userId: UserId, roleId: RoleId): Promise<void>',
-        description: 'Bind a role to one account. Binding an existing pair again changes nothing.',
-        parameters: [{ name: 'userId', description: 'the account that gains the role.' }, { name: 'roleId', description: 'the role to bind.' }],
-        throws: ['{UnknownRoleError} when the store holds no such role.'],
-      },
-      {
-        signature: 'abstract unbindUserRole(userId: UserId, roleId: RoleId): Promise<void>',
-        description: 'Unbind a role from one account. Unbinding an absent pair is not an error.',
-        parameters: [{ name: 'userId', description: 'the account that loses the role.' }, { name: 'roleId', description: 'the role to unbind.' }],
-      },
-      {
-        signature: 'abstract createGroup(orgId: OrgId, name: string): Promise<UserGroup>',
-        description: 'Create a group, which binds roles to several accounts at once and changes no part of how a request is evaluated.',
-        parameters: [{ name: 'orgId', description: 'the organization the group belongs to.' }, { name: 'name', description: 'the group\'s name.' }],
-        returns: 'the stored group.',
-      },
-      {
-        signature: 'abstract addGroupMember(groupId: GroupId, userId: UserId): Promise<void>',
-        description: 'Put an account in a group. Adding an existing member again changes nothing.',
-        parameters: [{ name: 'groupId', description: 'the group to add to.' }, { name: 'userId', description: 'the account to add.' }],
-      },
-      {
-        signature: 'abstract bindGroupRole(groupId: GroupId, roleId: RoleId): Promise<void>',
-        description: 'Bind a role to every member of a group, present and future.',
-        parameters: [{ name: 'groupId', description: 'the group that gains the role.' }, { name: 'roleId', description: 'the role to bind.' }],
-        throws: ['{UnknownRoleError} when the store holds no such role.'],
-      },
-      {
-        signature: 'abstract rolesOf(userId: UserId): Promise<RoleId[]>',
-        description: 'Every role an account holds, directly or through a group, without repeats.',
-        parameters: [{ name: 'userId', description: 'the account to resolve.' }],
-        returns: 'the role ids, in a stable order.',
-      },
-    ],
-  },
-  {
-    key: 'accountAuth',
-    summary: 'Verifies who a member is.',
-    description: 'Verifies who a member is. A provider mounts this service; consumers inject `accountAuth`.',
-    methods: [
-      {
-        signature: 'abstract authenticate(orgId: OrgId, loginName: string, secret: string): Promise<AuthenticationOutcome>',
-        description: 'Attempt a sign-in and record its effect on the account\'s sign-in state.\n\nImplementations take the same observable time whether or not the login name exists: a caller that could time the difference could enumerate accounts, which is the same leak the reasonless failure closes.',
-        parameters: [{ name: 'orgId', description: 'the organization the login name belongs to.' }, { name: 'loginName', description: 'the name as typed.' }, { name: 'secret', description: 'the secret as typed.' }],
-        returns: 'the account on success, or a reasonless failure.',
-      },
-      {
-        signature: 'abstract setSecret(userId: UserId, secret: string): Promise<void>',
-        description: 'Set an account\'s secret, satisfying whatever the account still owed.',
-        parameters: [{ name: 'userId', description: 'the account whose secret is set.' }, { name: 'secret', description: 'the new secret, in the clear; the provider stores only a derived form.' }],
-        throws: ['{WeakSecretError} when the secret does not satisfy the deployment\'s policy.'],
-      },
-      {
-        signature: 'abstract secretPolicy(): SecretPolicy',
-        description: 'The policy AccountAuth.setSecret applies.',
-        parameters: [],
-        returns: 'what a secret must satisfy for this deployment to accept it.',
-      },
-    ],
-  },
-  {
-    key: 'accountStore',
-    summary: 'Durable organizations and member accounts.',
-    description: 'Durable organizations and member accounts. Every method is a repository operation: it stores or returns records and reports conflicts, and it makes no policy decision of its own. A provider mounts this service; consumers inject `accountStore`.',
-    methods: [
-      {
-        signature: 'abstract createOrganization(name: string): Promise<Organization>',
-        description: 'Create the organization every other record hangs from.',
-        parameters: [{ name: 'name', description: 'human-readable organization name.' }],
-        returns: 'the stored organization, at policy revision zero.',
-      },
-      {
-        signature: 'abstract getOrganization(id: OrgId): Promise<Organization | undefined>',
-        description: 'Read one organization.',
-        parameters: [{ name: 'id', description: 'the organization to read.' }],
-        returns: 'the organization, or undefined when the store holds none.',
-      },
-      {
-        signature: 'abstract updateOrganization(id: OrgId, changes: UpdateOrganization): Promise<void>',
-        description: 'Change the organization\'s own fields, leaving every field the caller did not name as stored.',
-        parameters: [{ name: 'id', description: 'the organization to change.' }, { name: 'changes', description: 'the fields to write; `null` clears one, absence leaves it.' }],
-        throws: ['{UnknownOrganizationError} when the store holds no such organization.'],
-      },
-      {
-        signature: 'abstract bumpPolicyRevision(id: OrgId): Promise<bigint>',
-        description: 'Advance an organization\'s policy revision, the value authorization caches are keyed by. Callers increment it in the same transaction as the change that invalidated them.',
-        parameters: [{ name: 'id', description: 'the organization whose revision advances.' }],
-        returns: 'the revision after the increment.',
-        throws: ['{UnknownOrganizationError} when the store holds no such organization.'],
-      },
-      {
-        signature: 'abstract createUser(input: CreateAccountUser): Promise<AccountUser>',
-        description: 'Issue an account. The account starts active, with no password material and `mustChangePassword` set. A caller that provisions a usable account must set its secret as a separate operation.',
-        parameters: [{ name: 'input', description: 'the identity fields an administrator supplies.' }],
-        returns: 'the stored account.',
-        throws: ['{DuplicateLoginNameError} when the login name is taken in that organization.'],
-      },
-      {
-        signature: 'abstract getUser(id: UserId): Promise<AccountUser | undefined>',
-        description: 'Read one account by id.',
-        parameters: [{ name: 'id', description: 'the account to read.' }],
-        returns: 'the account, or undefined when the store holds none.',
-      },
-      {
-        signature: 'abstract findUserByLogin(orgId: OrgId, loginName: string): Promise<AccountUser | undefined>',
-        description: 'Resolve a sign-in attempt\'s login name to an account.',
-        parameters: [{ name: 'orgId', description: 'the organization the login name belongs to.' }, { name: 'loginName', description: 'the name as typed, compared exactly.' }],
-        returns: 'the account, or undefined when no account carries that name.',
-      },
-      {
-        signature: 'abstract listUsers(orgId: OrgId): Promise<AccountUser[]>',
-        description: 'List an organization\'s accounts in creation order, oldest first.',
-        parameters: [{ name: 'orgId', description: 'the organization to list.' }],
-        returns: 'every account the organization holds.',
-      },
-      {
-        signature: 'abstract setUserStatus(id: UserId, status: AccountUserStatus): Promise<void>',
-        description: 'Set whether an account may authenticate.',
-        parameters: [{ name: 'id', description: 'the account to change.' }, { name: 'status', description: 'the status to store.' }],
-        throws: ['{UnknownAccountUserError} when the store holds no such account.'],
-      },
-      {
-        signature: 'abstract updateUser(id: UserId, changes: UpdateAccountUser): Promise<void>',
-        description: 'Change an account\'s profile fields, leaving every field the caller did not name as stored.',
-        parameters: [{ name: 'id', description: 'the account to change.' }, { name: 'changes', description: 'the fields to write; `null` clears one, absence leaves it.' }],
-        throws: ['{UnknownAccountUserError} when the store holds no such account.'],
-      },
-      {
-        signature: 'abstract deleteUser(id: UserId): Promise<void>',
-        description: 'Delete one account, with the browser sessions it holds. The organization or department this account led is left without a lead rather than deleted with it.\n\nRecords another service owns — role bindings, device credentials, audit rows — are not this store\'s to remove; a caller that must withdraw them does so before calling this. Audit rows deliberately stay: they are the history of what the account did, and history does not leave with it.',
-        parameters: [{ name: 'id', description: 'the account to delete.' }],
-        throws: ['{UnknownAccountUserError} when the store holds no such account.'],
-      },
-      {
-        signature: 'abstract listDepartments(orgId: OrgId): Promise<Department[]>',
-        description: 'List an organization\'s departments, parents before the children that name them, and siblings in `sortOrder` then creation order.',
-        parameters: [{ name: 'orgId', description: 'the organization to list.' }],
-        returns: 'every department the organization holds.',
-      },
-      {
-        signature: 'abstract getDepartment(id: DeptId): Promise<Department | undefined>',
-        description: 'Read one department by id.',
-        parameters: [{ name: 'id', description: 'the department to read.' }],
-        returns: 'the department, or undefined when the store holds none.',
-      },
-      {
-        signature: 'abstract createDepartment(input: CreateDepartment): Promise<Department>',
-        description: 'Create one department.',
-        parameters: [{ name: 'input', description: 'the department\'s organization, name, code, and optional placement fields.' }],
-        returns: 'the stored department.',
-        throws: ['{DuplicateDepartmentCodeError} when the code is taken in that organization.'],
-      },
-      {
-        signature: 'abstract updateDepartment(id: DeptId, changes: UpdateDepartment): Promise<void>',
-        description: 'Change a department\'s fields, leaving every field the caller did not name as stored.',
-        parameters: [{ name: 'id', description: 'the department to change.' }, { name: 'changes', description: 'the fields to write; `null` clears one, absence leaves it.' }],
-        throws: ['{UnknownDepartmentError} when the store holds no such department.', '{DuplicateDepartmentCodeError} when the new code is taken in that organization.'],
-      },
-      {
-        signature: 'abstract deleteDepartment(id: DeptId): Promise<void>',
-        description: 'Delete one department.',
-        parameters: [{ name: 'id', description: 'the department to delete.' }],
-        throws: ['{UnknownDepartmentError} when the store holds no such department.', '{DepartmentNotEmptyError} when a department or an account still names it.'],
-      },
-      {
-        signature: 'abstract getPasswordHash(id: UserId): Promise<string | undefined>',
-        description: 'Read the authentication material an account carries, if any.\n\nOnly the authentication provider calls this. The store treats the value as opaque bytes: it never parses, compares, or derives anything from it, which is what lets a different authentication provider replace the format without touching stored identity.',
-        parameters: [{ name: 'id', description: 'the account whose material is read.' }],
-        returns: 'the stored encoded hash, or undefined when the account has none.',
-      },
-      {
-        signature: 'abstract setPasswordHash(id: UserId, encodedHash: string): Promise<void>',
-        description: 'Store the authentication material for an account and clear `mustChangePassword`, because choosing a secret is what satisfies it.',
-        parameters: [{ name: 'id', description: 'the account to change.' }, { name: 'encodedHash', description: 'the provider\'s own encoded hash, stored verbatim.' }],
-        throws: ['{UnknownAccountUserError} when the store holds no such account.'],
-      },
-      {
-        signature: 'abstract recordFailedLogin(id: UserId): Promise<number>',
-        description: 'Record one failed sign-in and return the resulting consecutive count. The store counts; the authentication provider decides what a count means.',
-        parameters: [{ name: 'id', description: 'the account that failed to sign in.' }],
-        returns: 'consecutive failures including this one.',
-        throws: ['{UnknownAccountUserError} when the store holds no such account.'],
-      },
-      {
-        signature: 'abstract lockUser(id: UserId, until: number): Promise<void>',
-        description: 'Refuse sign-in until a moment in time, and reset the failure count so the next lockout needs a fresh run of failures.',
-        parameters: [{ name: 'id', description: 'the account to lock.' }, { name: 'until', description: 'epoch milliseconds after which sign-in may be attempted again.' }],
-        throws: ['{UnknownAccountUserError} when the store holds no such account.'],
-      },
-      {
-        signature: 'abstract recordSuccessfulLogin(id: UserId, at: number): Promise<void>',
-        description: 'Record a successful sign-in: clear the failure count and any lock, and stamp the moment.',
-        parameters: [{ name: 'id', description: 'the account that signed in.' }, { name: 'at', description: 'epoch milliseconds of the sign-in.' }],
-        throws: ['{UnknownAccountUserError} when the store holds no such account.'],
-      },
-      {
-        signature: 'abstract createBrowserSession(userId: UserId, tokenHash: string, expiresAt: number): Promise<void>',
-        description: 'Open a Control Plane browser session for one account.\n\nThe caller hashes the token and keeps the plaintext; the store holds only the hash, so reading the database yields nothing a browser could present.',
-        parameters: [{ name: 'userId', description: 'the account signing in.' }, { name: 'tokenHash', description: 'the hash of the token the browser will carry.' }, { name: 'expiresAt', description: 'when the session stops being honoured, in epoch milliseconds.' }],
-      },
-      {
-        signature: 'abstract resolveBrowserSession(tokenHash: string): Promise<BrowserSessionRecord | undefined>',
-        description: 'Resolve a session token hash to the account it stands for.\n\nA suspended account holds no session. That is what makes suspending a member the whole act: nothing has to remember to end their sessions too.',
-        parameters: [{ name: 'tokenHash', description: 'the hash of the token a browser presented.' }],
-        returns: 'the session, or undefined when it is unknown, lapsed, or its account is suspended.',
-      },
-      {
-        signature: 'abstract revokeBrowserSession(tokenHash: string): Promise<void>',
-        description: 'End one session. Ending an absent session is not an error.',
-        parameters: [{ name: 'tokenHash', description: 'the hash of the token to forget.' }],
-      },
-      {
-        signature: 'abstract revokeBrowserSessions(userId: UserId): Promise<void>',
-        description: 'End every Control Plane browser session held by one account. Ending sessions for an account that has none is not an error.',
-        parameters: [{ name: 'userId', description: 'the account whose sessions must end.' }],
-      },
-    ],
-  },
-  {
     key: 'agentDefaultModel',
     summary: 'Owns the default model selection independently of any Host or transport.',
     description: 'Owns the default model selection independently of any Host or transport. The composition entry remains usable without a settings provider; when one is mounted, its user layer is read live.',
@@ -478,13 +161,6 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         throws: ['when no configured root supplies that id.'],
       },
       {
-        signature: 'async resolveFor(workspace: PresetWorkspace, id?: string): Promise<AgentPreset>',
-        description: 'Resolve the preset one session location composes: the named preset, or the location\'s default — defaultId for a session that owns a cwd, chatDefaultId for one that owns none — refusing a preset whose declared workspace requirement disagrees with the location. This is where a misconfigured default fails: a `chatDefault` that declares no `workspace: none`, or a user default that does, is refused at the first session it would compose.',
-        parameters: [{ name: 'workspace', description: '`required` when the session owns a cwd, `none` otherwise.' }, { name: 'id', description: 'the preset id, or `undefined` for the location\'s default.' }],
-        returns: 'the resolved preset.',
-        throws: ['{RemoteError} `agent-preset/not-found` when no root supplies the preset or no `chatDefault` is configured, `agent-preset/workspace-mismatch` when the preset\'s requirement disagrees with the location.'],
-      },
-      {
         signature: 'async mount(agentCtx: Context, id?: string): Promise<AgentPreset>',
         description: 'Compose one agent from a preset: ensure the preset\'s standing mount, then parent the agent\'s scope key to it so the mount\'s registrations and listeners cover this agent.\n\nCall from the agent factory\'s `setup(agentCtx)`; a rejection there rolls the agent creation back, so a broken preset never yields a half-composed session.',
         parameters: [{ name: 'agentCtx', description: 'the agent\'s scope context.' }, { name: 'id', description: 'the preset id, or `undefined` for {@link defaultId}.' }],
@@ -562,7 +238,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Compose a blank session\'s agent from a different preset and record it.',
         parameters: [{ name: 'agent', description: 'the session\'s live agent, resolved from the wire identity.' }, { name: 'agentPreset', description: 'the preset to compose the agent from instead.' }],
         returns: 'the preset id that was recorded.',
-        throws: ['{RemoteError} with `gateway/bad-request`, `agent-preset/locked`, `agent-preset/not-found`, `agent-preset/workspace-mismatch`, or `agent-preset/invalid` when refused.'],
+        throws: ['{RemoteError} with `gateway/bad-request`, `agent-preset/locked`, `agent-preset/not-found`, or `agent-preset/invalid` when refused.'],
       },
       {
         signature: 'async standingKeyFor(id?: string): Promise<ScopeKey>',
@@ -881,26 +557,6 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
-    key: 'audit',
-    summary: 'The audit trail.',
-    description: 'The audit trail. A provider mounts this service; consumers inject `audit`.\n\nRecords are append-only: there is no method to amend or remove one, and a store is expected to refuse both at the database as well. A reader who cannot rewrite history is what makes the trail worth reading.',
-    methods: [
-      {
-        signature: 'abstract record(record: AuditRecord): Promise<AuditEvent>',
-        description: 'Record one operation. The store assigns the sequence number and the time, so a caller can neither backdate an entry nor choose its order.',
-        parameters: [{ name: 'record', description: 'what happened: the action, its outcome, and who and what it involved.' }],
-        returns: 'the stored event, including what the store assigned.',
-        throws: ['{UnknownAuditActionError} when the action catalog does not register the action.', '{InvalidAuditValueError} when a field holds a value its rule does not admit.', '{UnknownMetadataKeyError} when metadata names an unregistered key.', '{MetadataKeyNotAllowedError} when the action does not declare a registered key.'],
-      },
-      {
-        signature: 'abstract query(query: AuditQuery): Promise<AuditEvent[]>',
-        description: 'Read events back, most recent first.',
-        parameters: [{ name: 'query', description: 'the organization to read, and any narrowing the reader wants.' }],
-        returns: 'the matching events, newest first, bounded by the store\'s configured maximum.',
-      },
-    ],
-  },
-  {
     key: 'authorization',
     summary: '`ctx.authorization`: a registry of credential-obtaining flows, one attempt at a time per key.',
     description: '`ctx.authorization`: a registry of credential-obtaining flows, one attempt at a time per key.',
@@ -935,124 +591,6 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [{ name: 'request', description: 'the key, the method, the surface, and the cancel signal.' }],
         returns: '`authorized` once the flow\'s record is committed during this attempt and observed, or `cancelled` when the human declined or the caller withdrew.',
         throws: ['{AuthorizationError} code `NO_FLOW` when nothing claims the key, `UNKNOWN_METHOD` when the named method is not one the flow offers, `ALREADY_IN_FLIGHT` when an attempt is already running for the key, or `NOT_COMMITTED` when the flow resolved without committing a record during the attempt.'],
-      },
-    ],
-  },
-  {
-    key: 'bi',
-    summary: 'BI analysis, as a Runner sees it.',
-    description: 'BI analysis, as a Runner sees it. A provider mounts this service; consumers inject `bi`.\n\nEvery method fails with BiError carrying a closed reason. None returns a partial answer: a directory that could not be authorized, a listing on a refused project, and a run on a chart outside its project all raise, because a quietly narrowed result is indistinguishable from a correct one to the model that reads it.',
-    methods: [
-      {
-        signature: 'abstract catalog(signal?: AbortSignal): Promise<readonly BiProjectEntry[]>',
-        description: 'The projects the current principal may analyze right now.',
-        parameters: [{ name: 'signal', description: 'aborts the operation.' }],
-        returns: 'the authorized directory, empty when the principal holds nothing.',
-        throws: ['{BiError} when the principal cannot be established or the directory cannot be read.'],
-      },
-      {
-        signature: 'abstract charts(request: BiChartsRequest): Promise<BiChartPage>',
-        description: 'One page of the saved charts in one authorized project.\n\nThe project is authorized on this call, like every other operation: a reference that was in the directory a moment ago is not standing permission to list it now.',
-        parameters: [{ name: 'request', description: 'the project, an optional keyword, and which page.' }],
-        returns: 'the page, empty when the project holds no matching chart.',
-        throws: ['{BiError} when the project is refused or the upstream does not answer usably.'],
-      },
-      {
-        signature: 'abstract query(request: BiQueryRequest): Promise<BiQueryResult>',
-        description: 'Run one saved chart as it was saved and answer its rows.\n\nThe chart\'s project is resolved from the source and authorized on this call, and a chart the source places in another project is refused before any row is read: holding a reference proves nothing.',
-        parameters: [{ name: 'request', description: 'the chart, and the most rows the caller wants.' }],
-        returns: 'the chart\'s definition summary, its fields, and its bounded rows.',
-        throws: ['{BiError} when the project is refused, the chart is unknown or misplaced (`chart-unavailable`), the warehouse fails (`query-failed`), or the upstream does not answer usably.'],
-      },
-    ],
-  },
-  {
-    key: 'biGateway',
-    summary: 'The governed catalog and the decision in front of it.',
-    description: 'The governed catalog and the decision in front of it. A provider mounts this service; consumers inject `biGateway`.\n\nAdministration methods take an organization because an administrator has already been authorized by the route that called them. Member-facing methods take a principal because they authorize it themselves, per project, on every call.',
-    methods: [
-      {
-        signature: 'abstract sync(orgId: OrgId): Promise<BiCatalogView>',
-        description: 'Reconcile the durable catalog against one successful full listing.\n\nSerialized: concurrent callers join the operation already in flight rather than racing two reconciliations over the same rows. A source that does not answer leaves the last successful snapshot in place and records the failure, because one failed listing must not disable every project an organization governs.',
-        parameters: [{ name: 'orgId', description: 'the organization whose catalog is reconciled.' }],
-        returns: 'the catalog as it stands after the attempt, successful or not.',
-      },
-      {
-        signature: 'abstract catalogView(orgId: OrgId): Promise<BiCatalogView>',
-        description: 'Read the durable catalog without contacting the source.',
-        parameters: [{ name: 'orgId', description: 'the organization to read.' }],
-        returns: 'every governed entry and the source\'s health.',
-      },
-      {
-        signature: 'abstract setEnabled(orgId: OrgId, ref: BiProjectRef, enabled: boolean): Promise<void>',
-        description: 'Switch one entry on or off for the whole organization.\n\nSynchronization never overrides this choice: an administrator who disabled a project finds it still disabled after the next listing.',
-        parameters: [{ name: 'orgId', description: 'the organization the entry belongs to.' }, { name: 'ref', description: 'the entry to change.' }, { name: 'enabled', description: 'whether it may be analyzed at all.' }],
-        throws: ['{BiError} `not-allowed` when the catalog holds no such entry.'],
-      },
-      {
-        signature: 'abstract directory(principal: BiPrincipal): Promise<readonly BiProjectEntry[]>',
-        description: 'The projects this principal may analyze right now.',
-        parameters: [{ name: 'principal', description: 'who is asking, from a verified token.' }],
-        returns: 'the authorized directory, empty when the principal holds nothing.',
-      },
-      {
-        signature: 'abstract charts(request: GovernedChartsRequest): Promise<BiChartPage>',
-        description: 'Authorize one chart listing and perform it.\n\nThe project is evaluated on this call, as a run\'s is. A member who may run a project\'s charts may see which charts are in it: the decision is the same permission, asked separately so it can be tightened without a new authorization path.',
-        parameters: [{ name: 'request', description: 'who is asking, which project, a keyword, and which page.' }],
-        returns: 'the page, with the charts addressed by governed references.',
-        throws: ['{BiError} with the reason the operation was refused or failed.'],
-      },
-      {
-        signature: 'abstract query(request: GovernedQueryRequest): Promise<BiQueryResult>',
-        description: 'Authorize one chart run and perform it.\n\nTwo things are proved before any row is read: the project the reference names admits this principal now, and the source agrees that the chart belongs to that project. The second is what makes an unsigned reference safe: a reference whose halves disagree is refused, and possession of one is never authority.',
-        parameters: [{ name: 'request', description: 'who is asking, which chart, and the caller\'s row bound.' }],
-        returns: 'the chart\'s definition summary, its fields, and its bounded rows.',
-        throws: ['{BiError} with the reason the operation was refused or failed.'],
-      },
-    ],
-  },
-  {
-    key: 'biSource',
-    summary: 'One upstream BI product.',
-    description: 'One upstream BI product. A provider mounts this service; the governed gateway injects `biSource`.\n\nFailures are raised as `BiError` with `upstream-unavailable`, `upstream-invalid`, `chart-unavailable`, or `query-failed`. A provider never raises an authorization reason: it does not know who is asking, which is the point.',
-    methods: [
-      {
-        signature: 'abstract readonly providerKind: string',
-        description: 'Which upstream product this is, as the first segment of a `BiProjectRef`.\n\nA constant of the provider rather than configuration: it names the code that speaks the protocol, and a deployment renaming it would change the identity of every project already governed.',
-        parameters: [],
-      },
-      {
-        signature: 'abstract readonly sourceCode: string',
-        description: 'The deployment\'s code for this source, as the second `BiProjectRef` segment. Configuration, because one company\'s `prod` is another\'s `bi`.',
-        parameters: [],
-      },
-      {
-        signature: 'abstract listProjects(signal?: AbortSignal): Promise<readonly UpstreamProject[]>',
-        description: 'Every project the configured source holds.',
-        parameters: [{ name: 'signal', description: 'aborts the operation.' }],
-        returns: 'every project, in whatever order the source lists them.',
-        throws: ['{BiError} `upstream-unavailable` or `upstream-invalid`.'],
-      },
-      {
-        signature: 'abstract listCharts(request: UpstreamChartsRequest): Promise<UpstreamChartListing>',
-        description: 'The saved charts of one already-authorized project.',
-        parameters: [{ name: 'request', description: 'the authorized upstream id.' }],
-        returns: 'the listing, empty when the project holds no chart.',
-        throws: ['{BiError} `upstream-unavailable` or `upstream-invalid`.'],
-      },
-      {
-        signature: 'abstract describeChart(upstreamChartId: string, signal?: AbortSignal): Promise<UpstreamChartPlacement>',
-        description: 'Where one chart sits, so the gateway can authorize the project that holds it before running anything in it.',
-        parameters: [{ name: 'upstreamChartId', description: 'the source\'s own chart id.' }, { name: 'signal', description: 'aborts the operation.' }],
-        returns: 'the project it belongs to, and the chart.',
-        throws: ['{BiError} `upstream-unavailable`, `upstream-invalid`, or `chart-unavailable` when the source holds no such chart.'],
-      },
-      {
-        signature: 'abstract runChart(request: UpstreamRunRequest): Promise<UpstreamRun>',
-        description: 'Run one already-authorized saved chart as it was saved.',
-        parameters: [{ name: 'request', description: 'the project, the chart, and the caller\'s row bound.' }],
-        returns: 'the fields, the saved filters, and the bounded rows.',
-        throws: ['{BiError} `upstream-unavailable`, `upstream-invalid`, `chart-unavailable` when the source no longer holds the chart, or `query-failed` when the source ran it and the warehouse refused or failed.'],
       },
     ],
   },
@@ -1100,7 +638,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
       },
       {
         signature: 'rebuilt(id: string): string | undefined',
-        description: 'Re-hash one bundle (the HMR watch\'s registration hook — the only entry point through which bundle content changes reach the graph).',
+        description: 'Publish one completed bundle generation (the HMR watch\'s registration hook — the only entry point through which build changes reach the graph).',
         parameters: [{ name: 'id', description: 'entry id (package name).' }],
         returns: 'the new rev, or undefined for an unknown id.',
       },
@@ -1196,46 +734,43 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
-    key: 'consoleMenu',
-    summary: 'The console\'s navigation, as durable records.',
-    description: 'The console\'s navigation, as durable records. A provider mounts this service; consumers inject `consoleMenu`.',
+    key: 'connection',
+    summary: 'Host `ctx.connection` shape consumed by transport-independent adapters.',
+    description: 'Host `ctx.connection` shape consumed by transport-independent adapters.',
     methods: [
       {
-        signature: 'abstract seedShipped(orgId: OrgId): Promise<number>',
-        description: 'Put the entries this build ships into an organization that does not have them yet, matching on the shipped key.\n\nIdempotent, and never an overwrite: an entry a deployment renamed, hid, or reordered keeps its edit, and one it deleted comes back at its shipped settings on the next start. Entries this build retired are removed; their children move to the retired entry\'s parent.',
-        parameters: [{ name: 'orgId', description: 'the organization to seed.' }],
-        returns: 'how many entries this call inserted.',
+        signature: 'readonly rpc: HostConnectionRpc',
+        description: 'Generic RPC channel registry.',
+        parameters: [],
       },
       {
-        signature: 'abstract listMenus(orgId: OrgId): Promise<ConsoleMenu[]>',
-        description: 'List one organization\'s navigation, parents before the children that name them, and siblings in `sortOrder` then creation order.',
-        parameters: [{ name: 'orgId', description: 'the organization to list.' }],
-        returns: 'every entry the organization holds.',
+        signature: 'readonly fetch: HostConnectionFetch',
+        description: 'Exact Fetch routes for streaming or browser-native responses.',
+        parameters: [],
       },
       {
-        signature: 'abstract getMenu(id: MenuId): Promise<ConsoleMenu | undefined>',
-        description: 'Read one entry by id.',
-        parameters: [{ name: 'id', description: 'the entry to read.' }],
-        returns: 'the entry, or undefined when the store holds none.',
+        signature: 'createSharedFetchHandler(channel: \'/api\'): ConnectionFetchHandler',
+        description: 'Compose exact Fetch routes and the shared-channel RPC interceptor.',
+        parameters: [{ name: 'channel', description: 'shared channel mounted by Connection.' }],
+        returns: 'Fetch handler for trusted, authenticated requests.',
       },
       {
-        signature: 'abstract createMenu(input: CreateConsoleMenu): Promise<ConsoleMenu>',
-        description: 'Create one entry.',
-        parameters: [{ name: 'input', description: 'the entry\'s organization, name, kind, and optional placement fields.' }],
-        returns: 'the stored entry.',
-        throws: ['{UnknownMenuPermissionError} when it names a permission the catalog does not govern.'],
+        signature: 'requestRejection(request: ConnectionTrustRequest): ConnectionRequestRejection',
+        description: 'Apply Connection\'s Host/Origin checks and browser authentication to another Web route.',
+        parameters: [{ name: 'request', description: 'request headers from the HTTP or upgrade request.' }],
+        returns: 'rejection status, or undefined when the route may accept the request.',
       },
       {
-        signature: 'abstract updateMenu(id: MenuId, changes: UpdateConsoleMenu): Promise<void>',
-        description: 'Change an entry\'s fields, leaving every field the caller did not name as stored. A rename drops the shipped copy key, because the words become the organization\'s own.',
-        parameters: [{ name: 'id', description: 'the entry to change.' }, { name: 'changes', description: 'the fields to write; `null` clears one, absence leaves it.' }],
-        throws: ['{UnknownConsoleMenuError} when the store holds no such entry.', '{UnknownMenuPermissionError} when it names a permission the catalog does not govern.'],
+        signature: 'authorizeIndex(request: ConnectionIndexRequest, response: ConnectionIndexResponse): boolean',
+        description: 'Authenticate one frontend index request, owning a token redirect or 401.',
+        parameters: [{ name: 'request', description: 'root or configured-index HTTP request.' }, { name: 'response', description: 'response owned when the result is false.' }],
+        returns: 'true only when the frontend may serve index.html.',
       },
       {
-        signature: 'abstract deleteMenu(id: MenuId): Promise<void>',
-        description: 'Delete one entry.',
-        parameters: [{ name: 'id', description: 'the entry to delete.' }],
-        throws: ['{UnknownConsoleMenuError} when the store holds no such entry.', '{ConsoleMenuNotEmptyError} when another entry still sits under it.'],
+        signature: 'authenticatedUrl(baseUrl: string): string',
+        description: 'Add the fresh process token to an ordinary Web application URL.',
+        parameters: [{ name: 'baseUrl', description: 'clean canonical browser origin.' }],
+        returns: 'root URL accepted by {@link authorizeIndex} for initial login.',
       },
     ],
   },
@@ -1339,74 +874,6 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Prepare every currently registered field from one immutable base request. Preparation failures reject before HTTP dispatch. Field values are cloned and frozen; providers retain no mutable alias to the outgoing request.',
         parameters: [{ name: 'request', description: 'exact serialized request facts before extension fields.' }],
         returns: 'detached fields and their idempotent joint acceptance transaction.',
-      },
-    ],
-  },
-  {
-    key: 'deviceAuthorization',
-    summary: 'Device binding, the credentials it produces, and the device registry it fills.',
-    description: 'Device binding, the credentials it produces, and the device registry it fills. A provider mounts this service; consumers inject `deviceAuthorization`.\n\nNothing here authorizes anything: a credential proves which device and which account a request comes from, and access control decides what that principal may do, against the policy revision current at the time of the request.',
-    methods: [
-      {
-        signature: 'abstract start(request: StartRequest): Promise<StartedTransaction>',
-        description: 'Open a binding transaction. The request carries no account: a transaction belongs to nobody until a member confirms it from an authenticated session, so an unauthenticated caller learns nothing by opening one.',
-        parameters: [{ name: 'request', description: 'the device\'s public key, platform, PKCE challenge, and fixed callback.' }],
-        returns: 'the transaction id, the pairing code to display locally, and when it lapses.',
-      },
-      {
-        signature: 'abstract describe(id: TransactionId): Promise<PendingTransaction>',
-        description: 'Read what a confirmation page must show before a person confirms.',
-        parameters: [{ name: 'id', description: 'the transaction the member\'s browser was sent to.' }],
-        returns: 'the device facts and the pairing code to compare against the local page.',
-        throws: ['{TransactionRefusedError} when it is unknown, lapsed, or already confirmed.'],
-      },
-      {
-        signature: 'abstract confirm(id: TransactionId, approval: Approval): Promise<IssuedCode>',
-        description: 'Confirm a transaction, minting the one-time code the browser carries back.',
-        parameters: [{ name: 'id', description: 'the transaction being confirmed.' }, { name: 'approval', description: 'who is confirming, from an authenticated Control Plane session.' }],
-        returns: 'the plaintext code, its lifetime, and the bound callback address.',
-        throws: ['{TransactionRefusedError} when it is unknown, lapsed, or already confirmed.'],
-      },
-      {
-        signature: 'abstract redeem(request: RedeemRequest): Promise<IssuedCredential>',
-        description: 'Turn an authorization code into a device and its first credential. The device row is created here, because until this point no one has proved possession of the private key behind the digest the member compared.',
-        parameters: [{ name: 'request', description: 'the code, the PKCE verifier, the device signature, and the bound callback and version.' }],
-        returns: 'the device, its credential family, and the first refresh and access tokens.',
-        throws: ['{CredentialRefusedError} when any bound fact fails to match.'],
-      },
-      {
-        signature: 'abstract refresh(request: RefreshRequest): Promise<IssuedCredential>',
-        description: 'Exchange a refresh token for the next one and a fresh access token.\n\nPresenting a refresh token that was already spent revokes the whole family: either the token leaked or the Runner lost track of it, and both are answered by making every credential in that family useless.',
-        parameters: [{ name: 'request', description: 'the family, the refresh token, and a device signature over both.' }],
-        returns: 'the next credential pair.',
-        throws: ['{CredentialRefusedError} when the token is unknown, lapsed, reused, or the device is revoked.'],
-      },
-      {
-        signature: 'abstract verifyAccessToken(token: string): Promise<AccessTokenClaims | undefined>',
-        description: 'Resolve an access token to what it stands for.',
-        parameters: [{ name: 'token', description: 'the plaintext access token a Runner presented.' }],
-        returns: 'the claims, or undefined when the token is unknown, lapsed, or its device is revoked.',
-      },
-      {
-        signature: 'abstract listDevices(orgId: OrgId): Promise<Device[]>',
-        description: 'List an organization\'s devices in binding order.',
-        parameters: [{ name: 'orgId', description: 'the organization to list.' }],
-        returns: 'every device the organization holds, revoked ones included.',
-      },
-      {
-        signature: 'abstract revokeDevice(id: DeviceId): Promise<void>',
-        description: 'Revoke a device and every credential family it holds. Revoking one that is already revoked is not an error: the caller\'s intent is that it be gone.',
-        parameters: [{ name: 'id', description: 'the device to revoke.' }],
-      },
-      {
-        signature: 'abstract revokeUserDevices(orgId: OrgId, userId: UserId): Promise<void>',
-        description: 'Revoke every device and credential family owned by one account in an organization. Accounts without devices need no special handling.',
-        parameters: [{ name: 'orgId', description: 'the organization that owns the devices.' }, { name: 'userId', description: 'the account whose devices must be signed out.' }],
-      },
-      {
-        signature: 'abstract revokeFamily(id: FamilyId): Promise<void>',
-        description: 'Revoke one credential family, leaving the device able to bind again.',
-        parameters: [{ name: 'id', description: 'the family to revoke.' }],
       },
     ],
   },
@@ -1663,6 +1130,42 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'hmr',
+    summary: 'Hot reload service with Cordis-compatible module configuration and events.',
+    description: 'Hot reload service with Cordis-compatible module configuration and events.',
+    methods: [
+      {
+        signature: 'public baseDir: string',
+        description: 'Absolute base directory used to resolve module watch roots.',
+        parameters: [],
+      },
+      {
+        signature: 'runExclusive<T>(operation: () => Promise<T>): Promise<T>',
+        description: 'Serialize a caller-owned mutation with all automatic reload paths.',
+        parameters: [{ name: 'operation', description: 'Work that must not overlap module or configuration replacement.' }],
+        returns: 'The operation result after its asynchronous work completes.',
+      },
+      {
+        signature: 'async watchConfig(filename: string, refresh: () => Promise<void>): Promise<() => Promise<void>>',
+        description: 'Watch a configuration path through the same queue as module replacement.',
+        parameters: [{ name: 'filename', description: 'Absolute path, which may not exist yet.' }, { name: 'refresh', description: 'Rebuilds configuration from its current files and awaits Loader completion.' }],
+        returns: 'Disposer closing this registration and waiting for its pending refresh.',
+      },
+      {
+        signature: 'getOuterStack: () => string[] = () => []',
+        description: 'Omit internal HMR frames from module import diagnostics.',
+        parameters: [],
+        returns: 'The preserved outer stack frames.',
+      },
+      {
+        signature: 'async getLinked(url: string): Promise<string[]>',
+        description: 'Read direct module dependency URLs from the active Node loader.',
+        parameters: [{ name: 'url', description: 'Module URL.' }],
+        returns: 'Linked module URLs, or an empty list for an uncached module.',
+      },
+    ],
+  },
+  {
     key: 'inspector',
     summary: 'Shared Host/Client service façade over the realm\'s source publisher.',
     description: 'Shared Host/Client service façade over the realm\'s source publisher.',
@@ -1750,145 +1253,6 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Attach an effect-scoped controller that can read and stop jobs. It serves the owners its registering context\'s scope covers, and start refuses an owner no attached controller serves.',
         parameters: [{ name: 'name', description: 'diagnostic label; duplicate names remain independent.' }],
         returns: 'disposer that detaches this controller.',
-      },
-    ],
-  },
-  {
-    key: 'knowledge',
-    summary: 'Private knowledge, as a Runner sees it.',
-    description: 'Private knowledge, as a Runner sees it. A provider mounts this service; consumers inject `knowledge`.\n\nBoth methods fail with KnowledgeError carrying a closed reason. Neither returns a partial answer: a directory that could not be authorized and a search whose scope was refused both raise, because a quietly narrowed result is indistinguishable from a correct one to the model that reads it.',
-    methods: [
-      {
-        signature: 'abstract catalog(signal?: AbortSignal): Promise<readonly KnowledgeBaseEntry[]>',
-        description: 'The knowledge bases the current principal may search right now.',
-        parameters: [{ name: 'signal', description: 'aborts the operation.' }],
-        returns: 'the authorized directory, empty when the principal holds nothing.',
-        throws: ['{KnowledgeError} when the principal cannot be established or the directory cannot be read.'],
-      },
-      {
-        signature: 'abstract documents(request: KnowledgeDocumentsRequest): Promise<KnowledgeDocumentPage>',
-        description: 'One page of the documents in one authorized knowledge base.\n\nThe knowledge base is authorized on this call, like every other operation: a reference that was in the directory a moment ago is not standing permission to list it now.',
-        parameters: [{ name: 'request', description: 'the knowledge base, and which page of it.' }],
-        returns: 'the page, empty when the knowledge base holds no document.',
-        throws: ['{KnowledgeError} when the knowledge base is refused or the upstream does not answer usably.'],
-      },
-      {
-        signature: 'abstract documentContent(request: KnowledgeDocumentRequest): Promise<KnowledgeDocumentContent>',
-        description: 'One document\'s content: the original file, or the source\'s parsed text when the file is larger than the caller accepts or the source holds none.\n\nThe document\'s knowledge base is resolved from the source and authorized on this call, and a reference whose two halves disagree is refused before any content is read: holding a reference proves nothing.',
-        parameters: [{ name: 'request', description: 'the document, and the most bytes the caller can accept.' }],
-        returns: 'the content, saying which of the two it is.',
-        throws: ['{KnowledgeError} when the knowledge base is refused, the document has no content to serve (`document-unavailable`), or the upstream does not answer usably.'],
-      },
-      {
-        signature: 'abstract search(request: KnowledgeSearchRequest): Promise<KnowledgeSearchResult>',
-        description: 'Search the knowledge bases one operation names.',
-        parameters: [{ name: 'request', description: 'the query, the scope resolved from the Session, and the caller\'s bounds.' }],
-        returns: 'the passages, with the knowledge bases actually searched.',
-        throws: ['{KnowledgeError} when any named knowledge base is refused, the scope cannot be searched together, or the upstream does not answer usably.'],
-      },
-    ],
-  },
-  {
-    key: 'knowledgeGateway',
-    summary: 'The governed catalog and the decision in front of it.',
-    description: 'The governed catalog and the decision in front of it. A provider mounts this service; consumers inject `knowledgeGateway`.\n\nAdministration methods take an organization because an administrator has already been authorized by the route that called them. Member-facing methods take a principal because they authorize it themselves, per knowledge base, on every call.',
-    methods: [
-      {
-        signature: 'abstract sync(orgId: OrgId): Promise<KnowledgeCatalogView>',
-        description: 'Reconcile the durable catalog against one successful full listing.\n\nSerialized: concurrent callers join the operation already in flight rather than racing two reconciliations over the same rows. A source that does not answer leaves the last successful snapshot in place and records the failure, because one failed listing must not disable every knowledge base an organization governs.',
-        parameters: [{ name: 'orgId', description: 'the organization whose catalog is reconciled.' }],
-        returns: 'the catalog as it stands after the attempt, successful or not.',
-      },
-      {
-        signature: 'abstract catalogView(orgId: OrgId): Promise<KnowledgeCatalogView>',
-        description: 'Read the durable catalog without contacting the source.',
-        parameters: [{ name: 'orgId', description: 'the organization to read.' }],
-        returns: 'every governed entry and the source\'s health.',
-      },
-      {
-        signature: 'abstract setEnabled(orgId: OrgId, ref: KnowledgeRef, enabled: boolean): Promise<void>',
-        description: 'Switch one entry on or off for the whole organization.\n\nSynchronization never overrides this choice: an administrator who disabled a knowledge base finds it still disabled after the next listing.',
-        parameters: [{ name: 'orgId', description: 'the organization the entry belongs to.' }, { name: 'ref', description: 'the entry to change.' }, { name: 'enabled', description: 'whether it may be searched at all.' }],
-        throws: ['{KnowledgeError} `not-allowed` when the catalog holds no such entry.'],
-      },
-      {
-        signature: 'abstract directory(principal: KnowledgePrincipal): Promise<readonly KnowledgeBaseEntry[]>',
-        description: 'The knowledge bases this principal may search right now.',
-        parameters: [{ name: 'principal', description: 'who is asking, from a verified token.' }],
-        returns: 'the authorized directory, empty when the principal holds nothing.',
-      },
-      {
-        signature: 'abstract documents(request: GovernedDocumentsRequest): Promise<KnowledgeDocumentPage>',
-        description: 'Authorize one document listing and perform it.\n\nThe knowledge base is evaluated on this call, as a search\'s is. A member who may retrieve from a knowledge base may list what is in it: the decision is the same permission, asked separately so it can be tightened without a new authorization path.',
-        parameters: [{ name: 'request', description: 'who is asking, which knowledge base, and which page.' }],
-        returns: 'the page, with the documents addressed by governed references.',
-        throws: ['{KnowledgeError} with the reason the operation was refused or failed.'],
-      },
-      {
-        signature: 'abstract documentContent(request: GovernedDocumentRequest): Promise<KnowledgeDocumentContent>',
-        description: 'Authorize one document read and perform it.\n\nTwo things are proved before any content is read: the knowledge base the reference names admits this principal now, and the source agrees that the document belongs to that knowledge base. The second is what makes an unsigned reference safe — a reference whose halves disagree is refused, and possession of one is never authority.',
-        parameters: [{ name: 'request', description: 'who is asking, which document, and the caller\'s byte bound.' }],
-        returns: 'the original file, or the parsed text when the file does not fit or does not exist.',
-        throws: ['{KnowledgeError} with the reason the operation was refused or failed.'],
-      },
-      {
-        signature: 'abstract search(request: GovernedSearchRequest): Promise<KnowledgeSearchResult>',
-        description: 'Authorize one search and perform it.\n\nEvery knowledge base the scope resolves to is evaluated before the source is called, and one refusal fails the whole request: a partial result is indistinguishable from a complete one to the model that reads it.',
-        parameters: [{ name: 'request', description: 'who is asking, the scope, the query, and the caller\'s bounds.' }],
-        returns: 'the passages, with the knowledge bases actually searched.',
-        throws: ['{KnowledgeError} with the reason the operation was refused or failed.'],
-      },
-    ],
-  },
-  {
-    key: 'knowledgeSource',
-    summary: 'One upstream knowledge product.',
-    description: 'One upstream knowledge product. A provider mounts this service; the governed gateway injects `knowledgeSource`.\n\nFailures are raised as `KnowledgeError` with `upstream-unavailable` or `upstream-invalid`. A provider never raises an authorization reason: it does not know who is asking, which is the point.',
-    methods: [
-      {
-        signature: 'abstract readonly providerKind: string',
-        description: 'Which upstream product this is, as the first segment of a `KnowledgeRef`.\n\nA constant of the provider rather than configuration: it names the code that speaks the protocol, and a deployment renaming it would change the identity of every knowledge base already governed.',
-        parameters: [],
-      },
-      {
-        signature: 'abstract readonly sourceCode: string',
-        description: 'The deployment\'s code for this source, as the second `KnowledgeRef` segment. Configuration, because one company\'s `prod` is another\'s `kb`.',
-        parameters: [],
-      },
-      {
-        signature: 'abstract list(signal?: AbortSignal): Promise<readonly UpstreamKnowledgeBase[]>',
-        description: 'Everything the configured source holds.',
-        parameters: [{ name: 'signal', description: 'aborts the operation.' }],
-        returns: 'every knowledge base, in whatever order the source lists them.',
-        throws: ['{KnowledgeError} `upstream-unavailable` or `upstream-invalid`.'],
-      },
-      {
-        signature: 'abstract listDocuments(request: UpstreamDocumentsRequest): Promise<UpstreamDocumentPage>',
-        description: 'One page of the documents in one already-authorized knowledge base.',
-        parameters: [{ name: 'request', description: 'the authorized upstream id, and which page of it.' }],
-        returns: 'the page, empty when the knowledge base holds no document.',
-        throws: ['{KnowledgeError} `upstream-unavailable` or `upstream-invalid`.'],
-      },
-      {
-        signature: 'abstract describeDocument(upstreamDocId: string, signal?: AbortSignal): Promise<UpstreamDocumentPlacement>',
-        description: 'Where one document sits, so the gateway can authorize the knowledge base that holds it before asking for anything in it.',
-        parameters: [{ name: 'upstreamDocId', description: 'the source\'s own document id.' }, { name: 'signal', description: 'aborts the operation.' }],
-        returns: 'the knowledge base it belongs to, and the document.',
-        throws: ['{KnowledgeError} `upstream-unavailable`, `upstream-invalid`, or `document-unavailable` when the source holds no such document.'],
-      },
-      {
-        signature: 'abstract fetchDocument(request: UpstreamDocumentRequest): Promise<UpstreamDocumentContent>',
-        description: 'One already-authorized document\'s content.',
-        parameters: [{ name: 'request', description: 'the document and the caller\'s bounds.' }],
-        returns: 'the original file, or the parsed text when the file does not fit or does not exist.',
-        throws: ['{KnowledgeError} `upstream-unavailable`, `upstream-invalid`, or `document-unavailable` when the source will serve neither a file nor text.'],
-      },
-      {
-        signature: 'abstract search(request: UpstreamSearchRequest): Promise<readonly UpstreamPassage[]>',
-        description: 'Search an explicit, already-authorized set of knowledge bases.',
-        parameters: [{ name: 'request', description: 'the authorized upstream ids, the query, and the result bound.' }],
-        returns: 'the passages, at most `maxResults` of them.',
-        throws: ['{KnowledgeError} `upstream-unavailable` or `upstream-invalid`.'],
       },
     ],
   },
@@ -1991,26 +1355,6 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
-    key: 'llmHttpTransport',
-    summary: 'How a model request reaches a provider.',
-    description: 'How a model request reaches a provider. A provider mounts this service; LLM adapters inject `llmHttpTransport`.\n\nA request names an operation the code registers and a model, never a URL. A direct transport resolves both from the member\'s own configuration; a team transport sends them to the Control Plane, which resolves them from the company catalog. Neither lets a caller decide where bytes go.',
-    methods: [
-      {
-        signature: 'abstract send(request: TransportRequest): Promise<TransportResponse>',
-        description: 'Carry one request to a provider and hand back its response.',
-        parameters: [{ name: 'request', description: 'the operation, the model, and the body an adapter built.' }],
-        returns: 'the provider\'s status, headers, and body stream.',
-        throws: ['{TransportFailedError} when the request could not be carried at all.'],
-      },
-      {
-        signature: 'listModels(): Promise<readonly TransportModel[] | undefined>',
-        description: 'List models the transport\'s remote policy currently exposes, when the transport owns model discovery. Direct transports return `undefined` so an adapter uses its own catalog. Each remote model carries the catalog\'s input-modality declaration, which is the only way an adapter learns whether a company model accepts images.',
-        parameters: [],
-        returns: 'remote models, or undefined when discovery remains adapter-owned.',
-      },
-    ],
-  },
-  {
     key: 'lsp',
     summary: 'The LSP capability seam (`ctx.lsp`).',
     description: 'The LSP capability seam (`ctx.lsp`). Owns provider registration/selection and normalized query execution; exposes exactly the four operations and no protocol escape hatch.',
@@ -2068,50 +1412,33 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
-    key: 'modelGateway',
-    summary: 'The company model catalog and the decision in front of it.',
-    description: 'The company model catalog and the decision in front of it. A provider mounts this service; consumers inject `modelGateway`.\n\nAuthorization is asked on every invocation rather than cached with a token, so a role change takes effect on the next request instead of when a credential happens to expire.',
+    key: 'officeToPdf',
+    summary: 'A provider lifetime owns all converters, queued calls, and temporary files.',
+    description: 'A provider lifetime owns all converters, queued calls, and temporary files.',
     methods: [
       {
-        signature: 'abstract register(input: RegisterModel): Promise<ModelEntry>',
-        description: 'Put a model in the catalog, or update the one already there.\n\nIdempotent on `(orgId, modelRef)`: the stable ref is the identity, so a provider renaming its model upstream, or a credential rotating, changes this row without disturbing any grant that names it.',
-        parameters: [{ name: 'input', description: 'the model\'s stable ref and everything the upstream call needs.' }],
-        returns: 'the stored entry.',
-        throws: ['{MalformedCatalogEntryError} when a field names something no call could use.'],
+        signature: 'readonly generation: OfficeToPdfGeneration = OfficeToPdfGeneration(randomUUID())',
+        description: 'Changes whenever engine, font, or conversion configuration is replaced.',
+        parameters: [],
       },
       {
-        signature: 'abstract setStatus(orgId: OrgId, modelRef: string, status: ModelStatus): Promise<void>',
-        description: 'Withdraw a model from service, or return it.',
-        parameters: [{ name: 'orgId', description: 'the organization the model belongs to.' }, { name: 'modelRef', description: 'the model to change.' }, { name: 'status', description: 'whether it may be invoked.' }],
+        signature: 'convert(request: OfficeToPdfRequest, signal?: AbortSignal): Promise<OfficeToPdfResult>',
+        description: 'Convert Office bytes without modifying the source or writing Session events.',
+        parameters: [{ name: 'request', description: 'authorized metadata and deferred bounded source read.' }, { name: 'signal', description: 'caller cancellation; provider disposal also stops active work.' }],
+        returns: 'caller-owned PDF bytes after conversion and scratch cleanup settle; canceled readers reject independently.',
+        throws: ['{OfficeToPdfError} Invalid input, unusable output, or engine failure; cancellation rejects with its reason.'],
       },
       {
-        signature: 'abstract remove(orgId: OrgId, modelRef: string): Promise<void>',
-        description: 'Take a model out of the catalog, with the grants that named it.\n\nDeleting is not retiring. A retired model keeps its row and its grants and returns to service unchanged; a deleted one leaves nothing behind, so a model registered later under the same ref starts with no access. Only what register governed is ungoverned: a ref this catalog holds no entry for changes nothing and does not fail, even when some other subsystem governs a resource of the model type under that same ref.',
-        parameters: [{ name: 'orgId', description: 'the organization the model belongs to.' }, { name: 'modelRef', description: 'the model to remove.' }],
+        signature: '@Remote async render( workspaceFileScope: WorkspaceFileScope, path: string, priority: OfficeToPdfPriority, signal: AbortSignal, ): Promise<RenderedDocumentBytes>',
+        description: 'Read and convert one Office file using the Session\'s ordinary filesystem authorization.',
+        parameters: [{ name: 'workspaceFileScope', description: 'Session header lookup shared with workspaceFiles.' }, { name: 'path', description: 'absolute or workspace-relative Office path.' }, { name: 'priority', description: 'foreground preview or speculative background work.' }, { name: 'signal', description: 'Remote cancellation; disposal also cancels outstanding reads and conversions.' }],
+        returns: 'complete base64 PDF with original source identity and missing font families.',
       },
       {
-        signature: 'abstract list(orgId: OrgId): Promise<ModelEntry[]>',
-        description: 'Every model in an organization\'s catalog, in registration order.\n\nThis is the administrator\'s view and is not filtered by any principal\'s grants; a member\'s list is discover.',
-        parameters: [{ name: 'orgId', description: 'the organization to list.' }],
-        returns: 'the catalog, retired models included.',
-      },
-      {
-        signature: 'abstract discover(orgId: OrgId, principalId: string): Promise<DiscoveredCatalogModel[]>',
-        description: 'The models one principal may see, with nothing an upstream call needs.\n\nA Runner is told the stable ref, the display name, and the input modalities and no more: the endpoint, the upstream name, and the credential reference are the gateway\'s, and a member\'s model list is not the place to publish them. The modalities are there because the Runner decides before sending whether a message with an image may go to this model, and has no other way to know.',
-        parameters: [{ name: 'orgId', description: 'the organization to list.' }, { name: 'principalId', description: 'the account asking.' }],
-        returns: 'the active models this principal holds `model.discover` on.',
-      },
-      {
-        signature: 'abstract authorize(request: InvocationRequest): Promise<CallPlan>',
-        description: 'Decide one invocation and hold the budget for it.\n\nThe order is deliberate: a model nobody may discover is refused as unknown, an authorized model with no budget is refused after the authorization it passed, and a reservation is only taken once the request is certain to be attempted.',
-        parameters: [{ name: 'request', description: 'who is asking, for which model, and how much it may cost.' }],
-        returns: 'the approved call, including the reservation to settle afterwards.',
-        throws: ['{InvocationRefusedError} with the word for why it may not proceed.'],
-      },
-      {
-        signature: 'abstract settle(reservationId: ReservationId, settlement: Settlement): Promise<void>',
-        description: 'Settle the reservation an approved call held.\n\nA pass-through to the ledger, so a caller that holds a plan does not also need the quota service, and so every settlement for a gateway call goes through one place.',
-        parameters: [{ name: 'reservationId', description: 'the reservation the plan named.' }, { name: 'settlement', description: 'what the provider reported, what is estimated, or a release.' }],
+        signature: '@Remote(\'generation\') getGeneration(signal: AbortSignal): OfficeToPdfGeneration',
+        description: 'Read the current rendering generation before reusing a Client PDF.',
+        parameters: [{ name: 'signal', description: 'Remote caller cancellation.' }],
+        returns: 'provider lifetime, replaced with rendering, font, or engine configuration.',
       },
     ],
   },
@@ -2179,6 +1506,88 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'pluginManager',
+    summary: 'Manage profile files and apply their declared reload lifecycle.',
+    description: 'Manage profile files and apply their declared reload lifecycle.',
+    methods: [
+      {
+        signature: '@Remote async listPlugins(): Promise<PluginInfo[]>',
+        description: 'Read current plugins, including why a row cannot be changed through the profile patch.',
+        parameters: [],
+        returns: 'Current runtime entries with persistent patch targets.',
+      },
+      {
+        signature: '@Remote listBundles(): Promise<BundleInfo[]>',
+        description: 'Read the profile\'s installed bundles, the bundles this dsh installation supplies, and the selected names that are not bundles. A dependency without a bundle patch is listed, as a `not-bundle` problem, only while it is selected.',
+        parameters: [],
+        returns: 'Package versions, one-liners, rows, activation selections, whether the installation offers the bundle, and removal availability.',
+      },
+      {
+        signature: '@Remote async inspect(spec: string, signal?: AbortSignal): Promise<PluginSpecInspection>',
+        description: 'Read what a spec names before installing it.',
+        parameters: [{ name: 'spec', description: 'One package spec: a registry name, an absolute path, a git address, or a tarball.' }, { name: 'signal', description: 'Ends a registry lookup early.' }],
+        returns: 'The package the spec names, or why it is refused.',
+      },
+      {
+        signature: '@Remote setPluginEnabled(id: PluginEntryId, enabled: boolean): Promise<ChangeResult>',
+        description: 'Persist a plugin entry\'s desired enablement and apply it on live profiles.',
+        parameters: [{ name: 'id', description: 'Loader entry identity returned by listPlugins.' }, { name: 'enabled', description: 'Whether the plugin should run.' }],
+        returns: 'Saved and runtime outcomes, including higher-priority overrides.',
+      },
+      {
+        signature: '@Remote setBundleEnabled(name: string, enabled: boolean): Promise<ChangeResult>',
+        description: 'Select or remove a bundle layer while retaining installed dependencies.',
+        parameters: [{ name: 'name', description: 'Bundle package name.' }, { name: 'enabled', description: 'Whether the bundle contributes its patch layer.' }],
+        returns: 'Persisted and runtime outcomes.',
+      },
+      {
+        signature: '@Remote installBundle(spec: string, options?: InstallBundleOptions): Promise<ChangeResult>',
+        description: 'Install a package using the same pnpm implementation as dsh plugin. A run that fails, is cancelled, or adds a package without a bundle patch restores `package.json` and `pnpm-lock.yaml` as they were; downloaded files can stay.',
+        parameters: [{ name: 'spec', description: 'One package spec, including local paths relative to the invocation directory.' }, { name: 'options', description: 'Whether to activate the installed bundle (defaults to true), the request id a cancellation names, and the pending build scripts to allow for this profile before pnpm runs.' }],
+        returns: 'Package-manager diagnostics and observed activation outcome.',
+      },
+      {
+        signature: '@Remote async cancelInstall(requestId: PluginInstallRequestId): Promise<PluginInstallCancellation>',
+        description: 'Stop an installation this manager owns and wait until its files are back.',
+        parameters: [{ name: 'requestId', description: 'The id the installation was started with.' }],
+        returns: '`cancelled` once pnpm exited and the files are restored, `too-late` once the bundle is being applied, `not-running` for any other id.',
+      },
+      {
+        signature: '@Remote removeBundle(name: string): Promise<ChangeResult>',
+        description: 'Unload and remove a profile-owned bundle dependency through dsh plugin\'s pnpm path.',
+        parameters: [{ name: 'name', description: 'Installed dependency name.' }],
+        returns: 'Removal diagnostics and the remaining profile state.',
+      },
+    ],
+  },
+  {
+    key: 'profileContext',
+    summary: 'Current profile facts; scheduling and mutation belong to their callers.',
+    description: 'Current profile facts; scheduling and mutation belong to their callers.',
+    methods: [
+      {
+        signature: 'readonly packageManager?: ProfilePnpmInvocation',
+        description: 'Packaged applications supply their bundled runtime instead of a PATH executable.',
+        parameters: [],
+      },
+      {
+        signature: 'readonly startedBundles: readonly string[]',
+        description: 'Bundle packages used to start this process, before any persisted edits.',
+        parameters: [],
+      },
+      {
+        signature: 'readonly overlays: readonly PatchOptions[]',
+        description: 'Parsed command-line overlays, applied above profile and home patches.',
+        parameters: [],
+      },
+      {
+        signature: 'readonly telemetryDisabledEnv: string | undefined',
+        description: 'Launch-time DSH_TELEMETRY_DISABLED value; any non-empty value opts out.',
+        parameters: [],
+      },
+    ],
+  },
+  {
     key: 'ptcRuntime',
     summary: 'Registers one `ctx.ptcRuntime` implementation.',
     description: 'Registers one `ctx.ptcRuntime` implementation. Program, budget, abort, and substrate failures resolve in PtcRunResult; only Service Definition contract misuse rejects. Implementations bridge structured-cloneable bindings, materialize each declared namespace rejection class, treat programs as hostile peers, isolate runs from one another, and terminate and await in-flight runs during disposal.',
@@ -2205,44 +1614,6 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Execute resolved inputs; program outcomes resolve as result fields.',
         parameters: [{ name: 'spec', description: 'directory, deadline, program, bindings, cancellation and supported policy.' }],
         returns: 'Captured output and the execution outcome.',
-      },
-    ],
-  },
-  {
-    key: 'quota',
-    summary: 'The budget ledger.',
-    description: 'The budget ledger. A provider mounts this service; consumers inject `quota`.\n\nNothing here decides who may use a model — access control does. This decides only whether there is budget left, and records what a request spent.',
-    methods: [
-      {
-        signature: 'abstract setLimit(orgId: OrgId, period: PeriodKey, limitTokens: number | undefined): Promise<void>',
-        description: 'Set what an organization may spend in one period. Setting it again replaces the limit and changes nothing already settled or reserved.',
-        parameters: [{ name: 'orgId', description: 'the organization to limit.' }, { name: 'period', description: 'the period the limit applies to.' }, { name: 'limitTokens', description: 'the ceiling, or undefined to remove the limit.' }],
-      },
-      {
-        signature: 'abstract reserve(request: ReservationRequest): Promise<Reservation>',
-        description: 'Hold a claim on the budget before calling an upstream provider.\n\nThe claim is the input tokens plus the most output the request may produce, so a reservation is the ceiling on what this request can ever cost. That is what lets a later estimate be bounded rather than invented.',
-        parameters: [{ name: 'request', description: 'who is asking, for which model, and for how much.' }],
-        returns: 'the held reservation.',
-        throws: ['{ReservationRefusedError} when the budget cannot cover it, or the request is malformed.'],
-      },
-      {
-        signature: 'abstract settle(id: ReservationId, settlement: Settlement): Promise<SettlementRecord>',
-        description: 'Settle a reservation once, for what actually happened.\n\nSettling the same reservation again returns the settlement already recorded and changes no balance. That is what makes a caller safe to retry after a crash, and what makes the reconciler safe to run beside it.',
-        parameters: [{ name: 'id', description: 'the reservation being settled.' }, { name: 'settlement', description: 'what the provider reported, what is estimated, or a release.' }],
-        returns: 'the settlement of record, which may predate this call.',
-        throws: ['{UnknownReservationError} when the ledger holds no such reservation.'],
-      },
-      {
-        signature: 'abstract reconcile(now: number): Promise<SettlementRecord[]>',
-        description: 'Settle every reservation whose lifetime has run out.\n\nThey are settled, not released: a request that ran past its window is far more likely to have spent the budget than to have spent nothing, and a ledger that released them would let a crash loop spend without recording.',
-        parameters: [{ name: 'now', description: 'the moment to reconcile against, in epoch milliseconds.' }],
-        returns: 'the settlements written, in reservation order.',
-      },
-      {
-        signature: 'abstract usage(orgId: OrgId, period: PeriodKey): Promise<QuotaUsage>',
-        description: 'What an organization has spent and holds in one period.',
-        parameters: [{ name: 'orgId', description: 'the organization to report on.' }, { name: 'period', description: 'the period to report on.' }],
-        returns: 'the limit, what is settled, what is reserved, and what remains.',
       },
     ],
   },
@@ -2379,8 +1750,8 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         returns: 'the durable attachment reference and base64-encoded bytes.',
       },
       {
-        signature: '@Remote(\'updateQueue\') updateQueue(request: SessionUpdateQueueRequest): SessionUpdateQueueValue',
-        description: 'Mutate one still-pending queue occurrence on a live Agent.',
+        signature: '@Remote(\'updateQueue\') updateQueue(request: SessionUpdateQueueRequest): Promise<SessionUpdateQueueValue>',
+        description: 'Mutate one still-pending queue occurrence, resuming a cold Agent first.',
         parameters: [{ name: 'request', description: 'Session, queue item, and requested mutation.' }],
         returns: 'acknowledgement that the queue mutation was applied.',
       },
@@ -2694,9 +2065,9 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     methods: [
       {
         signature: 'async listCandidates( agent: Agent, query: string = \'\', limit: number = this.config.candidateLimit, signal?: AbortSignal, ): Promise<SessionReferenceCandidate[]>',
-        description: 'List reference candidates, ranked by working-directory affinity.\n\nDiscovery runs at keystroke rate, so a title only ever comes from a projection read: see SessionReferenceResolver.projectedTitle for which sessions can answer one and which fall back to their id.',
-        parameters: [{ name: 'agent', description: 'target agent; self is excluded and its cwd drives ranking.' }, { name: 'query', description: 'optional case-insensitive session-id/cwd/title substring.' }, { name: 'limit', description: 'optional positive result cap.' }, { name: 'signal', description: 'optional cancellation boundary for host autocomplete teardown.' }],
-        returns: 'candidates labeled by latest title or, when absent, session id.',
+        description: 'List reference candidates, ranked by working-directory affinity.\n\nDiscovery runs at keystroke rate, so titles and subagent labels only ever come from projection reads; sessions without either fall back to their id.',
+        parameters: [{ name: 'agent', description: 'target agent; self is excluded and its cwd drives ranking.' }, { name: 'query', description: 'optional case-insensitive session-id/cwd/title/display-title substring.' }, { name: 'limit', description: 'optional positive result cap.' }, { name: 'signal', description: 'optional cancellation boundary for host autocomplete teardown.' }],
+        returns: 'candidates with canonical mention labels and presentation titles.',
       },
       {
         signature: '@Remote(\'candidates\') async remoteExportCandidates( agent: Agent, query: string, signal: AbortSignal, ): Promise<SessionReferenceMentionCandidate[]>',
@@ -2786,7 +2157,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
       {
         signature: '@Remote async list(request: SkillListRequest, signal: AbortSignal): Promise<SkillListValue>',
         description: 'List the user-invocable skills visible to one Session composition.',
-        parameters: [{ name: 'request', description: 'Session identity whose cwd and preset select the catalog view; a Session without a cwd sees only the skills no project root supplies.' }, { name: 'signal', description: 'caller lifetime carried by the Remote transport; admitted catalog reads retain their existing completion semantics.' }],
+        parameters: [{ name: 'request', description: 'Session identity whose cwd and preset select the catalog view.' }, { name: 'signal', description: 'caller lifetime carried by the Remote transport; admitted catalog reads retain their existing completion semantics.' }],
         returns: 'user-invocable skill metadata without loading skill bodies.',
         throws: ['RemoteError when the Session cannot be inspected or no registry can serve it.'],
       },
@@ -3167,6 +2538,12 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     description: 'Named provider registry with one-shot runs, durable discovery, and continuable-child operations.',
     methods: [
       {
+        signature: 'resolveMaxDepth(configured?: number | \'provider-managed\'): number | undefined',
+        description: 'Resolve a delegation tool\'s depth policy against the current user setting.',
+        parameters: [{ name: 'configured', description: 'Explicit tool limit, or provider-managed for external delegation.' }],
+        returns: 'The numeric limit, or undefined when the provider owns depth enforcement.',
+      },
+      {
         signature: 'async startContinuable(spec: ContinuableStartSpec): Promise<ContinuableStart>',
         description: 'Establish one durable continuable child and deliver its initial prompt. Resolves when the child\'s inbox accepts that prompt, without waiting for the turn to start or for the message to reach the Session log; any earlier failure rejects with no ids and rolls back the child entirely.',
         parameters: [{ name: 'spec', description: 'provider, delegation request, and caller cancellation.' }],
@@ -3223,7 +2600,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
       },
       {
         signature: '@Remote(\'prompt\') async prompt(request: SubagentPromptRequest, signal: AbortSignal): Promise<SubagentPromptReceipt>',
-        description: 'Deliver one browser-authored message to a continuable child through the exact live direct parent, retaining the caller-minted request identity and validated browser zone on the accepted message. Success identifies the message the child\'s inbox accepted; later execution is independent of this call. Queue delivery targets a later turn; steer delivery targets the nearest step and retains the Agent loop\'s best-effort fallback semantics. Image parts are admitted and persisted through the attachment store before delivery, and the child\'s model must accept image input.',
+        description: 'Deliver one browser-authored message to a continuable child through the exact live direct parent, retaining the caller-minted request identity and validated browser zone on the accepted message. Success identifies the message the child\'s inbox accepted; later execution is independent of this call. Queue delivery targets a later turn; steer delivery targets the nearest step and retains the Agent loop\'s best-effort fallback semantics. Image parts are admitted and persisted through the attachment store before delivery, and the child\'s model must accept image input. Cold resume at capacity rejects with `subagent/delivery-unavailable`.',
         parameters: [{ name: 'request', description: 'durable address, delivery, minted identity, content, and optional browser zone.' }, { name: 'signal', description: 'carrier cancellation, owning the call until inbox acceptance.' }],
         returns: 'the accepted message\'s inbox identity.',
         throws: ['{RemoteError} `gateway/bad-request`, `subagent/attachment-invalid`, `subagent/invalid-time-zone`, `subagent/parent-unavailable`, `subagent/not-resumable`, `subagent/unauthorized`, `subagent/delivery-unavailable`, `gateway/cancelled`, or `gateway/internal`.'],
@@ -3349,51 +2726,6 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
-    key: 'teamAccountClient',
-    summary: 'The team account as this computer holds it.',
-    description: 'The team account as this computer holds it.\n\nThe default `signIn` flow authenticates the Runner-local form through the Control Plane and binds the device without navigating there. `begin` and `complete` retain the two-step mechanism used by an optional browser handoff.',
-    methods: [
-      {
-        signature: 'async begin(): Promise<BindingHandle>',
-        description: 'Open a binding transaction and return what the local pairing page shows.\n\nThe PKCE verifier stays in this process: it is written nowhere, so a transaction cannot be completed by anything that reads this computer\'s disk without also being this Runner.',
-        parameters: [],
-        returns: 'the pairing code to display, the Control Plane address to send the member to, and the transaction id.',
-      },
-      {
-        signature: 'async signIn(loginName: string, secret: string): Promise<TeamAccountState>',
-        description: 'Authenticate a member and bind this Runner without opening the Control Plane in a browser.',
-        parameters: [{ name: 'loginName', description: 'the organization-local account name typed on the Runner.' }, { name: 'secret', description: 'the account password typed on the Runner.' }],
-        returns: 'the state this installation is now in.',
-        throws: ['{ControlPlaneRefusedError} when authentication or binding is refused.'],
-      },
-      {
-        signature: 'async complete( transactionId: TransactionId, code: string, member?: TeamMemberIdentity, ): Promise<TeamAccountState>',
-        description: 'Redeem the code the browser carried back, and keep the credential.',
-        parameters: [{ name: 'transactionId', description: 'the transaction the code belongs to.' }, { name: 'code', description: 'the one-time authorization code.' }, { name: 'member', description: 'authenticated member identity returned by a local sign-in.' }],
-        returns: 'the state this installation is now in.',
-        throws: ['{NotBoundError} when no transaction is awaiting confirmation in this process.', '{ControlPlaneRefusedError} when the Control Plane refused the redemption.'],
-      },
-      {
-        signature: 'async state(): Promise<TeamAccountState>',
-        description: 'What this installation currently holds.',
-        parameters: [],
-        returns: 'whether it is bound, and to which device and family.',
-      },
-      {
-        signature: 'async accessToken(): Promise<string>',
-        description: 'An access token that will still be valid when it arrives, refreshing first when the stored one is close enough to lapsing to lose the race.\n\nConcurrent callers share one refresh. The Control Plane spends a refresh token on its first presentation and reads a second presentation as a replay that revokes the whole family, so the model catalog and the knowledge search waking together must not each exchange the token they both read.',
-        parameters: [],
-        returns: 'the access token to present to a company-resource entry.',
-        throws: ['{NotBoundError} when this computer holds no credential.', '{ControlPlaneRefusedError} when the refresh was refused, including after a replay revoked the family.'],
-      },
-      {
-        signature: 'async signOut(): Promise<void>',
-        description: 'Forget the team credential, keeping the device key, the workspaces, and the sessions. The computer stays the same computer; it just stops holding a team account.',
-        parameters: [],
-      },
-    ],
-  },
-  {
     key: 'terminalController',
     summary: 'Typed Remote control of transient Session-owned terminal processes.',
     description: 'Typed Remote control of transient Session-owned terminal processes.',
@@ -3418,9 +2750,15 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
       },
       {
         signature: '@Remote async create(agent: Agent, request: TerminalCreateRequest, signal: AbortSignal): Promise<WebTerminalInfo>',
-        description: 'Allocate an interactive shell once for a caller-generated identity.',
+        description: 'Allocate a user shell once for a caller-generated identity, without Agent sandbox or approval restrictions.',
         parameters: [{ name: 'agent', description: 'Session owner supplied by the Gateway.' }, { name: 'request', description: 'initial dimensions and idempotency identity.' }, { name: 'signal', description: 'allocation cancellation; committed terminals survive disconnection.' }],
         returns: 'the existing or newly committed terminal.',
+      },
+      {
+        signature: '@Remote({ mode: \'stream\' }) retain(sessionId: SessionId, id: WebTerminalId, signal: AbortSignal): AsyncIterable<TerminalRetentionFrame>',
+        description: 'Retain an existing terminal for a window without activating its Agent or taking input control.',
+        parameters: [{ name: 'sessionId', description: 'owning Session identity, including an inactive saved layout.' }, { name: 'id', description: 'retained Host terminal identity.' }, { name: 'signal', description: 'physical Remote stream cancellation.' }],
+        returns: 'a hold acknowledgement followed by an open lifetime stream.',
       },
       {
         signature: '@Remote({ mode: \'stream\' }) follow(agent: Agent, id: WebTerminalId, attachmentId: TerminalAttachmentId, signal: AbortSignal): AsyncIterable<TerminalFrame>',
@@ -3620,7 +2958,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
       },
       {
         signature: 'restrict(filter: ToolRestriction): () => void',
-        description: 'Restrict the tools the calling agent scope inherits. Empty filters, unknown names, scope-local names, and reserved transport names fail. Restrictions intersect; the scope\'s own registrations stay visible to it and to every scope nested inside it, because a restriction filters what its scope inherits and never what that scope contributes.',
+        description: 'Restrict global tools for the calling agent scope. Empty filters, unknown names, scope-local names, and reserved transport names fail. Restrictions intersect; scoped registrations remain visible.',
         parameters: [{ name: 'filter', description: 'global-tool mask: `allow` (keep only) and/or `deny` (remove).' }],
         returns: 'the exact disposer that lifts this restriction.',
       },
@@ -3671,20 +3009,20 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         signature: 'get(key: string): TypertSchemaRecord | undefined',
         description: 'Look up one schema by `<package>#<name>`.',
         parameters: [{ name: 'key', description: 'global schema key.' }],
-        returns: 'the live schema record, or `undefined` when absent.',
+        returns: 'a record containing the cached schema, or `undefined` when absent.',
       },
       {
         signature: 'resolve(key: string): TypertSchemaRecord',
         description: 'Resolve one required schema.',
         parameters: [{ name: 'key', description: 'global schema key.' }],
-        returns: 'the live schema record.',
+        returns: 'a record containing the cached schema.',
         throws: ['when the key is malformed, the package face is absent, or the schema is not contributed.'],
       },
       {
         signature: 'list(filter: TypertSchemaFilter = {}): TypertSchemaRecord[]',
         description: 'Enumerate live schemas in registration order.',
         parameters: [{ name: 'filter', description: 'optional package and face restriction.' }],
-        returns: 'matching schema records.',
+        returns: 'matching records containing the cached schemas.',
       },
       {
         signature: 'getPackage(packageName: string, face: TypertFace = \'host\'): TypertPackageRecord | undefined',
@@ -3767,12 +3105,6 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Register a fetch provider. Throws WebError `WEB_DUPLICATE_PROVIDER` if its id is already registered for fetch. Returns a disposer; disposed with the calling fiber.',
         parameters: [{ name: 'provider', description: 'the provider; its `id` is the registry key.' }],
         returns: 'the disposer that unregisters the provider.',
-      },
-      {
-        signature: 'async searchPermitted(signal?: AbortSignal): Promise<boolean>',
-        description: 'Whether search is permitted to the current member by the provider a search would use: the configured provider, or the single registered one. Selection here ignores `available()`, because a missing credential is a search-time failure a member can fix, while a governance refusal is a reason not to offer search at all. No registered provider answers false; an ambiguous unconfigured selection answers true and leaves the refusal to search time.',
-        parameters: [{ name: 'signal', description: 'cancellation of the provider\'s decision request.' }],
-        returns: 'whether the deployment permits search right now.',
       },
       {
         signature: 'async search(request: WebSearchRequest, signal?: AbortSignal): Promise<WebSearchResult>',
@@ -3866,6 +3198,26 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Parse and execute a workflow script.',
         parameters: [{ name: 'request', description: 'the script, its `args`, the parent agent, and an optional cancel signal.' }],
         returns: 'the live run; its `result` resolves when the script settles.',
+      },
+    ],
+  },
+  {
+    key: 'workspaceChanges',
+    summary: 'Serves the summaries and file comparisons the recorder keeps for live Sessions.',
+    description: 'Serves the summaries and file comparisons the recorder keeps for live Sessions.',
+    methods: [
+      {
+        signature: 'summary(sessionId: SessionId, seq: number): WorkspaceChangesSummary | undefined',
+        description: 'The summary announced by one `workspace/changes` event.',
+        parameters: [{ name: 'sessionId', description: 'the Session that appended the event.' }, { name: 'seq', description: 'the event\'s sequence number.' }],
+        returns: 'the summary, or undefined once its Session was disposed or when this Host never recorded it.',
+      },
+      {
+        signature: 'diff(sessionId: SessionId, seq: number, index: number, signal: AbortSignal): Promise<WorkspaceFileDiff | undefined>',
+        description: 'Compare one listed file\'s contents at turn start and turn end.',
+        parameters: [{ name: 'sessionId', description: 'the Session that appended the event.' }, { name: 'seq', description: 'the event\'s sequence number.' }, { name: 'index', description: 'the file\'s index in the summary\'s `files`.' }, { name: 'signal', description: 'cancels the reads.' }],
+        returns: 'the comparison, or undefined once its Session was disposed, when this Host never recorded it, or when no file has that index.',
+        throws: ['when a snapshot read fails for a live Session.'],
       },
     ],
   },
@@ -4217,6 +3569,14 @@ export const EVENT_API: readonly EventApiEntry[] = [
     parameters: [{ name: 'payload', description: '.signal - optional compaction cancellation signal.' }, { name: 'next', description: 'delegate to the next recovery listener.' }],
   },
   {
+    name: 'connection/request',
+    mode: 'waterfall',
+    signature: '\'connection/request\'(request: IncomingMessage, response: ServerResponse, next: () => Promise<void>): Promise<void>',
+    summary: 'Admit or wrap an authenticated shared API request, including body transfer.',
+    description: 'Admit or wrap an authenticated shared API request, including body transfer. Existing requests continue when a listener refuses subsequent requests.',
+    parameters: [{ name: 'request', description: 'Authenticated incoming HTTP request.' }, { name: 'response', description: 'Response owned until the delegated bridge settles.' }, { name: 'next', description: 'Delegate to the next listener or the shared API bridge.' }],
+  },
+  {
     name: 'cordis/dynamic-package',
     mode: 'emit',
     signature: '\'cordis/dynamic-package\'(pkg: DynamicCordisPackage): void',
@@ -4337,6 +3697,22 @@ export const EVENT_API: readonly EventApiEntry[] = [
     parameters: [{ name: 'payload', description: '.change - fresh current projection or clear tombstone.' }],
   },
   {
+    name: 'hmr/change',
+    mode: 'emit',
+    signature: '\'hmr/change\'(url: string): void',
+    summary: 'A watched file has no module or configuration handler.',
+    description: 'A watched file has no module or configuration handler.',
+    parameters: [{ name: 'url', description: 'Canonical file URL.' }],
+  },
+  {
+    name: 'hmr/reload',
+    mode: 'emit',
+    signature: '\'hmr/reload\'(reloads: Map<Plugin, Reload>): void',
+    summary: 'Module replacements have finished loading.',
+    description: 'Module replacements have finished loading.',
+    parameters: [{ name: 'reloads', description: 'Replaced plugins and their module locations.' }],
+  },
+  {
     name: 'llm/adapters-updated',
     mode: 'emit',
     signature: '\'llm/adapters-updated\'(): void',
@@ -4359,6 +3735,30 @@ export const EVENT_API: readonly EventApiEntry[] = [
     summary: 'The selectable process catalog changed.',
     description: 'The selectable process catalog changed. Payload-free by design: consumers subscribe first, then re-read the complete catalog.',
     parameters: [],
+  },
+  {
+    name: 'plugin-manager/changed',
+    mode: 'emit',
+    signature: '\'plugin-manager/changed\'(change: PluginChange): void',
+    summary: 'The profile\'s plugins, bundles, or composition changed: a manager operation completed.',
+    description: 'The profile\'s plugins, bundles, or composition changed: a manager operation completed. A patch generation applied outside the manager, by HMR\'s watcher after a CLI or hand edit, announces nothing here.',
+    parameters: [{ name: 'change', description: 'what changed.' }],
+  },
+  {
+    name: 'plugin-manager/install-log',
+    mode: 'emit',
+    signature: '\'plugin-manager/install-log\'(chunk: PluginInstallLogChunk): void',
+    summary: 'One chunk of a pnpm run\'s output, streamed as the run produces it.',
+    description: 'One chunk of a pnpm run\'s output, streamed as the run produces it.',
+    parameters: [{ name: 'chunk', description: 'the chunk and the run it belongs to.' }],
+  },
+  {
+    name: 'plugin-manager/install-state',
+    mode: 'emit',
+    signature: '\'plugin-manager/install-state\'(progress: PluginInstallProgress): void',
+    summary: 'An installation moved between its Host phases.',
+    description: 'An installation moved between its Host phases.',
+    parameters: [{ name: 'progress', description: 'the installation\'s request id and phase.' }],
   },
   {
     name: 'session-telemetry/record',
@@ -4589,30 +3989,6 @@ export const EVENT_API: readonly EventApiEntry[] = [
 /** Shapes of every exported type the Service and Event signatures reference (transitively), sorted by name. */
 export const TYPE_API: readonly TypeApiEntry[] = [
   {
-    name: 'AccessDecision',
-    declaration: 'export interface AccessDecision {\n    readonly allowed: boolean;\n    readonly policyRevision: bigint;\n    readonly matchedGrantIds: readonly GrantId[];\n    readonly scopes: readonly string[];\n    readonly reason: AccessReason;\n}',
-  },
-  {
-    name: 'AccessReason',
-    declaration: 'export type AccessReason = \'allowed\' | \'default-deny\' | \'resource-disabled\' | \'no-grant\';',
-  },
-  {
-    name: 'AccessRequest',
-    declaration: 'export interface AccessRequest {\n    readonly orgId: OrgId;\n    readonly principalId: UserId;\n    readonly deviceId?: string;\n    readonly action: string;\n    readonly resourceType: string;\n    readonly resourceId: string;\n    readonly context?: {\n        readonly sessionCorrelationId?: string;\n    };\n}',
-  },
-  {
-    name: 'AccessTokenClaims',
-    declaration: 'export interface AccessTokenClaims {\n    readonly orgId: OrgId;\n    readonly principalId: UserId;\n    readonly deviceId: DeviceId;\n    readonly issuedAt: number;\n    readonly expiresAt: number;\n}',
-  },
-  {
-    name: 'AccountUser',
-    declaration: 'export interface AccountUser {\n    readonly id: UserId;\n    readonly orgId: OrgId;\n    readonly loginName: string;\n    readonly displayName: string;\n    readonly email: string | undefined;\n    readonly phone: string | undefined;\n    readonly gender: MemberGender | undefined;\n    readonly departmentId: DeptId | undefined;\n    readonly status: AccountUserStatus;\n    readonly mustChangePassword: boolean;\n    readonly failedAttempts: number;\n    readonly lockedUntil: number | undefined;\n    readonly lastLoginAt: number | undefined;\n    readonly createdAt: number;\n    readonly updatedAt: number;\n}',
-  },
-  {
-    name: 'AccountUserStatus',
-    declaration: 'export type AccountUserStatus = \'active\' | \'suspended\';',
-  },
-  {
     name: 'AdapterRegistrationHandle',
     declaration: 'export interface AdapterRegistrationHandle {\n    (): void;\n    replace(providers: string[]): void;\n}',
   },
@@ -4642,7 +4018,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AgentPreset',
-    declaration: 'export interface AgentPreset {\n    readonly id: string;\n    readonly trust: PresetTrust;\n    readonly path: string;\n    readonly name?: string;\n    readonly description?: string;\n    readonly order?: number;\n    readonly workspace: PresetWorkspace;\n    readonly broken?: string;\n}',
+    declaration: 'export interface AgentPreset {\n    readonly id: string;\n    readonly trust: PresetTrust;\n    readonly path: string;\n    readonly name?: string;\n    readonly description?: string;\n    readonly order?: number;\n    readonly broken?: string;\n}',
   },
   {
     name: 'AgentPresetComposition',
@@ -4666,7 +4042,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AgentPresetRow',
-    declaration: 'export interface AgentPresetRow {\n    readonly id: string;\n    readonly trust: PresetTrust;\n    readonly isDefault: boolean;\n    readonly workspace: PresetWorkspace;\n    readonly name?: string;\n    readonly description?: string;\n    readonly broken?: string;\n}',
+    declaration: 'export interface AgentPresetRow {\n    readonly id: string;\n    readonly trust: PresetTrust;\n    readonly isDefault: boolean;\n    readonly name?: string;\n    readonly description?: string;\n    readonly broken?: string;\n}',
   },
   {
     name: 'AgentResolver',
@@ -4690,15 +4066,11 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'ApiSessionAgentError',
-    declaration: 'export type ApiSessionAgentError = RemoteError<\'session/not-found\' | \'session/agent-busy\' | \'gateway/internal\'>;',
+    declaration: 'export type ApiSessionAgentError = RemoteError<\'session/not-found\' | \'session/agent-busy\' | \'session/writer-held\' | \'gateway/internal\'>;',
   },
   {
     name: 'ApiSessionAgentResult',
     declaration: 'export type ApiSessionAgentResult = {\n    readonly agent: Agent;\n} | {\n    readonly error: ApiSessionAgentError;\n};',
-  },
-  {
-    name: 'Approval',
-    declaration: 'export interface Approval {\n    readonly orgId: OrgId;\n    readonly userId: UserId;\n    readonly authenticationId: string;\n}',
   },
   {
     name: 'ApprovalOutcome',
@@ -4726,7 +4098,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'AskUserQuestionIntent',
-    declaration: 'export type AskUserQuestionIntent = {\n    kind: \'plan-review\';\n    approve: string;\n};',
+    declaration: 'export type AskUserQuestionIntent = {\n    kind: \'plan-review\';\n    approve: string;\n    callId?: ToolCallId;\n};',
   },
   {
     name: 'AskUserQuestionItem',
@@ -4787,38 +4159,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'AttachmentId',
     declaration: 'export type AttachmentId = Branded<\'AttachmentId\'>;',
-  },
-  {
-    name: 'AuditActionName',
-    declaration: 'export type AuditActionName = keyof typeof AUDIT_ACTIONS;',
-  },
-  {
-    name: 'AuditEvent',
-    declaration: 'export interface AuditEvent extends AuditRecord {\n    readonly seq: bigint;\n    readonly at: number;\n    readonly resourceType: string;\n    readonly metadata: AuditMetadata;\n}',
-  },
-  {
-    name: 'AuditMetadata',
-    declaration: 'export type AuditMetadata = Readonly<Partial<Record<MetadataKey, number | string>>>;',
-  },
-  {
-    name: 'AuditOutcome',
-    declaration: 'export type AuditOutcome = typeof AUDIT_OUTCOMES[number];',
-  },
-  {
-    name: 'AuditQuery',
-    declaration: 'export interface AuditQuery {\n    readonly orgId: OrgId;\n    readonly principalId?: UserId;\n    readonly action?: AuditActionName;\n    readonly resourceType?: string;\n    readonly outcome?: AuditOutcome;\n    readonly since?: number;\n    readonly until?: number;\n    readonly before?: bigint;\n    readonly limit?: number;\n}',
-  },
-  {
-    name: 'AuditReason',
-    declaration: 'export type AuditReason = typeof AUDIT_REASONS[number];',
-  },
-  {
-    name: 'AuditRecord',
-    declaration: 'export interface AuditRecord {\n    readonly orgId: OrgId;\n    readonly action: AuditActionName;\n    readonly outcome: AuditOutcome;\n    readonly principalId?: UserId;\n    readonly resourceId?: string;\n    readonly deviceId?: string;\n    readonly correlationId?: string;\n    readonly reason?: AuditReason;\n    readonly policyRevision?: bigint;\n    readonly metadata?: AuditMetadata;\n}',
-  },
-  {
-    name: 'AuthenticationOutcome',
-    declaration: 'export type AuthenticationOutcome = {\n    readonly ok: true;\n    readonly userId: UserId;\n    readonly mustChangePassword: boolean;\n} | {\n    readonly ok: false;\n};',
   },
   {
     name: 'AuthorizationEntry',
@@ -4885,74 +4225,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface BashEnvVariableInfo extends BashEnvVariable {\n    contributor: string;\n    key: DshEnvironmentKey;\n}',
   },
   {
-    name: 'BiCatalogEntry',
-    declaration: 'export interface BiCatalogEntry {\n    readonly ref: BiProjectRef;\n    readonly resourceId: ResourceId;\n    readonly displayName: string;\n    readonly description: string;\n    readonly projectType: string;\n    readonly warehouseType: string;\n    readonly adminEnabled: boolean;\n    readonly effectiveEnabled: boolean;\n    readonly lastDiscoveredAt: number;\n}',
-  },
-  {
-    name: 'BiCatalogView',
-    declaration: 'export interface BiCatalogView {\n    readonly source: BiSourceStatus;\n    readonly entries: readonly BiCatalogEntry[];\n}',
-  },
-  {
-    name: 'BiCell',
-    declaration: 'export type BiCell = string | number | boolean | null;',
-  },
-  {
-    name: 'BiChartKind',
-    declaration: 'export type BiChartKind = \'line\' | \'horizontal_bar\' | \'vertical_bar\' | \'scatter\' | \'bubble\' | \'waterfall\' | \'area\' | \'mixed\' | \'pie\' | \'table\' | \'big_number\' | \'funnel\' | \'map\' | \'sankey\' | \'radar\' | \'gauge\' | \'gantt\' | \'safety_cross\' | \'custom\' | \'other\';',
-  },
-  {
-    name: 'BiChartPage',
-    declaration: 'export interface BiChartPage {\n    readonly ref: BiProjectRef;\n    readonly charts: readonly BiChartSummary[];\n    readonly page: number;\n    readonly pageSize: number;\n    readonly total: number | undefined;\n}',
-  },
-  {
-    name: 'BiChartRef',
-    declaration: 'export type BiChartRef = Branded<\'BiChartRef\'>;',
-  },
-  {
-    name: 'BiChartsRequest',
-    declaration: 'export interface BiChartsRequest {\n    readonly ref: BiProjectRef;\n    readonly query?: string;\n    readonly page?: number;\n    readonly pageSize?: number;\n    readonly signal?: AbortSignal;\n}',
-  },
-  {
-    name: 'BiChartSummary',
-    declaration: 'export interface BiChartSummary {\n    readonly chartRef: BiChartRef;\n    readonly ref: BiProjectRef;\n    readonly name: string;\n    readonly spaceName: string;\n    readonly description: string;\n    readonly kind: BiChartKind;\n    readonly updatedAt: number | undefined;\n}',
-  },
-  {
-    name: 'BiField',
-    declaration: 'export interface BiField {\n    readonly id: string;\n    readonly label: string;\n    readonly role: \'dimension\' | \'metric\';\n    readonly type: string;\n}',
-  },
-  {
-    name: 'BindingHandle',
-    declaration: 'export interface BindingHandle {\n    readonly transactionId: TransactionId;\n    readonly pairingCode: string;\n    readonly expiresAt: number;\n    readonly confirmUrl: string;\n}',
-  },
-  {
-    name: 'BiPrincipal',
-    declaration: 'export interface BiPrincipal {\n    readonly orgId: OrgId;\n    readonly principalId: UserId;\n    readonly deviceId?: string;\n    readonly correlationId?: string;\n}',
-  },
-  {
-    name: 'BiProjectEntry',
-    declaration: 'export interface BiProjectEntry {\n    readonly ref: BiProjectRef;\n    readonly displayName: string;\n}',
-  },
-  {
-    name: 'BiProjectRef',
-    declaration: 'export type BiProjectRef = Branded<\'BiProjectRef\'>;',
-  },
-  {
-    name: 'BiQueryRequest',
-    declaration: 'export interface BiQueryRequest {\n    readonly chartRef: BiChartRef;\n    readonly limit?: number;\n    readonly signal?: AbortSignal;\n}',
-  },
-  {
-    name: 'BiQueryResult',
-    declaration: 'export interface BiQueryResult {\n    readonly chartRef: BiChartRef;\n    readonly ref: BiProjectRef;\n    readonly name: string;\n    readonly kind: BiChartKind;\n    readonly description: string;\n    readonly fields: readonly BiField[];\n    readonly filters: string;\n    readonly rows: readonly (readonly BiCell[])[];\n    readonly rowCount: number | undefined;\n    readonly truncated: boolean;\n    readonly cellsTruncated: boolean;\n}',
-  },
-  {
-    name: 'BiSourceHealth',
-    declaration: 'export type BiSourceHealth = \'never-synced\' | \'healthy\' | \'failing\';',
-  },
-  {
-    name: 'BiSourceStatus',
-    declaration: 'export interface BiSourceStatus {\n    readonly sourceCode: string;\n    readonly providerKind: string;\n    readonly health: BiSourceHealth;\n    readonly lastAttemptAt: number | undefined;\n    readonly lastSuccessAt: number | undefined;\n    readonly lastFailure: string | undefined;\n}',
-  },
-  {
     name: 'Branded',
     declaration: 'export type Branded<B extends string> = string & {\n    readonly [BRAND]: B;\n};',
   },
@@ -4961,16 +4233,20 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type BrandedNumber<B extends string> = number & {\n    readonly [BRAND]: B;\n};',
   },
   {
-    name: 'BrowserSessionRecord',
-    declaration: 'export interface BrowserSessionRecord {\n    readonly userId: UserId;\n    readonly orgId: OrgId;\n    readonly expiresAt: number;\n    readonly createdAt: number;\n}',
-  },
-  {
     name: 'BrowserUseProviderName',
     declaration: 'export type BrowserUseProviderName = Branded<\'BrowserUseProviderName\'>;',
   },
   {
-    name: 'CallPlan',
-    declaration: 'export interface CallPlan {\n    readonly modelRef: string;\n    readonly endpoint: string;\n    readonly upstreamModel: string;\n    readonly credentialRef: string;\n    readonly reservationId: ReservationId;\n    readonly maxOutputTokens: number;\n    readonly policyRevision: bigint;\n}',
+    name: 'BundleInfo',
+    declaration: 'export interface BundleInfo {\n    name: string;\n    version?: string;\n    description?: string;\n    enabled: boolean;\n    installed: boolean;\n    optional: boolean;\n    removable: boolean;\n    readOnlyReason?: ReadOnlyReason;\n    error?: ManagementError;\n    rows: BundleRowInfo[];\n    overrides: string[];\n}',
+  },
+  {
+    name: 'BundleRowInfo',
+    declaration: 'export interface BundleRowInfo {\n    rowId: string;\n    moduleName: string;\n    entryId?: PluginEntryId;\n}',
+  },
+  {
+    name: 'ChangeResult',
+    declaration: 'export interface ChangeResult {\n    changed: boolean;\n    application: \'applied\' | \'restart-required\' | \'overridden\' | \'failed\' | \'cancelled\';\n    stage: \'install\' | \'enable\' | \'remove\';\n    target: string;\n    enabled?: boolean;\n    error?: ManagementError;\n    warnings?: string[];\n    packageResult?: PackageResult;\n    bundle?: string;\n    pendingBuilds?: string[];\n    approvedBuilds?: string[];\n}',
   },
   {
     name: 'ClientArtifactBaseline',
@@ -5053,16 +4329,52 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type ConfinedSandboxMode = Exclude<SandboxMode, \'danger-full-access\'>;',
   },
   {
-    name: 'ConsoleMenu',
-    declaration: 'export interface ConsoleMenu {\n    readonly id: MenuId;\n    readonly orgId: OrgId;\n    readonly parentId: MenuId | undefined;\n    readonly name: string;\n    readonly labelKey: string | undefined;\n    readonly kind: ConsoleMenuKind;\n    readonly routePath: string | undefined;\n    readonly componentPath: string | undefined;\n    readonly permission: string | undefined;\n    readonly icon: string | undefined;\n    readonly sortOrder: number;\n    readonly status: ConsoleMenuStatus;\n    readonly visible: boolean;\n    readonly seedKey: string | undefined;\n    readonly createdAt: number;\n}',
+    name: 'ConnectionFetchHandler',
+    declaration: 'export interface ConnectionFetchHandler {\n    requestBodyMode(request: {\n        readonly method: string;\n        readonly url: URL;\n    }): ConnectionRequestBodyMode;\n    fetch(request: Request): Promise<Response>;\n}',
   },
   {
-    name: 'ConsoleMenuKind',
-    declaration: 'export type ConsoleMenuKind = \'catalog\' | \'menu\' | \'action\';',
+    name: 'ConnectionFetchMethod',
+    declaration: 'export type ConnectionFetchMethod = \'GET\' | \'HEAD\' | \'POST\';',
   },
   {
-    name: 'ConsoleMenuStatus',
-    declaration: 'export type ConsoleMenuStatus = \'active\' | \'suspended\';',
+    name: 'ConnectionFetchRoute',
+    declaration: 'export interface ConnectionFetchRoute {\n    readonly path: string;\n    readonly methods: readonly ConnectionFetchMethod[];\n    readonly requestBody: ConnectionRequestBodyMode;\n    readonly fetch: (request: Request) => Promise<Response>;\n}',
+  },
+  {
+    name: 'ConnectionIndexRequest',
+    declaration: 'export interface ConnectionIndexRequest extends ConnectionTrustRequest {\n    readonly method?: string | undefined;\n    readonly url?: string | undefined;\n}',
+  },
+  {
+    name: 'ConnectionIndexResponse',
+    declaration: 'export interface ConnectionIndexResponse {\n    writeHead(status: number, headers?: Readonly<Record<string, string>>): unknown;\n    end(body?: string): unknown;\n}',
+  },
+  {
+    name: 'ConnectionRequestBodyMode',
+    declaration: 'export type ConnectionRequestBodyMode = \'buffered\' | \'streaming\';',
+  },
+  {
+    name: 'ConnectionRequestRejection',
+    declaration: 'export type ConnectionRequestRejection = 401 | 403 | undefined;',
+  },
+  {
+    name: 'ConnectionRpcEndpointMatcher',
+    declaration: 'export type ConnectionRpcEndpointMatcher = (endpoint: string) => boolean;',
+  },
+  {
+    name: 'ConnectionRpcFailure',
+    declaration: 'export interface ConnectionRpcFailure {\n    readonly code: string;\n    readonly message: string;\n    readonly details: object;\n}',
+  },
+  {
+    name: 'ConnectionRpcHandler',
+    declaration: 'export type ConnectionRpcHandler = (endpoint: string, payload: unknown, signal: AbortSignal) => Promise<ConnectionRpcResult<unknown>>;',
+  },
+  {
+    name: 'ConnectionRpcResult',
+    declaration: 'export type ConnectionRpcResult<T> = {\n    readonly ok: true;\n    readonly value: T;\n} | {\n    readonly ok: false;\n    readonly error: ConnectionRpcFailure;\n};',
+  },
+  {
+    name: 'ConnectionTrustRequest',
+    declaration: 'export interface ConnectionTrustRequest {\n    readonly headers: Headers | Readonly<Record<string, string | readonly string[] | undefined>>;\n}',
   },
   {
     name: 'ContentBlockMap',
@@ -5169,20 +4481,8 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface CordisRuntimeTreeReader {\n    getTree(): Promise<CordisRuntimeTree>;\n}',
   },
   {
-    name: 'CreateAccountUser',
-    declaration: 'export interface CreateAccountUser {\n    readonly orgId: OrgId;\n    readonly loginName: string;\n    readonly displayName: string;\n    readonly email?: string;\n    readonly phone?: string;\n    readonly gender?: MemberGender;\n    readonly departmentId?: DeptId;\n}',
-  },
-  {
     name: 'CreateAgentOptions',
     declaration: 'export interface CreateAgentOptions {\n    readonly sessionId: SessionId;\n    readonly parentAgent?: Agent;\n    readonly meta?: {\n        readonly cwd?: string;\n        readonly parentSession?: SessionId;\n        readonly isSeeded?: boolean;\n        readonly origin?: \'subagent\';\n        readonly delegationDepth?: number;\n        readonly agentPreset?: string;\n    };\n    readonly inheritedEventCount?: SessionLogOffset;\n    readonly seed?: readonly SessionEvent[];\n    readonly agentOptions?: AgentOptions;\n    readonly signal?: AbortSignal;\n    readonly setup?: AgentSetup;\n}',
-  },
-  {
-    name: 'CreateConsoleMenu',
-    declaration: 'export interface CreateConsoleMenu {\n    readonly orgId: OrgId;\n    readonly name: string;\n    readonly kind: ConsoleMenuKind;\n    readonly parentId?: MenuId;\n    readonly routePath?: string;\n    readonly componentPath?: string;\n    readonly permission?: string;\n    readonly icon?: string;\n    readonly sortOrder?: number;\n    readonly visible?: boolean;\n}',
-  },
-  {
-    name: 'CreateDepartment',
-    declaration: 'export interface CreateDepartment {\n    readonly orgId: OrgId;\n    readonly name: string;\n    readonly code: string;\n    readonly parentId?: DeptId;\n    readonly category?: DepartmentCategory;\n    readonly leaderId?: UserId;\n    readonly phone?: string;\n    readonly email?: string;\n    readonly sortOrder?: number;\n}',
   },
   {
     name: 'CreateGoalRequest',
@@ -5191,10 +4491,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'CreateGoalResult',
     declaration: 'export interface CreateGoalResult {\n    readonly ref: GoalRef;\n}',
-  },
-  {
-    name: 'CreateRole',
-    declaration: 'export interface CreateRole {\n    readonly orgId: OrgId;\n    readonly name: string;\n    readonly code?: string;\n    readonly description?: string;\n    readonly kind?: RoleKind;\n    readonly coversCatalog?: boolean;\n}',
   },
   {
     name: 'CreateSessionOptions',
@@ -5245,38 +4541,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type DeepSeekLlmApiJson = null | boolean | number | string | DeepSeekLlmApiJson[] | {\n    [key: string]: DeepSeekLlmApiJson;\n};',
   },
   {
-    name: 'Department',
-    declaration: 'export interface Department {\n    readonly id: DeptId;\n    readonly orgId: OrgId;\n    readonly parentId: DeptId | undefined;\n    readonly name: string;\n    readonly code: string;\n    readonly category: DepartmentCategory;\n    readonly leaderId: UserId | undefined;\n    readonly phone: string | undefined;\n    readonly email: string | undefined;\n    readonly sortOrder: number;\n    readonly status: DepartmentStatus;\n    readonly createdAt: number;\n}',
-  },
-  {
-    name: 'DepartmentCategory',
-    declaration: 'export type DepartmentCategory = \'company\' | \'department\';',
-  },
-  {
-    name: 'DepartmentStatus',
-    declaration: 'export type DepartmentStatus = \'active\' | \'suspended\';',
-  },
-  {
-    name: 'DeptId',
-    declaration: 'export type DeptId = Branded<\'DeptId\'>;',
-  },
-  {
-    name: 'Device',
-    declaration: 'export interface Device {\n    readonly id: DeviceId;\n    readonly orgId: OrgId;\n    readonly ownerId: UserId;\n    readonly platform: DevicePlatform;\n    readonly publicKey: string;\n    readonly publicKeyDigest: string;\n    readonly runnerVersion: string;\n    readonly status: DeviceStatus;\n    readonly createdAt: number;\n    readonly lastSeenAt: number;\n}',
-  },
-  {
-    name: 'DeviceId',
-    declaration: 'export type DeviceId = Branded<\'DeviceId\'>;',
-  },
-  {
-    name: 'DevicePlatform',
-    declaration: 'export type DevicePlatform = typeof DEVICE_PLATFORMS[number];',
-  },
-  {
-    name: 'DeviceStatus',
-    declaration: 'export type DeviceStatus = \'active\' | \'revoked\';',
-  },
-  {
     name: 'DiffCallView',
     declaration: 'export interface DiffCallView {\n    card: \'diff\';\n    title: string;\n    diffs: FileDiff[];\n    locations?: FileLocation[];\n}',
   },
@@ -5311,10 +4575,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'DirectoryRegistrationHandle',
     declaration: 'export interface DirectoryRegistrationHandle {\n    (): void;\n    replace(entries: readonly LlmConfigurableProvider[]): void;\n}',
-  },
-  {
-    name: 'DiscoveredCatalogModel',
-    declaration: 'export interface DiscoveredCatalogModel {\n    readonly modelRef: string;\n    readonly displayName: string;\n    readonly inputModalities: readonly ModelInputModality[];\n}',
   },
   {
     name: 'Domain',
@@ -5405,16 +4665,12 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface EpochHeader {\n    config: LlmCallConfig;\n    adapterDefaults?: LlmCallConfigAdapterDefaults;\n    tools?: ToolSchema[];\n}',
   },
   {
-    name: 'FamilyId',
-    declaration: 'export type FamilyId = Branded<\'CredentialFamilyId\'>;',
-  },
-  {
     name: 'FeedbackCategory',
     declaration: 'export type FeedbackCategory = \'task-result\' | \'instruction-following\' | \'product-interaction\' | \'service-stability\' | \'resource-cost\' | \'security-privacy-permission\' | \'other\';',
   },
   {
     name: 'FiberState',
-    declaration: 'export type FiberState = FiberStateEnum;',
+    declaration: 'export const enum FiberState {\n    PENDING,\n    LOADING,\n    ACTIVE,\n    FAILED,\n    DISPOSED,\n    UNLOADING\n}',
   },
   {
     name: 'FileAttachmentRef',
@@ -5549,36 +4805,16 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface GoalView extends GoalSnapshot {\n    readonly roundsStarted: number;\n    readonly createdAt: number;\n    readonly updatedAt: number;\n    readonly activation: GoalActivation;\n}',
   },
   {
-    name: 'GovernedChartsRequest',
-    declaration: 'export interface GovernedChartsRequest extends BiPrincipal {\n    readonly ref: BiProjectRef;\n    readonly query?: string;\n    readonly page?: number;\n    readonly pageSize?: number;\n    readonly signal?: AbortSignal;\n}',
-  },
-  {
-    name: 'GovernedDocumentRequest',
-    declaration: 'export interface GovernedDocumentRequest extends KnowledgePrincipal {\n    readonly docRef: KnowledgeDocRef;\n    readonly maxBytes?: number;\n    readonly signal?: AbortSignal;\n}',
-  },
-  {
-    name: 'GovernedDocumentsRequest',
-    declaration: 'export interface GovernedDocumentsRequest extends KnowledgePrincipal {\n    readonly ref: KnowledgeRef;\n    readonly page?: number;\n    readonly pageSize?: number;\n    readonly signal?: AbortSignal;\n}',
-  },
-  {
-    name: 'GovernedQueryRequest',
-    declaration: 'export interface GovernedQueryRequest extends BiPrincipal {\n    readonly chartRef: BiChartRef;\n    readonly limit?: number;\n    readonly signal?: AbortSignal;\n}',
-  },
-  {
-    name: 'GovernedSearchRequest',
-    declaration: 'export interface GovernedSearchRequest extends KnowledgePrincipal {\n    readonly scope: KnowledgeScopeSelection;\n    readonly query: string;\n    readonly maxResults?: number;\n    readonly maxDocuments?: number;\n    readonly signal?: AbortSignal;\n}',
-  },
-  {
-    name: 'GrantId',
-    declaration: 'export type GrantId = Branded<\'GrantId\'>;',
-  },
-  {
     name: 'GrantRecord',
     declaration: 'export interface GrantRecord {\n    readonly kind: \'grant\';\n    readonly payload: unknown;\n}',
   },
   {
-    name: 'GroupId',
-    declaration: 'export type GroupId = Branded<\'GroupId\'>;',
+    name: 'HostConnectionFetch',
+    declaration: 'export interface HostConnectionFetch {\n    register(route: ConnectionFetchRoute): () => Promise<void>;\n}',
+  },
+  {
+    name: 'HostConnectionRpc',
+    declaration: 'export interface HostConnectionRpc {\n    handle(channel: string, handler: ConnectionRpcHandler): () => Promise<void>;\n    intercept(channel: \'/api\', matches: ConnectionRpcEndpointMatcher, handler: ConnectionRpcHandler): () => Promise<void>;\n}',
   },
   {
     name: 'ImageAttachmentLimits',
@@ -5629,6 +4865,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type InspectorJsonValue = InspectorJsonPrimitive | readonly InspectorJsonValue[] | InspectorJsonObject;',
   },
   {
+    name: 'InstallBundleOptions',
+    declaration: 'export interface InstallBundleOptions {\n    enabled?: boolean;\n    requestId?: PluginInstallRequestId;\n    approvedBuilds?: string[];\n}',
+  },
+  {
+    name: 'InstallSpecKind',
+    declaration: 'export type InstallSpecKind = \'registry\' | \'path\' | \'git\' | \'tarball\';',
+  },
+  {
     name: 'InvariantFailure',
     declaration: 'export type InvariantFailure = (message: string) => never;',
   },
@@ -5645,24 +4889,12 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface InvocationParameterDescriptor {\n    readonly name: string;\n    readonly wire: string;\n    readonly source: \'json\' | \'lookup\';\n    readonly lookup?: string;\n    readonly codec: TypertCodec;\n    readonly acceptsUndefined?: true;\n}',
   },
   {
-    name: 'InvocationRequest',
-    declaration: 'export interface InvocationRequest {\n    readonly orgId: OrgId;\n    readonly principalId: UserId;\n    readonly deviceId?: string;\n    readonly modelRef: string;\n    readonly period: string;\n    readonly inputTokens: number;\n    readonly maxOutputTokens?: number;\n    readonly correlationId?: string;\n}',
-  },
-  {
     name: 'InvocationSourceLocation',
     declaration: 'export interface InvocationSourceLocation {\n    readonly file: string;\n    readonly line: number;\n    readonly column: number;\n}',
   },
   {
     name: 'InvokeRemoteRequest',
     declaration: 'export interface InvokeRemoteRequest {\n    readonly namespace: string;\n    readonly method: string;\n    readonly args: Readonly<Record<string, unknown>>;\n    readonly signal?: AbortSignal;\n}',
-  },
-  {
-    name: 'IssuedCode',
-    declaration: 'export interface IssuedCode {\n    readonly code: string;\n    readonly expiresAt: number;\n    readonly callbackUri: string;\n}',
-  },
-  {
-    name: 'IssuedCredential',
-    declaration: 'export interface IssuedCredential {\n    readonly deviceId: DeviceId;\n    readonly familyId: FamilyId;\n    readonly refreshToken: string;\n    readonly refreshExpiresAt: number;\n    readonly accessToken: string;\n    readonly accessExpiresAt: number;\n}',
   },
   {
     name: 'JobDoneListener',
@@ -5725,82 +4957,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type JsonValue = null | boolean | number | string | JsonValue[] | {\n    [key: string]: JsonValue;\n};',
   },
   {
-    name: 'KnowledgeBaseEntry',
-    declaration: 'export interface KnowledgeBaseEntry {\n    readonly ref: KnowledgeRef;\n    readonly displayName: string;\n    readonly description: string;\n    readonly kind: KnowledgeKind;\n    readonly documentCount?: number;\n    readonly createdAt?: number;\n}',
-  },
-  {
-    name: 'KnowledgeCatalogEntry',
-    declaration: 'export interface KnowledgeCatalogEntry {\n    readonly ref: KnowledgeRef;\n    readonly resourceId: ResourceId;\n    readonly displayName: string;\n    readonly description: string;\n    readonly kind: KnowledgeKind;\n    readonly documentCount: number;\n    readonly processingCount: number;\n    readonly embeddingModelId: string;\n    readonly adminEnabled: boolean;\n    readonly effectiveEnabled: boolean;\n    readonly lastDiscoveredAt: number;\n    readonly upstreamUpdatedAt: number | undefined;\n    readonly upstreamCreatedAt: number | undefined;\n}',
-  },
-  {
-    name: 'KnowledgeCatalogView',
-    declaration: 'export interface KnowledgeCatalogView {\n    readonly source: KnowledgeSourceStatus;\n    readonly entries: readonly KnowledgeCatalogEntry[];\n}',
-  },
-  {
-    name: 'KnowledgeDocRef',
-    declaration: 'export type KnowledgeDocRef = Branded<\'KnowledgeDocRef\'>;',
-  },
-  {
-    name: 'KnowledgeDocument',
-    declaration: 'export interface KnowledgeDocument {\n    readonly docRef: KnowledgeDocRef;\n    readonly ref: KnowledgeRef;\n    readonly title: string;\n    readonly description: string;\n    readonly fileName: string;\n    readonly fileType: string;\n    readonly byteSize: number;\n    readonly state: KnowledgeDocumentState;\n    readonly updatedAt: number | undefined;\n}',
-  },
-  {
-    name: 'KnowledgeDocumentContent',
-    declaration: 'export type KnowledgeDocumentContent = {\n    readonly kind: \'bytes\';\n    readonly docRef: KnowledgeDocRef;\n    readonly fileName: string;\n    readonly contentType: string;\n    readonly bytes: Uint8Array;\n} | {\n    readonly kind: \'text\';\n    readonly docRef: KnowledgeDocRef;\n    readonly fileName: string;\n    readonly text: string;\n    readonly truncated: boolean;\n};',
-  },
-  {
-    name: 'KnowledgeDocumentPage',
-    declaration: 'export interface KnowledgeDocumentPage {\n    readonly ref: KnowledgeRef;\n    readonly documents: readonly KnowledgeDocument[];\n    readonly page: number;\n    readonly pageSize: number;\n    readonly total: number | undefined;\n}',
-  },
-  {
-    name: 'KnowledgeDocumentRequest',
-    declaration: 'export interface KnowledgeDocumentRequest {\n    readonly docRef: KnowledgeDocRef;\n    readonly maxBytes?: number;\n    readonly signal?: AbortSignal;\n}',
-  },
-  {
-    name: 'KnowledgeDocumentsRequest',
-    declaration: 'export interface KnowledgeDocumentsRequest {\n    readonly ref: KnowledgeRef;\n    readonly page?: number;\n    readonly pageSize?: number;\n    readonly signal?: AbortSignal;\n}',
-  },
-  {
-    name: 'KnowledgeDocumentState',
-    declaration: 'export type KnowledgeDocumentState = \'ready\' | \'processing\' | \'unavailable\';',
-  },
-  {
-    name: 'KnowledgeKind',
-    declaration: 'export type KnowledgeKind = \'document\' | \'faq\';',
-  },
-  {
-    name: 'KnowledgePassage',
-    declaration: 'export interface KnowledgePassage {\n    readonly ref: KnowledgeRef;\n    readonly docRef?: KnowledgeDocRef;\n    readonly title: string;\n    readonly text: string;\n    readonly truncated: boolean;\n    readonly score: number;\n}',
-  },
-  {
-    name: 'KnowledgePrincipal',
-    declaration: 'export interface KnowledgePrincipal {\n    readonly orgId: OrgId;\n    readonly principalId: UserId;\n    readonly deviceId?: string;\n    readonly correlationId?: string;\n}',
-  },
-  {
-    name: 'KnowledgeRef',
-    declaration: 'export type KnowledgeRef = Branded<\'KnowledgeRef\'>;',
-  },
-  {
-    name: 'KnowledgeScopeSelection',
-    declaration: 'export type KnowledgeScopeSelection = {\n    readonly mode: \'all\';\n} | {\n    readonly mode: \'selected\';\n    readonly refs: readonly KnowledgeRef[];\n} | {\n    readonly mode: \'documents\';\n    readonly ref: KnowledgeRef;\n    readonly docRefs: readonly KnowledgeDocRef[];\n};',
-  },
-  {
-    name: 'KnowledgeSearchRequest',
-    declaration: 'export interface KnowledgeSearchRequest {\n    readonly query: string;\n    readonly scope: KnowledgeScopeSelection;\n    readonly maxResults?: number;\n    readonly maxDocuments?: number;\n    readonly signal?: AbortSignal;\n}',
-  },
-  {
-    name: 'KnowledgeSearchResult',
-    declaration: 'export interface KnowledgeSearchResult {\n    readonly query: string;\n    readonly searched: readonly KnowledgeBaseEntry[];\n    readonly passages: readonly KnowledgePassage[];\n    readonly truncated: boolean;\n}',
-  },
-  {
-    name: 'KnowledgeSourceHealth',
-    declaration: 'export type KnowledgeSourceHealth = \'never-synced\' | \'healthy\' | \'failing\';',
-  },
-  {
-    name: 'KnowledgeSourceStatus',
-    declaration: 'export interface KnowledgeSourceStatus {\n    readonly sourceCode: string;\n    readonly providerKind: string;\n    readonly health: KnowledgeSourceHealth;\n    readonly lastAttemptAt: number | undefined;\n    readonly lastSuccessAt: number | undefined;\n    readonly lastFailure: string | undefined;\n}',
-  },
-  {
     name: 'KvFacet',
     declaration: 'export interface KvFacet {\n    open(descriptor: KvUnitDescriptor): Promise<KvUnit>;\n}',
   },
@@ -5838,7 +4994,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'LlmDiscoveredModel',
-    declaration: 'export interface LlmDiscoveredModel {\n    id: string;\n    name?: string;\n    contextWindow?: number;\n    maxTokens?: number;\n}',
+    declaration: 'export interface LlmDiscoveredModel {\n    id: string;\n    name?: string;\n    contextWindow?: number;\n    maxTokens?: number;\n    inputModalities?: readonly ModelModality[];\n}',
   },
   {
     name: 'LlmFailure',
@@ -5870,7 +5026,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'LlmProviderInfo',
-    declaration: 'export interface LlmProviderInfo {\n    id: string;\n    name: string;\n    category?: \'built-in\';\n}',
+    declaration: 'export interface LlmProviderInfo {\n    id: string;\n    name: string;\n}',
   },
   {
     name: 'LlmReasoningEffortInfo',
@@ -5925,8 +5081,8 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface LspRange {\n    readonly start: LspPosition;\n    readonly end: LspPosition;\n}',
   },
   {
-    name: 'ManagedResource',
-    declaration: 'export interface ManagedResource {\n    readonly id: ResourceId;\n    readonly orgId: OrgId;\n    readonly type: string;\n    readonly externalRef: string;\n    readonly displayName: string;\n    readonly enabled: boolean;\n}',
+    name: 'ManagementError',
+    declaration: 'export interface ManagementError {\n    code: ReadOnlyReason | \'unknown-plugin\' | \'invalid-spec\' | \'ambiguous-install\' | \'not-bundle\' | \'not-removable\' | \'stop-profile\' | \'bundle-in-use\' | \'stale-approval\' | \'operation-error\';\n    diagnostic?: string;\n}',
   },
   {
     name: 'ManualCompactAgentContext',
@@ -5939,14 +5095,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'McpResourceRequest',
     declaration: 'export type McpResourceRequest = {\n    method: \'resources/list\' | \'resources/templates/list\';\n    cursor?: string;\n} | {\n    method: \'resources/read\';\n    uri: string;\n};',
-  },
-  {
-    name: 'MemberGender',
-    declaration: 'export type MemberGender = \'male\' | \'female\' | \'unspecified\';',
-  },
-  {
-    name: 'MenuId',
-    declaration: 'export type MenuId = Branded<\'MenuId\'>;',
   },
   {
     name: 'Message',
@@ -6041,10 +5189,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface MessageSourceMap {\n    user: {\n        kind: \'user\';\n    };\n    plugin: {\n        kind: \'plugin\';\n        plugin: string;\n    } & ContextFormed;\n    model: ModelMessageSource;\n    tool: ToolMessageSource;\n}',
   },
   {
-    name: 'MetadataKey',
-    declaration: 'export type MetadataKey = keyof typeof METADATA_KEYS;',
-  },
-  {
     name: 'ModelCatalog',
     declaration: 'export interface ModelCatalog {\n    readonly default: ModelSelection;\n    readonly routableProviders: readonly string[];\n    readonly groups: readonly ModelProviderGroup[];\n    readonly failures: readonly ModelCatalogFailure[];\n}',
   },
@@ -6055,14 +5199,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'ModelCatalogModel',
     declaration: 'export interface ModelCatalogModel {\n    readonly id: string;\n    readonly name: string;\n    readonly description?: string;\n    readonly reasoning?: ModelReasoning;\n}',
-  },
-  {
-    name: 'ModelEntry',
-    declaration: 'export interface ModelEntry {\n    readonly orgId: OrgId;\n    readonly modelRef: string;\n    readonly displayName: string;\n    readonly providerRef: string;\n    readonly upstreamModel: string;\n    readonly endpoint: string;\n    readonly credentialRef: string;\n    readonly maxOutputTokens: number;\n    readonly inputModalities: readonly ModelInputModality[];\n    readonly status: ModelStatus;\n}',
-  },
-  {
-    name: 'ModelInputModality',
-    declaration: 'export type ModelInputModality = typeof MODEL_INPUT_MODALITIES[number];',
   },
   {
     name: 'ModelMessageSource',
@@ -6078,7 +5214,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'ModelProviderGroup',
-    declaration: 'export interface ModelProviderGroup {\n    readonly id: string;\n    readonly name: string;\n    readonly category?: \'built-in\';\n    readonly models: readonly ModelCatalogModel[];\n}',
+    declaration: 'export interface ModelProviderGroup {\n    readonly id: string;\n    readonly name: string;\n    readonly models: readonly ModelCatalogModel[];\n}',
   },
   {
     name: 'ModelReasoning',
@@ -6089,12 +5225,36 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ModelReasoningEffort {\n    readonly id: string;\n    readonly name: string;\n    readonly description?: string;\n}',
   },
   {
-    name: 'ModelStatus',
-    declaration: 'export type ModelStatus = typeof MODEL_STATUSES[number];',
-  },
-  {
     name: 'ObjectJsonSchema',
     declaration: 'export type ObjectJsonSchema = JsonSchemaNode & {\n    type: \'object\';\n};',
+  },
+  {
+    name: 'OfficeExtension',
+    declaration: 'export type OfficeExtension = \'doc\' | \'docx\' | \'xls\' | \'xlsx\' | \'ppt\' | \'pptx\';',
+  },
+  {
+    name: 'OfficeSourceKey',
+    declaration: 'export type OfficeSourceKey = Branded<\'OfficeSourceKey\'>;',
+  },
+  {
+    name: 'OfficeToPdfGeneration',
+    declaration: 'export type OfficeToPdfGeneration = Branded<\'OfficeToPdfGeneration\'>;',
+  },
+  {
+    name: 'OfficeToPdfKey',
+    declaration: 'export type OfficeToPdfKey = Branded<\'OfficeToPdfKey\'>;',
+  },
+  {
+    name: 'OfficeToPdfPriority',
+    declaration: 'export type OfficeToPdfPriority = \'foreground\' | \'background\';',
+  },
+  {
+    name: 'OfficeToPdfRequest',
+    declaration: 'export interface OfficeToPdfRequest {\n    readonly extension: OfficeExtension;\n    readonly priority: OfficeToPdfPriority;\n    readonly source: {\n        readonly key: OfficeSourceKey;\n        readonly version: string;\n        readonly bytes?: number;\n        read(signal: AbortSignal, maxBytes: number): Promise<{\n            readonly bytes: Uint8Array;\n            readonly version: string;\n        }>;\n    };\n}',
+  },
+  {
+    name: 'OfficeToPdfResult',
+    declaration: 'export interface OfficeToPdfResult {\n    readonly pdf: Uint8Array;\n    readonly missingFonts: string[];\n    readonly cacheKey: OfficeToPdfKey;\n    readonly generation: OfficeToPdfGeneration;\n}',
   },
   {
     name: 'OneShotSubagentDescriptorData',
@@ -6105,24 +5265,60 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type OptionalSessionSeq = SessionSeq | null;',
   },
   {
-    name: 'Organization',
-    declaration: 'export interface Organization {\n    readonly id: OrgId;\n    readonly name: string;\n    readonly code: string | undefined;\n    readonly leaderId: UserId | undefined;\n    readonly phone: string | undefined;\n    readonly email: string | undefined;\n    readonly policyRevision: bigint;\n    readonly createdAt: number;\n}',
-  },
-  {
-    name: 'OrgId',
-    declaration: 'export type OrgId = Branded<\'OrgId\'>;',
-  },
-  {
-    name: 'PendingTransaction',
-    declaration: 'export interface PendingTransaction {\n    readonly transactionId: TransactionId;\n    readonly platform: DevicePlatform;\n    readonly runnerVersion: string;\n    readonly publicKeyDigest: string;\n    readonly pairingCode: string;\n    readonly expiresAt: number;\n}',
-  },
-  {
-    name: 'PeriodKey',
-    declaration: 'export type PeriodKey = string;',
+    name: 'PackageResult',
+    declaration: 'export interface PackageResult {\n    exitCode: number;\n    output: string;\n    truncated: boolean;\n    logPath: string;\n    kind?: PluginInstallFailureKind;\n}',
   },
   {
     name: 'PermissionCatalog',
     declaration: 'export interface PermissionCatalog {\n    options: PresetOption[];\n}',
+  },
+  {
+    name: 'PluginChange',
+    declaration: 'export interface PluginChange {\n    readonly reason: \'plugin\' | \'bundle\' | \'install\' | \'remove\';\n}',
+  },
+  {
+    name: 'PluginEntryId',
+    declaration: 'export type PluginEntryId = Branded<\'PluginEntryId\'>;',
+  },
+  {
+    name: 'PluginFiberPhase',
+    declaration: 'export type PluginFiberPhase = \'pending\' | \'loading\' | \'active\' | \'failed\' | \'unloading\' | null;',
+  },
+  {
+    name: 'PluginInfo',
+    declaration: 'export type PluginInfo = PluginInventoryEntry & ({\n    patchId: string;\n    readOnlyReason?: never;\n} | {\n    patchId?: never;\n    readOnlyReason: ReadOnlyReason;\n});',
+  },
+  {
+    name: 'PluginInspectProblem',
+    declaration: 'export type PluginInspectProblem = \'invalid-spec\' | \'already-installed\' | \'not-found\' | \'not-a-package\' | \'not-a-bundle\' | \'network\' | \'unknown\';',
+  },
+  {
+    name: 'PluginInstallCancellation',
+    declaration: 'export interface PluginInstallCancellation {\n    readonly status: \'cancelled\' | \'too-late\' | \'not-running\';\n}',
+  },
+  {
+    name: 'PluginInstallFailureKind',
+    declaration: 'export type PluginInstallFailureKind = \'pnpm-missing\' | \'timeout\' | \'not-found\' | \'no-matching-version\' | \'network\' | \'disk-full\' | \'permission\' | \'build-blocked\' | \'integrity\' | \'unknown\';',
+  },
+  {
+    name: 'PluginInstallLogChunk',
+    declaration: 'export interface PluginInstallLogChunk {\n    readonly requestId?: PluginInstallRequestId;\n    readonly jobId: string;\n    readonly argv: readonly string[];\n    readonly cwd: string;\n    readonly stream: \'stdout\' | \'stderr\';\n    readonly text: string;\n    readonly exitCode?: number | null;\n}',
+  },
+  {
+    name: 'PluginInstallProgress',
+    declaration: 'export interface PluginInstallProgress {\n    readonly requestId: PluginInstallRequestId;\n    readonly phase: \'installing\' | \'cancelling\' | \'applying\';\n}',
+  },
+  {
+    name: 'PluginInstallRequestId',
+    declaration: 'export type PluginInstallRequestId = Branded<\'PluginInstallRequestId\'>;',
+  },
+  {
+    name: 'PluginInventoryEntry',
+    declaration: 'export interface PluginInventoryEntry {\n    readonly entryId: PluginEntryId;\n    readonly moduleName: string;\n    readonly enabled: boolean;\n    readonly fiberPhase: PluginFiberPhase;\n}',
+  },
+  {
+    name: 'PluginSpecInspection',
+    declaration: 'export type PluginSpecInspection = {\n    readonly status: \'accepted\';\n    readonly kind: InstallSpecKind;\n    readonly name?: string;\n    readonly version?: string;\n    readonly description?: string;\n    readonly bundle: boolean | null;\n} | {\n    readonly status: \'refused\';\n    readonly problem: PluginInspectProblem;\n    readonly reason: string;\n};',
   },
   {
     name: 'PostToolDecision',
@@ -6165,16 +5361,16 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type PresetTrust = \'system\' | \'user\';',
   },
   {
-    name: 'PresetWorkspace',
-    declaration: 'export type PresetWorkspace = \'required\' | \'none\';',
-  },
-  {
     name: 'PreStepDecision',
     declaration: 'export type PreStepDecision = {\n    kind: \'reject\';\n} | {\n    kind: \'enter\';\n    messages: UserMessage[];\n    startsRequestSeries?: true;\n};',
   },
   {
     name: 'PreToolDecision',
     declaration: 'export type PreToolDecision = {\n    kind: \'allow\';\n} | {\n    kind: \'deny\';\n    reason: string;\n    info?: ToolErrorInfo;\n} | {\n    kind: \'cancel\';\n} | {\n    kind: \'ask\';\n    reason?: string;\n};',
+  },
+  {
+    name: 'ProfilePnpmInvocation',
+    declaration: 'export interface ProfilePnpmInvocation {\n    readonly command: string;\n    readonly args: readonly string[];\n    readonly env: Readonly<Record<string, string>>;\n}',
   },
   {
     name: 'ProjectionChangeListener',
@@ -6273,12 +5469,16 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface PtcRunSpec extends PtcRunRequest {\n    cwd: string;\n    timeoutMs: number | null;\n}',
   },
   {
-    name: 'QuotaUsage',
-    declaration: 'export interface QuotaUsage {\n    readonly orgId: OrgId;\n    readonly period: PeriodKey;\n    readonly limitTokens?: number;\n    readonly settledTokens: number;\n    readonly reservedTokens: number;\n    readonly availableTokens?: number;\n}',
+    name: 'QueueAction',
+    declaration: 'export type QueueAction = {\n    readonly kind: \'edit\';\n    readonly content: readonly ContentBlock[];\n} | {\n    readonly kind: \'remove\';\n} | {\n    readonly kind: \'steer\';\n};',
   },
   {
     name: 'ReadFileLine',
     declaration: 'export interface ReadFileLine {\n    number: number;\n    text: string;\n}',
+  },
+  {
+    name: 'ReadOnlyReason',
+    declaration: 'export type ReadOnlyReason = \'management-required\' | \'unaddressable\';',
   },
   {
     name: 'ReadResultView',
@@ -6297,20 +5497,8 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface RedactedSecret {\n    path: string[];\n    set: boolean;\n}',
   },
   {
-    name: 'RedeemRequest',
-    declaration: 'export interface RedeemRequest {\n    readonly transactionId: TransactionId;\n    readonly code: string;\n    readonly pkceVerifier: string;\n    readonly deviceSignature: string;\n    readonly callbackUri: string;\n    readonly protocolVersion: number;\n}',
-  },
-  {
-    name: 'RefreshRequest',
-    declaration: 'export interface RefreshRequest {\n    readonly familyId: FamilyId;\n    readonly refreshToken: string;\n    readonly deviceSignature: string;\n}',
-  },
-  {
-    name: 'RegisterModel',
-    declaration: 'export interface RegisterModel {\n    readonly orgId: OrgId;\n    readonly modelRef: string;\n    readonly displayName: string;\n    readonly providerRef: string;\n    readonly upstreamModel: string;\n    readonly endpoint: string;\n    readonly credentialRef: string;\n    readonly maxOutputTokens: number;\n    readonly inputModalities: readonly ModelInputModality[];\n}',
-  },
-  {
-    name: 'RegisterResource',
-    declaration: 'export interface RegisterResource {\n    readonly orgId: OrgId;\n    readonly type: string;\n    readonly externalRef: string;\n    readonly displayName: string;\n}',
+    name: 'Reload',
+    declaration: 'export interface Reload {\n    filename: string;\n    runtime?: Plugin.Runtime | undefined;\n}',
   },
   {
     name: 'RemoteError',
@@ -6327,6 +5515,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'RemoteEventHostInfo',
     declaration: 'export interface RemoteEventHostInfo {\n    readonly home: string;\n}',
+  },
+  {
+    name: 'RenderedDocumentBytes',
+    declaration: 'export interface RenderedDocumentBytes extends WorkspaceFileBytes {\n    readonly missingFonts: string[];\n    readonly generation: OfficeToPdfGeneration;\n}',
   },
   {
     name: 'ReplayEnvelope',
@@ -6353,18 +5545,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type RequestRunOutcome = \'approved\' | \'completed\' | \'rejected\' | \'cancelled\' | \'failed\';',
   },
   {
-    name: 'Reservation',
-    declaration: 'export interface Reservation {\n    readonly id: ReservationId;\n    readonly orgId: OrgId;\n    readonly period: PeriodKey;\n    readonly principalId: UserId;\n    readonly modelRef: string;\n    readonly reservedTokens: number;\n    readonly createdAt: number;\n    readonly expiresAt: number;\n}',
-  },
-  {
-    name: 'ReservationId',
-    declaration: 'export type ReservationId = Branded<\'ReservationId\'>;',
-  },
-  {
-    name: 'ReservationRequest',
-    declaration: 'export interface ReservationRequest {\n    readonly orgId: OrgId;\n    readonly period: PeriodKey;\n    readonly principalId: UserId;\n    readonly deviceId?: string;\n    readonly modelRef: string;\n    readonly inputTokens: number;\n    readonly maxOutputTokens: number;\n    readonly correlationId?: string;\n}',
-  },
-  {
     name: 'ResolvedAlwaysRetryPolicy',
     declaration: 'export interface ResolvedAlwaysRetryPolicy extends ResolvedRetryBackoff {\n    readonly mode: \'always\';\n}',
   },
@@ -6389,10 +5569,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ResolvedSubagentStartRequest extends SubagentStartRequest {\n    readonly descriptor: SubagentDescriptorData;\n}',
   },
   {
-    name: 'ResourceId',
-    declaration: 'export type ResourceId = Branded<\'ResourceId\'>;',
-  },
-  {
     name: 'RestoredSessionOptions',
     declaration: 'export interface RestoredSessionOptions {\n    readonly seed: SessionEvent[];\n    readonly meta: SessionHeader;\n    readonly inheritedEventCount: SessionLogOffset;\n    readonly eventState: SessionSeedEventState;\n}',
   },
@@ -6401,20 +5577,8 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ResumeAgentOptions {\n    readonly resumeSessionId: SessionId;\n    readonly parentAgent?: Agent;\n    readonly agentOptions?: AgentOptions;\n    readonly signal?: AbortSignal;\n    readonly setup?: AgentSetup;\n}',
   },
   {
-    name: 'Role',
-    declaration: 'export interface Role {\n    readonly id: RoleId;\n    readonly orgId: OrgId;\n    readonly name: string;\n    readonly code: string;\n    readonly description: string;\n    readonly kind: RoleKind;\n    readonly coversCatalog: boolean;\n    readonly createdAt: number | undefined;\n}',
-  },
-  {
-    name: 'RoleGrant',
-    declaration: 'export type RoleGrant = {\n    readonly id: GrantId;\n    readonly roleId: RoleId;\n    readonly kind: \'type\';\n    readonly resourceType: string;\n    readonly action: string;\n} | {\n    readonly id: GrantId;\n    readonly roleId: RoleId;\n    readonly kind: \'resource\';\n    readonly resourceId: ResourceId;\n    readonly resourceType: string;\n    readonly resourceDisplayName: string;\n    readonly action: string;\n};',
-  },
-  {
-    name: 'RoleId',
-    declaration: 'export type RoleId = Branded<\'RoleId\'>;',
-  },
-  {
-    name: 'RoleKind',
-    declaration: 'export type RoleKind = \'system\' | \'custom\';',
+    name: 'RpcId',
+    declaration: 'export type RpcId = Branded<\'rpc-id\'>;',
   },
   {
     name: 'RunnerFailureRule',
@@ -6493,20 +5657,16 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type SearchResultView = SearchMatchesResultView | SearchPathsResultView;',
   },
   {
-    name: 'SecretCharacterClass',
-    declaration: 'export type SecretCharacterClass = typeof SECRET_CHARACTER_CLASSES[number];',
-  },
-  {
-    name: 'SecretPolicy',
-    declaration: 'export interface SecretPolicy {\n    readonly minLength: number;\n    readonly requiredClasses: readonly SecretCharacterClass[];\n}',
-  },
-  {
     name: 'SendTeamMessageRequest',
     declaration: 'export interface SendTeamMessageRequest {\n    readonly target: string;\n    readonly content: ContentBlock[];\n    readonly signal: AbortSignal;\n}',
   },
   {
     name: 'SendTeamMessageResult',
     declaration: 'export interface SendTeamMessageResult {\n    readonly messageId: TeamMessageId;\n    readonly status: \'accepted\' | \'queued\';\n}',
+  },
+  {
+    name: 'ServerResponse',
+    declaration: 'export interface ServerResponse {\n    readonly type: \'server-response\';\n    readonly rpcId: RpcId;\n    readonly result: ConnectionRpcResult<unknown>;\n}',
   },
   {
     name: 'Session',
@@ -6554,11 +5714,11 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'SessionControlBaseline',
-    declaration: 'export interface SessionControlBaseline {\n    readonly queues: Readonly<Record<SessionId, readonly SessionQueuedItem[]>>;\n    readonly jobs: Readonly<Record<SessionId, readonly SessionJob[]>>;\n    readonly projections: Readonly<Record<SessionId, SessionProjectionBaseline>>;\n}',
+    declaration: 'export interface SessionControlBaseline {\n    readonly jobs: Readonly<Record<SessionId, readonly SessionJob[]>>;\n    readonly projections: Readonly<Record<SessionId, SessionProjectionBaseline>>;\n}',
   },
   {
     name: 'SessionControlFrame',
-    declaration: 'export type SessionControlFrame = {\n    readonly type: \'baseline\';\n    readonly value: SessionControlBaseline;\n} | {\n    readonly type: \'queue\';\n    readonly sessionId: SessionId;\n    readonly items: readonly SessionQueuedItem[];\n} | {\n    readonly type: \'jobs\';\n    readonly sessionId: SessionId;\n    readonly jobs: readonly SessionJob[];\n} | ({\n    readonly type: \'projection\';\n} & SessionProjectionUpdate);',
+    declaration: 'export type SessionControlFrame = {\n    readonly type: \'baseline\';\n    readonly value: SessionControlBaseline;\n} | {\n    readonly type: \'jobs\';\n    readonly sessionId: SessionId;\n    readonly jobs: readonly SessionJob[];\n} | ({\n    readonly type: \'projection\';\n} & SessionProjectionUpdate);',
   },
   {
     name: 'SessionCreateRequest',
@@ -6566,7 +5726,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'SessionCreateValue',
-    declaration: 'export interface SessionCreateValue {\n    readonly sessionId: SessionId;\n    readonly agentPreset?: string;\n    readonly cwd?: string;\n}',
+    declaration: 'export interface SessionCreateValue {\n    readonly sessionId: SessionId;\n    readonly agentPreset?: string;\n}',
   },
   {
     name: 'SessionEvent',
@@ -6829,16 +5989,12 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface SessionPromptValue {\n    readonly accepted: true;\n}',
   },
   {
-    name: 'SessionQueuedItem',
-    declaration: 'export interface SessionQueuedItem {\n    readonly id: MessageId;\n    readonly placement: \'queued\' | \'steering\' | \'context\';\n    readonly rpcId?: SessionRequestId;\n    readonly message: {\n        readonly id: MessageId;\n        readonly content: readonly JsonValue[];\n    };\n}',
-  },
-  {
     name: 'SessionRecord',
     declaration: 'export interface SessionRecord {\n    header: SessionHeader;\n    live: boolean;\n    persisted: boolean;\n}',
   },
   {
     name: 'SessionReferenceCandidate',
-    declaration: 'export interface SessionReferenceCandidate {\n    sessionId: SessionId;\n    label: string;\n    cwd?: string;\n    sameWorkspace: boolean;\n    createdAt: number;\n}',
+    declaration: 'export interface SessionReferenceCandidate {\n    sessionId: SessionId;\n    label: string;\n    displayTitle?: string;\n    cwd?: string;\n    sameWorkspace: boolean;\n    createdAt: number;\n}',
   },
   {
     name: 'SessionReferenceInput',
@@ -6922,7 +6078,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'SessionSummary',
-    declaration: 'export interface SessionSummary {\n    readonly sessionId: SessionId;\n    readonly updatedAt: number;\n    readonly running: boolean;\n    readonly blank: boolean;\n    readonly pristine?: boolean;\n    readonly parentSessionId?: SessionId;\n    readonly origin?: \'subagent\';\n    readonly cwd?: string;\n    readonly projections?: SessionProjectionHints;\n}',
+    declaration: 'export interface SessionSummary {\n    readonly sessionId: SessionId;\n    readonly updatedAt: number;\n    readonly running: boolean;\n    readonly blank: boolean;\n    readonly parentSessionId?: SessionId;\n    readonly origin?: \'subagent\';\n    readonly cwd?: string;\n    readonly projections?: SessionProjectionHints;\n}',
   },
   {
     name: 'SessionSurface',
@@ -7057,18 +6213,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type SettingsUpdateSource = \'update\' | \'provider\';',
   },
   {
-    name: 'Settlement',
-    declaration: 'export type Settlement = {\n    readonly kind: \'reported\';\n    readonly inputTokens: number;\n    readonly outputTokens: number;\n} | {\n    readonly kind: \'estimated\';\n    readonly inputTokens: number;\n    readonly outputTokens: number;\n} | {\n    readonly kind: \'released\';\n};',
-  },
-  {
-    name: 'SettlementKind',
-    declaration: 'export type SettlementKind = typeof SETTLEMENT_KINDS[number];',
-  },
-  {
-    name: 'SettlementRecord',
-    declaration: 'export interface SettlementRecord {\n    readonly reservationId: ReservationId;\n    readonly kind: SettlementKind;\n    readonly inputTokens: number;\n    readonly outputTokens: number;\n    readonly chargedTokens: number;\n    readonly settledAt: number;\n    readonly reconciled: boolean;\n}',
-  },
-  {
     name: 'ShellExecRequest',
     declaration: 'export interface ShellExecRequest {\n    command: string;\n    workdir?: string | undefined;\n    timeoutMs?: number | undefined;\n    stdoutMaxBytes?: number | undefined;\n    signal?: AbortSignal | undefined;\n    stdin?: string | undefined;\n    env?: Record<string, string> | undefined;\n    dshEnv?: DshEnvironment | undefined;\n    sandboxPolicy?: SandboxExecutionPolicy | undefined;\n}',
   },
@@ -7189,14 +6333,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type SshStreamEndpoint = z.infer<typeof streamEndpointSchema>;',
   },
   {
-    name: 'StartedTransaction',
-    declaration: 'export interface StartedTransaction {\n    readonly transactionId: TransactionId;\n    readonly pairingCode: string;\n    readonly expiresAt: number;\n}',
-  },
-  {
-    name: 'StartRequest',
-    declaration: 'export interface StartRequest {\n    readonly publicKey: string;\n    readonly platform: DevicePlatform;\n    readonly runnerVersion: string;\n    readonly pkceChallenge: string;\n    readonly callbackUri: string;\n    readonly protocolVersion: number;\n}',
-  },
-  {
     name: 'StorageBackend',
     declaration: 'export interface StorageBackend {\n    readonly kv?: KvFacet;\n    close(): Promise<void>;\n}',
   },
@@ -7278,7 +6414,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'SubagentRuntime',
-    declaration: 'export class SubagentRuntime extends TypertRemoteService {\n    constructor(ctx: Context);\n    async startContinuable(spec: ContinuableStartSpec): Promise<ContinuableStart>;\n    async sendMessage(sender: Agent, targetId: SessionId, content: ContentBlock[], options: SubagentSendMessageOptions): Promise<MessageId>;\n    interrupt(targetSessionId: SessionId, authority: SubagentInterruptAuthority): void;\n    async drainContinuableDescendants(parents: readonly Agent[]): Promise<void>;\n    async drainContinuableChildren(parent: Agent, childIds: readonly SessionId[]): Promise<void>;\n    listChildren(parentSessionId: SessionId, signal?: AbortSignal): Promise<SubagentListEntry[]>;\n    listDescendants(rootSessionId: SessionId, signal?: AbortSignal): Promise<SubagentDescendantListEntry[]>;\n    @Remote(\'list\')\n    async remoteExportList(parentSessionId: SessionId, signal: AbortSignal): Promise<SubagentCatalog>;\n    @Remote(\'prompt\')\n    async prompt(request: SubagentPromptRequest, signal: AbortSignal): Promise<SubagentPromptReceipt>;\n    @Remote(\'interruptByParent\')\n    interruptByParent(childSessionId: SessionId, parentSessionId: SessionId, mode: \'continuable\'): SubagentInterruptReceipt;\n    registerProvider(provider: SubagentProvider): () => void;\n    getProvider(name: string): SubagentProvider | undefined;\n    list(): string[];\n    async start(name: string, request: SubagentStartRequest): Promise<SubagentRun>;\n}',
+    declaration: 'export class SubagentRuntime extends TypertRemoteService {\n    static Config: z<Config>;\n    constructor(ctx: Context, config: Config);\n    resolveMaxDepth(configured?: number | \'provider-managed\'): number | undefined;\n    async startContinuable(spec: ContinuableStartSpec): Promise<ContinuableStart>;\n    async sendMessage(sender: Agent, targetId: SessionId, content: ContentBlock[], options: SubagentSendMessageOptions): Promise<MessageId>;\n    interrupt(targetSessionId: SessionId, authority: SubagentInterruptAuthority): void;\n    async drainContinuableDescendants(parents: readonly Agent[]): Promise<void>;\n    async drainContinuableChildren(parent: Agent, childIds: readonly SessionId[]): Promise<void>;\n    listChildren(parentSessionId: SessionId, signal?: AbortSignal): Promise<SubagentListEntry[]>;\n    listDescendants(rootSessionId: SessionId, signal?: AbortSignal): Promise<SubagentDescendantListEntry[]>;\n    @Remote(\'list\')\n    async remoteExportList(parentSessionId: SessionId, signal: AbortSignal): Promise<SubagentCatalog>;\n    @Remote(\'prompt\')\n    async prompt(request: SubagentPromptRequest, signal: AbortSignal): Promise<SubagentPromptReceipt>;\n    @Remote(\'interruptByParent\')\n    interruptByParent(childSessionId: SessionId, parentSessionId: SessionId, mode: \'continuable\'): SubagentInterruptReceipt;\n    registerProvider(provider: SubagentProvider): () => void;\n    getProvider(name: string): SubagentProvider | undefined;\n    list(): string[];\n    async start(name: string, re /* …truncated — full shape in source */',
   },
   {
     name: 'SubagentSendMessageOptions',
@@ -7337,6 +6473,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface SubprocessStdio {\n    stdin: SubprocessStdinMode;\n    stdout: SubprocessOutputMode;\n    stderr: SubprocessOutputMode;\n    control?: \'pipe\';\n}',
   },
   {
+    name: 'SubprocessTerminalActivity',
+    declaration: 'export interface SubprocessTerminalActivity {\n    state: \'idle\' | \'busy\' | \'unknown\';\n    revision: number;\n}',
+  },
+  {
     name: 'SubprocessTerminalEnvironment',
     declaration: 'export interface SubprocessTerminalEnvironment {\n    platform: \'posix\' | \'windows\';\n    defaultShell?: string;\n}',
   },
@@ -7346,7 +6486,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'SubprocessTerminalHandle',
-    declaration: 'export interface SubprocessTerminalHandle {\n    readonly pid: number;\n    readonly output: Readable;\n    readonly done: Promise<SubprocessOutcome>;\n    write(data: string): Promise<void>;\n    resize(cols: number, rows: number): Promise<void>;\n    inspectForeground(): Promise<SubprocessTerminalForeground | undefined>;\n    signalForeground(signal: SubprocessTerminalSignal): Promise<number>;\n    terminate(): Promise<void>;\n}',
+    declaration: 'export interface SubprocessTerminalHandle {\n    readonly pid: number;\n    readonly output: Readable;\n    readonly done: Promise<SubprocessOutcome>;\n    write(data: string): Promise<void>;\n    resize(cols: number, rows: number): Promise<void>;\n    inspectForeground(): Promise<SubprocessTerminalForeground | undefined>;\n    inspectActivity(): Promise<SubprocessTerminalActivity>;\n    signalForeground(signal: SubprocessTerminalSignal): Promise<number>;\n    terminate(): Promise<void>;\n}',
   },
   {
     name: 'SubprocessTerminalSignal',
@@ -7354,7 +6494,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'SubprocessTerminalSpawnSpec',
-    declaration: 'export interface SubprocessTerminalSpawnSpec {\n    argv: readonly string[];\n    cwd: string;\n    env?: Record<string, string> | undefined;\n    rows: number;\n    cols: number;\n    terminalType: string;\n    graceMs: number;\n    signal?: AbortSignal | undefined;\n}',
+    declaration: 'export interface SubprocessTerminalSpawnSpec {\n    argv: readonly string[];\n    cwd: string;\n    env?: Record<string, string> | undefined;\n    rows: number;\n    cols: number;\n    terminalType: string;\n    shellActivity?: boolean | undefined;\n    graceMs: number;\n    signal?: AbortSignal | undefined;\n}',
   },
   {
     name: 'SurfaceEvent',
@@ -7393,16 +6533,8 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export type TableValueOf<S extends DomainSpec, N extends keyof S[\'tables\']> = S[\'tables\'][N] extends DomainTableSpec<string, infer V> ? V : never;',
   },
   {
-    name: 'TeamAccountState',
-    declaration: 'export interface TeamAccountState {\n    readonly bound: boolean;\n    readonly deviceId?: DeviceId;\n    readonly familyId?: FamilyId;\n    readonly member?: TeamMemberIdentity;\n}',
-  },
-  {
     name: 'TeamId',
     declaration: 'export type TeamId = Branded<\'TeamId\'>;',
-  },
-  {
-    name: 'TeamMemberIdentity',
-    declaration: 'export interface TeamMemberIdentity {\n    readonly loginName: string;\n    readonly displayName: string;\n}',
   },
   {
     name: 'TeamMembership',
@@ -7487,6 +6619,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'TerminalResultView',
     declaration: 'export interface TerminalResultView {\n    card: \'terminal\';\n    title?: string;\n    output?: string;\n    exitCode?: number;\n    signal?: string;\n}',
+  },
+  {
+    name: 'TerminalRetentionFrame',
+    declaration: 'export interface TerminalRetentionFrame {\n    readonly type: \'retained\';\n}',
   },
   {
     name: 'TerminalSendOperation',
@@ -7669,26 +6805,6 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface ToolSchema {\n    name: string;\n    description: string;\n    parameters: Record<string, unknown>;\n}',
   },
   {
-    name: 'TransactionId',
-    declaration: 'export type TransactionId = Branded<\'DeviceTransactionId\'>;',
-  },
-  {
-    name: 'TransportModel',
-    declaration: 'export interface TransportModel {\n    readonly id: string;\n    readonly name: string;\n    readonly inputModalities: readonly ModelInputModality[];\n}',
-  },
-  {
-    name: 'TransportOperation',
-    declaration: 'export type TransportOperation = typeof TRANSPORT_OPERATIONS[number];',
-  },
-  {
-    name: 'TransportRequest',
-    declaration: 'export interface TransportRequest {\n    readonly operation: TransportOperation;\n    readonly modelRef: string;\n    readonly body: Record<string, unknown>;\n    readonly inputTokens: number;\n    readonly maxOutputTokens?: number;\n    readonly correlationId?: string;\n    readonly signal?: AbortSignal;\n}',
-  },
-  {
-    name: 'TransportResponse',
-    declaration: 'export interface TransportResponse {\n    readonly status: number;\n    readonly headers: Readonly<Record<string, string>>;\n    readonly body: Readable;\n}',
-  },
-  {
     name: 'TurnEndCancelCause',
     declaration: 'export type TurnEndCancelCause = AgentCancelCause | {\n    readonly kind: \'legacy\';\n};',
   },
@@ -7702,11 +6818,11 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'TypertCodec',
-    declaration: 'export type TypertCodec = {\n    readonly mode: \'strict\';\n    readonly typeSymbol: string;\n    readonly schema: TypertSchema;\n} | {\n    readonly mode: \'src-json\';\n};',
+    declaration: 'export type TypertCodec = {\n    readonly mode: \'strict\';\n    readonly typeSymbol: string;\n    readonly create: () => TypertSchema;\n} | {\n    readonly mode: \'src-json\';\n};',
   },
   {
     name: 'TypertContribution',
-    declaration: 'export interface TypertContribution {\n    readonly package: string;\n    readonly face: TypertFace;\n    readonly schemas: readonly TypertSchema[];\n    readonly model: TypertPackageModel;\n    readonly invocations: readonly InvocationDescriptor[];\n}',
+    declaration: 'export interface TypertContribution {\n    readonly package: string;\n    readonly face: TypertFace;\n    readonly schemas: readonly TypertSchemaFactory[];\n    readonly model: TypertPackageModel;\n    readonly invocations: readonly InvocationDescriptor[];\n}',
   },
   {
     name: 'TypertDisposer',
@@ -7781,12 +6897,20 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export abstract class TypertRemoteService<out T = never> extends Service<T> {\n    readonly typertRemote: TypertGatewayBinding<this>;\n}',
   },
   {
+    name: 'TypertSchema',
+    declaration: 'export interface TypertSchema<Output = unknown> {\n    parse(value: unknown): Output;\n}',
+  },
+  {
+    name: 'TypertSchemaFactory',
+    declaration: 'export interface TypertSchemaFactory {\n    readonly name: string;\n    readonly create: () => z.ZodType;\n}',
+  },
+  {
     name: 'TypertSchemaFilter',
     declaration: 'export interface TypertSchemaFilter {\n    readonly package?: string;\n    readonly face?: TypertFace;\n}',
   },
   {
     name: 'TypertSchemaRecord',
-    declaration: 'export interface TypertSchemaRecord extends TypertSchema {\n    readonly package: string;\n    readonly face: TypertFace;\n    readonly key: string;\n}',
+    declaration: 'export interface TypertSchemaRecord {\n    readonly name: string;\n    readonly schema: z.ZodType;\n    readonly package: string;\n    readonly face: TypertFace;\n    readonly key: string;\n}',
   },
   {
     name: 'TypertServiceModel',
@@ -7797,100 +6921,8 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface TypertTypeModel {\n    readonly name: string;\n    readonly declaration: string;\n}',
   },
   {
-    name: 'UpdateAccountUser',
-    declaration: 'export interface UpdateAccountUser {\n    readonly displayName?: string;\n    readonly email?: string | null;\n    readonly phone?: string | null;\n    readonly gender?: MemberGender | null;\n    readonly departmentId?: DeptId | null;\n}',
-  },
-  {
-    name: 'UpdateConsoleMenu',
-    declaration: 'export interface UpdateConsoleMenu {\n    readonly name?: string;\n    readonly kind?: ConsoleMenuKind;\n    readonly routePath?: string | null;\n    readonly componentPath?: string | null;\n    readonly permission?: string | null;\n    readonly icon?: string | null;\n    readonly sortOrder?: number;\n    readonly status?: ConsoleMenuStatus;\n    readonly visible?: boolean;\n}',
-  },
-  {
-    name: 'UpdateDepartment',
-    declaration: 'export interface UpdateDepartment {\n    readonly name?: string;\n    readonly code?: string;\n    readonly category?: DepartmentCategory;\n    readonly leaderId?: UserId | null;\n    readonly phone?: string | null;\n    readonly email?: string | null;\n    readonly sortOrder?: number;\n    readonly status?: DepartmentStatus;\n}',
-  },
-  {
-    name: 'UpdateOrganization',
-    declaration: 'export interface UpdateOrganization {\n    readonly name?: string;\n    readonly code?: string | null;\n    readonly leaderId?: UserId | null;\n    readonly phone?: string | null;\n    readonly email?: string | null;\n}',
-  },
-  {
-    name: 'UpdateRole',
-    declaration: 'export interface UpdateRole {\n    readonly name?: string;\n    readonly code?: string;\n    readonly description?: string;\n    readonly coversCatalog?: boolean;\n}',
-  },
-  {
     name: 'UpdateTeamTaskRequest',
     declaration: 'export interface UpdateTeamTaskRequest {\n    readonly taskId: TeamTaskId;\n    readonly expectedRevision: number;\n    readonly action: TeamTaskAction;\n    readonly subject?: string;\n    readonly description?: string;\n    readonly blockedBy?: readonly TeamTaskId[];\n    readonly writeScopes?: readonly string[];\n    readonly owner?: string;\n}',
-  },
-  {
-    name: 'UpstreamChart',
-    declaration: 'export interface UpstreamChart {\n    readonly upstreamChartId: string;\n    readonly name: string;\n    readonly spaceName: string;\n    readonly description: string;\n    readonly kind: BiChartKind;\n    readonly updatedAt: number | undefined;\n}',
-  },
-  {
-    name: 'UpstreamChartListing',
-    declaration: 'export interface UpstreamChartListing {\n    readonly charts: readonly UpstreamChart[];\n    readonly truncated: boolean;\n}',
-  },
-  {
-    name: 'UpstreamChartPlacement',
-    declaration: 'export interface UpstreamChartPlacement {\n    readonly upstreamId: string;\n    readonly chart: UpstreamChart;\n}',
-  },
-  {
-    name: 'UpstreamChartsRequest',
-    declaration: 'export interface UpstreamChartsRequest {\n    readonly upstreamId: string;\n    readonly signal?: AbortSignal;\n}',
-  },
-  {
-    name: 'UpstreamDocument',
-    declaration: 'export interface UpstreamDocument {\n    readonly upstreamDocId: string;\n    readonly title: string;\n    readonly description: string;\n    readonly fileName: string;\n    readonly fileType: string;\n    readonly byteSize: number;\n    readonly state: KnowledgeDocumentState;\n    readonly updatedAt: number | undefined;\n}',
-  },
-  {
-    name: 'UpstreamDocumentContent',
-    declaration: 'export type UpstreamDocumentContent = {\n    readonly kind: \'bytes\';\n    readonly fileName: string;\n    readonly contentType: string;\n    readonly bytes: Uint8Array;\n} | {\n    readonly kind: \'text\';\n    readonly fileName: string;\n    readonly text: string;\n    readonly truncated: boolean;\n};',
-  },
-  {
-    name: 'UpstreamDocumentPage',
-    declaration: 'export interface UpstreamDocumentPage {\n    readonly documents: readonly UpstreamDocument[];\n    readonly pageSize: number;\n    readonly total: number | undefined;\n}',
-  },
-  {
-    name: 'UpstreamDocumentPlacement',
-    declaration: 'export interface UpstreamDocumentPlacement {\n    readonly upstreamId: string;\n    readonly document: UpstreamDocument;\n}',
-  },
-  {
-    name: 'UpstreamDocumentRequest',
-    declaration: 'export interface UpstreamDocumentRequest {\n    readonly upstreamDocId: string;\n    readonly maxBytes: number;\n    readonly maxTextChars: number;\n    readonly signal?: AbortSignal;\n}',
-  },
-  {
-    name: 'UpstreamDocumentsRequest',
-    declaration: 'export interface UpstreamDocumentsRequest {\n    readonly upstreamId: string;\n    readonly page: number;\n    readonly pageSize: number;\n    readonly signal?: AbortSignal;\n}',
-  },
-  {
-    name: 'UpstreamKnowledgeBase',
-    declaration: 'export interface UpstreamKnowledgeBase {\n    readonly upstreamId: string;\n    readonly name: string;\n    readonly description: string;\n    readonly kind: KnowledgeKind;\n    readonly documentCount: number;\n    readonly processingCount: number;\n    readonly embeddingModelId: string;\n    readonly updatedAt: number | undefined;\n    readonly createdAt: number | undefined;\n}',
-  },
-  {
-    name: 'UpstreamPassage',
-    declaration: 'export interface UpstreamPassage {\n    readonly upstreamId: string;\n    readonly upstreamDocId?: string;\n    readonly title: string;\n    readonly text: string;\n    readonly truncated: boolean;\n    readonly score: number;\n}',
-  },
-  {
-    name: 'UpstreamProject',
-    declaration: 'export interface UpstreamProject {\n    readonly upstreamId: string;\n    readonly name: string;\n    readonly description: string;\n    readonly projectType: string;\n    readonly warehouseType: string;\n}',
-  },
-  {
-    name: 'UpstreamRun',
-    declaration: 'export interface UpstreamRun {\n    readonly fields: readonly BiField[];\n    readonly filters: string;\n    readonly rows: readonly (readonly BiCell[])[];\n    readonly rowCount: number | undefined;\n    readonly truncated: boolean;\n    readonly cellsTruncated: boolean;\n}',
-  },
-  {
-    name: 'UpstreamRunRequest',
-    declaration: 'export interface UpstreamRunRequest {\n    readonly upstreamId: string;\n    readonly upstreamChartId: string;\n    readonly limit: number;\n    readonly signal?: AbortSignal;\n}',
-  },
-  {
-    name: 'UpstreamSearchRequest',
-    declaration: 'export interface UpstreamSearchRequest {\n    readonly upstreamIds: readonly string[];\n    readonly upstreamDocIds?: readonly string[];\n    readonly query: string;\n    readonly maxResults: number;\n    readonly maxDocuments?: number;\n    readonly signal?: AbortSignal;\n}',
-  },
-  {
-    name: 'UserGroup',
-    declaration: 'export interface UserGroup {\n    readonly id: GroupId;\n    readonly orgId: OrgId;\n    readonly name: string;\n}',
-  },
-  {
-    name: 'UserId',
-    declaration: 'export type UserId = Branded<\'UserId\'>;',
   },
   {
     name: 'UserMessage',
@@ -7982,7 +7014,7 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   },
   {
     name: 'WebSearchProvider',
-    declaration: 'export interface WebSearchProvider {\n    readonly id: string;\n    available(): boolean;\n    search(request: WebSearchRequest, signal?: AbortSignal): Promise<WebSearchResult>;\n    permitted?(signal?: AbortSignal): Promise<boolean>;\n}',
+    declaration: 'export interface WebSearchProvider {\n    readonly id: string;\n    available(): boolean;\n    search(request: WebSearchRequest, signal?: AbortSignal): Promise<WebSearchResult>;\n}',
   },
   {
     name: 'WebSearchRequest',
@@ -8085,6 +7117,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface WorkspaceByteRange {\n    readonly offset?: number;\n    readonly length?: number;\n}',
   },
   {
+    name: 'WorkspaceChangedFile',
+    declaration: 'export interface WorkspaceChangedFile {\n    path: string;\n    display: string;\n    added: number;\n    deleted: number;\n    binary?: true;\n    oversized?: true;\n}',
+  },
+  {
+    name: 'WorkspaceChangesSummary',
+    declaration: 'export interface WorkspaceChangesSummary {\n    turn: number;\n    cwd: string;\n    files: WorkspaceChangedFile[];\n    total: number;\n    added: number;\n    deleted: number;\n    snapshot?: {\n        before: string;\n        after: string;\n    };\n}',
+  },
+  {
     name: 'WorkspaceCreateRequest',
     declaration: 'export interface WorkspaceCreateRequest {\n    readonly path: string;\n}',
   },
@@ -8101,6 +7141,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface WorkspaceDeleteValue {\n    readonly deleted: true;\n}',
   },
   {
+    name: 'WorkspaceDiffHunk',
+    declaration: 'export interface WorkspaceDiffHunk {\n    oldStart: number;\n    oldLines: number;\n    newStart: number;\n    newLines: number;\n    lines: string[];\n}',
+  },
+  {
     name: 'WorkspaceDirectoryEntry',
     declaration: 'export interface WorkspaceDirectoryEntry {\n    readonly name: string;\n    readonly type: \'file\' | \'directory\' | \'other\';\n    readonly size?: number;\n}',
   },
@@ -8115,6 +7159,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'WorkspaceFileChange',
     declaration: 'export type WorkspaceFileChange = {\n    readonly absolutePath: string;\n    readonly version: string;\n} | {\n    readonly absolutePath: string;\n    readonly absent: true;\n};',
+  },
+  {
+    name: 'WorkspaceFileDiff',
+    declaration: 'export type WorkspaceFileDiff = {\n    kind: \'text\';\n    path: string;\n    display: string;\n    before: boolean;\n    after: boolean;\n    hunks: WorkspaceDiffHunk[];\n    coarse: boolean;\n} | {\n    kind: \'binary\';\n    path: string;\n    display: string;\n} | {\n    kind: \'oversized\';\n    path: string;\n    display: string;\n};',
   },
   {
     name: 'WorkspaceFileRange',
@@ -8185,7 +7233,6 @@ export const INHERITED_CTX_API: readonly InheritedApiEntry[] = [
   { name: 'ctx.root / ctx.fiber / ctx.registry / ctx.reflect / ctx.events / ctx.logger', summary: 'Ambient handles onto the running context graph.' },
   { name: 'ctx.timer (+ interval / timeout / throttle / debounce)', summary: 'Disposable timer helpers. The `timer` key is provided at runtime; the four supported helpers are mixed onto ctx directly (declared via Pick).' },
   { name: 'ctx.loader', summary: 'The config Loader that booted the app (present under the loader).' },
-  { name: 'ctx.hmr', summary: 'The hot-module-reload watcher (present under the hmr plugin).' },
 ]
 
 function referencedTypeClosure(seeds: readonly string[]): TypeApiEntry[] {

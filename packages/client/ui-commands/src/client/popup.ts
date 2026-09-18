@@ -72,7 +72,12 @@ export interface PopupState {
   readonly options: readonly SelectOption[]
   /** Local filter text over the loaded options. */
   readonly search: string
-  /** Highlight index into the filtered row list (0 when empty/pending). */
+  /**
+   * Highlight index into the filtered row list: 0 until options land; afterwards
+   * the row the loaded list marks as the current value
+   * ({@link SelectOption.active}), else 0. A search rebases it to the top of the
+   * filtered rows.
+   */
   readonly active: number
   /** A select() settlement is in flight: further select/search/highlight no-op until it settles. */
   readonly submitting: boolean
@@ -120,6 +125,20 @@ function toggled(state: PopupState, option: SelectOption): readonly string[] {
   if (option.exclusive === true) return [option.id]
   const exclusive = new Set(state.options.filter(row => row.exclusive === true).map(row => row.id))
   return [...state.checked.filter(id => !exclusive.has(id)), option.id]
+}
+
+/**
+ * Highlight index for a freshly loaded row list: the row marked as the current
+ * value when the live search still shows it, else the top row. Opening parks
+ * the highlight on the value the session already uses, so an accept gesture
+ * made without looking confirms that value instead of the topmost row.
+ * @param options - the loaded rows.
+ * @param search - the shell's live filter text (non-empty after a retry).
+ * @returns index into the filtered rows.
+ */
+function currentIndex(options: readonly SelectOption[], search: string): number {
+  const at = filterOptions(options, search).findIndex(option => option.active === true)
+  return at === -1 ? 0 : at
 }
 
 /** One open shell's bindings (spec + open-time context + segment snapshot + options-fetch abort). */
@@ -179,11 +198,18 @@ export class PopupSelectController<TCtx = unknown> {
     binding.spec.options(binding.context, binding.abort.signal).then(
       (options) => {
         if (this.binding !== binding) return
-        const s = this.state.getSnapshot()
+        const current = this.state.getSnapshot()
         // A reopened multi-choice shell shows the current choice rather than an
         // empty one, so the business marks it with `active` and it seeds here.
-        const checked = s.multi ? options.filter(o => o.active === true).map(o => o.id) : []
-        this.state.set({ ...s, status: 'ready', options, active: 0, error: null, checked })
+        const checked = current.multi ? options.filter(o => o.active === true).map(o => o.id) : []
+        this.state.set({
+          ...current,
+          status: 'ready',
+          options,
+          active: current.multi ? 0 : currentIndex(options, current.search),
+          error: null,
+          checked,
+        })
       },
       (error: unknown) => {
         if (this.binding !== binding) return
@@ -204,7 +230,8 @@ export class PopupSelectController<TCtx = unknown> {
 
   /**
    * Replace the local search text (pure local filter — the provider is never
-   * re-queried) and rebase the highlight onto the new filtered list.
+   * re-queried) and rebase the highlight to the top of the new filtered list:
+   * typing searches for something other than the current value.
    * @param search - the shell search input's text.
    */
   setSearch(search: string): void {

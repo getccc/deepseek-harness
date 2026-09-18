@@ -24,6 +24,12 @@ export interface SelectOption {
   /** Optional short marker rendered as a superscript beside the label. */
   readonly badge?: string
   readonly detail?: string
+  /**
+   * The row the shell's highlight parks on when the panel opens, so an accept
+   * gesture made without looking confirms the value in use. A business package
+   * that marks a row `active` for presentation alone would make that row the
+   * default pick.
+   */
   readonly active?: boolean
   /**
    * A row that cannot be ticked alongside any other, in a multi-choice shell.

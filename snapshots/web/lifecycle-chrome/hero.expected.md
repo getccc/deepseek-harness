@@ -3,6 +3,8 @@
   - img
 - button "New chat"
 - button "New work task"
+- navigation "Global panels":
+  - button "Plugins"
 - text: Workspaces
 - button "Search sessions":
   - img
@@ -23,6 +25,9 @@
 - button "Settings":
   - img
   - text: Settings
+- banner:
+  - button "Open right sidebar":
+    - img
 - text: What is the plan today?
 - button "Choose workspace":
   - img
