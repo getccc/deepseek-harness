@@ -126,6 +126,18 @@ node scripts/publish-release.mjs \
 
 把产物、它们的 `.blockmap` 文件、`latest-mac.yml` 或 `latest.yml` 以及 `manifest.json` 复制到部署在 `/updates/` 提供的目录，并以静态文件方式提供——差分下载会发出 `Range` 请求，而放在该目录之前的应用层代理必须自行回答它们。发布私钥留在发布机上：部署只分发收到的内容、不持有任何密钥，因此一台被攻陷的主机也无法发布一个版本。
 
+该目录在 nginx 中最小的一个 location，与控制台自己的那个并列：
+
+```nginx
+location /updates/ {
+    alias /opt/deepseek-harness/updates/;
+    add_header Cache-Control "no-cache";
+    limit_rate 4m;
+}
+```
+
+`no-cache` 让清单保持新鲜；产物名字里带着版本号，因此文件本身从不需要重新校验。限速则让一次发布不至于把同时还在应答模型调用的主机带宽占满。
+
 -----
 
 <a id="runtime-behavior"></a>

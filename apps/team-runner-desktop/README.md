@@ -126,6 +126,18 @@ It reads the update metadata electron-builder wrote, refuses a directory that de
 
 Copy the artifacts, their `.blockmap` files, `latest-mac.yml` or `latest.yml`, and `manifest.json` into the directory the deployment serves at `/updates/`, and serve them as static files — differential download issues `Range` requests, which an application-layer proxy in front of the directory would have to answer itself. The release private key stays on the release machine: the deployment serves what it is given and holds no key, so a compromised host cannot publish a release.
 
+A minimal nginx location for that directory, beside the console's own:
+
+```nginx
+location /updates/ {
+    alias /opt/deepseek-harness/updates/;
+    add_header Cache-Control "no-cache";
+    limit_rate 4m;
+}
+```
+
+`no-cache` keeps the manifest fresh; an artifact's name carries its version, so the files themselves never need revalidating. The rate limit is what keeps one release from saturating a host that also answers model calls.
+
 -----
 
 <a id="runtime-behavior"></a>
