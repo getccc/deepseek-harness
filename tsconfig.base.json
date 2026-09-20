@@ -500,6 +500,7 @@
       "@deepseek-ai/dsh-team-release-http": ["./packages/team/team-release-http/src"],
       "@deepseek-ai/dsh-team-shell": ["./packages/team/team-shell/src"],
       "@deepseek-ai/dsh-team-update": ["./packages/team/team-update/src"],
+      "@deepseek-ai/dsh-team-update-source": ["./packages/team/team-update-source/src"],
       "@deepseek-ai/dsh-terminal": ["./packages/terminal/terminal/src"],
       "@deepseek-ai/dsh-terminal-bash": ["./packages/terminal/terminal-bash/src"],
       "@deepseek-ai/dsh-time-context": ["./packages/context/time-context/src"],

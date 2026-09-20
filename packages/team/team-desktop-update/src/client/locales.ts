@@ -11,6 +11,10 @@ export const zh = {
   'ready.title': '{version} 已下载，正在重启',
   'error.label': '更新失败，点击重试',
   'error.title': '更新失败：{message}',
+  'required.title': '需要更新',
+  'required.body': '本部署不再支持当前版本。更新到 {version} 后才能继续使用。',
+  'required.action': '立即更新',
+  'required.working': '正在更新…',
 } satisfies Record<string, string>
 
 /** The team.update namespace key union. */
@@ -27,4 +31,8 @@ export const en = {
   'ready.title': '{version} is downloaded; restarting',
   'error.label': 'Update failed, click to retry',
   'error.title': 'Update failed: {message}',
+  'required.title': 'Update required',
+  'required.body': 'This deployment no longer supports the installed version. Update to {version} to keep working.',
+  'required.action': 'Update now',
+  'required.working': 'Updating…',
 } satisfies Record<DesktopUpdateKey, string>

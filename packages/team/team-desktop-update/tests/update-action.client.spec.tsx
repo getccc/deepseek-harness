@@ -64,6 +64,21 @@ describe('sidebar update control', () => {
     expect(check).toHaveBeenCalledTimes(2)
   })
 
+  it('blocks the application when the deployment refuses the installed build', async () => {
+    const install = vi.fn().mockResolvedValue(undefined)
+    render(<UpdateAction {...props({ phase: 'available', version: '2.4.0', required: true }, { install })} />)
+    const blockade = await screen.findByRole('alertdialog', { name: 'required.title' })
+    expect(blockade.textContent).toContain('required.body:2.4.0')
+    fireEvent.click(screen.getByRole('button', { name: 'required.action' }))
+    expect(install).toHaveBeenCalledTimes(1)
+  })
+
+  it('leaves no blockade when the update is the member\'s choice', async () => {
+    render(<UpdateAction {...props({ phase: 'available', version: '2.4.0' })} />)
+    await screen.findByRole('button', { name: 'available.label' })
+    expect(screen.queryByRole('alertdialog')).toBeNull()
+  })
+
   it('follows what the shell publishes and stops listening when it leaves', () => {
     const stop = vi.fn()
     let publish: ((state: DesktopUpdateState) => void) | undefined

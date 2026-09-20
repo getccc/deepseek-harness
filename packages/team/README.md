@@ -33,6 +33,7 @@ Nine packages, split by which side of the network they run on; each child README
 | [`team-local-handoff/`](team-local-handoff/README.md) | Runner | Optional company-site browser handoff | — |
 | [`team-release/`](team-release/README.md) | Control Plane | The published releases, who each is offered to, and the version floor | `ctx.teamReleases` |
 | [`team-release-http/`](team-release-http/README.md) | Control Plane | The Runner-facing route answering which release a member is offered | — |
+| [`team-update-source/`](team-update-source/README.md) | Runner | The loopback route the desktop shell reads its release from | — |
 | [`team-admin-api/`](team-admin-api/README.md) | Control Plane | The administration console's JSON API: session, authorization, audit | — |
 | [`team-admin-app/`](team-admin-app/README.md) | Control Plane | Serving the built administration console | — |
 | [`team-console-menu/`](team-console-menu/README.md) | Control Plane | The console's navigation tree and the permission each entry names | `ctx.consoleMenu` |

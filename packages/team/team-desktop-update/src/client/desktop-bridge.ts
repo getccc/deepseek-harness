@@ -26,6 +26,8 @@ export interface DesktopUpdateState {
   readonly version?: string
   /** Whole percent of the download, present while one runs. */
   readonly percent?: number
+  /** Whether this deployment refuses the installed build until it is updated. */
+  readonly required?: boolean
   /** Why the last operation failed; present only with `error`. */
   readonly message?: string
 }

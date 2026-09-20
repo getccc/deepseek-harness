@@ -86,7 +86,7 @@ async function ask(token = accessToken, protocolVersion = RELEASE_PROTOCOL_VERSI
   const response = await fetch(`${origin}${RELEASE_MANIFEST_PATH}`, {
     method,
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
-    body: method === 'POST' ? JSON.stringify({ protocolVersion }) : undefined,
+    ...method === 'POST' ? { body: JSON.stringify({ protocolVersion }) } : {},
   })
   return { status: response.status, body: await response.json() as Record<string, unknown> }
 }

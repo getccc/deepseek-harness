@@ -51,7 +51,16 @@ function downloaded(bytes: Buffer): string {
 describe('accepting a release', () => {
   it('accepts the artifact for this computer when the release key signed it', async () => {
     const verdict = await acceptRelease('1.1.0', target, async () => signed())
-    expect(verdict).toEqual({ accepted: artifact })
+    expect(verdict).toEqual({ accepted: artifact, required: false })
+  })
+
+  it('reports an update the deployment refuses to run without', async () => {
+    // The floor is the deployment's own statement, so it rides beside the
+    // signed document rather than inside it.
+    const floored = async () => ({ ...signed(), minimumVersion: '1.1.0' })
+    expect(await acceptRelease('1.1.0', target, floored)).toMatchObject({ required: true })
+    expect(await acceptRelease('1.1.0', { ...target, installedVersion: '1.1.0' }, floored))
+      .toEqual({ refused: 'release refused: not-newer' })
   })
 
   it('refuses a manifest the trusted key did not sign', async () => {

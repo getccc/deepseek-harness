@@ -13,7 +13,8 @@ import { createHash } from 'node:crypto'
 import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import {
-  decideUpdate, type UpdateArchitecture, type UpdateArtifact, type UpdateManifest, type UpdatePlatform,
+  compareVersions, decideUpdate,
+  type UpdateArchitecture, type UpdateArtifact, type UpdateManifest, type UpdatePlatform,
 } from '@deepseek-ai/dsh-team-update'
 
 /** Platforms a release is built for, as the manifest names them. */
@@ -27,6 +28,8 @@ export interface SignedManifest {
   readonly manifest: UpdateManifest
   /** Base64url Ed25519 signature over the manifest's canonical bytes. */
   readonly signature: string
+  /** The oldest version this deployment still accepts, when it sets one. */
+  readonly minimumVersion?: string
 }
 
 /** What this computer is, for the decision the manifest is read against. */
@@ -40,7 +43,11 @@ export interface ReleaseTarget {
 
 /** An accepted release, or the one word for why it was refused. */
 export type GateVerdict =
-  | { readonly accepted: UpdateArtifact }
+  | {
+    readonly accepted: UpdateArtifact
+    /** Whether the installed build is below the floor this deployment enforces. */
+    readonly required: boolean
+  }
   | { readonly refused: string }
 
 /** The two questions the coordinator asks before it replaces this build. */
@@ -80,14 +87,24 @@ export type ManifestRequest = (url: string) => Promise<Response>
 export async function readManifest(url: string, request: ManifestRequest = fetch): Promise<SignedManifest> {
   const response = await request(url)
   if (!response.ok) throw new Error(`release manifest answered ${String(response.status)}`)
-  const document = await response.json() as { manifest?: unknown; signature?: unknown }
+  const document = await response.json() as {
+    manifest?: unknown
+    signature?: unknown
+    minimumVersion?: unknown
+  }
   if (typeof document.signature !== 'string' || typeof document.manifest !== 'object' || document.manifest === null) {
     throw new Error('release manifest is missing its manifest or signature')
   }
   // The fields are read as the manifest type here and verified by the
   // signature before any of them is acted on: a document whose contents differ
   // from what the release key signed cannot produce a valid signature.
-  return { manifest: document.manifest as UpdateManifest, signature: document.signature }
+  return {
+    manifest: document.manifest as UpdateManifest,
+    signature: document.signature,
+    // The floor is the deployment's own statement rather than the release
+    // key's, because it changes without republishing a release.
+    ...typeof document.minimumVersion === 'string' ? { minimumVersion: document.minimumVersion } : {},
+  }
 }
 
 /**
@@ -129,7 +146,11 @@ export async function acceptRelease(
   if (signed.manifest.version !== offered) {
     return { refused: `release metadata offers ${offered}, the signed manifest ${signed.manifest.version}` }
   }
-  return { accepted: decision.install }
+  // Below the floor the deployment enforces, this update is not optional; the
+  // member is told so rather than left on a build the deployment refuses.
+  const required = signed.minimumVersion !== undefined
+    && compareVersions(target.installedVersion, signed.minimumVersion) < 0
+  return { accepted: decision.install, required }
 }
 
 /**

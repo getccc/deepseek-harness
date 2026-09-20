@@ -3394,6 +3394,50 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'teamReleases',
+    summary: 'The published releases of one deployment, over SQLite.',
+    description: 'The published releases of one deployment, over SQLite.\n\nVersions are ordered by their numbers rather than as text, because that is the order the installed application compares them in; `1.0.10` is newer than `1.0.9` here for the same reason it is there.',
+    methods: [
+      {
+        signature: 'publish(orgId: OrgId, release: PublishRelease): PublishedRelease',
+        description: 'Record one release, or replace the record of a version published before.\n\nThe manifest is checked against the version it is published as, which is the one mistake that would otherwise ship a signature over another release\'s files.',
+        parameters: [{ name: 'orgId', description: 'the organization publishing it.' }, { name: 'release', description: 'the signed manifest, its signature, and who it is offered to.' }],
+        returns: 'the recorded release.',
+        throws: ['{ReleaseVersionMismatchError} when the manifest describes another version.'],
+      },
+      {
+        signature: 'withdraw(orgId: OrgId, version: string): boolean',
+        description: 'Stop offering one release without forgetting it was published.',
+        parameters: [{ name: 'orgId', description: 'the organization that published it.' }, { name: 'version', description: 'the release to withdraw.' }],
+        returns: 'whether a release was withdrawn.',
+      },
+      {
+        signature: 'list(orgId: OrgId): readonly PublishedRelease[]',
+        description: 'Every release this organization published, newest first.',
+        parameters: [{ name: 'orgId', description: 'the organization.' }],
+        returns: 'the releases, withdrawn ones included.',
+      },
+      {
+        signature: 'offered(orgId: OrgId, staged: boolean): PublishedRelease | undefined',
+        description: 'The newest release offered to one member.\n\nA staged release is offered only to members whose roles grant the staged channel; everyone else is offered the newest general release, even when a staged one is newer.',
+        parameters: [{ name: 'orgId', description: 'the organization.' }, { name: 'staged', description: 'whether this member is offered staged releases.' }],
+        returns: 'the release to offer, or undefined when none is.',
+      },
+      {
+        signature: 'floor(orgId: OrgId): ReleaseFloor | undefined',
+        description: 'The oldest version this deployment still accepts.',
+        parameters: [{ name: 'orgId', description: 'the organization.' }],
+        returns: 'the floor, or undefined when the deployment sets none.',
+      },
+      {
+        signature: 'setFloor(orgId: OrgId, version: string | undefined): ReleaseFloor | undefined',
+        description: 'Set or clear the oldest version this deployment accepts.',
+        parameters: [{ name: 'orgId', description: 'the organization.' }, { name: 'version', description: 'the floor, or undefined to accept every version.' }],
+        returns: 'the floor now in force, or undefined when it was cleared.',
+      },
+    ],
+  },
+  {
     key: 'terminalController',
     summary: 'Typed Remote control of transient Session-owned terminal processes.',
     description: 'Typed Remote control of transient Session-owned terminal processes.',
@@ -6273,6 +6317,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface PtcRunSpec extends PtcRunRequest {\n    cwd: string;\n    timeoutMs: number | null;\n}',
   },
   {
+    name: 'PublishedRelease',
+    declaration: 'export interface PublishedRelease {\n    readonly version: string;\n    readonly manifest: string;\n    readonly signature: string;\n    readonly channel: ReleaseChannel;\n    readonly publishedAt: number;\n    readonly withdrawnAt?: number;\n}',
+  },
+  {
+    name: 'PublishRelease',
+    declaration: 'export interface PublishRelease {\n    readonly version: string;\n    readonly manifest: string;\n    readonly signature: string;\n    readonly channel: ReleaseChannel;\n}',
+  },
+  {
     name: 'QuotaUsage',
     declaration: 'export interface QuotaUsage {\n    readonly orgId: OrgId;\n    readonly period: PeriodKey;\n    readonly limitTokens?: number;\n    readonly settledTokens: number;\n    readonly reservedTokens: number;\n    readonly availableTokens?: number;\n}',
   },
@@ -6311,6 +6363,14 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'RegisterResource',
     declaration: 'export interface RegisterResource {\n    readonly orgId: OrgId;\n    readonly type: string;\n    readonly externalRef: string;\n    readonly displayName: string;\n}',
+  },
+  {
+    name: 'ReleaseChannel',
+    declaration: 'export type ReleaseChannel = \'staged\' | \'general\';',
+  },
+  {
+    name: 'ReleaseFloor',
+    declaration: 'export interface ReleaseFloor {\n    readonly version: string;\n    readonly updatedAt: number;\n}',
   },
   {
     name: 'RemoteError',

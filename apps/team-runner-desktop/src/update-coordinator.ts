@@ -82,6 +82,8 @@ export class TeamUpdateCoordinator {
         // release the signed manifest does not cover is never offered.
         if ('refused' in verdict) return this.publish({ phase: 'error', version, message: verdict.refused })
         this.accepted = verdict.accepted
+        this.offered = version
+        return this.publish({ phase: 'available', version, required: verdict.required })
       }
       this.offered = version
       return this.publish({ phase: 'available', version })

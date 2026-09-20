@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useState, type ReactElement } from 'react'
+import { createPortal } from 'react-dom'
 import clsx from 'clsx'
 import {
   IconDownloadOutline16, IconRefreshOutline16, IconWarningOutline16, Tooltip,
@@ -135,20 +136,44 @@ export function UpdateAction({ wide, subscribe, check, install, t }: UpdateActio
   const shown = presentation(state, t)
   if (shown === undefined) return null
 
+  // The deployment refuses this build: the control stays, and the member is
+  // also told in front of everything, because nothing they do in the
+  // application counts until the update is taken.
+  const blockade = state.required !== true ? null : createPortal(
+    <div className={css.blockade} role="alertdialog" aria-modal="true" aria-label={t('required.title')}>
+      <div className={css.blockadeCard}>
+        <div className={css.blockadeTitle}>{t('required.title')}</div>
+        <div className={css.blockadeBody}>{t('required.body', { version: state.version ?? '' })}</div>
+        <button
+          type="button"
+          className={css.blockadeButton}
+          disabled={state.phase !== 'available'}
+          onClick={() => { void install() }}
+        >
+          {t(state.phase === 'available' ? 'required.action' : 'required.working')}
+        </button>
+      </div>
+    </div>,
+    globalThis.document.body,
+  )
+
   return (
-    <Tooltip label={shown.title} delayMs={300} side="top">
-      <button
-        type="button"
-        className={clsx(css.action, shown.tone, wide ? css.wide : css.rail)}
-        aria-label={shown.label}
-        disabled={shown.act === 'none'}
-        onClick={() => {
-          if (shown.act === 'install') void install()
-          if (shown.act === 'check') void check().then(setState, () => {})
-        }}
-      >
-        <span className={css.glyph} aria-hidden="true">{shown.glyph}</span>
-      </button>
-    </Tooltip>
+    <>
+      {blockade}
+      <Tooltip label={shown.title} delayMs={300} side="top">
+        <button
+          type="button"
+          className={clsx(css.action, shown.tone, wide ? css.wide : css.rail)}
+          aria-label={shown.label}
+          disabled={shown.act === 'none'}
+          onClick={() => {
+            if (shown.act === 'install') void install()
+            if (shown.act === 'check') void check().then(setState, () => {})
+          }}
+        >
+          <span className={css.glyph} aria-hidden="true">{shown.glyph}</span>
+        </button>
+      </Tooltip>
+    </>
   )
 }

@@ -33,6 +33,7 @@ kind: "package-group"
 | [`team-local-handoff/`](team-local-handoff/README.zh.md) | Runner | 可选公司站点浏览器 Handoff | — |
 | [`team-release/`](team-release/README.zh.md) | Control Plane | 已发布的版本、每个版本提供给谁，以及版本下限 | `ctx.teamReleases` |
 | [`team-release-http/`](team-release-http/README.zh.md) | Control Plane | 面向 Runner、答复成员被提供哪个版本的路由 | — |
+| [`team-update-source/`](team-update-source/README.zh.md) | Runner | 桌面外壳读取自身版本的回环路由 | — |
 | [`team-admin-api/`](team-admin-api/README.zh.md) | Control Plane | 管理控制台的 JSON API：会话、授权、审计 | — |
 | [`team-admin-app/`](team-admin-app/README.zh.md) | Control Plane | 提供构建好的管理控制台 | — |
 | [`team-console-menu/`](team-console-menu/README.zh.md) | Control Plane | 控制台的导航树，以及每条菜单所声明的权限 | `ctx.consoleMenu` |

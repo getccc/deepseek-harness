@@ -62,8 +62,13 @@ const RUNNER_PID_FILE = 'runner.pid'
 const SHELL_LOG = 'shell.log'
 /** Update metadata electron-builder writes when the build carries a release stream. */
 const UPDATE_CONFIG = 'app-update.yml'
-/** The deployment's signed release manifest, beside the artifacts nginx serves. */
-const MANIFEST_PATH = '/updates/manifest.json'
+/**
+ * Where the shell reads the release manifest: the Runner beside it, which
+ * holds the device credential this shell does not. The Runner asks the
+ * Control Plane with it and hands the signed document back unchanged, so the
+ * release key's signature is still what this shell decides on.
+ */
+const MANIFEST_URL = 'http://127.0.0.1:3090/team/update/manifest'
 /** How long after launch the first update check runs; startup owns the first minute. */
 const FIRST_UPDATE_CHECK_MS = 60_000
 /** Cadence of later update checks. */
@@ -412,16 +417,14 @@ function packagedReleaseKey(): string | undefined {
  * The signed-manifest decision for this computer, or undefined when this build
  * carries no release key and therefore never offers an update.
  *
- * The manifest is fetched through Electron's own network stack, which is where
- * the deployment authority is pinned; Node's `fetch` reads neither that pin nor
- * the operating system's trust store.
- * @param controlPlaneUrl - the deployment's Control Plane origin.
+ * The manifest comes from the Runner; the artifact it describes is fetched
+ * from the Control Plane directly, which is why the deployment authority is
+ * still pinned for that host.
  * @returns the gate, or undefined when this build has no trust root for an update.
  */
-function releaseGate(controlPlaneUrl: string): ReleaseGate | undefined {
+function releaseGate(): ReleaseGate | undefined {
   const releaseKey = packagedReleaseKey()
   if (releaseKey === undefined) return undefined
-  const manifestUrl = new URL(MANIFEST_PATH, controlPlaneUrl).href
   const target = {
     releaseKey,
     installedVersion: app.getVersion(),
@@ -429,7 +432,7 @@ function releaseGate(controlPlaneUrl: string): ReleaseGate | undefined {
     architecture: process.arch,
   }
   return {
-    accept: async offered => acceptRelease(offered, target, async () => readManifest(manifestUrl, url => net.fetch(url))),
+    accept: async offered => acceptRelease(offered, target, async () => readManifest(MANIFEST_URL, url => net.fetch(url))),
     verify: verifyDownload,
   }
 }
@@ -633,9 +636,7 @@ if (!app.requestSingleInstanceLock()) {
       ? packagedControlPlaneUrl()
       : process.env['DSH_TEAM_CONTROL_PLANE_URL']
     if (controlPlaneUrl !== undefined && controlPlaneUrl !== '') pinControlPlaneAuthority(controlPlaneUrl)
-    const gate = controlPlaneUrl === undefined || controlPlaneUrl === ''
-      ? undefined
-      : releaseGate(controlPlaneUrl)
+    const gate = releaseGate()
     if (gate === undefined) log('no release key; this build does not check for updates')
     updates = new TeamUpdateCoordinator(
       publishUpdateState,
