@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { AppUpdater } from 'electron-updater'
+import type { UpdateArtifact } from '@deepseek-ai/dsh-team-update'
+import type { ReleaseGate } from '../src/release-gate.ts'
 import type { TeamUpdateState } from '../src/update-state.ts'
 
 vi.mock('electron-updater', () => ({
@@ -25,7 +27,7 @@ function harness(options: {
     : { isUpdateAvailable: true, updateInfo: { version: options.offers } }))
   const downloadUpdate = vi.fn(async () => {
     order.push('download')
-    return options.download === undefined ? [] : options.download()
+    return options.download === undefined ? ['/tmp/WeWork.zip'] : options.download()
   })
   const quitAndInstall = vi.fn(() => { order.push('quitAndInstall') })
   const listeners = new Map<string, (info: { percent: number }) => void>()
@@ -117,6 +119,34 @@ describe('team update coordinator', () => {
     await coordinator.install()
     expect(stream.quitAndInstall).not.toHaveBeenCalled()
     expect(stream.states.at(-1)).toEqual({ phase: 'error', version: '2.4.0', message: 'digest mismatch' })
+  })
+
+  it('offers nothing the signed manifest refuses, and downloads nothing either', async () => {
+    const stream = harness({ offers: '2.4.0' })
+    const gate: ReleaseGate = {
+      accept: vi.fn().mockResolvedValue({ refused: 'release refused: signature' }),
+      verify: vi.fn(),
+    }
+    const coordinator = new TeamUpdateCoordinator(stream.publish, undefined, stream.updater, () => true, gate)
+    await coordinator.check()
+    expect(stream.states.at(-1)).toEqual({ phase: 'error', version: '2.4.0', message: 'release refused: signature' })
+    await coordinator.install()
+    expect(stream.downloadUpdate).not.toHaveBeenCalled()
+  })
+
+  it('refuses to restart into bytes the signed manifest does not describe', async () => {
+    const accepted = { platform: 'darwin', architecture: 'arm64', url: 'u', digest: 'd', sizeBytes: 1 } as UpdateArtifact
+    const stream = harness({ offers: '2.4.0' })
+    const verify = vi.fn().mockResolvedValue('the downloaded file does not match the signed manifest')
+    const gate: ReleaseGate = { accept: vi.fn().mockResolvedValue({ accepted }), verify }
+    const coordinator = new TeamUpdateCoordinator(stream.publish, undefined, stream.updater, () => true, gate)
+    await coordinator.check()
+    await coordinator.install()
+    expect(verify).toHaveBeenCalledWith('/tmp/WeWork.zip', accepted)
+    expect(stream.quitAndInstall).not.toHaveBeenCalled()
+    expect(stream.states.at(-1)).toEqual({
+      phase: 'error', version: '2.4.0', message: 'the downloaded file does not match the signed manifest',
+    })
   })
 
   it('answers concurrent checks from one request to the release stream', async () => {

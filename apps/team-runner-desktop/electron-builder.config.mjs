@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { pluginTreeFingerprint, resolveAppVersion } from './scripts/packaging-inputs.mjs'
+import { pluginTreeFingerprint, resolveAppVersion, resolveReleaseKey } from './scripts/packaging-inputs.mjs'
 
 const runner = process.env.DSH_TEAM_RUNNER_EXECUTABLE
 const controlPlaneUrl = process.env.DSH_TEAM_CONTROL_PLANE_URL
@@ -23,6 +23,10 @@ const appleTeamId = process.env.DSH_TEAM_APPLE_TEAM_ID
 // comparison and the shipped decision kernel read it, so it is validated here
 // rather than discovered when an installed application refuses to upgrade.
 const appVersion = resolveAppVersion(process.env)
+// The release public key this build checks an offered manifest against. A
+// build without one never checks for an update at all: with no trust root,
+// there is nothing an installed application may safely replace itself with.
+const releaseKey = resolveReleaseKey(process.env)
 
 if (runner === undefined || !existsSync(runner)) {
   throw new Error('DSH_TEAM_RUNNER_EXECUTABLE must name the built Team Runner executable')
@@ -91,7 +95,8 @@ export default {
   productName: process.env.DSH_TEAM_PRODUCT_NAME ?? 'DeepSeek Team Runner',
   artifactName: '${productName}-${version}-${os}-${arch}.${ext}',
   asar: true,
-  files: ['dist/**/*', 'package.json'],
+  // `dist/types` is tsc output that tsdown already bundled into dist/main.js.
+  files: ['dist/**/*', '!dist/types', 'package.json'],
   // `app.getName()` reads `productName` from the packaged manifest, not from
   // the bundle's Info.plist; without it the window and tray show the package name.
   extraMetadata: {
@@ -101,6 +106,7 @@ export default {
     // Identifies the shipped plugin tree, so an upgrade recopies it only when
     // the plugins actually changed.
     ...pluginTree === undefined ? {} : { teamPluginTreeFingerprint: pluginTreeFingerprint(pluginTree) },
+    ...releaseKey === undefined ? {} : { teamReleaseKey: releaseKey },
     ...Object.keys(officeSkills).length === 0 ? {} : { teamOfficeSkills: officeSkills },
   },
   extraResources,

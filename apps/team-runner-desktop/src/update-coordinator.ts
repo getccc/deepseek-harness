@@ -7,6 +7,8 @@
  */
 
 import electronUpdater, { type AppUpdater } from 'electron-updater'
+import type { UpdateArtifact } from '@deepseek-ai/dsh-team-update'
+import type { ReleaseGate } from './release-gate.ts'
 import type { TeamUpdateState } from './update-state.ts'
 
 const { autoUpdater } = electronUpdater
@@ -14,6 +16,7 @@ const { autoUpdater } = electronUpdater
 /** Checks, downloads, and installs one complete desktop release. */
 export class TeamUpdateCoordinator {
   private offered: string | undefined
+  private accepted: UpdateArtifact | undefined
   private checkOperation: Promise<TeamUpdateState> | undefined
   private installOperation: Promise<TeamUpdateState> | undefined
 
@@ -22,12 +25,14 @@ export class TeamUpdateCoordinator {
    * @param beforeRestart - stops the Runner and waits for its port and executable to be released.
    * @param updater - the artifact updater; replaceable for tests.
    * @param enabled - whether this build carries a release stream to ask.
+   * @param gate - the signed-manifest decision; without one nothing is verified beyond the updater's own hash.
    */
   constructor(
     private readonly publish: (state: TeamUpdateState) => TeamUpdateState,
     private readonly beforeRestart: () => Promise<void> = async () => {},
     private readonly updater: AppUpdater = autoUpdater,
     private readonly enabled: () => boolean = () => true,
+    private readonly gate?: ReleaseGate,
   ) {
     this.updater.autoDownload = false
     this.updater.autoInstallOnAppQuit = false
@@ -68,12 +73,21 @@ export class TeamUpdateCoordinator {
       }
       const result = await this.updater.checkForUpdates()
       const version = result?.isUpdateAvailable === true ? result.updateInfo.version : undefined
+      this.offered = undefined
+      this.accepted = undefined
+      if (version === undefined) return this.publish({ phase: 'idle' })
+      if (this.gate !== undefined) {
+        const verdict = await this.gate.accept(version)
+        // The metadata beside the artifacts is not what this build trusts; a
+        // release the signed manifest does not cover is never offered.
+        if ('refused' in verdict) return this.publish({ phase: 'error', version, message: verdict.refused })
+        this.accepted = verdict.accepted
+      }
       this.offered = version
-      return version === undefined
-        ? this.publish({ phase: 'idle' })
-        : this.publish({ phase: 'available', version })
+      return this.publish({ phase: 'available', version })
     } catch (error) {
       this.offered = undefined
+      this.accepted = undefined
       return this.publish({ phase: 'error', message: reason(error) })
     }
   }
@@ -91,8 +105,17 @@ export class TeamUpdateCoordinator {
     }
     this.updater.on('download-progress', progress)
     try {
-      await this.updater.downloadUpdate()
+      const files = await this.updater.downloadUpdate()
+      const accepted = this.accepted
+      if (accepted !== undefined) {
+        const artifact = files.find(path => !path.endsWith('.blockmap'))
+        const problem = artifact === undefined
+          ? 'the updater downloaded no artifact to verify'
+          : await (this.gate?.verify(artifact, accepted) ?? Promise.resolve(undefined))
+        if (problem !== undefined) return this.publish({ phase: 'error', version, message: problem })
+      }
       this.offered = undefined
+      this.accepted = undefined
       const ready = this.publish({ phase: 'ready', version })
       // The Runner holds the fixed port and, on Windows, files the installer
       // replaces; it has to be gone before the installer runs.

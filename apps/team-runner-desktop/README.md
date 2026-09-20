@@ -53,6 +53,7 @@ Every deployment-varying fact is a packaging environment variable, so one source
 | `DSH_TEAM_RUNNER_EXECUTABLE` | yes | The built Runner executable; its ripgrep and macOS spawn-helper sidecars are read from the neighbouring `-rg` and `-spawn-helper` names. |
 | `DSH_TEAM_CONTROL_PLANE_URL` | yes | The Control Plane origin this build belongs to. |
 | `DSH_TEAM_CONTROL_PLANE_CA` | no | The certificate that signed the Control Plane's TLS certificate. |
+| `DSH_TEAM_RELEASE_KEY` | no | Base64url DER SPKI of the Ed25519 release public key. A build without it never checks for an update, because it has no trust root for one. |
 | `DSH_TEAM_PLUGIN_TREE` | no | An installed profile's `node_modules`, carrying the out-of-tree plugins. |
 | `DSH_TEAM_PRODUCT_NAME`, `DSH_TEAM_APP_ID` | no | The installed application's name and bundle identifier. |
 | `DSH_TEAM_APP_ICON`, `DSH_TEAM_TRAY_ICON` | no | The application icon, and the menu bar template image whose `@2x` neighbour is staged with it. |
@@ -103,6 +104,10 @@ The member decides when. The shell checks a minute after launch and then every s
 `window.dshTeamDesktop` is the bridge the page uses: a context-isolated preload script exposing `check`, `install`, and a state subscription, and nothing else. The same page opened in a plain browser finds no such object and shows no update control.
 
 Electron's network stack reads the operating system's trust store, so a Control Plane behind a company authority would refuse these requests even though the Runner accepts it. The shell verifies that one host itself against the staged `DSH_TEAM_CONTROL_PLANE_CA`, accepting a certificate that authority issued and leaving every other host to Chromium's own verdict.
+
+What may be installed is decided by the deployment's signed release manifest at `<control plane origin>/updates/manifest.json`, not by the metadata beside the artifacts. The shell reads that document over the same pinned connection, checks its Ed25519 signature against the key this build carries, and refuses everything the key did not vouch for: a release no newer than the installed build, a version the metadata announced but the manifest does not cover, a platform this release has no artifact for, and an upgrade across a gap the release refuses. The refusal reaches the member's tooltip and the shell log.
+
+After the download the file is hashed again and compared with the digest inside the signed manifest. The updater already checked the hash its own metadata carried; this is the one an attacker who replaced both the artifact and that metadata could not choose. A mismatch leaves the installed build running.
 
 The release directory holds what the updater reads: `latest-mac.yml` or `latest.yml`, the artifacts, and their `.blockmap` files, which let an upgrade fetch only the blocks that changed. The macOS build produces both a disk image and a zip, because Squirrel.Mac replaces an application from a zip while the disk image stays the manual download; both are produced after notarization so the bundle that lands is the notarized one.
 

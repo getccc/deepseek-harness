@@ -1,6 +1,6 @@
 /** Packaging-time inputs an installed build carries: the release version and the plugin tree's identity. */
 
-import { createHash } from 'node:crypto'
+import { createHash, createPublicKey } from 'node:crypto'
 import { readdirSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 
@@ -60,4 +60,32 @@ export function pluginTreeFingerprint(directory) {
   const hash = createHash('sha256')
   for (const entry of entries) hash.update(entry).update('\n')
   return hash.digest('hex').slice(0, 16)
+}
+
+/** Environment variable carrying the release public key this build trusts. */
+export const RELEASE_KEY_ENV = 'DSH_TEAM_RELEASE_KEY'
+
+/**
+ * Validate the release public key, in the encoding the decision kernel reads:
+ * base64url DER SPKI of an Ed25519 public key.
+ *
+ * A build without one carries no trust root for an update, so it never checks
+ * for one. That is the safe absence: a deployment that has not yet published
+ * a release key keeps distributing complete installers.
+ * @param {NodeJS.ProcessEnv} env - the packaging environment.
+ * @returns {string | undefined} the validated key, or undefined when this build carries none.
+ */
+export function resolveReleaseKey(env) {
+  const value = env[RELEASE_KEY_ENV]?.trim()
+  if (value === undefined || value === '') return undefined
+  let key
+  try {
+    key = createPublicKey({ key: Buffer.from(value, 'base64url'), format: 'der', type: 'spki' })
+  } catch (cause) {
+    throw new Error(`${RELEASE_KEY_ENV} must be base64url DER SPKI of the release public key`, { cause })
+  }
+  if (key.asymmetricKeyType !== 'ed25519') {
+    throw new Error(`${RELEASE_KEY_ENV} must be an Ed25519 public key; received ${String(key.asymmetricKeyType)}`)
+  }
+  return value
 }

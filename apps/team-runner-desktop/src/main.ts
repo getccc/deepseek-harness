@@ -13,11 +13,13 @@ import {
   ipcMain,
   Menu,
   nativeImage,
+  net,
   session,
   shell,
   Tray,
 } from 'electron'
 import { pinnedCertificateVerdict } from './control-plane-certificate.ts'
+import { acceptRelease, readManifest, verifyDownload, type ReleaseGate } from './release-gate.ts'
 import { deploymentPatch, resolveDeployment, type LoginLocale, type OfficeSkills } from './deployment.ts'
 import { profileManifest } from './profile.ts'
 import { runnerReady } from './readiness.ts'
@@ -60,6 +62,8 @@ const RUNNER_PID_FILE = 'runner.pid'
 const SHELL_LOG = 'shell.log'
 /** Update metadata electron-builder writes when the build carries a release stream. */
 const UPDATE_CONFIG = 'app-update.yml'
+/** The deployment's signed release manifest, beside the artifacts nginx serves. */
+const MANIFEST_PATH = '/updates/manifest.json'
 /** How long after launch the first update check runs; startup owns the first minute. */
 const FIRST_UPDATE_CHECK_MS = 60_000
 /** Cadence of later update checks. */
@@ -391,6 +395,46 @@ function pinControlPlaneAuthority(controlPlaneUrl: string): void {
 }
 
 /**
+ * The release public key this build checks an offered manifest against, or
+ * undefined when it carries none.
+ * @returns the packaged key, or undefined in a development launch or an
+ * unsigned deployment.
+ */
+function packagedReleaseKey(): string | undefined {
+  if (!app.isPackaged) return process.env['DSH_TEAM_RELEASE_KEY']
+  const manifest = JSON.parse(readFileSync(join(app.getAppPath(), 'package.json'), 'utf8')) as {
+    teamReleaseKey?: unknown
+  }
+  return typeof manifest.teamReleaseKey === 'string' ? manifest.teamReleaseKey : undefined
+}
+
+/**
+ * The signed-manifest decision for this computer, or undefined when this build
+ * carries no release key and therefore never offers an update.
+ *
+ * The manifest is fetched through Electron's own network stack, which is where
+ * the deployment authority is pinned; Node's `fetch` reads neither that pin nor
+ * the operating system's trust store.
+ * @param controlPlaneUrl - the deployment's Control Plane origin.
+ * @returns the gate, or undefined when this build has no trust root for an update.
+ */
+function releaseGate(controlPlaneUrl: string): ReleaseGate | undefined {
+  const releaseKey = packagedReleaseKey()
+  if (releaseKey === undefined) return undefined
+  const manifestUrl = new URL(MANIFEST_PATH, controlPlaneUrl).href
+  const target = {
+    releaseKey,
+    installedVersion: app.getVersion(),
+    platform: process.platform,
+    architecture: process.arch,
+  }
+  return {
+    accept: async offered => acceptRelease(offered, target, async () => readManifest(manifestUrl, url => net.fetch(url))),
+    verify: verifyDownload,
+  }
+}
+
+/**
  * Publish one update state to the window and retain it, so a page that asks
  * before subscribing is answered with the state the shell is actually in.
  * @param state - the state the coordinator reached.
@@ -582,11 +626,16 @@ if (!app.requestSingleInstanceLock()) {
       ? packagedControlPlaneUrl()
       : process.env['DSH_TEAM_CONTROL_PLANE_URL']
     if (controlPlaneUrl !== undefined && controlPlaneUrl !== '') pinControlPlaneAuthority(controlPlaneUrl)
+    const gate = controlPlaneUrl === undefined || controlPlaneUrl === ''
+      ? undefined
+      : releaseGate(controlPlaneUrl)
+    if (gate === undefined) log('no release key; this build does not check for updates')
     updates = new TeamUpdateCoordinator(
       publishUpdateState,
       stopRunner,
       undefined,
-      () => app.isPackaged && existsSync(join(process.resourcesPath, UPDATE_CONFIG)),
+      () => gate !== undefined && app.isPackaged && existsSync(join(process.resourcesPath, UPDATE_CONFIG)),
+      gate,
     )
     ipcMain.handle(UPDATE_IPC.check, async () => updates?.check() ?? updateState)
     ipcMain.handle(UPDATE_IPC.install, async () => { await updates?.install() })

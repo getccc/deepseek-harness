@@ -53,6 +53,7 @@ pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 | `DSH_TEAM_RUNNER_EXECUTABLE` | 是 | 构建好的 Runner 可执行文件；其 ripgrep 与 macOS spawn-helper 伴随程序按相邻的 `-rg` 与 `-spawn-helper` 名称读取。 |
 | `DSH_TEAM_CONTROL_PLANE_URL` | 是 | 这份构建所属的 Control Plane 源。 |
 | `DSH_TEAM_CONTROL_PLANE_CA` | 否 | 签发 Control Plane TLS 证书的那份证书。 |
+| `DSH_TEAM_RELEASE_KEY` | 否 | Ed25519 发布公钥的 base64url DER SPKI 编码。没有它的构建从不检查更新，因为它没有可据以判断更新的信任根。 |
 | `DSH_TEAM_PLUGIN_TREE` | 否 | 一个已安装 profile 的 `node_modules`，携带树外插件。 |
 | `DSH_TEAM_PRODUCT_NAME`、`DSH_TEAM_APP_ID` | 否 | 安装后应用的名称与 bundle 标识符。 |
 | `DSH_TEAM_APP_ICON`、`DSH_TEAM_TRAY_ICON` | 否 | 应用图标，以及菜单栏模板图像——其 `@2x` 相邻文件随它一同置入资源。 |
@@ -103,6 +104,10 @@ pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 `window.dshTeamDesktop` 是页面使用的桥：一个上下文隔离的 preload 脚本，暴露 `check`、`install` 与状态订阅，除此之外别无其他。同一个页面在普通浏览器中打开时找不到该对象，也就不显示更新控件。
 
 Electron 的网络栈读取操作系统信任库，因此即便 Runner 接受某个位于公司自有证书颁发机构之后的 Control Plane，这些请求仍会被拒绝。外壳自行针对这一个主机用暂存的 `DSH_TEAM_CONTROL_PLANE_CA` 进行校验，接受由该机构签发的证书，其余主机一律保留 Chromium 自己的判定。
+
+可以安装什么由部署在 `<control plane origin>/updates/manifest.json` 发布的签名清单决定，而不是由产物旁边的元数据决定。外壳经同一条固定了证书的连接读取该文档，用本构建携带的公钥检查其 Ed25519 签名，并拒绝一切该公钥未曾背书的内容：不比已安装构建更新的版本、元数据声称而清单并未覆盖的版本、本次发布没有对应产物的平台，以及跨越该发布所拒绝间隔的升级。拒绝原因会到达成员的提示气泡和外壳日志。
+
+下载完成后会再次对文件做哈希，并与签名清单中的摘要比对。更新程序已经校验过它自己元数据携带的哈希；而这一个，是同时替换了产物与那份元数据的攻击者也无法选择的。不匹配时，已安装的构建继续运行。
 
 发布目录中存放更新程序读取的内容：`latest-mac.yml` 或 `latest.yml`、各个产物，以及它们的 `.blockmap` 文件，后者使一次升级只需取回发生变化的块。macOS 构建同时产出磁盘映像与 zip，因为 Squirrel.Mac 从 zip 替换应用，而磁盘映像仍作为手动下载渠道；两者都在公证之后产出，因此落地的正是已公证的包。
 
