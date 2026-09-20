@@ -18,7 +18,9 @@ import {
   shell,
   Tray,
 } from 'electron'
-import { pinnedCertificateVerdict } from './control-plane-certificate.ts'
+import {
+  CERTIFICATE_VERDICT, pinnedCertificateVerdict, pinnedHost, type CertificateVerdict,
+} from './control-plane-certificate.ts'
 import { acceptRelease, readManifest, verifyDownload, type ReleaseGate } from './release-gate.ts'
 import { deploymentPatch, resolveDeployment, type LoginLocale, type OfficeSkills } from './deployment.ts'
 import { profileManifest } from './profile.ts'
@@ -69,6 +71,14 @@ const UPDATE_CONFIG = 'app-update.yml'
  * release key's signature is still what this shell decides on.
  */
 const MANIFEST_URL = 'http://127.0.0.1:3090/team/update/manifest'
+/**
+ * The session partition `electron-updater` requests through.
+ *
+ * It does not use the default session, so a certificate rule set only there
+ * never reaches a check or a download. The name is that package's own
+ * constant, which it does not export.
+ */
+const UPDATER_SESSION = 'electron-updater'
 /** How long after launch the first update check runs; startup owns the first minute. */
 const FIRST_UPDATE_CHECK_MS = 60_000
 /** Cadence of later update checks. */
@@ -391,11 +401,30 @@ async function stopRunner(): Promise<void> {
 function pinControlPlaneAuthority(controlPlaneUrl: string): void {
   const authority = stagedResource(CONTROL_PLANE_CA, 'DSH_TEAM_CONTROL_PLANE_CA')
   if (authority === undefined) return
-  const host = new URL(controlPlaneUrl).hostname.toLowerCase()
+  const host = pinnedHost(new URL(controlPlaneUrl).hostname)
   const authorities = new Map([[host, readFileSync(authority, 'utf8')]])
-  session.defaultSession.setCertificateVerifyProc((request, callback) => {
-    callback(pinnedCertificateVerdict(request, authorities))
-  })
+  // One line per host, not per request: support needs to tell "the pin was
+  // never consulted" from "the pin refused this certificate", and an update
+  // check makes several requests to the same host.
+  const reported = new Set<string>()
+  const pin = (target: Electron.Session, label: string): void => {
+    target.setCertificateVerifyProc((request, callback) => {
+      let verdict: CertificateVerdict = CERTIFICATE_VERDICT.chromium
+      try {
+        verdict = pinnedCertificateVerdict(request, authorities)
+      } catch (error) {
+        log(`certificate verification failed for ${request.hostname}: ${String(error)}`)
+      }
+      const seen = `${label} ${request.hostname}`
+      if (!reported.has(seen)) {
+        reported.add(seen)
+        log(`certificate ${seen} verdict ${String(verdict)}`)
+      }
+      callback(verdict)
+    })
+  }
+  pin(session.defaultSession, 'default')
+  pin(session.fromPartition(UPDATER_SESSION, { cache: false }), UPDATER_SESSION)
   log(`pinned the deployment authority for ${host}`)
 }
 

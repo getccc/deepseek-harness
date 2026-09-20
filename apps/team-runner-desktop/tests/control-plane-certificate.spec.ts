@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
-  CERTIFICATE_VERDICT, certificateBody, issuedBy, pinnedCertificateVerdict,
+  CERTIFICATE_VERDICT, certificateBody, issuedBy, pinnedCertificateVerdict, pinnedHost,
 } from '../src/control-plane-certificate.ts'
 
 const fixture = (name: string): string => readFileSync(join(import.meta.dirname, 'fixtures', name), 'utf8')
@@ -13,6 +13,14 @@ const unrelated = fixture('unrelated-authority.pem')
 const pinned = new Map([['control.test', authority]])
 
 describe('control plane certificate pinning', () => {
+  it('pins a host Chromium named with a port', () => {
+    // A lookup that misses reads as "not pinned", which hands the request
+    // back to a trust store this authority is not in.
+    expect(pinnedHost('CONTROL.TEST:3095')).toBe('control.test')
+    expect(pinnedCertificateVerdict({ hostname: 'control.test:3095', certificate: { data: server } }, pinned))
+      .toBe(CERTIFICATE_VERDICT.accept)
+  })
+
   it('leaves every other host to Chromium', () => {
     const request = { hostname: 'registry.npmjs.org', certificate: { data: server } }
     expect(pinnedCertificateVerdict(request, pinned)).toBe(CERTIFICATE_VERDICT.chromium)

@@ -42,6 +42,20 @@ export interface CertificateRequest {
 }
 
 /**
+ * The key a pinned host is looked up by.
+ *
+ * Chromium has reported the authority with and without the port depending on
+ * the request, and a lookup that misses reads as "not pinned" — which quietly
+ * hands the request back to the operating system's trust store, where a
+ * deployment's own authority is not.
+ * @param hostname - the host Chromium named.
+ * @returns the lowercase host without a port.
+ */
+export function pinnedHost(hostname: string): string {
+  return hostname.toLowerCase().replace(/:\d+$/u, '')
+}
+
+/**
  * Reduce one PEM document to the base64 body of its first certificate, so two
  * encodings of the same certificate compare equal.
  * @param pem - PEM text holding at least one certificate.
@@ -82,7 +96,7 @@ export function pinnedCertificateVerdict(
   request: CertificateRequest,
   authorities: ReadonlyMap<string, string>,
 ): CertificateVerdict {
-  const authority = authorities.get(request.hostname.toLowerCase())
+  const authority = authorities.get(pinnedHost(request.hostname))
   if (authority === undefined) return CERTIFICATE_VERDICT.chromium
   const pinned = certificateBody(authority)
   if (pinned === '') return CERTIFICATE_VERDICT.reject
