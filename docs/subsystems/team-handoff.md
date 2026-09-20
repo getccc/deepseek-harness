@@ -128,4 +128,73 @@ async signOut(): Promise<void>
 Types: [TransactionId](device-authorization.md)
 
 Source: [`packages/team/team-account-client/src/index.ts`](../../packages/team/team-account-client/src/index.ts)
+
+<a id="ctxteamreleases--teamreleasestore"></a>
+
+### `ctx.teamReleases` — `TeamReleaseStore`
+
+The published releases of one deployment, over SQLite.
+
+Versions are ordered by their numbers rather than as text, because that is the order the installed application compares them in; `1.0.10` is newer than `1.0.9` here for the same reason it is there.
+
+```ts cordis-catalog
+/**
+ * Record one release, or replace the record of a version published before.
+ *
+ * The manifest is checked against the version it is published as, which is
+ * the one mistake that would otherwise ship a signature over another
+ * release's files.
+ * @param orgId - the organization publishing it.
+ * @param release - the signed manifest, its signature, and who it is offered to.
+ * @returns the recorded release.
+ * @throws {ReleaseVersionMismatchError} when the manifest describes another version.
+ */
+publish(orgId: OrgId, release: PublishRelease): PublishedRelease
+
+/**
+ * Stop offering one release without forgetting it was published.
+ * @param orgId - the organization that published it.
+ * @param version - the release to withdraw.
+ * @returns whether a release was withdrawn.
+ */
+withdraw(orgId: OrgId, version: string): boolean
+
+/**
+ * Every release this organization published, newest first.
+ * @param orgId - the organization.
+ * @returns the releases, withdrawn ones included.
+ */
+list(orgId: OrgId): readonly PublishedRelease[]
+
+/**
+ * The newest release offered to one member.
+ *
+ * A staged release is offered only to members whose roles grant the staged
+ * channel; everyone else is offered the newest general release, even when a
+ * staged one is newer.
+ * @param orgId - the organization.
+ * @param staged - whether this member is offered staged releases.
+ * @returns the release to offer, or undefined when none is.
+ */
+offered(orgId: OrgId, staged: boolean): PublishedRelease | undefined
+
+/**
+ * The oldest version this deployment still accepts.
+ * @param orgId - the organization.
+ * @returns the floor, or undefined when the deployment sets none.
+ */
+floor(orgId: OrgId): ReleaseFloor | undefined
+
+/**
+ * Set or clear the oldest version this deployment accepts.
+ * @param orgId - the organization.
+ * @param version - the floor, or undefined to accept every version.
+ * @returns the floor now in force, or undefined when it was cleared.
+ */
+setFloor(orgId: OrgId, version: string | undefined): ReleaseFloor | undefined
+```
+
+Types: [OrgId](account.md)
+
+Source: [`packages/team/team-release/src/index.ts`](../../packages/team/team-release/src/index.ts)
 <!-- END GENERATED cordis-surface -->

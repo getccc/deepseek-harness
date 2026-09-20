@@ -3372,7 +3372,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/team/team-admin-api/src/index.ts:173`](../packages/team/team-admin-api/src/index.ts)
+Source: [`packages/team/team-admin-api/src/index.ts:183`](../packages/team/team-admin-api/src/index.ts)
 
 <a id="deepseek-aidsh-team-console-menu-sqlite"></a>
 
@@ -3460,6 +3460,40 @@ export type LoginLocale = typeof LOGIN_LOCALES[number]
 
 Source: [`packages/team/team-local-login/src/index.ts:28`](../packages/team/team-local-login/src/index.ts)
 
+<a id="deepseek-aidsh-team-release"></a>
+
+## `@deepseek-ai/dsh-team-release`
+
+```ts config-catalog
+/** Plugin config: where the published releases live. */
+export interface Config {
+  /** Path to the release database. */
+  path: string
+  /** SQLite journal mode; `wal` lets readers run beside the one writer. */
+  journalMode?: 'wal' | 'delete' | 'truncate' | 'persist'
+  /** How long a write waits for the lock before it fails. */
+  busyTimeoutMs?: number
+}
+```
+
+Source: [`packages/team/team-release/src/index.ts:38`](../packages/team/team-release/src/index.ts)
+
+<a id="deepseek-aidsh-team-release-http"></a>
+
+## `@deepseek-ai/dsh-team-release-http`
+
+Requires: `webServer` · `teamReleases` · `deviceAuthorization` · `accessControl`
+
+```ts config-catalog
+/** Plugin config: the one bound a request body may carry. */
+export interface Config {
+  /** The most bytes a request body may carry; the body holds one number. */
+  maxRequestBodyBytes?: number
+}
+```
+
+Source: [`packages/team/team-release-http/src/index.ts:40`](../packages/team/team-release-http/src/index.ts)
+
 <a id="deepseek-aidsh-team-shell"></a>
 
 ## `@deepseek-ai/dsh-team-shell`
@@ -3475,6 +3509,24 @@ export interface Config {
 ```
 
 Source: [`packages/team/team-shell/src/index.ts:39`](../packages/team/team-shell/src/index.ts)
+
+<a id="deepseek-aidsh-team-update-source"></a>
+
+## `@deepseek-ai/dsh-team-update-source`
+
+Requires: `webServer` · `teamAccountClient`
+
+```ts config-catalog
+/** Plugin config: where the Control Plane is, and how to trust it. */
+export interface Config {
+  /** Origin of the company Control Plane; no default. */
+  controlPlaneUrl: string
+  /** Absolute path of the certificate that signed the Control Plane's TLS certificate. */
+  controlPlaneCa?: string
+}
+```
+
+Source: [`packages/team/team-update-source/src/index.ts:30`](../packages/team/team-update-source/src/index.ts)
 
 <a id="deepseek-aidsh-terminal-bash"></a>
 

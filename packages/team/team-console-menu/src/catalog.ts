@@ -152,4 +152,19 @@ export const SHIPPED_CONSOLE_MENUS: readonly ShippedConsoleMenu[] = [
     icon: 'chart',
     sortOrder: 4,
   },
+  {
+    key: 'releases',
+    parentKey: 'resources',
+    name: 'Client releases',
+    labelKey: 'nav.releases',
+    kind: 'menu',
+    routePath: '/resources/releases',
+    componentPath: 'resources/ReleasesPage',
+    // Registered only where this Control Plane publishes desktop releases, so
+    // a deployment that distributes complete installers grants this to nobody
+    // and the entry stays hidden.
+    permission: 'release|release.manage',
+    icon: 'laptop',
+    sortOrder: 5,
+  },
 ]

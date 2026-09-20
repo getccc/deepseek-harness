@@ -57,7 +57,6 @@ import {
   RELEASE_RESOURCE_TYPE,
   ReleaseVersionMismatchError,
   type PublishedRelease,
-  type ReleaseChannel,
   type TeamReleaseStore,
 } from '@deepseek-ai/dsh-team-release'
 import {
@@ -111,6 +110,7 @@ import type {
   WireModel,
   WireOrganization,
   WireOverview,
+  WireRelease,
   WireRole,
 } from './types.ts'
 
@@ -136,6 +136,8 @@ export type {
   WirePermission,
   WireRefusal,
   WireRefusalReason,
+  WireRelease,
+  WireReleaseCatalog,
   WireRole,
   WireRoleRef,
   WireSecretPolicy,
@@ -2136,12 +2138,7 @@ export function apply(ctx: Context, config: Config): void {
 }
 
 /** One published release as the console reads it; the manifest itself stays in the store. */
-function wireRelease(release: PublishedRelease): {
-  version: string
-  channel: ReleaseChannel
-  publishedAt: number
-  withdrawnAt: number | null
-} {
+function wireRelease(release: PublishedRelease): WireRelease {
   return {
     version: release.version,
     channel: release.channel,

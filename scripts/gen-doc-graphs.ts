@@ -189,6 +189,15 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'Holds the device key and the credential on the member computer and calls the Control Plane over HTTPS. No company provider credential ever reaches it.',
   },
   {
+    key: 'teamReleases',
+    pkg: 'team-release',
+    title: 'Published desktop releases',
+    mode: 'seam',
+    implementations: [],
+    consumers: ['team-release-http', 'team-admin-api'],
+    note: 'Holds the signed manifest a release machine produced, who it is offered to, and the version floor. The Control Plane serves what it was given and cannot sign a release of its own.',
+  },
+  {
     key: 'mcpResources',
     pkg: 'mcp-resources',
     title: 'Scoped MCP resource access',

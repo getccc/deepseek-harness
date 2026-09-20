@@ -45,6 +45,9 @@ flowchart LR
   svc_teamAccountClient["ctx.teamAccountClient<br/>The Runner side of the team account"]
   pkg_team_local_login["team-local-login"]
   pkg_team_local_handoff["team-local-handoff"]
+  pkg_team_release["team-release"]
+  svc_teamReleases["ctx.teamReleases<br/>Published desktop releases"]
+  pkg_team_release_http["team-release-http"]
   pkg_mcp_resources["mcp-resources"]
   svc_mcpResources["ctx.mcpResources<br/>Scoped MCP resource access"]
   pkg_mcp_client["mcp-client"]
@@ -440,6 +443,7 @@ flowchart LR
   pkg_team_account_client --> svc_teamAccountClient
   pkg_team_console_menu --> svc_consoleMenu
   pkg_team_console_menu_sqlite --> svc_consoleMenu
+  pkg_team_release --> svc_teamReleases
   pkg_terminal --> svc_terminals
   pkg_terminal_bash --> svc_terminals
   pkg_token_meter --> svc_tokenMeter
@@ -589,6 +593,8 @@ flowchart LR
   svc_systemPrompt --> pkg_tools
   svc_teamAccountClient --> pkg_team_local_handoff
   svc_teamAccountClient --> pkg_team_local_login
+  svc_teamReleases --> pkg_team_admin_api
+  svc_teamReleases --> pkg_team_release_http
   svc_terminals --> pkg_tool_terminal
   svc_tokenMeter --> pkg_compaction_basic
   svc_toolResultPruner --> pkg_compaction_basic
@@ -629,6 +635,7 @@ flowchart LR
 | `ctx.llmHttpTransport` | `seam` | [`llm-http-transport`](../packages/llm/llm-http-transport) | [`llm-http-transport-team`](../packages/llm/llm-http-transport-team) | [`llm-deepseek`](../packages/llm/llm-deepseek) | - | 请求指名的是封闭列表中的一个操作和一个模型，绝不是 URL，因此没有任何调用方决定凭据去往何处。远程策略归 Transport 所有时，DeepSeek Adapter 也会把模型发现委托给它。 |
 | `ctx.deviceAuthorization` | `seam` | [`device-authorization`](../packages/account/device-authorization) | [`device-authorization-sqlite`](../packages/account/device-authorization-sqlite) | [`team-admin-api`](../packages/team/team-admin-api), [`team-control-plane-http`](../packages/team/team-control-plane-http), [`team-shell`](../packages/team/team-shell) | - | 默认 Runner 流程认证账户并批准 Transaction；PKCE 与设备签名证明完成兑换的电脑持有密钥。可选的浏览器交接也可以提供批准。 |
 | `ctx.teamAccountClient` | `seam` | [`team-account-client`](../packages/team/team-account-client) | - | [`team-local-login`](../packages/team/team-local-login), [`team-local-handoff`](../packages/team/team-local-handoff) | - | 在成员电脑上持有设备密钥与凭据，并通过 HTTPS 调用 Control Plane。公司 Provider 凭据从不到达它。 |
+| `ctx.teamReleases` | `seam` | [`team-release`](../packages/team/team-release) | - | [`team-release-http`](../packages/team/team-release-http), [`team-admin-api`](../packages/team/team-admin-api) | - | 保存发布机产出的签名清单、它提供给谁，以及版本下限。Control Plane 分发它收到的内容，无法签署属于自己的版本。 |
 | `ctx.mcpResources` | `seam` | [`mcp-resources`](../packages/mcp/mcp-resources) | [`mcp-client`](../packages/mcp/mcp-client) | [`mcp-resources`](../packages/mcp/mcp-resources) | - | 连接所有者提供的操作在调用 agent 的作用域内服务于共享资源工具。 |
 | `ctx.browserUse` | `seam` | [`browser-use`](../packages/browser-use/browser-use) | [`experimental-browser-use-playwright-mcp`](../packages/experimental/browser-use-playwright-mcp), [`experimental-browser-use-chrome-devtools-mcp`](../packages/experimental/browser-use-chrome-devtools-mcp), [`experimental-browser-use-stagehand-native`](../packages/experimental/browser-use-stagehand-native) | [`experimental-browser-use-playwright-mcp`](../packages/experimental/browser-use-playwright-mcp), [`experimental-browser-use-chrome-devtools-mcp`](../packages/experimental/browser-use-chrome-devtools-mcp), [`experimental-browser-use-stagehand-native`](../packages/experimental/browser-use-stagehand-native) | - | 每个服务实例注册一个提供方拥有的名称。提供方按实时 Session 拥有自己的工具与浏览器资源；共享服务不提供浏览器操作 API。 |
 | `ctx.computerUse` | `seam` | [`computer-use`](../packages/computer-use/computer-use) | [`experimental-computer-use-cua-driver-mcp`](../packages/experimental/computer-use-cua-driver-mcp), [`experimental-computer-use-cua-driver-native`](../packages/experimental/computer-use-cua-driver-native) | [`experimental-computer-use-cua-driver-mcp`](../packages/experimental/computer-use-cua-driver-mcp), [`experimental-computer-use-cua-driver-native`](../packages/experimental/computer-use-cua-driver-native) | - | 每个服务实例只注册一个提供方自定的名称。各提供方也拥有自己的模型工具；服务不提供通用操作 API、运行时选择或 Session 流程锁。 |

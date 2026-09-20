@@ -21,6 +21,8 @@ import type {
   WirePermission,
   WireRefusal,
   WireRefusalReason,
+  WireRelease,
+  WireReleaseCatalog,
   WireRole,
   WireSession,
 } from '@deepseek-ai/dsh-team-admin-api'
@@ -29,7 +31,8 @@ export type {
   SecretCharacterClass, WireBiAccess, WireBiCatalog, WireBiProject,
   WireDepartment, WireDevice, WireGrant, WireKnowledgeAccess,
   WireKnowledgeBase, WireKnowledgeCatalog, WireMember, WireMenu, WireModel,
-  WireOrganization, WireOverview, WirePermission, WireRole, WireSecretPolicy, WireSession,
+  WireOrganization, WireOverview, WirePermission, WireRelease, WireReleaseCatalog,
+  WireRole, WireSecretPolicy, WireSession,
 } from '@deepseek-ai/dsh-team-admin-api'
 
 /** The fields the company row's form collects; an empty string clears a stored one. */
@@ -300,4 +303,23 @@ export const api = {
   /** Take one model out of the catalog, with the grants that named it. */
   removeModel: (modelRef: string): Promise<WireModel[]> =>
     call('DELETE', `/models/${encodeURIComponent(modelRef)}`),
+  /** Every desktop release this deployment published, and the floor it enforces. */
+  releases: (): Promise<WireReleaseCatalog> => call('GET', '/releases'),
+  /**
+   * Record one release, or change who a recorded one is offered to. The
+   * version is the identity, so publishing a recorded version again is how a
+   * staged release is offered to everyone.
+   */
+  publishRelease: (input: {
+    version: string
+    manifest: string
+    signature: string
+    channel: 'staged' | 'general'
+  }): Promise<WireRelease> => call('POST', '/releases', input),
+  /** Stop offering one release without forgetting it was published. */
+  withdrawRelease: (version: string): Promise<{ withdrawn: boolean }> =>
+    call('POST', `/releases/${encodeURIComponent(version)}/withdraw`, {}),
+  /** Set the oldest version this deployment accepts, or null to accept every version. */
+  setReleaseFloor: (version: string | null): Promise<{ minimumVersion: string | null }> =>
+    call('POST', '/releases/floor', { version }),
 }
