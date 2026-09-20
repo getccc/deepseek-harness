@@ -51,7 +51,7 @@
 }
 
 .failed {
-  color: var(--dsw-alias-state-danger-primary);
+  color: var(--dsw-alias-state-warn-primary);
 }
 
 .failed:hover {
@@ -76,7 +76,7 @@
 
 .ringTrack {
   fill: none;
-  stroke: var(--dsw-alias-line-secondary);
+  stroke: var(--dsw-alias-border-l3);
   stroke-width: 2.5;
 }
 
