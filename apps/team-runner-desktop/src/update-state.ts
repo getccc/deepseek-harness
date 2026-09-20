@@ -21,6 +21,8 @@ export interface TeamUpdateState {
   readonly phase: 'idle' | 'checking' | 'available' | 'installing' | 'ready' | 'error'
   /** The offered release, present from `available` onward. */
   readonly version?: string
+  /** Whole percent of the download, present while one reports progress. */
+  readonly percent?: number
   /** Why the last operation failed; present only with `error`. */
   readonly message?: string
 }

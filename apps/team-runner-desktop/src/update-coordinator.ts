@@ -84,6 +84,12 @@ export class TeamUpdateCoordinator {
       return this.publish({ phase: 'error', message: 'no accepted release is available' })
     }
     this.publish({ phase: 'installing', version })
+    // A 280 MB download over a company network is minutes long; the member
+    // watches the percentage rather than a button that only looks busy.
+    const progress = (info: { percent: number }): void => {
+      this.publish({ phase: 'installing', version, percent: Math.round(info.percent) })
+    }
+    this.updater.on('download-progress', progress)
     try {
       await this.updater.downloadUpdate()
       this.offered = undefined
@@ -95,6 +101,8 @@ export class TeamUpdateCoordinator {
       return ready
     } catch (error) {
       return this.publish({ phase: 'error', version, message: reason(error) })
+    } finally {
+      this.updater.off('download-progress', progress)
     }
   }
 }

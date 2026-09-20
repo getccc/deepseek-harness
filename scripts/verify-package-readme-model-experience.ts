@@ -194,6 +194,7 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/team/team-control-plane-http': { kind: 'none', reason: 'Server-side HTTP endpoints: the plugin registers no prompt section, tool, or request context.' },
   'packages/team/team-account-client': { kind: 'none', reason: 'Runner-side account custody: the service registers no prompt section, tool, or request context.' },
   'packages/team/team-local-handoff': { kind: 'none', reason: 'Runner-side navigation endpoints: the plugin registers no prompt section, tool, or request context.' },
+  'packages/team/team-desktop-update': { kind: 'none', reason: 'A sidebar control over the desktop shell\'s update bridge: no prompt section, tool, or request context.' },
   'packages/team/team-local-login': { kind: 'none', reason: 'Runner-side login endpoints: the plugin registers no prompt section, tool, or request context.' },
   'packages/team/team-admin-api': { kind: 'none', reason: "An administrator's browser API: the plugin registers no prompt section, tool, or request context." },
   'packages/team/team-console-menu': { kind: 'none', reason: "The administration console's navigation vocabulary: the package registers no prompt section, tool, or request context." },

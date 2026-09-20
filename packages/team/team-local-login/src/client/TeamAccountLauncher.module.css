@@ -1,6 +1,29 @@
+/* The member row and whatever is registered beside it. On the rail the two
+   stack, with the action above the avatar, because 36px leaves no room to
+   sit next to it. */
+.row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.rowWide {
+  gap: 4px;
+}
+
+.rowRail {
+  flex-direction: column-reverse;
+  justify-content: center;
+}
+
 .menu {
   display: flex;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
+}
+
+.rowRail .menu {
+  flex: none;
 }
 
 .launcher {

@@ -207,6 +207,13 @@
     - id: client-ui-bi
       name: '@deepseek-ai/dsh-client-ui-bi'
 
+    # The update control beside the member row at the sidebar foot. The plugin
+    # carries no Host behavior; its browser half registers only when the page
+    # runs inside a desktop shell that exposes the update bridge, so a member
+    # reaching this Runner from a browser sees the sidebar unchanged.
+    - id: team-desktop-update
+      name: '@deepseek-ai/dsh-team-desktop-update'
+
     # Word, Excel, and PowerPoint previews for the right Sidebar's document
     # tab. Registered as external renderers of the shipped preview registry,
     # so removing this row hands those suffixes back to the builtin fallback

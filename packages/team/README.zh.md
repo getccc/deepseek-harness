@@ -29,6 +29,7 @@ kind: "package-group"
 | [`team-control-plane-http/`](team-control-plane-http/README.zh.md) | Control Plane | 面向 Runner 的账户认证与设备凭据端点 | — |
 | [`team-account-client/`](team-account-client/README.zh.md) | Runner | 设备密钥、凭据，以及对 Control Plane 的调用 | `ctx.teamAccountClient` |
 | [`team-local-login/`](team-local-login/README.zh.md) | Runner | 默认本地成员登录、入口与退出 | — |
+| [`team-desktop-update/`](team-desktop-update/README.zh.md) | Runner | 桌面外壳更新桥之上的侧边栏更新控件 | — |
 | [`team-local-handoff/`](team-local-handoff/README.zh.md) | Runner | 可选公司站点浏览器 Handoff | — |
 | [`team-admin-api/`](team-admin-api/README.zh.md) | Control Plane | 管理控制台的 JSON API：会话、授权、审计 | — |
 | [`team-admin-app/`](team-admin-app/README.zh.md) | Control Plane | 提供构建好的管理控制台 | — |

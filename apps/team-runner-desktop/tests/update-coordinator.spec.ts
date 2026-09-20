@@ -28,16 +28,20 @@ function harness(options: {
     return options.download === undefined ? [] : options.download()
   })
   const quitAndInstall = vi.fn(() => { order.push('quitAndInstall') })
+  const listeners = new Map<string, (info: { percent: number }) => void>()
   const updater = {
     autoDownload: true,
     autoInstallOnAppQuit: true,
     checkForUpdates,
     downloadUpdate,
     quitAndInstall,
+    on: (event: string, listener: (info: { percent: number }) => void) => { listeners.set(event, listener) },
+    off: (event: string) => { listeners.delete(event) },
   } as unknown as AppUpdater
   return {
     states,
     order,
+    listeners,
     checkForUpdates,
     downloadUpdate,
     quitAndInstall,
@@ -63,6 +67,19 @@ describe('team update coordinator', () => {
     expect(stream.order).toEqual(['download', 'stopRunner', 'quitAndInstall'])
     expect(stream.states.map(state => state.phase)).toEqual(['checking', 'available', 'installing', 'ready'])
     expect(stream.states.at(-1)?.version).toBe('2.4.0')
+  })
+
+  it('publishes the download percentage and stops listening afterwards', async () => {
+    const stream = harness({ offers: '2.4.0' })
+    stream.downloadUpdate.mockImplementationOnce(async () => {
+      stream.listeners.get('download-progress')?.({ percent: 41.6 })
+      return []
+    })
+    const coordinator = new TeamUpdateCoordinator(stream.publish, undefined, stream.updater, () => true)
+    await coordinator.check()
+    await coordinator.install()
+    expect(stream.states).toContainEqual({ phase: 'installing', version: '2.4.0', percent: 42 })
+    expect(stream.listeners.has('download-progress')).toBe(false)
   })
 
   it('turns off the updater defaults that would install without the member', () => {

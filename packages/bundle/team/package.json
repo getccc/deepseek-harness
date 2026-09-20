@@ -52,13 +52,14 @@
     "@deepseek-ai/dsh-client-ui-office": "workspace:^",
     "@deepseek-ai/dsh-client-ui-sidebar-documentpreview-office": "workspace:^",
     "@deepseek-ai/dsh-knowledge-team": "workspace:^",
-    "@deepseek-ai/dsh-web-search-team": "workspace:^",
     "@deepseek-ai/dsh-llm-http-transport-team": "workspace:^",
     "@deepseek-ai/dsh-office": "workspace:^",
     "@deepseek-ai/dsh-team-account-client": "workspace:^",
+    "@deepseek-ai/dsh-team-desktop-update": "workspace:^",
     "@deepseek-ai/dsh-team-local-login": "workspace:^",
     "@deepseek-ai/dsh-tool-bi": "workspace:^",
     "@deepseek-ai/dsh-tool-knowledge": "workspace:^",
-    "@deepseek-ai/dsh-tool-office": "workspace:^"
+    "@deepseek-ai/dsh-tool-office": "workspace:^",
+    "@deepseek-ai/dsh-web-search-team": "workspace:^"
   }
 }

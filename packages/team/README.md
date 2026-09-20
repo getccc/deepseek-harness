@@ -29,6 +29,7 @@ Nine packages, split by which side of the network they run on; each child README
 | [`team-control-plane-http/`](team-control-plane-http/README.md) | Control Plane | Runner-facing account authentication and device-credential endpoints | — |
 | [`team-account-client/`](team-account-client/README.md) | Runner | The device key, the credential, and the calls to the Control Plane | `ctx.teamAccountClient` |
 | [`team-local-login/`](team-local-login/README.md) | Runner | Default local member login, entry, and sign-out | — |
+| [`team-desktop-update/`](team-desktop-update/README.md) | Runner | The sidebar update control over the desktop shell's update bridge | — |
 | [`team-local-handoff/`](team-local-handoff/README.md) | Runner | Optional company-site browser handoff | — |
 | [`team-admin-api/`](team-admin-api/README.md) | Control Plane | The administration console's JSON API: session, authorization, audit | — |
 | [`team-admin-app/`](team-admin-app/README.md) | Control Plane | Serving the built administration console | — |

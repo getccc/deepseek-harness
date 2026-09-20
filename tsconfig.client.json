@@ -118,6 +118,7 @@
     { "path": "./packages/client/ui-settings" },
     { "path": "./packages/client/ui-settings-general" },
     { "path": "./packages/team/team-local-login/tsconfig.client.json" },
+    { "path": "./packages/team/team-desktop-update" },
     { "path": "./packages/client/ui-settings-models" },
     { "path": "./packages/client/ui-settings-plugin-inventory" },
     { "path": "./packages/client/ui-settings-unarchive-sessions" },

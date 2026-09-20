@@ -40,9 +40,9 @@ The Team shell carries its own coordinator, built like the one in `apps/desktop`
 
 `electron-updater` requests through Electron's network stack, which reads the operating system's trust store and therefore rejects the deployment's private certificate authority. The shell pins that authority for the Control Plane host alone with `session.setCertificateVerifyProc`, comparing against the staged `runner/control-plane-ca.crt`. `app.on('certificate-error')` does not apply: it observes `webContents` navigation, not `net` requests.
 
-### The sidebar control is a client seam over a preload bridge
+### The control joins the member row over a preload bridge
 
-`sidebar.footer.action` is a declared list slot beside the settings seat with no registrant, and it is where this control belongs. The shell exposes check, install, and a state subscription through a context-isolated preload bridge, as `apps/desktop` already does for its own page. One small client package adapts that bridge into a client service; the sidebar occupant consumes the service and reads no host global. A browser opened at port 3090 and a source launch carry no bridge, the service registers nothing, and no control renders.
+The member row at the sidebar foot declares a `team.account.action` list, and the control joins it there, beside the name. The shell exposes check, install, and a state subscription through a context-isolated preload bridge, as `apps/desktop` already does for its own page, and reports the download's percentage on that subscription, because a 280 MB transfer needs more than a button that looks busy. One Team package reads the bridge and registers the control. It declares the bridge itself rather than importing the shell's declaration, because the two programs compile independently; `protocolVersion` is what a drift between them trips on. A browser opened at port 3090 and a source launch carry no bridge, the package registers nothing, and no control renders.
 
 ### Packaging publishes what the updater reads
 
@@ -58,7 +58,7 @@ The admin console gains a release page: register a version with its signed manif
 
 **Serve updates from the website.** The website and the public Control Plane share a host, so a static `/updates/` there would work and need no new route. Rejected because the website is plain HTTP and, more decisively, because the update address must follow the Control Plane a build was packaged for — the intranet deployment and the public one are different servers, and a second address would have to be packaged, validated, and kept in step with the first.
 
-**Let the sidebar package read the preload bridge directly.** This is what `apps/desktop` does for its own page, and it would remove one package. Rejected because that page is the shell's own document, while the sidebar belongs to the Runner's web application, which also runs in a plain browser; a host global read from a client package makes the shell a silent dependency of the web surface.
+**Let an upstream client package read the bridge.** The control could instead join `sidebar.footer.action`, an unoccupied list `ui-sidebar` already declares, which would place it one row above the member rather than beside them. Rejected on both counts: the row this belongs on is the member's own, and a shell-owned global read from an upstream browser package would make the desktop shell a silent dependency of every deployment's web surface. The Team package that does read it ships only where a shell can act on what it reports.
 
 **Reach the shell through the Runner.** An `ipc` channel on the spawned Runner plus a BFF controller would carry update state on the existing request path, matching how `open-in-app` and the office picker are built. Rejected as the larger of two correct answers: it adds a process protocol and an API package to move state the preload bridge already carries, and the Runner restarts independently of the shell, so that channel would need its own reconnection rules.
 
@@ -80,7 +80,7 @@ A build below the manifest's `minimumFrom` refuses the update instead of install
 
 The Control Plane answers `Range` requests for artifacts, and a differential download completes without fetching the whole file.
 
-With no shell — a browser at port 3090, or a source launch — the sidebar renders no update control and the client service registers nothing.
+With no shell — a browser at port 3090, or a source launch — the sidebar renders no update control and the package registers nothing.
 
 Focused tests cover the decision path, the coordinator's phases, the certificate-pinning predicate, and the plugin-tree fingerprint. The client package carries its own dictionaries, and the sidebar registration is covered by the client test tier.
 
