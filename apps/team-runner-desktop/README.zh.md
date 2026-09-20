@@ -38,6 +38,8 @@ pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 
 `package:mac` 生成 Apple 芯片 DMG 以及更新所安装的 zip，不生成 Intel 或 Universal 产物。`package:win` 生成 x64 NSIS 安装程序，并要求 Windows Runner 可执行文件与 ripgrep 伴随程序。
 
+发布版本只经环境变量传入，不要再从别处传：electron-builder 命令行上的 `--config.extraMetadata.version` 覆盖会替换掉已校验的值，并可能悄悄恢复一个破坏更新的后缀。
+
 打包配置把 Runner 二进制文件复制到 Electron 资源中，并在应用元数据中记录已验证的 Control Plane 源。运行时，外壳在自己的应用数据目录下写入部署补丁，用该补丁启动 Team profile，并为子进程提供位于同一目录下的私有 `DSH_HOME`。
 
 <a id="deployment-inputs"></a>

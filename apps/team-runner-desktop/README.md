@@ -38,6 +38,8 @@ pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 
 `package:mac` produces an Apple silicon DMG and the zip an update installs from. It does not produce Intel or Universal artifacts. `package:win` produces an x64 NSIS installer and expects the Windows Runner executable and ripgrep sidecar.
 
+Pass the release version in the environment and nowhere else: an `--config.extraMetadata.version` override on the electron-builder command line replaces the validated value, and would silently restore a suffix that breaks updating.
+
 The packaging configuration copies the Runner binaries into Electron resources and records the validated Control Plane origin in application metadata. At runtime the shell writes a deployment patch under its own application-data directory, starts the Team profile with that patch, and gives the child a private `DSH_HOME` in the same directory.
 
 <a id="deployment-inputs"></a>
