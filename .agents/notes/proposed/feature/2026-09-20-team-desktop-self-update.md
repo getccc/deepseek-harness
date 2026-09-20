@@ -56,6 +56,16 @@ The plugin tree's generation stamp is a fingerprint of the tree's paths and size
 
 The admin console gains a release page: register a version with its signed manifest, choose who is offered it, set the minimum version below which the application refuses to run, withdraw a release, and read the version distribution the existing device records already hold. Artifacts reach the host by `scp`: nginx caps a request body at 40 MB, and a 280 MB upload through the console would need a second mechanism for no gain.
 
+## What the end-to-end check established
+
+A signed 1.0.0 build, installed from its own disk image and pointed at the live Control Plane on 47.99.132.129, took a published 1.0.1: it read the update metadata, verified the signed manifest, downloaded 295 MB, stopped the Runner, let Squirrel.Mac replace the application, and restarted into 1.0.1. The plugin tree was not recopied, because the fingerprint of the two builds' trees is the same.
+
+Two defects only a real deployment could show. `electron-updater` requests through `session.fromPartition('electron-updater')` rather than the default session, so the pinned authority never reached a check and every attempt failed with `ERR_CERT_AUTHORITY_INVALID`; both sessions carry the pin now. And the first attempt could not tell "the pin was never consulted" from "the pin refused this certificate", so the verification now logs one verdict per session and host.
+
+Two things the check did not cover. The Runner-side manifest route needs a signed-in member, so the release the shell read came from the deployment directly, as it did before that route existed; its refusals are covered by tests alone. And the console page has not been exercised against a deployed Control Plane.
+
+Differential download measured on this pair: 281.3 MB of blocks, 268.8 MB reusable, 12.6 MB to fetch when only the version number changed.
+
 ## Alternatives considered
 
 **Serve updates from the website.** The website and the public Control Plane share a host, so a static `/updates/` there would work and need no new route. Rejected because the website is plain HTTP and, more decisively, because the update address must follow the Control Plane a build was packaged for — the intranet deployment and the public one are different servers, and a second address would have to be packaged, validated, and kept in step with the first.
