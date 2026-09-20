@@ -17,6 +17,7 @@ kind: "package-reference"
 
 - [构建安装程序](#build-installers)
 - [部署输入](#deployment-inputs)
+- [更新已安装的构建](#update-an-installed-build)
 - [运行时行为](#runtime-behavior)
 - [平台支持](#platform-support)
 - [已知限制](#known-limitations)
@@ -34,7 +35,7 @@ DSH_TEAM_CONTROL_PLANE_URL=https://control.example.com \
 pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 ```
 
-`package:mac` 只生成 Apple 芯片 DMG，不生成 Intel 或 Universal 产物。`package:win` 生成 x64 NSIS 安装程序，并要求 Windows Runner 可执行文件与 ripgrep 伴随程序。
+`package:mac` 生成 Apple 芯片 DMG 以及更新所安装的 zip，不生成 Intel 或 Universal 产物。`package:win` 生成 x64 NSIS 安装程序，并要求 Windows Runner 可执行文件与 ripgrep 伴随程序。
 
 打包配置把 Runner 二进制文件复制到 Electron 资源中，并在应用元数据中记录已验证的 Control Plane 源。运行时，外壳在自己的应用数据目录下写入部署补丁，用该补丁启动 Team profile，并为子进程提供位于同一目录下的私有 `DSH_HOME`。
 
@@ -87,6 +88,21 @@ pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 
 -----
 
+<a id="update-an-installed-build"></a>
+## 更新已安装的构建
+
+已安装的应用向它自己的 Control Plane 询问更新版本。打包配置把 `electron-updater` 指向 `<control plane origin>/updates/`，因此更新地址跟随本构建所属的部署，不需要另一个属于它自己的地址。
+
+由成员决定何时更新。外壳在启动一分钟后检查一次，此后每六小时检查一次并附加最多半小时的分散，把查到的结果发布给页面，仅在页面请求时才下载。下载完成后停止 Runner 并等待它退出——它的端口，以及在 Windows 上安装程序要替换的文件，都必须先被释放——然后应用重启进入新版本。检查或下载失败时，已安装的构建继续运行。
+
+`window.dshTeamDesktop` 是页面使用的桥：一个上下文隔离的 preload 脚本，暴露 `check`、`install` 与状态订阅，除此之外别无其他。同一个页面在普通浏览器中打开时找不到该对象，也就不显示更新控件。
+
+Electron 的网络栈读取操作系统信任库，因此即便 Runner 接受某个位于公司自有证书颁发机构之后的 Control Plane，这些请求仍会被拒绝。外壳自行针对这一个主机用暂存的 `DSH_TEAM_CONTROL_PLANE_CA` 进行校验，接受由该机构签发的证书，其余主机一律保留 Chromium 自己的判定。
+
+发布目录中存放更新程序读取的内容：`latest-mac.yml` 或 `latest.yml`、各个产物，以及它们的 `.blockmap` 文件，后者使一次升级只需取回发生变化的块。macOS 构建同时产出磁盘映像与 zip，因为 Squirrel.Mac 从 zip 替换应用，而磁盘映像仍作为手动下载渠道；两者都在公证之后产出，因此落地的正是已公证的包。
+
+-----
+
 <a id="runtime-behavior"></a>
 ## 运行时行为
 
@@ -109,7 +125,7 @@ pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 
 | 平台 | 安装程序目标 | 架构 |
 |---|---|---|
-| macOS 12 或更高版本 | DMG | Apple 芯片（`arm64`） |
+| macOS 12 或更高版本 | 安装用 DMG，更新用 zip | Apple 芯片（`arm64`） |
 | Windows | NSIS | x64 |
 
 Linux 桌面打包与 macOS Intel 支持不在本应用的平台集合内。
@@ -119,7 +135,7 @@ Linux 桌面打包与 macOS Intel 支持不在本应用的平台集合内。
 <a id="known-limitations"></a>
 ## 已知限制
 
-- 桌面外壳不下载或更新 Runner。部署方需要签名并分发完整的安装程序构建。
+- 一次更新替换整个应用。Runner、插件树与外壳都不会被单独替换，因此每个版本都携带三者。
 - Runner 可执行文件按平台在该平台上构建：它的原生插件置入拒绝跨平台目标，因此 Windows 安装程序需要先在 Windows x64 上构建 Runner。
 - 自动登录启动以操作系统用户为单位，而不是特权系统服务。因此 Runner 使用该成员的权限执行工作。
 - Runner 日志、外壳日志与部署补丁位于用户级应用数据目录下；支持工具需要从受影响的电脑收集它们。

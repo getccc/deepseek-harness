@@ -97,7 +97,9 @@ export default {
   extraResources,
   directories: { output: 'release' },
   mac: {
-    target: [{ target: 'dmg', arch: ['arm64'] }],
+    // Squirrel.Mac replaces an installed application from a zip; the disk
+    // image is the manual download and is never what an update reads.
+    target: [{ target: 'dmg', arch: ['arm64'] }, { target: 'zip', arch: ['arm64'] }],
     ...appIcon === undefined ? {} : { icon: appIcon },
     category: 'public.app-category.productivity',
     minimumSystemVersion: '12.0',
@@ -119,5 +121,10 @@ export default {
     perMachine: false,
     oneClick: false,
     allowToChangeInstallationDirectory: true,
+    differentialPackage: true,
   },
+  // The deployment's own Control Plane serves the release, so the update
+  // address follows the address this build was packaged for. The shell trusts
+  // that host's private authority for these requests; see `pinControlPlaneAuthority`.
+  publish: [{ provider: 'generic', url: new URL('/updates/', controlPlaneUrl).href, channel: 'latest' }],
 }

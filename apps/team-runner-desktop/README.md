@@ -17,6 +17,7 @@ The desktop build belongs to one enterprise deployment. Its package metadata car
 
 - [Build installers](#build-installers)
 - [Deployment inputs](#deployment-inputs)
+- [Update an installed build](#update-an-installed-build)
 - [Runtime behavior](#runtime-behavior)
 - [Platform support](#platform-support)
 - [Known limitations](#known-limitations)
@@ -34,7 +35,7 @@ DSH_TEAM_CONTROL_PLANE_URL=https://control.example.com \
 pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 ```
 
-`package:mac` produces an Apple silicon DMG only. It does not produce Intel or Universal artifacts. `package:win` produces an x64 NSIS installer and expects the Windows Runner executable and ripgrep sidecar.
+`package:mac` produces an Apple silicon DMG and the zip an update installs from. It does not produce Intel or Universal artifacts. `package:win` produces an x64 NSIS installer and expects the Windows Runner executable and ripgrep sidecar.
 
 The packaging configuration copies the Runner binaries into Electron resources and records the validated Control Plane origin in application metadata. At runtime the shell writes a deployment patch under its own application-data directory, starts the Team profile with that patch, and gives the child a private `DSH_HOME` in the same directory.
 
@@ -87,6 +88,21 @@ The bundled `dsh` executable and the native addons under `runner/` are signed wi
 
 -----
 
+<a id="update-an-installed-build"></a>
+## Update an installed build
+
+An installed application asks its own Control Plane for a newer release. The packaging configuration points `electron-updater` at `<control plane origin>/updates/`, so the update address follows the deployment this build belongs to and needs no second address of its own.
+
+The member decides when. The shell checks a minute after launch and then every six hours with up to half an hour of spread, publishes what it found to the page, and downloads only when the page asks for it. After the download the Runner is stopped and waited for — its port, and on Windows the files the installer replaces, have to be free — and the application restarts into the new version. A failed check or download leaves the installed build running.
+
+`window.dshTeamDesktop` is the bridge the page uses: a context-isolated preload script exposing `check`, `install`, and a state subscription, and nothing else. The same page opened in a plain browser finds no such object and shows no update control.
+
+Electron's network stack reads the operating system's trust store, so a Control Plane behind a company authority would refuse these requests even though the Runner accepts it. The shell verifies that one host itself against the staged `DSH_TEAM_CONTROL_PLANE_CA`, accepting a certificate that authority issued and leaving every other host to Chromium's own verdict.
+
+The release directory holds what the updater reads: `latest-mac.yml` or `latest.yml`, the artifacts, and their `.blockmap` files, which let an upgrade fetch only the blocks that changed. The macOS build produces both a disk image and a zip, because Squirrel.Mac replaces an application from a zip while the disk image stays the manual download; both are produced after notarization so the bundle that lands is the notarized one.
+
+-----
+
 <a id="runtime-behavior"></a>
 ## Runtime behavior
 
@@ -109,7 +125,7 @@ The bundled `dsh` executable and the native addons under `runner/` are signed wi
 
 | Platform | Installer target | Architecture |
 |---|---|---|
-| macOS 12 or later | DMG | Apple silicon (`arm64`) |
+| macOS 12 or later | DMG to install, zip to update | Apple silicon (`arm64`) |
 | Windows | NSIS | x64 |
 
 Linux desktop packaging and macOS Intel support are outside this application's platform set.
@@ -119,7 +135,7 @@ Linux desktop packaging and macOS Intel support are outside this application's p
 <a id="known-limitations"></a>
 ## Known limitations
 
-- The desktop shell does not download or update the Runner. A deployment signs and distributes a complete installer build.
+- An update replaces the whole application. Neither the Runner, the plugin tree, nor the shell is replaced on its own, so every release carries all three.
 - The Runner executable is built per platform on that platform: its native addon staging refuses a cross-platform target, so a Windows installer needs the Runner built on Windows x64 first.
 - Automatic login startup is per operating-system user, not a privileged system service. The Runner therefore executes work with that member's permissions.
 - The Runner log, shell log, and deployment patch live under the per-user application-data directory; support tooling must collect them from the affected computer.

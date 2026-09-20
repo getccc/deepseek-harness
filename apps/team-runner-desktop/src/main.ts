@@ -5,18 +5,24 @@ import {
   appendFileSync, closeSync, cpSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync,
 } from 'node:fs'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
   app,
   BrowserWindow,
   dialog,
+  ipcMain,
   Menu,
   nativeImage,
+  session,
   shell,
   Tray,
 } from 'electron'
+import { pinnedCertificateVerdict } from './control-plane-certificate.ts'
 import { deploymentPatch, resolveDeployment, type LoginLocale, type OfficeSkills } from './deployment.ts'
 import { profileManifest } from './profile.ts'
 import { runnerReady } from './readiness.ts'
+import { TeamUpdateCoordinator } from './update-coordinator.ts'
+import { UPDATE_IPC, type TeamUpdateState } from './update-state.ts'
 
 const RUNNER_URL = 'http://127.0.0.1:3090/team/open'
 const RESTART_DELAY_MS = 10_000
@@ -52,6 +58,16 @@ const TRAY_ICON = 'trayTemplate.png'
 const RUNNER_PID_FILE = 'runner.pid'
 /** Timestamped shell events, beside the Runner's own log. */
 const SHELL_LOG = 'shell.log'
+/** Update metadata electron-builder writes when the build carries a release stream. */
+const UPDATE_CONFIG = 'app-update.yml'
+/** How long after launch the first update check runs; startup owns the first minute. */
+const FIRST_UPDATE_CHECK_MS = 60_000
+/** Cadence of later update checks. */
+const UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000
+/** Spread added to every check, so a deployment's members do not all ask at once. */
+const UPDATE_CHECK_JITTER_MS = 30 * 60 * 1000
+/** How long the Runner gets to exit before an installer replaces its files. */
+const RUNNER_STOP_MS = 10_000
 
 const copy = {
   zh: {
@@ -75,6 +91,8 @@ let tray: Tray | undefined
 let runner: ChildProcess | undefined
 let restart: NodeJS.Timeout | undefined
 let quitting = false
+let updates: TeamUpdateCoordinator | undefined
+let updateState: TeamUpdateState = { phase: 'idle' }
 
 /** The per-user directory holding the Runner's home, logs, and deployment patch. */
 function runnerData(): string {
@@ -311,6 +329,71 @@ function startRunner(): void {
   })
 }
 
+/**
+ * Stop the Runner and wait for it to leave, so its port is free and the files
+ * an installer replaces are closed. A Runner that ignores the signal is killed
+ * outright at the deadline; the shell is about to be replaced either way.
+ * @returns when the Runner has exited, or when the deadline passed.
+ */
+async function stopRunner(): Promise<void> {
+  quitting = true
+  if (restart !== undefined) {
+    clearTimeout(restart)
+    restart = undefined
+  }
+  const child = runner
+  if (child === undefined || child.exitCode !== null || child.signalCode !== null) return
+  log('stopping runner before replacement')
+  const exited = new Promise<boolean>((resolve) => { child.once('exit', () => { resolve(false) }) })
+  const deadline = new Promise<boolean>((resolve) => { setTimeout(() => { resolve(true) }, RUNNER_STOP_MS).unref() })
+  child.kill()
+  if (await Promise.race([exited, deadline])) {
+    log('runner outlived its stop deadline; killing')
+    child.kill('SIGKILL')
+  }
+}
+
+/**
+ * Trust the deployment's own authority for the Control Plane host alone.
+ * Electron's network stack, which the updater requests through, reads the
+ * operating system's trust store and would otherwise reject a privately
+ * signed Control Plane; every other host keeps Chromium's own verdict.
+ * @param controlPlaneUrl - the deployment's Control Plane origin.
+ */
+function pinControlPlaneAuthority(controlPlaneUrl: string): void {
+  const authority = stagedResource(CONTROL_PLANE_CA, 'DSH_TEAM_CONTROL_PLANE_CA')
+  if (authority === undefined) return
+  const host = new URL(controlPlaneUrl).hostname.toLowerCase()
+  const authorities = new Map([[host, readFileSync(authority, 'utf8')]])
+  session.defaultSession.setCertificateVerifyProc((request, callback) => {
+    callback(pinnedCertificateVerdict(request, authorities))
+  })
+  log(`pinned the deployment authority for ${host}`)
+}
+
+/**
+ * Publish one update state to the window and retain it, so a page that asks
+ * before subscribing is answered with the state the shell is actually in.
+ * @param state - the state the coordinator reached.
+ * @returns the same state.
+ */
+function publishUpdateState(state: TeamUpdateState): TeamUpdateState {
+  updateState = state
+  window?.webContents.send(UPDATE_IPC.state, state)
+  return state
+}
+
+/** Ask the release stream once after startup, then on a jittered cadence. */
+function scheduleUpdateChecks(): void {
+  const later = (delay: number): void => {
+    setTimeout(() => {
+      void updates?.check()
+      later(UPDATE_CHECK_INTERVAL_MS)
+    }, delay + Math.random() * UPDATE_CHECK_JITTER_MS).unref()
+  }
+  later(FIRST_UPDATE_CHECK_MS)
+}
+
 /** Launch the Runner and keep the resident shell alive when startup fails. */
 function launchRunner(): void {
   try {
@@ -408,7 +491,12 @@ function createDesktop(): void {
     minWidth: 900,
     minHeight: 640,
     show: false,
-    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      preload: fileURLToPath(new URL('./preload.cjs', import.meta.url)),
+    },
   })
   void window.loadURL(startingPage())
   window.webContents.setWindowOpenHandler(({ url }) => {
@@ -471,6 +559,19 @@ if (!app.requestSingleInstanceLock()) {
     // The Runner's boot is the critical path to the first screen; it starts
     // before the window exists and before the login item is touched.
     launchRunner()
+    const controlPlaneUrl = app.isPackaged
+      ? packagedControlPlaneUrl()
+      : process.env['DSH_TEAM_CONTROL_PLANE_URL']
+    if (controlPlaneUrl !== undefined && controlPlaneUrl !== '') pinControlPlaneAuthority(controlPlaneUrl)
+    updates = new TeamUpdateCoordinator(
+      publishUpdateState,
+      stopRunner,
+      undefined,
+      () => app.isPackaged && existsSync(join(process.resourcesPath, UPDATE_CONFIG)),
+    )
+    ipcMain.handle(UPDATE_IPC.check, async () => updates?.check() ?? updateState)
+    ipcMain.handle(UPDATE_IPC.install, async () => { await updates?.install() })
+    scheduleUpdateChecks()
     createDesktop()
     // Registering is slow and announces itself with a system notification, so
     // it happens once, not on every launch.
