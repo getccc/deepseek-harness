@@ -20,7 +20,7 @@ Publish each release through the Control Plane the installed build already trust
 
 ### Released versions are three increasing numbers
 
-A release build takes `x.y.z`, incremented per release. A build stamp may follow the hyphen for support, but only the three numbers decide an upgrade, because that is all `compareVersions` reads. The website's hardcoded `v2.3.0` and the packaged version become the same string, read from the published manifest rather than written twice.
+A release build takes `MAJOR.MINOR.PATCH` and nothing else, starting at `1.0.0` for the first build that can update itself, and packaging refuses any other form. A prerelease tag sends `electron-updater` to another channel and compares equal to the release that follows it, because `compareVersions` reads only the three numbers; build metadata after `+` is ignored by semver comparison, so two builds of one version would never replace each other. Staged rollout is therefore the Control Plane's decision per device, not a release channel, and the version line stays one increasing sequence. The website's hardcoded `v2.3.0` gives way to the published version, read once rather than written twice.
 
 ### The Control Plane serves the release
 
@@ -48,7 +48,7 @@ The member row at the sidebar foot declares a `team.account.action` list, and th
 
 The macOS build adds a `zip` target: Squirrel.Mac replaces an application from a zip, and the disk image remains the manual download. The zip is produced after notarization and stapling, so the bundle that lands is the notarized one. Both platforms already emit `.blockmap`. The release step signs the manifest and uploads artifacts, manifest, and blockmaps together.
 
-The plugin tree's generation stamp changes from the application version to a fingerprint of the tree, because an upgrade that ships identical plugins currently recopies 959 MB on Windows at first launch.
+The plugin tree's generation stamp is a fingerprint of the tree's paths and sizes, computed once at packaging time and carried in the application manifest, because an upgrade that ships identical plugins otherwise recopies 959 MB on Windows at first launch.
 
 ### The console publishes a release
 

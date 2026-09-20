@@ -30,6 +30,7 @@ The desktop build belongs to one enterprise deployment. Its package metadata car
 Build the Runner executable and its sidecars first, then supply the executable and deployment origin to the platform packaging command:
 
 ```sh
+DSH_TEAM_APP_VERSION=1.0.0 \
 DSH_TEAM_RUNNER_EXECUTABLE=/absolute/path/to/dsh \
 DSH_TEAM_CONTROL_PLANE_URL=https://control.example.com \
 pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
@@ -46,6 +47,7 @@ Every deployment-varying fact is a packaging environment variable, so one source
 
 | Variable | Required | What it carries |
 |---|---|---|
+| `DSH_TEAM_APP_VERSION` | yes | The release this build is: `MAJOR.MINOR.PATCH`, with no prerelease tag and no build metadata, incremented once per release. |
 | `DSH_TEAM_RUNNER_EXECUTABLE` | yes | The built Runner executable; its ripgrep and macOS spawn-helper sidecars are read from the neighbouring `-rg` and `-spawn-helper` names. |
 | `DSH_TEAM_CONTROL_PLANE_URL` | yes | The Control Plane origin this build belongs to. |
 | `DSH_TEAM_CONTROL_PLANE_CA` | no | The certificate that signed the Control Plane's TLS certificate. |
@@ -65,7 +67,7 @@ The Runner is a Node process and ignores the operating-system trust store, so a 
 
 Plugins outside the Runner's own installation ship as a real directory rather than inside the packaged executable, because their native addons cannot be loaded from a packaged executable's virtual filesystem and their runtime dependency copying expects real files. Install them into a profile with `dsh plugin --profile <name> add <package>`, then point `DSH_TEAM_PLUGIN_TREE` at that profile's `node_modules`. The layer list mounts `dsh-univer-office` and `@dsh-external/dsh-echarts` from that tree, so the tree must carry both; a pnpm patch recorded in the staging profile ships with the patched files.
 
-The shell owns the private profile's manifest: it writes the layer list on every launch and materializes the shipped tree as that profile's own `node_modules` once per application version. The packages have to be real files there rather than links into application resources — a plugin reaches its dependencies through its own real location, and `dsh` adds links beside them for the packages these plugins take as peers from the Runner installation. macOS clones the tree on a copy-on-write volume, so the duplicate costs little time and little disk space. A member never installs plugins into this profile, so an application upgrade that changes the layer list takes effect on the next launch. The member's own `cordis.patch.yml` is never touched.
+The shell owns the private profile's manifest: it writes the layer list on every launch and materializes the shipped tree as that profile's own `node_modules` once per shipped tree, identified by a fingerprint of its contents that packaging records. The packages have to be real files there rather than links into application resources — a plugin reaches its dependencies through its own real location, and `dsh` adds links beside them for the packages these plugins take as peers from the Runner installation. macOS clones the tree on a copy-on-write volume, so the duplicate costs little time and little disk space. A member never installs plugins into this profile, so an application upgrade that changes the layer list takes effect on the next launch. The member's own `cordis.patch.yml` is never touched.
 
 ### Signing and notarizing the macOS build
 
@@ -79,6 +81,7 @@ Without a signing identity the DMG is ad-hoc signed, and Gatekeeper blocks it un
 export APPLE_ID="you@example.com"
 export APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx"
 DSH_TEAM_APPLE_TEAM_ID="YOURTEAMID" \
+DSH_TEAM_APP_VERSION=1.0.0 \
 DSH_TEAM_RUNNER_EXECUTABLE=/absolute/path/to/dsh \
 DSH_TEAM_CONTROL_PLANE_URL=https://control.example.com \
 pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
@@ -101,6 +104,7 @@ Electron's network stack reads the operating system's trust store, so a Control 
 
 The release directory holds what the updater reads: `latest-mac.yml` or `latest.yml`, the artifacts, and their `.blockmap` files, which let an upgrade fetch only the blocks that changed. The macOS build produces both a disk image and a zip, because Squirrel.Mac replaces an application from a zip while the disk image stays the manual download; both are produced after notarization so the bundle that lands is the notarized one.
 
+Each release takes the next `MAJOR.MINOR.PATCH`: patch for a fix, minor for a new capability or a changed Runner or plugin tree, major for a change a member has to act on. A suffix is refused at packaging time, and a staged rollout is the Control Plane's decision per device rather than a release channel, so the version line stays one increasing sequence.
 -----
 
 <a id="runtime-behavior"></a>

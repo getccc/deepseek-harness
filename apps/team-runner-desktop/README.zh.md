@@ -30,6 +30,7 @@ kind: "package-reference"
 先构建 Runner 可执行文件及其伴随程序，再把可执行文件与部署源提供给对应平台的打包命令：
 
 ```sh
+DSH_TEAM_APP_VERSION=1.0.0 \
 DSH_TEAM_RUNNER_EXECUTABLE=/absolute/path/to/dsh \
 DSH_TEAM_CONTROL_PLANE_URL=https://control.example.com \
 pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
@@ -46,6 +47,7 @@ pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 
 | 变量 | 必需 | 携带什么 |
 |---|---|---|
+| `DSH_TEAM_APP_VERSION` | 是 | 本构建所属的发布版本：`MAJOR.MINOR.PATCH`，不带预发布标签，也不带构建元数据，每次发布递增一次。 |
 | `DSH_TEAM_RUNNER_EXECUTABLE` | 是 | 构建好的 Runner 可执行文件；其 ripgrep 与 macOS spawn-helper 伴随程序按相邻的 `-rg` 与 `-spawn-helper` 名称读取。 |
 | `DSH_TEAM_CONTROL_PLANE_URL` | 是 | 这份构建所属的 Control Plane 源。 |
 | `DSH_TEAM_CONTROL_PLANE_CA` | 否 | 签发 Control Plane TLS 证书的那份证书。 |
@@ -65,7 +67,7 @@ Runner 是一个 Node 进程，不读取操作系统信任库，因此位于企�
 
 位于 Runner 自身安装之外的插件以真实目录而非打包可执行文件内部的形式随附，因为它们的原生插件无法从打包可执行文件的虚拟文件系统中加载，而它们运行时的依赖复制需要真实文件。用 `dsh plugin --profile <name> add <package>` 把它们装进一个 profile，再让 `DSH_TEAM_PLUGIN_TREE` 指向该 profile 的 `node_modules`。层列表从这棵树挂载 `dsh-univer-office` 与 `@dsh-external/dsh-echarts`，因此树中必须同时带有两者；暂存 profile 中记录的 pnpm 补丁会随打过补丁的文件一同随附。
 
-外壳拥有这个私有 profile 的清单：它在每次启动时写入层列表，并按应用版本把随附的树物化为该 profile 自己的 `node_modules`。这些包必须是那里的真实文件，而不是指向应用资源的链接——插件通过自己的真实位置解析依赖，而 `dsh` 会在它们旁边补上插件作为 peer 从 Runner 安装取用的包。macOS 在写时复制卷上克隆这棵树，因此这份副本几乎不花时间也几乎不占磁盘空间。成员从不向这个 profile 安装插件，因此改变层列表的应用升级会在下次启动时生效。成员自己的 `cordis.patch.yml` 不会被触碰。
+外壳拥有这个私有 profile 的清单：它在每次启动时写入层列表，并按随附的树把它物化为该 profile 自己的 `node_modules`，该树由打包时记录的内容指纹标识。这些包必须是那里的真实文件，而不是指向应用资源的链接——插件通过自己的真实位置解析依赖，而 `dsh` 会在它们旁边补上插件作为 peer 从 Runner 安装取用的包。macOS 在写时复制卷上克隆这棵树，因此这份副本几乎不花时间也几乎不占磁盘空间。成员从不向这个 profile 安装插件，因此改变层列表的应用升级会在下次启动时生效。成员自己的 `cordis.patch.yml` 不会被触碰。
 
 ### 签名与公证 macOS 构建
 
@@ -79,6 +81,7 @@ Runner 是一个 Node 进程，不读取操作系统信任库，因此位于企�
 export APPLE_ID="you@example.com"
 export APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx"
 DSH_TEAM_APPLE_TEAM_ID="YOURTEAMID" \
+DSH_TEAM_APP_VERSION=1.0.0 \
 DSH_TEAM_RUNNER_EXECUTABLE=/absolute/path/to/dsh \
 DSH_TEAM_CONTROL_PLANE_URL=https://control.example.com \
 pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
@@ -101,6 +104,7 @@ Electron 的网络栈读取操作系统信任库，因此即便 Runner 接受某
 
 发布目录中存放更新程序读取的内容：`latest-mac.yml` 或 `latest.yml`、各个产物，以及它们的 `.blockmap` 文件，后者使一次升级只需取回发生变化的块。macOS 构建同时产出磁盘映像与 zip，因为 Squirrel.Mac 从 zip 替换应用，而磁盘映像仍作为手动下载渠道；两者都在公证之后产出，因此落地的正是已公证的包。
 
+每个版本取下一个 `MAJOR.MINOR.PATCH`：修复用 patch，新能力或 Runner、插件树发生变化用 minor，需要成员配合的变更用 major。后缀在打包时就会被拒绝，而分批放量是 Control Plane 按设备做的判定、不是发布渠道，因此版本线始终保持为一条递增序列。
 -----
 
 <a id="runtime-behavior"></a>

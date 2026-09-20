@@ -43,7 +43,7 @@ const PLUGIN_TREE = 'plugins'
 const PPT_TEMPLATE = 'templates/welinkin-ppt.pptx'
 /** The skill directory the office kinds' skills load from. */
 const SKILL_DIR = 'skills'
-/** Records which application version materialized the profile's plugin tree. */
+/** Records which plugin tree the profile's `node_modules` was materialized from. */
 const PLUGIN_TREE_STAMP = '.dsh-plugin-tree'
 /**
  * The welcome-notice version this build treats as already acknowledged, so the
@@ -166,6 +166,25 @@ function officeSkills(): OfficeSkills {
   return manifest.teamOfficeSkills ?? {}
 }
 
+/**
+ * What identifies the shipped plugin tree in the profile's stamp. A packaged
+ * build carries the fingerprint the packaging step computed from the tree's
+ * contents, so an upgrade that ships the same plugins keeps the copy it
+ * already materialized — on Windows that is 959 MB of real copying at first
+ * launch. A build without one, such as a development launch, falls back to
+ * the application version and recopies once per upgrade.
+ * @returns the generation token recorded beside the materialized tree.
+ */
+function pluginTreeGeneration(): string {
+  if (!app.isPackaged) return app.getVersion()
+  const manifest = JSON.parse(readFileSync(join(app.getAppPath(), 'package.json'), 'utf8')) as {
+    teamPluginTreeFingerprint?: unknown
+  }
+  return typeof manifest.teamPluginTreeFingerprint === 'string'
+    ? manifest.teamPluginTreeFingerprint
+    : app.getVersion()
+}
+
 /** Executable bundled beside Electron, or an explicit development Runner. */
 function runnerExecutable(): string {
   const development = process.env['DSH_TEAM_RUNNER_EXECUTABLE']
@@ -218,8 +237,8 @@ function materializePluginTree(source: string, target: string): void {
  * Write the deployment's own Team profile into the private Harness home. The
  * manifest is rewritten on every launch so an application upgrade that changes
  * the layer list takes effect; the member's `cordis.patch.yml` is never touched.
- * The plugin tree is materialized once per application version, because a
- * member cannot change it and `dsh` heals its own links there on every boot.
+ * The plugin tree is materialized once per shipped tree, because a member
+ * cannot change it and `dsh` heals its own links there on every boot.
  * @param home - the private `DSH_HOME` given to the Runner.
  */
 function provisionProfile(home: string): void {
@@ -229,7 +248,7 @@ function provisionProfile(home: string): void {
   writeFileSync(join(dir, 'package.json'), profileManifest(plugins !== undefined))
   if (plugins === undefined) return
   const stamp = join(dir, PLUGIN_TREE_STAMP)
-  const generation = `${app.getVersion()} ${plugins}\n`
+  const generation = `${pluginTreeGeneration()} ${plugins}\n`
   if (existsSync(stamp) && readFileSync(stamp, 'utf8') === generation) return
   log('materializing plugin tree')
   materializePluginTree(plugins, join(dir, 'node_modules'))
