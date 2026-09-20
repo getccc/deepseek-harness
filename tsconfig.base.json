@@ -496,6 +496,8 @@
       "@deepseek-ai/dsh-team-desktop-update": ["./packages/team/team-desktop-update/src"],
       "@deepseek-ai/dsh-team-local-handoff": ["./packages/team/team-local-handoff/src"],
       "@deepseek-ai/dsh-team-local-login": ["./packages/team/team-local-login/src"],
+      "@deepseek-ai/dsh-team-release": ["./packages/team/team-release/src"],
+      "@deepseek-ai/dsh-team-release-http": ["./packages/team/team-release-http/src"],
       "@deepseek-ai/dsh-team-shell": ["./packages/team/team-shell/src"],
       "@deepseek-ai/dsh-team-update": ["./packages/team/team-update/src"],
       "@deepseek-ai/dsh-terminal": ["./packages/terminal/terminal/src"],

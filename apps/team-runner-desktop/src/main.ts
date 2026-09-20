@@ -441,6 +441,13 @@ function releaseGate(controlPlaneUrl: string): ReleaseGate | undefined {
  * @returns the same state.
  */
 function publishUpdateState(state: TeamUpdateState): TeamUpdateState {
+  // Phase changes only: a download publishes a state per percent, and support
+  // reads this log to tell "never checked" from "checked and refused".
+  if (state.phase !== updateState.phase || state.version !== updateState.version) {
+    const version = state.version === undefined ? '' : ` ${state.version}`
+    const message = state.message === undefined ? '' : `: ${state.message}`
+    log(`update ${state.phase}${version}${message}`)
+  }
   updateState = state
   window?.webContents.send(UPDATE_IPC.state, state)
   return state

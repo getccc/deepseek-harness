@@ -65,6 +65,8 @@ export const PERMISSION_CATALOG: readonly Permission[] = [
   { resourceType: 'bi_project', action: 'bi.catalog.read' },
   { resourceType: 'bi_project', action: 'bi.catalog.manage' },
   { resourceType: 'web_search', action: 'web.search' },
+  { resourceType: 'release', action: 'release.staged' },
+  { resourceType: 'release', action: 'release.manage' },
   { resourceType: 'plugin', action: 'plugin.discover' },
   { resourceType: 'plugin', action: 'plugin.download' },
   { resourceType: 'plugin', action: 'plugin.use' },

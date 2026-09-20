@@ -44,9 +44,6 @@
     "@deepseek-ai/dsh-device-authorization-sqlite": "workspace:^",
     "@deepseek-ai/dsh-host-webserver": "workspace:^",
     "@deepseek-ai/dsh-knowledge-gateway-http": "workspace:^",
-    "@deepseek-ai/dsh-web": "workspace:^",
-    "@deepseek-ai/dsh-web-search-deepseek": "workspace:^",
-    "@deepseek-ai/dsh-web-search-gateway-http": "workspace:^",
     "@deepseek-ai/dsh-knowledge-gateway-sqlite": "workspace:^",
     "@deepseek-ai/dsh-knowledge-weknora": "workspace:^",
     "@deepseek-ai/dsh-model-gateway-http": "workspace:^",
@@ -55,7 +52,12 @@
     "@deepseek-ai/dsh-team-admin-api": "workspace:^",
     "@deepseek-ai/dsh-team-admin-app": "workspace:^",
     "@deepseek-ai/dsh-team-console-menu-sqlite": "workspace:^",
-    "@deepseek-ai/dsh-team-control-plane-http": "workspace:^"
+    "@deepseek-ai/dsh-team-control-plane-http": "workspace:^",
+    "@deepseek-ai/dsh-team-release": "workspace:^",
+    "@deepseek-ai/dsh-team-release-http": "workspace:^",
+    "@deepseek-ai/dsh-web": "workspace:^",
+    "@deepseek-ai/dsh-web-search-deepseek": "workspace:^",
+    "@deepseek-ai/dsh-web-search-gateway-http": "workspace:^"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:^"

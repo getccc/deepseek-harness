@@ -2565,6 +2565,12 @@ importers:
       '@deepseek-ai/dsh-team-control-plane-http':
         specifier: workspace:^
         version: link:../../team/team-control-plane-http
+      '@deepseek-ai/dsh-team-release':
+        specifier: workspace:^
+        version: link:../../team/team-release
+      '@deepseek-ai/dsh-team-release-http':
+        specifier: workspace:^
+        version: link:../../team/team-release-http
       '@deepseek-ai/dsh-web':
         specifier: workspace:^
         version: link:../../web/web
@@ -12229,6 +12235,9 @@ importers:
       '@deepseek-ai/dsh-team-console-menu':
         specifier: workspace:^
         version: link:../team-console-menu
+      '@deepseek-ai/dsh-team-release':
+        specifier: workspace:^
+        version: link:../team-release
       '@deepseek-ai/schemastery':
         specifier: link:../../../vendor/schemastery
         version: link:../../../vendor/schemastery
@@ -12471,6 +12480,47 @@ importers:
       react-dom:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
+
+  packages/team/team-release:
+    dependencies:
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:^
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-team-update':
+        specifier: workspace:^
+        version: link:../team-update
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
+
+  packages/team/team-release-http:
+    dependencies:
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:^
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:^
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:^
+        version: link:../../account/device-authorization
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:^
+        version: link:../../host/webserver
+      '@deepseek-ai/dsh-team-release':
+        specifier: workspace:^
+        version: link:../team-release
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:^
+        version: link:../../../vendor/cordis
 
   packages/team/team-shell:
     dependencies:

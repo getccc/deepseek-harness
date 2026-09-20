@@ -15,6 +15,7 @@
     {
       "path": "../../access/access-control"
     },
+    { "path": "../team-release" },
     {
       "path": "../../access/audit"
     },
