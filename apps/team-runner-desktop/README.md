@@ -112,6 +112,20 @@ After the download the file is hashed again and compared with the digest inside 
 The release directory holds what the updater reads: `latest-mac.yml` or `latest.yml`, the artifacts, and their `.blockmap` files, which let an upgrade fetch only the blocks that changed. The macOS build produces both a disk image and a zip, because Squirrel.Mac replaces an application from a zip while the disk image stays the manual download; both are produced after notarization so the bundle that lands is the notarized one.
 
 Each release takes the next `MAJOR.MINOR.PATCH`: patch for a fix, minor for a new capability or a changed Runner or plugin tree, major for a change a member has to act on. A suffix is refused at packaging time, and a staged rollout is the Control Plane's decision per device rather than a release channel, so the version line stays one increasing sequence.
+### Publish a release
+
+On the release machine, once the build is signed, notarized, and stapled:
+
+```sh
+node scripts/publish-release.mjs \
+  --directory release/<build> --version 1.0.0 --minimum-from 1.0.0 \
+  --base-url https://<control plane>/updates/ --key <release private key>
+```
+
+It reads the update metadata electron-builder wrote, refuses a directory that describes another version, hashes the artifact each platform installs from, and writes `manifest.json` beside them. `--minimum-from` names the oldest installed version this release may be applied on top of: a build below it refuses the update instead of installing across a gap the release does not support.
+
+Copy the artifacts, their `.blockmap` files, `latest-mac.yml` or `latest.yml`, and `manifest.json` into the directory the deployment serves at `/updates/`, and serve them as static files — differential download issues `Range` requests, which an application-layer proxy in front of the directory would have to answer itself. The release private key stays on the release machine: the deployment serves what it is given and holds no key, so a compromised host cannot publish a release.
+
 -----
 
 <a id="runtime-behavior"></a>

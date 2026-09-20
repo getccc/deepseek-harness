@@ -112,6 +112,20 @@ Electron 的网络栈读取操作系统信任库，因此即便 Runner 接受某
 发布目录中存放更新程序读取的内容：`latest-mac.yml` 或 `latest.yml`、各个产物，以及它们的 `.blockmap` 文件，后者使一次升级只需取回发生变化的块。macOS 构建同时产出磁盘映像与 zip，因为 Squirrel.Mac 从 zip 替换应用，而磁盘映像仍作为手动下载渠道；两者都在公证之后产出，因此落地的正是已公证的包。
 
 每个版本取下一个 `MAJOR.MINOR.PATCH`：修复用 patch，新能力或 Runner、插件树发生变化用 minor，需要成员配合的变更用 major。后缀在打包时就会被拒绝，而分批放量是 Control Plane 按设备做的判定、不是发布渠道，因此版本线始终保持为一条递增序列。
+### 发布一个版本
+
+在发布机上，构建完成签名、公证与 staple 之后：
+
+```sh
+node scripts/publish-release.mjs \
+  --directory release/<build> --version 1.0.0 --minimum-from 1.0.0 \
+  --base-url https://<control plane>/updates/ --key <release private key>
+```
+
+它读取 electron-builder 写下的更新元数据，拒绝描述了另一个版本的目录，对各平台更新所安装的那个产物做哈希，并在它们旁边写出 `manifest.json`。`--minimum-from` 给出本次发布可以在其之上应用的最旧已安装版本：低于它的构建会拒绝这次更新，而不是跨越该发布并不支持的间隔去安装。
+
+把产物、它们的 `.blockmap` 文件、`latest-mac.yml` 或 `latest.yml` 以及 `manifest.json` 复制到部署在 `/updates/` 提供的目录，并以静态文件方式提供——差分下载会发出 `Range` 请求，而放在该目录之前的应用层代理必须自行回答它们。发布私钥留在发布机上：部署只分发收到的内容、不持有任何密钥，因此一台被攻陷的主机也无法发布一个版本。
+
 -----
 
 <a id="runtime-behavior"></a>

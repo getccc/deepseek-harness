@@ -26,9 +26,11 @@
   },
   "devDependencies": {
     "@deepseek-ai/dsh-team-update": "workspace:^",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.10.1",
     "electron": "44.0.0",
     "electron-builder": "26.15.3",
+    "js-yaml": "^4.2.0",
     "typescript": "^6.0.3"
   }
 }

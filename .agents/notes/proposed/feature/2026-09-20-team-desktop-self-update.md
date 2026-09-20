@@ -32,6 +32,8 @@ The manifest request carries the member's device identity, so the Control Plane 
 
 The release private key stays on the release machine and signs the manifest there. The Control Plane stores and serves what it is given and holds no key. The client verifies the signature against the public key it ships with, reads the artifact digest from the verified document, and `electron-updater` refuses a download whose hash does not match — differential downloads included, because the assembled file is hashed before it is installed.
 
+One command on the release machine turns a signed, notarized build into that document: it reads the metadata electron-builder wrote, refuses a directory built for another version, hashes the artifact each platform installs from, and signs the result. The publishing step is therefore one scp of a directory, and a host that is compromised can withhold a release but cannot publish one.
+
 An intercepted intranet connection can withhold an update, or serve an older signed manifest that `not-newer` refuses. It cannot make a client install bytes the release key did not vouch for, which is the property a Windows Authenticode certificate would otherwise supply. When that certificate arrives, `publisherName` adds the operating system's own check above this one.
 
 ### The shell carries a coordinator shaped like Desktop's
