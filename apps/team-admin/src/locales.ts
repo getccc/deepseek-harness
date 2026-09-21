@@ -305,6 +305,7 @@ export const zh = {
   'knowledge.access.all': '全部已启用知识库',
 
   'nav.releases': '客户端发布',
+  'nav.releaseStaged': '预发布版本',
   'release.description': '本部署发布的桌面客户端版本。清单由发布机签名，这里只登记与分发：持有预发布角色的成员先拿到 staged 版本，其余成员拿到最新的 general 版本。',
   'release.publish': '登记版本',
   'release.version': '版本',
@@ -714,6 +715,7 @@ export const en: Record<keyof typeof zh, string> = {
   'knowledge.access.all': 'All enabled knowledge bases',
 
   'nav.releases': 'Client releases',
+  'nav.releaseStaged': 'Staged releases',
   'release.description': 'The desktop releases this deployment published. The manifest is signed on the release machine; this page records and offers it: members holding a staged role are offered the staged release first, everyone else the newest general one.',
   'release.publish': 'Register a release',
   'release.version': 'Version',

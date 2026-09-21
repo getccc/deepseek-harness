@@ -167,4 +167,16 @@ export const SHIPPED_CONSOLE_MENUS: readonly ShippedConsoleMenu[] = [
     icon: 'laptop',
     sortOrder: 5,
   },
+  {
+    key: 'release-staged',
+    parentKey: 'resources',
+    name: 'Staged releases',
+    labelKey: 'nav.releaseStaged',
+    kind: 'action',
+    // No page: the entry exists so a role can be offered a release before
+    // everyone else, which the Control Plane's release route decides on.
+    permission: 'release|release.staged',
+    icon: 'laptop',
+    sortOrder: 6,
+  },
 ]
