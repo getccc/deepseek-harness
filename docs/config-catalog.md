@@ -3372,7 +3372,7 @@ export interface Config {
 }
 ```
 
-Source: [`packages/team/team-admin-api/src/index.ts:183`](../packages/team/team-admin-api/src/index.ts)
+Source: [`packages/team/team-admin-api/src/index.ts:184`](../packages/team/team-admin-api/src/index.ts)
 
 <a id="deepseek-aidsh-team-console-menu-sqlite"></a>
 
