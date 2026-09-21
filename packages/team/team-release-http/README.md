@@ -38,7 +38,7 @@ Mount it in a Control Plane composition that carries `webServer`, `teamReleases`
 
 ### Who is offered a staged release
 
-The route registers one governed resource, **Staged releases**, so the console's role editor can grant `release.staged` to a role. A member holding it is offered the newest release of either channel; everyone else is offered the newest `general` release, even when a staged one is newer.
+The route registers one governed resource, **Client releases**, so the console's role editor can grant `release.staged` to a role. The console registers the same resource at startup, so an administrator can publish before any installed build has asked for a release. A member holding it is offered the newest release of either channel; everyone else is offered the newest `general` release, even when a staged one is newer.
 
 -----
 

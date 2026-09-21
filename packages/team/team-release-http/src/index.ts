@@ -17,7 +17,7 @@ import type {} from '@deepseek-ai/dsh-access-control'
 import type { OrgId, UserId } from '@deepseek-ai/dsh-account-store'
 import type {} from '@deepseek-ai/dsh-device-authorization'
 import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
-import { RELEASE_RESOURCE_TYPE, RELEASE_STAGED_ACTION } from '@deepseek-ai/dsh-team-release'
+import { RELEASE_RESOURCE_NAME, RELEASE_RESOURCE_TYPE, RELEASE_STAGED_ACTION } from '@deepseek-ai/dsh-team-release'
 import {
   ACCESS_TOKEN_HEADER,
   MINIMUM_RELEASE_PROTOCOL_VERSION,
@@ -34,7 +34,7 @@ export {
   type ManifestBody,
 } from './protocol.ts'
 
-export { RELEASE_RESOURCE_TYPE, RELEASE_STAGED_ACTION } from '@deepseek-ai/dsh-team-release'
+export { RELEASE_RESOURCE_NAME, RELEASE_RESOURCE_TYPE, RELEASE_STAGED_ACTION } from '@deepseek-ai/dsh-team-release'
 
 /** Plugin config: the one bound a request body may carry. */
 export interface Config {
@@ -109,7 +109,7 @@ export function apply(ctx: Context, config: Config): void {
       orgId,
       type: RELEASE_RESOURCE_TYPE,
       externalRef: orgId,
-      displayName: 'Staged releases',
+      displayName: RELEASE_RESOURCE_NAME,
     })
     governed.add(orgId)
   }

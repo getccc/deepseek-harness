@@ -50,6 +50,9 @@ export const RELEASE_RESOURCE_TYPE = 'release'
 /** The action a role holds to be offered staged releases. */
 export const RELEASE_STAGED_ACTION = 'release.staged'
 
+/** Display name of the governed release resource, wherever it is registered first. */
+export const RELEASE_RESOURCE_NAME = 'Client releases'
+
 /** The action an administrator holds to publish, promote, and withdraw releases. */
 export const RELEASE_MANAGE_ACTION = 'release.manage'
 

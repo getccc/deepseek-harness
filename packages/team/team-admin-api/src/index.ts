@@ -54,6 +54,7 @@ import {
 import { BiError, BiProjectRef, isBiProjectRef } from '@deepseek-ai/dsh-bi'
 import {
   RELEASE_MANAGE_ACTION,
+  RELEASE_RESOURCE_NAME,
   RELEASE_RESOURCE_TYPE,
   ReleaseVersionMismatchError,
   type PublishedRelease,
@@ -543,6 +544,10 @@ export function apply(ctx: Context, config: Config): void {
       ['menu', organizationId, 'Console navigation administration'],
       ['device', organizationId, 'Device administration'],
       ['model', MODEL_CATALOG_RESOURCE, 'Model catalog administration'],
+      // Releases are governed from here rather than only when a Runner first
+      // asks for one: an administrator has to be able to publish before any
+      // installed build exists to ask.
+      [RELEASE_RESOURCE_TYPE, organizationId, RELEASE_RESOURCE_NAME],
     ] as const) {
       await ctx.accessControl.registerResource({ orgId: organizationId, type, externalRef, displayName })
     }
