@@ -673,6 +673,7 @@ if (!app.requestSingleInstanceLock()) {
       undefined,
       () => gate !== undefined && app.isPackaged && existsSync(join(process.resourcesPath, UPDATE_CONFIG)),
       gate,
+      log,
     )
     ipcMain.handle(UPDATE_IPC.check, async () => updates?.check() ?? updateState)
     ipcMain.handle(UPDATE_IPC.install, async () => { await updates?.install() })

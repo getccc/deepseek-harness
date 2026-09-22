@@ -29,6 +29,7 @@ export class TeamUpdateCoordinator {
    * @param updater - the artifact updater; replaceable for tests.
    * @param enabled - whether this build carries a release stream to ask.
    * @param gate - the signed-manifest decision; without one nothing is verified beyond the updater's own hash.
+   * @param log - where a failure nobody is shown is recorded.
    */
   constructor(
     private readonly publish: (state: TeamUpdateState) => TeamUpdateState,
@@ -36,6 +37,7 @@ export class TeamUpdateCoordinator {
     private readonly updater: AppUpdater = autoUpdater,
     private readonly enabled: () => boolean = () => true,
     private readonly gate?: ReleaseGate,
+    private readonly log: (line: string) => void = () => {},
   ) {
     this.updater.autoDownload = false
     this.updater.autoInstallOnAppQuit = false
@@ -109,7 +111,11 @@ export class TeamUpdateCoordinator {
     } catch (error) {
       this.offered = undefined
       this.accepted = undefined
-      return this.publish({ phase: 'error', message: reason(error) })
+      // A release stream that cannot be reached is the deployment's problem,
+      // not this member's: the shell log carries the reason, and the sidebar
+      // stays as it was rather than showing a warning nobody can act on.
+      this.log(`update check failed: ${reason(error)}`)
+      return this.publish({ phase: 'idle' })
     }
   }
 

@@ -107,12 +107,17 @@ describe('team update coordinator', () => {
     expect(stream.states.map(state => state.phase)).toEqual(['checking', 'idle'])
   })
 
-  it('publishes the reason a check failed and installs nothing after it', async () => {
+  it('logs a failed check instead of showing it, and installs nothing after it', async () => {
     const stream = harness()
+    const lines: string[] = []
     stream.checkForUpdates.mockRejectedValueOnce(new Error('unreachable release stream'))
-    const coordinator = new TeamUpdateCoordinator(stream.publish, undefined, stream.updater, () => true)
+    const coordinator = new TeamUpdateCoordinator(
+      stream.publish, undefined, stream.updater, () => true, undefined, line => lines.push(line),
+    )
     await coordinator.check()
-    expect(stream.states.at(-1)).toEqual({ phase: 'error', message: 'unreachable release stream' })
+    // Nobody can act on an unreachable release stream; support reads the log.
+    expect(stream.states.at(-1)).toEqual({ phase: 'idle' })
+    expect(lines).toEqual(['update check failed: unreachable release stream'])
     await coordinator.install()
     expect(stream.downloadUpdate).not.toHaveBeenCalled()
     expect(stream.states.at(-1)?.message).toBe('no accepted release is available')
