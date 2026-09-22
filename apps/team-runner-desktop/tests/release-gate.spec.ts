@@ -60,39 +60,36 @@ describe('accepting a release', () => {
     const floored = async () => ({ ...signed(), minimumVersion: '1.1.0' })
     expect(await acceptRelease('1.1.0', target, floored)).toMatchObject({ required: true })
     expect(await acceptRelease('1.1.0', { ...target, installedVersion: '1.1.0' }, floored))
-      .toEqual({ refused: 'release refused: not-newer' })
+      .toEqual({ refused: 'release refused: not-newer', quiet: true })
   })
 
-  it('refuses a manifest the trusted key did not sign', async () => {
+  it('tells the member about a manifest the trusted key did not sign', async () => {
+    // The one refusal worth interrupting someone for: the document did not
+    // come from the release key.
     const verdict = await acceptRelease('1.1.0', { ...target, releaseKey: strangerKey }, async () => signed())
     expect(verdict).toEqual({ refused: 'release refused: signature' })
   })
 
-  it('refuses a release no newer than the installed build', async () => {
-    const verdict = await acceptRelease('1.1.0', { ...target, installedVersion: '1.1.0' }, async () => signed())
-    expect(verdict).toEqual({ refused: 'release refused: not-newer' })
+  it('keeps every ordinary refusal to itself', async () => {
+    const quietly = async (offered: string, over: Partial<typeof target>, document = signed()) =>
+      acceptRelease(offered, { ...target, ...over }, async () => document)
+
+    // Already current, an upgrade path this build may not take, no build for
+    // this computer, and metadata a publish has not finished replacing: all
+    // states of a healthy deployment.
+    expect(await quietly('1.1.0', { installedVersion: '1.1.0' }))
+      .toEqual({ refused: 'release refused: not-newer', quiet: true })
+    expect(await quietly('3.0.0', {}, signed({ ...manifest, version: '3.0.0', minimumFrom: '2.0.0' })))
+      .toEqual({ refused: 'release refused: upgrade-path', quiet: true })
+    expect(await quietly('1.1.0', { platform: 'win32' }))
+      .toEqual({ refused: 'release refused: no-artifact', quiet: true })
+    expect(await quietly('9.9.9', {}))
+      .toMatchObject({ quiet: true })
   })
 
-  it('refuses a release this build may not be upgraded across', async () => {
-    const gap = signed({ ...manifest, version: '3.0.0', minimumFrom: '2.0.0' })
-    const verdict = await acceptRelease('3.0.0', target, async () => gap)
-    expect(verdict).toEqual({ refused: 'release refused: upgrade-path' })
-  })
-
-  it('refuses a release carrying no artifact for this computer', async () => {
-    const verdict = await acceptRelease('1.1.0', { ...target, platform: 'win32' }, async () => signed())
-    expect(verdict).toEqual({ refused: 'release refused: no-artifact' })
-  })
-
-  it('refuses metadata that offers a version the signature does not cover', async () => {
-    // The file beside the artifacts is not what this build trusts.
-    const verdict = await acceptRelease('9.9.9', target, async () => signed())
-    expect(verdict).toEqual({ refused: 'release metadata offers 9.9.9, the signed manifest 1.1.0' })
-  })
-
-  it('refuses when the manifest cannot be read at all', async () => {
+  it('keeps an unreachable deployment to itself as well', async () => {
     const verdict = await acceptRelease('1.1.0', target, async () => { throw new Error('unreachable deployment') })
-    expect(verdict).toEqual({ refused: 'unreachable deployment' })
+    expect(verdict).toEqual({ refused: 'unreachable deployment', quiet: true })
   })
 })
 
@@ -104,7 +101,11 @@ describe('reading the manifest', () => {
     expect(request).toHaveBeenCalledWith('https://control.test/updates/manifest.json')
   })
 
-  it('refuses an error answer and a document missing either half', async () => {
+  it('names the three states that are not a member\'s problem, and one that is', async () => {
+    const offersNothing = vi.fn().mockResolvedValue({ ok: false, status: 404, json: async () => ({}) })
+    await expect(readManifest('https://control.test/u', offersNothing)).rejects.toThrow(/answered 404/u)
+    const signedOut = vi.fn().mockResolvedValue({ ok: false, status: 401, json: async () => ({}) })
+    await expect(readManifest('https://control.test/u', signedOut)).rejects.toThrow(/not signed in/u)
     const failing = vi.fn().mockResolvedValue({ ok: false, status: 502, json: async () => ({}) })
     await expect(readManifest('https://control.test/u', failing)).rejects.toThrow(/answered 502/u)
     const partial = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ manifest }) })

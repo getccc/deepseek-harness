@@ -59,10 +59,15 @@ export type GateVerdict =
     readonly quiet?: boolean
   }
 
-/** Raised when the deployment offers this member no release at all. */
+/**
+ * Raised when this computer has no release to consider: the deployment offers
+ * this member none, the Runner is not signed in, or the deployment could not
+ * be reached. None of the three is something a member can act on, and all
+ * three are ordinary.
+ */
 export class NoOfferedReleaseError extends Error {
-  constructor() {
-    super('the deployment offers this member no release')
+  constructor(reason: string) {
+    super(reason)
     this.name = 'NoOfferedReleaseError'
   }
 }
@@ -103,10 +108,15 @@ export type ManifestRequest = (url: string) => Promise<Response>
  */
 export async function readManifest(url: string, request: ManifestRequest = fetch): Promise<SignedManifest> {
   const response = await request(url)
-  // 404 is the deployment saying this member is offered nothing, which the
-  // staged channel produces for everyone outside the pilot group.
-  if (response.status === 404) throw new NoOfferedReleaseError()
-  if (!response.ok) throw new Error(`release manifest answered ${String(response.status)}`)
+  if (!response.ok) {
+    // Every refusal here is a state of this computer rather than a fault a
+    // member could do something about: 404 is the staged channel for everyone
+    // outside the pilot group, 401 a Runner that is not signed in, and the
+    // rest a deployment that could not answer.
+    throw new NoOfferedReleaseError(response.status === 401
+      ? 'this computer is not signed in to the deployment'
+      : `the deployment answered ${String(response.status)} for the release manifest`)
+  }
   const document = await response.json() as {
     manifest?: unknown
     signature?: unknown
@@ -147,9 +157,12 @@ export async function acceptRelease(
   try {
     signed = await read()
   } catch (error) {
-    return error instanceof NoOfferedReleaseError
-      ? { refused: error.message, quiet: true }
-      : { refused: error instanceof Error ? error.message : String(error) }
+    // Unreachable, unreadable, and not signed in are all this computer's
+    // situation rather than a failure to report; the shell log keeps them.
+    return {
+      refused: error instanceof Error ? error.message : String(error),
+      quiet: true,
+    }
   }
   const platform = PLATFORMS.find(name => name === target.platform)
   const architecture = ARCHITECTURES.find(name => name === target.architecture)
@@ -164,9 +177,23 @@ export async function acceptRelease(
     platform,
     architecture,
   })
-  if ('refused' in decision) return { refused: `release refused: ${decision.refused}` }
+  if ('refused' in decision) {
+    // A signature that does not verify is the one refusal a member should
+    // see: it means the document did not come from the release key. The
+    // others — not newer, no artifact for this computer, an upgrade path this
+    // build may not take — are ordinary states of a healthy deployment.
+    return {
+      refused: `release refused: ${decision.refused}`,
+      ...decision.refused === 'signature' ? {} : { quiet: true },
+    }
+  }
   if (signed.manifest.version !== offered) {
-    return { refused: `release metadata offers ${offered}, the signed manifest ${signed.manifest.version}` }
+    // The metadata beside the artifacts is not what this build trusts, and a
+    // deployment mid-publish shows exactly this for a moment.
+    return {
+      refused: `release metadata offers ${offered}, the signed manifest ${signed.manifest.version}`,
+      quiet: true,
+    }
   }
   // Below the floor the deployment enforces, this update is not optional; the
   // member is told so rather than left on a build the deployment refuses.
