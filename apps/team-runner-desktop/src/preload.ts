@@ -13,6 +13,7 @@ const api: TeamDesktopUpdateApi = {
   protocolVersion: 1,
   check: () => ipcRenderer.invoke(UPDATE_IPC.check) as Promise<TeamUpdateState>,
   install: () => ipcRenderer.invoke(UPDATE_IPC.install) as Promise<void>,
+  pause: () => ipcRenderer.invoke(UPDATE_IPC.pause) as Promise<void>,
   subscribe: (listener) => {
     const handle = (_event: IpcRendererEvent, state: TeamUpdateState): void => { listener(state) }
     ipcRenderer.on(UPDATE_IPC.state, handle)

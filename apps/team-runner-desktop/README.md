@@ -124,7 +124,9 @@ node scripts/publish-release.mjs \
 
 It reads the update metadata electron-builder wrote, refuses a directory that describes another version, hashes the artifact each platform installs from, and writes `manifest.json` beside them. `--minimum-from` names the oldest installed version this release may be applied on top of: a build below it refuses the update instead of installing across a gap the release does not support.
 
-Copy the artifacts, their `.blockmap` files, `latest-mac.yml` or `latest.yml`, and `manifest.json` into the directory the deployment serves at `/updates/`, and serve them as static files — differential download issues `Range` requests, which an application-layer proxy in front of the directory would have to answer itself. The release private key stays on the release machine: the deployment serves what it is given and holds no key, so a compromised host cannot publish a release.
+Copy the artifacts, their `.blockmap` files, and `latest-mac.yml` or `latest.yml` into the directory the deployment serves at `/updates/`, and serve them as static files — differential download issues `Range` requests, which an application-layer proxy in front of the directory would have to answer itself.
+
+The signed manifest does not go there. It is registered in the console, which is what decides who is offered the release; a manifest served as a static file would hand every build the same answer and step around the staged channel. The release private key stays on the release machine: the deployment serves what it is given and holds no key, so a compromised host cannot publish a release.
 
 A minimal nginx location for that directory, beside the console's own:
 

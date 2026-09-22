@@ -676,6 +676,7 @@ if (!app.requestSingleInstanceLock()) {
     )
     ipcMain.handle(UPDATE_IPC.check, async () => updates?.check() ?? updateState)
     ipcMain.handle(UPDATE_IPC.install, async () => { await updates?.install() })
+    ipcMain.handle(UPDATE_IPC.pause, () => { updates?.pause() })
     scheduleUpdateChecks()
     createDesktop()
     // Registering is slow and announces itself with a system notification, so

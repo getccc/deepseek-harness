@@ -59,6 +59,7 @@ export function apply(ctx: ClientContext): void {
       subscribe: listener => bridge.subscribe(listener),
       check: () => bridge.check(),
       install: () => bridge.install(),
+      pause: () => bridge.pause(),
     }),
   }, UpdateAction))
 }

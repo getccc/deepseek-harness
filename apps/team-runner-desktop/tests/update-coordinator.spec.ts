@@ -6,6 +6,11 @@ import type { TeamUpdateState } from '../src/update-state.ts'
 
 vi.mock('electron-updater', () => ({
   default: { autoUpdater: { autoDownload: true, autoInstallOnAppQuit: true } },
+  // The real token, minus the request plumbing it carries for the updater.
+  CancellationToken: class {
+    cancelled = false
+    cancel(): void { this.cancelled = true }
+  },
 }))
 
 const { TeamUpdateCoordinator } = await import('../src/update-coordinator.ts')
@@ -19,14 +24,18 @@ function harness(options: {
   offers?: string
   download?: () => Promise<unknown>
   order?: string[]
+  /** Cancel the download as it starts, as a member pressing pause does. */
+  pauseDuring?: boolean
 } = {}) {
   const states: TeamUpdateState[] = []
   const order = options.order ?? []
   const checkForUpdates = vi.fn(async () => (options.offers === undefined
     ? { isUpdateAvailable: false, updateInfo: { version: '2.3.0' } }
     : { isUpdateAvailable: true, updateInfo: { version: options.offers } }))
-  const downloadUpdate = vi.fn(async () => {
+  const downloadUpdate = vi.fn(async (token?: { cancelled: boolean; cancel: () => void }) => {
     order.push('download')
+    if (options.pauseDuring === true) token?.cancel()
+    if (token?.cancelled === true) throw new Error('cancelled')
     return options.download === undefined ? ['/tmp/WeWork.zip'] : options.download()
   })
   const quitAndInstall = vi.fn(() => { order.push('quitAndInstall') })
@@ -80,7 +89,7 @@ describe('team update coordinator', () => {
     const coordinator = new TeamUpdateCoordinator(stream.publish, undefined, stream.updater, () => true)
     await coordinator.check()
     await coordinator.install()
-    expect(stream.states).toContainEqual({ phase: 'installing', version: '2.4.0', percent: 42 })
+    expect(stream.states).toContainEqual({ phase: 'installing', version: '2.4.0', percent: 42, required: false })
     expect(stream.listeners.has('download-progress')).toBe(false)
   })
 
@@ -147,6 +156,16 @@ describe('team update coordinator', () => {
     expect(stream.states.at(-1)).toEqual({
       phase: 'error', version: '2.4.0', message: 'the downloaded file does not match the signed manifest',
     })
+  })
+
+  it('goes back to offering the release when the member pauses the download', async () => {
+    const stream = harness({ offers: '2.4.0', pauseDuring: true })
+    const coordinator = new TeamUpdateCoordinator(stream.publish, undefined, stream.updater, () => true)
+    await coordinator.check()
+    await coordinator.install()
+    expect(stream.quitAndInstall).not.toHaveBeenCalled()
+    // Not an error: the member asked for it, and the same button takes it again.
+    expect(stream.states.at(-1)).toEqual({ phase: 'paused', version: '2.4.0', required: false })
   })
 
   it('answers concurrent checks from one request to the release stream', async () => {

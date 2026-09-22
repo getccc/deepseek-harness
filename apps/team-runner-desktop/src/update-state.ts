@@ -9,16 +9,18 @@
 export const UPDATE_IPC = {
   check: 'dsh-team-desktop:update-check',
   install: 'dsh-team-desktop:update-install',
+  pause: 'dsh-team-desktop:update-pause',
   state: 'dsh-team-desktop:update-state',
 } as const
 
 /**
  * The shell's current position in one update. `available` names a release the
- * decision accepted; `ready` is published after the download and before the
- * application quits to install it.
+ * decision accepted, `paused` one whose download the member stopped, and
+ * `ready` is published after the download and before the application quits to
+ * install it.
  */
 export interface TeamUpdateState {
-  readonly phase: 'idle' | 'checking' | 'available' | 'installing' | 'ready' | 'error'
+  readonly phase: 'idle' | 'checking' | 'available' | 'installing' | 'paused' | 'ready' | 'error'
   /** The offered release, present from `available` onward. */
   readonly version?: string
   /** Whole percent of the download, present while one reports progress. */
@@ -47,6 +49,12 @@ export interface TeamDesktopUpdateApi {
    * @returns nothing; the outcome arrives through the state subscription.
    */
   install(): Promise<void>
+  /**
+   * Stop the download in flight. What was fetched is not kept, so a later
+   * install starts the transfer again.
+   * @returns when the download has been told to stop.
+   */
+  pause(): Promise<void>
   /**
    * Observe every state the shell publishes.
    * @param listener - called with each published state.

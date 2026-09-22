@@ -21,6 +21,16 @@ import css from './UpdateAction.module.css'
 /** Radius of the progress ring in its own 32-unit viewBox. */
 const RING_RADIUS = 14
 
+/** The two bars a paused download shows in place of its ring. */
+function PauseGlyph() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+      <rect x="2.5" y="1.5" width="2.6" height="9" rx="1" fill="currentColor" />
+      <rect x="6.9" y="1.5" width="2.6" height="9" rx="1" fill="currentColor" />
+    </svg>
+  )
+}
+
 /** Registration-side operations for the update control. */
 export interface UpdateActionInjected {
   /**
@@ -40,6 +50,11 @@ export interface UpdateActionInjected {
    * @returns nothing; the window closes when the installer takes over.
    */
   install: () => Promise<void>
+  /**
+   * Stop the download in flight.
+   * @returns when the download has been told to stop.
+   */
+  pause: () => Promise<void>
 }
 
 /** Complete slot props for the update control. */
@@ -48,21 +63,30 @@ export type UpdateActionProps =
   & PropsLocale<'team.update'>
   & InjectFace<UpdateActionInjected>
 
-/** The ring drawn around a running download. */
+/**
+ * The ring drawn around a running download, with the percentage inside it.
+ *
+ * The number is the point of the ring at this size: a member wants to know
+ * whether a 295 MB transfer is a minute or a quarter of an hour from done,
+ * which the arc alone does not say.
+ */
 function ProgressRing({ percent }: { percent?: number | undefined }) {
   const circumference = 2 * Math.PI * RING_RADIUS
   const drawn = percent === undefined ? circumference * 0.25 : circumference * (percent / 100)
   return (
-    <svg className={clsx(css.ring, percent === undefined && css.spin)} viewBox="0 0 32 32" aria-hidden="true">
-      <circle className={css.ringTrack} cx="16" cy="16" r={RING_RADIUS} />
-      <circle
-        className={css.ringHead}
-        cx="16"
-        cy="16"
-        r={RING_RADIUS}
-        strokeDasharray={`${drawn} ${circumference}`}
-      />
-    </svg>
+    <span className={css.ringWrap}>
+      <svg className={clsx(css.ring, percent === undefined && css.spin)} viewBox="0 0 32 32" aria-hidden="true">
+        <circle className={css.ringTrack} cx="16" cy="16" r={RING_RADIUS} />
+        <circle
+          className={css.ringHead}
+          cx="16"
+          cy="16"
+          r={RING_RADIUS}
+          strokeDasharray={`${drawn} ${circumference}`}
+        />
+      </svg>
+      {percent !== undefined && <span className={css.ringLabel}>{percent}</span>}
+    </span>
   )
 }
 
@@ -71,7 +95,7 @@ function presentation(state: DesktopUpdateState, t: UpdateActionProps['t']): {
   glyph: ReactElement
   label: string
   title: string
-  act: 'install' | 'check' | 'none'
+  act: 'install' | 'check' | 'pause' | 'none'
   tone: string
 } | undefined {
   const version = state.version ?? ''
@@ -91,8 +115,17 @@ function presentation(state: DesktopUpdateState, t: UpdateActionProps['t']): {
         title: state.percent === undefined
           ? t('installing.title.unknown', { version })
           : t('installing.title', { version, percent: String(state.percent) }),
-        act: 'none',
+        // The same button stops it, which is where a member looks for that.
+        act: 'pause',
         tone: css.working ?? '',
+      }
+    case 'paused':
+      return {
+        glyph: <PauseGlyph />,
+        label: t('paused.label'),
+        title: t('paused.title', { version }),
+        act: 'install',
+        tone: css.offered ?? '',
       }
     case 'ready':
       return {
@@ -122,7 +155,7 @@ function presentation(state: DesktopUpdateState, t: UpdateActionProps['t']): {
  * @param props - composed slot props and the shell's update operations.
  * @returns the control, or nothing while there is no update to act on.
  */
-export function UpdateAction({ wide, subscribe, check, install, t }: UpdateActionProps) {
+export function UpdateAction({ wide, subscribe, check, install, pause, t }: UpdateActionProps) {
   const [state, setState] = useState<DesktopUpdateState>({ phase: 'idle' })
 
   useEffect(() => {
@@ -168,6 +201,7 @@ export function UpdateAction({ wide, subscribe, check, install, t }: UpdateActio
           disabled={shown.act === 'none'}
           onClick={() => {
             if (shown.act === 'install') void install()
+            if (shown.act === 'pause') void pause()
             if (shown.act === 'check') void check().then(setState, () => {})
           }}
         >

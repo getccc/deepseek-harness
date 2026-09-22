@@ -18,6 +18,7 @@ function props(state: DesktopUpdateState, overrides: Partial<UpdateActionProps> 
     subscribe: () => () => {},
     check: vi.fn().mockResolvedValue(state),
     install: vi.fn().mockResolvedValue(undefined),
+    pause: vi.fn().mockResolvedValue(undefined),
     t: (key: string, params?: Record<string, string>) => (
       params === undefined ? key : `${key}:${Object.values(params).join(',')}`
     ),
@@ -47,13 +48,22 @@ describe('sidebar update control', () => {
     expect(install).toHaveBeenCalledTimes(1)
   })
 
-  it('shows the percentage while downloading and takes no click', async () => {
+  it('shows the percentage inside the ring and pauses on a click', async () => {
     const install = vi.fn()
-    render(<UpdateAction {...props({ phase: 'installing', version: '2.4.0', percent: 42 }, { install })} />)
+    const pause = vi.fn().mockResolvedValue(undefined)
+    render(<UpdateAction {...props({ phase: 'installing', version: '2.4.0', percent: 42 }, { install, pause })} />)
     const button = await screen.findByRole('button', { name: 'installing.label' })
-    expect(button.hasAttribute('disabled')).toBe(true)
+    expect(button.textContent).toContain('42')
     fireEvent.click(button)
+    expect(pause).toHaveBeenCalledTimes(1)
     expect(install).not.toHaveBeenCalled()
+  })
+
+  it('takes the release again from the paused state', async () => {
+    const install = vi.fn().mockResolvedValue(undefined)
+    render(<UpdateAction {...props({ phase: 'paused', version: '2.4.0' }, { install })} />)
+    fireEvent.click(await screen.findByRole('button', { name: 'paused.label' }))
+    expect(install).toHaveBeenCalledTimes(1)
   })
 
   it('offers a retry after a failure, carrying the reason in its label', async () => {

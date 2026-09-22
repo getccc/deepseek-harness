@@ -41,14 +41,31 @@ export interface ReleaseTarget {
   readonly architecture: string
 }
 
-/** An accepted release, or the one word for why it was refused. */
+/** An accepted release, or why it was refused. */
 export type GateVerdict =
   | {
     readonly accepted: UpdateArtifact
     /** Whether the installed build is below the floor this deployment enforces. */
     readonly required: boolean
   }
-  | { readonly refused: string }
+  | {
+    readonly refused: string
+    /**
+     * Whether the refusal is this member having nothing to take rather than
+     * something being wrong. A staged release nobody offered them is the
+     * ordinary case, and reporting it as a failure would put a warning in
+     * front of every member outside the pilot group.
+     */
+    readonly quiet?: boolean
+  }
+
+/** Raised when the deployment offers this member no release at all. */
+export class NoOfferedReleaseError extends Error {
+  constructor() {
+    super('the deployment offers this member no release')
+    this.name = 'NoOfferedReleaseError'
+  }
+}
 
 /** The two questions the coordinator asks before it replaces this build. */
 export interface ReleaseGate {
@@ -86,6 +103,9 @@ export type ManifestRequest = (url: string) => Promise<Response>
  */
 export async function readManifest(url: string, request: ManifestRequest = fetch): Promise<SignedManifest> {
   const response = await request(url)
+  // 404 is the deployment saying this member is offered nothing, which the
+  // staged channel produces for everyone outside the pilot group.
+  if (response.status === 404) throw new NoOfferedReleaseError()
   if (!response.ok) throw new Error(`release manifest answered ${String(response.status)}`)
   const document = await response.json() as {
     manifest?: unknown
@@ -127,7 +147,9 @@ export async function acceptRelease(
   try {
     signed = await read()
   } catch (error) {
-    return { refused: error instanceof Error ? error.message : String(error) }
+    return error instanceof NoOfferedReleaseError
+      ? { refused: error.message, quiet: true }
+      : { refused: error instanceof Error ? error.message : String(error) }
   }
   const platform = PLATFORMS.find(name => name === target.platform)
   const architecture = ARCHITECTURES.find(name => name === target.architecture)

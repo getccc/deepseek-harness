@@ -6,7 +6,7 @@
  * @module @deepseek-ai/dsh-team-runner-desktop/update-coordinator
  */
 
-import electronUpdater, { type AppUpdater } from 'electron-updater'
+import electronUpdater, { CancellationToken, type AppUpdater } from 'electron-updater'
 import type { UpdateArtifact } from '@deepseek-ai/dsh-team-update'
 import type { ReleaseGate } from './release-gate.ts'
 import type { TeamUpdateState } from './update-state.ts'
@@ -17,6 +17,9 @@ const { autoUpdater } = electronUpdater
 export class TeamUpdateCoordinator {
   private offered: string | undefined
   private accepted: UpdateArtifact | undefined
+  private required = false
+  /** The token that stops the download in flight, while one runs. */
+  private downloading: CancellationToken | undefined
   private checkOperation: Promise<TeamUpdateState> | undefined
   private installOperation: Promise<TeamUpdateState> | undefined
 
@@ -51,6 +54,15 @@ export class TeamUpdateCoordinator {
   }
 
   /**
+   * Stop the download in flight. What was fetched is not kept: the updater
+   * discards a cancelled transfer, so taking the release later starts it again.
+   * @returns when the download has been told to stop.
+   */
+  pause(): void {
+    this.downloading?.cancel()
+  }
+
+  /**
    * Wait for an in-flight check, then download the retained release and
    * restart into it.
    * @returns the last state published before the installer takes over.
@@ -80,8 +92,15 @@ export class TeamUpdateCoordinator {
         const verdict = await this.gate.accept(version)
         // The metadata beside the artifacts is not what this build trusts; a
         // release the signed manifest does not cover is never offered.
-        if ('refused' in verdict) return this.publish({ phase: 'error', version, message: verdict.refused })
+        if ('refused' in verdict) {
+          // A member the deployment offers nothing has nothing to see; only a
+          // refusal that means something is wrong reaches them.
+          return verdict.quiet === true
+            ? this.publish({ phase: 'idle' })
+            : this.publish({ phase: 'error', version, message: verdict.refused })
+        }
         this.accepted = verdict.accepted
+        this.required = verdict.required
         this.offered = version
         return this.publish({ phase: 'available', version, required: verdict.required })
       }
@@ -99,15 +118,17 @@ export class TeamUpdateCoordinator {
     if (version === undefined) {
       return this.publish({ phase: 'error', message: 'no accepted release is available' })
     }
-    this.publish({ phase: 'installing', version })
+    this.publish({ phase: 'installing', version, percent: 0, required: this.required })
     // A 280 MB download over a company network is minutes long; the member
     // watches the percentage rather than a button that only looks busy.
     const progress = (info: { percent: number }): void => {
-      this.publish({ phase: 'installing', version, percent: Math.round(info.percent) })
+      this.publish({ phase: 'installing', version, percent: Math.round(info.percent), required: this.required })
     }
     this.updater.on('download-progress', progress)
+    const token = new CancellationToken()
+    this.downloading = token
     try {
-      const files = await this.updater.downloadUpdate()
+      const files = await this.updater.downloadUpdate(token)
       const accepted = this.accepted
       if (accepted !== undefined) {
         const artifact = files.find(path => !path.endsWith('.blockmap'))
@@ -116,8 +137,6 @@ export class TeamUpdateCoordinator {
           : await (this.gate?.verify(artifact, accepted) ?? Promise.resolve(undefined))
         if (problem !== undefined) return this.publish({ phase: 'error', version, message: problem })
       }
-      this.offered = undefined
-      this.accepted = undefined
       const ready = this.publish({ phase: 'ready', version })
       // The Runner holds the fixed port and, on Windows, files the installer
       // replaces; it has to be gone before the installer runs.
@@ -125,9 +144,14 @@ export class TeamUpdateCoordinator {
       this.updater.quitAndInstall(false, true)
       return ready
     } catch (error) {
-      return this.publish({ phase: 'error', version, message: reason(error) })
+      // A member who paused asked for this; the release stays offered and the
+      // same button takes it again.
+      return token.cancelled
+        ? this.publish({ phase: 'paused', version, required: this.required })
+        : this.publish({ phase: 'error', version, message: reason(error) })
     } finally {
       this.updater.off('download-progress', progress)
+      this.downloading = undefined
     }
   }
 }

@@ -8,8 +8,8 @@
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  width: 32px;
-  height: 32px;
+  width: 26px;
+  height: 26px;
   padding: 0;
   border: none;
   border-radius: 50%;
@@ -66,24 +66,43 @@
   height: 100%;
 }
 
-/* The ring fills the button, so the percentage reads at a glance without a
-   second element competing with the sidebar's own rows. */
+/* The ring fills the button and the percentage sits inside it, so one 26px
+   control carries both how far along the transfer is and how to stop it. */
+.ringWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
 .ring {
   width: 100%;
   height: 100%;
   transform: rotate(-90deg);
 }
 
+.ringLabel {
+  position: absolute;
+  color: var(--dsw-alias-label-primary);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.2px;
+}
+
 .ringTrack {
   fill: none;
   stroke: var(--dsw-alias-border-l3);
-  stroke-width: 2.5;
+  stroke-width: 3;
 }
 
 .ringHead {
   fill: none;
   stroke: currentColor;
-  stroke-width: 2.5;
+  stroke-width: 3;
   stroke-linecap: round;
   transition: stroke-dasharray 200ms linear;
 }

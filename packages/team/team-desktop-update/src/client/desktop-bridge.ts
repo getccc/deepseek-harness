@@ -14,10 +14,11 @@ export const DESKTOP_UPDATE_PROTOCOL = 1
 
 /**
  * Where the shell is in one update. `available` names a release it accepted,
- * `installing` runs the download, and `ready` is the moment before the
- * application quits into the installer.
+ * `installing` runs the download, `paused` holds one the member stopped, and
+ * `ready` is the moment before the application quits into the installer.
  */
-export type DesktopUpdatePhase = 'idle' | 'checking' | 'available' | 'installing' | 'ready' | 'error'
+export type DesktopUpdatePhase =
+  | 'idle' | 'checking' | 'available' | 'installing' | 'paused' | 'ready' | 'error'
 
 /** One state the shell published. */
 export interface DesktopUpdateState {
@@ -45,6 +46,12 @@ export interface DesktopUpdateBridge {
    * @returns nothing; the window closes when the installer takes over.
    */
   install(): Promise<void>
+  /**
+   * Stop the download in flight. The bytes already fetched are not kept, so
+   * taking the release again starts the transfer over.
+   * @returns when the download has been told to stop.
+   */
+  pause(): Promise<void>
   /**
    * Observe every state the shell publishes.
    * @param listener - called with each published state.
