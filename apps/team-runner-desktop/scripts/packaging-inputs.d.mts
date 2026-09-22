@@ -26,3 +26,15 @@ export declare const RELEASE_KEY_ENV: 'DSH_TEAM_RELEASE_KEY'
  * @throws when the variable holds something that is not such a key.
  */
 export declare function resolveReleaseKey(env: NodeJS.ProcessEnv): string | undefined
+
+/** Environment variable naming where this build fetches release artifacts. */
+export declare const UPDATE_ORIGIN_ENV: 'DSH_TEAM_UPDATE_ORIGIN'
+
+/**
+ * Where the installed build fetches release artifacts.
+ * @param env - the packaging environment.
+ * @param controlPlaneUrl - the deployment's Control Plane origin.
+ * @returns the directory releases are served from, ending in a slash.
+ * @throws when the variable names something other than an http(s) address.
+ */
+export declare function resolveUpdateOrigin(env: NodeJS.ProcessEnv, controlPlaneUrl: string): string

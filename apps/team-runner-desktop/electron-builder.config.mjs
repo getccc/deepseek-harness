@@ -1,6 +1,8 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { pluginTreeFingerprint, resolveAppVersion, resolveReleaseKey } from './scripts/packaging-inputs.mjs'
+import {
+  pluginTreeFingerprint, resolveAppVersion, resolveReleaseKey, resolveUpdateOrigin,
+} from './scripts/packaging-inputs.mjs'
 
 const runner = process.env.DSH_TEAM_RUNNER_EXECUTABLE
 const controlPlaneUrl = process.env.DSH_TEAM_CONTROL_PLANE_URL
@@ -138,8 +140,8 @@ export default {
     allowToChangeInstallationDirectory: true,
     differentialPackage: true,
   },
-  // The deployment's own Control Plane serves the release, so the update
-  // address follows the address this build was packaged for. The shell trusts
-  // that host's private authority for these requests; see `pinControlPlaneAuthority`.
-  publish: [{ provider: 'generic', url: new URL('/updates/', controlPlaneUrl).href, channel: 'latest' }],
+  // The deployment's own Control Plane serves the release unless a deployment
+  // points DSH_TEAM_UPDATE_ORIGIN elsewhere. What may be installed is decided
+  // by the signed manifest either way; this only says where the bytes are.
+  publish: [{ provider: 'generic', url: resolveUpdateOrigin(process.env, controlPlaneUrl), channel: 'latest' }],
 }

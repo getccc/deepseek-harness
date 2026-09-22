@@ -89,3 +89,29 @@ export function resolveReleaseKey(env) {
   }
   return value
 }
+
+/** Environment variable naming where this build fetches release artifacts. */
+export const UPDATE_ORIGIN_ENV = 'DSH_TEAM_UPDATE_ORIGIN'
+
+/**
+ * Where the installed build fetches release artifacts and the updater
+ * metadata beside them.
+ *
+ * It defaults to the deployment's own Control Plane, which needs no second
+ * address. A deployment whose Control Plane has little bandwidth — every
+ * member pulls a few hundred megabytes on a release — points this at object
+ * storage or a CDN instead. Nothing about trust moves with it: what may be
+ * installed is decided by the signed manifest the Control Plane serves, and
+ * the downloaded bytes are checked against the digest that manifest carries.
+ * @param {NodeJS.ProcessEnv} env - the packaging environment.
+ * @param {string} controlPlaneUrl - the deployment's Control Plane origin.
+ * @returns {string} the directory releases are served from, ending in a slash.
+ */
+export function resolveUpdateOrigin(env, controlPlaneUrl) {
+  const value = env[UPDATE_ORIGIN_ENV]?.trim()
+  const url = new URL(value === undefined || value === '' ? '/updates/' : value, controlPlaneUrl)
+  if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+    throw new Error(`${UPDATE_ORIGIN_ENV} must be an http or https address; received ${url.protocol}`)
+  }
+  return url.href.endsWith('/') ? url.href : `${url.href}/`
+}

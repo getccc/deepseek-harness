@@ -2,7 +2,9 @@ import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { APP_VERSION_ENV, pluginTreeFingerprint, resolveAppVersion } from '../scripts/packaging-inputs.mjs'
+import {
+  APP_VERSION_ENV, UPDATE_ORIGIN_ENV, pluginTreeFingerprint, resolveAppVersion, resolveUpdateOrigin,
+} from '../scripts/packaging-inputs.mjs'
 
 const trees: string[] = []
 
@@ -47,6 +49,28 @@ describe('release version', () => {
   it('refuses a build that names no release', () => {
     expect(() => resolveAppVersion({})).toThrow(/must name the release version/u)
     expect(() => resolveAppVersion({ [APP_VERSION_ENV]: '  ' })).toThrow(/must name the release version/u)
+  })
+})
+
+describe('where releases are fetched from', () => {
+  const controlPlane = 'https://control.example.com:3095'
+
+  it('serves releases from the deployment itself by default', () => {
+    expect(resolveUpdateOrigin({}, controlPlane)).toBe('https://control.example.com:3095/updates/')
+  })
+
+  it('takes object storage or a CDN instead, ending in a slash either way', () => {
+    // A Control Plane with little bandwidth would otherwise carry a few
+    // hundred megabytes per member on every release.
+    expect(resolveUpdateOrigin({ [UPDATE_ORIGIN_ENV]: 'https://cdn.example.com/wework' }, controlPlane))
+      .toBe('https://cdn.example.com/wework/')
+    expect(resolveUpdateOrigin({ [UPDATE_ORIGIN_ENV]: 'http://127.0.0.1:8099/updates/' }, controlPlane))
+      .toBe('http://127.0.0.1:8099/updates/')
+  })
+
+  it('refuses an address that is not fetched over http', () => {
+    expect(() => resolveUpdateOrigin({ [UPDATE_ORIGIN_ENV]: 'file:///tmp/updates/' }, controlPlane))
+      .toThrow(/http or https/u)
   })
 })
 

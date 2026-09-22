@@ -50,6 +50,7 @@ Every deployment-varying fact is a packaging environment variable, so one source
 | Variable | Required | What it carries |
 |---|---|---|
 | `DSH_TEAM_APP_VERSION` | yes | The release this build is: `MAJOR.MINOR.PATCH`, with no prerelease tag and no build metadata, incremented once per release. |
+| `DSH_TEAM_UPDATE_ORIGIN` | no | Where release artifacts are fetched from, when that is not the Control Plane itself: object storage or a CDN, for a deployment whose own bandwidth a few hundred megabytes per member would exhaust. |
 | `DSH_TEAM_RUNNER_EXECUTABLE` | yes | The built Runner executable; its ripgrep and macOS spawn-helper sidecars are read from the neighbouring `-rg` and `-spawn-helper` names. |
 | `DSH_TEAM_CONTROL_PLANE_URL` | yes | The Control Plane origin this build belongs to. |
 | `DSH_TEAM_CONTROL_PLANE_CA` | no | The certificate that signed the Control Plane's TLS certificate. |

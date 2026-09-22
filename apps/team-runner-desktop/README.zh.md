@@ -50,6 +50,7 @@ pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 | 变量 | 必需 | 携带什么 |
 |---|---|---|
 | `DSH_TEAM_APP_VERSION` | 是 | 本构建所属的发布版本：`MAJOR.MINOR.PATCH`，不带预发布标签，也不带构建元数据，每次发布递增一次。 |
+| `DSH_TEAM_UPDATE_ORIGIN` | 否 | 版本产物的获取地址，当它不是 Control Plane 本身时：对象存储或 CDN，适用于自身带宽撑不住每位成员几百兆下载的部署。 |
 | `DSH_TEAM_RUNNER_EXECUTABLE` | 是 | 构建好的 Runner 可执行文件；其 ripgrep 与 macOS spawn-helper 伴随程序按相邻的 `-rg` 与 `-spawn-helper` 名称读取。 |
 | `DSH_TEAM_CONTROL_PLANE_URL` | 是 | 这份构建所属的 Control Plane 源。 |
 | `DSH_TEAM_CONTROL_PLANE_CA` | 否 | 签发 Control Plane TLS 证书的那份证书。 |
