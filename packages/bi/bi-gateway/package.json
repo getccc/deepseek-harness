@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-bi-gateway",
   "description": "Abstract governed BI gateway seam (ctx.biGateway) for the DeepSeek Harness Control Plane — the durable project catalog an administrator curates, and the authorized directory, chart listing, and chart run a Runner reaches",
-  "version": "0.1.6-alpha.2",
+  "version": "0.1.7-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -27,15 +27,15 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-access-control": "workspace:^",
-    "@deepseek-ai/dsh-account-store": "workspace:^",
-    "@deepseek-ai/dsh-bi": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-access-control": "workspace:*",
+    "@deepseek-ai/dsh-account-store": "workspace:*",
+    "@deepseek-ai/dsh-bi": "workspace:*"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-access-control": "workspace:^",
-    "@deepseek-ai/dsh-account-store": "workspace:^",
-    "@deepseek-ai/dsh-bi": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-access-control": "workspace:*",
+    "@deepseek-ai/dsh-account-store": "workspace:*",
+    "@deepseek-ai/dsh-bi": "workspace:*"
   }
 }

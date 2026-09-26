@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-15-the-desktop-installer-ships-the-office-build.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-15-the-desktop-installer-ships-the-office-build.md
-2026-09-15-the-desktop-installer-ships-the-office-build.md: 304304964d3aaa6d6cd3b93e3332ff408acdbb4c
-2026-09-15-the-desktop-installer-ships-the-office-build.zh.md: b47795c671f373970d72705323e0e18778b81c9f
+/agent-note-the-desktop-installer-ships-the-office-build:
+  en: c2bac320ed648e6d
+  zh: 11661105c88f28f8
+/agent-note-the-desktop-installer-ships-the-office-build/problem:
+  en: f783841cb786fe91
+  zh: 828e9af9d02d145b
+/agent-note-the-desktop-installer-ships-the-office-build/decision:
+  en: 0b7c0e4b355edeb4
+  zh: 1d8a4f4e3888d7d3
+/agent-note-the-desktop-installer-ships-the-office-build/alternatives-considered:
+  en: d0d0e0076f120837
+  zh: a5b9eba2098566f5
+/agent-note-the-desktop-installer-ships-the-office-build/consequences:
+  en: a76c1fdf839d13a0
+  zh: f7e0c47efd67aaad

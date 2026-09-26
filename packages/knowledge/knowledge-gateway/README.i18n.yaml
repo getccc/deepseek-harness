@@ -1,6 +1,58 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/knowledge/knowledge-gateway/README.md
-README.md: 966b962e8be17545c8cbc84cc5e041b8f575eb92
-README.zh.md: 2cc61bc561407babef0c048711e389930b1831a1
+/:
+  en: f754008de4c3aff3
+  zh: 2e729261aaaa9ec9
+/deepseek-ai-dsh-knowledge-gateway:
+  en: 6a2479f6e91e3720
+  zh: 9ba046cc17211c3d
+/deepseek-ai-dsh-knowledge-gateway/summary:
+  en: 293979a1e2053ee3
+  zh: 5343b35fa2a547a2
+/deepseek-ai-dsh-knowledge-gateway/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 9f0336825ccdaacd
+/deepseek-ai-dsh-knowledge-gateway/use-this-package:
+  en: 217bec148fcb3901
+  zh: 5d10b3783a9632bc
+/deepseek-ai-dsh-knowledge-gateway/use-this-package/when-to-choose-it:
+  en: 83acd748a956011a
+  zh: 74074e23140b240c
+/deepseek-ai-dsh-knowledge-gateway/use-this-package/minimal-configuration:
+  en: fbe2edb73b16263b
+  zh: 54afd716002a8d70
+/deepseek-ai-dsh-knowledge-gateway/use-this-package/the-two-audiences:
+  en: 4d108578c21e3a13
+  zh: f399a808e5578ec0
+/deepseek-ai-dsh-knowledge-gateway/use-this-package/one-resource-type-two-meanings:
+  en: a03e19af4a12e11d
+  zh: 6ab7e749efd3ad9f
+/deepseek-ai-dsh-knowledge-gateway/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-knowledge-gateway/understand-the-implementation/design-philosophy:
+  en: c521b826690e7c1a
+  zh: 9ae73eea4b4e2d25
+/deepseek-ai-dsh-knowledge-gateway/understand-the-implementation/source-map:
+  en: 9a7fc8dd9c930420
+  zh: 7c68ff332b69c2bc
+/deepseek-ai-dsh-knowledge-gateway/understand-the-implementation/data-model:
+  en: 8e9df58dfe924e30
+  zh: e6f06eada181636c
+/deepseek-ai-dsh-knowledge-gateway/further-exploration:
+  en: a44d14861e9e37b6
+  zh: eaadb1704e8ce6b6
+/deepseek-ai-dsh-knowledge-gateway/model-experience:
+  en: 24bfeea5d24b8b84
+  zh: 182c098683c52689
+/deepseek-ai-dsh-knowledge-gateway/model-experience/kv-cache-effect:
+  en: 14c1112fcaa45b72
+  zh: de0b9ebe76d338f6
+/deepseek-ai-dsh-knowledge-gateway/known-limitations-and-deferred-work:
+  en: c09098f9b6206e9d
+  zh: f38151811b8f4113
+/deepseek-ai-dsh-knowledge-gateway/known-limitations-and-deferred-work/dev-note:
+  en: ecae26bde86c102b
+  zh: 6500dd0586a1e6a8

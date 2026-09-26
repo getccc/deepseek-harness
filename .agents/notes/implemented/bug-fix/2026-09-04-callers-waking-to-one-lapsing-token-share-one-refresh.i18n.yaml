@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-04-callers-waking-to-one-lapsing-token-share-one-refresh.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-04-callers-waking-to-one-lapsing-token-share-one-refresh.md
-2026-09-04-callers-waking-to-one-lapsing-token-share-one-refresh.md: 6d0cb345d7a361ba38d3db7e66cbf5fee355bc9c
-2026-09-04-callers-waking-to-one-lapsing-token-share-one-refresh.zh.md: f07f1951ed3dc9ea97126e868c427a928cb342fa
+/agent-note-callers-waking-to-one-lapsing-token-share-one-refresh:
+  en: 3defcc4b3bb0b4d6
+  zh: 98a42f56fb5c9431
+/agent-note-callers-waking-to-one-lapsing-token-share-one-refresh/problem:
+  en: d576b2caecbf4923
+  zh: f5c55fe5d3291ad9
+/agent-note-callers-waking-to-one-lapsing-token-share-one-refresh/decision:
+  en: ac5fe96ec330f65b
+  zh: 190d126dab26877b
+/agent-note-callers-waking-to-one-lapsing-token-share-one-refresh/alternatives-considered:
+  en: 9700bc528c4b20ce
+  zh: 7dfb7a17ac10b459
+/agent-note-callers-waking-to-one-lapsing-token-share-one-refresh/consequences:
+  en: a04c61f6e3c7e592
+  zh: da942dad87dca205

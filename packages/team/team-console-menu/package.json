@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team-console-menu",
   "description": "Console-menu Service Definition: the administration console's navigation tree, the permission each entry names, and the shipped catalog an organization starts from",
-  "version": "0.1.6-alpha.2",
+  "version": "0.1.7-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -26,14 +26,14 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@deepseek-ai/dsh-access-control": "workspace:^",
-    "@deepseek-ai/dsh-account-store": "workspace:^",
-    "@deepseek-ai/dsh-brand": "workspace:^"
+    "@deepseek-ai/dsh-access-control": "workspace:*",
+    "@deepseek-ai/dsh-account-store": "workspace:*",
+    "@deepseek-ai/dsh-brand": "workspace:*"
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~"
   }
 }

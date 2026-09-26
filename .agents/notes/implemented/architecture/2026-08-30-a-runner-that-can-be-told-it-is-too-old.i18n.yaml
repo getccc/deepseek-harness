@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-30-a-runner-that-can-be-told-it-is-too-old.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-30-a-runner-that-can-be-told-it-is-too-old.md
-2026-08-30-a-runner-that-can-be-told-it-is-too-old.md: 8d95dbc324b42080b34ed6dfa4dfd9b7dcbc582c
-2026-08-30-a-runner-that-can-be-told-it-is-too-old.zh.md: 0ab02f8fb97bf268735d639ab95ee7744dc649e8
+/agent-note-a-runner-that-can-be-told-it-is-too-old:
+  en: 624974f0c0538cbb
+  zh: f4022d8fee3fb040
+/agent-note-a-runner-that-can-be-told-it-is-too-old/problem:
+  en: 2e4cbb9afda2034a
+  zh: ba7430b7150fa24b
+/agent-note-a-runner-that-can-be-told-it-is-too-old/decision:
+  en: f104ffc345269fc5
+  zh: a3f2fd9613030d73
+/agent-note-a-runner-that-can-be-told-it-is-too-old/alternatives-considered:
+  en: ade4de9100e9d73b
+  zh: 1a6658e25dd6f595
+/agent-note-a-runner-that-can-be-told-it-is-too-old/consequences:
+  en: 3d4ed17e876508c4
+  zh: 51fad82c0b9e626c

@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-29-lock-the-local-application.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-29-lock-the-local-application.md
-2026-08-29-lock-the-local-application.md: 3d0ed56f7d85cdc36de7b18f8cc146316e1077fb
-2026-08-29-lock-the-local-application.zh.md: f22c567cd3257310ac12b140a1ccbd00ea62025a
+/agent-note-locking-the-local-application-is-a-navigation-not-an-rpc:
+  en: 31250ea3180d7bd8
+  zh: 5bd0981045c723af
+/agent-note-locking-the-local-application-is-a-navigation-not-an-rpc/problem:
+  en: 221020e85635f027
+  zh: 37a9decd9e5dd14d
+/agent-note-locking-the-local-application-is-a-navigation-not-an-rpc/decision:
+  en: 2dfd2cdacd7b6dee
+  zh: a7859014fbff0c26
+/agent-note-locking-the-local-application-is-a-navigation-not-an-rpc/alternatives-considered:
+  en: efb81ee2a4560493
+  zh: 4e98aabbe1e42ac8
+/agent-note-locking-the-local-application-is-a-navigation-not-an-rpc/consequences:
+  en: 6989cbada73782cb
+  zh: 3ca0a79cecbc03eb

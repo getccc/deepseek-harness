@@ -1,6 +1,28 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for account.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/subsystems/account.md
-account.md: 8eb409addc492d66a7ecdf2aad722b56ad842b0d
-account.zh.md: 72d91aefc329c94b6ecd0720b5cf2e5eff39d39e
+/accounts:
+  en: 26f42ecddbd0aaaa
+  zh: 5232f9f4f8a65e5e
+/accounts/what-the-store-owns-and-what-it-does-not:
+  en: 02723f91674902c7
+  zh: b44c2df645368a01
+/accounts/an-issued-account-cannot-yet-sign-in:
+  en: 6aea919170f43cd8
+  zh: 58378cd575ebdef5
+/accounts/sign-in-state:
+  en: 7b293ace44cbe535
+  zh: 22339b17930d8e28
+/accounts/browser-sessions:
+  en: 3e5dbf3fafe2f8ee
+  zh: 42735d3caf4d9f2a
+/accounts/ordering-and-identity:
+  en: 174a4c836d6301a8
+  zh: 4022cbab249ce82e
+/accounts/authentication-ctx-accountauth:
+  en: 024f9e1cc4abbc54
+  zh: b965828a05475009
+/accounts/consumers:
+  en: 57d2123ea49fdd96
+  zh: ec9a74fe8aa13d14

@@ -4,8 +4,8 @@ import { useState } from 'react'
 import type { ReactNode } from 'react'
 import clsx from 'clsx'
 import {
-  IconChartOutline16, IconChevronDownOutline14, IconDocumentOutline16, IconListPenOutline16,
-  IconSlidesOutline16, IconSpreadsheetOutline16, Menu,
+  IconChartOutlineRegular, IconChevronDownOutlineRegular, IconDocumentOutlineRegular, IconListPenOutlineRegular,
+  IconSlidesOutlineRegular, IconSpreadsheetOutlineRegular, Menu,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { MenuEntry } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
@@ -26,10 +26,10 @@ const OFFICE_KINDS = ['word', 'excel', 'ppt', 'chart'] as const satisfies readon
 
 /** The mark each row carries, so a kind is recognizable before its label is read. */
 const KIND_ICONS: Record<Exclude<OfficeKind, 'none'>, ReactNode> = {
-  word: <IconDocumentOutline16 size={16} />,
-  excel: <IconSpreadsheetOutline16 size={16} />,
-  ppt: <IconSlidesOutline16 size={16} />,
-  chart: <IconChartOutline16 size={16} />,
+  word: <IconDocumentOutlineRegular size={16} />,
+  excel: <IconSpreadsheetOutlineRegular size={16} />,
+  ppt: <IconSlidesOutlineRegular size={16} />,
+  chart: <IconChartOutlineRegular size={16} />,
 }
 
 /** What this control needs from the plugin that registered it. */
@@ -97,10 +97,10 @@ export function OfficeSelect({ sessionId, useSessions, useProjection, apply, t }
           title={t('chip.title')}
           onClick={() => { setOpen(!open) }}
         >
-          <span className={css.icon} aria-hidden><IconListPenOutline16 size={14} /></span>
+          <span className={css.icon} aria-hidden><IconListPenOutlineRegular size={14} /></span>
           <span className={css.label}>{label}</span>
           <span className={clsx(css.chevron, open && css.chevronOpen)} aria-hidden>
-            <IconChevronDownOutline14 />
+            <IconChevronDownOutlineRegular />
           </span>
         </button>
       }

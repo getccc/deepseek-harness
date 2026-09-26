@@ -7,7 +7,7 @@
 import { Context } from '@deepseek-ai/cordis'
 import { describe, expect, it } from 'vitest'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
-import { IconDataOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconDataOutlineRegular } from '@deepseek-ai/dsh-client-ui-primitives'
 import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { KnowledgeRef } from '@deepseek-ai/dsh-knowledge'
@@ -139,7 +139,7 @@ describe('what the plugin installs', () => {
   it('mounts the knowledge namespace, the picker, and the chip, and gives all three back', async () => {
     const b = await bench()
     expect(b.mounts()).toBe(1)
-    expect(b.contribution()).toMatchObject({ name: 'knowledge', icon: IconDataOutline16 })
+    expect(b.contribution()).toMatchObject({ name: 'knowledge', icon: IconDataOutlineRegular })
     expect(b.contribution()?.label?.()).toBe('知识库')
     expect(b.contribution()?.description?.()).toBe('选择本次对话可检索的知识库')
     const seat = b.slots.entries('conversation.input.left')[0]!

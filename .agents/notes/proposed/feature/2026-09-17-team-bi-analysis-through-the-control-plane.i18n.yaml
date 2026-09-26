@@ -1,6 +1,97 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-17-team-bi-analysis-through-the-control-plane.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/proposed/feature/2026-09-17-team-bi-analysis-through-the-control-plane.md
-2026-09-17-team-bi-analysis-through-the-control-plane.md: c5d3344d486fcd43af5f04ddfec15f3e8d947394
-2026-09-17-team-bi-analysis-through-the-control-plane.zh.md: a9879c5220a1a58d054dec5a7ab4b3ab4e007400
+/agent-note-team-bi-analysis-through-the-control-plane:
+  en: e7a8ee1e433d1e09
+  zh: 0ced3feeba87571f
+/agent-note-team-bi-analysis-through-the-control-plane/problem:
+  en: 3c7c3d5af262e7f9
+  zh: 3261d8dfff17f721
+/agent-note-team-bi-analysis-through-the-control-plane/proposal:
+  en: 2e98bc003185d993
+  zh: 24161f663a493e3d
+/agent-note-team-bi-analysis-through-the-control-plane/proposal/product-outcome:
+  en: b8bcf43e84d466ef
+  zh: e35e9d00baf01158
+/agent-note-team-bi-analysis-through-the-control-plane/proposal/non-goals-for-the-first-delivery:
+  en: 0a7f178e6e861efb
+  zh: 16837f8efa37ba29
+/agent-note-team-bi-analysis-through-the-control-plane/security-invariants:
+  en: 90277b94e3df8c9a
+  zh: 2b7c826dd8d70f15
+/agent-note-team-bi-analysis-through-the-control-plane/runtime-architecture:
+  en: 29eaac43a5295afe
+  zh: 017d1daeb51967bf
+/agent-note-team-bi-analysis-through-the-control-plane/runtime-architecture/capability-and-package-topology:
+  en: dd99b053e6364b20
+  zh: c5417eb83785e01d
+/agent-note-team-bi-analysis-through-the-control-plane/runtime-architecture/stable-references:
+  en: c8322372be76e196
+  zh: d8abbd5ae09582a9
+/agent-note-team-bi-analysis-through-the-control-plane/governed-catalog:
+  en: 1b0a84c1ed32576a
+  zh: ba8e94c1d8852482
+/agent-note-team-bi-analysis-through-the-control-plane/governed-catalog/sqlite-records:
+  en: ab9a8f8add25c297
+  zh: c045b89089f373db
+/agent-note-team-bi-analysis-through-the-control-plane/governed-catalog/synchronization:
+  en: 38606eeed77532b4
+  zh: 27334c6d2296c76d
+/agent-note-team-bi-analysis-through-the-control-plane/permissions-and-role-composition:
+  en: 40a6f3ece5c65804
+  zh: e143a2db6476bc33
+/agent-note-team-bi-analysis-through-the-control-plane/control-plane-api:
+  en: 0daec46978c188f9
+  zh: 0daec46978c188f9
+/agent-note-team-bi-analysis-through-the-control-plane/control-plane-api/administration-api:
+  en: 3c0ee73977f00c09
+  zh: ec8023961c07603b
+/agent-note-team-bi-analysis-through-the-control-plane/control-plane-api/runner-api:
+  en: 87613c1aeb7638c6
+  zh: d4288f92f9e1d22f
+/agent-note-team-bi-analysis-through-the-control-plane/the-webi-provider:
+  en: ecfc4d24c5dff28c
+  zh: 9fb8fe990d1cb863
+/agent-note-team-bi-analysis-through-the-control-plane/runner-tools-and-the-composer-control:
+  en: 75f7b1bbda6327db
+  zh: 55b198489115c09b
+/agent-note-team-bi-analysis-through-the-control-plane/runner-tools-and-the-composer-control/session-scope-state:
+  en: 8c8c9b634f4973be
+  zh: 7567fc743cd2ab02
+/agent-note-team-bi-analysis-through-the-control-plane/runner-tools-and-the-composer-control/what-the-model-sees:
+  en: 1d2d19ee5d519fde
+  zh: 8a388b071f3f6918
+/agent-note-team-bi-analysis-through-the-control-plane/runner-tools-and-the-composer-control/the-model-facing-tools:
+  en: 30a8b32b2da485b5
+  zh: 298cdee97d95a430
+/agent-note-team-bi-analysis-through-the-control-plane/runner-tools-and-the-composer-control/the-composer-control:
+  en: 83e45f59ef30f0fd
+  zh: 4969293bc2d8859a
+/agent-note-team-bi-analysis-through-the-control-plane/runner-tools-and-the-composer-control/visualization:
+  en: 2b4ec3b5f34fa206
+  zh: 2b396ea206a41eab
+/agent-note-team-bi-analysis-through-the-control-plane/runner-tools-and-the-composer-control/cost:
+  en: 30711ac5c7da479e
+  zh: f90018f406dbe13f
+/agent-note-team-bi-analysis-through-the-control-plane/audit-and-operational-visibility:
+  en: e616ca42ab9324ba
+  zh: f417961aa06fa1c7
+/agent-note-team-bi-analysis-through-the-control-plane/failure-semantics:
+  en: 8bc58b447bdb0708
+  zh: 7f205303fa48d89c
+/agent-note-team-bi-analysis-through-the-control-plane/administration-ui:
+  en: 6394ccca2b7a0e5a
+  zh: 1e3d678239e03940
+/agent-note-team-bi-analysis-through-the-control-plane/delivery-plan:
+  en: 9a28f3d1e5af4e20
+  zh: b4572d9878c2ab9e
+/agent-note-team-bi-analysis-through-the-control-plane/alternatives-considered:
+  en: c57015046b974d23
+  zh: 9335084bd1df8043
+/agent-note-team-bi-analysis-through-the-control-plane/acceptance-criteria:
+  en: 29c63f6d4a72e999
+  zh: 8d90fa0e25dbb812
+/agent-note-team-bi-analysis-through-the-control-plane/risks:
+  en: 2ea5b37c0996a595
+  zh: 6678cf0a9b927b03

@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-30-team-runner-owns-member-sign-in.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-30-team-runner-owns-member-sign-in.md
-2026-08-30-team-runner-owns-member-sign-in.md: 107379d40c5168802011fcce884286a0f72240c2
-2026-08-30-team-runner-owns-member-sign-in.zh.md: 3bc7354da640ccaa077ff0002a89c22da4f232b5
+/agent-note-the-team-runner-owns-member-sign-in:
+  en: 5c1f9b23bf24604d
+  zh: 18cd7820ed8d9515
+/agent-note-the-team-runner-owns-member-sign-in/problem:
+  en: 5e319f556f68efb4
+  zh: d1e689b279b7e5eb
+/agent-note-the-team-runner-owns-member-sign-in/decision:
+  en: ffa569e7da6999a7
+  zh: 29f00203ccd27df5
+/agent-note-the-team-runner-owns-member-sign-in/alternatives-considered:
+  en: c4323b097b80d518
+  zh: 9754748834beb737
+/agent-note-the-team-runner-owns-member-sign-in/consequences:
+  en: f412f501f7277b67
+  zh: 7a9fc780376e5e49

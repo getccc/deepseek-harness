@@ -1,8 +1,11 @@
 import type { ChatNode } from '../contract/chat-nodes.ts'
 import type { ChatNodeStore } from '../contract/snapshot.ts'
 
-/** Rows that come before a Turn's assistant activity: the words it answers and the prompt it answers under. */
-const PRECEDING_KINDS: ReadonlySet<string> = new Set(['system-prompt', 'user', 'steering'])
+/**
+ * Rows that come before a Turn's assistant activity: the words it answers, the
+ * notice that woke it, and the prompt it answers under.
+ */
+const PRECEDING_KINDS: ReadonlySet<string> = new Set(['system-prompt', 'user', 'steering', 'turn-trigger'])
 
 /**
  * Key of the row that opens a Turn's assistant activity: the first row after
@@ -14,7 +17,7 @@ const PRECEDING_KINDS: ReadonlySet<string> = new Set(['system-prompt', 'user', '
  * @param keys - the Turn's ordered Chat Node keys.
  * @param nodes - the live Chat Node store.
  * @param controlShown - whether the Turn-process control is rendered for this
- * Turn: its process window is ready and it has rows to disclose.
+ * Turn: the loaded window holds the Turn's start or its end.
  * @returns the leading key, or undefined for a Turn with only the member's words so far.
  */
 export function turnActivityLead(
@@ -29,4 +32,18 @@ export function turnActivityLead(
     if (controlShown) return key
   }
   return undefined
+}
+
+/**
+ * Whether one seat of a leading Chat Node draws the Turn's identity header.
+ * An Assistant step with non-blank reasoning and a reply renders twice: a
+ * `reasoning` seat inside its process group, then a `response` seat after it.
+ * The header belongs to the first seat, so a Node never draws it twice.
+ * @param node - the leading Node.
+ * @param groupPart - the seat's part of that Node, when it is split.
+ * @returns whether this seat renders the header.
+ */
+export function leadsFromSeat(node: ChatNode | undefined, groupPart: string | undefined): boolean {
+  if (groupPart !== 'response' || node?.kind !== 'assistant-step') return true
+  return !node.data.blocks.some(block => block.kind === 'reasoning' && block.text.trim() !== '')
 }

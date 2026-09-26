@@ -1,6 +1,55 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/knowledge/knowledge-gateway-http/README.md
-README.md: 884bf43546816c2695db24cb9ceb8655bf7b3c63
-README.zh.md: c8e0906556e7c56fd2cca1912e946f9557bda734
+/:
+  en: b05972a919cdd452
+  zh: 8f47ecd7dda2e719
+/deepseek-ai-dsh-knowledge-gateway-http:
+  en: 52d9db7104ad0494
+  zh: 43a94588a05b5269
+/deepseek-ai-dsh-knowledge-gateway-http/summary:
+  en: d431b8df3bed5610
+  zh: 428fa55d6dd209a6
+/deepseek-ai-dsh-knowledge-gateway-http/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 9f0336825ccdaacd
+/deepseek-ai-dsh-knowledge-gateway-http/use-this-package:
+  en: 7f191774338b4b5b
+  zh: c382d9e60cd77ff8
+/deepseek-ai-dsh-knowledge-gateway-http/use-this-package/minimal-configuration:
+  en: 717346ed7617555f
+  zh: 0f37a68b00534c60
+/deepseek-ai-dsh-knowledge-gateway-http/use-this-package/the-routes:
+  en: 92dd67122532b796
+  zh: e03490b195171b99
+/deepseek-ai-dsh-knowledge-gateway-http/use-this-package/the-version-is-decided-first:
+  en: 3858d0f1a2cd8edd
+  zh: 027afee137a3a063
+/deepseek-ai-dsh-knowledge-gateway-http/use-this-package/refusals:
+  en: 5dd7be4c1793800d
+  zh: 06c6d09d317f3c66
+/deepseek-ai-dsh-knowledge-gateway-http/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-knowledge-gateway-http/understand-the-implementation/design-philosophy:
+  en: bcf7064eb43651ce
+  zh: e5960d6c21d579a5
+/deepseek-ai-dsh-knowledge-gateway-http/understand-the-implementation/source-map:
+  en: 4f06a16bcdfcc160
+  zh: 6d9b2ba9902cbd4f
+/deepseek-ai-dsh-knowledge-gateway-http/further-exploration:
+  en: 38f96bb430eefe5f
+  zh: c7db686479ed679d
+/deepseek-ai-dsh-knowledge-gateway-http/model-experience:
+  en: 16e3ad6cca12e1b6
+  zh: facbfa26e0c98e5d
+/deepseek-ai-dsh-knowledge-gateway-http/model-experience/kv-cache-effect:
+  en: bd74536a2bee9dc1
+  zh: 2ec3e8821063ccc6
+/deepseek-ai-dsh-knowledge-gateway-http/known-limitations-and-deferred-work:
+  en: 0046ba4e3119ec2a
+  zh: 80e276efb6941a79
+/deepseek-ai-dsh-knowledge-gateway-http/known-limitations-and-deferred-work/dev-note:
+  en: 0f2205df98b7a5d6
+  zh: e842392ade44a9c7

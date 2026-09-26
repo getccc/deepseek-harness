@@ -1,6 +1,64 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/bi/bi-webi/README.md
-README.md: 1696113f245f61909f5babdf534fe00101c1ff91
-README.zh.md: 42876830eaa1a90f49aa27ca2dd6d78e27622185
+/:
+  en: 0f99a903b5ebdd38
+  zh: 29551ad94d2e7d5e
+/deepseek-ai-dsh-bi-webi:
+  en: 9d3962efcc0ca231
+  zh: e8c259c051739bcb
+/deepseek-ai-dsh-bi-webi/summary:
+  en: c10728c18e7619d5
+  zh: daae0902b7e34380
+/deepseek-ai-dsh-bi-webi/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 9f0336825ccdaacd
+/deepseek-ai-dsh-bi-webi/use-this-package:
+  en: fb9f5977cc3f1916
+  zh: b4469e0af68c38f1
+/deepseek-ai-dsh-bi-webi/use-this-package/when-to-choose-it:
+  en: 9a8d887aa9abc289
+  zh: 1c1d90514be87419
+/deepseek-ai-dsh-bi-webi/use-this-package/minimal-configuration:
+  en: c97c46ae622e2c6a
+  zh: ca0f07a9ead67b48
+/deepseek-ai-dsh-bi-webi/use-this-package/use-an-administrator-s-token-made-for-this-deployment:
+  en: b1f7bbc249cd5051
+  zh: c28662fcb103f799
+/deepseek-ai-dsh-bi-webi/use-this-package/bounds-and-cost:
+  en: a710139ffa638fd4
+  zh: 5d4f9bf90b8889c7
+/deepseek-ai-dsh-bi-webi/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-bi-webi/understand-the-implementation/design-philosophy:
+  en: 7a0ee09a30a23c7f
+  zh: 20ec8c438b652fc7
+/deepseek-ai-dsh-bi-webi/understand-the-implementation/source-map:
+  en: beb2e0f24f8c3462
+  zh: 22b621a4e2f86d56
+/deepseek-ai-dsh-bi-webi/understand-the-implementation/the-routes:
+  en: 2cd2fae888873869
+  zh: 3892ddf324035f78
+/deepseek-ai-dsh-bi-webi/understand-the-implementation/failures:
+  en: 6c4f1a153f048f20
+  zh: f2fb52fc757f9b94
+/deepseek-ai-dsh-bi-webi/further-exploration:
+  en: a35e6b8c1bbc57ce
+  zh: fd15856bb9efd2b0
+/deepseek-ai-dsh-bi-webi/model-experience:
+  en: fdce4e870d96f558
+  zh: 56281ebfd310caff
+/deepseek-ai-dsh-bi-webi/model-experience/kv-cache-effect:
+  en: 646f110beccfad03
+  zh: e428075e590e306a
+/deepseek-ai-dsh-bi-webi/known-limitations-and-deferred-work:
+  en: c0adb5826618c668
+  zh: bea627a888bbfc69
+/deepseek-ai-dsh-bi-webi/known-limitations-and-deferred-work/dev-note:
+  en: 64ee46559b704be8
+  zh: 7cf9d7a59aae526a
+/deepseek-ai-dsh-bi-webi/known-limitations-and-deferred-work/dev-note/the-listing-spells-one-kind-watefall:
+  en: f36e312332541a73
+  zh: b121ce857e7bf148

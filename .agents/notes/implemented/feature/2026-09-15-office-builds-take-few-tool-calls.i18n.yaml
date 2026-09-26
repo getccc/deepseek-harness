@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-15-office-builds-take-few-tool-calls.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-15-office-builds-take-few-tool-calls.md
-2026-09-15-office-builds-take-few-tool-calls.md: 6125f30f40e3495e719593b9c4673af60594c363
-2026-09-15-office-builds-take-few-tool-calls.zh.md: 7d336cce6e090e5e3f5836c054d2872387f467c3
+/agent-note-office-builds-take-few-tool-calls:
+  en: ab3262bd35a91fc2
+  zh: 3bb9a4ce8df3938d
+/agent-note-office-builds-take-few-tool-calls/problem:
+  en: 520e1d371259c4a6
+  zh: e135d4d5e7b39e95
+/agent-note-office-builds-take-few-tool-calls/decision:
+  en: 459b631e6d1d3bda
+  zh: 4c7293e2387c9746
+/agent-note-office-builds-take-few-tool-calls/alternatives-considered:
+  en: dfc28a1bf331f280
+  zh: d1627ce4736b3b56
+/agent-note-office-builds-take-few-tool-calls/consequences:
+  en: f5480d76ac6da567
+  zh: 39c2350d277b8060

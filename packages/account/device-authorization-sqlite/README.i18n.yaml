@@ -1,6 +1,49 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/account/device-authorization-sqlite/README.md
-README.md: a1f69c005db61e7669ac0e0bbd7487611d22b3d0
-README.zh.md: 067a3b5f66f6f78b0e5c7ba8ba876ed18814fe0c
+/:
+  en: 2954fc2ebdcc9bab
+  zh: 954b69868860e106
+/deepseek-ai-dsh-device-authorization-sqlite:
+  en: d40eaab07c3215dc
+  zh: 0df54eeb61bf1bce
+/deepseek-ai-dsh-device-authorization-sqlite/summary:
+  en: a0e4e72f6bbc19a6
+  zh: eb8c21f04c27e29e
+/deepseek-ai-dsh-device-authorization-sqlite/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5452fccb37762c88
+/deepseek-ai-dsh-device-authorization-sqlite/use-this-package:
+  en: 8d8bfd2ad37603a6
+  zh: 685d649023a21e6e
+/deepseek-ai-dsh-device-authorization-sqlite/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-device-authorization-sqlite/understand-the-implementation/the-code-lives-on-its-transaction:
+  en: 950bf59fa4ff4774
+  zh: dd9379585b45fd8a
+/deepseek-ai-dsh-device-authorization-sqlite/understand-the-implementation/spent-rows-are-kept:
+  en: 35bc45968d2f25dd
+  zh: 04479b40935564e8
+/deepseek-ai-dsh-device-authorization-sqlite/understand-the-implementation/revocation-is-one-operation:
+  en: 0ec9db5a2f46a2d6
+  zh: a186733ec0087564
+/deepseek-ai-dsh-device-authorization-sqlite/understand-the-implementation/source-map:
+  en: 13367a3d8cae37b2
+  zh: 87d0b0f079307b9e
+/deepseek-ai-dsh-device-authorization-sqlite/further-exploration:
+  en: 10794177509709b2
+  zh: b4ac7135d64ac171
+/deepseek-ai-dsh-device-authorization-sqlite/model-experience:
+  en: f5f91ee621db40e5
+  zh: 9b1bf6e1ac2636cb
+/deepseek-ai-dsh-device-authorization-sqlite/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: e8121475b5ee0f9b
+/deepseek-ai-dsh-device-authorization-sqlite/known-limitations-and-deferred-work:
+  en: 56b678925372f2c3
+  zh: 88b80a7e64750303
+/deepseek-ai-dsh-device-authorization-sqlite/known-limitations-and-deferred-work/dev-note:
+  en: b1c551249d4543db
+  zh: ad1a5acff1124818

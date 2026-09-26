@@ -1,7 +1,7 @@
 /** The documents a conversation is narrowed to, drawn inside its composer the way attached files are. */
 
 import { useState } from 'react'
-import { fileExtension, FileTypeIcon, IconCloseFill14 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { fileExtension, FileTypeIcon, IconCloseFillRegular } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 // Type-only: pulls the ui-conversation SlotMap merge (the composer context seat).
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
@@ -64,7 +64,7 @@ export function KnowledgeDocumentCards({ useProjection, remove, t }: KnowledgeDo
                 void remove(document.ref).catch(() => { setFailed(true) })
               }}
             >
-              <IconCloseFill14 size={12} />
+              <IconCloseFillRegular size={12} />
             </button>
           </div>
         )

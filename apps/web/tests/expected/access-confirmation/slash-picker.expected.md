@@ -1,11 +1,9 @@
 - textbox "筛选选项":
   - /placeholder: 搜索…
 - listbox "/permission 匹配项":
-  - option "只读"
-  - option "工作区可写" [selected]:
-    - text: 工作区可写
-    - img
-  - option "完全访问"
+  - option "仅可查看"
+  - option "工作区内修改" [selected]
+  - option "完全权限"
   - option "Auto review EXP":
     - text: Auto review
     - superscript: EXP

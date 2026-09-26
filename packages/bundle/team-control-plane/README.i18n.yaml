@@ -1,6 +1,61 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/bundle/team-control-plane/README.md
-README.md: 9bc4d88e8b8cc860bf6486e15e080c930001f8d5
-README.zh.md: 27ac09bd78a1e154e4599483acd78f01da04d772
+/:
+  en: ca701b73d0d6320f
+  zh: 39b47b344e97130a
+/deepseek-ai-dsh-team-control-plane:
+  en: 051c0eb40e574591
+  zh: 8908b9bf2dd01aa3
+/deepseek-ai-dsh-team-control-plane/summary:
+  en: 1e128fcfd6adb37b
+  zh: abe0a49c637ccef6
+/deepseek-ai-dsh-team-control-plane/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 405b30feaf48c087
+/deepseek-ai-dsh-team-control-plane/use-this-package:
+  en: 6c421b371c806916
+  zh: e444b6fad2801e72
+/deepseek-ai-dsh-team-control-plane/use-this-package/production-binding:
+  en: 315e33b6daa5007b
+  zh: 2bd91132bc925fa3
+/deepseek-ai-dsh-team-control-plane/use-this-package/deploying-private-knowledge:
+  en: 95914eaba9590530
+  zh: 489e021419363d37
+/deepseek-ai-dsh-team-control-plane/use-this-package/deploying-bi-analysis:
+  en: d7e37bb7e1878ac5
+  zh: c2993a0d777ac10a
+/deepseek-ai-dsh-team-control-plane/use-this-package/storage-and-instance-count:
+  en: 909b8b21cbfded20
+  zh: 39203d89d0f09fac
+/deepseek-ai-dsh-team-control-plane/use-this-package/running-beside-a-runner:
+  en: 03dbf162b4ac8900
+  zh: 8333dc86474af0b4
+/deepseek-ai-dsh-team-control-plane/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-team-control-plane/understand-the-implementation/why-it-does-not-stack-the-base-bundle:
+  en: afbc393d0c7e02f9
+  zh: 34d64480962fe625
+/deepseek-ai-dsh-team-control-plane/understand-the-implementation/source-map:
+  en: 9cc6ec0af31de66e
+  zh: 42e6849f371b6999
+/deepseek-ai-dsh-team-control-plane/understand-the-implementation/invariant-ownership:
+  en: e42401fadd33403a
+  zh: d6b6f71e4ec68483
+/deepseek-ai-dsh-team-control-plane/further-exploration:
+  en: 84864512bbf5155f
+  zh: a8f1821cfb0ca9f5
+/deepseek-ai-dsh-team-control-plane/model-experience:
+  en: 53c02c5acb9d4e7c
+  zh: 09c8b7f82d9e4b3f
+/deepseek-ai-dsh-team-control-plane/model-experience/kv-cache-effect:
+  en: 70a67edf8f548e2f
+  zh: b4c13eec49aed269
+/deepseek-ai-dsh-team-control-plane/known-limitations-and-deferred-work:
+  en: c1d7096e8e0c5ea4
+  zh: df42de308aab0400
+/deepseek-ai-dsh-team-control-plane/known-limitations-and-deferred-work/dev-note:
+  en: f56f5b9da83b9be4
+  zh: decb5e0ce10d0c8d

@@ -5,7 +5,7 @@ import type { Context as ClientContext } from '@deepseek-ai/cordis'
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 // Type-only: pulls the settings.launcher slot declaration into this program.
-import type {} from '@deepseek-ai/dsh-client-ui-settings-general/client'
+import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 // Type-only: pulls the conversation.hero.headline slot declaration into this program.
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 // Type-only: pulls the conversation.chat.assistant-identity slot declaration into this program.

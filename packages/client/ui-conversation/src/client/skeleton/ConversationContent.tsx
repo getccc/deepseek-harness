@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
 import type { WorkspaceId } from '@deepseek-ai/dsh-workspace/types'
+import { workspaceDisplayTitle } from '@deepseek-ai/dsh-api-workspace-controller/default-workspace'
 import type { ConversationContentProps, ConversationViewsProps, InputZone } from '../contract/slots.ts'
 import { HeroShell, WorkspaceChip, workspaceLabel } from './EmptyHero.tsx'
 import css from './ConversationRoot.module.css'
@@ -98,13 +99,18 @@ export function ConversationContent(props: ConversationContentProps) {
   //      flash on refresh (empty cwd → placeholder);
   //   5. list ready but no owning workspace (deleted from the sidebar) →
   //      placeholder, never the deleted folder's name via cwd.
-  const chipTitle = pendingWorkspace?.title
+  // A title still automatic reads in the reader's language, matching the
+  // sidebar row the same Workspace has there.
+  const storedChipTitle = pendingWorkspace?.title
     ?? (sessionId === undefined
       ? undefined
       : sessionWorkspace?.title
         ?? (workspaces.phase === 'ready' || cwd === undefined || cwd === ''
           ? undefined
           : workspaceLabel(cwd)))
+  const chipTitle = storedChipTitle === undefined
+    ? undefined
+    : workspaceDisplayTitle(storedChipTitle, t('workspace.defaultName'))
 
   // A chat session's hero has no workspace row: no chip to pick a folder, no
   // picker, and no agent-preset chip (the host refuses a workspace preset for
@@ -187,7 +193,7 @@ export function ConversationContent(props: ConversationContentProps) {
   // on the fallback alone would leave a business-owned takeover at the content
   // end off-screen when the user is not pinned to the floor.
   const composerSeat = (
-    <div ref={seatResizeRef} className={css.composerSeat} data-composer-seat="">
+    <div ref={seatResizeRef} className={css.composerSeat} data-composer-seat="" data-conversation-region="composer">
       {composer}
     </div>
   )
@@ -197,6 +203,8 @@ export function ConversationContent(props: ConversationContentProps) {
       ref={setBody}
       className={clsx(css.body, props.variant === 'embedded' && css.embeddedBody)}
       data-conversation-content=""
+      data-conversation-session={sessionId}
+      data-conversation-region="chat"
       data-content-phase={phase}
     >
       <div className={css.scrollBody} data-conversation-scroll="">

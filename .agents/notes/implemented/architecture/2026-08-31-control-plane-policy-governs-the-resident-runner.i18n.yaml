@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-31-control-plane-policy-governs-the-resident-runner.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-31-control-plane-policy-governs-the-resident-runner.md
-2026-08-31-control-plane-policy-governs-the-resident-runner.md: e89049181cfa36095032164236f160f6f13aa431
-2026-08-31-control-plane-policy-governs-the-resident-runner.zh.md: 0fac2d73d3cfc93b3310b37943ac596b9097a2e3
+/agent-note-control-plane-policy-governs-the-resident-runner:
+  en: d7abbc1e15a8c026
+  zh: 29c7945297500304
+/agent-note-control-plane-policy-governs-the-resident-runner/problem:
+  en: 0701811c036f69d9
+  zh: cd1c7c1a9a611bd6
+/agent-note-control-plane-policy-governs-the-resident-runner/decision:
+  en: d878a77cd435c3f4
+  zh: 944f953468d5cc05
+/agent-note-control-plane-policy-governs-the-resident-runner/alternatives-considered:
+  en: 75a30bb3ef2702b8
+  zh: 7b7defa692c4bb39
+/agent-note-control-plane-policy-governs-the-resident-runner/consequences:
+  en: cd61d596d3b00694
+  zh: 977cd1ee5a92fad7

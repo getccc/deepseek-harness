@@ -1,6 +1,6 @@
 /** The composer control that will record a conversation and write its transcript. */
 
-import { IconWaveformOutline14 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconWaveformOutlineMedium } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 // Type-only: pulls the ui-conversation SlotMap merge (the composer left zone).
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
@@ -35,7 +35,7 @@ export function TranscribeChip({ sessionId, useSessions, t }: TranscribeChipProp
       aria-label={t('transcribe.label')}
       title={t('transcribe.pending')}
     >
-      <span className={css.icon} aria-hidden><IconWaveformOutline14 size={14} /></span>
+      <span className={css.icon} aria-hidden><IconWaveformOutlineMedium size={14} /></span>
       <span className={css.label}>{t('transcribe.label')}</span>
     </button>
   )

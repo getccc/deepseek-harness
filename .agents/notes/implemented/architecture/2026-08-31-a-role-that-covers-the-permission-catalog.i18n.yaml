@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-31-a-role-that-covers-the-permission-catalog.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-31-a-role-that-covers-the-permission-catalog.md
-2026-08-31-a-role-that-covers-the-permission-catalog.md: d64dc0a63306347d3e92ca183782a4931b464c29
-2026-08-31-a-role-that-covers-the-permission-catalog.zh.md: 68c04957cc1c86f22340a2405e2f37476235b3ef
+/agent-note-a-role-that-covers-the-permission-catalog-and-what-an-administrator-may-take-away:
+  en: a72cd28794b6e7a8
+  zh: ebaee16dff578f1d
+/agent-note-a-role-that-covers-the-permission-catalog-and-what-an-administrator-may-take-away/problem:
+  en: d481f9598ad6e8a0
+  zh: d788984ebd9e7af3
+/agent-note-a-role-that-covers-the-permission-catalog-and-what-an-administrator-may-take-away/decision:
+  en: 3eabdf5299a3ab0d
+  zh: 9e8f4009ea457c58
+/agent-note-a-role-that-covers-the-permission-catalog-and-what-an-administrator-may-take-away/alternatives-considered:
+  en: 066f0272702ab3d7
+  zh: fcfd80a7d5bd0c2d
+/agent-note-a-role-that-covers-the-permission-catalog-and-what-an-administrator-may-take-away/consequences:
+  en: 4f91c6fef7956c9a
+  zh: e7231e6554596dee

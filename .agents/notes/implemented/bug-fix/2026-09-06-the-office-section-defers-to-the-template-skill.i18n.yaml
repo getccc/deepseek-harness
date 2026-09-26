@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-06-the-office-section-defers-to-the-template-skill.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-06-the-office-section-defers-to-the-template-skill.md
-2026-09-06-the-office-section-defers-to-the-template-skill.md: 8925757629ef69f1483f9c70058cbd88327d89f5
-2026-09-06-the-office-section-defers-to-the-template-skill.zh.md: 8dfc7f3a8c2d1777efa3d3bcd20b94091615ce26
+/agent-note-the-office-section-defers-to-the-template-skill:
+  en: 1eee7cea608f871b
+  zh: 3d4acbec4defc2f5
+/agent-note-the-office-section-defers-to-the-template-skill/problem:
+  en: 701cf86a19f15965
+  zh: 8b4f7ff1cfd86f74
+/agent-note-the-office-section-defers-to-the-template-skill/decision:
+  en: 8d74e5ff2e15e00d
+  zh: 80b8bbe656c2ee08
+/agent-note-the-office-section-defers-to-the-template-skill/alternatives-considered:
+  en: 5068ca9c5820a044
+  zh: 97965a03a1044fa3
+/agent-note-the-office-section-defers-to-the-template-skill/consequences:
+  en: 9d21a2e177c02c66
+  zh: 163929b7b612cce3

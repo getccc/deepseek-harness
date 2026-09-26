@@ -56,7 +56,7 @@ Read these pages when the chip is not enough. They move from the control to the 
 
 - [dsh-api-web-access-controller](../../api/web-access-controller/README.md) — the Remote the chip sets the switch through.
 - [dsh-tool-web](../../web/tool-web/README.md) — owns the `sessionSwitch` config, the `/web` command, the `webAccess` projection, and the per-session tool restriction.
-- [dsh-agent-presets](../../preset/agent-presets/README.md) — the shipped `chat` preset that mounts the switch off by default.
+- [dsh-agent-preset-registry](../../preset/agent-preset-registry/README.md) — the registry the shipped `chat` preset (Web bundle `presets/chat.patch.yml`) is declared to; that preset mounts the switch off by default.
 - [ui-conversation](../ui-conversation/README.md) — declares the composer's `conversation.input.left` zone.
 - [Client package map](../README.md) — adjacent browser UI packages.
 

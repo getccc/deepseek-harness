@@ -1,6 +1,25 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/account/README.md
-README.md: e7bc2d912d009ce761af6250a07183ff5ba4c4b9
-README.zh.md: 66c05608574e7fab6f6c39e8ebab3f9596471acb
+/:
+  en: c605831d898c7a00
+  zh: 76e4f473b8f50478
+/account-who-a-member-is:
+  en: 6cc8cbe04b64acd5
+  zh: 8113e1b2e6faf2eb
+/account-who-a-member-is/summary:
+  en: 89512d86a08b4889
+  zh: bf590f907905c4ab
+/account-who-a-member-is/table-of-contents:
+  en: 1eb35b015a6c423f
+  zh: a8a3dceee2c9e943
+/account-who-a-member-is/packages:
+  en: ed791a66d2ba8b18
+  zh: 1104eabf64047b78
+/account-who-a-member-is/related-documentation:
+  en: 3ab9649213efb94d
+  zh: 7c8fe948c96098af
+/account-who-a-member-is/dev-note:
+  en: f2539f7c3b565fa2
+  zh: 734e15dec96684eb

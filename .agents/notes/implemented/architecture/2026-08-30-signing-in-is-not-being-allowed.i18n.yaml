@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-30-signing-in-is-not-being-allowed.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-30-signing-in-is-not-being-allowed.md
-2026-08-30-signing-in-is-not-being-allowed.md: 75bec87f771516029d9df2f5e663a9ff55cfb448
-2026-08-30-signing-in-is-not-being-allowed.zh.md: 21c57df7979752f296557b111d12534a87e16997
+/agent-note-signing-in-is-not-being-allowed-and-a-write-needs-all-three:
+  en: 7f381477bafe40ec
+  zh: 482fcdadafbd9d42
+/agent-note-signing-in-is-not-being-allowed-and-a-write-needs-all-three/problem:
+  en: eebc0ac442da7e29
+  zh: fa1112e0e7b70979
+/agent-note-signing-in-is-not-being-allowed-and-a-write-needs-all-three/decision:
+  en: b8d6b90ea423f340
+  zh: 34055dc32abd05a6
+/agent-note-signing-in-is-not-being-allowed-and-a-write-needs-all-three/alternatives-considered:
+  en: 095cc3cff3a49307
+  zh: 481d680b4987f898
+/agent-note-signing-in-is-not-being-allowed-and-a-write-needs-all-three/consequences:
+  en: 6f4274292ce6a976
+  zh: 92882dd0605354ba

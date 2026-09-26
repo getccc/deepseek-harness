@@ -1,6 +1,52 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/account/account-auth-password/README.md
-README.md: 60d65805507e86a30e4d360267813b7ec5da7a56
-README.zh.md: 1ff238f1712956cbced61deda6f8cdff25ebc73e
+/:
+  en: 389bb386855edc76
+  zh: 11c0f2313b9ed0be
+/deepseek-ai-dsh-account-auth-password:
+  en: ff1360ee8f8daaf9
+  zh: b402edec834a28ed
+/deepseek-ai-dsh-account-auth-password/summary:
+  en: c3f803f308802301
+  zh: bd1320f6adf89f16
+/deepseek-ai-dsh-account-auth-password/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 405b30feaf48c087
+/deepseek-ai-dsh-account-auth-password/use-this-package:
+  en: 74dd8bac7492f8d3
+  zh: bf9eb6ae4cb2a1f2
+/deepseek-ai-dsh-account-auth-password/use-this-package/raising-the-cost-later:
+  en: 68ab2ac7a5d4594c
+  zh: f961e5ff01faa396
+/deepseek-ai-dsh-account-auth-password/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-account-auth-password/understand-the-implementation/the-encoded-hash-is-self-describing:
+  en: 7dc5ac172e68915d
+  zh: 079752fa863ded32
+/deepseek-ai-dsh-account-auth-password/understand-the-implementation/why-an-absent-account-still-costs-work:
+  en: e2e3d2105158e07a
+  zh: e66d99e42a1f68c5
+/deepseek-ai-dsh-account-auth-password/understand-the-implementation/where-the-lockout-lives:
+  en: 10cdc929c19df2d0
+  zh: 10b15047abc942a2
+/deepseek-ai-dsh-account-auth-password/understand-the-implementation/source-map:
+  en: 2916730d5fd24c15
+  zh: e85420fd3cc4c6f4
+/deepseek-ai-dsh-account-auth-password/further-exploration:
+  en: ac206b76e4bce3f9
+  zh: 660d5f73252600a0
+/deepseek-ai-dsh-account-auth-password/model-experience:
+  en: 0e29d5a82b193a5e
+  zh: 94c46f6e167fd30c
+/deepseek-ai-dsh-account-auth-password/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: 9618abc820ac7a34
+/deepseek-ai-dsh-account-auth-password/known-limitations-and-deferred-work:
+  en: 016656924003ab51
+  zh: 390f05b04f1350f0
+/deepseek-ai-dsh-account-auth-password/known-limitations-and-deferred-work/dev-note:
+  en: 35ecd4a2eb6ee5e4
+  zh: 6a90047f91e19605

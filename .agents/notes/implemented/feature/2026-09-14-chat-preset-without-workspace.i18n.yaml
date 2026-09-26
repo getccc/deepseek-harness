@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-14-chat-preset-without-workspace.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-14-chat-preset-without-workspace.md
-2026-09-14-chat-preset-without-workspace.md: 6fa80ad9c3db0ad8d3e8fa6ffdb6758c63d42f7d
-2026-09-14-chat-preset-without-workspace.zh.md: 54ccf3a25976595ff2ae4451d933f23cc3868c08
+/agent-note-chat-preset-without-a-workspace:
+  en: eb51437e9e24e5f0
+  zh: e77354c28ea4e212
+/agent-note-chat-preset-without-a-workspace/problem:
+  en: b187ae48ba1e7837
+  zh: 6d53c6923074729d
+/agent-note-chat-preset-without-a-workspace/decision:
+  en: 552880b625374438
+  zh: 958dfdf001b699b3
+/agent-note-chat-preset-without-a-workspace/alternatives-considered:
+  en: c850416a83f78a07
+  zh: c81af531caf8834b
+/agent-note-chat-preset-without-a-workspace/consequences:
+  en: 10dc145c0951e018
+  zh: 0fcf21d2c2dd737f

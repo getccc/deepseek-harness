@@ -1,6 +1,46 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write apps/team-runner-desktop/README.md
-README.md: 3d77a56437eeb920a9afe659410c1c57dc66b0db
-README.zh.md: 37432e62ce41b3b956245e5892f158438eefb07d
+/:
+  en: 905be107068d416c
+  zh: 8a01800b1fd2d5c2
+/deepseek-ai-dsh-team-runner-desktop:
+  en: 328bf76b1ed90e0b
+  zh: cbd23c41afabeae9
+/deepseek-ai-dsh-team-runner-desktop/summary:
+  en: 90f82e5b4564f2dd
+  zh: fc19a0481eace9b8
+/deepseek-ai-dsh-team-runner-desktop/table-of-contents:
+  en: 57c41269e4ad3bf3
+  zh: 20105013763ba24c
+/deepseek-ai-dsh-team-runner-desktop/build-installers:
+  en: 936b6fa942ebf7f6
+  zh: a1264f16525e35e0
+/deepseek-ai-dsh-team-runner-desktop/deployment-inputs:
+  en: 1bc588a087d2bf4e
+  zh: 81992420a6ed9512
+/deepseek-ai-dsh-team-runner-desktop/deployment-inputs/pinning-a-private-certificate-authority:
+  en: 4c2a576a6372a090
+  zh: fd7b435b6b3d22c1
+/deepseek-ai-dsh-team-runner-desktop/deployment-inputs/carrying-out-of-tree-plugins:
+  en: b220446c132f5651
+  zh: ff2d024770dd8988
+/deepseek-ai-dsh-team-runner-desktop/deployment-inputs/signing-and-notarizing-the-macos-build:
+  en: f153fe39f5a03025
+  zh: 26256cf705785af6
+/deepseek-ai-dsh-team-runner-desktop/update-an-installed-build:
+  en: 81ac4d2e73e9709b
+  zh: a78ad93ab910a09c
+/deepseek-ai-dsh-team-runner-desktop/update-an-installed-build/publish-a-release:
+  en: 54fd661bab7e36e6
+  zh: 3a2ee4baf66b4fd2
+/deepseek-ai-dsh-team-runner-desktop/runtime-behavior:
+  en: 94e1a921b1e2e7c5
+  zh: 78d2d6d18c070b9d
+/deepseek-ai-dsh-team-runner-desktop/platform-support:
+  en: 646a7ffd6fae6639
+  zh: d6812ff286ead9c0
+/deepseek-ai-dsh-team-runner-desktop/known-limitations:
+  en: 90ee26a67315e24d
+  zh: 168410294f6cf89e

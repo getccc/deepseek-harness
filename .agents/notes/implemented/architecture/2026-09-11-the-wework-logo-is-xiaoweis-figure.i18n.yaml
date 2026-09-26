@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-11-the-wework-logo-is-xiaoweis-figure.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-11-the-wework-logo-is-xiaoweis-figure.md
-2026-09-11-the-wework-logo-is-xiaoweis-figure.md: 3183b205926a9cb70d81f3de061be2ae284d7732
-2026-09-11-the-wework-logo-is-xiaoweis-figure.zh.md: 3d478929d73498681b4712f53f112db46bb59efc
+/agent-note-the-wework-logo-is-s-figure:
+  en: 8ddebe51f91d4cf5
+  zh: a8c392c40e44792f
+/agent-note-the-wework-logo-is-s-figure/problem:
+  en: ddea8866ecdc4bc3
+  zh: f34abe57119c757f
+/agent-note-the-wework-logo-is-s-figure/decision:
+  en: a3bf6afab9b30dbb
+  zh: 347644f6431a635c
+/agent-note-the-wework-logo-is-s-figure/alternatives-considered:
+  en: 4cd11ab0755d20fd
+  zh: f3b1a1f56b2ae943
+/agent-note-the-wework-logo-is-s-figure/consequences:
+  en: 53583b7de6b2e332
+  zh: 9e606b3559417801

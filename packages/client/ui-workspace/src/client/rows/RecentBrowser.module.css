@@ -24,7 +24,7 @@
   padding-left: 4px;
   margin: 2px -4px 4px 0;
   box-sizing: border-box;
-  border-radius: 12px;
+  border-radius: var(--dsw-radius-md);
   overflow: hidden;
   color: var(--dsw-alias-label-tertiary);
 }
@@ -45,16 +45,27 @@
   width: 28px;
   height: 28px;
   border: none;
-  border-radius: 50%;
-  corner-shape: round;
+  border-radius: var(--dsw-radius-sm);
   padding: 0;
   background: transparent;
   cursor: pointer;
   color: var(--dsw-alias-label-secondary);
 }
 
+/* The section header clips an outer ring; the ring stays inside the control. */
+.iconButton:focus-visible {
+  outline: var(--dsw-focus-ring-width) solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: -2px;
+}
+
 .iconButton:hover {
   background: var(--dsw-alias-interactive-bg-hover);
+}
+
+/* Positioned for the row list's exit overlay (AnimatedRows). */
+.body {
+  flex: none;
+  position: relative;
 }
 
 .list {

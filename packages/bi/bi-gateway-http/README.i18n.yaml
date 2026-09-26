@@ -1,6 +1,55 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/bi/bi-gateway-http/README.md
-README.md: 7fb293c5358ed259435aaed26cb1f491bc83b8ad
-README.zh.md: ac7d6dbcbde270db9f85aa2b4db0b01de12e8563
+/:
+  en: cd9b850efdd10bd7
+  zh: a56bcbea34854bcd
+/deepseek-ai-dsh-bi-gateway-http:
+  en: 766a9e06eef41ce6
+  zh: 8eaa0766201a8f99
+/deepseek-ai-dsh-bi-gateway-http/summary:
+  en: c8a5091b7f4f506d
+  zh: e70740bfb3da36b7
+/deepseek-ai-dsh-bi-gateway-http/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 9f0336825ccdaacd
+/deepseek-ai-dsh-bi-gateway-http/use-this-package:
+  en: 7f191774338b4b5b
+  zh: ce066a5d216d97ca
+/deepseek-ai-dsh-bi-gateway-http/use-this-package/minimal-configuration:
+  en: 3cbc65b5c8a64181
+  zh: eee2653b7bfeee12
+/deepseek-ai-dsh-bi-gateway-http/use-this-package/the-routes:
+  en: bbf7ea5c51b162bb
+  zh: 38bcc1388c1b07ce
+/deepseek-ai-dsh-bi-gateway-http/use-this-package/the-version-is-decided-first:
+  en: 9964d88661765bef
+  zh: 90fd9bc7ffcf690e
+/deepseek-ai-dsh-bi-gateway-http/use-this-package/refusals:
+  en: c1bec3568f5a4f4b
+  zh: 94c9115d976fd002
+/deepseek-ai-dsh-bi-gateway-http/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-bi-gateway-http/understand-the-implementation/design-philosophy:
+  en: 1989066e02be89c0
+  zh: 879d5888e1cace47
+/deepseek-ai-dsh-bi-gateway-http/understand-the-implementation/source-map:
+  en: 4f06a16bcdfcc160
+  zh: dbda94275c841559
+/deepseek-ai-dsh-bi-gateway-http/further-exploration:
+  en: 7e173734c28da4b3
+  zh: 75f0ec5319879d62
+/deepseek-ai-dsh-bi-gateway-http/model-experience:
+  en: 16e3ad6cca12e1b6
+  zh: a9ff8e6dbef54764
+/deepseek-ai-dsh-bi-gateway-http/model-experience/kv-cache-effect:
+  en: 97165e5476cc5300
+  zh: c61c860fd7d7ffc8
+/deepseek-ai-dsh-bi-gateway-http/known-limitations-and-deferred-work:
+  en: d38da672ebc56d2d
+  zh: a7946e664df28583
+/deepseek-ai-dsh-bi-gateway-http/known-limitations-and-deferred-work/dev-note:
+  en: 0f2205df98b7a5d6
+  zh: 0597214b0942113a

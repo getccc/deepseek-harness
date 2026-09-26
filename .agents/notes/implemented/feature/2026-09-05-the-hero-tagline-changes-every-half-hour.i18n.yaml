@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-05-the-hero-tagline-changes-every-half-hour.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-05-the-hero-tagline-changes-every-half-hour.md
-2026-09-05-the-hero-tagline-changes-every-half-hour.md: 2cbde20cf96a4d08f27ccc0f15d596954aa10ef7
-2026-09-05-the-hero-tagline-changes-every-half-hour.zh.md: 783696421e3bbbbc1c1840f07108ad01c844b43b
+/agent-note-the-hero-tagline-changes-every-half-hour:
+  en: 12a45b29e352cf8c
+  zh: 1f7ba42cc4186962
+/agent-note-the-hero-tagline-changes-every-half-hour/problem:
+  en: c39fb6dc86530fdc
+  zh: d554df64475fa5c4
+/agent-note-the-hero-tagline-changes-every-half-hour/decision:
+  en: 6074b239fb1b5d3d
+  zh: 2b64ef411d26ce61
+/agent-note-the-hero-tagline-changes-every-half-hour/alternatives-considered:
+  en: 43198448fffaef74
+  zh: a9556f5b8712a268
+/agent-note-the-hero-tagline-changes-every-half-hour/consequences:
+  en: c8c740ce74a5de2c
+  zh: 36005478e296b324

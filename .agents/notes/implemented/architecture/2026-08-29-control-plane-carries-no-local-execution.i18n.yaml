@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-29-control-plane-carries-no-local-execution.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-29-control-plane-carries-no-local-execution.md
-2026-08-29-control-plane-carries-no-local-execution.md: cbf874fdbc74bab552f477c1934f685ce3e0b628
-2026-08-29-control-plane-carries-no-local-execution.zh.md: 61c9658a0a0516ebf3d474c896edd81ef3be378a
+/agent-note-the-team-control-plane-is-a-standalone-tree-so-it-cannot-execute-code:
+  en: bfc54e33c144d5a2
+  zh: cd82a50996b862b5
+/agent-note-the-team-control-plane-is-a-standalone-tree-so-it-cannot-execute-code/problem:
+  en: 95d28af99917cec2
+  zh: e1e2ecc1ccc2e0ba
+/agent-note-the-team-control-plane-is-a-standalone-tree-so-it-cannot-execute-code/decision:
+  en: 6e904c484073d884
+  zh: 559e0dcc77b4a9f4
+/agent-note-the-team-control-plane-is-a-standalone-tree-so-it-cannot-execute-code/alternatives-considered:
+  en: 0a19f1cabbcab968
+  zh: 88c9fd20f9b5279f
+/agent-note-the-team-control-plane-is-a-standalone-tree-so-it-cannot-execute-code/consequences:
+  en: 1ff34f94c5374fad
+  zh: b777e839affd3ac4

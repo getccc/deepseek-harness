@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team-update-source",
   "description": "The Runner's loopback release route: the desktop shell asks it, and the Runner asks the Control Plane with the device credential the shell does not hold",
-  "version": "0.1.6-alpha.1",
+  "version": "0.1.7-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -26,15 +26,15 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@deepseek-ai/dsh-host-webserver": "workspace:^",
-    "@deepseek-ai/dsh-team-account-client": "workspace:^",
-    "@deepseek-ai/dsh-team-release-http": "workspace:^",
-    "@deepseek-ai/schemastery": "workspace:^"
+    "@deepseek-ai/dsh-host-webserver": "workspace:*",
+    "@deepseek-ai/dsh-team-account-client": "workspace:*",
+    "@deepseek-ai/dsh-team-release-http": "workspace:*",
+    "@deepseek-ai/schemastery": "workspace:~"
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~"
   }
 }

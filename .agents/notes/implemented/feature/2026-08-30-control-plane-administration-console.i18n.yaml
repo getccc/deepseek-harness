@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-30-control-plane-administration-console.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-30-control-plane-administration-console.md
-2026-08-30-control-plane-administration-console.md: d8104618441dedc82ca9510f0fd2842cdaa10746
-2026-08-30-control-plane-administration-console.zh.md: e39accdf4c7fc8628346c84c70be881c306f3794
+/agent-note-the-control-plane-administers-what-its-gateways-enforce:
+  en: 47562fc213ed93d3
+  zh: 975b24292bd9d8c5
+/agent-note-the-control-plane-administers-what-its-gateways-enforce/problem:
+  en: 08c88375afc58e2f
+  zh: d1d77e571ec56906
+/agent-note-the-control-plane-administers-what-its-gateways-enforce/decision:
+  en: 404eb2176543c38b
+  zh: 6748bcd52a13b8b3
+/agent-note-the-control-plane-administers-what-its-gateways-enforce/alternatives-considered:
+  en: aeeeb125c458eef0
+  zh: fd73ae7d1efb1176
+/agent-note-the-control-plane-administers-what-its-gateways-enforce/consequences:
+  en: bcc846acc08f21b4
+  zh: d0988bebcc994a90

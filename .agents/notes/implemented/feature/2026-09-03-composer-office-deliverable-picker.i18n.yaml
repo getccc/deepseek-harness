@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-03-composer-office-deliverable-picker.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-03-composer-office-deliverable-picker.md
-2026-09-03-composer-office-deliverable-picker.md: 72d7ae054edcaf6363f41bd996487d0c9955ab05
-2026-09-03-composer-office-deliverable-picker.zh.md: 857257759bddb3f1ecc35381ad077464297cefa7
+/agent-note-a-composer-picker-chooses-the-office-deliverable:
+  en: 3f9f4f28b969acab
+  zh: 352f8ba3c8b3bccf
+/agent-note-a-composer-picker-chooses-the-office-deliverable/problem:
+  en: 028b1f91346a9374
+  zh: f3dea776eff65c93
+/agent-note-a-composer-picker-chooses-the-office-deliverable/decision:
+  en: 6c45aa0ec9579a6b
+  zh: 74f8a999d0b57027
+/agent-note-a-composer-picker-chooses-the-office-deliverable/alternatives-considered:
+  en: 3a4bd2235e2a492d
+  zh: 4508b01358d1d719
+/agent-note-a-composer-picker-chooses-the-office-deliverable/consequences:
+  en: 60987e4f218175d6
+  zh: dc332663529ffd20

@@ -25,7 +25,7 @@ Use this package inside an agent preset to state which global tools that preset'
 <a id="use-this-package"></a>
 ## Use this package
 
-Add one row to a preset's `agent.cordis.yml`. Tools the preset's own rows register are never affected; only the tools every scope inherits from the host composition are masked.
+Add one row to a preset's `plugins` list (a `@deepseek-ai/dsh-agent-preset` row in a bundle patch). Tools the preset's own rows register are never affected; only the tools every scope inherits from the host composition are masked.
 
 ### When to choose it
 
@@ -79,7 +79,7 @@ The scope the mask attaches to is the scope of the context the row was plugged i
 ## Further Exploration
 
 - [Tools subsystem reference](../../../docs/subsystems/tools.md) — scoped layers, `restrict()`, and why a scope's own registrations stay visible.
-- [Agent presets](../../preset/agent-presets/README.md) — the composition files this row is written into, and the shipped `chat` preset that uses it.
+- [Agent presets](../../preset/agent-preset-registry/README.md) — the preset definitions this row is written into, and the shipped `chat` preset that uses it.
 - [Generated configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-tool-restriction) — every accepted config field and its source declaration.
 - [guard group map](../README.md) — the sibling guard packages.
 

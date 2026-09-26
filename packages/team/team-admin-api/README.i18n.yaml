@@ -1,6 +1,55 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/team/team-admin-api/README.md
-README.md: ee6b642583b68e274349a4bf9f46164b73829cf9
-README.zh.md: 3bb8318608cc8a96d5f8b6ad7c6cb5e86c2b6f29
+/:
+  en: 5429108583f52ab9
+  zh: 6fde9433117d0b13
+/deepseek-ai-dsh-team-admin-api:
+  en: 6fef4da1e0cfa402
+  zh: bcb3eab1cf4d09ba
+/deepseek-ai-dsh-team-admin-api/summary:
+  en: daa9cf1cda498288
+  zh: 219e892bf3908a07
+/deepseek-ai-dsh-team-admin-api/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5452fccb37762c88
+/deepseek-ai-dsh-team-admin-api/use-this-package:
+  en: 34b8d284a8a1cefd
+  zh: 1a70759bcf1c93df
+/deepseek-ai-dsh-team-admin-api/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-team-admin-api/understand-the-implementation/a-write-needs-all-three:
+  en: 1e9f2ab901db0de6
+  zh: 8b994569dcdd2f4e
+/deepseek-ai-dsh-team-admin-api/understand-the-implementation/permissions-hides-controls-it-does-not-enforce-anything:
+  en: 1f558041e44e05d0
+  zh: 475317245ca3825c
+/deepseek-ai-dsh-team-admin-api/understand-the-implementation/a-refusal-names-a-word-not-a-sentence:
+  en: 52883dad040350a4
+  zh: 9af36595363aeca2
+/deepseek-ai-dsh-team-admin-api/understand-the-implementation/the-company-is-a-row-of-the-department-tree:
+  en: 1cdb33ffe4c3cea5
+  zh: 7faf6e5a5222fa47
+/deepseek-ai-dsh-team-admin-api/understand-the-implementation/the-wire-is-narrower-than-the-record:
+  en: b2d09d3b89beea53
+  zh: 31bf4c4d52e88565
+/deepseek-ai-dsh-team-admin-api/understand-the-implementation/source-map:
+  en: ccb0f7ef3f30d9c7
+  zh: 4f5858f04687e851
+/deepseek-ai-dsh-team-admin-api/further-exploration:
+  en: 98e6a51d1eb4e5c8
+  zh: 20bff98ae50e5dd4
+/deepseek-ai-dsh-team-admin-api/model-experience:
+  en: fda3391086657cd9
+  zh: da287112c1f3a7fe
+/deepseek-ai-dsh-team-admin-api/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: ac91908e96d0e23d
+/deepseek-ai-dsh-team-admin-api/known-limitations-and-deferred-work:
+  en: 0a1dc07953222860
+  zh: bffef53ef226676a
+/deepseek-ai-dsh-team-admin-api/known-limitations-and-deferred-work/dev-note:
+  en: eba4390ea2e22bc1
+  zh: 6ba9f97ded4ffcab

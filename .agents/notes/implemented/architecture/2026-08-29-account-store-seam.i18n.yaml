@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-29-account-store-seam.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-29-account-store-seam.md
-2026-08-29-account-store-seam.md: 6b710e7d54444ef3989381d88d3e031bb2bfa602
-2026-08-29-account-store-seam.zh.md: 4f7bab54b0af5c775d365c5dd23cedd64749b895
+/agent-note-the-account-store-holds-identity-and-nothing-else:
+  en: b3c60457cf21ffee
+  zh: aee5714456d85fe7
+/agent-note-the-account-store-holds-identity-and-nothing-else/problem:
+  en: 457766237ff966ff
+  zh: a1e926c0cd141afa
+/agent-note-the-account-store-holds-identity-and-nothing-else/decision:
+  en: b9de316080bb345b
+  zh: 04d03f7a16d3730a
+/agent-note-the-account-store-holds-identity-and-nothing-else/decision/two-contracts-worth-naming:
+  en: 329279311b4de94c
+  zh: 9e4927069afa54de
+/agent-note-the-account-store-holds-identity-and-nothing-else/alternatives-considered:
+  en: 1470703940f51d63
+  zh: 0a47928cc4fa0bcd
+/agent-note-the-account-store-holds-identity-and-nothing-else/consequences:
+  en: 452dc6c9b3074cc6
+  zh: b4d9385093d275b0

@@ -1,6 +1,49 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/account/device-authorization/README.md
-README.md: 0af7556b426f94cce76d3cadcb49e1c9c6267b07
-README.zh.md: 0bc8a9c0490bf449fb9b1a50ace5a009064d0793
+/:
+  en: b09f54d9f0d8600e
+  zh: 0e56d6e25330bfe5
+/deepseek-ai-dsh-device-authorization:
+  en: cf5c168b809079cc
+  zh: 9c3590e2f49de6cc
+/deepseek-ai-dsh-device-authorization/summary:
+  en: b5477d24b54b85fa
+  zh: 309ef9319539b88e
+/deepseek-ai-dsh-device-authorization/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5452fccb37762c88
+/deepseek-ai-dsh-device-authorization/use-this-package:
+  en: c7a620701e9db734
+  zh: 46659f2df7d95898
+/deepseek-ai-dsh-device-authorization/use-this-package/deriving-the-shared-values:
+  en: a0f337d54f2e040e
+  zh: a9709e802b8bcf99
+/deepseek-ai-dsh-device-authorization/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-device-authorization/understand-the-implementation/why-the-signed-bytes-name-the-transaction-and-the-code:
+  en: 6a5cda49fbdeee6c
+  zh: 8e28de418df48e1f
+/deepseek-ai-dsh-device-authorization/understand-the-implementation/why-the-pairing-code-excludes-vowels:
+  en: ea56d25c4ccbc9f5
+  zh: e4ee5fb5dc2b8ff6
+/deepseek-ai-dsh-device-authorization/understand-the-implementation/source-map:
+  en: 7ad673f96c2aed33
+  zh: a8434043eced7383
+/deepseek-ai-dsh-device-authorization/further-exploration:
+  en: cafb0060f964353c
+  zh: e589aff877da4ed6
+/deepseek-ai-dsh-device-authorization/model-experience:
+  en: f5f91ee621db40e5
+  zh: 9b1bf6e1ac2636cb
+/deepseek-ai-dsh-device-authorization/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: e8121475b5ee0f9b
+/deepseek-ai-dsh-device-authorization/known-limitations-and-deferred-work:
+  en: 251a652624c4d0ba
+  zh: 5393e155e4d7838e
+/deepseek-ai-dsh-device-authorization/known-limitations-and-deferred-work/dev-note:
+  en: 1e58d641575e0595
+  zh: 530785e4619fc08e

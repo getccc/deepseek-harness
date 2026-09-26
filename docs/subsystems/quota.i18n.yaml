@@ -1,6 +1,28 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for quota.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/subsystems/quota.md
-quota.md: 003f694d9ec758d03c692fc611ebee526860281b
-quota.zh.md: 4d147767e76cf495b2eb8c295bc5c15766b407e1
+/quota:
+  en: 92027599aea8bf4f
+  zh: 56e6b8c8fc7f9b87
+/quota/the-problem-it-is-shaped-around:
+  en: c8d102119fb355da
+  zh: d6a886d30947a7f1
+/quota/a-reservation-is-the-ceiling:
+  en: c68378f396467f1f
+  zh: 114faf8501790dc5
+/quota/a-settlement-happens-once:
+  en: 56975c51f19ebccf
+  zh: b7224752f3d8c178
+/quota/three-kinds-because-they-answer-different-questions:
+  en: 2f2d2971363bd720
+  zh: dfd3c1c1128d89f2
+/quota/an-expired-reservation-is-settled-not-released:
+  en: 877c734eb6aada1c
+  zh: c319df4e026234e1
+/quota/no-limit-means-no-ceiling:
+  en: da43baaf96118edf
+  zh: 56d040c03d318a2e
+/quota/what-the-ledger-does-not-decide:
+  en: 64725f6491cc33d1
+  zh: 61e64eae6f7ec838

@@ -1,6 +1,55 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/client/ui-knowledge-panels/README.md
-README.md: a60f1db1bdfeec8442b999a035cbe36038f4c702
-README.zh.md: 84fd1ea85d52f56cd787e552aa507d42097a88a4
+/:
+  en: 31571241dca224fb
+  zh: 8a1ee2ee42b82863
+/deepseek-ai-dsh-client-ui-knowledge-panels:
+  en: 09b9c5c05bd7a550
+  zh: f19be96c68379d2f
+/deepseek-ai-dsh-client-ui-knowledge-panels/summary:
+  en: 5e985b3be51813f7
+  zh: d268f5f3bae30153
+/deepseek-ai-dsh-client-ui-knowledge-panels/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 9f0336825ccdaacd
+/deepseek-ai-dsh-client-ui-knowledge-panels/use-this-package:
+  en: bf0c0fcf140f699f
+  zh: cc93d42bf46bee75
+/deepseek-ai-dsh-client-ui-knowledge-panels/use-this-package/minimal-configuration:
+  en: 122797faef0f3701
+  zh: d0b1a1a44c42c471
+/deepseek-ai-dsh-client-ui-knowledge-panels/use-this-package/what-a-member-reaches:
+  en: 518de038de1eb303
+  zh: c295e59092b7885d
+/deepseek-ai-dsh-client-ui-knowledge-panels/use-this-package/how-a-member-moves-through-it:
+  en: 9a67804e4e6bbdba
+  zh: 8a6bd7a4f599888c
+/deepseek-ai-dsh-client-ui-knowledge-panels/use-this-package/what-the-panels-hold:
+  en: 09052bdf09d42373
+  zh: 619e934685371a79
+/deepseek-ai-dsh-client-ui-knowledge-panels/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-client-ui-knowledge-panels/understand-the-implementation/design-philosophy:
+  en: d3c0e86d6f9cdd98
+  zh: d3566cc854725058
+/deepseek-ai-dsh-client-ui-knowledge-panels/understand-the-implementation/source-map:
+  en: 76630b2a96e6fdec
+  zh: 736d1bed62627fc9
+/deepseek-ai-dsh-client-ui-knowledge-panels/further-exploration:
+  en: ec892bbaf4998c4d
+  zh: 1882341f9affd1a9
+/deepseek-ai-dsh-client-ui-knowledge-panels/model-experience:
+  en: 39a593ce794f77f1
+  zh: 2c4b6e7fa50308c6
+/deepseek-ai-dsh-client-ui-knowledge-panels/model-experience/kv-cache-effect:
+  en: bc9fa61f49a88150
+  zh: eeba82e1cf752c26
+/deepseek-ai-dsh-client-ui-knowledge-panels/known-limitations-and-deferred-work:
+  en: f5e5919f31b9fad6
+  zh: 6ae2d80328ca4950
+/deepseek-ai-dsh-client-ui-knowledge-panels/known-limitations-and-deferred-work/dev-note:
+  en: 1dc65d38e79b4ba0
+  zh: 7e51a08746bea29a

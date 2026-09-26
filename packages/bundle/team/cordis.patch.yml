@@ -57,7 +57,7 @@
   config:
     enabled: false
 
-# The base adapter adds the company route only after the Team transport is
+# The API-key adapter adds the company route only while the Team transport is
 # mounted, and keeps its direct DeepSeek route for the member who stored a key
 # of their own; a member without one is offered company models alone.
 # The upstream model sometimes ends a stream cleanly without [DONE] after a
@@ -70,6 +70,23 @@
     retryPolicy:
       mode: normal
       retryableCodes: [EMPTY_RESPONSE, RATE_LIMIT, SERVER, TIMEOUT, TRANSPORT, STREAM_CLOSED]
+
+# A DeepSeek account sign-in would let a member run tasks on a personal
+# platform balance beside the company route, outside the Control Plane's
+# grants and audit, and its settings launcher claims the sidebar slot the Team
+# account launcher fills. Team Runners compose none of it: no account service,
+# no account route, no account Remote, and no Account settings section.
+- id: deepseek-account
+  disabled: true
+
+- id: llm-deepseek-account
+  disabled: true
+
+- id: account-controller
+  disabled: true
+
+- id: ui-settings-account
+  disabled: true
 
 # Web search leaves this computer through the Control Plane, which holds the
 # company search credential and decides per member; the base row's

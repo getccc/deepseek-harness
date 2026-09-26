@@ -1,7 +1,7 @@
 /** The document list's pager: the total, the previous and next controls, and the pages between them. */
 
 import clsx from 'clsx'
-import { IconChevronLeftOutline14, IconChevronRightOutline14 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconChevronLeftOutlineRegular, IconChevronRightOutlineRegular } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { Translate } from './locales.ts'
 import { pageCount, pageItems, type PageItem } from './paging.ts'
 import css from './panels.module.css'
@@ -47,7 +47,7 @@ export function Pager({ page, pageSize, total, shown, go, t }: PagerProps) {
         disabled={page <= 1}
         onClick={() => { go(page - 1) }}
       >
-        <IconChevronLeftOutline14 size={14} />
+        <IconChevronLeftOutlineRegular size={14} />
       </button>
       {items.map(item => item.kind === 'gap'
         ? <span key={item.key} className={css.pagerGap} aria-hidden="true">…</span>
@@ -70,7 +70,7 @@ export function Pager({ page, pageSize, total, shown, go, t }: PagerProps) {
         disabled={!more}
         onClick={() => { go(page + 1) }}
       >
-        <IconChevronRightOutline14 size={14} />
+        <IconChevronRightOutlineRegular size={14} />
       </button>
     </nav>
   )

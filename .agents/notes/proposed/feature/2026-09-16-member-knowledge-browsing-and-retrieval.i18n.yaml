@@ -1,6 +1,67 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-16-member-knowledge-browsing-and-retrieval.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/proposed/feature/2026-09-16-member-knowledge-browsing-and-retrieval.md
-2026-09-16-member-knowledge-browsing-and-retrieval.md: 2c32cff12b8330c29c9e9bb195c0ed5ee5c65b08
-2026-09-16-member-knowledge-browsing-and-retrieval.zh.md: e41586b73c3b1be6d0de0a8e4a9eb902f634408d
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation:
+  en: f753cd5eb2b85a5c
+  zh: b37bff36147936f3
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation/problem:
+  en: 0045baa2d1107dd1
+  zh: 118cb69fb400c22e
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation/proposal:
+  en: 80825f31c72e26de
+  zh: 3df0626524b51405
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation/proposal/product-outcome:
+  en: 2e6935cfe90f59f5
+  zh: 753559ae8db2e4a8
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation/proposal/non-goals-for-this-delivery:
+  en: d8a58f98265fe290
+  zh: 5143205abfe313c0
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation/what-the-member-reaches-from-the-left-navigation:
+  en: 156db597eef58f36
+  zh: e799cd08fb5f18b3
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation/capability-and-package-topology:
+  en: 3dfb31049c910051
+  zh: 083fed0c1cae570d
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation/knowledge-document-references:
+  en: 9d1afb1176d890d3
+  zh: 9a08ba65079aed56
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation/control-plane-api-additions:
+  en: 6b9f90a77455098f
+  zh: 59b136741fc260aa
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation/upstream-operations-this-delivery-uses:
+  en: 1253d107a5c1c00e
+  zh: 36471b6fb2b74cef
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation/document-level-session-scope:
+  en: fe80fe2211fc6067
+  zh: 40fb5046e5fa00a4
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation/a-document-conversation-is-a-chat-that-can-search:
+  en: 9e707f94cf0f54b9
+  zh: 66103cc55d2c3340
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation/a-retrieval-ranks-documents:
+  en: 4f25108474136580
+  zh: f5b5fbf8b4579f2f
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation/document-preview-delivery-and-bounds:
+  en: 9c16072941da01b9
+  zh: 490e5c8dfc7ce9d8
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation/permissions:
+  en: 9d722853a6cb5f67
+  zh: 50cbf28b0bdd7ee4
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation/audit:
+  en: a8c7fcdb3c15628b
+  zh: 62e1ab928bef6bd9
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation/delivery-plan:
+  en: 5c6394b993e829cb
+  zh: 5d0b65682a6aeaed
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation/alternatives-considered:
+  en: 4c75fe6e7b0ad12d
+  zh: df9f28e04d906da2
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation/acceptance-criteria:
+  en: 694fe0131245d996
+  zh: fb8e75636e32f0fe
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation/named-coverage-gap-no-recorded-session-tier-reaches-knowledge:
+  en: 7c0ff941c5cbf630
+  zh: 07e51c4158f01feb
+/agent-note-members-read-and-search-private-knowledge-outside-a-conversation/risks:
+  en: eba0b6a27336cbb9
+  zh: 98f680406b4aac81

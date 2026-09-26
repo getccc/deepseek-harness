@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-16-composer-voice-control-seats.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-16-composer-voice-control-seats.md
-2026-09-16-composer-voice-control-seats.md: 2e495c240ed7d21eb23866ad9fb7e587593fa54e
-2026-09-16-composer-voice-control-seats.zh.md: 764fe846c4d4f4922a313a0745e60f25c7d7bc05
+/agent-note-composer-voice-control-seats:
+  en: 450a3dbb8d8411b6
+  zh: 3392230dfeb6d45c
+/agent-note-composer-voice-control-seats/problem:
+  en: 17415a0a2b707cff
+  zh: 7b5104d51df6e7d1
+/agent-note-composer-voice-control-seats/decision:
+  en: 38e5306d87758122
+  zh: b0ada93646e31361
+/agent-note-composer-voice-control-seats/alternatives-considered:
+  en: d326b7beb3bb43f2
+  zh: ad2e5a3e45965f66
+/agent-note-composer-voice-control-seats/consequences:
+  en: abadf9c0ea97da8b
+  zh: 46ee2b53a1166ebf
+/agent-note-composer-voice-control-seats/testing:
+  en: 3c4a142b73567901
+  zh: c0df0ef2bd8f327a

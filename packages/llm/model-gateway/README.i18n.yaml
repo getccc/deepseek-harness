@@ -1,6 +1,58 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/llm/model-gateway/README.md
-README.md: a65e443ffa732068a4ed3d26c18e3764d340009d
-README.zh.md: b96ba3ade0c16fa043f6335034a90e6c89cbeeca
+/:
+  en: d84460a468417581
+  zh: 4b53165bec861ae4
+/deepseek-ai-dsh-model-gateway:
+  en: 9b63012711005f13
+  zh: c66f9c2304f070a7
+/deepseek-ai-dsh-model-gateway/summary:
+  en: 37a772b2e76bec26
+  zh: ea3810cd3bade780
+/deepseek-ai-dsh-model-gateway/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5452fccb37762c88
+/deepseek-ai-dsh-model-gateway/use-this-package:
+  en: b9399d58e2a9adb6
+  zh: 8a19ae68a39b2a38
+/deepseek-ai-dsh-model-gateway/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-model-gateway/understand-the-implementation/absent-and-ungranted-answer-alike:
+  en: a9ade611a5e36f3f
+  zh: c51871b3f27b40d9
+/deepseek-ai-dsh-model-gateway/understand-the-implementation/two-body-fields-and-only-two:
+  en: 6d4683668a10fc1c
+  zh: 0ff765dcb76b5b50
+/deepseek-ai-dsh-model-gateway/understand-the-implementation/a-reference-not-a-key:
+  en: 808cb18e043dc696
+  zh: 96df1d77300c9424
+/deepseek-ai-dsh-model-gateway/understand-the-implementation/the-catalog-declares-what-a-request-may-carry:
+  en: 8e9e17b9755b5047
+  zh: c1acb1b0ee8684f9
+/deepseek-ai-dsh-model-gateway/understand-the-implementation/the-catalog-s-ceiling-wins:
+  en: 034049ae46742649
+  zh: b8013fb209c1ab84
+/deepseek-ai-dsh-model-gateway/understand-the-implementation/retiring-and-deleting-are-different-acts:
+  en: 00e3e19ea0a18117
+  zh: 2709d4c418696bce
+/deepseek-ai-dsh-model-gateway/understand-the-implementation/source-map:
+  en: b2414bcff1a3c61f
+  zh: 7c6e5c711dc292cb
+/deepseek-ai-dsh-model-gateway/further-exploration:
+  en: 8ea5d4016756773a
+  zh: 6f84fb7de8eec8b2
+/deepseek-ai-dsh-model-gateway/model-experience:
+  en: ee746ccebe4f197a
+  zh: ce40f74fbb5de49f
+/deepseek-ai-dsh-model-gateway/model-experience/kv-cache-effect:
+  en: 7c8f8d593c03881c
+  zh: b03d8f9bda3c5813
+/deepseek-ai-dsh-model-gateway/known-limitations-and-deferred-work:
+  en: bf4acc76d46610f6
+  zh: aa53ff46a581f3c8
+/deepseek-ai-dsh-model-gateway/known-limitations-and-deferred-work/dev-note:
+  en: f68558235d380e15
+  zh: 90a495c284265806

@@ -25,8 +25,7 @@ function titleSources() {
       },
     },
     phase: 'ready',
-    subagentsByParent: {},
-    jobsBySession: {},
+    projectionsBySession: {},
   })
   const panelInfo = createSnapshotStore<PanelInfo>({ activePanelId: null })
   return {

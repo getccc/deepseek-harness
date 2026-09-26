@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team-runner-desktop",
   "description": "Electron desktop shell for the local Team Runner on Windows and Apple silicon macOS",
-  "version": "0.1.6-alpha.2",
+  "version": "0.1.7-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -25,7 +25,7 @@
     "electron-updater": "^6.8.9"
   },
   "devDependencies": {
-    "@deepseek-ai/dsh-team-update": "workspace:^",
+    "@deepseek-ai/dsh-team-update": "workspace:*",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.10.1",
     "electron": "44.0.0",

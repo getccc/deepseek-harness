@@ -1,6 +1,25 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/access/README.md
-README.md: 69e8001975f88702abc33c3b21eb274eac659407
-README.zh.md: 0bc8ad952212a81cc3ebb1292f6ddde6951726e6
+/:
+  en: 7da9bb7d4e7d88e9
+  zh: 50a4a546a7757734
+/access-what-a-member-may-do-and-what-they-did:
+  en: 108b26c9c2df0b1a
+  zh: 21bda1ca9e622150
+/access-what-a-member-may-do-and-what-they-did/summary:
+  en: 613a59d471b7a53a
+  zh: b74fe542a9900b8e
+/access-what-a-member-may-do-and-what-they-did/table-of-contents:
+  en: 1eb35b015a6c423f
+  zh: a8a3dceee2c9e943
+/access-what-a-member-may-do-and-what-they-did/packages:
+  en: b57f8d6a118649fc
+  zh: 81fb91ae4a6a5230
+/access-what-a-member-may-do-and-what-they-did/related-documentation:
+  en: 60bd030cdfa34f41
+  zh: 2ef360256aec2fe0
+/access-what-a-member-may-do-and-what-they-did/dev-note:
+  en: 8f2478f90a786639
+  zh: 1af75aa3492889d6

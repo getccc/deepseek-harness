@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-07-company-models-declare-image-input.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-07-company-models-declare-image-input.md
-2026-09-07-company-models-declare-image-input.md: a1a41faa2b9117f49b361d8199569417cf216c9e
-2026-09-07-company-models-declare-image-input.zh.md: ee1f0764a7d732888becd38030135888d0b20b32
+/agent-note-company-models-declare-image-input:
+  en: 25850cc640f70bcf
+  zh: fec4acdf8b98e7b8
+/agent-note-company-models-declare-image-input/problem:
+  en: 5fae5526059e5d25
+  zh: 7358f89a41418ade
+/agent-note-company-models-declare-image-input/decision:
+  en: fe9679314dc0d261
+  zh: 1e8a1a3433325710
+/agent-note-company-models-declare-image-input/alternatives-considered:
+  en: 10995ff889d34395
+  zh: d14e74cf9bf46df0
+/agent-note-company-models-declare-image-input/consequences:
+  en: 0de7ff6532b4726c
+  zh: 81e4d669fc1cada2

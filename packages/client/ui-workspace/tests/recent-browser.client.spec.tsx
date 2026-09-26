@@ -1,18 +1,26 @@
 // @vitest-environment jsdom
-import type { GlobalStandardProps } from '@deepseek-ai/dsh-client-ui-slots'
+import type { GlobalStandardProps, PropsRenderSlots } from '@deepseek-ai/dsh-client-ui-slots'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { bindSnapshotSelector, makeTranslate } from '@deepseek-ai/dsh-client-test-runtime'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
+import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
+import {
+  bindSnapshotSelector, makeTranslate, SlotTestRuntime, usePinnedBrowserLanguages,
+} from '@deepseek-ai/dsh-client-test-runtime'
+import { apply, inject } from '@deepseek-ai/dsh-client-ui-workspace/client'
 import type { SessionListState, SessionSummary } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { WorkspaceSnapshot } from '@deepseek-ai/dsh-api-workspace-controller/client'
 import type { SessionStatusSnapshot } from '@deepseek-ai/dsh-client-ui-session/client'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { MainPanelId } from '@deepseek-ai/dsh-client-ui-layout/client'
 import { zh as commonZh } from '@deepseek-ai/dsh-client-locale/src/locales/zh.ts'
-import type { RecentBrowserProps } from '../src/client/contract/slots.ts'
+import type { RecentBrowserProps, SessionRowSeats } from '../src/client/contract/slots.ts'
 import { createWorkspaceViewStore } from '../src/client/stores.ts'
 import { RecentBrowser } from '../src/client/rows/RecentBrowser.tsx'
 import { zh } from '../src/client/locales.ts'
+
+// The assembled case asserts the shipped Chinese copy through the locale service.
+usePinnedBrowserLanguages('zh-CN')
 
 // Every fixture carries the resource hook the resources plugin merges into GlobalStandardProps.
 const useResource = (() => ({ status: 'none' as const, value: undefined, failure: undefined, reload: () => {} })) as GlobalStandardProps['useResource']
@@ -28,15 +36,16 @@ const summary = (id: string, updatedAt: number, overrides: Partial<SessionSummar
   id: sid(id), displayTitle: id, kind: 'chat', running: false, blank: false, updatedAt, ...overrides,
   retainedBy: overrides.retainedBy ?? {},
 })
-const sessionState = (items: readonly SessionSummary[], overrides: Partial<SessionListState> = {}): SessionListState => ({
+const sessionState = (items: readonly SessionSummary[]): SessionListState => ({
   ids: items.map(item => item.id),
   byId: Object.fromEntries(items.map(item => [item.id, item])),
   phase: 'ready',
-  subagentsByParent: {}, jobsBySession: {},
-  ...overrides,
+  projectionsBySession: {},
 })
-const workspaceState = (archivedSessionIds: readonly SessionId[] = []): WorkspaceSnapshot =>
-  ({ items: [], archivedSessionIds, state: 'idle', phase: 'ready', error: null })
+const workspaceState = (
+  archivedSessionIds: readonly SessionId[] = [],
+  pinnedSessionIds: readonly SessionId[] = [],
+): WorkspaceSnapshot => ({ items: [], archivedSessionIds, pinnedSessionIds, state: 'idle', phase: 'ready', error: null })
 const noStatus: SessionStatusSnapshot = new Map()
 function hook<T>(snapshot: T) {
   return function select<S>(selector: (state: T) => S): S { return selector(snapshot) }
@@ -49,6 +58,9 @@ const mixed = sessionState([
   summary('stale-blank', 1, { blank: true }),
   summary('work-w', 5, { kind: 'work', cwd: '/projects/w' }),
 ])
+
+/** Row seats that render nothing: the browser has not shared its own. */
+const noSeats: SessionRowSeats = { renderSlot: () => null }
 
 function mount(overrides: Partial<RecentBrowserProps> = {}) {
   const store = createWorkspaceViewStore().create()
@@ -63,9 +75,9 @@ function mount(overrides: Partial<RecentBrowserProps> = {}) {
     useStore: bindSnapshotSelector(store),
     actions: store.actions,
     open: vi.fn(),
-    renameSession: vi.fn(async () => {}),
-    forkSession: vi.fn(),
-    archiveSession: vi.fn(async () => {}),
+    requestSessionRename: vi.fn(),
+    notifyArchivedNotOpenable: vi.fn(),
+    useRowSeats: hook(noSeats),
     t,
     ...overrides,
   }
@@ -73,15 +85,9 @@ function mount(overrides: Partial<RecentBrowserProps> = {}) {
   return { view, props, store }
 }
 
-/** Visible row titles in render order (the flat row also carries a relative time, which is not the title). */
+/** Visible row titles in render order (the row also carries a relative time, which is not the title). */
 function rowTitles(): string[] {
   return screen.getAllByRole('treeitem').map(row => row.querySelector('[class*="title"]')?.textContent ?? '')
-}
-
-/** Open the row menu of one session and pick a verb. */
-function pickRowVerb(title: string, verb: string): void {
-  fireEvent.click(screen.getByRole('button', { name: `会话“${title}”的操作` }))
-  fireEvent.click(screen.getByRole('menuitem', { name: verb }))
 }
 
 describe('RecentBrowser', () => {
@@ -108,7 +114,8 @@ describe('RecentBrowser', () => {
     fireEvent.click(screen.getByRole('button', { name: '筛选' }))
     fireEvent.click(screen.getByRole('menuitem', { name: '全部' }))
     expect(b.store.getSnapshot().recentFilter).toBe('all')
-    expect(rowTitles()).toEqual(['work-w', '新对话', 'chat-a'])
+    // The current blank leads as the provisional row, then newest-first.
+    expect(rowTitles()).toEqual(['新对话', 'work-w', 'chat-a'])
 
     // Escape closes the menu without picking.
     fireEvent.click(screen.getByRole('button', { name: '筛选' }))
@@ -131,73 +138,108 @@ describe('RecentBrowser', () => {
     expect(screen.getByText('新对话').closest('[role="treeitem"]')?.getAttribute('aria-selected')).toBe('false')
   })
 
+  it('leads with pinned rows and follows the browser\'s archived filter', () => {
+    const sessions = hook(sessionState([summary('old-pin', 1), summary('newer', 3), summary('gone', 2)]))
+    const workspaces = hook(workspaceState([sid('gone')], [sid('old-pin')]))
+    const b = mount({ useSessions: sessions, useWorkspaces: workspaces })
+    expect(rowTitles()).toEqual(['old-pin', 'newer'])
+    expect(screen.getByRole('img', { name: '已置顶' })).toBeTruthy()
+    cleanup()
+
+    b.store.actions.setArchivedFilter('show')
+    const shown = mount({ useSessions: sessions, useWorkspaces: workspaces })
+    expect(rowTitles()).toEqual(['old-pin', 'newer', 'gone'])
+    // An archived row explains instead of opening.
+    fireEvent.click(screen.getByText('gone'))
+    expect(shown.props.open).not.toHaveBeenCalled()
+    expect(shown.props.notifyArchivedNotOpenable).toHaveBeenCalledOnce()
+  })
+
+  it('renders the browser\'s row seats for each non-blank row and raises rename from a title double-click', () => {
+    const renderSlot = vi.fn((key: string) =>
+      key === 'sidebar.workspaces.session.menu.item'
+        ? <button type="button" role="menuitem">Seat action</button>
+        : null)
+    const b = mount({ useRowSeats: hook<SessionRowSeats>({ renderSlot }) })
+    // Idle rows offer the leading seat and a hover-button strip; the blank row offers neither.
+    expect(renderSlot).toHaveBeenCalledWith('sidebar.session.row.leading', { sessionId: sid('chat-a') })
+    expect(renderSlot).toHaveBeenCalledWith(
+      'sidebar.workspaces.session.row.action', { sessionId: sid('chat-a'), displayTitle: 'chat-a' },
+    )
+    expect(renderSlot).not.toHaveBeenCalledWith(
+      'sidebar.workspaces.session.row.action', expect.objectContaining({ sessionId: sid('chat-blank') }),
+    )
+    // The row menu renders the menu-item seat with the menu's open state as hook context.
+    fireEvent.click(screen.getByRole('button', { name: '会话“chat-a”的操作' }))
+    expect(screen.getByRole('menuitem', { name: 'Seat action' })).toBeTruthy()
+    expect(renderSlot).toHaveBeenCalledWith(
+      'sidebar.workspaces.session.menu.item',
+      { sessionId: sid('chat-a'), displayTitle: 'chat-a' },
+      { hookContext: [true, expect.any(Function)] },
+    )
+    expect(b.props.open).not.toHaveBeenCalled()
+
+    fireEvent.doubleClick(screen.getByText('chat-a'))
+    expect(b.props.requestSessionRename).toHaveBeenCalledExactlyOnceWith(sid('chat-a'), 'chat-a')
+  })
+
+  it('reads a persisted view without an archived filter as hiding archived rows', () => {
+    localStorage.setItem('dsh.workspace.view.v6', JSON.stringify({
+      groupBy: 'workspace', orderBy: 'updated', recentFilter: 'chat', groupExpansion: {}, sessionOrderByAccount: {},
+    }))
+    const b = mount({ useWorkspaces: hook(workspaceState([sid('chat-a')])) })
+    expect(b.store.getSnapshot().archivedFilter).toBeUndefined()
+    expect(rowTitles()).toEqual(['新对话'])
+  })
+
   it('renders nothing on the rail', () => {
     const b = mount({ wide: false })
     expect(b.view.container.innerHTML).toBe('')
   })
+})
 
-  it('renames through the row menu: composition and blank drafts never submit, Enter submits, acceptance closes', async () => {
-    const b = mount()
-    pickRowVerb('chat-a', '重命名')
-    const input = screen.getByLabelText('会话名称') as HTMLInputElement
-    expect(input.value).toBe('chat-a')
-    fireEvent.compositionStart(input)
-    fireEvent.keyDown(input, { key: 'Enter' })
-    fireEvent.compositionEnd(input)
-    fireEvent.change(input, { target: { value: '   ' } })
-    fireEvent.keyDown(input, { key: 'Enter' })
-    expect(b.props.renameSession).not.toHaveBeenCalled()
-    fireEvent.change(input, { target: { value: ' Renamed ' } })
-    fireEvent.keyDown(input, { key: 'Enter' })
-    expect(b.props.renameSession).toHaveBeenCalledExactlyOnceWith(sid('chat-a'), 'Renamed')
-    await waitFor(() => { expect(screen.queryByLabelText('会话名称')).toBeNull() })
-  })
+/** Test-owned shell role: the two browsing seats and the frame-wide overlay list. */
+function SidebarFrame({ renderSlot }: PropsRenderSlots<'sidebar.workspaces' | 'sidebar.recent' | 'shell.overlay'>) {
+  return (
+    <>
+      {renderSlot('sidebar.workspaces', { wide: true, expandSidebar: () => {} })}
+      {renderSlot('sidebar.recent', { wide: true, expandSidebar: () => {} })}
+      {renderSlot('shell.overlay', {})}
+    </>
+  )
+}
 
-  it('keeps a rejected rename open with its message, ignores Cancel while renaming, and Cancel closes when idle', async () => {
-    let settle: () => void = () => {}
-    const renameSession = vi.fn<RecentBrowserProps['renameSession']>()
-      .mockRejectedValueOnce('denied')
-      .mockRejectedValueOnce(new Error('title write failed'))
-      .mockImplementationOnce(() => new Promise<void>((resolve) => { settle = resolve }))
-    mount({ renameSession })
-    pickRowVerb('chat-a', '重命名')
-    fireEvent.click(screen.getByRole('button', { name: '重命名' }))
-    await waitFor(() => { expect(screen.getByRole('alert').textContent).toBe('denied') })
-    fireEvent.click(screen.getByRole('button', { name: '重命名' }))
-    await waitFor(() => { expect(screen.getByRole('alert').textContent).toBe('title write failed') })
+describe('RecentBrowser assembled with the Workspace browser', () => {
+  it('renders the shipped row actions through the seats the browser shares', async () => {
+    const runtime = await SlotTestRuntime.create()
+    runtime.ctx.provide('shortcuts', { register: () => () => {}, catalog: createSnapshotStore([]) })
+    runtime.ctx.provide('layout', { selectPanel: vi.fn(), beginNavigation: () => new AbortController().signal })
+    runtime.releaseWorkspaceSource()
+    runtime.remote.provideNamespaces({ directoryPicker: {} })
+    const locale = new LocaleRuntime(runtime.ctx)
+    runtime.ctx.provide('locale', locale)
+    runtime.slots.installLocale(locale)
+    // No cwd: the list derives a chat Session, which only the Recent list shows.
+    await runtime.sessions.add({ id: sid('c1'), summary: { title: 'Chat title', displayTitle: 'Chat title' } })
+    await runtime.root.declare(
+      {
+        'sidebar.workspaces': { kind: 'single', scope: 'root' },
+        'sidebar.recent': { kind: 'single', scope: 'root' },
+        'shell.overlay': { kind: 'list', scope: 'root' },
+      } as never,
+      SidebarFrame as never,
+    )
+    await runtime.mount({ inject: [...inject], apply })
+    const view = runtime.renderRoot()
 
-    fireEvent.click(screen.getByRole('button', { name: '重命名' }))
-    expect(screen.queryByRole('alert')).toBeNull()
-    // In flight: the Cancel and Rename controls are disabled and closing is refused.
-    expect(screen.getByRole<HTMLButtonElement>('button', { name: '取消' }).disabled).toBe(true)
-    fireEvent.keyDown(document, { key: 'Escape' })
-    expect(screen.getByLabelText('会话名称')).toBeTruthy()
-    settle()
-    await waitFor(() => { expect(screen.queryByLabelText('会话名称')).toBeNull() })
-
-    // A fresh open seeds a fresh draft; Cancel closes it.
-    pickRowVerb('chat-a', '重命名')
-    expect(screen.getByLabelText<HTMLInputElement>('会话名称').value).toBe('chat-a')
-    fireEvent.click(screen.getByRole('button', { name: '取消' }))
-    expect(screen.queryByLabelText('会话名称')).toBeNull()
-    expect(renameSession).toHaveBeenCalledTimes(3)
-  })
-
-  it('forks and archives through the row menu and reports a rejected archive', async () => {
-    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
-    const archiveSession = vi.fn<RecentBrowserProps['archiveSession']>()
-      .mockResolvedValueOnce(undefined)
-      .mockRejectedValueOnce(new Error('archive rejected'))
-    const b = mount({ archiveSession })
-    pickRowVerb('chat-a', '分叉会话')
-    expect(b.props.forkSession).toHaveBeenCalledExactlyOnceWith(sid('chat-a'))
-    pickRowVerb('chat-a', '归档会话')
-    expect(archiveSession).toHaveBeenCalledWith(sid('chat-a'))
-    pickRowVerb('chat-a', '归档会话')
-    await waitFor(() => {
-      expect(warning).toHaveBeenCalledWith('session archive rejected:', expect.any(Error))
-    })
-    expect(b.props.open).not.toHaveBeenCalled()
-    warning.mockRestore()
+    const row = (await view.findByText('Chat title')).closest('[role="treeitem"]')!
+    fireEvent.click(within(row as HTMLElement).getByLabelText('会话“Chat title”的操作'))
+    expect(view.getAllByRole('menuitem').map(item => item.textContent)).toEqual([
+      '置顶会话', '重命名', '分叉会话', '归档会话',
+    ])
+    // The rename row raises the overlay dialog the tree's rows use.
+    fireEvent.click(view.getByRole('menuitem', { name: '重命名' }))
+    expect(((await view.findByLabelText('会话名称')) as HTMLInputElement).value).toBe('Chat title')
+    await runtime.dispose()
   })
 })

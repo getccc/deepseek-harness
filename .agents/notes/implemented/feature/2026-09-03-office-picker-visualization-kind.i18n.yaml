@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-03-office-picker-visualization-kind.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-03-office-picker-visualization-kind.md
-2026-09-03-office-picker-visualization-kind.md: 9928dae8583dc15d4e85ec63e13eba4884866707
-2026-09-03-office-picker-visualization-kind.zh.md: 2133a7534cad900e317f0087850446c9f7908c09
+/agent-note-the-office-picker-offers-a-visualization-kind:
+  en: 5a2ff671853a6563
+  zh: a7a5f0d3e9dd107c
+/agent-note-the-office-picker-offers-a-visualization-kind/problem:
+  en: 25dff2465f2fe088
+  zh: f140ce41f35d04a7
+/agent-note-the-office-picker-offers-a-visualization-kind/decision:
+  en: ebc49353e2f4ae6b
+  zh: d8c1c0e1f5c04239
+/agent-note-the-office-picker-offers-a-visualization-kind/consequences:
+  en: 2980a318f0175b22
+  zh: 6122580441d4b4a6
+/agent-note-the-office-picker-offers-a-visualization-kind/alternatives-considered:
+  en: 66fbc6176cce9379
+  zh: acebda996f8aad72

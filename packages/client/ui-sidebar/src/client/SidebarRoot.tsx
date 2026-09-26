@@ -21,8 +21,10 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import clsx from 'clsx'
 import {
-  WeWorkLogo, IconFolderOpenOutline16, IconNewChatOutline16, IconPanelLeftOutline16, isDarwinDesktop, Tooltip,
+  WeWorkLogo, IconFolderOpenOutlineRegular, IconNewChatOutlineRegular, IconPanelLeftOutlineRegular, isDarwinDesktop,
+  Tooltip,
 } from '@deepseek-ai/dsh-client-ui-primitives'
+import type { ShortcutCatalogEntry } from '@deepseek-ai/dsh-client-shortcuts/client'
 import type { InjectFace, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type {
   SidebarPanelMetadata, SidebarRootComponentProps, SidebarRootInjected, SidebarSectionOwnerProps,
@@ -78,21 +80,24 @@ function PanelRow({ id, label, wide, usePanelInfo, selectPanel, renderSlot }: Pa
 /**
  * One shell action entry in the panel-row style: icon plus label wide, icon
  * with a tooltip on the rail. `name` is the accessible name and tooltip;
- * `label` is the visible wide text.
+ * `label` is the visible wide text; `shortcut` is the command's current
+ * binding, announced and shown in the rail tooltip.
  */
-function ActionRow({ name, label, icon, wide, onClick }: {
+function ActionRow({ name, label, icon, wide, shortcut, onClick }: {
   name: string
   label: string
   icon: ReactNode
   wide: boolean
+  shortcut?: ShortcutCatalogEntry | undefined
   onClick: () => void
 }) {
   return (
-    <Tooltip label={name} delayMs={500} disabled={wide}>
+    <Tooltip label={name} shortcutKeys={shortcut?.keys} delayMs={500} disabled={wide}>
       <button
         type="button"
         className={css.panelRow}
         aria-label={name}
+        aria-keyshortcuts={shortcut?.aria}
         onClick={onClick}
       >
         <span className={css.panelGlyph} aria-hidden="true">{icon}</span>
@@ -115,11 +120,15 @@ export function SidebarRoot({
   toggleSidebar,
   selectPanel,
   usePanels,
+  useShortcuts,
   usePanelInfo,
   t,
   renderSlot,
 }: SidebarRootComponentProps) {
   const panels = usePanels(snapshot => snapshot)
+  const shortcut = useShortcuts(rows => rows.find(row => row.id === 'sidebar.left.toggle'))
+  const newShortcut = useShortcuts(rows => rows.find(row => row.id === 'session.new'))
+  const toggleLabel = collapsed ? t('toggle.open') : t('toggle.collapse')
   // Wide content stays mounted while the collapse animates (fading via
   // .collapsed .wide), unmounts at settle, and remounts right away on expand.
   const [settled, setSettled] = useState(collapsed)
@@ -131,7 +140,10 @@ export function SidebarRoot({
   const windowsTitlebar = document.documentElement.hasAttribute('data-windows-titlebar')
   const wide = windowsTitlebar ? !collapsed : !collapsed || !settled
   const expandSidebar = (): void => { if (collapsed) toggleSidebar() }
-
+  // The Windows caption menus occupy the strip to the right of these controls
+  // (that is what --dsh-windows-menu-start reserves), so a right-side bubble
+  // lands under their text. Below the caption is the only clear side.
+  const captionTooltipSide = windowsTitlebar ? 'bottom' : 'right'
   // Freeze the content at its expanded width while it fades out (collapsed
   // && wide): the sliding column then clips it instead of reflowing it. The
   // rail layout (.collapsed styles) only applies once the fade settles.
@@ -191,11 +203,12 @@ export function SidebarRoot({
   // (the expand affordance, figma sidebar-hover flow). Expanded it is a plain
   // panel icon.
   const toggle = (
-    <Tooltip label={collapsed ? t('toggle.open') : t('toggle.collapse')} delayMs={500}>
+    <Tooltip label={toggleLabel} shortcutKeys={shortcut?.keys} delayMs={500} side={captionTooltipSide}>
       <button
         type="button"
         className={clsx(css.iconButton, css.toggle)}
-        aria-label={collapsed ? t('toggle.open') : t('toggle.collapse')}
+        aria-label={toggleLabel}
+        aria-keyshortcuts={shortcut?.aria}
         onClick={() => { toggleSidebar() }}
       >
         {!wide && !windowsTitlebar && (
@@ -206,12 +219,11 @@ export function SidebarRoot({
           </span>
         )}
         {/* Rail icons render at 18 (figma rail spec); expanded keeps the glyph-native sizes. */}
-        <IconPanelLeftOutline16 className={css.panelIcon} size={wide || windowsTitlebar ? 16 : 18} />
+        <IconPanelLeftOutlineRegular className={css.panelIcon} size={wide || windowsTitlebar ? 16 : 18} />
         {!wide && renderSlot('sidebar.toggle.badge', {})}
       </button>
     </Tooltip>
   )
-
 
   return (
     <div
@@ -229,17 +241,14 @@ export function SidebarRoot({
     >
       {/* macOS hiddenInset titlebar: the strip shares the row with the
           traffic lights and keeps the toggle at the sidebar's top-right. */}
-      {darwinDesktop && <div className={css.topStrip}>{toggle}</div>}
-      <div className={css.logoRow}>
-        {/* Expanded, the brand doubles as a New work task shortcut; the
-            collapsed rail's logo is the expand toggle below instead. */}
-        {wide && (
-          <button
-            type="button"
-            className={clsx(css.brand, css.wide)}
-            aria-label={t('work.new.label')}
-            onClick={() => { startSession() }}
-          >
+      {darwinDesktop && <div className={css.topStrip} data-window-drag>{toggle}</div>}
+      <div className={css.logoRow} data-window-drag>
+        {/* Expanded, the brand doubles as a New work task shortcut — except on
+            macOS, where it stays part of the logo row's window-drag surface
+            (a button would subtract itself through the global no-drag rule);
+            the collapsed rail's logo is the expand toggle below instead. */}
+        {wide && (() => {
+          const identity = (
             <span className={css.brandIdentity} aria-hidden="true">
               <span className={css.brandMark}>
                 {renderSlot('sidebar.brand.mark', { size: BRAND_MARK_SIZE }, { fallback: <WeWorkLogo size={BRAND_MARK_SIZE} /> })}
@@ -250,8 +259,23 @@ export function SidebarRoot({
                 })}
               </span>
             </span>
-          </button>
-        )}
+          )
+          return darwinDesktop
+            ? <span className={clsx(css.brand, css.wide)}>{identity}</span>
+            : (
+              <Tooltip label={t('work.new.label')} shortcutKeys={newShortcut?.keys} delayMs={500}>
+                <button
+                  type="button"
+                  className={clsx(css.brand, css.wide)}
+                  aria-label={t('work.new.label')}
+                  aria-keyshortcuts={newShortcut?.aria}
+                  onClick={() => { startSession() }}
+                >
+                  {identity}
+                </button>
+              </Tooltip>
+            )
+        })()}
         {!darwinDesktop && toggle}
       </div>
 
@@ -261,15 +285,16 @@ export function SidebarRoot({
         <ActionRow
           name={t('chat.new.label')}
           label={t('chat.new')}
-          icon={<IconNewChatOutline16 size={wide ? 16 : 18} />}
+          icon={<IconNewChatOutlineRegular size={wide ? 16 : 18} />}
           wide={wide}
           onClick={() => { startChat() }}
         />
         <ActionRow
           name={t('work.new.label')}
           label={t('work.new')}
-          icon={<IconFolderOpenOutline16 size={wide ? 16 : 18} />}
+          icon={<IconFolderOpenOutlineRegular size={wide ? 16 : 18} />}
           wide={wide}
+          shortcut={newShortcut}
           onClick={() => { startSession() }}
         />
       </div>

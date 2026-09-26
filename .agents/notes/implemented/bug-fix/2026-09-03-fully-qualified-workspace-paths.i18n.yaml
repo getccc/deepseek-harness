@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-03-fully-qualified-workspace-paths.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-03-fully-qualified-workspace-paths.md
-2026-09-03-fully-qualified-workspace-paths.md: f23d14e18b2ffc05a44a60ff912ab072adf6dec8
-2026-09-03-fully-qualified-workspace-paths.zh.md: 7e1334f37c19954d060de651b50c5531c9b5693d
+/agent-note-fully-qualified-workspace-paths:
+  en: dc79167516bd8fb4
+  zh: 35190fd30805f790
+/agent-note-fully-qualified-workspace-paths/problem:
+  en: 8f58840b29d9c7c3
+  zh: 00e4d4c9726632fa
+/agent-note-fully-qualified-workspace-paths/decision:
+  en: 8cd207e8140f1f75
+  zh: e002dec990c4cf8c
+/agent-note-fully-qualified-workspace-paths/alternatives-considered:
+  en: ef9870af42f2feb4
+  zh: 77d81bca14082afd
+/agent-note-fully-qualified-workspace-paths/consequences:
+  en: 888ecaa05c920f34
+  zh: 4ec67a3cd04010e2

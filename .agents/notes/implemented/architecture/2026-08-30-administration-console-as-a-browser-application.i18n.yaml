@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-30-administration-console-as-a-browser-application.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-30-administration-console-as-a-browser-application.md
-2026-08-30-administration-console-as-a-browser-application.md: 0222b0f9c0418aa7414d54a2d53b0c326ddb47eb
-2026-08-30-administration-console-as-a-browser-application.zh.md: 3c6ec837b13dcdb18d418960cce9f9ca83cf746c
+/agent-note-the-administration-console-is-a-browser-application:
+  en: d8015e8ccb7abc20
+  zh: dfdf624a4447d069
+/agent-note-the-administration-console-is-a-browser-application/problem:
+  en: 591e7b9ae63461c1
+  zh: d61f0caf5bfa6701
+/agent-note-the-administration-console-is-a-browser-application/decision:
+  en: 7434458b7ff8bcc9
+  zh: 57f23888b9bc63af
+/agent-note-the-administration-console-is-a-browser-application/alternatives-considered:
+  en: ff6f65feb34468c0
+  zh: c4f9a0e766306d27
+/agent-note-the-administration-console-is-a-browser-application/consequences:
+  en: 4be9f8c519a80693
+  zh: 8a65f97e42a5f4ad
+/agent-note-the-administration-console-is-a-browser-application/testing:
+  en: 3ccec5fd16aa09b2
+  zh: 2a59e5420f5693ad

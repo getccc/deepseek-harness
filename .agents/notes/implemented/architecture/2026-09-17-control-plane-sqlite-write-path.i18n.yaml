@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-17-control-plane-sqlite-write-path.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-17-control-plane-sqlite-write-path.md
-2026-09-17-control-plane-sqlite-write-path.md: 9e5145aee687edb70724d0a55a84b934a47b00b3
-2026-09-17-control-plane-sqlite-write-path.zh.md: 782e110e06623ec267a9922f1ef6686e203664b1
+/agent-note-control-plane-sqlite-write-path:
+  en: bcdaa86b1fac1f15
+  zh: 18480232f34956ec
+/agent-note-control-plane-sqlite-write-path/problem:
+  en: 474ba3d69c255df0
+  zh: 81aebdb59a39c95f
+/agent-note-control-plane-sqlite-write-path/decision:
+  en: 6ebd55898e8f1cdb
+  zh: 36a581244691cc7c
+/agent-note-control-plane-sqlite-write-path/measurements:
+  en: 63eaff4d92d03a97
+  zh: 0647e4fd093f3e41
+/agent-note-control-plane-sqlite-write-path/alternatives-considered:
+  en: 77975132b5e98bec
+  zh: a295ffedb712dd8d
+/agent-note-control-plane-sqlite-write-path/consequences:
+  en: 57dfbeb647c98a3b
+  zh: cd78d5898515a94b

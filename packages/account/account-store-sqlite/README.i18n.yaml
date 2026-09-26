@@ -1,6 +1,49 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/account/account-store-sqlite/README.md
-README.md: 01cc876981fb15a8ea69fef90560456b966b2c01
-README.zh.md: 6b5b5ed64e3102d2d2e145638e3dcb04670801d0
+/:
+  en: 8176fff0c4036eb6
+  zh: 104ce892a9bd8ebe
+/deepseek-ai-dsh-account-store-sqlite:
+  en: 4104c39bed982eac
+  zh: 2fa148f4e1c647ce
+/deepseek-ai-dsh-account-store-sqlite/summary:
+  en: 8dd1b2181c0d1e0f
+  zh: 9e697e5f63f7559d
+/deepseek-ai-dsh-account-store-sqlite/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 405b30feaf48c087
+/deepseek-ai-dsh-account-store-sqlite/use-this-package:
+  en: 7b5cb0933019ef7d
+  zh: acacacfa3ce1652d
+/deepseek-ai-dsh-account-store-sqlite/use-this-package/what-it-guarantees:
+  en: 87063164550c1525
+  zh: 880f63025cceca2f
+/deepseek-ai-dsh-account-store-sqlite/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-account-store-sqlite/understand-the-implementation/schema-ownership:
+  en: f2497985d4879fa3
+  zh: 7a95edca079b52d2
+/deepseek-ai-dsh-account-store-sqlite/understand-the-implementation/invariants-live-in-the-schema:
+  en: 1d8fe6312ed2164a
+  zh: d9d8c595d069cf40
+/deepseek-ai-dsh-account-store-sqlite/understand-the-implementation/source-map:
+  en: 99f5179b0a8984cb
+  zh: 0065c83b9338014c
+/deepseek-ai-dsh-account-store-sqlite/further-exploration:
+  en: 0cca5d7c56a7757b
+  zh: 164e5c5712782c2a
+/deepseek-ai-dsh-account-store-sqlite/model-experience:
+  en: 3b445e43acd3953e
+  zh: 05cd7d87ec5efc35
+/deepseek-ai-dsh-account-store-sqlite/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: 9618abc820ac7a34
+/deepseek-ai-dsh-account-store-sqlite/known-limitations-and-deferred-work:
+  en: 1c1f8ba819b731d4
+  zh: 591654f89a35832a
+/deepseek-ai-dsh-account-store-sqlite/known-limitations-and-deferred-work/dev-note:
+  en: 80d35e6ec8a8ef75
+  zh: 630ba80313b74e97

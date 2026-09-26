@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-29-authentication-tells-nothing-apart.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-29-authentication-tells-nothing-apart.md
-2026-08-29-authentication-tells-nothing-apart.md: 624bd006e68233fb4d4fce739deb3d79aac961ef
-2026-08-29-authentication-tells-nothing-apart.zh.md: a206e7dcce54dc24632d50e1e350dc674e5ed7be
+/agent-note-a-sign-in-failure-carries-no-reason-by-type:
+  en: b38b9dcfdf441a76
+  zh: 5c863a7892e54d95
+/agent-note-a-sign-in-failure-carries-no-reason-by-type/problem:
+  en: bf8c17a2187da37b
+  zh: da9acadfe6f3492b
+/agent-note-a-sign-in-failure-carries-no-reason-by-type/decision:
+  en: 69e3fa3f5c53ca1e
+  zh: ebad57d075bcbc50
+/agent-note-a-sign-in-failure-carries-no-reason-by-type/alternatives-considered:
+  en: d6578e519d55957a
+  zh: f3a80b06f675e969
+/agent-note-a-sign-in-failure-carries-no-reason-by-type/consequences:
+  en: 9cc496ab394f8479
+  zh: b7998bace858ca23

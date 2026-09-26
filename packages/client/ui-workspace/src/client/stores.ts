@@ -1,15 +1,20 @@
 /**
- * The sidebar browsing view store shared by the Workspace browser and the
- * Recent list: the session-list grouping and order modes, the Recent list's
- * kind filter, and the per-account session orders, persisted across reloads.
- * Rehydration replaces the whole persisted value with no field migration, so
- * a field added to the state bumps the persist key. Module level exports the
- * factory only (a module-level handle would pin the store identity across
- * plugin reloads); apply creates one handle and passes it to both register()
- * calls, and each browser derives its PropsStore share from the return type.
+ * The sidebar browsing view store shared by the Workspace browser, the
+ * Recent list, and the row-action notice: the session-list grouping and order
+ * modes, the archived filter, the Recent list's kind filter, and the
+ * per-account session orders, persisted across reloads. Rehydration replaces
+ * the whole persisted value with no field migration, so a required field
+ * added to the state bumps the persist key; an optional field reads its
+ * default when absent. Module level exports the factory only (a module-level
+ * handle would pin the store identity across plugin reloads); apply creates
+ * one instance and hands it to every registration that declares the store and
+ * to the UiWorkspace service, and each surface derives its PropsStore share
+ * from the return type.
  */
 import { defineStore, type EngineStoreHandle } from '@deepseek-ai/dsh-client-store'
-import type { RecentFilter } from './tree.ts'
+import type { SessionListState } from '@deepseek-ai/dsh-api-session-controller/client'
+import type { SessionId } from '@deepseek-ai/dsh-session/types'
+import { reconcileManualOrder, type ArchivedFilter, type RecentFilter, type SessionRowState } from './tree.ts'
 
 /** Browser-local order account for the hierarchy-free flat Session list. */
 export const FLAT_SESSION_ORDER_KEY = '__flat_session_order__'
@@ -29,6 +34,14 @@ type WorkspaceViewState = {
   groupExpansion: Record<string, boolean>
   /** Saved manual order per Workspace group plus the browser-local flat-list account. */
   sessionOrderByAccount: Record<string, string[]>
+  /** Archived-row visibility; omitted in snapshots written before the archived filter existed and read as 'default'. */
+  archivedFilter?: ArchivedFilter
+}
+
+type SessionOrderSource = {
+  members: Readonly<Record<string, readonly SessionId[]>>
+  summaries: SessionListState['byId']
+  rowState: Pick<SessionRowState, 'pinnedSessionIds' | 'archivedSessionIds'>
 }
 
 /**
@@ -55,6 +68,13 @@ type WorkspaceViewActions = {
     order: readonly string[],
     initialOrders: Readonly<Record<string, readonly string[]>>,
   ) => void
+  pinSessionOrder: (
+    draft: WorkspaceViewState,
+    sessionId: string,
+    accountKeys: readonly string[],
+    source: SessionOrderSource,
+  ) => void
+  setArchivedFilter: (draft: WorkspaceViewState, filter: ArchivedFilter) => void
 }
 
 /** Copy read-only projections into the persisted mutable store representation. */
@@ -76,6 +96,7 @@ export function createWorkspaceViewStore(): EngineStoreHandle<WorkspaceViewState
       recentFilter: 'chat',
       groupExpansion: {},
       sessionOrderByAccount: {},
+      archivedFilter: 'default',
     }),
     persist: 'dsh.workspace.view.v6',
     actions: {
@@ -103,9 +124,21 @@ export function createWorkspaceViewStore(): EngineStoreHandle<WorkspaceViewState
       },
       setSessionOrder: (d, accountKey, order, initialOrders) => {
         if (d.orderBy === 'updated') d.sessionOrderByAccount = copySessionOrders(initialOrders)
+        else Object.assign(d.sessionOrderByAccount, copySessionOrders(initialOrders))
         d.orderBy = 'manual'
         d.sessionOrderByAccount[accountKey] = [...order]
       },
+      pinSessionOrder: (d, sessionId, accountKeys, source) => {
+        const selected = new Set(accountKeys)
+        d.sessionOrderByAccount = Object.fromEntries(Object.entries(source.members).map(([key, members]) => {
+          const order = reconcileManualOrder(members, d.sessionOrderByAccount[key], source.summaries, source.rowState)
+          return [key, selected.has(key) ? [sessionId, ...order.filter(id => id !== sessionId)] : order]
+        }))
+      },
+      setArchivedFilter: (d, filter: ArchivedFilter) => { d.archivedFilter = filter },
     },
   })
 }
+
+/** The bound write set of one viewing-store instance (what the UiWorkspace service drives). */
+export type WorkspaceViewStoreActions = ReturnType<ReturnType<typeof createWorkspaceViewStore>['create']>['actions']

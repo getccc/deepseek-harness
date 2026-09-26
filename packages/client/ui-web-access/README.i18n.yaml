@@ -1,6 +1,43 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/client/ui-web-access/README.md
-README.md: c6cf0e737f63627e5aa296c8c80c1fb88b841d2c
-README.zh.md: 3adeb02e4710bcba9011b75534afab940f862042
+/:
+  en: 3bc4706d6786c207
+  zh: 0e539bb650e18fe9
+/deepseek-ai-dsh-client-ui-web-access:
+  en: 8c9976a3760f76b9
+  zh: 8d185389fd3c67f4
+/deepseek-ai-dsh-client-ui-web-access/summary:
+  en: 74c1376eade8ecbe
+  zh: 6772ed6bfc174be5
+/deepseek-ai-dsh-client-ui-web-access/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 09388d293f9be9cb
+/deepseek-ai-dsh-client-ui-web-access/use-this-package:
+  en: 788a7d3c8f07fe66
+  zh: f155ff875f857e99
+/deepseek-ai-dsh-client-ui-web-access/use-this-package/what-the-chip-shows:
+  en: 361adecab7d16043
+  zh: 73fed2b9434981a2
+/deepseek-ai-dsh-client-ui-web-access/use-this-package/failures:
+  en: 2cb3481bfa35a960
+  zh: e3aa2efe1695edae
+/deepseek-ai-dsh-client-ui-web-access/understand-the-implementation:
+  en: 1e4213d8533256c1
+  zh: e1e13c105120ddff
+/deepseek-ai-dsh-client-ui-web-access/further-exploration:
+  en: a94d94a0b60b6907
+  zh: 71967a0f812b9b80
+/deepseek-ai-dsh-client-ui-web-access/model-experience:
+  en: 2288421009663b29
+  zh: 45478cf5e264e4bf
+/deepseek-ai-dsh-client-ui-web-access/model-experience/kv-cache-effect:
+  en: 552a6f780e3f12ff
+  zh: 5758e483db600e43
+/deepseek-ai-dsh-client-ui-web-access/known-limitations-and-deferred-work:
+  en: 5b7dc80c28c0a851
+  zh: 975884a0275e2915
+/deepseek-ai-dsh-client-ui-web-access/known-limitations-and-deferred-work/dev-note:
+  en: 5425ed3dabd7cc5a
+  zh: 99493b6d3852bf7c

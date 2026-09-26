@@ -1,6 +1,25 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for audit.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/subsystems/audit.md
-audit.md: 63dd17ec61425abe0f14b5b1cbe56636112b4518
-audit.zh.md: 72926e8f72f5159cb5be90824619667648ef78ba
+/audit:
+  en: ce50d11ffde07fa2
+  zh: d2f6af83c3139401
+/audit/the-trail-proves-authorization-it-is-not-a-copy-of-anyone-s-work:
+  en: 9c11ca055112e678
+  zh: 6682c116e4d91118
+/audit/a-token-cannot-hold-a-sentence:
+  en: 9bcae6b8e002f0ae
+  zh: 283c91dd6e029985
+/audit/two-catalogs-both-seeded-from-code:
+  en: eba0d6f264e21c93
+  zh: 0d47a88bab596802
+/audit/the-database-refuses-what-the-service-refuses:
+  en: 847a83835d70249d
+  zh: cca2a564ed6156c2
+/audit/the-trail-is-append-only:
+  en: 54a950ec2df33aad
+  zh: 4e57a0bde5af2ae4
+/audit/reading-back:
+  en: e42d3dfe5b65c376
+  zh: db7b3b11e7ec356f

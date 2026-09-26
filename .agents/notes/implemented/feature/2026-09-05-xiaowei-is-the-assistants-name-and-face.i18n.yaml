@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-05-xiaowei-is-the-assistants-name-and-face.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-05-xiaowei-is-the-assistants-name-and-face.md
-2026-09-05-xiaowei-is-the-assistants-name-and-face.md: af693ce1b20bf8fe151953f59522a56840e29f9e
-2026-09-05-xiaowei-is-the-assistants-name-and-face.zh.md: 3b18e3253802af5419d68434be4494eb7ae53120
+/agent-note-is-the-assistant-s-name-and-face:
+  en: 1f46a2e415cb8871
+  zh: c863a4a69463d106
+/agent-note-is-the-assistant-s-name-and-face/problem:
+  en: fe7416667deeb61c
+  zh: 82dbefcae7503dfa
+/agent-note-is-the-assistant-s-name-and-face/decision:
+  en: 585fc399068c75e5
+  zh: 39c3f8bbe74eee8c
+/agent-note-is-the-assistant-s-name-and-face/alternatives-considered:
+  en: f9741af28b124e23
+  zh: 29195166e7bd8858
+/agent-note-is-the-assistant-s-name-and-face/consequences:
+  en: fbb6be9b676aff95
+  zh: 8b462c23d56717ff

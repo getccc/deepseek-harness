@@ -1,6 +1,49 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/team/team-shell/README.md
-README.md: b975d0e7c0e7c1aa16d99c20595654889a9d3197
-README.zh.md: c54cea3179f9109e53f736e4d504679ef9edaaa5
+/:
+  en: 5880c323409b1dfa
+  zh: c64444e21230646c
+/deepseek-ai-dsh-team-shell:
+  en: 4e67e91e142c5ecf
+  zh: 5a5af2d2dcdeeadc
+/deepseek-ai-dsh-team-shell/summary:
+  en: 0b97d049214e5127
+  zh: 3272fc2765dcf89f
+/deepseek-ai-dsh-team-shell/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5452fccb37762c88
+/deepseek-ai-dsh-team-shell/use-this-package:
+  en: 0978d8b7d5fcf752
+  zh: a00600b0d185d2ca
+/deepseek-ai-dsh-team-shell/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-team-shell/understand-the-implementation/a-confirmation-needs-all-three:
+  en: 73fcd2e05f2c4c6e
+  zh: 8e17108110185e43
+/deepseek-ai-dsh-team-shell/understand-the-implementation/the-refusal-names-the-seam-s-own-word:
+  en: 4b1f9f1278acdfff
+  zh: b4b2004a88f014b3
+/deepseek-ai-dsh-team-shell/understand-the-implementation/an-unsigned-browser-goes-to-the-console-and-comes-back:
+  en: 118fe85f75c4af4e
+  zh: 3b3e7f3359b1cf41
+/deepseek-ai-dsh-team-shell/understand-the-implementation/source-map:
+  en: a21c0c0cb8ff9acb
+  zh: 944a1493aedd915f
+/deepseek-ai-dsh-team-shell/further-exploration:
+  en: a0fae64e5d5c93d5
+  zh: e07c8bbb3f508061
+/deepseek-ai-dsh-team-shell/model-experience:
+  en: 27c6492d300a2cbf
+  zh: c23f49c446d45528
+/deepseek-ai-dsh-team-shell/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: ac91908e96d0e23d
+/deepseek-ai-dsh-team-shell/known-limitations-and-deferred-work:
+  en: 026a1c5a1d9c30d4
+  zh: 6bd067e3a18ab2d0
+/deepseek-ai-dsh-team-shell/known-limitations-and-deferred-work/dev-note:
+  en: b7a487279c3850a4
+  zh: a2776d6b0352d5e3

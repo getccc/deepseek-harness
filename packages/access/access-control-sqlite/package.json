@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-access-control-sqlite",
   "description": "SQLite-backed access control: roles, grants, governed resources, and the default-deny evaluation over them",
-  "version": "0.1.6-alpha.2",
+  "version": "0.1.7-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -26,15 +26,15 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@deepseek-ai/dsh-access-control": "workspace:^",
-    "@deepseek-ai/dsh-account-store": "workspace:^",
-    "@deepseek-ai/schemastery": "workspace:^"
+    "@deepseek-ai/dsh-access-control": "workspace:*",
+    "@deepseek-ai/dsh-account-store": "workspace:*",
+    "@deepseek-ai/schemastery": "workspace:~"
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-account-store-sqlite": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-account-store-sqlite": "workspace:*"
   }
 }

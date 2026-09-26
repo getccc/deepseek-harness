@@ -1,6 +1,52 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/access/quota/README.md
-README.md: c8f3fb9797caa587a28e004f6e98f0d3064f0977
-README.zh.md: c6c49278b9283d8ca526a8bfc16ddcf60636bf07
+/:
+  en: 6b5d1fb0aec5f1fc
+  zh: 3c8c97f6a8f0f417
+/deepseek-ai-dsh-quota:
+  en: 0280883eae9b8cdb
+  zh: ebe5160e53e13060
+/deepseek-ai-dsh-quota/summary:
+  en: 8e3a6ef8f53287d2
+  zh: 2a6afa61959f936e
+/deepseek-ai-dsh-quota/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5452fccb37762c88
+/deepseek-ai-dsh-quota/use-this-package:
+  en: 77695cb96b407360
+  zh: 4121da56d270aef6
+/deepseek-ai-dsh-quota/use-this-package/which-settlement-to-send:
+  en: 63c00f0d30fc6579
+  zh: 0fec084677622ce0
+/deepseek-ai-dsh-quota/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-quota/understand-the-implementation/the-reservation-is-the-ceiling:
+  en: 93e9e292bbb0bc9a
+  zh: 8a037e1380db19bc
+/deepseek-ai-dsh-quota/understand-the-implementation/no-limit-means-no-ceiling:
+  en: 0ad3b7edb43b4dab
+  zh: 897318bf63467271
+/deepseek-ai-dsh-quota/understand-the-implementation/periods-are-named-by-the-caller:
+  en: 0a0e2e9444f232bb
+  zh: 62c2f8276a76b959
+/deepseek-ai-dsh-quota/understand-the-implementation/source-map:
+  en: 1d53037ef039447e
+  zh: be402d34d4816bc4
+/deepseek-ai-dsh-quota/further-exploration:
+  en: bf95a25fc171e986
+  zh: fefbf284c50ee6b1
+/deepseek-ai-dsh-quota/model-experience:
+  en: ba1c9434e824dca2
+  zh: e258f0683fa7b468
+/deepseek-ai-dsh-quota/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: e8121475b5ee0f9b
+/deepseek-ai-dsh-quota/known-limitations-and-deferred-work:
+  en: 520654f8e9510b26
+  zh: cf17768983c61047
+/deepseek-ai-dsh-quota/known-limitations-and-deferred-work/dev-note:
+  en: 5ffbf745a812ae73
+  zh: f59c57fc8bd2d52f

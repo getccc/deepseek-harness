@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for team-handoff.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/subsystems/team-handoff.md
-team-handoff.md: 06fe0b009f59e1400ab2d5725639495caeaba6fc
-team-handoff.zh.md: 61731cd63994ad082ab03f3111c9b23a2b758ed9
+/team-sign-in:
+  en: 7394a415aa3d877d
+  zh: eca880b483e16deb
+/team-sign-in/the-two-browser-surfaces-serve-different-people:
+  en: 0f162b98fd4701c0
+  zh: 7574cef823486db5
+/team-sign-in/one-local-login-becomes-one-device-credential:
+  en: 075a79dd32a8b760
+  zh: 0915223a7ee94649
+/team-sign-in/three-fixed-local-routes:
+  en: 9e1e27e45201b9fe
+  zh: 8a904f38a2a4761b
+/team-sign-in/the-control-plane-is-administrator-only:
+  en: b3fbe52f8dcd9de9
+  zh: 4f401bb45ee3b460
+/team-sign-in/suspension-is-checked-where-access-is-decided:
+  en: 2af9dd8a5e768820
+  zh: 433be30298b31fc2

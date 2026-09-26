@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-audit-sqlite",
   "description": "SQLite-backed audit trail: an append-only event table whose every text column holds a catalog word or a short token, so task content has nowhere to land",
-  "version": "0.1.6-alpha.2",
+  "version": "0.1.7-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -26,14 +26,14 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "@deepseek-ai/dsh-account-store": "workspace:^",
-    "@deepseek-ai/dsh-audit": "workspace:^",
-    "@deepseek-ai/schemastery": "workspace:^"
+    "@deepseek-ai/dsh-account-store": "workspace:*",
+    "@deepseek-ai/dsh-audit": "workspace:*",
+    "@deepseek-ai/schemastery": "workspace:~"
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~"
   }
 }

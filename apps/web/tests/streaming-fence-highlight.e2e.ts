@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import type { Browser, Page } from 'playwright'
 import { chromium } from 'playwright'
 import { afterAll, beforeAll, describe, expect, it, onTestFailed } from 'vitest'
-import type { GenerateOptions, LlmModelInfo, StreamChunk } from '@deepseek-ai/dsh-llm'
+import type { GenerateOptions, StreamChunk } from '@deepseek-ai/dsh-llm'
 import { LlmAdapter } from '@deepseek-ai/dsh-llm'
 import type {} from '@deepseek-ai/dsh-agent-default-model'
 import {
@@ -30,6 +30,7 @@ const REPLY = `${OPEN_REPLY}\n\`\`\``
 
 /** Deterministic model response held after each visible fence-growth frame. */
 class StreamingFenceAdapter extends LlmAdapter {
+  override async listModels(provider: string) { return [{ provider, id: MODEL, name: `${provider}/${MODEL}` }] }
   private resolveFirstPaused!: () => void
   private resolveFirstContinuation!: () => void
   private resolveSecondPaused!: () => void
@@ -40,12 +41,6 @@ class StreamingFenceAdapter extends LlmAdapter {
   readonly secondPaused = new Promise<void>((resolve) => { this.resolveSecondPaused = resolve })
   private readonly firstContinuation = new Promise<void>((resolve) => { this.resolveFirstContinuation = resolve })
   private readonly secondContinuation = new Promise<void>((resolve) => { this.resolveSecondContinuation = resolve })
-
-  // The catalog default gives way to the first listed model when the default
-  // is not listed, so the route advertises the model the scenario saves.
-  override listModels(provider: string): Promise<readonly LlmModelInfo[]> {
-    return Promise.resolve([{ provider, id: MODEL, name: MODEL }])
-  }
 
   grow(): void {
     if (this.firstContinued) return
@@ -91,7 +86,7 @@ async function fenceTree(block: ReturnType<Page['locator']>): Promise<FenceTree>
     const pre = element.querySelector<HTMLPreElement>('pre.shiki')
     if (pre === null) throw new Error('streaming fence did not render through the shiki arm')
     return {
-      language: element.querySelector('[class*="infostring"]')?.textContent ?? '',
+      language: element.querySelector('[data-code-block-banner] [class*="language"]')?.textContent ?? '',
       pre: {
         className: pre.className,
         style: pre.style.cssText,

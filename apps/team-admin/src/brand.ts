@@ -3,7 +3,8 @@
  * bundles independently of the harness's client packages, so it carries its own
  * copy rather than a dependency on `@deepseek-ai/dsh-client-ui-primitives`. The
  * same artwork also ships as the shell's `WeWorkLogo` primitive,
- * apps/web/public/favicon.svg, this application's own index.html favicon, and
+ * apps/web/public/favicon.svg and favicon-dark.svg, this application's own
+ * index.html favicon, and
  * packages/team/team-local-login/src/pages.ts; replacing the logo means
  * replacing all of them.
  */

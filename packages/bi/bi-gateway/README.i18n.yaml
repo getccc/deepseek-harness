@@ -1,6 +1,58 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/bi/bi-gateway/README.md
-README.md: b2fb00a6b46b1ddd43519aa518b3467379965872
-README.zh.md: e86a3dcd271bb746e5c041717be4306fa931de13
+/:
+  en: 27f371f34d2701f8
+  zh: 10f5cfbc14025abd
+/deepseek-ai-dsh-bi-gateway:
+  en: 8a09d25159003d52
+  zh: 679299419ab44406
+/deepseek-ai-dsh-bi-gateway/summary:
+  en: 82fa20cef4177315
+  zh: 7c898ff4c2826d1c
+/deepseek-ai-dsh-bi-gateway/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 9f0336825ccdaacd
+/deepseek-ai-dsh-bi-gateway/use-this-package:
+  en: 217bec148fcb3901
+  zh: a6605cc2b7125232
+/deepseek-ai-dsh-bi-gateway/use-this-package/when-to-choose-it:
+  en: 2ae92c47e0bd206c
+  zh: e3e3a8dcb2cc22f3
+/deepseek-ai-dsh-bi-gateway/use-this-package/minimal-configuration:
+  en: fbe2edb73b16263b
+  zh: 5f9f5dffa9c28146
+/deepseek-ai-dsh-bi-gateway/use-this-package/the-two-audiences:
+  en: a76fc1f612796fb9
+  zh: e5e3816cc073ca6d
+/deepseek-ai-dsh-bi-gateway/use-this-package/one-resource-type-two-meanings:
+  en: 38ff40a1879af090
+  zh: 170331df62727ef9
+/deepseek-ai-dsh-bi-gateway/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-bi-gateway/understand-the-implementation/design-philosophy:
+  en: 2e17f60f88ca70ca
+  zh: 71c27a3a219de69d
+/deepseek-ai-dsh-bi-gateway/understand-the-implementation/source-map:
+  en: 389460bd10eae18c
+  zh: 2e0867f954adca98
+/deepseek-ai-dsh-bi-gateway/understand-the-implementation/data-model:
+  en: 9a8f19e85812e98f
+  zh: 47651f26adf2c396
+/deepseek-ai-dsh-bi-gateway/further-exploration:
+  en: 5f5414ab5935d471
+  zh: af580d539fddaad7
+/deepseek-ai-dsh-bi-gateway/model-experience:
+  en: 24bfeea5d24b8b84
+  zh: c087bf6077760115
+/deepseek-ai-dsh-bi-gateway/model-experience/kv-cache-effect:
+  en: 14c1112fcaa45b72
+  zh: ebaa66da56e3d135
+/deepseek-ai-dsh-bi-gateway/known-limitations-and-deferred-work:
+  en: 4cb136cf8ecfdb75
+  zh: c12dd2fbdea6d701
+/deepseek-ai-dsh-bi-gateway/known-limitations-and-deferred-work/dev-note:
+  en: d6498d14c442a1ff
+  zh: db24aa6f6867be36

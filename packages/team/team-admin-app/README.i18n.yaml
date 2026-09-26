@@ -1,6 +1,49 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/team/team-admin-app/README.md
-README.md: daf70dcc3db04231b98ca8deeebf9985bbf53074
-README.zh.md: a601fc1dfa1974fe5246d60b3e45539ecc95ee45
+/:
+  en: f11410469638dc66
+  zh: ae9e724ec93f334c
+/deepseek-ai-dsh-team-admin-app:
+  en: 832fa9fe7841b0c1
+  zh: 075248aa2b2bd2fe
+/deepseek-ai-dsh-team-admin-app/summary:
+  en: d458ddb107cd4a74
+  zh: 8a752bda51444aac
+/deepseek-ai-dsh-team-admin-app/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5452fccb37762c88
+/deepseek-ai-dsh-team-admin-app/use-this-package:
+  en: 85707cae217803bc
+  zh: 6ddc4b55f54cd03c
+/deepseek-ai-dsh-team-admin-app/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-team-admin-app/understand-the-implementation/the-page-is-public-the-api-is-not:
+  en: 259bde73d30b33b4
+  zh: 23df356f605c124f
+/deepseek-ai-dsh-team-admin-app/understand-the-implementation/a-base-element-because-the-build-is-address-agnostic:
+  en: 71bb5dbdb2a40bc8
+  zh: 00e88357f61a0bbb
+/deepseek-ai-dsh-team-admin-app/understand-the-implementation/traversal-is-the-static-server-s-not-this-package-s:
+  en: f68a5fc3f45511d8
+  zh: 02897e185333c429
+/deepseek-ai-dsh-team-admin-app/understand-the-implementation/source-map:
+  en: 59a35e56619e8b33
+  zh: 75bbf5d22ddd9df0
+/deepseek-ai-dsh-team-admin-app/further-exploration:
+  en: cc32ce92cc66848a
+  zh: fc811d715593f480
+/deepseek-ai-dsh-team-admin-app/model-experience:
+  en: 3fc17fd6e9209070
+  zh: f2bd28cabd14edea
+/deepseek-ai-dsh-team-admin-app/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: ac91908e96d0e23d
+/deepseek-ai-dsh-team-admin-app/known-limitations-and-deferred-work:
+  en: 2c9d8216a185e3f1
+  zh: c7b5799b400a5fdc
+/deepseek-ai-dsh-team-admin-app/known-limitations-and-deferred-work/dev-note:
+  en: 98f3d7d3dea18635
+  zh: cc15903243e5665b

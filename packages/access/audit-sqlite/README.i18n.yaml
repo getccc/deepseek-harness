@@ -1,6 +1,49 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/access/audit-sqlite/README.md
-README.md: a1de879ea04bbb6c0a939f92951ed70a6dc7d04e
-README.zh.md: cef4d384e09119e41aa10317833361792936ffa7
+/:
+  en: 43a1a1c2c31c6cb6
+  zh: e8ef284eced24095
+/deepseek-ai-dsh-audit-sqlite:
+  en: 8e2c184c353b3587
+  zh: 25a77f2ce4b9602b
+/deepseek-ai-dsh-audit-sqlite/summary:
+  en: 442231f1dc0e5afd
+  zh: 05469d8fa64511fe
+/deepseek-ai-dsh-audit-sqlite/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5452fccb37762c88
+/deepseek-ai-dsh-audit-sqlite/use-this-package:
+  en: f95a7244388f6cd7
+  zh: 826809ee6cc71ed0
+/deepseek-ai-dsh-audit-sqlite/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-audit-sqlite/understand-the-implementation/the-schema-states-the-rules-a-second-time:
+  en: 5d49d03fc3b58118
+  zh: 949bc4dd96fc6a5f
+/deepseek-ai-dsh-audit-sqlite/understand-the-implementation/append-only-at-the-database:
+  en: 4051f0ac4aa0b88f
+  zh: 11b79ec85b62a38d
+/deepseek-ai-dsh-audit-sqlite/understand-the-implementation/seeding-is-additive:
+  en: e65e6a3994f23fc4
+  zh: 6af658178cc12489
+/deepseek-ai-dsh-audit-sqlite/understand-the-implementation/source-map:
+  en: 8f5d4d5874ddf63d
+  zh: 8b7b1e51a10efeb0
+/deepseek-ai-dsh-audit-sqlite/further-exploration:
+  en: 1a8d8e94e4285c2c
+  zh: 05c7fee84f9edd18
+/deepseek-ai-dsh-audit-sqlite/model-experience:
+  en: 0d0e18e68e82d0d7
+  zh: d0ead7b5ee635e69
+/deepseek-ai-dsh-audit-sqlite/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: e8121475b5ee0f9b
+/deepseek-ai-dsh-audit-sqlite/known-limitations-and-deferred-work:
+  en: 36629fb0ff13de8e
+  zh: b4f23b16ebe21d43
+/deepseek-ai-dsh-audit-sqlite/known-limitations-and-deferred-work/dev-note:
+  en: 9867e88dc4382676
+  zh: 2a3d882b83672708

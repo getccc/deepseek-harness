@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-30-the-handoff-is-navigation-not-a-tunnel.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-30-the-handoff-is-navigation-not-a-tunnel.md
-2026-08-30-the-handoff-is-navigation-not-a-tunnel.md: 62e564f46dcefc26b436281df48941721acab0e3
-2026-08-30-the-handoff-is-navigation-not-a-tunnel.zh.md: b8a4cf9508a941af617fb92293a6637c2b3fa916
+/agent-note-the-handoff-is-navigation-and-the-callback-cannot-be-a-redirect:
+  en: 7aeffebaa06aacfe
+  zh: b144aa2ffeedc598
+/agent-note-the-handoff-is-navigation-and-the-callback-cannot-be-a-redirect/problem:
+  en: 02b5257873611499
+  zh: 2ac95ff9c6eeb4f1
+/agent-note-the-handoff-is-navigation-and-the-callback-cannot-be-a-redirect/decision:
+  en: 40518f98d0d73762
+  zh: 6b9ed20999913ba3
+/agent-note-the-handoff-is-navigation-and-the-callback-cannot-be-a-redirect/alternatives-considered:
+  en: 0f4b73a8eae7ba48
+  zh: 0fc02c19cc0f76ce
+/agent-note-the-handoff-is-navigation-and-the-callback-cannot-be-a-redirect/consequences:
+  en: e2cf3f2f5130c94a
+  zh: 73ca05c441490f5a

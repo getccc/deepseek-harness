@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-01-editing-and-deleting-a-catalog-model.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-01-editing-and-deleting-a-catalog-model.md
-2026-09-01-editing-and-deleting-a-catalog-model.md: 7af30289ba63d6c783849886f831f93020a0af34
-2026-09-01-editing-and-deleting-a-catalog-model.zh.md: bde1f7c6f5f8749bd9c062ccf43a5097de515b8b
+/agent-note-editing-and-deleting-a-catalog-model:
+  en: c3aaae97016eac19
+  zh: daae60499969551a
+/agent-note-editing-and-deleting-a-catalog-model/problem:
+  en: 410434fe466cd10e
+  zh: b5a1e4740f87a977
+/agent-note-editing-and-deleting-a-catalog-model/decision:
+  en: 2c4bac161084f189
+  zh: cdb66e63ffc86f20
+/agent-note-editing-and-deleting-a-catalog-model/alternatives-considered:
+  en: 5c6b5dc1c7c2cb16
+  zh: 0c8b468fb5d8dc50
+/agent-note-editing-and-deleting-a-catalog-model/consequences:
+  en: 807ddee087fc6793
+  zh: 6b16cb99d76f4605

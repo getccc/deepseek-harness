@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-30-watching-a-response-go-past.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-30-watching-a-response-go-past.md
-2026-08-30-watching-a-response-go-past.md: 63cfd8a866de3f1504066f33aada98e69a2a1c41
-2026-08-30-watching-a-response-go-past.zh.md: bcb99c33ebde7d4874dc823413f273291eef5820
+/agent-note-watching-a-response-go-past:
+  en: 0f45bff783cb2d81
+  zh: b203dc198a3e4584
+/agent-note-watching-a-response-go-past/problem:
+  en: 3dc9eada2bc55d37
+  zh: ec6dda84e87e8ec1
+/agent-note-watching-a-response-go-past/decision:
+  en: 6ed1111996e54054
+  zh: e03484b2a4cc3e2c
+/agent-note-watching-a-response-go-past/alternatives-considered:
+  en: e74db3e5736213fe
+  zh: 86bc3ffa108aeeae
+/agent-note-watching-a-response-go-past/consequences:
+  en: 01a799aa20de9593
+  zh: 338dfb0ef3770a55

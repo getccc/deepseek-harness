@@ -1,6 +1,49 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/team/team-account-client/README.md
-README.md: e2e736dbeeaa89a15a22e683ab58f6f8efcefd44
-README.zh.md: 5268d4703e877f77c00ce970a00b5f4411327386
+/:
+  en: 2cfe52215fd2767c
+  zh: 425d446654aa7836
+/deepseek-ai-dsh-team-account-client:
+  en: 37edf27f7c223557
+  zh: 2fd9b7339d14e238
+/deepseek-ai-dsh-team-account-client/summary:
+  en: e3998ef46ced81bc
+  zh: 9ca874194254f6b8
+/deepseek-ai-dsh-team-account-client/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5452fccb37762c88
+/deepseek-ai-dsh-team-account-client/use-this-package:
+  en: 1cefc80ff3562a04
+  zh: 9e83964c9a436070
+/deepseek-ai-dsh-team-account-client/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-team-account-client/understand-the-implementation/the-pkce-verifier-lives-only-in-this-process:
+  en: d604405760800517
+  zh: 8645de91a52cf70f
+/deepseek-ai-dsh-team-account-client/understand-the-implementation/both-records-go-through-the-credential-provider:
+  en: 813b06d56d4a917e
+  zh: 00632cb7203c5276
+/deepseek-ai-dsh-team-account-client/understand-the-implementation/signing-out-keeps-the-computer:
+  en: f7aa2ca2984e5450
+  zh: cd8c85250a0078ac
+/deepseek-ai-dsh-team-account-client/understand-the-implementation/source-map:
+  en: 06ec6ae9df4e40c0
+  zh: 8383c3ac2a9084db
+/deepseek-ai-dsh-team-account-client/further-exploration:
+  en: 3772e44022ebe7e7
+  zh: de0664841de56360
+/deepseek-ai-dsh-team-account-client/model-experience:
+  en: ba1b8bb3ef47ab5a
+  zh: a42217e2b57dcfd0
+/deepseek-ai-dsh-team-account-client/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: e8121475b5ee0f9b
+/deepseek-ai-dsh-team-account-client/known-limitations-and-deferred-work:
+  en: 9b2f6301c6ac8ec0
+  zh: 8a178768ca4792ef
+/deepseek-ai-dsh-team-account-client/known-limitations-and-deferred-work/dev-note:
+  en: cf0151c306117a65
+  zh: 99a9d62b0989cf06

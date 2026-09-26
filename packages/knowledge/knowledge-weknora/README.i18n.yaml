@@ -1,6 +1,67 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/knowledge/knowledge-weknora/README.md
-README.md: 5880cf8d8856122b58b231a01ab1810803023d55
-README.zh.md: 29a54a64ecfeb6da2d4bc0fe399721bdc689e094
+/:
+  en: 2e426b39bd6f60f5
+  zh: 00735956cf654753
+/deepseek-ai-dsh-knowledge-weknora:
+  en: b9ed7e1fb44ec49f
+  zh: 84252f90e034d233
+/deepseek-ai-dsh-knowledge-weknora/summary:
+  en: d84a81652b3fd276
+  zh: af3527dc991b8143
+/deepseek-ai-dsh-knowledge-weknora/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 9f0336825ccdaacd
+/deepseek-ai-dsh-knowledge-weknora/use-this-package:
+  en: 887cc7348990408d
+  zh: 5776f40a42d1c2a4
+/deepseek-ai-dsh-knowledge-weknora/use-this-package/when-to-choose-it:
+  en: ac1118e9400af1f1
+  zh: e5887b7550bd8de5
+/deepseek-ai-dsh-knowledge-weknora/use-this-package/minimal-configuration:
+  en: b0c9a47b6130b70c
+  zh: 12537396905d2f6c
+/deepseek-ai-dsh-knowledge-weknora/use-this-package/use-a-space-key-not-a-platform-key:
+  en: 0c22aa9cd962ff6c
+  zh: d9c23f8f4d500b46
+/deepseek-ai-dsh-knowledge-weknora/use-this-package/bounds-and-cost:
+  en: f54e2ad98e954ef0
+  zh: 9e24c509a1e945a2
+/deepseek-ai-dsh-knowledge-weknora/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-knowledge-weknora/understand-the-implementation/design-philosophy:
+  en: db701c342a688e64
+  zh: 55d2346fc72f4492
+/deepseek-ai-dsh-knowledge-weknora/understand-the-implementation/source-map:
+  en: caf5949d73d533ef
+  zh: d3ac4354a8112042
+/deepseek-ai-dsh-knowledge-weknora/understand-the-implementation/the-endpoints:
+  en: 4e5e8e31524082d9
+  zh: 02892719357b7936
+/deepseek-ai-dsh-knowledge-weknora/understand-the-implementation/no-loadable-url-can-come-back:
+  en: 06ca53a5e73c059e
+  zh: a8a8a6cd7ca9770f
+/deepseek-ai-dsh-knowledge-weknora/understand-the-implementation/failures:
+  en: cb4d6df55feb21ee
+  zh: d79ab343decdbdbe
+/deepseek-ai-dsh-knowledge-weknora/further-exploration:
+  en: 885b16cd3ea14e83
+  zh: fb7318c4d96f7d87
+/deepseek-ai-dsh-knowledge-weknora/model-experience:
+  en: fdce4e870d96f558
+  zh: 24c4b80cbd585f09
+/deepseek-ai-dsh-knowledge-weknora/model-experience/kv-cache-effect:
+  en: 5100276efc3618db
+  zh: 366908aff2c9a97d
+/deepseek-ai-dsh-knowledge-weknora/known-limitations-and-deferred-work:
+  en: 30a84600a3618762
+  zh: a65d63208e46e9bb
+/deepseek-ai-dsh-knowledge-weknora/known-limitations-and-deferred-work/dev-note:
+  en: 64ee46559b704be8
+  zh: 5354dccd41099de5
+/deepseek-ai-dsh-knowledge-weknora/known-limitations-and-deferred-work/dev-note/the-published-api-documentation-and-a-deployment-disagree:
+  en: b3419cca5a366438
+  zh: 70764bd42508b7c3

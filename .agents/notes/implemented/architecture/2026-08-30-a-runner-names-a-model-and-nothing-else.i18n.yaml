@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-30-a-runner-names-a-model-and-nothing-else.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-30-a-runner-names-a-model-and-nothing-else.md
-2026-08-30-a-runner-names-a-model-and-nothing-else.md: 0a96f4722eb2aefb3071ded435c753d5bd94c437
-2026-08-30-a-runner-names-a-model-and-nothing-else.zh.md: 82fa6b90093660442397ab53fdb600b0266f6e3f
+/agent-note-a-runner-names-a-model-and-nothing-else:
+  en: 78e91909a9e5a444
+  zh: 44c94b6b18762921
+/agent-note-a-runner-names-a-model-and-nothing-else/problem:
+  en: 20986e0fd9dadf80
+  zh: c873d075b22b0bb3
+/agent-note-a-runner-names-a-model-and-nothing-else/decision:
+  en: 018b4f32c5a41f5f
+  zh: 0b93ea4a80023304
+/agent-note-a-runner-names-a-model-and-nothing-else/alternatives-considered:
+  en: 0840f5531cc347f9
+  zh: 3356b54d5a5a0c36
+/agent-note-a-runner-names-a-model-and-nothing-else/consequences:
+  en: c27df3373318d713
+  zh: 16f04585a20b4554

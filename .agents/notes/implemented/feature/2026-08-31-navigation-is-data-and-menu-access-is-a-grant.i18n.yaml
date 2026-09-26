@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-31-navigation-is-data-and-menu-access-is-a-grant.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-31-navigation-is-data-and-menu-access-is-a-grant.md
-2026-08-31-navigation-is-data-and-menu-access-is-a-grant.md: c5233f585a96874fc8e1a0f4e282140f485c5f74
-2026-08-31-navigation-is-data-and-menu-access-is-a-grant.zh.md: 22753d06fd850319adac4b827ac00cca490e1b86
+/agent-note-console-navigation-is-organization-data-and-menu-access-is-a-grant:
+  en: 6a585b63445e5bcf
+  zh: cb042b316717322c
+/agent-note-console-navigation-is-organization-data-and-menu-access-is-a-grant/problem:
+  en: 63fc6f9bc8930aca
+  zh: acf2ffaca21cd37c
+/agent-note-console-navigation-is-organization-data-and-menu-access-is-a-grant/decision:
+  en: 30acdecadb2222aa
+  zh: fda236fe2e03ac88
+/agent-note-console-navigation-is-organization-data-and-menu-access-is-a-grant/alternatives-considered:
+  en: 9d26ad8c5fa9855d
+  zh: a6854327d4bdf340
+/agent-note-console-navigation-is-organization-data-and-menu-access-is-a-grant/consequences:
+  en: a17c9eb7cdfefb78
+  zh: 766abba4897cbf71

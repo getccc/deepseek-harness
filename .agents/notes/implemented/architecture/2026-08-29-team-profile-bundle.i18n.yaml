@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-29-team-profile-bundle.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-29-team-profile-bundle.md
-2026-08-29-team-profile-bundle.md: 3642cfeb72c343a9d236f75aa21fe488d3b42e9f
-2026-08-29-team-profile-bundle.zh.md: 16ee4897a634925c2fbd5730aac14942a8838553
+/agent-note-the-team-profile-stacks-on-web-app-instead-of-forking-it:
+  en: 57d240aad2ee044b
+  zh: af9a7c5f7586f3d1
+/agent-note-the-team-profile-stacks-on-web-app-instead-of-forking-it/problem:
+  en: 1826a79c505405c3
+  zh: d99ee8af1408171e
+/agent-note-the-team-profile-stacks-on-web-app-instead-of-forking-it/decision:
+  en: ff59b03b978a8fd4
+  zh: 26b430ff0da39e30
+/agent-note-the-team-profile-stacks-on-web-app-instead-of-forking-it/decision/package-topology:
+  en: 6b589c3f92e041bf
+  zh: 9661cc2187361a70
+/agent-note-the-team-profile-stacks-on-web-app-instead-of-forking-it/alternatives-considered:
+  en: c26aa6aadb5938d0
+  zh: 9262157950b83b1a
+/agent-note-the-team-profile-stacks-on-web-app-instead-of-forking-it/consequences:
+  en: a94a285f93190546
+  zh: 26e6235267091376

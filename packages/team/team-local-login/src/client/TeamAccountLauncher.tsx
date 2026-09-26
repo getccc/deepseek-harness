@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import {
-  IconEllipsisOutline16, IconSettingsOutline16, Menu,
+  IconEllipsisOutlineRegular, IconSettingsOutlineRegular, Menu,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type {
   InjectFace, PropsLocale, PropsRenderSlots, PropsRuntime,
 } from '@deepseek-ai/dsh-client-ui-slots'
 // Type-only: pulls the settings.launcher slot declaration into this program.
-import type {} from '@deepseek-ai/dsh-client-ui-settings-general/client'
+import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 // Type-only: pulls the team.account.action declaration into this program.
 import type {} from './account-slots.ts'
 import type { TeamAccountKey } from './locales.ts'
@@ -85,7 +85,7 @@ export function TeamAccountLauncher({
         align="start"
         portal
         items={[
-          { id: 'settings', label: t('settings'), icon: <IconSettingsOutline16 /> },
+          { id: 'settings', label: t('settings'), icon: <IconSettingsOutlineRegular /> },
           { id: 'sign-out', label: t('signOut'), icon: <SignOutIcon />, danger: true },
         ]}
         onSelect={(id) => {
@@ -105,7 +105,7 @@ export function TeamAccountLauncher({
           >
             <span className={css.avatar} aria-hidden="true">{accountInitial(label)}</span>
             {wide && <span className={css.name}>{label}</span>}
-            {wide && <IconEllipsisOutline16 className={css.more} />}
+            {wide && <IconEllipsisOutlineRegular className={css.more} />}
           </button>
         )}
       />

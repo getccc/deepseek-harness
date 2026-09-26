@@ -56,7 +56,7 @@ kind: "package-reference"
 
 - [dsh-api-web-access-controller](../../api/web-access-controller/README.zh.md)——徽章借以设置开关的 Remote。
 - [dsh-tool-web](../../web/tool-web/README.zh.md)——拥有 `sessionSwitch` 配置、`/web` 命令、`webAccess` 投影与按会话的工具限制。
-- [dsh-agent-presets](../../preset/agent-presets/README.zh.md)——随附的 `chat` preset，默认以关闭状态挂载该开关。
+- [dsh-agent-preset-registry](../../preset/agent-preset-registry/README.zh.md)——随附的 `chat` preset（Web bundle 的 `presets/chat.patch.yml`）向其声明；该 preset 默认以关闭状态挂载该开关。
 - [ui-conversation](../ui-conversation/README.zh.md)——声明 composer 的 `conversation.input.left` 区域。
 - [客户端包映射](../README.zh.md)——相邻的浏览器 UI 包。
 

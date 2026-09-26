@@ -1,6 +1,61 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/llm/model-gateway-http/README.md
-README.md: 5a04130bcbfcd2b1f83185a48ab6a7a16a32ebce
-README.zh.md: 90a6cfa09672fd0077b5ea948c1fd3a839c6da2f
+/:
+  en: 70903309b0389e77
+  zh: 8c813ebff3de6779
+/deepseek-ai-dsh-model-gateway-http:
+  en: 4a31f9df2d9d2eed
+  zh: 41dccdd7f5b8d888
+/deepseek-ai-dsh-model-gateway-http/summary:
+  en: bf118367ad0dfaa8
+  zh: 5657ca90612b1c35
+/deepseek-ai-dsh-model-gateway-http/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5452fccb37762c88
+/deepseek-ai-dsh-model-gateway-http/use-this-package:
+  en: 0d64f9683925dd20
+  zh: 839bbf5813ff0fa5
+/deepseek-ai-dsh-model-gateway-http/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-model-gateway-http/understand-the-implementation/one-answer-for-every-bad-token:
+  en: be5b5b86eb8d7ac3
+  zh: 6aa21ecc47402c02
+/deepseek-ai-dsh-model-gateway-http/understand-the-implementation/discovery-uses-the-same-device-principal:
+  en: 3111f191c71c8520
+  zh: a1df3ce9e0e5f14f
+/deepseek-ai-dsh-model-gateway-http/understand-the-implementation/the-credential-exists-for-one-call:
+  en: c358cb1abbfc0844
+  zh: a39c30efeec93030
+/deepseek-ai-dsh-model-gateway-http/understand-the-implementation/the-provider-base-url-keeps-its-path-prefix:
+  en: c7b6d2957a451968
+  zh: 22b6acb4d2c78b78
+/deepseek-ai-dsh-model-gateway-http/understand-the-implementation/usage-is-read-by-watching-not-by-holding:
+  en: 9644e7c95d842533
+  zh: 80b92cb739488122
+/deepseek-ai-dsh-model-gateway-http/understand-the-implementation/what-each-outcome-settles:
+  en: bb8312ea7c3f685b
+  zh: d030dde3ff29c2a1
+/deepseek-ai-dsh-model-gateway-http/understand-the-implementation/a-settlement-failure-is-not-the-member-s-problem:
+  en: 1946be9ba41a56ba
+  zh: 1b0b83d29718c6bd
+/deepseek-ai-dsh-model-gateway-http/understand-the-implementation/source-map:
+  en: bdde0f8417ec998e
+  zh: c8d0e6a7a00522d9
+/deepseek-ai-dsh-model-gateway-http/further-exploration:
+  en: 45308d8a9ca1712b
+  zh: af5334374a816666
+/deepseek-ai-dsh-model-gateway-http/model-experience:
+  en: 09879b6771bc57c8
+  zh: ac2c06d839226233
+/deepseek-ai-dsh-model-gateway-http/model-experience/kv-cache-effect:
+  en: 41d08e0bca077c2a
+  zh: 3dd07cc467a07163
+/deepseek-ai-dsh-model-gateway-http/known-limitations-and-deferred-work:
+  en: 2e7b269fa7e9164e
+  zh: 5a9b008ab7f22060
+/deepseek-ai-dsh-model-gateway-http/known-limitations-and-deferred-work/dev-note:
+  en: 088d85bf8f0fb79b
+  zh: ff39792f9287a477

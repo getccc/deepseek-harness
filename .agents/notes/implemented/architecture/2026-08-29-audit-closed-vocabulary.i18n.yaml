@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-29-audit-closed-vocabulary.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-29-audit-closed-vocabulary.md
-2026-08-29-audit-closed-vocabulary.md: e1cfadd4e30dc08e2b714b084141ac7bcae621ee
-2026-08-29-audit-closed-vocabulary.zh.md: d8f08d818f5aac38773fea04c4a48922a4c0d8b2
+/agent-note-an-audit-record-has-nowhere-to-put-a-sentence:
+  en: b16d4ca0dd3badc4
+  zh: 207a589b8f7dcc95
+/agent-note-an-audit-record-has-nowhere-to-put-a-sentence/problem:
+  en: 674fe44d00320568
+  zh: 15bc71a31980137f
+/agent-note-an-audit-record-has-nowhere-to-put-a-sentence/decision:
+  en: 3840d2f37435094e
+  zh: 12b170edb958d75c
+/agent-note-an-audit-record-has-nowhere-to-put-a-sentence/alternatives-considered:
+  en: 9c84286bf6c94831
+  zh: 3b308eb751908e6b
+/agent-note-an-audit-record-has-nowhere-to-put-a-sentence/consequences:
+  en: ed790e00b5683048
+  zh: 1c73f9af0e34dfb4

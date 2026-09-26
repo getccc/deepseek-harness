@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-30-a-profile-that-refuses-to-guess.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-30-a-profile-that-refuses-to-guess.md
-2026-08-30-a-profile-that-refuses-to-guess.md: 3d3cd3f566d7f809c18323138da8b593958f3305
-2026-08-30-a-profile-that-refuses-to-guess.zh.md: 52c93344241833bd9a629ef2776fc4978832daf1
+/agent-note-the-shipped-team-profiles-refuse-to-guess-who-they-serve:
+  en: dee32e10f7c5a550
+  zh: 2dede4aae49dc385
+/agent-note-the-shipped-team-profiles-refuse-to-guess-who-they-serve/problem:
+  en: 979175fa378d1538
+  zh: 798a9ff5b94a266e
+/agent-note-the-shipped-team-profiles-refuse-to-guess-who-they-serve/decision:
+  en: e1a5374a7bb9e4b9
+  zh: 231659d5d2630f91
+/agent-note-the-shipped-team-profiles-refuse-to-guess-who-they-serve/alternatives-considered:
+  en: 33577f4d865c564f
+  zh: c695d3cf100346c9
+/agent-note-the-shipped-team-profiles-refuse-to-guess-who-they-serve/consequences:
+  en: 56c7082cae830a29
+  zh: eef3a853f83ac612

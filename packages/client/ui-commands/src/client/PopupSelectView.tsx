@@ -11,10 +11,11 @@
  * focus). Closed state renders null; the overlay slot stays mounted. The card
  * height clamps to the space above the composer.
  */
+import { MenuSurface } from '@deepseek-ai/dsh-client-ui-primitives'
 import { useEffect, useRef } from 'react'
 import { useSyncExternalStore } from 'react'
 import clsx from 'clsx'
-import { IconCheckOutline16, RiskConfirmation, useAnchoredMaxHeight } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconCheckOutlineRegular, RiskConfirmation, useAnchoredMaxHeight } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import { filterOptions } from './popup.ts'
 import type { PopupSelectController } from './popup.ts'
@@ -121,7 +122,7 @@ export function PopupSelectView({ popup, t }: PopupSelectViewProps) {
   return (
     <>
       {state.confirming === null && (
-        <div
+        <MenuSurface
           ref={cardRef}
           className={css.card}
           style={{ maxHeight }}
@@ -176,13 +177,13 @@ export function PopupSelectView({ popup, t }: PopupSelectViewProps) {
                   </span>
                   {option.detail !== undefined && <span className={css.detail}>{option.detail}</span>}
                   {(state.multi ? state.checked.includes(option.id) : option.active === true) && (
-                    <span className={css.check}><IconCheckOutline16 /></span>
+                    <span className={css.check}><IconCheckOutlineRegular /></span>
                   )}
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </MenuSurface>
       )}
       {confirmation !== undefined && (
         <RiskConfirmation

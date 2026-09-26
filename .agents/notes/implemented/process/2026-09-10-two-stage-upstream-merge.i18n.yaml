@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-10-two-stage-upstream-merge.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-09-10-two-stage-upstream-merge.md
-2026-09-10-two-stage-upstream-merge.md: c4fc99f763e54c637894d51edc8a3b78fd7ac9eb
-2026-09-10-two-stage-upstream-merge.zh.md: 0fb594f15942420855830f0cfe5b343bc2e82d78
+/agent-note-two-stage-merge-of-upstream-0-1-5-rc-1:
+  en: 4339ecc7b82ea87a
+  zh: b6db27703eec0d7c
+/agent-note-two-stage-merge-of-upstream-0-1-5-rc-1/problem:
+  en: 2f3e3dd1744ceb51
+  zh: b134052781d3f18e
+/agent-note-two-stage-merge-of-upstream-0-1-5-rc-1/decision:
+  en: 7313d37dd682cc43
+  zh: b1cca274ffeea30d
+/agent-note-two-stage-merge-of-upstream-0-1-5-rc-1/alternatives-considered:
+  en: 129dd62143ba849a
+  zh: 7e93da68110d107a
+/agent-note-two-stage-merge-of-upstream-0-1-5-rc-1/consequences:
+  en: 4b4f36f61c91a7bd
+  zh: 2bd347616e497dc5

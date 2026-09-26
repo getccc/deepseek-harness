@@ -1,6 +1,25 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/team/README.md
-README.md: af91ef816eba5b21b4b3c586f1b25fa23d3e32a6
-README.zh.md: dc824a4803d2f70c65e096e9c10aa34aea17f096
+/:
+  en: c2f154b1c81c35be
+  zh: b72cfa7fa767fce2
+/team-getting-from-the-company-site-to-this-computer:
+  en: ee8124a2dc2abb23
+  zh: f8cac5cc33f25e12
+/team-getting-from-the-company-site-to-this-computer/summary:
+  en: 2ec3dbb8e7018904
+  zh: 092791061a808a6b
+/team-getting-from-the-company-site-to-this-computer/table-of-contents:
+  en: 1eb35b015a6c423f
+  zh: a8a3dceee2c9e943
+/team-getting-from-the-company-site-to-this-computer/packages:
+  en: 86429b72d0f6add6
+  zh: 6b068ba20091449d
+/team-getting-from-the-company-site-to-this-computer/related-documentation:
+  en: b1c909759a1d24b8
+  zh: 189c28f1fcb2ebc1
+/team-getting-from-the-company-site-to-this-computer/dev-note:
+  en: 6ddb7a1c2d4c7e77
+  zh: 9776063aa9935df5

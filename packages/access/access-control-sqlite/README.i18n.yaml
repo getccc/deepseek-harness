@@ -1,6 +1,49 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/access/access-control-sqlite/README.md
-README.md: 28d2aa24b9610a789770346dc91590e2efef55bd
-README.zh.md: 3a561a15e29338c84fb2990daed8b525e63b02bc
+/:
+  en: ceec3c249082ebfe
+  zh: 1b582b5752be96e4
+/deepseek-ai-dsh-access-control-sqlite:
+  en: 4480334396c8f06b
+  zh: a09c8e4d39dfbbfe
+/deepseek-ai-dsh-access-control-sqlite/summary:
+  en: ce82b0ae77903ba2
+  zh: 627405c4be0950e6
+/deepseek-ai-dsh-access-control-sqlite/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 405b30feaf48c087
+/deepseek-ai-dsh-access-control-sqlite/use-this-package:
+  en: 0919f9c98cba6698
+  zh: 406a6e6b91fb7ddf
+/deepseek-ai-dsh-access-control-sqlite/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-access-control-sqlite/understand-the-implementation/the-evaluation-is-one-query:
+  en: b7154c52943ba9d2
+  zh: 3955160c1ad97b49
+/deepseek-ai-dsh-access-control-sqlite/understand-the-implementation/invariants-live-in-the-schema:
+  en: 302a8e48fcefd3db
+  zh: 56d3fafac32de4a7
+/deepseek-ai-dsh-access-control-sqlite/understand-the-implementation/the-policy-revision-is-not-local:
+  en: 534b61f1304befe2
+  zh: a2b90b401f6b11d1
+/deepseek-ai-dsh-access-control-sqlite/understand-the-implementation/source-map:
+  en: e47f40cc7d4322eb
+  zh: a4c9f990efdeb0b8
+/deepseek-ai-dsh-access-control-sqlite/further-exploration:
+  en: 9c253dfca281fcb1
+  zh: 9926fca209a898bd
+/deepseek-ai-dsh-access-control-sqlite/model-experience:
+  en: c6f77f295aff8cf6
+  zh: 187d60ce526d0991
+/deepseek-ai-dsh-access-control-sqlite/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: 9618abc820ac7a34
+/deepseek-ai-dsh-access-control-sqlite/known-limitations-and-deferred-work:
+  en: a2dc4b7010319c6f
+  zh: adca2517d4bcc1c6
+/deepseek-ai-dsh-access-control-sqlite/known-limitations-and-deferred-work/dev-note:
+  en: 13e4991e4fb094a9
+  zh: ad8ae34e403f84d2

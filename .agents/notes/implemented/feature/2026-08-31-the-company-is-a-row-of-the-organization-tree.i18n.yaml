@@ -1,6 +1,25 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-31-the-company-is-a-row-of-the-organization-tree.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-31-the-company-is-a-row-of-the-organization-tree.md
-2026-08-31-the-company-is-a-row-of-the-organization-tree.md: 1c84046d10076dcaa0573e56c5ae4a902e1b7665
-2026-08-31-the-company-is-a-row-of-the-organization-tree.zh.md: cd30b6c1bd802e54367f92f435ea97344a58abeb
+/agent-note-the-company-is-a-row-of-the-organization-tree:
+  en: d20789c2a9db75ee
+  zh: f279cbc3012f5894
+/agent-note-the-company-is-a-row-of-the-organization-tree/problem:
+  en: 17aebef2df9dc586
+  zh: 2ad01780c447158e
+/agent-note-the-company-is-a-row-of-the-organization-tree/decision:
+  en: 9f71e8f249276cd9
+  zh: 15bf70276a45cb6b
+/agent-note-the-company-is-a-row-of-the-organization-tree/decision/two-fields-to-a-line:
+  en: 0ac850fbbfa1f31e
+  zh: 44b221ae3e3357bf
+/agent-note-the-company-is-a-row-of-the-organization-tree/decision/a-dialog-reopens-on-the-record-it-was-opened-for:
+  en: a6a61adaf4769f46
+  zh: 8e85a4ba7c15a174
+/agent-note-the-company-is-a-row-of-the-organization-tree/alternatives-considered:
+  en: cfe0243a269ad82a
+  zh: 91ddca335ff76cbd
+/agent-note-the-company-is-a-row-of-the-organization-tree/consequences:
+  en: 9b5b78ff1da39e5a
+  zh: d975b4fed610fd7c

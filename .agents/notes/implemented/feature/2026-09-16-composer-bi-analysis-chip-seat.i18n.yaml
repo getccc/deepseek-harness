@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-16-composer-bi-analysis-chip-seat.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-16-composer-bi-analysis-chip-seat.md
-2026-09-16-composer-bi-analysis-chip-seat.md: 329faeb5e31d6bc744c7b5eb7cec4be11edc5073
-2026-09-16-composer-bi-analysis-chip-seat.zh.md: 4c5badc4cf133f30075e051dcac9c677f752b1fa
+/agent-note-composer-bi-analysis-chip-seat:
+  en: 270a0d12b05814fe
+  zh: 1674262ab3ceecc3
+/agent-note-composer-bi-analysis-chip-seat/problem:
+  en: 3b36e36134d1d62a
+  zh: ccd61168ac9e9e83
+/agent-note-composer-bi-analysis-chip-seat/decision:
+  en: ed40d5c6a2c08273
+  zh: d813408110b23e2d
+/agent-note-composer-bi-analysis-chip-seat/alternatives-considered:
+  en: 43b0d41409ddc75b
+  zh: e3e13608b62d1411
+/agent-note-composer-bi-analysis-chip-seat/consequences:
+  en: 52c9428932b1a7e4
+  zh: ec3668990073620d
+/agent-note-composer-bi-analysis-chip-seat/testing:
+  en: 704975cb2960ed70
+  zh: ca109b8bda4b98a7

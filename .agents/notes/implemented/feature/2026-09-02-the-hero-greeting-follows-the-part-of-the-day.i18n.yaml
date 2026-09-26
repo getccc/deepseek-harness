@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-02-the-hero-greeting-follows-the-part-of-the-day.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-02-the-hero-greeting-follows-the-part-of-the-day.md
-2026-09-02-the-hero-greeting-follows-the-part-of-the-day.md: fc83a188f723df9d428a432fa260ff91979bebe7
-2026-09-02-the-hero-greeting-follows-the-part-of-the-day.zh.md: c1907eb821e980f61cac27f243a2fd3081cc6040
+/agent-note-the-hero-greeting-follows-the-part-of-the-day:
+  en: 8e14394e046b5c68
+  zh: 88cd3ba4987133fd
+/agent-note-the-hero-greeting-follows-the-part-of-the-day/problem:
+  en: 6e785c64f7889297
+  zh: 5a79e425d4a9f68b
+/agent-note-the-hero-greeting-follows-the-part-of-the-day/decision:
+  en: c1a6e581f7ea0bb3
+  zh: da5f645f30300995
+/agent-note-the-hero-greeting-follows-the-part-of-the-day/alternatives-considered:
+  en: 6a2a860b9c8c7b1f
+  zh: d4d1d33035ee9af6
+/agent-note-the-hero-greeting-follows-the-part-of-the-day/consequences:
+  en: cd06d8ed69096ff2
+  zh: b566119c97042c65

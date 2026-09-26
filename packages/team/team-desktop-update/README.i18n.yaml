@@ -1,6 +1,43 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/team/team-desktop-update/README.md
-README.md: 93b843f1bc6b93024e656a87681404d58810b64a
-README.zh.md: a300047ef4856a9ee8ce541f2a57295011d8b876
+/:
+  en: 66db656bf101f724
+  zh: 0b707ec92d49662e
+/deepseek-ai-dsh-team-desktop-update:
+  en: 5358d37ec71797d8
+  zh: 87c82a6ce76d4106
+/deepseek-ai-dsh-team-desktop-update/summary:
+  en: d5eda2101245f60b
+  zh: 95fab5425356c8ea
+/deepseek-ai-dsh-team-desktop-update/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5452fccb37762c88
+/deepseek-ai-dsh-team-desktop-update/use-this-package:
+  en: d9fa026ef4d867fa
+  zh: 0a8601d262fcc712
+/deepseek-ai-dsh-team-desktop-update/use-this-package/what-the-button-shows:
+  en: 2189426850584a3c
+  zh: b82d819036cdbd7b
+/deepseek-ai-dsh-team-desktop-update/use-this-package/failures:
+  en: 50efda0a0c45b08a
+  zh: ad0cbe51695177a1
+/deepseek-ai-dsh-team-desktop-update/understand-the-implementation:
+  en: 51a3e7fcd1ac6b56
+  zh: a99460f1bd9080f5
+/deepseek-ai-dsh-team-desktop-update/further-exploration:
+  en: 577e4045d5ba5e3c
+  zh: 1456c9aa767868da
+/deepseek-ai-dsh-team-desktop-update/model-experience:
+  en: 619d4471a381c8d1
+  zh: 1d4b563616823352
+/deepseek-ai-dsh-team-desktop-update/model-experience/kv-cache-effect:
+  en: 2117cfbc5de12998
+  zh: 3a5a738aad494f4d
+/deepseek-ai-dsh-team-desktop-update/known-limitations-and-deferred-work:
+  en: bd9b2d7e1b3e7b47
+  zh: 16ed376ae1efb5f5
+/deepseek-ai-dsh-team-desktop-update/known-limitations-and-deferred-work/dev-note:
+  en: 807b0a44c9d0d4f0
+  zh: 6e878a7b194a208a

@@ -10,7 +10,7 @@ Status: implemented
 
 ## 决定
 
-**名字住在 agent preset 的 persona 里。** [`agent-presets`](../../../../packages/preset/agent-presets/presets/) 中的 `standard`、`ptc`、`cordis` 三个 preset 在原有句子前加上 `You are 小微 (Xiaowei), the WeWork assistant:`。preset 就是成员在 WeWork 里挑选的模式，它们的 persona 本来就是 agent 身份所在之处；固定的 harness 身份句保留，因为它说的是引擎而不是助手。`minimal` preset 保留它的完整提示词，`sdk`、`acp`、`headless` 三个 profile 的 bundle 级 persona 不动：它们是自动化界面，从不挂载 preset，也从不显示这张脸。
+**名字住在 agent preset 的 persona 里。** Web bundle 的 [`presets/`](../../../../packages/bundle/web-app/presets/) 中的 `standard`、`ptc`、`cordis` 三个 preset 在原有句子前加上 `You are 小微 (Xiaowei), the WeWork assistant:`。preset 就是成员在 WeWork 里挑选的模式，它们的 persona 本来就是 agent 身份所在之处；固定的 harness 身份句保留，因为它说的是引擎而不是助手。`minimal` preset 保留它的完整提示词，`sdk`、`acp`、`headless` 三个 profile 的 bundle 级 persona 不动：它们是自动化界面，从不挂载 preset，也从不显示这张脸。
 
 **脸是一个内联源、两个消费者。** `team-local-login` 里的 [`xiaowei-avatar.ts`](../../../../packages/team/team-local-login/src/xiaowei-avatar.ts) 把形象导出为 data URI；[小微在 hero 与轮次头部完整站立](2026-09-07-xiaowei-stands-whole-in-the-hero-and-the-turn-header.zh.md)拥有当前的原图、它的编码，以及每个消费者绘制它的尺寸。登录页携带产品的标志组合——WeWork 标志（[WeWork 标志就是小微的形象](../architecture/2026-09-11-the-wework-logo-is-xiaoweis-figure.zh.md)让它就是这一形象）、`WeWork`、`个人与团队工作空间` 和表单上方的 `欢迎回来`——但没有介绍句，因为尚未登录的成员还没有在和助手对话。
 

@@ -1,6 +1,46 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/team/team-control-plane-http/README.md
-README.md: f0e42f0a16d373e6a1479bc080d39c3857cbb986
-README.zh.md: eb74c5e13f33198e060f4e909390b5d0dfa79787
+/:
+  en: 56d6429d2611db60
+  zh: 13d9923b050f2edb
+/deepseek-ai-dsh-team-control-plane-http:
+  en: 80782e38e1eacaf5
+  zh: 10630df3564d95a6
+/deepseek-ai-dsh-team-control-plane-http/summary:
+  en: e11bc30486538839
+  zh: 6ae2e89a056614a0
+/deepseek-ai-dsh-team-control-plane-http/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5452fccb37762c88
+/deepseek-ai-dsh-team-control-plane-http/use-this-package:
+  en: ab05d0981746f7b7
+  zh: 8a7cd5be7105d298
+/deepseek-ai-dsh-team-control-plane-http/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-team-control-plane-http/understand-the-implementation/every-body-is-parsed-before-the-seam-sees-it:
+  en: bc0b4f0895385a95
+  zh: d3dda3d381ba4db0
+/deepseek-ai-dsh-team-control-plane-http/understand-the-implementation/a-failure-that-is-not-a-refusal-says-nothing-about-itself:
+  en: 1626333041b8ce4d
+  zh: c3172431954e162e
+/deepseek-ai-dsh-team-control-plane-http/understand-the-implementation/source-map:
+  en: f3fdc262cec78ce1
+  zh: 62d3f6a0c04a1d25
+/deepseek-ai-dsh-team-control-plane-http/further-exploration:
+  en: 8c70cb51026738a7
+  zh: 89485c7083c33d32
+/deepseek-ai-dsh-team-control-plane-http/model-experience:
+  en: 059706fad770c047
+  zh: dc42e9d5bfc39656
+/deepseek-ai-dsh-team-control-plane-http/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: e8121475b5ee0f9b
+/deepseek-ai-dsh-team-control-plane-http/known-limitations-and-deferred-work:
+  en: 99bef986da871a1e
+  zh: 4f332b6e0f88c7d3
+/deepseek-ai-dsh-team-control-plane-http/known-limitations-and-deferred-work/dev-note:
+  en: a20e6fb37fe6713b
+  zh: bc1e07b51ea3083a

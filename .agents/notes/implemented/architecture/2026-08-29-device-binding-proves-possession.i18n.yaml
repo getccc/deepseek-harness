@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-29-device-binding-proves-possession.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-29-device-binding-proves-possession.md
-2026-08-29-device-binding-proves-possession.md: 275f0b2f22b81fb8274766bdd1d8500ee8e11282
-2026-08-29-device-binding-proves-possession.zh.md: 6244c79881c2bfc2a261db0760e3291f9fb7d5f9
+/agent-note-binding-proves-three-things-and-refuses-unless-all-three-hold:
+  en: 528f708b49e8f1fa
+  zh: dd07c602eb88ebfc
+/agent-note-binding-proves-three-things-and-refuses-unless-all-three-hold/problem:
+  en: 768742052ab743a5
+  zh: 3f931ecbbbaa16b0
+/agent-note-binding-proves-three-things-and-refuses-unless-all-three-hold/decision:
+  en: 1deb64433398b7c5
+  zh: f14b1f40b5023e7d
+/agent-note-binding-proves-three-things-and-refuses-unless-all-three-hold/alternatives-considered:
+  en: 34ce6ab4121aded0
+  zh: 9ce5dc661ae29fd0
+/agent-note-binding-proves-three-things-and-refuses-unless-all-three-hold/consequences:
+  en: 81fe97a8ab82e493
+  zh: 037aee19448c5596

@@ -1,6 +1,58 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/bi/bi-gateway-sqlite/README.md
-README.md: 4f709d1c24bc6c80a07d841dbe7cd0b32f895afb
-README.zh.md: fd08416f40c632bc9dc7a767e7ce0b6db564c87c
+/:
+  en: 1936d4b150c5a8ef
+  zh: 3e1349426018b970
+/deepseek-ai-dsh-bi-gateway-sqlite:
+  en: 740f9c10dbf11b38
+  zh: 9c62aae7b1b0833e
+/deepseek-ai-dsh-bi-gateway-sqlite/summary:
+  en: aa962a22ae57927a
+  zh: e183c9fc0d5409e3
+/deepseek-ai-dsh-bi-gateway-sqlite/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 9f0336825ccdaacd
+/deepseek-ai-dsh-bi-gateway-sqlite/use-this-package:
+  en: 08886a774d6c9a28
+  zh: 5b332a27db4c2ddf
+/deepseek-ai-dsh-bi-gateway-sqlite/use-this-package/minimal-configuration:
+  en: 875d77185e081947
+  zh: 2d616247a37f581e
+/deepseek-ai-dsh-bi-gateway-sqlite/use-this-package/synchronization:
+  en: 07499e0f63d0c630
+  zh: b2c91431da517828
+/deepseek-ai-dsh-bi-gateway-sqlite/use-this-package/authorization:
+  en: 7500f30800103613
+  zh: a666419f97fd2de0
+/deepseek-ai-dsh-bi-gateway-sqlite/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-bi-gateway-sqlite/understand-the-implementation/two-databases-that-cannot-commit-together:
+  en: 81df7f47289e96d3
+  zh: 43db5b9b00573e35
+/deepseek-ai-dsh-bi-gateway-sqlite/understand-the-implementation/source-map:
+  en: 2e41a03de51a868f
+  zh: 587102fa78963e0b
+/deepseek-ai-dsh-bi-gateway-sqlite/understand-the-implementation/what-an-operation-records:
+  en: 98077277c46499bc
+  zh: d2756b73cb958ab6
+/deepseek-ai-dsh-bi-gateway-sqlite/further-exploration:
+  en: 64c5c52fa237eb89
+  zh: 1cab5437f7f4240e
+/deepseek-ai-dsh-bi-gateway-sqlite/model-experience:
+  en: 8447199c3dd6028a
+  zh: ff560bc20a784e4e
+/deepseek-ai-dsh-bi-gateway-sqlite/model-experience/kv-cache-effect:
+  en: 97165e5476cc5300
+  zh: c61c860fd7d7ffc8
+/deepseek-ai-dsh-bi-gateway-sqlite/known-limitations-and-deferred-work:
+  en: c46328d2eef35d29
+  zh: 7b30e6a14bb8974b
+/deepseek-ai-dsh-bi-gateway-sqlite/known-limitations-and-deferred-work/dev-note:
+  en: 64ee46559b704be8
+  zh: 7cf9d7a59aae526a
+/deepseek-ai-dsh-bi-gateway-sqlite/known-limitations-and-deferred-work/dev-note/the-reconciliation-shape-is-shared-with-the-knowledge-gateway:
+  en: 939c6d44001e5a81
+  zh: c8d3713b877071ca

@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-01-separate-company-and-member-model-routes.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-01-separate-company-and-member-model-routes.md
-2026-09-01-separate-company-and-member-model-routes.md: 1401d175093eeb16a5afb2738b510508e3f310f1
-2026-09-01-separate-company-and-member-model-routes.zh.md: d1bc7b6aab9472e4775d82ca9af72fcd7988e0e3
+/agent-note-separate-company-and-member-model-routes:
+  en: a3824f90c745578e
+  zh: aa7c6d492834a49a
+/agent-note-separate-company-and-member-model-routes/problem:
+  en: bc87c2330263f6ce
+  zh: 733e241a6334e28e
+/agent-note-separate-company-and-member-model-routes/decision:
+  en: 4f39c99a33714434
+  zh: a678ff7e47274393
+/agent-note-separate-company-and-member-model-routes/alternatives-considered:
+  en: 74267a56abbdaacb
+  zh: c0cd844a79b5015f
+/agent-note-separate-company-and-member-model-routes/consequences:
+  en: 2ad480babd327cb7
+  zh: 9fc2ec8b8642b01f

@@ -1,6 +1,121 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-01-team-private-knowledge-control-plane.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/proposed/feature/2026-09-01-team-private-knowledge-control-plane.md
-2026-09-01-team-private-knowledge-control-plane.md: 27063262a35115d58c8d9855b5118faa74d359ee
-2026-09-01-team-private-knowledge-control-plane.zh.md: b3f5e1ff203cf4a8611b6b1c8dc8c819e9fa499a
+/agent-note-team-private-knowledge-stays-behind-the-control-plane:
+  en: db00561d2c2e8486
+  zh: f01a89f61a9a59c6
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/problem:
+  en: 0e3a17dce02a105d
+  zh: 33032519bce405c4
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/proposal:
+  en: b063e6ce530a4b8f
+  zh: 54eed4cd0faa403e
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/proposal/product-outcome:
+  en: 9fa4b195a748f895
+  zh: 00986a883cd60341
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/proposal/non-goals-for-the-first-delivery:
+  en: bdede51de50b6b9e
+  zh: dcae8ccbdb737a39
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/security-invariants:
+  en: e83964d22ed092c5
+  zh: 257216c23181deec
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/runtime-architecture:
+  en: be8f473b7ef33c29
+  zh: 9617b63a9d473130
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/runtime-architecture/deployment-topology-and-network-ownership:
+  en: 177bebbbca195269
+  zh: 88abc13324d463d3
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/runtime-architecture/capability-and-package-topology:
+  en: 3b78f39048936734
+  zh: 4cd161614bcca8b0
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/runtime-architecture/stable-knowledge-references:
+  en: bd10913965467758
+  zh: c670619ec5536f43
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/governed-catalog:
+  en: 1b0a84c1ed32576a
+  zh: ba8e94c1d8852482
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/governed-catalog/sqlite-records:
+  en: de3ac9255adc5c13
+  zh: c2a65fb53f124fad
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/governed-catalog/synchronization:
+  en: 9fc4686f0bf784e4
+  zh: 8cdfb13e02d2881c
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/permissions-and-role-composition:
+  en: 0fb640674f2f7116
+  zh: 880c40b30498b6f7
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/control-plane-api:
+  en: 0daec46978c188f9
+  zh: 0daec46978c188f9
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/control-plane-api/administration-api:
+  en: 93c53c48939dc372
+  zh: 95f61888ccf3e366
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/control-plane-api/runner-api:
+  en: fc6db46602a32d92
+  zh: 027eadd092c4dadd
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/runner-tools-and-knowledge:
+  en: e45264e002851f5f
+  zh: 4358d795973aa999
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/runner-tools-and-knowledge/session-scope-state:
+  en: 4b99bfd2a1180a7c
+  zh: 5aa69a19af0768b9
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/runner-tools-and-knowledge/what-the-model-sees:
+  en: f4b6f09a12e2e962
+  zh: 74624b074ea253a8
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/runner-tools-and-knowledge/command-behavior:
+  en: 7940ca21ad11a67f
+  zh: cc43f2a4a7dd3f8c
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/runner-tools-and-knowledge/the-model-facing-tool:
+  en: 7b20b9e4b9f0afb7
+  zh: a7073d3a0d1bdfd4
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/runner-tools-and-knowledge/cost-and-budget:
+  en: fb15a77baf37f4c3
+  zh: d44f4234d2101d35
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/runner-tools-and-knowledge/deferred-full-document-reading:
+  en: 6f139dc16334f03f
+  zh: 2e2f0ba1555a2b29
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/weknora-provider-behavior:
+  en: 1aa36d6cd509e550
+  zh: 75fab05d8d89e6c5
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/audit-and-operational-visibility:
+  en: 17c7c14f70b50326
+  zh: 821d3bf4b86eb721
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/failure-semantics:
+  en: e69236f04d099de9
+  zh: 4aff0b2a3724b66c
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/administration-ui:
+  en: 76025b1cb7c87280
+  zh: 5d9a5a976177e00a
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/delivery-plan:
+  en: f80494eff27a6437
+  zh: df0fb154ed538610
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/delivery-plan/pr-1-domain-permissions-and-session-vocabulary:
+  en: e541a328f72d161b
+  zh: 07d60e247b758316
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/delivery-plan/pr-2-weknora-provider-and-governed-catalog:
+  en: 98d72dc5a1fe953b
+  zh: 6661ee0dea74d643
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/delivery-plan/pr-3-control-plane-http-and-administration-api:
+  en: d0e505975b033c7b
+  zh: 36d9c2e65bf57a39
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/delivery-plan/pr-4-runner-provider-tool-and-what-the-model-sees:
+  en: 4e348f37d7f2b933
+  zh: 947e6ee40cf8956c
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/delivery-plan/pr-5-knowledge-the-api-remote-administration-pages-and-the-role-editor:
+  en: 3b682ec00128ccd8
+  zh: 86af8d96c087d2e3
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/delivery-plan/stack-completion:
+  en: 97e625854c9d7eea
+  zh: fc942cd55de9550a
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/verification-matrix:
+  en: db4ca324f01a6eef
+  zh: 15a7fb0636605831
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/acceptance-criteria:
+  en: 9bd0a97a7a2148ad
+  zh: ee6bc2883f423a78
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/alternatives-considered:
+  en: 2a994e3ed8dd20eb
+  zh: ca7e9aa3ce5b522f
+/agent-note-team-private-knowledge-stays-behind-the-control-plane/risks:
+  en: 3c24075fc73cc50e
+  zh: a83f1ebc8e17440c

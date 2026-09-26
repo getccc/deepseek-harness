@@ -1,6 +1,46 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/team/team-local-handoff/README.md
-README.md: 28e9a97e00d7f4e8c0e33c6503ba7cde48eaadb7
-README.zh.md: abb2c5e3a63dedfac3273d1a898f100d691b9e71
+/:
+  en: 821519d71c851d78
+  zh: 68a13ee590b1f658
+/deepseek-ai-dsh-team-local-handoff:
+  en: 3bfd21e60ea53615
+  zh: 54284cd5023d8d18
+/deepseek-ai-dsh-team-local-handoff/summary:
+  en: 37a9e9b60c200d7f
+  zh: 419615b4dc86e249
+/deepseek-ai-dsh-team-local-handoff/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5452fccb37762c88
+/deepseek-ai-dsh-team-local-handoff/use-this-package:
+  en: 07333e69c8ba6952
+  zh: e8fc631e178f6f32
+/deepseek-ai-dsh-team-local-handoff/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-team-local-handoff/understand-the-implementation/why-the-callback-is-not-a-redirect:
+  en: baedada8b59357a6
+  zh: 29e99841569dd062
+/deepseek-ai-dsh-team-local-handoff/understand-the-implementation/what-the-local-state-does-and-does-not-do:
+  en: aea5c384d3936b55
+  zh: 695de6c011c15d73
+/deepseek-ai-dsh-team-local-handoff/understand-the-implementation/source-map:
+  en: f2b83de9361d25f4
+  zh: 4a837af938906dfc
+/deepseek-ai-dsh-team-local-handoff/further-exploration:
+  en: 08cddde4fc773c87
+  zh: 087f9ac1d4f81971
+/deepseek-ai-dsh-team-local-handoff/model-experience:
+  en: f13f3ebb1f22debf
+  zh: 304e285e9d5e165f
+/deepseek-ai-dsh-team-local-handoff/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: e8121475b5ee0f9b
+/deepseek-ai-dsh-team-local-handoff/known-limitations-and-deferred-work:
+  en: ada11c08ecaea79f
+  zh: aa4deba70c7cb070
+/deepseek-ai-dsh-team-local-handoff/known-limitations-and-deferred-work/dev-note:
+  en: b46e98b63a1d5aa3
+  zh: c8ef7e17a6245223

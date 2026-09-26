@@ -1,6 +1,46 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-20-team-desktop-self-update.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/proposed/feature/2026-09-20-team-desktop-self-update.md
-2026-09-20-team-desktop-self-update.md: 1b3a8a907e150cba25af5d176746980a10c81222
-2026-09-20-team-desktop-self-update.zh.md: 1a0d2f8184b8b2b4b4cd30b6668a520ce3e37c7a
+/agent-note-the-team-desktop-updates-itself-from-the-control-plane:
+  en: 8e61405e8d5f396c
+  zh: fcc0dc1d6a81982b
+/agent-note-the-team-desktop-updates-itself-from-the-control-plane/problem:
+  en: b4242296ff4278e2
+  zh: 1e2befaf3c39f234
+/agent-note-the-team-desktop-updates-itself-from-the-control-plane/proposal:
+  en: 3a3a1ffc41a28a3c
+  zh: b46b48e227abd700
+/agent-note-the-team-desktop-updates-itself-from-the-control-plane/proposal/released-versions-are-three-increasing-numbers:
+  en: 14da147a85f334ec
+  zh: 5ff8665a286e96df
+/agent-note-the-team-desktop-updates-itself-from-the-control-plane/proposal/the-control-plane-serves-the-release:
+  en: f8084648712f9e0d
+  zh: e2cd5f6c6ebcc847
+/agent-note-the-team-desktop-updates-itself-from-the-control-plane/proposal/the-manifest-signature-stands-in-for-the-missing-windows-certificate:
+  en: 32f57201003ae4bf
+  zh: 7671df164e833618
+/agent-note-the-team-desktop-updates-itself-from-the-control-plane/proposal/the-shell-carries-a-coordinator-shaped-like-desktop-s:
+  en: 6c282077d176da25
+  zh: 4fd0c1702b375d45
+/agent-note-the-team-desktop-updates-itself-from-the-control-plane/proposal/the-control-joins-the-member-row-over-a-preload-bridge:
+  en: aacfaee4e1a2d5d4
+  zh: b53983c3b4a5bf14
+/agent-note-the-team-desktop-updates-itself-from-the-control-plane/proposal/packaging-publishes-what-the-updater-reads:
+  en: 017d31ef236f801c
+  zh: 8380dcd887058ee2
+/agent-note-the-team-desktop-updates-itself-from-the-control-plane/proposal/the-console-publishes-a-release:
+  en: 57b0b50be852ba70
+  zh: 91202e8d3898bbeb
+/agent-note-the-team-desktop-updates-itself-from-the-control-plane/what-the-end-to-end-check-established:
+  en: 8fd29522c56fa4ab
+  zh: 23ec8c68e003bdbd
+/agent-note-the-team-desktop-updates-itself-from-the-control-plane/alternatives-considered:
+  en: 98d952a9fd33289a
+  zh: ed5a6de48dcff9b9
+/agent-note-the-team-desktop-updates-itself-from-the-control-plane/acceptance-criteria:
+  en: efd7945819d4b444
+  zh: 960bdbfdd9f645a3
+/agent-note-the-team-desktop-updates-itself-from-the-control-plane/risks:
+  en: 25b77fcd1b1b5932
+  zh: 44039e2714c23287

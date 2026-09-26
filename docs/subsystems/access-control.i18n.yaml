@@ -1,6 +1,28 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for access-control.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/subsystems/access-control.md
-access-control.md: 937655c73cab19b751afe71fd6954530568c298a
-access-control.zh.md: cb1471e620a27960185b622359128be4562e1f25
+/access-control:
+  en: 4eb9f9b2104953bd
+  zh: b05af0c59ff724ed
+/access-control/the-evaluation-is-deliberately-small:
+  en: 5e2d5a3c3a1e357c
+  zh: e6be1dc2d9d3757c
+/access-control/the-permission-catalog-is-closed:
+  en: 6776f8ca754fe985
+  zh: acb7fac2430c36cd
+/access-control/resources-are-governed-by-reference:
+  en: 2737cb91aedc60c1
+  zh: 3d7b6c20d7d4793d
+/access-control/two-grant-shapes:
+  en: a02661481cdf013c
+  zh: ff0a4b40615bf398
+/access-control/groups-change-no-outcome:
+  en: b22b382b0154d60b
+  zh: f0939b0273bc2309
+/access-control/the-policy-revision:
+  en: 5a02c27177c8a6b9
+  zh: 2ff05ab828ba0646
+/access-control/knowledge-scopes:
+  en: 46d7a1a8777f6dd7
+  zh: 482749e09dbedc9e

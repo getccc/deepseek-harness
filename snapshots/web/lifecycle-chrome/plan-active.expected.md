@@ -1,48 +1,25 @@
-- button "New work task"
-- button "Collapse sidebar":
-  - img
-- button "New chat"
-- button "New work task"
+- button "New session"
+- button "Collapse sidebar"
+- button "New session": New Session
 - navigation "Global panels":
   - button "Plugins"
 - text: Workspaces
-- button "Search sessions":
-  - img
-- textbox "Search sessions..."
-- button "View options":
-  - img
-- button "Add workspace":
-  - img
+- button "Search sessions"
+- textbox "Search session names"
+- button "View options"
+- button "Add workspace"
 - tree "Sessions":
-  - treeitem "workspace" [expanded]:
-    - img
-    - text: workspace
+  - treeitem "workspace" [expanded]
   - treeitem "New Session" [selected]
-- text: Recent
-- button "Filter":
-  - img
-- tree "Recent": No conversations yet
-- button "Settings":
-  - img
-  - text: Settings
+- button "Settings"
 - banner:
-  - button "Open right sidebar":
-    - img
-- text: What is the plan today?
-- button "Choose workspace":
-  - img
-  - text: workspace
-  - img
-- button "Standard mode":
-  - img
-  - text: Standard mode
-  - img
+  - button "Open right sidebar"
+- text: Into the Unknown Preview
+- button "Choose workspace": workspace
+- button "Standard mode"
 - textbox "Describe what you want to build, / commands, @ files or sessions"
-- button "Add files or run commands":
-  - img
+- button "Add files or run commands"
 - 'button "Access mode, current: Workspace Write"': Workspace Write
 - button "Plan mode on, press to turn off": Plan
-- button "Select model, current DeepSeek-V4-Flash":
-  - text: DeepSeek-V4-Flash
-  - img
+- button "Select model, current DeepSeek-V4-Flash": DeepSeek-V4-Flash
 - button "Send message" [disabled]

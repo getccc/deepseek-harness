@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team-control-plane",
   "description": "The dsh Team Edition Control Plane bundle: a standalone server tree that deliberately mounts no Agent, filesystem, shell, or code-execution capability",
-  "version": "0.1.6-alpha.2",
+  "version": "0.1.7-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -34,36 +34,36 @@
     }
   },
   "dependencies": {
-    "@deepseek-ai/dsh-access-control-sqlite": "workspace:^",
-    "@deepseek-ai/dsh-account-auth-password": "workspace:^",
-    "@deepseek-ai/dsh-account-store-sqlite": "workspace:^",
-    "@deepseek-ai/dsh-audit-sqlite": "workspace:^",
-    "@deepseek-ai/dsh-bi-gateway-http": "workspace:^",
-    "@deepseek-ai/dsh-bi-gateway-sqlite": "workspace:^",
-    "@deepseek-ai/dsh-bi-webi": "workspace:^",
-    "@deepseek-ai/dsh-device-authorization-sqlite": "workspace:^",
-    "@deepseek-ai/dsh-host-webserver": "workspace:^",
-    "@deepseek-ai/dsh-knowledge-gateway-http": "workspace:^",
-    "@deepseek-ai/dsh-knowledge-gateway-sqlite": "workspace:^",
-    "@deepseek-ai/dsh-knowledge-weknora": "workspace:^",
-    "@deepseek-ai/dsh-model-gateway-http": "workspace:^",
-    "@deepseek-ai/dsh-model-gateway-sqlite": "workspace:^",
-    "@deepseek-ai/dsh-quota-sqlite": "workspace:^",
-    "@deepseek-ai/dsh-team-admin-api": "workspace:^",
-    "@deepseek-ai/dsh-team-admin-app": "workspace:^",
-    "@deepseek-ai/dsh-team-console-menu-sqlite": "workspace:^",
-    "@deepseek-ai/dsh-team-control-plane-http": "workspace:^",
-    "@deepseek-ai/dsh-team-release": "workspace:^",
-    "@deepseek-ai/dsh-team-release-http": "workspace:^",
-    "@deepseek-ai/dsh-web": "workspace:^",
-    "@deepseek-ai/dsh-web-search-deepseek": "workspace:^",
-    "@deepseek-ai/dsh-web-search-gateway-http": "workspace:^"
+    "@deepseek-ai/dsh-access-control-sqlite": "workspace:*",
+    "@deepseek-ai/dsh-account-auth-password": "workspace:*",
+    "@deepseek-ai/dsh-account-store-sqlite": "workspace:*",
+    "@deepseek-ai/dsh-audit-sqlite": "workspace:*",
+    "@deepseek-ai/dsh-bi-gateway-http": "workspace:*",
+    "@deepseek-ai/dsh-bi-gateway-sqlite": "workspace:*",
+    "@deepseek-ai/dsh-bi-webi": "workspace:*",
+    "@deepseek-ai/dsh-device-authorization-sqlite": "workspace:*",
+    "@deepseek-ai/dsh-host-webserver": "workspace:*",
+    "@deepseek-ai/dsh-knowledge-gateway-http": "workspace:*",
+    "@deepseek-ai/dsh-knowledge-gateway-sqlite": "workspace:*",
+    "@deepseek-ai/dsh-knowledge-weknora": "workspace:*",
+    "@deepseek-ai/dsh-model-gateway-http": "workspace:*",
+    "@deepseek-ai/dsh-model-gateway-sqlite": "workspace:*",
+    "@deepseek-ai/dsh-quota-sqlite": "workspace:*",
+    "@deepseek-ai/dsh-team-admin-api": "workspace:*",
+    "@deepseek-ai/dsh-team-admin-app": "workspace:*",
+    "@deepseek-ai/dsh-team-console-menu-sqlite": "workspace:*",
+    "@deepseek-ai/dsh-team-control-plane-http": "workspace:*",
+    "@deepseek-ai/dsh-team-release": "workspace:*",
+    "@deepseek-ai/dsh-team-release-http": "workspace:*",
+    "@deepseek-ai/dsh-web": "workspace:*",
+    "@deepseek-ai/dsh-web-search-deepseek": "workspace:*",
+    "@deepseek-ai/dsh-web-search-gateway-http": "workspace:*"
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/cordis-plugin-include": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/cordis-plugin-include": "workspace:~"
   }
 }

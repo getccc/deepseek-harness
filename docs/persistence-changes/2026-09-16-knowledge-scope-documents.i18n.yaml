@@ -1,6 +1,28 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-16-knowledge-scope-documents.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-09-16-knowledge-scope-documents.md
-2026-09-16-knowledge-scope-documents.md: 6759a7a489cbb468f78a504ad0e1f5b139f39130
-2026-09-16-knowledge-scope-documents.zh.md: f1c2467aa31ca35e305c09fe5a4176dc5e6040f7
+/:
+  en: 3d5a424ae7d7e46b
+  zh: c22a8e4a62d8cc1a
+/2026-09-16-knowledge-scope-documents:
+  en: 98c98a8866804bf3
+  zh: abdd13e8795d64ba
+/2026-09-16-knowledge-scope-documents/summary:
+  en: f29cbb8cabb802c2
+  zh: ad7afa3517847574
+/2026-09-16-knowledge-scope-documents/table-of-contents:
+  en: 6cf314a069ceb451
+  zh: 9adff678e9ecab3b
+/2026-09-16-knowledge-scope-documents/declaration:
+  en: 6907136f28e48c90
+  zh: 02f8298485f3d8e7
+/2026-09-16-knowledge-scope-documents/compatibility:
+  en: 541ce815145ee3c9
+  zh: 4ac0d933106ea495
+/2026-09-16-knowledge-scope-documents/verification:
+  en: c6da135916cc3fa8
+  zh: f7d6903bece98c86
+/2026-09-16-knowledge-scope-documents/dev-note:
+  en: b75c8458928b72b9
+  zh: 003ba4e17b4b5269

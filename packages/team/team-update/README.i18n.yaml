@@ -1,6 +1,52 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/team/team-update/README.md
-README.md: 3b4b84bd84bd16ce549e15ac2dc9233779d45e42
-README.zh.md: cfa3559f62c419e88d13432661bb7b7e3e1fb816
+/:
+  en: 5fb7431eb7dfe8ae
+  zh: 3384d7eb21523682
+/deepseek-ai-dsh-team-update:
+  en: d3380fbe149bf225
+  zh: afbc67c7dbbc3ad2
+/deepseek-ai-dsh-team-update/summary:
+  en: 93ac5a2dabde8bc9
+  zh: 87d7fd2a0fff1197
+/deepseek-ai-dsh-team-update/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5452fccb37762c88
+/deepseek-ai-dsh-team-update/use-this-package:
+  en: bcce8b8a03e4c95b
+  zh: ecf950d00cad8c85
+/deepseek-ai-dsh-team-update/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-team-update/understand-the-implementation/the-signature-is-checked-first-against-canonical-bytes:
+  en: faa72e6897d69058
+  zh: 4e7dbb448e3d0050
+/deepseek-ai-dsh-team-update/understand-the-implementation/versions-compare-numerically-ignoring-prerelease-tags:
+  en: b1de8710218d9d5b
+  zh: 97e21cb768f99754
+/deepseek-ai-dsh-team-update/understand-the-implementation/minimumfrom-makes-an-upgrade-path-expressible:
+  en: e0c58b65644115ab
+  zh: eb071f93b4932af7
+/deepseek-ai-dsh-team-update/understand-the-implementation/the-service-runs-as-the-member:
+  en: 4c6f7a098ac88dd2
+  zh: 3f90d4c28ba086a0
+/deepseek-ai-dsh-team-update/understand-the-implementation/source-map:
+  en: 2f00fbb5d09dc3ad
+  zh: de196594c134ca6e
+/deepseek-ai-dsh-team-update/further-exploration:
+  en: 57c0fcab152680a8
+  zh: fa1ef687eec78c4f
+/deepseek-ai-dsh-team-update/model-experience:
+  en: 93aca4c53d1b29af
+  zh: ddb5fb1b6ad21c87
+/deepseek-ai-dsh-team-update/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: e8121475b5ee0f9b
+/deepseek-ai-dsh-team-update/known-limitations-and-deferred-work:
+  en: ddb74037f408d1b7
+  zh: e265f53f570e76b7
+/deepseek-ai-dsh-team-update/known-limitations-and-deferred-work/dev-note:
+  en: fdaabc5a04ffb188
+  zh: 1b81a89fb8176afc

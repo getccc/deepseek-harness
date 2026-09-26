@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-29-access-control-evaluation.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-29-access-control-evaluation.md
-2026-08-29-access-control-evaluation.md: de1e8793baa34a5b2d0f8dd8ed121fe50ad2d585
-2026-08-29-access-control-evaluation.zh.md: eb81d358a432ba4e8120503be0f4dbc673cd68c5
+/agent-note-authorization-stays-explainable-by-refusing-to-be-expressive:
+  en: 8862208816b07990
+  zh: 073437d073416e39
+/agent-note-authorization-stays-explainable-by-refusing-to-be-expressive/problem:
+  en: dbe99932891988c6
+  zh: 945ad99e0f1c8493
+/agent-note-authorization-stays-explainable-by-refusing-to-be-expressive/decision:
+  en: 7d76ca291f39cb27
+  zh: 0e2e2a263d423ac5
+/agent-note-authorization-stays-explainable-by-refusing-to-be-expressive/decision/one-name-was-already-taken:
+  en: 9b9cdca7594e0e5e
+  zh: 951b2b8d165bf10e
+/agent-note-authorization-stays-explainable-by-refusing-to-be-expressive/alternatives-considered:
+  en: a16e79cf13db4ff0
+  zh: c8b96a689299f298
+/agent-note-authorization-stays-explainable-by-refusing-to-be-expressive/consequences:
+  en: f9577c8981f6b884
+  zh: f96b7bbd79d5de5d

@@ -19,7 +19,10 @@ export interface SessionListEntry {
   title?: string
   updatedAt: number
   running: boolean
-  /** Empty-log bit mirrored from the summary; lists hide blank sessions (filtering stays with the consumer). */
+  /**
+   * New Session presentation and reuse eligibility, reconciled with
+   * `sessionListMetadata`; lists hide blank sessions (filtering stays with the consumer).
+   */
   blank: boolean
   /** Nothing-recorded bit mirrored from the summary; New Session reuses one of these. Absent means not pristine. */
   pristine?: boolean
@@ -66,8 +69,9 @@ export function flattenLineage(
       return
     }
     visited.add(s.sessionId)
+    const { agentAvailable: _agentAvailable, ...row } = s
     out.push({
-      ...s,
+      ...row,
       depth,
     })
     const kids = children.get(s.sessionId)

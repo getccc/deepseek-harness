@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-07-wework-is-the-only-product-identity.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-07-wework-is-the-only-product-identity.md
-2026-09-07-wework-is-the-only-product-identity.md: 801e0acf1a9e6e1a0fb16c61c000dce8b6042079
-2026-09-07-wework-is-the-only-product-identity.zh.md: 139de2fa8fb8f7472c2b1a0a6dee15cbf4d6c301
+/agent-note-wework-is-the-only-product-identity:
+  en: 0ad4a5ba40696bf8
+  zh: a6c3fbf8b33900b5
+/agent-note-wework-is-the-only-product-identity/problem:
+  en: 3cf9709b68a6bafe
+  zh: 5b60b2f53c165ad7
+/agent-note-wework-is-the-only-product-identity/decision:
+  en: f13b85344fe89ba0
+  zh: 95e74202f2f6c0af
+/agent-note-wework-is-the-only-product-identity/alternatives-considered:
+  en: b331e1b589367565
+  zh: 1745dda78410a48a
+/agent-note-wework-is-the-only-product-identity/consequences:
+  en: dcf8777066b872eb
+  zh: 3ba51573304ab949

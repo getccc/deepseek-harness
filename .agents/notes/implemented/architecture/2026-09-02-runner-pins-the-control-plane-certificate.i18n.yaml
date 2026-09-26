@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-02-runner-pins-the-control-plane-certificate.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-02-runner-pins-the-control-plane-certificate.md
-2026-09-02-runner-pins-the-control-plane-certificate.md: 5d65e3ea9aec34c3d4c24b9f2471fc15349e8120
-2026-09-02-runner-pins-the-control-plane-certificate.zh.md: 6d4d4f5e13ad609bb82c434f5666706c265ad89f
+/agent-note-the-runner-pins-the-control-plane-s-certificate:
+  en: da9d2447b9f111ea
+  zh: ac3970c824ad8a0a
+/agent-note-the-runner-pins-the-control-plane-s-certificate/problem:
+  en: 5997f9fb20b57405
+  zh: 325f0f3ae066ca18
+/agent-note-the-runner-pins-the-control-plane-s-certificate/decision:
+  en: ae33d8088721296a
+  zh: 26e8a501ac414e6e
+/agent-note-the-runner-pins-the-control-plane-s-certificate/alternatives-considered:
+  en: 6ce462f76c3b817f
+  zh: 763e21640c2cabac
+/agent-note-the-runner-pins-the-control-plane-s-certificate/consequences:
+  en: 45a824933a63e686
+  zh: fc20ee8de3d53390

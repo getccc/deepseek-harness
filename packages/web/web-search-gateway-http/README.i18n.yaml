@@ -1,6 +1,58 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/web/web-search-gateway-http/README.md
-README.md: f3058d6fe1c9a960816316d69f786b6c606c0213
-README.zh.md: d16d9081970cd2dbd51d85a31babe0919323d99f
+/:
+  en: d215e6e261d14fd3
+  zh: 9880e5a465d1f672
+/deepseek-ai-dsh-web-search-gateway-http:
+  en: f6edf7d7c225d54d
+  zh: 3cb80800562e1591
+/deepseek-ai-dsh-web-search-gateway-http/summary:
+  en: 6e1a11f33fbfe0f3
+  zh: fae7e49c741a2080
+/deepseek-ai-dsh-web-search-gateway-http/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 09388d293f9be9cb
+/deepseek-ai-dsh-web-search-gateway-http/use-this-package:
+  en: 7c220c27c82f67a4
+  zh: 2873835fc9103762
+/deepseek-ai-dsh-web-search-gateway-http/use-this-package/minimal-configuration:
+  en: 165591b5c4f57110
+  zh: 693910b6c1d0de58
+/deepseek-ai-dsh-web-search-gateway-http/use-this-package/the-routes:
+  en: 53afd19804b08972
+  zh: 21574ec6201e865f
+/deepseek-ai-dsh-web-search-gateway-http/use-this-package/the-version-is-decided-first:
+  en: a3838d5f0831d783
+  zh: 2b51e49e9ed62bc4
+/deepseek-ai-dsh-web-search-gateway-http/use-this-package/who-may-search:
+  en: 2aa8f085f2a77cd2
+  zh: f37f7161f28f2903
+/deepseek-ai-dsh-web-search-gateway-http/use-this-package/refusals:
+  en: fee34fa210fb67a3
+  zh: 1d719e7376dc33f7
+/deepseek-ai-dsh-web-search-gateway-http/use-this-package/what-is-recorded:
+  en: 085630feba62340d
+  zh: 287638f669401766
+/deepseek-ai-dsh-web-search-gateway-http/understand-the-implementation:
+  en: 35edb814653d50ee
+  zh: f416ead1c6fa3002
+/deepseek-ai-dsh-web-search-gateway-http/understand-the-implementation/source-map:
+  en: 07ff24ddec427191
+  zh: a2b73efcd04aa6fa
+/deepseek-ai-dsh-web-search-gateway-http/further-exploration:
+  en: ed810a9c3b29a4a3
+  zh: 3388ece0fcda6392
+/deepseek-ai-dsh-web-search-gateway-http/model-experience:
+  en: dd9aa3825ad9482f
+  zh: ec8e7b99d6a238a5
+/deepseek-ai-dsh-web-search-gateway-http/model-experience/kv-cache-effect:
+  en: 389fa88bd38cf920
+  zh: d6c5e8e033ff00aa
+/deepseek-ai-dsh-web-search-gateway-http/known-limitations-and-deferred-work:
+  en: 12d188c708179320
+  zh: 6ed829feadc86142
+/deepseek-ai-dsh-web-search-gateway-http/known-limitations-and-deferred-work/dev-note:
+  en: fc820578e74ad17a
+  zh: 80b651da592f62ea

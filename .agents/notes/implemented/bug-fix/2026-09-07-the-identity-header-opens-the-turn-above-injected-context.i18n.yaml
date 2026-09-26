@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-07-the-identity-header-opens-the-turn-above-injected-context.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-07-the-identity-header-opens-the-turn-above-injected-context.md
-2026-09-07-the-identity-header-opens-the-turn-above-injected-context.md: 0ca711915d866cd77144f41d202d0977c793c4bf
-2026-09-07-the-identity-header-opens-the-turn-above-injected-context.zh.md: c7e9bab1ab5f22f8b1a0bb1c58ae5f93cf47f893
+/agent-note-the-identity-header-opens-the-turn-above-injected-context:
+  en: 13745839108eacb0
+  zh: 6219361fa957abe8
+/agent-note-the-identity-header-opens-the-turn-above-injected-context/problem:
+  en: ceb8ba1db2e811d5
+  zh: 139c430f8e70aa45
+/agent-note-the-identity-header-opens-the-turn-above-injected-context/decision:
+  en: fa13b7a09f4c7869
+  zh: 2968f5ea22c1b6b0
+/agent-note-the-identity-header-opens-the-turn-above-injected-context/alternatives-considered:
+  en: 2e011ae0940e8e34
+  zh: 766733e291a23973
+/agent-note-the-identity-header-opens-the-turn-above-injected-context/consequences:
+  en: a13d1b087c13b966
+  zh: 7e3f4221ca078bf4

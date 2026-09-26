@@ -1,6 +1,58 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/office/tool-office/README.md
-README.md: 8f7a2f08fa7ec63416c1f9183d6b6d0a7309c3e2
-README.zh.md: 50a1e6e79ab47861f37f986ec85f986eeb6b89e8
+/:
+  en: 8b11e1023de31d63
+  zh: c580028219e256a7
+/deepseek-ai-dsh-tool-office:
+  en: 9c941a25647cbbe4
+  zh: 20aff1b12b1b2e4d
+/deepseek-ai-dsh-tool-office/summary:
+  en: b39d17dd6dcd2405
+  zh: f7215f7658e4a0db
+/deepseek-ai-dsh-tool-office/table-of-contents:
+  en: 4e53164159b5ce41
+  zh: 76842dc98a55a3d0
+/deepseek-ai-dsh-tool-office/use-this-package:
+  en: b751bb5b4047bc4e
+  zh: e608915593d01034
+/deepseek-ai-dsh-tool-office/model-experience:
+  en: 215e7ba838619b7b
+  zh: 215e7ba838619b7b
+/deepseek-ai-dsh-tool-office/model-experience/system-prompt:
+  en: cf78b9dd5596495f
+  zh: bd44560f8c2435e8
+/deepseek-ai-dsh-tool-office/model-experience/system-prompt/what-the-model-sees:
+  en: bdbea8098b66854f
+  zh: 635a446bb8c3ea80
+/deepseek-ai-dsh-tool-office/model-experience/system-prompt/what-the-model-sees/with-the-word-or-excel-kind-chosen-and-no-skill-configured:
+  en: 15043ee0c5db3237
+  zh: c929efb430f1ee50
+/deepseek-ai-dsh-tool-office/model-experience/system-prompt/what-the-model-sees/with-the-word-kind-chosen-and-a-skill-configured:
+  en: 0c1eefc5138d702f
+  zh: 859c250fa0ed67b8
+/deepseek-ai-dsh-tool-office/model-experience/system-prompt/what-the-model-sees/with-the-powerpoint-kind-chosen-and-a-skill-and-template-path-configured:
+  en: 75937d62da918787
+  zh: c4ddcdf6b35bfef3
+/deepseek-ai-dsh-tool-office/model-experience/system-prompt/what-the-model-sees/with-the-powerpoint-kind-chosen-and-only-a-template-path-configured:
+  en: 4f39f4cba337da31
+  zh: 5553af4ed2f91ac4
+/deepseek-ai-dsh-tool-office/model-experience/system-prompt/what-the-model-sees/with-the-powerpoint-kind-chosen-and-neither-configured:
+  en: 1ddf81a05e7f46a9
+  zh: e2bc66e5f76cd4df
+/deepseek-ai-dsh-tool-office/model-experience/system-prompt/what-the-model-sees/with-the-visualization-kind-chosen:
+  en: 676e345a3be5457b
+  zh: 7f92a2c3024d1fe5
+/deepseek-ai-dsh-tool-office/model-experience/system-prompt/token-effect:
+  en: a3dee55064312fe8
+  zh: 47c81e6490351e93
+/deepseek-ai-dsh-tool-office/model-experience/system-prompt/kv-cache-effect:
+  en: 8a6902e40f733a05
+  zh: c27b3c6ae585ef51
+/deepseek-ai-dsh-tool-office/known-limitations-and-deferred-work:
+  en: cdce11950845ed27
+  zh: 9dec21ed8b092ef7
+/deepseek-ai-dsh-tool-office/known-limitations-and-deferred-work/dev-note:
+  en: 9cab02e29eeb7119
+  zh: a82c986a21845862

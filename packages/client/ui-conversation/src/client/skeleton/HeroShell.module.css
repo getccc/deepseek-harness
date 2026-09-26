@@ -23,9 +23,9 @@
   overflow: visible;
 }
 
-/* figma 34:10411: title centered; 26/32 wt500. The mark and the preview badge
-   that flanked it are gone — the line is one sentence now, and a composition
-   that knows the member fills it with a greeting through the headline slot. */
+/* figma 34:10411: title centered; 26/32 wt500. The line is one sentence with
+   no mark or badge; a composition that knows the member fills it with a
+   greeting through the headline slot. */
 .headline {
   display: flex;
   align-items: center;
@@ -79,7 +79,7 @@
   min-height: 28px;
   padding: 0 8px;
   border: none;
-  border-radius: 16px;
+  border-radius: var(--dsw-radius-sm);
   background: transparent;
   color: var(--dsw-alias-label-primary);
   font-size: 13px;
@@ -116,7 +116,7 @@
   color: var(--dsw-alias-label-caption);
 }
 
-/* Dialog field: 44 tall on the modal's 332 content column, r22, hairline
+/* Dialog field: 44 tall on the modal's 332 content column, hairline
    border, pad 14/7, 14/22 wt400 primary text, caption placeholder. Focus
    keeps the resting border (design shows no focus ring). */
 .modalInput {
@@ -125,7 +125,7 @@
   height: 44px;
   padding: 7px 14px;
   border: 0.5px solid var(--dsw-alias-border-l4);
-  border-radius: 22px;
+  border-radius: var(--dsw-radius-lg);
   outline: none;
   background: transparent;
   font-size: 14px;

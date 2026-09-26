@@ -1,6 +1,43 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for deployment.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/user/guide/deployment.md
-deployment.md: b9331a3e9d1abb6712d7b31513bd02bee7dbe8f5
-deployment.zh.md: 89346e0d9f4650d1dfeea121ec0a9fa6a822e9bd
+/start-and-deploy-deepseek-harness:
+  en: b5e0cecdaf097eda
+  zh: 95e825364e3cb803
+/start-and-deploy-deepseek-harness/summary:
+  en: e7f776c0c81dca2b
+  zh: 950382088f7b488e
+/start-and-deploy-deepseek-harness/table-of-contents:
+  en: ecc969542b122d86
+  zh: 72bdf9b1e74b1839
+/start-and-deploy-deepseek-harness/prerequisites:
+  en: 8a0f7b545699336c
+  zh: 4da6fdba586b71db
+/start-and-deploy-deepseek-harness/build-the-checkout:
+  en: b00d2d7043d3515f
+  zh: 72028846c4db7af1
+/start-and-deploy-deepseek-harness/start-the-web-ui:
+  en: cbf803e047448bb1
+  zh: 1607d257813c9bff
+/start-and-deploy-deepseek-harness/open-and-configure-the-ui:
+  en: 0aae364adddb1c50
+  zh: d792c51e9c5b9354
+/start-and-deploy-deepseek-harness/start-team-management:
+  en: 4fb1847356d55615
+  zh: 7a9e08970eff547b
+/start-and-deploy-deepseek-harness/reach-a-remote-development-host:
+  en: 04ff9d4dd62013bc
+  zh: 26b8598c4016ca0b
+/start-and-deploy-deepseek-harness/operate-the-process:
+  en: ee256344749ca3ee
+  zh: 6b49e28c96762ec4
+/start-and-deploy-deepseek-harness/troubleshooting:
+  en: e384926dd20f971b
+  zh: a584bcd25b3afa0b
+/start-and-deploy-deepseek-harness/further-exploration:
+  en: f8c6e026c4a1d99a
+  zh: 6f5a3972a51db704
+/start-and-deploy-deepseek-harness/dev-note:
+  en: d7cd0f6ab495ce8f
+  zh: 565d6aa123a8d46a

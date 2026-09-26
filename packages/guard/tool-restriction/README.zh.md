@@ -25,7 +25,7 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用此包
 
-在 preset 的 `agent.cordis.yml` 里加一行。preset 自己的行注册的工具不受影响；被遮蔽的只有每个 scope 从 host 组合继承来的工具。
+在 preset 的 `plugins` 列表（bundle patch 中的一行 `@deepseek-ai/dsh-agent-preset`）里加一行。preset 自己的行注册的工具不受影响；被遮蔽的只有每个 scope 从 host 组合继承来的工具。
 
 ### 何时选择它
 
@@ -79,7 +79,7 @@ kind: "package-reference"
 ## 延伸阅读
 
 - [Tools 子系统参考](../../../docs/subsystems/tools.zh.md)——scope 分层、`restrict()`，以及 scope 自己的注册为何保持可见。
-- [Agent presets](../../preset/agent-presets/README.zh.md)——此行写入的组合文件，以及使用它的随附 `chat` preset。
+- [Agent presets](../../preset/agent-preset-registry/README.zh.md)——此行写入的 preset 定义，以及使用它的随附 `chat` preset。
 - [生成的配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-tool-restriction)——每个可接受的配置字段及其源声明。
 - [guard 组映射](../README.zh.md)——同组的其他 guard 包。
 

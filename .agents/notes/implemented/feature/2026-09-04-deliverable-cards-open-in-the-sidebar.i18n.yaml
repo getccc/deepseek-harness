@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-04-deliverable-cards-open-in-the-sidebar.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-04-deliverable-cards-open-in-the-sidebar.md
-2026-09-04-deliverable-cards-open-in-the-sidebar.md: b100131bbf3018f816cf4bc52a7f5e07bc5b80d3
-2026-09-04-deliverable-cards-open-in-the-sidebar.zh.md: 7893a28df495d002bc23af562da0a284fcbb4432
+/agent-note-deliverable-cards-open-in-the-sidebar:
+  en: cf26e0cf5cb20361
+  zh: 9249569c6fcf096a
+/agent-note-deliverable-cards-open-in-the-sidebar/problem:
+  en: 3960e2110cd0cba3
+  zh: f0ff25b2fa4ae3d7
+/agent-note-deliverable-cards-open-in-the-sidebar/decision:
+  en: 31858852ea88cf4e
+  zh: b6bbbe4cc2b75f13
+/agent-note-deliverable-cards-open-in-the-sidebar/alternatives-considered:
+  en: b9972a09420a821e
+  zh: 5cfe40966f5594af
+/agent-note-deliverable-cards-open-in-the-sidebar/consequences:
+  en: 24f49c27acc84078
+  zh: 653a83974371fbcd

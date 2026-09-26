@@ -1,7 +1,7 @@
 /** The composer control switching web search and page fetching on or off for this conversation. */
 
 import { useEffect, useRef, useState } from 'react'
-import { IconGlobeOutline14 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconGlobeOutlineRegular } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 // Type-only: pulls the ui-conversation SlotMap merge (the composer left zone).
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
@@ -103,7 +103,7 @@ export function WebAccessChip({ sessionId, useProjection, offered, setEnabled, t
         disabled={busy}
         onClick={flip}
       >
-        <span className={css.icon} aria-hidden><IconGlobeOutline14 size={14} /></span>
+        <span className={css.icon} aria-hidden><IconGlobeOutlineRegular size={14} /></span>
         <span className={css.label}>{t('chip.label')}</span>
       </button>
       {error !== null && <span className={css.error} role="status" title={error}>{t('chip.failed')}</span>}

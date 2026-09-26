@@ -1,6 +1,6 @@
 /** The composer control that will dictate a draft, between the model selector and the send action. */
 
-import { IconMicrophoneOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconMicrophoneOutlineMedium } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 // Type-only: pulls the ui-conversation SlotMap merge (the composer voice seat).
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
@@ -37,7 +37,7 @@ export function VoiceInputButton({ sessionId, useSessions, locked, t }: VoiceInp
       aria-label={t('input.label')}
       title={t('input.pending')}
     >
-      <IconMicrophoneOutline16 size={16} />
+      <IconMicrophoneOutlineMedium size={16} />
     </button>
   )
 }

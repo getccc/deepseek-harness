@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-15-team-web-search-through-the-control-plane.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-15-team-web-search-through-the-control-plane.md
-2026-09-15-team-web-search-through-the-control-plane.md: e0ba8d4307a3264f1a73f0b73ff014b8c06ffb8c
-2026-09-15-team-web-search-through-the-control-plane.zh.md: 0eae145fdb806d19b92b5b3de4547574d30c64e6
+/agent-note-team-web-search-through-the-control-plane:
+  en: e7fbd70b9f1c3575
+  zh: 09381b6082c72d4f
+/agent-note-team-web-search-through-the-control-plane/problem:
+  en: c24601caebc2d3d8
+  zh: b58b407da7aa998a
+/agent-note-team-web-search-through-the-control-plane/decision:
+  en: 0c60322e18702a92
+  zh: d2c26506e44ce836
+/agent-note-team-web-search-through-the-control-plane/alternatives-considered:
+  en: a412701abed78a82
+  zh: bec92963790e891a
+/agent-note-team-web-search-through-the-control-plane/consequences:
+  en: 92d83e142389df1f
+  zh: a445c1fa197d1008

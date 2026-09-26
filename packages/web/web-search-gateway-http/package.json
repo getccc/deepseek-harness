@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-web-search-gateway-http",
   "description": "The Control Plane's Runner-facing web search route: device-token verification, a per-member web.search decision, the search through the Control Plane's own web service, and an audit record",
-  "version": "0.1.6-alpha.2",
+  "version": "0.1.7-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -27,28 +27,28 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-access-control": "workspace:^",
-    "@deepseek-ai/dsh-account-store": "workspace:^",
-    "@deepseek-ai/dsh-audit": "workspace:^",
-    "@deepseek-ai/dsh-device-authorization": "workspace:^",
-    "@deepseek-ai/dsh-host-webserver": "workspace:^",
-    "@deepseek-ai/dsh-web": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-access-control": "workspace:*",
+    "@deepseek-ai/dsh-account-store": "workspace:*",
+    "@deepseek-ai/dsh-audit": "workspace:*",
+    "@deepseek-ai/dsh-device-authorization": "workspace:*",
+    "@deepseek-ai/dsh-host-webserver": "workspace:*",
+    "@deepseek-ai/dsh-web": "workspace:*"
   },
   "dependencies": {
-    "@deepseek-ai/schemastery": "workspace:^"
+    "@deepseek-ai/schemastery": "workspace:~"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-access-control": "workspace:^",
-    "@deepseek-ai/dsh-access-control-sqlite": "workspace:^",
-    "@deepseek-ai/dsh-account-store": "workspace:^",
-    "@deepseek-ai/dsh-account-store-sqlite": "workspace:^",
-    "@deepseek-ai/dsh-audit": "workspace:^",
-    "@deepseek-ai/dsh-audit-sqlite": "workspace:^",
-    "@deepseek-ai/dsh-device-authorization": "workspace:^",
-    "@deepseek-ai/dsh-device-authorization-sqlite": "workspace:^",
-    "@deepseek-ai/dsh-host-webserver": "workspace:^",
-    "@deepseek-ai/dsh-web": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-access-control": "workspace:*",
+    "@deepseek-ai/dsh-access-control-sqlite": "workspace:*",
+    "@deepseek-ai/dsh-account-store": "workspace:*",
+    "@deepseek-ai/dsh-account-store-sqlite": "workspace:*",
+    "@deepseek-ai/dsh-audit": "workspace:*",
+    "@deepseek-ai/dsh-audit-sqlite": "workspace:*",
+    "@deepseek-ai/dsh-device-authorization": "workspace:*",
+    "@deepseek-ai/dsh-device-authorization-sqlite": "workspace:*",
+    "@deepseek-ai/dsh-host-webserver": "workspace:*",
+    "@deepseek-ai/dsh-web": "workspace:*"
   }
 }

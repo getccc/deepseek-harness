@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-10-office-deliverables-through-present.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-10-office-deliverables-through-present.md
-2026-09-10-office-deliverables-through-present.md: 9a64f0c9437b69263bfc01dd8f2910cc84e3e0aa
-2026-09-10-office-deliverables-through-present.zh.md: e5c20b36a1e903c70b39ff39a883ee13222399e7
+/agent-note-office-deliverables-reach-the-reader-through-present:
+  en: b2fbb6ab5a95fa62
+  zh: bfca2ea5dab4b5d3
+/agent-note-office-deliverables-reach-the-reader-through-present/problem:
+  en: 59a1b1bfa1c29446
+  zh: afeeda0e2f588226
+/agent-note-office-deliverables-reach-the-reader-through-present/decision:
+  en: ba4bf58d6040de88
+  zh: 8da09423f4fb197d
+/agent-note-office-deliverables-reach-the-reader-through-present/alternatives-considered:
+  en: 7b6624431c6ff0a0
+  zh: 2f27cad10ba020a7
+/agent-note-office-deliverables-reach-the-reader-through-present/consequences:
+  en: 025fa21be3785577
+  zh: e420a697c9060799

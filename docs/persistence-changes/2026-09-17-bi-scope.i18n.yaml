@@ -1,6 +1,28 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-17-bi-scope.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/persistence-changes/2026-09-17-bi-scope.md
-2026-09-17-bi-scope.md: 2d389091dffc4872f5196a65445a8c53b8f87d31
-2026-09-17-bi-scope.zh.md: 59550bfef3f311013f229796eeb0ca34bfbce314
+/:
+  en: 3d5a424ae7d7e46b
+  zh: c22a8e4a62d8cc1a
+/2026-09-17-bi-scope:
+  en: 5c3845175ef86a16
+  zh: 297d1c4ed982e5c4
+/2026-09-17-bi-scope/summary:
+  en: 781f6357ebe92c6e
+  zh: 1306a8fa232d883d
+/2026-09-17-bi-scope/table-of-contents:
+  en: 6cf314a069ceb451
+  zh: 9adff678e9ecab3b
+/2026-09-17-bi-scope/declaration:
+  en: 6907136f28e48c90
+  zh: 02f8298485f3d8e7
+/2026-09-17-bi-scope/compatibility:
+  en: 70a99fa2f0897f24
+  zh: 931b917ad0ed2799
+/2026-09-17-bi-scope/verification:
+  en: e2925f51a2072f69
+  zh: 84deefc5f4f7de98
+/2026-09-17-bi-scope/dev-note:
+  en: b75c8458928b72b9
+  zh: 003ba4e17b4b5269

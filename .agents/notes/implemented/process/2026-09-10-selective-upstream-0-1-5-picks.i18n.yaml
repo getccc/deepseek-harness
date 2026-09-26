@@ -1,6 +1,28 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-10-selective-upstream-0-1-5-picks.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/process/2026-09-10-selective-upstream-0-1-5-picks.md
-2026-09-10-selective-upstream-0-1-5-picks.md: eed9f05c2d9c4cf56d14b4ee3ce1f401fae84a29
-2026-09-10-selective-upstream-0-1-5-picks.zh.md: 6532d3f5587d8ba6dedd294497f14e130d2dee1c
+/agent-note-selective-upstream-0-1-5-rc-1-picks:
+  en: 40af4bd215d9c911
+  zh: 450ed8aca7fbf327
+/agent-note-selective-upstream-0-1-5-rc-1-picks/problem:
+  en: 70115c0231a33fd3
+  zh: af4ac6048cf076ad
+/agent-note-selective-upstream-0-1-5-rc-1-picks/decision:
+  en: e4f89fa1799bcbf4
+  zh: dd1a41e1a174289b
+/agent-note-selective-upstream-0-1-5-rc-1-picks/decision/picked:
+  en: 0e667842680b461d
+  zh: 32c8b0d4f0d8f5ca
+/agent-note-selective-upstream-0-1-5-rc-1-picks/decision/deferred-behind-a-missing-prerequisite:
+  en: 7db9a43c97066f3c
+  zh: f4c86747051c9ca6
+/agent-note-selective-upstream-0-1-5-rc-1-picks/decision/not-applicable:
+  en: a6e2495a6eca9061
+  zh: 722b2ab9704c2edb
+/agent-note-selective-upstream-0-1-5-rc-1-picks/alternatives-considered:
+  en: df61bec336f3597a
+  zh: b97a889692985dd8
+/agent-note-selective-upstream-0-1-5-rc-1-picks/consequences:
+  en: 45fe070108320735
+  zh: 3f4a67d6e3b15621

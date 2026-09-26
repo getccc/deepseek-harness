@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-15-opening-a-session-loads-its-cut-turn-start.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-15-opening-a-session-loads-its-cut-turn-start.md
-2026-09-15-opening-a-session-loads-its-cut-turn-start.md: 11b57b5da46fed7aa92fbab39b3bed178b18fb28
-2026-09-15-opening-a-session-loads-its-cut-turn-start.zh.md: 81d4db43242168ab6086dc309c0cbfca73b81ae6
+/agent-note-opening-a-session-loads-the-start-of-the-turn-its-window-cuts:
+  en: 6c4525cad273c198
+  zh: debfb4d1e0b4a541
+/agent-note-opening-a-session-loads-the-start-of-the-turn-its-window-cuts/problem:
+  en: d9eb5a2788f61ce9
+  zh: bb0e2fa300de8f3e
+/agent-note-opening-a-session-loads-the-start-of-the-turn-its-window-cuts/decision:
+  en: ee12426842fb5858
+  zh: e8438c3c5affc7cf
+/agent-note-opening-a-session-loads-the-start-of-the-turn-its-window-cuts/alternatives-considered:
+  en: 3423e6bbc38c0c86
+  zh: a6347365e7e22df9
+/agent-note-opening-a-session-loads-the-start-of-the-turn-its-window-cuts/consequences:
+  en: 17cd1e7d00394419
+  zh: 72037413ecaeca1b

@@ -1,6 +1,52 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/access/access-control/README.md
-README.md: cae09f8a4d0101aa4b28863eec3c5f6ed966e3fd
-README.zh.md: 10f7e3f637cd62bf3701d030a34d11672de72c28
+/:
+  en: 677d7450934c2876
+  zh: 092f8a36dc855d8b
+/deepseek-ai-dsh-access-control:
+  en: 37dc1186b4d847f8
+  zh: edbe2d2c7861c119
+/deepseek-ai-dsh-access-control/summary:
+  en: 79b43ecd3dbbbfea
+  zh: 90005bc19afc02ed
+/deepseek-ai-dsh-access-control/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 405b30feaf48c087
+/deepseek-ai-dsh-access-control/use-this-package:
+  en: afa27f657e6df385
+  zh: 104e100f2cedc6f6
+/deepseek-ai-dsh-access-control/use-this-package/granting:
+  en: 9c762b49e06790b1
+  zh: 748e3738cd49096a
+/deepseek-ai-dsh-access-control/use-this-package/reading-a-refusal:
+  en: 48c80ea6ec2926ba
+  zh: 2a0f90e24cdb21f1
+/deepseek-ai-dsh-access-control/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-access-control/understand-the-implementation/why-the-catalog-is-closed:
+  en: be2aa033da7503b0
+  zh: 2fdc406112b7596f
+/deepseek-ai-dsh-access-control/understand-the-implementation/why-there-is-no-explicit-deny:
+  en: 2d161e9f7cc25af4
+  zh: 7617c67c073f5b06
+/deepseek-ai-dsh-access-control/understand-the-implementation/source-map:
+  en: 26d13b8006157341
+  zh: c7d0511f837d68db
+/deepseek-ai-dsh-access-control/further-exploration:
+  en: 00fd1c745fb5861b
+  zh: 24891114de0b6fa8
+/deepseek-ai-dsh-access-control/model-experience:
+  en: 2284a6866710a810
+  zh: 60839b3f69756505
+/deepseek-ai-dsh-access-control/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: 9618abc820ac7a34
+/deepseek-ai-dsh-access-control/known-limitations-and-deferred-work:
+  en: 6ed9709db72f367d
+  zh: 67b4f0c44b25ca1e
+/deepseek-ai-dsh-access-control/known-limitations-and-deferred-work/dev-note:
+  en: 23bf374a4d87e148
+  zh: bc83724ee8078ece

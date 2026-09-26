@@ -1,6 +1,49 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/access/quota-sqlite/README.md
-README.md: d4a41bb57b2361b599cd135a22bcb0d9827f4590
-README.zh.md: d41d68cadaf3c9ea194f416a166d4f96291e5cf8
+/:
+  en: c4207fb0592e13e1
+  zh: e1403a424b36c51c
+/deepseek-ai-dsh-quota-sqlite:
+  en: 55e63f657a95afcf
+  zh: 765593f9990407b9
+/deepseek-ai-dsh-quota-sqlite/summary:
+  en: ffe651c74f02c8e0
+  zh: 548e2d8571c3bb56
+/deepseek-ai-dsh-quota-sqlite/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5452fccb37762c88
+/deepseek-ai-dsh-quota-sqlite/use-this-package:
+  en: 9bdda0cd4b1c917f
+  zh: 38ed790d3af7eea4
+/deepseek-ai-dsh-quota-sqlite/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-quota-sqlite/understand-the-implementation/idempotence-is-the-schema:
+  en: c42bfc44067ea44a
+  zh: ef730a5a930f9f8f
+/deepseek-ai-dsh-quota-sqlite/understand-the-implementation/balances-are-derived-never-stored:
+  en: 4a2574e52fa0d1a6
+  zh: 76a1882cf6c60fda
+/deepseek-ai-dsh-quota-sqlite/understand-the-implementation/the-reconciler-charges-and-marks-that-it-did:
+  en: d8b98d0ed5f47e23
+  zh: ce88668e6b2ecc5a
+/deepseek-ai-dsh-quota-sqlite/understand-the-implementation/source-map:
+  en: 32d8dadf0bb5102c
+  zh: d9093f859255e82c
+/deepseek-ai-dsh-quota-sqlite/further-exploration:
+  en: e8aaf5bce1b1f380
+  zh: 724cd5ed5fb73e10
+/deepseek-ai-dsh-quota-sqlite/model-experience:
+  en: ba1c9434e824dca2
+  zh: e258f0683fa7b468
+/deepseek-ai-dsh-quota-sqlite/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: e8121475b5ee0f9b
+/deepseek-ai-dsh-quota-sqlite/known-limitations-and-deferred-work:
+  en: 74b48f2cdc6e9c94
+  zh: 40a13eabe60eea5a
+/deepseek-ai-dsh-quota-sqlite/known-limitations-and-deferred-work/dev-note:
+  en: 0cf598ccfc8b3ee7
+  zh: dc01dcc97ab20263

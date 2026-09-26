@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-09-one-powerpoint-row-carries-the-company-template.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/simplification/2026-09-09-one-powerpoint-row-carries-the-company-template.md
-2026-09-09-one-powerpoint-row-carries-the-company-template.md: 679ed0a03e15725c503eb25ed99d5606148ad108
-2026-09-09-one-powerpoint-row-carries-the-company-template.zh.md: 4d7e0ebdd4109265b75d57b9cdca3d7a4fc84e62
+/agent-note-one-powerpoint-row-carries-the-company-template:
+  en: 90ce0a6467e5c2f7
+  zh: 1584c07ec3ba406d
+/agent-note-one-powerpoint-row-carries-the-company-template/problem:
+  en: b7087d2c11f42a13
+  zh: 1aa6c459cf82a52b
+/agent-note-one-powerpoint-row-carries-the-company-template/decision:
+  en: 2702001b8990f9ed
+  zh: e1221375153a57e7
+/agent-note-one-powerpoint-row-carries-the-company-template/alternatives-considered:
+  en: 2fde7caaf960152d
+  zh: e02bdfbe0f10b108
+/agent-note-one-powerpoint-row-carries-the-company-template/consequences:
+  en: 01dce86ee5c9538c
+  zh: 2cbf0b35bfdc02b5

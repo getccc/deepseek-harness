@@ -1,6 +1,28 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for model-gateway.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/subsystems/model-gateway.md
-model-gateway.md: 6774d16af5e3729f2d0277b1777499a4d94c7b6b
-model-gateway.zh.md: 2b900e4a39a293e2cbe0408b8568419c7ee7aedc
+/model-gateway:
+  en: 83a2570243910c18
+  zh: 0887f56de757aa29
+/model-gateway/a-runner-names-a-model-and-nothing-else:
+  en: 50254a6a22a5e9a0
+  zh: d532512a0c099fa9
+/model-gateway/the-catalog-holds-a-reference-never-a-secret:
+  en: 0a91155112cd77b6
+  zh: df66b9cfed4fab21
+/model-gateway/the-stable-ref-is-the-identity:
+  en: 0c278787731a2f60
+  zh: c8510152226d5766
+/model-gateway/registering-a-model-governs-it:
+  en: c3d79bc5e5a5678e
+  zh: 05c0b39741d7b380
+/model-gateway/three-decisions-in-this-order:
+  en: 17fda18793e2280e
+  zh: c2057715a8d49003
+/model-gateway/what-reaches-the-provider:
+  en: 5f0b6e492eea219c
+  zh: ffbf84435f0544df
+/model-gateway/the-catalog-s-ceiling-wins:
+  en: ae5a1e7476d9cf89
+  zh: fd585b83f5d7b820

@@ -51,6 +51,8 @@ describe('SidebarRoot.module.css', () => {
     expect(declarations('.regionArea::after')?.get('height')).toBe('16px')
     expect(declarations('.regionFade')?.get('height')).toBe('24px')
     expect(declarations('.regionFade')?.get('pointer-events')).toBe('none')
+    // The translucent macOS sidebar would show the opaque gradient as a smear.
+    expect(declarations(":global([data-platform='darwin']) .regionFade")?.get('display')).toBe('none')
     expect(declarations('.collapsed .regionArea')?.get('margin-left')).toBe('0')
     expect(declarations('.collapsed .regionArea')?.get('padding-left')).toBe('0')
     expect(declarations('.collapsed .regionArea')?.get('margin-right')).toBe('0')

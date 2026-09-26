@@ -1,6 +1,55 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/api/knowledge-controller/README.md
-README.md: c0f650e1604aa0d85ffd406f11d2c871c1cf79af
-README.zh.md: 7357144aaf17b260c5f542b31d3e9ec258f15a48
+/:
+  en: ac7473a3aed5fa84
+  zh: 6da4822ae5064ca2
+/deepseek-ai-dsh-api-knowledge-controller:
+  en: f177ccbbea28e40c
+  zh: 373d8667d89e088b
+/deepseek-ai-dsh-api-knowledge-controller/summary:
+  en: 376b8dba30c7ca7f
+  zh: de12f05edf1d97e7
+/deepseek-ai-dsh-api-knowledge-controller/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 9f0336825ccdaacd
+/deepseek-ai-dsh-api-knowledge-controller/use-this-package:
+  en: 8400605646d44ca0
+  zh: f2345e3071567118
+/deepseek-ai-dsh-api-knowledge-controller/use-this-package/minimal-configuration:
+  en: f048c4ce1665b4a7
+  zh: d10b1fabce9e8001
+/deepseek-ai-dsh-api-knowledge-controller/use-this-package/the-seven-methods:
+  en: 2db3a007ff9ff696
+  zh: 890d362be4cc4166
+/deepseek-ai-dsh-api-knowledge-controller/use-this-package/why-a-document-carries-the-title-it-was-chosen-by:
+  en: dc6cfc9c75f28e39
+  zh: f1dc81ae4b153241
+/deepseek-ai-dsh-api-knowledge-controller/use-this-package/why-a-choice-carries-names:
+  en: f2273cf4604ea2f0
+  zh: da17089fbe88828d
+/deepseek-ai-dsh-api-knowledge-controller/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-api-knowledge-controller/understand-the-implementation/design-philosophy:
+  en: 407e3ed66a596b1f
+  zh: fea1e5fc3c9d6510
+/deepseek-ai-dsh-api-knowledge-controller/understand-the-implementation/source-map:
+  en: 86245b8830ddd665
+  zh: f719507e415a4f7e
+/deepseek-ai-dsh-api-knowledge-controller/further-exploration:
+  en: 95d06e64e328f883
+  zh: 5805459a5f49f453
+/deepseek-ai-dsh-api-knowledge-controller/model-experience:
+  en: 19b13abbf590c16e
+  zh: 0059a58fb8588af6
+/deepseek-ai-dsh-api-knowledge-controller/model-experience/kv-cache-effect:
+  en: 12492195c34cb5ce
+  zh: 295baff2130d2182
+/deepseek-ai-dsh-api-knowledge-controller/known-limitations-and-deferred-work:
+  en: 32d2a7f598ee4f54
+  zh: e2252e52417a1867
+/deepseek-ai-dsh-api-knowledge-controller/known-limitations-and-deferred-work/dev-note:
+  en: 08cb4227231243e9
+  zh: 18475a32353be640

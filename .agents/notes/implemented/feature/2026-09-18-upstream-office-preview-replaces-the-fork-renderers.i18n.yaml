@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-18-upstream-office-preview-replaces-the-fork-renderers.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-18-upstream-office-preview-replaces-the-fork-renderers.md
-2026-09-18-upstream-office-preview-replaces-the-fork-renderers.md: 4fe7cbfbd40c40910e683aaa29d0a8378575c6e2
-2026-09-18-upstream-office-preview-replaces-the-fork-renderers.zh.md: c317df98548f304c126033596e1a42149621e3ea
+/agent-note-upstream-office-preview-replaces-the-fork-renderers:
+  en: 7bb2e5089683526f
+  zh: 5d93f76a38956e31
+/agent-note-upstream-office-preview-replaces-the-fork-renderers/problem:
+  en: 649d805425fd9520
+  zh: f50cc5452d952073
+/agent-note-upstream-office-preview-replaces-the-fork-renderers/decision:
+  en: f3d1d6fd307ef11f
+  zh: b8c4baad4016ae48
+/agent-note-upstream-office-preview-replaces-the-fork-renderers/alternatives-considered:
+  en: 5e0a4a1ee6c29ef0
+  zh: 842d0def2e252521
+/agent-note-upstream-office-preview-replaces-the-fork-renderers/consequences:
+  en: b28a8a61ea575dc9
+  zh: c130a725fe2b1cd0

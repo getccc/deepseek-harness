@@ -17,10 +17,12 @@ export { ClientWorkspaceModel } from './model.ts'
 export type {
   WorkspaceFollowSink, WorkspaceListPhase, WorkspaceRemote, WorkspaceSnapshot,
 } from './model.ts'
-export { WorkspaceController, WorkspaceCreateError, WorkspaceOpenPathError } from './service.ts'
+export { WorkspaceArchiveError, WorkspaceController, WorkspaceCreateError, WorkspaceOpenPathError } from './service.ts'
 export type { IWorkspaces, WorkspacePathOpener, WorkspaceSource } from './service.ts'
-export type { WorkspaceId, WorkspaceView } from '../types.ts'
-
+export type {
+  SessionActivity, SessionActivityItem, SessionActivityKind, SessionActivityKindMap, WorkspaceId,
+  WorkspaceView,
+} from '../types.ts'
 
 type WorkspaceBaselineFrame = Extract<WorkspaceFollowFrame, { type: 'baseline' }>
 
@@ -110,6 +112,9 @@ function acceptIncrement(accept: WorkspaceFollowSink, frame: WorkspaceFollowIncr
       return
     case 'archived':
       accept.replaceArchived(frame.archivedSessionIds)
+      return
+    case 'pinned':
+      accept.replacePinned(frame.pinnedSessionIds)
       return
     /* v8 ignore next -- the generated Remote codec validates this closed union */
     default:

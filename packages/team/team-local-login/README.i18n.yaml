@@ -1,6 +1,55 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/team/team-local-login/README.md
-README.md: 649b125f6d2e5625ab496887b12f4802bd6f9e10
-README.zh.md: 44077914583e198d03d1b6a718ea89b7d7030972
+/:
+  en: 05b7ad2876a5b5e2
+  zh: 851a1b82c883e68a
+/deepseek-ai-dsh-team-local-login:
+  en: 7b7279e049facece
+  zh: 360ace2ddc983fcb
+/deepseek-ai-dsh-team-local-login/summary:
+  en: 187011d46938740c
+  zh: 926e6b4b485357d4
+/deepseek-ai-dsh-team-local-login/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5452fccb37762c88
+/deepseek-ai-dsh-team-local-login/use-this-package:
+  en: dc71cd14bc8f583d
+  zh: ae84f250ffdf9b45
+/deepseek-ai-dsh-team-local-login/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-team-local-login/understand-the-implementation/login-stays-local-authentication-remains-authoritative:
+  en: 6519168960f7d252
+  zh: e4d45ab6d28ee41e
+/deepseek-ai-dsh-team-local-login/understand-the-implementation/entry-does-not-silently-reuse-a-stored-team-credential:
+  en: b52657fb44e91251
+  zh: 0bd38ffa2baca6e0
+/deepseek-ai-dsh-team-local-login/understand-the-implementation/sign-out-clears-both-layers:
+  en: 9ae22a9f1b031dc6
+  zh: 024c9558835dd279
+/deepseek-ai-dsh-team-local-login/understand-the-implementation/the-application-footer-shows-the-local-member:
+  en: 6f116731e3ceddbd
+  zh: 72f714c33821a3b1
+/deepseek-ai-dsh-team-local-login/understand-the-implementation/the-blank-conversation-greets-the-member-by-their-own-clock:
+  en: f406f92c31aea9b8
+  zh: 7822ec85426c9872
+/deepseek-ai-dsh-team-local-login/understand-the-implementation/source-map:
+  en: 45fde09858b9c718
+  zh: e5a25bf5090314b4
+/deepseek-ai-dsh-team-local-login/further-exploration:
+  en: 0b2123bf1a771b03
+  zh: c94715a6f5f8994d
+/deepseek-ai-dsh-team-local-login/model-experience:
+  en: d082aa41bd94527b
+  zh: 285add557f9ac3f6
+/deepseek-ai-dsh-team-local-login/model-experience/kv-cache-effect:
+  en: 2117cfbc5de12998
+  zh: 5ca028005fd39936
+/deepseek-ai-dsh-team-local-login/known-limitations-and-deferred-work:
+  en: ed5e976a23a0e64e
+  zh: 8e9166b0fe57681b
+/deepseek-ai-dsh-team-local-login/known-limitations-and-deferred-work/dev-note:
+  en: cab03d984867b79c
+  zh: c49c75532a7bfaad

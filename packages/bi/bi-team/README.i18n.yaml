@@ -1,6 +1,55 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/bi/bi-team/README.md
-README.md: 6585f3e6c0e484021e067389b4f4c0ba1804ebed
-README.zh.md: 9447c9d2f1a16b3f6b31454759092d9b49f711b7
+/:
+  en: de2bd0983fd75c79
+  zh: 58483515517d33ab
+/deepseek-ai-dsh-bi-team:
+  en: ad999cdb0b6875d7
+  zh: 0d4437c0775edb1a
+/deepseek-ai-dsh-bi-team/summary:
+  en: 530cad067460d97e
+  zh: 09ced5e101bcb9e3
+/deepseek-ai-dsh-bi-team/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 9f0336825ccdaacd
+/deepseek-ai-dsh-bi-team/use-this-package:
+  en: 5d539d0503a04764
+  zh: 8bc6a708125dd57a
+/deepseek-ai-dsh-bi-team/use-this-package/minimal-configuration:
+  en: 4a87420934880e45
+  zh: ea72cd924c714fce
+/deepseek-ai-dsh-bi-team/use-this-package/the-token-is-read-per-call:
+  en: b292a4cbdfcb7330
+  zh: 2190cc5b66fddf8e
+/deepseek-ai-dsh-bi-team/use-this-package/failures:
+  en: 67851e6bc7ea8994
+  zh: 50e893657b6c63c4
+/deepseek-ai-dsh-bi-team/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-bi-team/understand-the-implementation/design-philosophy:
+  en: 466a844e3092b727
+  zh: 5b13dddc57f1b314
+/deepseek-ai-dsh-bi-team/understand-the-implementation/source-map:
+  en: 1d9e00cafeebaeab
+  zh: 22fb25bf656f43dd
+/deepseek-ai-dsh-bi-team/further-exploration:
+  en: 40f10b62cdb7f440
+  zh: ae3250f0c34a7376
+/deepseek-ai-dsh-bi-team/model-experience:
+  en: 6be6e49a1bed4461
+  zh: 5ccea497f9a5fb8d
+/deepseek-ai-dsh-bi-team/model-experience/kv-cache-effect:
+  en: 6f29044816ec60ef
+  zh: d5b787d5293bf93b
+/deepseek-ai-dsh-bi-team/known-limitations-and-deferred-work:
+  en: 66eaeb4450ae50b4
+  zh: 2f10f5190365af37
+/deepseek-ai-dsh-bi-team/known-limitations-and-deferred-work/dev-note:
+  en: 64ee46559b704be8
+  zh: ee748e987e2f0c34
+/deepseek-ai-dsh-bi-team/known-limitations-and-deferred-work/dev-note/the-call-shape-is-shared-with-the-knowledge-provider:
+  en: abd36e453baccaa3
+  zh: b42a2b8ab18395c6

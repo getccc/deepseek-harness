@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import clsx from 'clsx'
-import { IconChevronDownOutline14, IconDataOutline16, Menu } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconChevronDownOutlineRegular, IconDataOutlineRegular, Menu } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { MenuEntry } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 // Type-only: pulls the ui-conversation SlotMap merge (the composer left zone).
@@ -86,10 +86,10 @@ export function KnowledgeSelect({ sessionId, useSessions, useProjection, choices
           title={t('chip.title')}
           onClick={show}
         >
-          <span className={css.icon} aria-hidden><IconDataOutline16 size={14} /></span>
+          <span className={css.icon} aria-hidden><IconDataOutlineRegular size={14} /></span>
           <span className={css.label}>{label}</span>
           <span className={clsx(css.chevron, open && css.chevronOpen)} aria-hidden>
-            <IconChevronDownOutline14 />
+            <IconChevronDownOutlineRegular />
           </span>
         </button>
       }

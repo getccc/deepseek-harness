@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-03-member-deepseek-route-dormant-without-a-key.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-03-member-deepseek-route-dormant-without-a-key.md
-2026-09-03-member-deepseek-route-dormant-without-a-key.md: 1195b2567f6a6929d7b0f61e2b20ca9339fc7179
-2026-09-03-member-deepseek-route-dormant-without-a-key.zh.md: 2a9533dc7b70c49ec2f56e2e0986b1b58c0d0a4c
+/agent-note-the-member-deepseek-route-stays-dormant-without-a-key:
+  en: b398067ae116e66f
+  zh: 6b60657ac179dc69
+/agent-note-the-member-deepseek-route-stays-dormant-without-a-key/problem:
+  en: 2997d0f6ec46842f
+  zh: 4802db9926579628
+/agent-note-the-member-deepseek-route-stays-dormant-without-a-key/decision:
+  en: c4f30276ba8e4d8f
+  zh: efcd62399f1c25e6
+/agent-note-the-member-deepseek-route-stays-dormant-without-a-key/consequences:
+  en: c3c65998b95b2988
+  zh: 23d0f10f6d4fbbab
+/agent-note-the-member-deepseek-route-stays-dormant-without-a-key/alternatives-considered:
+  en: e1477e7eb0f37d51
+  zh: 63964de17e6c57bf

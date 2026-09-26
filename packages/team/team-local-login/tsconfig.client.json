@@ -22,16 +22,16 @@
       "path": "../../../vendor/cordis"
     },
     {
-      "path": "../../client/locale"
+      "path": "../../client/locale/tsconfig.client.json"
     },
     {
       "path": "../../api/session-controller/tsconfig.client.json"
     },
     {
-      "path": "../../client/ui-chat"
+      "path": "../../client/ui-chat/tsconfig.client.json"
     },
     {
-      "path": "../../client/ui-conversation"
+      "path": "../../client/ui-conversation/tsconfig.client.json"
     },
     {
       "path": "../../client/ui-primitives"
@@ -40,7 +40,7 @@
       "path": "../../client/ui-renderer"
     },
     {
-      "path": "../../client/ui-settings-general"
+      "path": "../../client/ui-settings/tsconfig.client.json"
     },
     {
       "path": "../../client/ui-slots"

@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-03-desktop-installer-carries-the-deployment.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-03-desktop-installer-carries-the-deployment.md
-2026-09-03-desktop-installer-carries-the-deployment.md: 758f27c207a4acdb4fdcad04ee2210765880df70
-2026-09-03-desktop-installer-carries-the-deployment.zh.md: 172158ecddc29fa2500ddd9b63ccd8b086e912dd
+/agent-note-the-desktop-installer-carries-the-whole-deployment:
+  en: 89f406d2122959f0
+  zh: 212f5f2be2608ac3
+/agent-note-the-desktop-installer-carries-the-whole-deployment/problem:
+  en: 676b31c0416b8fce
+  zh: c627cfe5e8c09215
+/agent-note-the-desktop-installer-carries-the-whole-deployment/decision:
+  en: 89f477cb6336cf70
+  zh: 38adbd5d4513d7c7
+/agent-note-the-desktop-installer-carries-the-whole-deployment/alternatives-considered:
+  en: 630b08a98d5e29b3
+  zh: 1203984577eaa09f
+/agent-note-the-desktop-installer-carries-the-whole-deployment/discovered-while-verifying:
+  en: 257d888e6e11b6ad
+  zh: 7f33ecda84cfaeb9
+/agent-note-the-desktop-installer-carries-the-whole-deployment/consequences:
+  en: 406dae376490c168
+  zh: 2cf890f1d5d7f51d

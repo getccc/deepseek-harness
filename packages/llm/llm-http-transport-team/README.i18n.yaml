@@ -1,6 +1,49 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/llm/llm-http-transport-team/README.md
-README.md: abc27a82e52bb3901dc9598e70664a4dd2cacac6
-README.zh.md: 47eceb4d85b5aefc68e19eb432c60fa9cd274e18
+/:
+  en: 05fbe26ddae30fbf
+  zh: 595adac687224c95
+/deepseek-ai-dsh-llm-http-transport-team:
+  en: cf19bfb784f1575a
+  zh: 33cb3d96de00de2f
+/deepseek-ai-dsh-llm-http-transport-team/summary:
+  en: eaf5b24ac91d6179
+  zh: 4b37cd5e4aaee494
+/deepseek-ai-dsh-llm-http-transport-team/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5452fccb37762c88
+/deepseek-ai-dsh-llm-http-transport-team/use-this-package:
+  en: f126ac538fbc6a4c
+  zh: ec632b080ec645e5
+/deepseek-ai-dsh-llm-http-transport-team/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-llm-http-transport-team/understand-the-implementation/the-access-token-is-read-per-call:
+  en: 6aa9907798baec0e
+  zh: 6216b0f12024c278
+/deepseek-ai-dsh-llm-http-transport-team/understand-the-implementation/the-budget-period-is-the-utc-month:
+  en: 8abd908b5a4d0889
+  zh: f41e3884a0778f54
+/deepseek-ai-dsh-llm-http-transport-team/understand-the-implementation/the-answer-is-streamed-not-buffered:
+  en: f10bd26d69c8044e
+  zh: 814fe2a12fdd310c
+/deepseek-ai-dsh-llm-http-transport-team/understand-the-implementation/source-map:
+  en: f388c644f981b9bd
+  zh: 00db816fbed117e1
+/deepseek-ai-dsh-llm-http-transport-team/further-exploration:
+  en: e7164efc45e93e1c
+  zh: dcbe439d35274c9a
+/deepseek-ai-dsh-llm-http-transport-team/model-experience:
+  en: 894f9ec9ea028cde
+  zh: f4fcd754e4ae7a3f
+/deepseek-ai-dsh-llm-http-transport-team/model-experience/kv-cache-effect:
+  en: f8563262dcfe68fb
+  zh: 23ce17e0bbde7115
+/deepseek-ai-dsh-llm-http-transport-team/known-limitations-and-deferred-work:
+  en: e3ae06f5ed966199
+  zh: afefcbb47ef3d47f
+/deepseek-ai-dsh-llm-http-transport-team/known-limitations-and-deferred-work/dev-note:
+  en: ef4f57a834d5fede
+  zh: b54e79f5b8f2c4f6

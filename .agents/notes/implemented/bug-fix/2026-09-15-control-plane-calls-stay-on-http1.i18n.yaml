@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-15-control-plane-calls-stay-on-http1.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-15-control-plane-calls-stay-on-http1.md
-2026-09-15-control-plane-calls-stay-on-http1.md: b0133c30c8dfebbcef1d86e8306b5239302d070c
-2026-09-15-control-plane-calls-stay-on-http1.zh.md: 641874f7a1c01a313bbd54a5b1c3ffcaae78e1c9
+/agent-note-control-plane-calls-stay-on-http-1-1:
+  en: 874c97abc4a38d81
+  zh: d0e0b752c9d04244
+/agent-note-control-plane-calls-stay-on-http-1-1/problem:
+  en: 5e8f17baf4b6931f
+  zh: c08dd8474c4937e4
+/agent-note-control-plane-calls-stay-on-http-1-1/decision:
+  en: 4a2fdc548b434f83
+  zh: 4e573919c3d1ca69
+/agent-note-control-plane-calls-stay-on-http-1-1/alternatives-considered:
+  en: 724b26d6ecc1b0f5
+  zh: b04f97fc36fbf8f9
+/agent-note-control-plane-calls-stay-on-http-1-1/consequences:
+  en: 5241400be4084ffb
+  zh: a7b2d7b5def2534c

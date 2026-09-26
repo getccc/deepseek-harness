@@ -1,0 +1,82 @@
+# Agent preset chat: a conversation with no working directory and, by default,
+# no tools; web search and page fetching are a per-session switch. The
+# registry's `chatDefault` names it for sessions created without a Workspace
+# or cwd, and `workspace: none` keeps it off every session that owns one.
+#
+# Nothing here may interpolate `{{cwd}}`, mount a filesystem or shell row, or
+# scan a project directory. What makes the first token fast is what is absent:
+# no tool schemas in the request while the web switch is off, no skill
+# discovery, no AGENTS.md read, no runtime-context snapshot of a directory. The
+# persona row states the whole persona, suffix included, because the Web
+# deployment's suffix names the working directory.
+- insert:
+    - id: preset-chat
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: chat
+        order: 5
+        workspace: none
+        plugins:
+          # Runtime-context snapshots describe the file sandbox and approval
+          # policy, which govern tools this agent does not have, so they are
+          # suppressed too.
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: >-
+                You are 小微 (Xiaowei), the WeWork assistant, powered by the {{model}} model. You are chatting without a workspace: answer directly from your own knowledge and the conversation, and say so when a question needs files or commands. When web_search is offered, use it for anything that needs current information; when no web tool is offered and the question needs one, say that the person can turn on web access from the composer.
+              includeRuntimeContext: false
+
+          # The host-plane tools every scope inherits are masked so a deployment
+          # adding one later does not put it into chat sessions; the rows of
+          # this composition are not inherited from outside it, so the web
+          # tools below stay visible. The empty allow list is the masking.
+          #
+          # Knowledge search is the one host tool let through, and only where a
+          # Team deployment registers it. It is offered solely to a chat whose
+          # log records a knowledge scope — the knowledge panels open one
+          # narrowed to a document — so an ordinary chat still sends no tool
+          # schema, while a chat the member opened about a document can
+          # actually search it instead of being told it can.
+          - id: tool-restriction
+            name: '@deepseek-ai/dsh-tool-restriction'
+            config:
+              allow: []
+              allowWhenRegistered: [knowledge_search]
+
+          # The `web` service and its providers stay in the host composition;
+          # the model-facing tools are this preset's, behind a switch every
+          # session starts with off. `/web on` (the composer's 联网 chip)
+          # offers `web_search` and `web_fetch` from the next step, and the
+          # log's `web/access` events own the state, so a resumed chat is
+          # offered exactly what it was last set to. Search is a full auxiliary
+          # model request with server-side retrieval on the shipped DeepSeek
+          # route, hence the 60s budget the standard preset also gives it.
+          - id: tool-web
+            name: '@deepseek-ai/dsh-tool-web'
+            config:
+              fetch: true
+              searchTimeoutMs: 60000
+              sessionSwitch: off
+
+          # Same compaction group as the standard preset: a long chat still has
+          # to fit the model's context, and the pruner is the service
+          # `compaction-basic` resolves through `ctx.get`, so it shares the
+          # realm even with no tool results to prune.
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+              toolResultPruner: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: command-compact
+                name: '@deepseek-ai/dsh-command-compact'
+              - id: tool-result-pruner
+                name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+                config:
+                  thresholdChars: 8192
+                  headChars: 4096
+                  tailChars: 1024

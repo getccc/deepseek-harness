@@ -1,6 +1,19 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-09-05-the-first-request-uses-the-model-the-composer-names.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-05-the-first-request-uses-the-model-the-composer-names.md
-2026-09-05-the-first-request-uses-the-model-the-composer-names.md: 2848027b4d5638daed206b6ff78fd76193dffb95
-2026-09-05-the-first-request-uses-the-model-the-composer-names.zh.md: fe2fc40965cf8b768a77897b577440522ddf288e
+/agent-note-the-first-request-uses-the-model-the-composer-names:
+  en: 1e6099977a0135fb
+  zh: dc255b44e8ad73f4
+/agent-note-the-first-request-uses-the-model-the-composer-names/problem:
+  en: 1b6d0513f374b01a
+  zh: 8f10021113c9f94f
+/agent-note-the-first-request-uses-the-model-the-composer-names/decision:
+  en: 6bf8e37dcdf8acc2
+  zh: fc6f2a2d6d877bc4
+/agent-note-the-first-request-uses-the-model-the-composer-names/alternatives-considered:
+  en: 4b901e3b06250510
+  zh: 63b934202afad3c9
+/agent-note-the-first-request-uses-the-model-the-composer-names/consequences:
+  en: 99da3bce23762616
+  zh: fd56ecb539a1a926

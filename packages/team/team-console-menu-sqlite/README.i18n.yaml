@@ -1,6 +1,52 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/team/team-console-menu-sqlite/README.md
-README.md: 51c7af2d35ea2c87500fdfe09b7e65fad6d6537d
-README.zh.md: cf8d9ee99703a45a994e5ccf85fe25194343c651
+/:
+  en: bdee401978bdd7b1
+  zh: f0b3fd553f33f8de
+/deepseek-ai-dsh-team-console-menu-sqlite:
+  en: 55684ca1cb9c14c0
+  zh: 85f5a7db972eb3e9
+/deepseek-ai-dsh-team-console-menu-sqlite/summary:
+  en: 1622014dd387904e
+  zh: 4263e93076b74d64
+/deepseek-ai-dsh-team-console-menu-sqlite/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: f000227568d8c70e
+/deepseek-ai-dsh-team-console-menu-sqlite/use-this-package:
+  en: da4f6abc2fbcd1c4
+  zh: 497d526adc0982cc
+/deepseek-ai-dsh-team-console-menu-sqlite/use-this-package/what-it-guarantees:
+  en: e769cdf274c9ee75
+  zh: a74a46849eef95ca
+/deepseek-ai-dsh-team-console-menu-sqlite/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-team-console-menu-sqlite/understand-the-implementation/schema-ownership:
+  en: f2497985d4879fa3
+  zh: 57e840b8ac2155e8
+/deepseek-ai-dsh-team-console-menu-sqlite/understand-the-implementation/invariants-live-in-the-schema:
+  en: 7b39fb5836bf4988
+  zh: a722bf53bf836eec
+/deepseek-ai-dsh-team-console-menu-sqlite/understand-the-implementation/a-rename-drops-the-shipped-copy-key:
+  en: 61c981017633a824
+  zh: b4b7d41a003da432
+/deepseek-ai-dsh-team-console-menu-sqlite/understand-the-implementation/source-map:
+  en: 99f5179b0a8984cb
+  zh: e6294e68c918ca66
+/deepseek-ai-dsh-team-console-menu-sqlite/further-exploration:
+  en: 9df4e13440ac53b8
+  zh: 4d15a1a3c2d656f2
+/deepseek-ai-dsh-team-console-menu-sqlite/model-experience:
+  en: 8d505a67932981d4
+  zh: 8e3fffabb365a713
+/deepseek-ai-dsh-team-console-menu-sqlite/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: 54128a3dac4698be
+/deepseek-ai-dsh-team-console-menu-sqlite/known-limitations-and-deferred-work:
+  en: 1fdd637d7f67f93e
+  zh: ede9dde4bd05f02e
+/deepseek-ai-dsh-team-console-menu-sqlite/known-limitations-and-deferred-work/dev-note:
+  en: 2e2b4d3d4370ad2e
+  zh: 891d4c116fddac82

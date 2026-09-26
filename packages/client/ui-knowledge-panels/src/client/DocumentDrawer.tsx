@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type AnimationEvent, type ReactNode } from 'react'
 import clsx from 'clsx'
 import {
-  IconCheckOutline16, IconCloseOutline16, IconCopyOutline16, IconDownloadOutline16, Tooltip, writeClipboard,
+  IconCheckOutlineRegular, IconCloseOutlineRegular, IconCopyOutlineRegular, IconDownloadOutlineRegular, Tooltip, writeClipboard,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsRenderSlots } from '@deepseek-ai/dsh-client-ui-slots'
 import type { KnowledgeDocumentContentView } from '@deepseek-ai/dsh-api-knowledge-controller/types'
@@ -184,7 +184,7 @@ export function DocumentDrawer({ title, docRef, content, closing, close, closed,
             {copyText !== undefined && (
               <Tooltip label={copyLabel} side="bottom">
                 <button type="button" className={css.drawerAction} aria-label={copyLabel} onClick={() => { copy(copyText) }}>
-                  {copied ? <IconCheckOutline16 size={18} /> : <IconCopyOutline16 size={18} />}
+                  {copied ? <IconCheckOutlineRegular size={18} /> : <IconCopyOutlineRegular size={18} />}
                 </button>
               </Tooltip>
             )}
@@ -196,13 +196,13 @@ export function DocumentDrawer({ title, docRef, content, closing, close, closed,
                   aria-label={t('drawer.download')}
                   onClick={() => { download(prepared.fileName, fileUrl) }}
                 >
-                  <IconDownloadOutline16 size={18} />
+                  <IconDownloadOutlineRegular size={18} />
                 </button>
               </Tooltip>
             )}
             <Tooltip label={t('drawer.close')} side="bottom">
               <button type="button" className={css.drawerAction} aria-label={t('drawer.close')} onClick={close}>
-                <IconCloseOutline16 size={18} />
+                <IconCloseOutlineRegular size={18} />
               </button>
             </Tooltip>
           </div>

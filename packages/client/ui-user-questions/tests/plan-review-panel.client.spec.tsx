@@ -57,19 +57,19 @@ const sessionList = {
     },
   },
   phase: 'ready' as const,
-  subagentsByParent: {},
-  jobsBySession: {},
+  projectionsBySession: {},
 }
 const attentionState: AttentionState = new Map()
 const workspaceState = {
   items: [],
   archivedSessionIds: [],
+  pinnedSessionIds: [],
   state: 'idle' as const,
   phase: 'ready' as const,
   error: null,
 }
 const conversationState: ConversationState = {
-  views: { get: () => undefined },
+  views: { get: () => undefined, grouped: () => undefined },
   activeTargets: new Set(),
 }
 const emptyKeys: readonly string[] = []
@@ -79,6 +79,7 @@ const chatState: ChatState = {
   nodes: {
     get: () => undefined,
     source: () => emptyNodeSource,
+    turnDataSource: () => { throw new Error('unused') },
     processSource: () => emptyNodeSource,
     values: () => [],
   },
@@ -131,6 +132,8 @@ const kit: Omit<QuestionComposerProps, 'matched'> = {
   useProjection: (() => undefined),
   useInput: selector => selector(inputState),
   inputActions: {
+    captureInsertion: () => ({ start: 0, end: 0, draftRev: 0 }),
+    insertText: () => false,
     setDraft: () => { throw new Error('unused') },
     addAttachments: () => { throw new Error('unused') },
     removeAttachment: () => { throw new Error('unused') },
@@ -244,6 +247,7 @@ describe('PlanReviewPanel', () => {
 
     expect(document.querySelector('[data-plan-review-key]')?.getAttribute('data-plan-review-key')).toBe(carrier.key)
     expect(screen.getByText(zh['plan.header'])).toBeTruthy()
+    expect(document.querySelector('[data-plan-review-key] [data-state="warning"]')).not.toBeNull()
     expect(screen.getByRole('heading', { name: 'Ship the picker' })).toBeTruthy()
     expect(screen.getByText('read the store')).toBeTruthy()
     expect(screen.getAllByRole('button')).toHaveLength(2)
@@ -284,6 +288,8 @@ describe('PlanReviewPanel', () => {
     expect(approve.getAttribute('title')).toBe('Leave plan mode; the plan is carried out from the next step.')
     fireEvent.click(approve)
     expect(answer).toHaveBeenCalledWith(decision('Approve'))
+    expect(document.querySelector('[data-plan-review-key] [data-state="ongoing"]')).not.toBeNull()
+    expect(document.querySelector('[data-plan-review-key] section')?.getAttribute('aria-busy')).toBe('true')
     // One-shot: every action locks until the host's resolved frame lands.
     expect(approve.hasAttribute('disabled')).toBe(true)
     expect(screen.getByRole('button', { name: zh['plan.discuss'] }).hasAttribute('disabled')).toBe(true)

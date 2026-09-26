@@ -1,6 +1,55 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/account/account-store/README.md
-README.md: f588d9c4ab097c3fd97aface70ea6c1e9423f3fc
-README.zh.md: b06884a01af494335cd9f9456120a44929a1f20b
+/:
+  en: 68c9263e5e1e3065
+  zh: a0d01df0994d94de
+/deepseek-ai-dsh-account-store:
+  en: 0435c3fb650a06bd
+  zh: 7223aa8c2ee1be28
+/deepseek-ai-dsh-account-store/summary:
+  en: 12b0d1664087567c
+  zh: 2f29193054e45120
+/deepseek-ai-dsh-account-store/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 405b30feaf48c087
+/deepseek-ai-dsh-account-store/use-this-package:
+  en: dcee783350ddba8f
+  zh: 9db62d2cd8bf9e6a
+/deepseek-ai-dsh-account-store/use-this-package/an-issued-account-cannot-yet-sign-in:
+  en: 79fa3c99ca68f7e4
+  zh: 9eb98619c3865b4d
+/deepseek-ai-dsh-account-store/use-this-package/sign-in-state-is-counted-here-judged-elsewhere:
+  en: 15b2845041983a40
+  zh: 41a3e6c3ac8b9c27
+/deepseek-ai-dsh-account-store/use-this-package/failures-you-can-act-on:
+  en: 84211fe5a3ddea43
+  zh: 0e94400b6faa98d5
+/deepseek-ai-dsh-account-store/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-account-store/understand-the-implementation/why-authentication-material-is-opaque-here:
+  en: a7b2d4b96f0199c7
+  zh: 3d319f35f94590c9
+/deepseek-ai-dsh-account-store/understand-the-implementation/source-map:
+  en: 93c171f56a72c993
+  zh: dc1bb9e1d893f58e
+/deepseek-ai-dsh-account-store/understand-the-implementation/invariant-ownership:
+  en: 3114a7a389b012f1
+  zh: facaff3eb2fa5b55
+/deepseek-ai-dsh-account-store/further-exploration:
+  en: 762b3c2bfd2647a4
+  zh: ebeaff35dbe5a401
+/deepseek-ai-dsh-account-store/model-experience:
+  en: 6686d6795d545015
+  zh: e614eaf6ceb4b71d
+/deepseek-ai-dsh-account-store/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: 9618abc820ac7a34
+/deepseek-ai-dsh-account-store/known-limitations-and-deferred-work:
+  en: a34e6b5f15fdd5ca
+  zh: 899c69c92965ffda
+/deepseek-ai-dsh-account-store/known-limitations-and-deferred-work/dev-note:
+  en: 23196ba9258790f6
+  zh: 90a85a266c96ae95

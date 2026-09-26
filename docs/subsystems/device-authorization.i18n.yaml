@@ -1,6 +1,25 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for device-authorization.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/subsystems/device-authorization.md
-device-authorization.md: 52a12747daa3cae7d080b457297f895fe99ad70c
-device-authorization.zh.md: 8bda6749c6ebe3afeac8b4a50ef42e84a768f740
+/device-authorization:
+  en: c777a4ad91a181d7
+  zh: f4baec518ab1a246
+/device-authorization/what-the-flow-establishes:
+  en: e0cc4b96e35d7e51
+  zh: 9435462ad5cf27ff
+/device-authorization/the-pairing-code-is-for-a-person:
+  en: d32430d71712882b
+  zh: 8a6f74dfcc685dae
+/device-authorization/the-authorization-code-binds-everything-it-can:
+  en: 249bc95e15525973
+  zh: e8e87c194bf9b07b
+/device-authorization/refresh-token-families:
+  en: 6f295024cad2684c
+  zh: 2c0140fc797ac28e
+/device-authorization/revocation-reaches-every-family:
+  en: 3eb00b9982f24670
+  zh: 0f5f6700fa13a61c
+/device-authorization/access-tokens-carry-no-authorization:
+  en: a73cd8f8456f188b
+  zh: 3aedde755533ad00

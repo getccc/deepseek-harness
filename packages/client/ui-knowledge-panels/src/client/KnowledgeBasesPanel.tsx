@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import clsx from 'clsx'
-import { Button, IconDataOutline16, fileSizeText } from '@deepseek-ai/dsh-client-ui-primitives'
+import { Button, IconDataOutlineRegular, fileSizeText } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRenderSlots, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type {
   KnowledgeChoice, KnowledgeDocumentContentView, KnowledgeDocumentsView, KnowledgeDocumentView,
@@ -155,7 +155,7 @@ export function KnowledgeBasesPanel({ directory, documents, content, renderSlotC
   return (
     <section className={css.panel} aria-label={t('bases.title')}>
       <nav className={css.crumbs} aria-label={t('crumbs.label')}>
-        <IconDataOutline16 size={16} />
+        <IconDataOutlineRegular size={16} />
         {chosen === undefined
           ? <h1 className={css.title}>{t('bases.title')}</h1>
           : (

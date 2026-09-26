@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for bi.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write docs/subsystems/bi.md
-bi.md: 1c6b6d46c3db218f06b9fe6f1d52ce33fa281ef3
-bi.zh.md: 7cfed1a40de0d028661fae0263797781846bba46
+/bi-analysis:
+  en: 299cebe35438b91f
+  zh: d713eb57a81cf0a8
+/bi-analysis/naming-a-project:
+  en: 10c3e3de9138cc35
+  zh: 901d4747962bdd4c
+/bi-analysis/naming-a-chart:
+  en: 11f39f6f547dcd1d
+  zh: 6d6e49f1cc42819f
+/bi-analysis/the-session-bi-scope:
+  en: c187406d17493c86
+  zh: 32b5492fac1fe2aa
+/bi-analysis/directory-charts-and-run:
+  en: 6a981db7c041e7f0
+  zh: 9f1e460e9bf5ac06
+/bi-analysis/failures:
+  en: dd615a72ed19377a
+  zh: 18149bd874003e4d

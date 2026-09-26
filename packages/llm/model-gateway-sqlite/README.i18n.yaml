@@ -1,6 +1,49 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/llm/model-gateway-sqlite/README.md
-README.md: 27907a4cf0bb6de2a35e34476b5fb123322d29b1
-README.zh.md: 90ffc53ba44dfc8db97fd96182c4b030571ad534
+/:
+  en: 213b19028dd7520c
+  zh: 9bdbf1885d938c63
+/deepseek-ai-dsh-model-gateway-sqlite:
+  en: f913f398650a4d4c
+  zh: b248bfb7283fe48f
+/deepseek-ai-dsh-model-gateway-sqlite/summary:
+  en: af546d841136f774
+  zh: f62f2f6940a11ea9
+/deepseek-ai-dsh-model-gateway-sqlite/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5452fccb37762c88
+/deepseek-ai-dsh-model-gateway-sqlite/use-this-package:
+  en: 6bbb32145dda85de
+  zh: 2023bcfb890e126d
+/deepseek-ai-dsh-model-gateway-sqlite/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-model-gateway-sqlite/understand-the-implementation/registering-and-governing-are-one-act:
+  en: 538150046518a1f2
+  zh: e8ec0d2306faf8fb
+/deepseek-ai-dsh-model-gateway-sqlite/understand-the-implementation/the-catalog-holds-a-reference-never-a-secret:
+  en: 2278c953718edc9f
+  zh: b00546913ac6182d
+/deepseek-ai-dsh-model-gateway-sqlite/understand-the-implementation/the-order-of-the-three-decisions:
+  en: d913f4d66394f3cc
+  zh: b9994c7fe02e4949
+/deepseek-ai-dsh-model-gateway-sqlite/understand-the-implementation/source-map:
+  en: 82557e55b32f282d
+  zh: f055914d1624185d
+/deepseek-ai-dsh-model-gateway-sqlite/further-exploration:
+  en: c93992fee415872e
+  zh: 4378d61a93205c60
+/deepseek-ai-dsh-model-gateway-sqlite/model-experience:
+  en: ee746ccebe4f197a
+  zh: ce40f74fbb5de49f
+/deepseek-ai-dsh-model-gateway-sqlite/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: e8121475b5ee0f9b
+/deepseek-ai-dsh-model-gateway-sqlite/known-limitations-and-deferred-work:
+  en: da705552e6332756
+  zh: 108783d1fb78b9c1
+/deepseek-ai-dsh-model-gateway-sqlite/known-limitations-and-deferred-work/dev-note:
+  en: 6fbbfea79f6225a7
+  zh: 6762f30bb2527deb

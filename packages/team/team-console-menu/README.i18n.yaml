@@ -1,6 +1,52 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/team/team-console-menu/README.md
-README.md: f31bdfed7157840f5daf2fbf1476df611bf06c9b
-README.zh.md: 27cd7baffac800163358569ab60fa43c389a8775
+/:
+  en: 62ee82b5808687a3
+  zh: 6547b3c5953cf41f
+/deepseek-ai-dsh-team-console-menu:
+  en: 5efb812eea964b7b
+  zh: f05d17f754ebdee1
+/deepseek-ai-dsh-team-console-menu/summary:
+  en: 029b871532323158
+  zh: 6cca3119e4fe75d0
+/deepseek-ai-dsh-team-console-menu/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: f000227568d8c70e
+/deepseek-ai-dsh-team-console-menu/use-this-package:
+  en: ed7a51fd3ac3eb33
+  zh: 1d0688bd051cdd8b
+/deepseek-ai-dsh-team-console-menu/use-this-package/what-an-entry-is:
+  en: e48ac0ac48b4b0b3
+  zh: f6515ad80fa21edc
+/deepseek-ai-dsh-team-console-menu/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-team-console-menu/understand-the-implementation/navigation-decides-nothing:
+  en: a992ab669cbc81dc
+  zh: 7beaa3c3571d4566
+/deepseek-ai-dsh-team-console-menu/understand-the-implementation/the-permission-an-entry-names-is-not-free-text:
+  en: 8d12f342ee864a66
+  zh: cb770a11557c47af
+/deepseek-ai-dsh-team-console-menu/understand-the-implementation/a-shipped-entry-carries-the-console-s-own-words:
+  en: 8f47b8b9492d3e2a
+  zh: 59af9dd1c46b5ab3
+/deepseek-ai-dsh-team-console-menu/understand-the-implementation/source-map:
+  en: f868c28e41667640
+  zh: 9ed82ac2861170aa
+/deepseek-ai-dsh-team-console-menu/further-exploration:
+  en: 034c9c5481879406
+  zh: bf257e824acd08be
+/deepseek-ai-dsh-team-console-menu/model-experience:
+  en: 2e80fa6ccbeca79b
+  zh: 77d0f3d02024d135
+/deepseek-ai-dsh-team-console-menu/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: 54128a3dac4698be
+/deepseek-ai-dsh-team-console-menu/known-limitations-and-deferred-work:
+  en: be3844d8706a5097
+  zh: 821db1740d94bae5
+/deepseek-ai-dsh-team-console-menu/known-limitations-and-deferred-work/dev-note:
+  en: 88d5887569ce9f48
+  zh: bebfcf2c93647eb4

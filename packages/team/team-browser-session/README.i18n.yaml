@@ -1,6 +1,52 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/team/team-browser-session/README.md
-README.md: ec0b347e8f90d7b0966f605baf07c8b65c1f56a3
-README.zh.md: a9274499e9c34d17f2db23dd2f5fc847b0d72246
+/:
+  en: e92775355d18a48d
+  zh: 23f2675e903efbd2
+/deepseek-ai-dsh-team-browser-session:
+  en: d777e29ab4eec0d4
+  zh: 5b712a875dc384ea
+/deepseek-ai-dsh-team-browser-session/summary:
+  en: 28513219bf35470b
+  zh: 78bfde9bdedfbadf
+/deepseek-ai-dsh-team-browser-session/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5452fccb37762c88
+/deepseek-ai-dsh-team-browser-session/use-this-package:
+  en: f9d885c2f2074aab
+  zh: f85cb6f19a698b76
+/deepseek-ai-dsh-team-browser-session/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-team-browser-session/understand-the-implementation/nothing-about-the-member-travels-in-the-cookie:
+  en: 30bb3d44fea999f9
+  zh: 190b23214e603dcb
+/deepseek-ai-dsh-team-browser-session/understand-the-implementation/the-csrf-value-is-derived-not-stored:
+  en: 04a932cde2638438
+  zh: 7e2ec06a7c04b10c
+/deepseek-ai-dsh-team-browser-session/understand-the-implementation/the-session-cookie-is-lax-not-strict:
+  en: 07ebaacd46132840
+  zh: 176482ea6c7592a3
+/deepseek-ai-dsh-team-browser-session/understand-the-implementation/an-opaque-origin-needs-fetch-metadata:
+  en: 4e1970e1e487ae08
+  zh: ca9368c5fa6278e2
+/deepseek-ai-dsh-team-browser-session/understand-the-implementation/source-map:
+  en: 1e23fe531350f4b8
+  zh: 271987b516730ccd
+/deepseek-ai-dsh-team-browser-session/further-exploration:
+  en: 1e668b65ccf68b76
+  zh: 25037c3880a135e0
+/deepseek-ai-dsh-team-browser-session/model-experience:
+  en: 3a06acfcd6496287
+  zh: cfd53bbb901287ad
+/deepseek-ai-dsh-team-browser-session/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: ac91908e96d0e23d
+/deepseek-ai-dsh-team-browser-session/known-limitations-and-deferred-work:
+  en: dd887dc6aff9915f
+  zh: 74683b907dfa29e8
+/deepseek-ai-dsh-team-browser-session/known-limitations-and-deferred-work/dev-note:
+  en: 4e0ae511c3fc8fe2
+  zh: d6f3e2451dec238e

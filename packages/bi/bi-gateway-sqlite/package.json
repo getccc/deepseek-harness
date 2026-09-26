@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-bi-gateway-sqlite",
   "description": "SQLite-backed governed BI gateway (ctx.biGateway) for the DeepSeek Harness Control Plane — the durable project catalog, synchronization against a BI source, per-project authorization, and audit",
-  "version": "0.1.6-alpha.2",
+  "version": "0.1.7-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -27,27 +27,27 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-access-control": "workspace:^",
-    "@deepseek-ai/dsh-account-store": "workspace:^",
-    "@deepseek-ai/dsh-audit": "workspace:^",
-    "@deepseek-ai/dsh-bi": "workspace:^",
-    "@deepseek-ai/dsh-bi-gateway": "workspace:^",
-    "@deepseek-ai/dsh-bi-source": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-access-control": "workspace:*",
+    "@deepseek-ai/dsh-account-store": "workspace:*",
+    "@deepseek-ai/dsh-audit": "workspace:*",
+    "@deepseek-ai/dsh-bi": "workspace:*",
+    "@deepseek-ai/dsh-bi-gateway": "workspace:*",
+    "@deepseek-ai/dsh-bi-source": "workspace:*"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-access-control": "workspace:^",
-    "@deepseek-ai/dsh-access-control-sqlite": "workspace:^",
-    "@deepseek-ai/dsh-account-store": "workspace:^",
-    "@deepseek-ai/dsh-account-store-sqlite": "workspace:^",
-    "@deepseek-ai/dsh-audit": "workspace:^",
-    "@deepseek-ai/dsh-audit-sqlite": "workspace:^",
-    "@deepseek-ai/dsh-bi": "workspace:^",
-    "@deepseek-ai/dsh-bi-gateway": "workspace:^",
-    "@deepseek-ai/dsh-bi-source": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-access-control": "workspace:*",
+    "@deepseek-ai/dsh-access-control-sqlite": "workspace:*",
+    "@deepseek-ai/dsh-account-store": "workspace:*",
+    "@deepseek-ai/dsh-account-store-sqlite": "workspace:*",
+    "@deepseek-ai/dsh-audit": "workspace:*",
+    "@deepseek-ai/dsh-audit-sqlite": "workspace:*",
+    "@deepseek-ai/dsh-bi": "workspace:*",
+    "@deepseek-ai/dsh-bi-gateway": "workspace:*",
+    "@deepseek-ai/dsh-bi-source": "workspace:*"
   },
   "dependencies": {
-    "@deepseek-ai/schemastery": "workspace:^"
+    "@deepseek-ai/schemastery": "workspace:~"
   }
 }

@@ -1,6 +1,49 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/account/account-auth/README.md
-README.md: 8a226d30f96723f4679f9d8dd176d0e7751d5acb
-README.zh.md: e0a10a5af99051b309c62ae13289f236b518b3b0
+/:
+  en: 3174761700e20c7e
+  zh: ce19862f2fd7c57f
+/deepseek-ai-dsh-account-auth:
+  en: de54769d8a29d4f4
+  zh: 7cb011b88832c07c
+/deepseek-ai-dsh-account-auth/summary:
+  en: e2500e6f78a0cf61
+  zh: 876f5ccba07b7bbf
+/deepseek-ai-dsh-account-auth/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 405b30feaf48c087
+/deepseek-ai-dsh-account-auth/use-this-package:
+  en: bbff250eba0f1b89
+  zh: 0a618f05cc88ee2b
+/deepseek-ai-dsh-account-auth/use-this-package/the-failure-has-no-reason-deliberately:
+  en: 1b1928f95ea9a208
+  zh: 07ca361947c9fefc
+/deepseek-ai-dsh-account-auth/use-this-package/setting-a-secret:
+  en: 9989551e704466aa
+  zh: 5f24a18f97367573
+/deepseek-ai-dsh-account-auth/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-account-auth/understand-the-implementation/why-timing-is-part-of-the-contract:
+  en: 2dca9752a7459988
+  zh: 7c69c1c6e9d3800d
+/deepseek-ai-dsh-account-auth/understand-the-implementation/source-map:
+  en: 371515d04196da57
+  zh: d81d20a650cf91b8
+/deepseek-ai-dsh-account-auth/further-exploration:
+  en: a48009fc4a5d9da5
+  zh: 8a36371a6b3108f9
+/deepseek-ai-dsh-account-auth/model-experience:
+  en: 1a79206ea8e197f2
+  zh: 49edae7747c5757d
+/deepseek-ai-dsh-account-auth/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: 9618abc820ac7a34
+/deepseek-ai-dsh-account-auth/known-limitations-and-deferred-work:
+  en: 01a5ab26ec4a8412
+  zh: 723a0a13e884df55
+/deepseek-ai-dsh-account-auth/known-limitations-and-deferred-work/dev-note:
+  en: 11a4603131eda8bf
+  zh: 0d4a366ec49b7164

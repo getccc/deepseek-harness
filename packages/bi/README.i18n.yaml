@@ -1,6 +1,25 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/bi/README.md
-README.md: 22fe9e602ca7820f198c689b53eb9f15bcb750bc
-README.zh.md: 7413c38e9d77e382665665d5ff7891605aabe1bf
+/:
+  en: 48fef00d80e08d5f
+  zh: b05cfcce50716a49
+/bi-bi-analysis-capability-family:
+  en: a1fee6cbcc68563e
+  zh: d322dc65ab3aa532
+/bi-bi-analysis-capability-family/summary:
+  en: 43a03466db6353bf
+  zh: 2e423c0b88e6ad27
+/bi-bi-analysis-capability-family/table-of-contents:
+  en: 1eb35b015a6c423f
+  zh: a120f34f802b44db
+/bi-bi-analysis-capability-family/packages:
+  en: f6dd970804c248f6
+  zh: 1e23430a9a77e212
+/bi-bi-analysis-capability-family/related-documentation:
+  en: c99470e41b4f0f59
+  zh: 7bef7b8a7dc3938d
+/bi-bi-analysis-capability-family/dev-note:
+  en: 5de1d6304e00c58f
+  zh: eb3dabe1d93b2870

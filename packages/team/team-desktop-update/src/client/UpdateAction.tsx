@@ -10,7 +10,7 @@ import { useEffect, useState, type ReactElement } from 'react'
 import { createPortal } from 'react-dom'
 import clsx from 'clsx'
 import {
-  IconDownloadOutline16, IconRefreshOutline16, IconWarningOutline16, Tooltip,
+  IconDownloadOutlineRegular, IconRefreshOutlineRegular, IconWarningOutlineRegular, Tooltip,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 // Type-only: pulls the team.account.action slot declaration into this program.
@@ -102,7 +102,7 @@ function presentation(state: DesktopUpdateState, t: UpdateActionProps['t']): {
   switch (state.phase) {
     case 'available':
       return {
-        glyph: <IconDownloadOutline16 />,
+        glyph: <IconDownloadOutlineRegular />,
         label: t('available.label'),
         title: t('available.title', { version }),
         act: 'install',
@@ -129,7 +129,7 @@ function presentation(state: DesktopUpdateState, t: UpdateActionProps['t']): {
       }
     case 'ready':
       return {
-        glyph: <IconRefreshOutline16 />,
+        glyph: <IconRefreshOutlineRegular />,
         label: t('ready.label'),
         title: t('ready.title', { version }),
         act: 'none',
@@ -137,7 +137,7 @@ function presentation(state: DesktopUpdateState, t: UpdateActionProps['t']): {
       }
     case 'error':
       return {
-        glyph: <IconWarningOutline16 />,
+        glyph: <IconWarningOutlineRegular />,
         label: t('error.label'),
         title: t('error.title', { message: state.message ?? '' }),
         act: 'check',

@@ -1,6 +1,52 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/access/audit/README.md
-README.md: 150c924a391acd11205c2440a62008534f21d31b
-README.zh.md: 0d812a5ce697611e415c989d5641cd4085531756
+/:
+  en: f92f267a46aadcf0
+  zh: 0760ac55f82de053
+/deepseek-ai-dsh-audit:
+  en: abe205fa0e498944
+  zh: 14d850d40a9afe56
+/deepseek-ai-dsh-audit/summary:
+  en: 87554a4981f1b7dc
+  zh: 98b3a6da9a1a1169
+/deepseek-ai-dsh-audit/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 5452fccb37762c88
+/deepseek-ai-dsh-audit/use-this-package:
+  en: 2b942a3acdb100b1
+  zh: 94ec28068c024c73
+/deepseek-ai-dsh-audit/use-this-package/what-a-record-may-carry:
+  en: 8abcfdb07073fd5f
+  zh: 2b256841908852f5
+/deepseek-ai-dsh-audit/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-audit/understand-the-implementation/why-there-is-no-free-text-field:
+  en: 408b6952e9ba50a7
+  zh: 8286b61f67469f68
+/deepseek-ai-dsh-audit/understand-the-implementation/why-the-metadata-catalog-is-closed-and-per-action:
+  en: d9d7456389b47b63
+  zh: aec0b3a7b6ad2f3b
+/deepseek-ai-dsh-audit/understand-the-implementation/why-the-word-lists-are-runtime-arrays:
+  en: 0516d7e0e1bec7f0
+  zh: 7d4e23440225a3f1
+/deepseek-ai-dsh-audit/understand-the-implementation/source-map:
+  en: 3e9e0242ad25806a
+  zh: b175ea4657dc4f23
+/deepseek-ai-dsh-audit/further-exploration:
+  en: 674ef5608ff53d8b
+  zh: 4c584a2f4f20cb0a
+/deepseek-ai-dsh-audit/model-experience:
+  en: 0d0e18e68e82d0d7
+  zh: d0ead7b5ee635e69
+/deepseek-ai-dsh-audit/model-experience/kv-cache-effect:
+  en: 53c4476273b2dd81
+  zh: e8121475b5ee0f9b
+/deepseek-ai-dsh-audit/known-limitations-and-deferred-work:
+  en: 4454c88e5a396bdc
+  zh: 38ef1b065ad491c0
+/deepseek-ai-dsh-audit/known-limitations-and-deferred-work/dev-note:
+  en: 5b1a02983b1a14d4
+  zh: 44fd2ca05a044cfe

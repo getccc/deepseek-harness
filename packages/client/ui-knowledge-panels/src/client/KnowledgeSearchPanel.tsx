@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useState } from 'react'
 import clsx from 'clsx'
 import {
-  FileTypeIcon, IconChevronDownOutline14, IconSendOutline14, Menu,
+  FileTypeIcon, IconChevronDownOutlineRegular, IconSendOutlineRegular, Menu,
 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import type {
@@ -199,7 +199,7 @@ export function KnowledgeSearchPanel({ directory, documents, search, discuss, t 
                     onClick={() => { setMenuOpen(!menuOpen) }}
                   >
                     <span className={css.scopeName}>{scopeName}</span>
-                    <IconChevronDownOutline14 />
+                    <IconChevronDownOutlineRegular />
                   </button>
                 }
               />
@@ -210,7 +210,7 @@ export function KnowledgeSearchPanel({ directory, documents, search, discuss, t 
                 disabled={phase === 'running' || query.trim() === ''}
                 onClick={() => { run(chosen) }}
               >
-                <IconSendOutline14 />
+                <IconSendOutlineRegular />
               </button>
             </div>
           </div>

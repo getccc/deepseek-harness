@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-bi-webi",
   "description": "webi BI-source provider (ctx.biSource) for the DeepSeek Harness Control Plane — the fixed webi routes, per-operation API-key resolution, row and cell bounds, and closed failure mapping",
-  "version": "0.1.6-alpha.2",
+  "version": "0.1.7-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -27,20 +27,20 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-bi": "workspace:^",
-    "@deepseek-ai/dsh-bi-source": "workspace:^",
-    "@deepseek-ai/dsh-credentials": "workspace:^",
-    "@deepseek-ai/dsh-util-crypto": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-bi": "workspace:*",
+    "@deepseek-ai/dsh-bi-source": "workspace:*",
+    "@deepseek-ai/dsh-credentials": "workspace:*",
+    "@deepseek-ai/dsh-util-crypto": "workspace:*"
   },
   "dependencies": {
-    "@deepseek-ai/schemastery": "workspace:^"
+    "@deepseek-ai/schemastery": "workspace:~"
   },
   "devDependencies": {
-    "@deepseek-ai/cordis": "workspace:^",
-    "@deepseek-ai/dsh-bi": "workspace:^",
-    "@deepseek-ai/dsh-bi-source": "workspace:^",
-    "@deepseek-ai/dsh-credentials": "workspace:^",
-    "@deepseek-ai/dsh-util-crypto": "workspace:^"
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-bi": "workspace:*",
+    "@deepseek-ai/dsh-bi-source": "workspace:*",
+    "@deepseek-ai/dsh-credentials": "workspace:*",
+    "@deepseek-ai/dsh-util-crypto": "workspace:*"
   }
 }

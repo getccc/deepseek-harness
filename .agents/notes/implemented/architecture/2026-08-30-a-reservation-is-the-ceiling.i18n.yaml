@@ -1,6 +1,22 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for 2026-08-30-a-reservation-is-the-ceiling.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-08-30-a-reservation-is-the-ceiling.md
-2026-08-30-a-reservation-is-the-ceiling.md: 5e239a1c767aa2e4d41732a742db0e0708b2ebb5
-2026-08-30-a-reservation-is-the-ceiling.zh.md: 5bdeb866f318f6fd6dd02a12301e5caab595db06
+/agent-note-a-reservation-is-the-ceiling-and-a-settlement-happens-once:
+  en: 652d73d1dbb1b4ef
+  zh: 7c2c1fc8d351c986
+/agent-note-a-reservation-is-the-ceiling-and-a-settlement-happens-once/problem:
+  en: 154cece37c137dc3
+  zh: 6eb4070bf7c3e034
+/agent-note-a-reservation-is-the-ceiling-and-a-settlement-happens-once/decision:
+  en: d20076c475d71cc2
+  zh: e81d373d3cc2b7b3
+/agent-note-a-reservation-is-the-ceiling-and-a-settlement-happens-once/what-the-ledger-does-not-decide:
+  en: 6e83a57b64e7cf6f
+  zh: 5222f36749d02281
+/agent-note-a-reservation-is-the-ceiling-and-a-settlement-happens-once/alternatives-considered:
+  en: 0b2b7386e031429b
+  zh: 7fccb49b0fc06f18
+/agent-note-a-reservation-is-the-ceiling-and-a-settlement-happens-once/consequences:
+  en: 1e61f32382423a42
+  zh: 679706cc496556af
