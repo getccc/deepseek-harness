@@ -4605,16 +4605,17 @@ export interface Config {
   /** Global tool names that stay visible; every other global tool is removed. `[]` removes them all. */
   allow?: string[]
   /**
-   * Global tool names that also stay visible, but only when some deployment
-   * row has registered them by the time this row mounts; an absent one is
-   * skipped rather than refused. Beside `allow` only.
+   * Global tool names that also stay visible, but only while some deployment
+   * row registers them; an absent one is skipped rather than refused. Beside
+   * `allow` only.
    *
    * For a shipped preset that should reach a tool some deployments add — the
    * `chat` preset and Team knowledge search — without failing every deployment
    * that does not. The price is the name check `allow` gets: a misspelling
    * here masks the tool instead of failing, so list only names a registering
-   * package owns. Resolved once, at mount: a tool registered afterwards stays
-   * masked until the preset mounts again.
+   * package owns. Followed while the row is mounted: registering or removing
+   * one of these tools re-installs the mask, because a preset's standing
+   * mount activates before the deployment rows that register them.
    */
   allowWhenRegistered?: string[]
   /** Global tool names removed from visibility. */

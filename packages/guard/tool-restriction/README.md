@@ -43,14 +43,14 @@ Choose it when a preset must see fewer tools than the host registers for everyon
 | Field | Default | Meaning |
 |---|---|---|
 | `allow` | absent | Global tool names that stay visible; every other global tool is removed. `[]` removes them all |
-| `allowWhenRegistered` | absent | Beside `allow` only: global tool names that also stay visible when a deployment has registered them by the time the row mounts, and are skipped rather than refused when it has not |
+| `allowWhenRegistered` | absent | Beside `allow` only: global tool names that also stay visible while a deployment registers them, and are skipped rather than refused while it does not |
 | `deny` | absent | Global tool names removed from visibility |
 
-At least one list must be declared: a row that masks nothing fails validation, and an absent list is never read as an empty one. Both lists together intersect. A name no registered global tool carries fails when the row mounts, which for a preset is the first session that composes it — except in `allowWhenRegistered`, which exists so a shipped preset can keep a tool only some deployments register (the `chat` preset and Team knowledge search) without failing the others. It gives up the misspelling check in exchange, and it is read once at mount: a tool registered afterwards stays masked until the preset mounts again. The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-tool-restriction) documents every accepted value.
+At least one list must be declared: a row that masks nothing fails validation, and an absent list is never read as an empty one. Both lists together intersect. A name no registered global tool carries fails when the row mounts, which for a preset is its activation at startup — except in `allowWhenRegistered`, which exists so a shipped preset can keep a tool only some deployments register (the `chat` preset and Team knowledge search) without failing the others. It gives up the misspelling check in exchange. The row follows these names while it is mounted: registering or removing one re-installs the mask, because a preset's standing mount activates before the deployment rows that register such a tool. The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-tool-restriction) documents every accepted value.
 
 ### What you get
 
-Agents joined to the preset see the masked catalog in their tool schemas and cannot execute a masked tool, exactly as if the host had never registered it. The mask is a standing filter over the live global layer, so a tool the deployment registers after the preset mounted is masked too. Other presets and the host's own view keep the whole surface.
+Agents joined to the preset see the masked catalog in their tool schemas and cannot execute a masked tool, exactly as if the host had never registered it. The mask is a standing filter over the live global layer, so a tool the deployment registers after the preset mounted is masked too, unless `allowWhenRegistered` names it. Other presets and the host's own view keep the whole surface.
 
 -----
 
@@ -60,7 +60,7 @@ Agents joined to the preset see the masked catalog in their tool schemas and can
 <details>
 <summary>Implementation internals — click to expand</summary>
 
-The row is the configuration face of `ctx.tools.restrict()`: `apply` validates that at least one list is present, then registers the restriction as one effect on the mounting context, so disposing the row lifts the mask. Everything else — intersection with other restrictions, the exemption of scope-local registrations, the unknown-name and unscoped-context refusals — is the registry's own contract, documented with the tools subsystem.
+The row is the configuration face of `ctx.tools.restrict()`: `apply` validates that at least one list is present, then registers the restriction as one effect on the mounting context, so disposing the row lifts the mask. With `allowWhenRegistered`, the same effect listens to `tools/change` and, whenever the registered subset of those names changes, installs the widened restriction before lifting the previous one, so no agent sees a tool outside both. Everything else — intersection with other restrictions, the exemption of scope-local registrations, the unknown-name and unscoped-context refusals — is the registry's own contract, documented with the tools subsystem.
 
 The scope the mask attaches to is the scope of the context the row was plugged into. Inside an agent preset that is the preset's standing mount, an ancestor of every agent that joins the preset, which is why one row covers them all.
 
@@ -68,7 +68,7 @@ The scope the mask attaches to is the scope of the context the row was plugged i
 
 | File | Role |
 |---|---|
-| [`src/index.ts`](src/index.ts) | Plugin entry: `Config` schema, the at-least-one-list check, the `restrict()` effect |
+| [`src/index.ts`](src/index.ts) | Plugin entry: `Config` schema, the at-least-one-list check, the `restrict()` effect and its `allowWhenRegistered` re-installation |
 | — | No runtime invariant companion is published; the row owns one registry effect and no state an independent companion could observe diverging. |
 
 </details>
@@ -100,7 +100,7 @@ Zero direct tokens; the request carries fewer tool schemas than the unmasked hos
 
 #### KV Cache effect
 
-Prefix-stable: the masked catalog is fixed for the life of the preset's standing mount, so the tool-schema prefix of every request from its agents is identical. Lifting or re-mounting the row changes that prefix and invalidates reuse for requests after it.
+Prefix-stable: the masked catalog is fixed for the life of the preset's standing mount, so the tool-schema prefix of every request from its agents is identical. Lifting or re-mounting the row, or registering or removing a tool `allowWhenRegistered` names, changes that prefix and invalidates reuse for requests after it.
 
 ## Known Limitations and Deferred Work
 

@@ -322,61 +322,51 @@ describe('web e2e: shortcut reference', () => {
   })
 
   it.each([
-    { platform: 'Win32', primary: 'Control', keys: 'Ctrl + Alt + N' },
-    { platform: 'MacIntel', primary: 'Meta', keys: '⌥ ⇧ ⌘ F12' },
-  ])('shows the shortcut inside New Session on hover and keyboard focus at wide and narrow widths on $platform', async ({ platform, primary, keys }) => {
+    { platform: 'Win32', primary: 'Control', keys: 'Ctrl + Alt + N', aria: 'Control+Alt+N' },
+    { platform: 'MacIntel', primary: 'Meta', keys: '⌥ ⇧ ⌘ F12', aria: 'Alt+Shift+Meta+F12' },
+  ])('announces the New Session shortcut on New work task and the brand row, and shows it in their tooltips on $platform', async ({ platform, primary, keys, aria }) => {
     const context = await browser.newContext({ locale: 'en-US', viewport: { width: 1440, height: 1000 } })
     try {
       await context.addInitScript((value) => { Object.defineProperty(navigator, 'platform', { value }) }, platform)
       const page = await context.newPage()
       await page.goto(scaffold.authenticatedUrl)
-      const newSession = page.getByRole('button', { name: 'New work task', exact: true }).filter({ hasText: 'New work task' })
-      await newSession.waitFor()
-      if (platform === 'MacIntel') await page.evaluate(() => { document.documentElement.dataset.platform = 'darwin' })
+      const workTask = page.getByRole('button', { name: 'New work task', exact: true }).filter({ hasText: 'New work task' })
+      const brand = page.getByRole('button', { name: 'New work task', exact: true }).filter({ hasNotText: 'New work task' })
+      await workTask.waitFor()
       await page.keyboard.press(`${primary}+/`)
       await page.getByRole('button', { name: 'Edit shortcut for New Session', exact: true }).click()
       await page.keyboard.press(platform === 'Win32' ? 'Control+Alt+N' : 'Meta+Alt+Shift+F12')
       await page.getByRole('group', { name: 'New Session', exact: true }).waitFor({ state: 'hidden' })
       await page.keyboard.press('Escape')
-      for (const colorScheme of ['light', 'dark'] as const) {
-        await page.emulateMedia({ colorScheme })
-        for (const width of [420, 264]) {
-          const handle = (await page.locator('[data-side="sidebar"]').boundingBox())!
-          await page.mouse.move(handle.x + handle.width / 2, 240)
-          await page.mouse.down()
-          await page.mouse.move(width, 240, { steps: 10 })
-          await page.mouse.up()
-          await expect.poll(() => newSession.locator('kbd').allTextContents()).toEqual(keys.split(' '))
-          const centerOffset = () => newSession.evaluate((element) => {
-            const button = element.getBoundingClientRect()
-            const content = element.querySelector('[class*="newSessionContent"]')!.getBoundingClientRect()
-            return Math.abs(button.x + button.width / 2 - content.x - content.width / 2)
-          })
-          expect(await centerOffset()).toBeLessThan(1)
-          const hintStyle = () => newSession.locator('[class*="newSessionShortcut"]').evaluate(element => ({
-            opacity: getComputedStyle(element).opacity, mask: getComputedStyle(element.previousElementSibling!).maskImage,
-          }))
-          expect(await hintStyle()).toEqual({ opacity: '0', mask: 'none' })
-          await newSession.hover()
-          expect(await centerOffset()).toBeLessThan(1)
-          const mask = await newSession.locator('[class*="newSessionLabelMask"]').boundingBox()
-          const hint = await newSession.locator('[class*="newSessionShortcut"]').boundingBox()
-          expect(mask!.x + mask!.width).toBeLessThanOrEqual(hint!.x + 1)
-          expect((await hintStyle()).opacity).toBe('1')
-          expect((await hintStyle()).mask).toContain('linear-gradient')
-          await newSession.screenshot({ path: fileURLToPath(new URL(`../../../.artifacts/new-session-${process.pid}-${platform}-${colorScheme}-${width}.png`, import.meta.url)) })
-          expect(await page.getByRole('tooltip').count()).toBe(0)
-          await page.mouse.move(700, 100)
-          expect(await hintStyle()).toEqual({ opacity: '0', mask: 'none' })
-          await newSession.focus()
-          await page.keyboard.press('Shift+Tab')
-          await page.keyboard.press('Tab')
-          expect(await newSession.evaluate(element => element.matches(':focus-visible'))).toBe(true)
-          expect((await hintStyle()).opacity).toBe('1')
-          expect(await page.getByRole('tooltip').count()).toBe(0)
-          await newSession.evaluate((element) => { element.blur() })
-        }
+      const hint = page.getByRole('tooltip', { name: `New work task ${keys}`, exact: true })
+      for (const width of [420, 264]) {
+        const handle = (await page.locator('[data-side="sidebar"]').boundingBox())!
+        await page.mouse.move(handle.x + handle.width / 2, 240)
+        await page.mouse.down()
+        await page.mouse.move(width, 240, { steps: 10 })
+        await page.mouse.up()
+        await expect.poll(() => workTask.getAttribute('aria-keyshortcuts')).toBe(aria)
+        expect(await brand.getAttribute('aria-keyshortcuts')).toBe(aria)
+        await brand.hover()
+        await hint.waitFor()
+        await page.mouse.move(700, 100)
+        await hint.waitFor({ state: 'hidden' })
       }
+      // The wide row shows its label; the rail row shows the label and keys in its tooltip.
+      await page.getByRole('button', { name: 'Collapse sidebar', exact: true }).click()
+      await page.getByRole('button', { name: 'Open sidebar', exact: true }).waitFor()
+      const railTask = page.getByRole('button', { name: 'New work task', exact: true })
+      await expect.poll(() => railTask.count()).toBe(1)
+      expect(await railTask.getAttribute('aria-keyshortcuts')).toBe(aria)
+      await railTask.hover()
+      await hint.waitFor()
+      await page.mouse.move(700, 100)
+      await hint.waitFor({ state: 'hidden' })
+      await railTask.focus()
+      await page.keyboard.press('Shift+Tab')
+      await page.keyboard.press('Tab')
+      expect(await railTask.evaluate(element => element.matches(':focus-visible'))).toBe(true)
+      await hint.waitFor()
     } finally { await context.close() }
   })
 

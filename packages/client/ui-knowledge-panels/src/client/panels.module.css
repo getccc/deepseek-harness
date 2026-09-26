@@ -283,6 +283,26 @@
   background: var(--dsw-alias-bg-base);
 }
 
+/* A zoom viewport (a PDF) scrolls its own pages and keeps its zoom controls on
+   its bottom edge, so while the sheet holds one the body stops scrolling, the
+   sheet is bounded to the body, and the viewport takes the height left. */
+.drawerBody:has([data-document-zoom-frame]) {
+  display: flex;
+  flex-direction: column;
+  overflow-y: hidden;
+}
+
+.drawerBody:has([data-document-zoom-frame]) .sheet {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.drawerBody:has([data-document-zoom-frame]) [data-document-zoom-frame] {
+  flex: 1 1 0;
+}
+
 .sheetNote {
   margin: 0 0 12px;
   font-size: 12px;

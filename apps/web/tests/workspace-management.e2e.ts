@@ -17,7 +17,7 @@ import { join, sep } from 'node:path'
 import type { Browser, Locator, Page } from 'playwright'
 import { chromium } from 'playwright'
 import { afterAll, beforeAll, describe, expect, it, onTestFailed } from 'vitest'
-import { SessionId, SessionLogOffset } from '@deepseek-ai/dsh-session'
+import { SessionId } from '@deepseek-ai/dsh-session'
 import { logPath } from '../../../packages/session/session-persistence-jsonl/src/format.ts'
 import {
   acknowledgeReloadConnectionLoss, assertFixtureInventory, captureStableAria, compareOrRefreshGolden,
@@ -772,9 +772,9 @@ describe('web e2e: New Session after an outdated blank cache', () => {
       if (stored === undefined) throw new Error('seeded Session is missing')
       // A durable log may advance after its last blank projection checkpoint.
       // An unregistered Session writes only the checkpoint, leaving the persisted log intact.
-      const blank = scaffold.ctx.sessions.prepare(id, {
-        eventState: 'detached', seed: [], meta: stored.header, inheritedEventCount: SessionLogOffset(0),
-      })
+      // The checkpoint holds no events, so it also claims the Session pristine,
+      // which is what New work task reuses a Session by.
+      const blank = scaffold.ctx.sessions.prepare(id, { meta: stored.header })
       await scaffold.ctx.sessionProjectionCache.write(blank)
       const workspace = await scaffold.ctx.workspaceRegistry.create(scaffold.workspaceCwd, 'New session regression')
       await workspace.attachSession(id)

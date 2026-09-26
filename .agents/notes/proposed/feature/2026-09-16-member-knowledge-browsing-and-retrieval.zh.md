@@ -113,7 +113,7 @@ Status: proposed
 
 打开关于某份文档的对话会创建一个聊天会话：读一份报告的成员不应先去挑一个工作目录。内置的 `chat` preset 用 `allow: []` 遮蔽所有宿主工具，在本次改动之前这也包括 `knowledge_search`，于是这样的对话记录了一个范围，模型被告知了它却用不上。`dsh-tool-restriction` 现在接受 `allowWhenRegistered`，chat preset 把 `knowledge_search` 列在其中。它只在 Team 部署注册了它的地方可见，而工具自己的规则仍然在记录知识范围之前把它藏起来，因此普通聊天不发送任何工具 schema。
 
-另一个方案是一个持有同样组合的 Team 专属 preset。它的根目录必须是已安装 bundle 内部的绝对路径，要在打包的 Runner 里于加载时解析；而 chat preset 本来就以完全相同的方式携带一个按会话开关的工具。所选方案的代价落在遮蔽行上：`allowWhenRegistered` 里的名字没有拼写检查，并且列表只在挂载时读取一次。
+另一个方案是一个持有同样组合的 Team 专属 preset。它的根目录必须是已安装 bundle 内部的绝对路径，要在打包的 Runner 里于加载时解析；而 chat preset 本来就以完全相同的方式携带一个按会话开关的工具。所选方案的代价落在遮蔽行上：`allowWhenRegistered` 里的名字没有拼写检查。该行跟随工具注册表，而不是只读取一次列表，因为 preset 的常驻挂载在启动时激活，早于注册 `knowledge_search` 的 Team 行。
 
 文档以附件文件的样子显示在 composer 里：`ui-conversation` 在 composer 卡片顶部新增了一个 `conversation.input.context` 列表座位——因为草稿附件栏是 `ui-attachment` 独占的单一槽位——`ui-knowledge` 在其中以附件文件卡片的形态为每份文档画一张卡片：类型、标题、所属知识库。卡片的 × 会移除文档；最后一份被移除时知识被关闭，而不是扩大到成员从未选择过的知识库。
 

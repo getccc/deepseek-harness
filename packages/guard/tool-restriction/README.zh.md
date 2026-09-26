@@ -43,14 +43,14 @@ kind: "package-reference"
 | 字段 | 默认 | 含义 |
 |---|---|---|
 | `allow` | 无 | 保持可见的全局工具名；其余全局工具都被移除。`[]` 移除全部 |
-| `allowWhenRegistered` | 无 | 仅与 `allow` 同用：部署在该行挂载前已注册时同样保持可见的全局工具名；未注册时跳过而非拒绝 |
+| `allowWhenRegistered` | 无 | 仅与 `allow` 同用：部署注册了它们期间同样保持可见的全局工具名；未注册期间跳过而非拒绝 |
 | `deny` | 无 | 从可见范围移除的全局工具名 |
 
-至少要声明一个列表：什么都不遮蔽的行通不过校验，缺省的列表也绝不会被当成空列表。两个列表同时声明时取交集。没有任何已注册全局工具使用的名字会在该行挂载时失败，对 preset 而言就是第一次组合它的会话——`allowWhenRegistered` 除外，它的存在是为了让内置 preset 保留只有部分部署才注册的工具（`chat` preset 与 Team 知识检索），而不让其余部署失败。代价是放弃拼写检查；它也只在挂载时读取一次：之后才注册的工具会一直被遮蔽，直到 preset 再次挂载。生成的[配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-tool-restriction)记录每个可接受的值。
+至少要声明一个列表：什么都不遮蔽的行通不过校验，缺省的列表也绝不会被当成空列表。两个列表同时声明时取交集。没有任何已注册全局工具使用的名字会在该行挂载时失败，对 preset 而言就是它在启动时激活——`allowWhenRegistered` 除外，它的存在是为了让内置 preset 保留只有部分部署才注册的工具（`chat` preset 与 Team 知识检索），而不让其余部署失败。代价是放弃拼写检查。该行在挂载期间跟随这些名字：注册或移除其中一个都会重新安装遮蔽，因为 preset 的常驻挂载先于注册这类工具的部署行激活。生成的[配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-tool-restriction)记录每个可接受的值。
 
 ### 你得到什么
 
-加入该 preset 的 agent 在工具 schema 里看到的是遮蔽后的目录，也无法执行被遮蔽的工具，效果与 host 从未注册它完全一样。遮蔽是对实时全局层的常驻过滤，所以部署在 preset 挂载之后注册的工具同样被遮蔽。其他 preset 和 host 自己的视图保留完整的工具面。
+加入该 preset 的 agent 在工具 schema 里看到的是遮蔽后的目录，也无法执行被遮蔽的工具，效果与 host 从未注册它完全一样。遮蔽是对实时全局层的常驻过滤，所以部署在 preset 挂载之后注册的工具同样被遮蔽，除非 `allowWhenRegistered` 列出了它。其他 preset 和 host 自己的视图保留完整的工具面。
 
 -----
 
@@ -60,7 +60,7 @@ kind: "package-reference"
 <details>
 <summary>实现内部——点击展开</summary>
 
-此行是 `ctx.tools.restrict()` 的配置面：`apply` 校验至少有一个列表，然后把限制作为挂载上下文上的一个 effect 注册，因此释放该行就解除遮蔽。其余一切——与其他限制求交集、scope 本地注册的豁免、未知名字和无 scope 上下文的拒绝——都是注册表自身的契约，记录在 tools 子系统文档中。
+此行是 `ctx.tools.restrict()` 的配置面：`apply` 校验至少有一个列表，然后把限制作为挂载上下文上的一个 effect 注册，因此释放该行就解除遮蔽。声明 `allowWhenRegistered` 时，同一个 effect 监听 `tools/change`，每当这些名字中已注册的子集变化，就先安装放宽后的限制、再解除原有限制，因此任何 agent 都看不到两者之外的工具。其余一切——与其他限制求交集、scope 本地注册的豁免、未知名字和无 scope 上下文的拒绝——都是注册表自身的契约，记录在 tools 子系统文档中。
 
 遮蔽附着的 scope 是该行被插入的上下文所在的 scope。在 agent preset 内，这就是 preset 的常驻挂载，是每个加入该 preset 的 agent 的祖先，所以一行就覆盖全部。
 
@@ -68,7 +68,7 @@ kind: "package-reference"
 
 | 文件 | 角色 |
 |---|---|
-| [`src/index.ts`](src/index.ts) | 插件入口：`Config` schema、至少一个列表的检查、`restrict()` effect |
+| [`src/index.ts`](src/index.ts) | 插件入口：`Config` schema、至少一个列表的检查、`restrict()` effect 及其 `allowWhenRegistered` 重新安装 |
 | — | 不发布运行时不变量伴随件；此行只拥有一个注册表 effect，没有独立伴随件能观察到分歧的状态。 |
 
 </details>
@@ -100,7 +100,7 @@ kind: "package-reference"
 
 #### KV Cache 影响
 
-前缀稳定：遮蔽后的目录在 preset 常驻挂载的生命周期内固定，因此其 agent 每次请求的工具 schema 前缀相同。解除或重新挂载该行会改变前缀，使其后的请求无法复用。
+前缀稳定：遮蔽后的目录在 preset 常驻挂载的生命周期内固定，因此其 agent 每次请求的工具 schema 前缀相同。解除或重新挂载该行，或注册、移除 `allowWhenRegistered` 列出的工具，会改变前缀，使其后的请求无法复用。
 
 ## 已知限制与延后工作
 

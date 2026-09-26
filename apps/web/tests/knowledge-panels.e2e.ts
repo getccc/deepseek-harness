@@ -36,7 +36,7 @@ const DRILL = KnowledgeDocRef(`${LINGANG}/doc-3`)
  * the slots — is the shipped code.
  *
  * It mounts after boot, so the launch prints one best-effort warning for the
- * controller row waiting on `knowledge`; the row activates when this arrives.
+ * rows waiting on `knowledge`; they activate when this arrives.
  */
 class FixtureKnowledge extends Knowledge {
   catalog(): Promise<readonly KnowledgeBaseEntry[]> {
@@ -209,6 +209,16 @@ describe('web e2e: knowledge panels', () => {
     const manual = page.getByRole('dialog', { name: '园区运维手册 v3' })
     await manual.getByRole('img', { name: 'PDF 第 1 页', exact: true }).waitFor({ state: 'visible', timeout: 30_000 })
     expect(await manual.locator('[data-pdf-page]').count()).toBe(2)
+    // The pages scroll inside the zoom viewport, which fills the sheet down to
+    // the drawer's bottom inset, so its controls surface there, in view.
+    const drawerBox = (await manual.boundingBox())!
+    const frameBox = (await manual.locator('[data-document-zoom-frame]').boundingBox())!
+    expect(drawerBox.y + drawerBox.height - (frameBox.y + frameBox.height)).toBeLessThanOrEqual(48)
+    await page.mouse.move(frameBox.x + frameBox.width / 2, frameBox.y + frameBox.height - 8)
+    const zoomControls = manual.locator('[data-document-zoom-visible]')
+    await zoomControls.waitFor()
+    const controlsBox = (await zoomControls.boundingBox())!
+    expect(controlsBox.y + controlsBox.height).toBeLessThanOrEqual(drawerBox.y + drawerBox.height)
     expect(await manual.getByRole('button', { name: '复制内容' }).count()).toBe(0)
     await page.keyboard.press('Escape')
     await expect.poll(async () => await page.getByRole('dialog').count()).toBe(0)

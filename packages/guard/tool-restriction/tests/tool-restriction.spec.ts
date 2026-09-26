@@ -54,9 +54,8 @@ describe('the mask a preset row declares', () => {
     expect(names(ctx, (await mintScope(ctx, 'other')).key)).toEqual(['added_later', 'knowledge_search', 'web_search'])
   })
 
-  it('keeps a tool named as allowed-when-registered only in a deployment that registered it', async () => {
-    // A Team deployment registers knowledge search before any preset mounts;
-    // a deployment that never registers it must still compose the preset.
+  it('keeps a tool named as allowed-when-registered only while a deployment registers it', async () => {
+    // A deployment that never registers knowledge search must still compose the preset.
     const team = await mount()
     team.tools.register(tool('knowledge_search'))
     team.tools.register(tool('web_search'))
@@ -67,11 +66,22 @@ describe('the mask a preset row declares', () => {
     const plain = await mount()
     plain.tools.register(tool('web_search'))
     const plainPreset = await mintScope(plain, 'preset')
-    await plainPreset.scope.ctx.plugin(ToolRestriction, { allow: [], allowWhenRegistered: ['knowledge_search'] })
-    expect(names(plain, (await mintScope(plain, 'agent', plainPreset.key)).key)).toEqual([])
-    // Registered after the row mounted, it stays masked: the list is read once.
+    const row = await plainPreset.scope.ctx.plugin(ToolRestriction, { allow: [], allowWhenRegistered: ['knowledge_search'] })
+    const agent = await mintScope(plain, 'agent', plainPreset.key)
+    expect(names(plain, agent.key)).toEqual([])
+    // A preset's standing mount activates before the deployment rows that
+    // register the tool, so the mask follows the registry both ways.
+    const unregister = plain.tools.register(tool('knowledge_search'))
+    expect(names(plain, agent.key)).toEqual(['knowledge_search'])
+    plain.tools.register(tool('added_later'))
+    expect(names(plain, agent.key)).toEqual(['knowledge_search'])
+    unregister()
+    expect(names(plain, agent.key)).toEqual([])
+    // Disposing the row lifts the mask and stops following the registry.
+    await row.dispose()
+    expect(names(plain, agent.key)).toEqual(['added_later', 'web_search'])
     plain.tools.register(tool('knowledge_search'))
-    expect(names(plain, (await mintScope(plain, 'agent-2', plainPreset.key)).key)).toEqual([])
+    expect(names(plain, agent.key)).toEqual(['added_later', 'knowledge_search', 'web_search'])
   })
 
   it('keeps only the allow-list, removes the deny-list, and lifts with the row', async () => {

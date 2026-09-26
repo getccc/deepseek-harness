@@ -37,16 +37,17 @@ export interface Config {
   /** Global tool names that stay visible; every other global tool is removed. `[]` removes them all. */
   allow?: string[]
   /**
-   * Global tool names that also stay visible, but only when some deployment
-   * row has registered them by the time this row mounts; an absent one is
-   * skipped rather than refused. Beside `allow` only.
+   * Global tool names that also stay visible, but only while some deployment
+   * row registers them; an absent one is skipped rather than refused. Beside
+   * `allow` only.
    *
    * For a shipped preset that should reach a tool some deployments add — the
    * `chat` preset and Team knowledge search — without failing every deployment
    * that does not. The price is the name check `allow` gets: a misspelling
    * here masks the tool instead of failing, so list only names a registering
-   * package owns. Resolved once, at mount: a tool registered afterwards stays
-   * masked until the preset mounts again.
+   * package owns. Followed while the row is mounted: registering or removing
+   * one of these tools re-installs the mask, because a preset's standing
+   * mount activates before the deployment rows that register them.
    */
   allowWhenRegistered?: string[]
   /** Global tool names removed from visibility. */
@@ -69,9 +70,38 @@ export const Config: z<Config> = z.union([
  */
 export function apply(ctx: Context, config: Config): void {
   const { allowWhenRegistered, ...restriction } = config
-  // Read from the global view, which is what a restriction masks: the scope's
-  // own view would already be missing a tool some nearer layer hides.
-  const present = (allowWhenRegistered ?? []).filter(name => ctx.tools.get(name) !== undefined)
-  const mask = restriction.allow === undefined ? restriction : { ...restriction, allow: [...restriction.allow, ...present] }
-  ctx.effect(() => ctx.tools.restrict(mask), 'tool-restriction: mask')
+  const { allow } = restriction
+  if (allow === undefined || allowWhenRegistered === undefined) {
+    ctx.effect(() => ctx.tools.restrict(restriction), 'tool-restriction: mask')
+    return
+  }
+  ctx.effect(() => {
+    let installed: { readonly present: string; readonly lift: () => void } | undefined
+    // Installing or lifting a mask emits `tools/change` synchronously.
+    let settling = false
+    const settle = (): void => {
+      if (settling) return
+      // Read from the global view, which is what a restriction masks: the
+      // scope's own view would already be missing a tool some nearer layer hides.
+      const present = allowWhenRegistered.filter(name => ctx.tools.get(name) !== undefined)
+      const key = present.join('\n')
+      if (installed?.present === key) return
+      settling = true
+      try {
+        // The replacement lands before the old mask lifts, so the intersection
+        // never shows a tool outside both.
+        const previous = installed
+        installed = { present: key, lift: ctx.tools.restrict({ ...restriction, allow: [...allow, ...present] }) }
+        previous?.lift()
+      } finally {
+        settling = false
+      }
+    }
+    settle()
+    const unlisten = ctx.on('tools/change', settle)
+    return () => {
+      unlisten()
+      installed?.lift()
+    }
+  }, 'tool-restriction: mask')
 }

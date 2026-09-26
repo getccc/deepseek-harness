@@ -21,17 +21,17 @@
   en: 502e13ff48343edf
   zh: 67b450727ec901b3
 /deepseek-ai-dsh-tool-restriction/use-this-package/declaring-the-mask:
-  en: 52488ad209d5418e
-  zh: 50ed195e028aa5b6
+  en: 2d84a46afbee2781
+  zh: ee57400d86b482c8
 /deepseek-ai-dsh-tool-restriction/use-this-package/what-you-get:
-  en: 5fccdcfb889ca393
-  zh: d17c9d5fbb07b15d
+  en: 8577f00b2d49005f
+  zh: bf72e9c3dc6cbb1a
 /deepseek-ai-dsh-tool-restriction/understand-the-implementation:
-  en: dc423da450e17171
-  zh: d545affae43d8029
+  en: 6d4c19262ccdf8f1
+  zh: 71c0474d7a2ebcad
 /deepseek-ai-dsh-tool-restriction/understand-the-implementation/source-map:
-  en: 5c18cbe8b8c12843
-  zh: ee7c865fd3b72849
+  en: 20dbef28b7ee6e2b
+  zh: ded9f6e1bd387d1a
 /deepseek-ai-dsh-tool-restriction/further-exploration:
   en: 3951a919553b23f3
   zh: 76065b3be651018b
@@ -48,8 +48,8 @@
   en: beebbc886c218072
   zh: ae6d061fac7c8912
 /deepseek-ai-dsh-tool-restriction/model-experience/global-tool-catalog-after-the-mask/kv-cache-effect:
-  en: 9914bd61cdb54eb3
-  zh: 3768cf49ee291dc7
+  en: 5e6fff83e693c299
+  zh: 46830a6088fd716a
 /deepseek-ai-dsh-tool-restriction/known-limitations-and-deferred-work:
   en: 57ff4ba6469c48cb
   zh: 6e2198c2feb23760

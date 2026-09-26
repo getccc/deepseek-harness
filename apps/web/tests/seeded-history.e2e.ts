@@ -268,7 +268,7 @@ describe('web e2e: seeded history renders through cold resume', () => {
     page = await newEnglishPage(browser)
     tripwire = watchConsole(page)
     if (MODE !== 'record') {
-      // A one-message tail makes this short recording exercise the real Load earlier path.
+      // A one-message tail makes the opening window cut this short recording's only turn.
       let pagedOpening = false
       await page.routeWebSocket('**/api/remote.mux', (socket) => {
         const server = socket.connectToServer()
@@ -349,19 +349,24 @@ describe('web e2e: seeded history renders through cold resume', () => {
     await groupRow.click()
     const sessionRow = page.locator('[role="treeitem"]').nth(1)
     await sessionRow.waitFor({ timeout: 10_000 })
+    const pageRequests: Array<{ maxMessages: number; turnWindow?: object }> = []
+    page.on('request', (request) => {
+      if (!request.url().endsWith('/api/session/page')) return
+      const body = request.postDataJSON() as { payload: { args: { request: { maxMessages: number; turnWindow?: object } } } }
+      pageRequests.push(body.payload.args.request)
+    })
     await sessionRow.click()
     // Settled barrier for history: the recorded final assistant text renders.
     await expect.poll(() => page.getByText('DONE', { exact: true }).count(), { timeout: 15_000 }).toBe(1)
     expect(openingWindow).toMatchObject({ maxMessages: 500, turnWindow: { minMessages: 50, minTurns: 2 } })
-    expect(await page.getByText(PROMPT, { exact: true }).count()).toBe(0)
-    const [paging] = await Promise.all([
-      page.waitForRequest('**/api/session/page'),
-      page.getByRole('button', { name: 'Load earlier', exact: true }).click(),
-    ])
-    expect(paging.postDataJSON()).toMatchObject({
-      payload: { args: { request: { maxMessages: 500, turnWindow: { minMessages: 50, minTurns: 2 } } } },
-    })
+    // The one-message tail opens inside the recorded turn, so the Client pages
+    // back in message-aligned pages that start at one message and double until
+    // that turn's turn/start is loaded. That turn opens the log, so the prompt
+    // renders and no Load earlier remains.
     await expect.poll(() => page.getByText(PROMPT, { exact: true }).count(), { timeout: 10_000 }).toBe(1)
+    expect(pageRequests.map(request => request.maxMessages)).toEqual([1, 2])
+    expect(pageRequests.filter(request => request.turnWindow !== undefined)).toEqual([])
+    expect(await page.getByRole('button', { name: 'Load earlier', exact: true }).count()).toBe(0)
     await expect.poll(() => page.getByText('compact', { exact: true }).count(), { timeout: 10_000 }).toBe(1)
     await expect.poll(() => page.getByText(/^Compacted \d+ history items \(~\d+ tokens\)$/).count(), {
       timeout: 10_000,

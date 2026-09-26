@@ -275,12 +275,14 @@ describe.skipIf(MODE === 'record')('web e2e: first-run DeepSeek credential setup
     // trigger — on the page; the scaffold boots without one.
     await connectFreshWorkspaceZh(page, scaffold.workspaceCwd, 'model-fallback-e2e', false)
 
-    const modelTrigger = page.getByRole('button', { name: /^选择模型.*deepseek-official\// })
+    // The default model was among those removed, so the new Session names the
+    // first model the catalog lists rather than the removed id.
+    const modelTrigger = page.getByRole('button', { name: /^选择模型.*Private Preview/ })
     await modelTrigger.waitFor({ timeout: 10_000 })
     await modelTrigger.click()
     await page.getByRole('menuitem', { name: /模型/ }).click()
     expect(await page.getByText('Configured Flash', { exact: true }).count()).toBe(0)
-    await page.getByRole('menuitemradio', { name: 'Private Preview' }).waitFor({ timeout: 10_000 })
+    await page.getByRole('menuitemradio', { name: 'Private Preview', checked: true }).waitFor({ timeout: 10_000 })
     expect(tripwire.warnings).toEqual([])
     expect(tripwire.pageErrors).toEqual([])
   }, 60_000)
