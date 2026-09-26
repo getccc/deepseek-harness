@@ -57,7 +57,7 @@
 }
 
 .crumbLink:focus-visible {
-  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
+  box-shadow: 0 0 0 2px var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
 }
 
 .crumbMark {
@@ -127,7 +127,7 @@
 
 .pagerStep:focus-visible,
 .pagerPage:focus-visible {
-  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
+  box-shadow: 0 0 0 2px var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
 }
 
 .pagerStep:disabled {
@@ -263,7 +263,7 @@
 }
 
 .drawerAction:focus-visible {
-  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
+  box-shadow: 0 0 0 2px var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
 }
 
 /* The scrolling part: the document sits on a sheet inset from the drawer's
@@ -279,7 +279,7 @@
   box-sizing: border-box;
   min-height: 100%;
   padding: 24px 28px;
-  border-radius: 12px;
+  border-radius: var(--dsw-radius-md);
   background: var(--dsw-alias-bg-base);
 }
 
@@ -371,7 +371,7 @@
 }
 
 .cardSelect:focus-visible {
-  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
+  box-shadow: 0 0 0 2px var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
 }
 
 .cardOn {
@@ -426,7 +426,7 @@
   display: block;
   max-width: 100%;
   margin-inline: auto;
-  border-radius: 8px;
+  border-radius: var(--dsw-radius-sm);
 }
 
 .summary {
@@ -511,7 +511,7 @@
   height: 30px;
   padding: 0 8px 0 12px;
   border: 0.5px solid var(--dsw-alias-border-l2);
-  border-radius: 8px;
+  border-radius: var(--dsw-radius-sm);
   outline: none;
   background: transparent;
   color: var(--dsw-alias-label-primary);
@@ -525,7 +525,7 @@
 }
 
 .scopeTrigger:focus-visible {
-  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
+  box-shadow: 0 0 0 2px var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
 }
 
 .scopeName {
@@ -557,7 +557,7 @@
 }
 
 .send:focus-visible {
-  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
+  box-shadow: 0 0 0 2px var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
 }
 
 /* The retrieval panel's reading column, which its notices and summary share
@@ -588,7 +588,7 @@
   width: 100%;
   padding: 14px 16px;
   border: 0.5px solid var(--dsw-alias-border-l2);
-  border-radius: 12px;
+  border-radius: var(--dsw-radius-md);
   outline: none;
   background: var(--dsw-alias-bg-layer-2);
   color: inherit;
@@ -606,7 +606,7 @@
 
 .feedCard:focus-visible,
 .rankCard:focus-visible {
-  box-shadow: 0 0 0 2px var(--dsw-alias-border-l3);
+  box-shadow: 0 0 0 2px var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
 }
 
 .feedThumb {

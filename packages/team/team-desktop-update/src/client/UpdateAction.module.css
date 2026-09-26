@@ -154,7 +154,7 @@
   box-sizing: border-box;
   width: min(420px, calc(100vw - 48px));
   padding: 24px;
-  border: 1px solid var(--dsw-alias-border-l2);
+  border: 0.5px solid var(--dsw-alias-border-l2);
   border-radius: 16px;
   background: var(--dsw-alias-bg-layer-2);
   box-shadow: 0 12px 40px rgb(0 0 0 / 18%);

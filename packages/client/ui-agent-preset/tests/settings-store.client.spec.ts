@@ -96,8 +96,8 @@ describe('the agent-preset roster store', () => {
     const state = controller.store.getSnapshot()
     expect(state.status).toBe('ready')
     expect(state.options).toEqual([
-      { id: 'standard' },
-      { id: 'mine' },
+      { id: 'standard', workspace: 'required' },
+      { id: 'mine', workspace: 'required' },
     ])
   })
 
@@ -125,7 +125,7 @@ describe('the agent-preset roster store', () => {
     // Surfaces beyond this row read the same options; the id alone never said
     // what a preset does.
     expect(controller.store.getSnapshot().options).toEqual([
-      { id: 'standard', name: '标准模式', description: '完整的编码 agent。' },
+      { id: 'standard', workspace: 'required', name: '标准模式', description: '完整的编码 agent。' },
     ])
   })
 
@@ -301,7 +301,7 @@ describe('the new-session chip controller', () => {
     await controller.load()
 
     expect(controller.store.getSnapshot().options).toEqual([
-      { id: 'standard', name: '标准模式', description: '完整的编码 agent。' },
+      { id: 'standard', workspace: 'required', name: '标准模式', description: '完整的编码 agent。' },
     ])
   })
 

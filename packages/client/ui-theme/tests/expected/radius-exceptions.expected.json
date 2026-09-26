@@ -1,4 +1,13 @@
 {
+  "ui-knowledge-panels/src/client/panels.module.css": [
+    ".pagerStep, .pagerPage: border-radius: 6px",
+    ".drawerAction: border-radius: 6px",
+    ".card: border-radius: 10px",
+    ".cardTag: border-radius: 6px",
+    ".queryBox: border-radius: 14px",
+    ".feedThumb: border-radius: 10px",
+    ".rankBadge: border-radius: 10px"
+  ],
   "ui-schedule/src/client/ClockPicker.module.css": [
     ".option: border-radius: 10px"
   ],

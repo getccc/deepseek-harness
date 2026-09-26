@@ -144,7 +144,7 @@ describe('dsh-team-control-plane bundle', () => {
     // across whatever directories it was launched from.
     //
     const stores = rows().filter(row => row.config?.['path'] !== undefined)
-    expect(stores).toHaveLength(9)
+    expect(stores).toHaveLength(10)
     for (const row of stores) {
       const expression = (row.config?.['path'] as { __jsExpr: string }).__jsExpr
       expect(expression, row.id).toMatch(/^dshHomePath\('control-plane', '[a-z]+\.sqlite'\)$/u)

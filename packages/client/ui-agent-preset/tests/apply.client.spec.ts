@@ -809,7 +809,7 @@ describe('ui-agent-preset apply', () => {
 
     await label.load()
 
-    expect(label.hooks.agentPresets.getSnapshot().options).toEqual([{ id: 'standard' }])
+    expect(label.hooks.agentPresets.getSnapshot().options).toEqual([{ id: 'standard', workspace: 'required' }])
   })
 
   it('stages the creator preset and starts a session from the section', async () => {
