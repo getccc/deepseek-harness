@@ -33,6 +33,7 @@
     "@deepseek-ai/dsh-model-gateway": "workspace:^",
     "@deepseek-ai/dsh-team-browser-session": "workspace:^",
     "@deepseek-ai/dsh-team-console-menu": "workspace:^",
+    "@deepseek-ai/dsh-team-release": "workspace:^",
     "@deepseek-ai/schemastery": "workspace:^"
   },
   "peerDependencies": {

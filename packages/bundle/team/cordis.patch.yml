@@ -99,6 +99,12 @@
         callbackUri: !!js "'http://127.0.0.1:' + (ctx.webStartup.port ?? 3090) + '/team/callback'"
         refreshLeadMs: 60000
 
+    # The desktop shell has no member credential and should not have one, so
+    # the Runner answers it on loopback with what the Control Plane offers
+    # this member. The shell verifies the release key's signature itself.
+    - id: team-update-source
+      name: '@deepseek-ai/dsh-team-update-source'
+
     # Account authentication stays on the Runner origin. Ordinary members do
     # not navigate to the Control Plane administration origin.
     - id: team-local-login
@@ -206,4 +212,11 @@
     # in the boot graph, and only a Team build has a `bi` namespace to serve it.
     - id: client-ui-bi
       name: '@deepseek-ai/dsh-client-ui-bi'
+
+    # The update control beside the member row at the sidebar foot. The plugin
+    # carries no Host behavior; its browser half registers only when the page
+    # runs inside a desktop shell that exposes the update bridge, so a member
+    # reaching this Runner from a browser sees the sidebar unchanged.
+    - id: team-desktop-update
+      name: '@deepseek-ai/dsh-team-desktop-update'
 

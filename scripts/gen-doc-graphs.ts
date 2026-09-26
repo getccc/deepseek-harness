@@ -230,6 +230,15 @@ const SERVICE_ROLES: ServiceRole[] = [
     note: 'The same browser authentication the transport enforces, exposed to the Team login and handoff routes so they can issue, read, and end a signed-in browser session.',
   },
   {
+    key: 'teamReleases',
+    pkg: 'team-release',
+    title: 'Published desktop releases',
+    mode: 'seam',
+    implementations: [],
+    consumers: ['team-release-http', 'team-admin-api'],
+    note: 'Holds the signed manifest a release machine produced, who it is offered to, and the version floor. The Control Plane serves what it was given and cannot sign a release of its own.',
+  },
+  {
     key: 'mcpResources',
     pkg: 'mcp-resources',
     title: 'Scoped MCP resource access',

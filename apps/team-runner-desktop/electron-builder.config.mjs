@@ -1,5 +1,8 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
+import {
+  pluginTreeFingerprint, resolveAppVersion, resolveReleaseKey, resolveUpdateOrigin,
+} from './scripts/packaging-inputs.mjs'
 
 const runner = process.env.DSH_TEAM_RUNNER_EXECUTABLE
 const controlPlaneUrl = process.env.DSH_TEAM_CONTROL_PLANE_URL
@@ -18,6 +21,14 @@ const trayIcon = process.env.DSH_TEAM_TRAY_ICON
 // in the environment), the mac build is notarized. Signing itself needs a
 // "Developer ID Application" identity in the login keychain.
 const appleTeamId = process.env.DSH_TEAM_APPLE_TEAM_ID
+// The release this build is. It decides every update: both the updater's
+// comparison and the shipped decision kernel read it, so it is validated here
+// rather than discovered when an installed application refuses to upgrade.
+const appVersion = resolveAppVersion(process.env)
+// The release public key this build checks an offered manifest against. A
+// build without one never checks for an update at all: with no trust root,
+// there is nothing an installed application may safely replace itself with.
+const releaseKey = resolveReleaseKey(process.env)
 
 if (runner === undefined || !existsSync(runner)) {
   throw new Error('DSH_TEAM_RUNNER_EXECUTABLE must name the built Team Runner executable')
@@ -86,18 +97,26 @@ export default {
   productName: process.env.DSH_TEAM_PRODUCT_NAME ?? 'DeepSeek Team Runner',
   artifactName: '${productName}-${version}-${os}-${arch}.${ext}',
   asar: true,
-  files: ['dist/**/*', 'package.json'],
+  // `dist/types` is tsc output that tsdown already bundled into dist/main.js.
+  files: ['dist/**/*', '!dist/types', 'package.json'],
   // `app.getName()` reads `productName` from the packaged manifest, not from
   // the bundle's Info.plist; without it the window and tray show the package name.
   extraMetadata: {
+    version: appVersion,
     productName: process.env.DSH_TEAM_PRODUCT_NAME ?? 'DeepSeek Team Runner',
     teamControlPlaneUrl: controlPlaneUrl,
+    // Identifies the shipped plugin tree, so an upgrade recopies it only when
+    // the plugins actually changed.
+    ...pluginTree === undefined ? {} : { teamPluginTreeFingerprint: pluginTreeFingerprint(pluginTree) },
+    ...releaseKey === undefined ? {} : { teamReleaseKey: releaseKey },
     ...Object.keys(officeSkills).length === 0 ? {} : { teamOfficeSkills: officeSkills },
   },
   extraResources,
   directories: { output: 'release' },
   mac: {
-    target: [{ target: 'dmg', arch: ['arm64'] }],
+    // Squirrel.Mac replaces an installed application from a zip; the disk
+    // image is the manual download and is never what an update reads.
+    target: [{ target: 'dmg', arch: ['arm64'] }, { target: 'zip', arch: ['arm64'] }],
     ...appIcon === undefined ? {} : { icon: appIcon },
     category: 'public.app-category.productivity',
     minimumSystemVersion: '12.0',
@@ -119,5 +138,10 @@ export default {
     perMachine: false,
     oneClick: false,
     allowToChangeInstallationDirectory: true,
+    differentialPackage: true,
   },
+  // The deployment's own Control Plane serves the release unless a deployment
+  // points DSH_TEAM_UPDATE_ORIGIN elsewhere. What may be installed is decided
+  // by the signed manifest either way; this only says where the bytes are.
+  publish: [{ provider: 'generic', url: resolveUpdateOrigin(process.env, controlPlaneUrl), channel: 'latest' }],
 }

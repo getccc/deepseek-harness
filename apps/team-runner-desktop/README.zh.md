@@ -17,6 +17,7 @@ kind: "package-reference"
 
 - [构建安装程序](#build-installers)
 - [部署输入](#deployment-inputs)
+- [更新已安装的构建](#update-an-installed-build)
 - [运行时行为](#runtime-behavior)
 - [平台支持](#platform-support)
 - [已知限制](#known-limitations)
@@ -29,12 +30,15 @@ kind: "package-reference"
 先构建 Runner 可执行文件及其伴随程序，再把可执行文件与部署源提供给对应平台的打包命令：
 
 ```sh
+DSH_TEAM_APP_VERSION=1.0.0 \
 DSH_TEAM_RUNNER_EXECUTABLE=/absolute/path/to/dsh \
 DSH_TEAM_CONTROL_PLANE_URL=https://control.example.com \
 pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 ```
 
-`package:mac` 只生成 Apple 芯片 DMG，不生成 Intel 或 Universal 产物。`package:win` 生成 x64 NSIS 安装程序，并要求 Windows Runner 可执行文件与 ripgrep 伴随程序。
+`package:mac` 生成 Apple 芯片 DMG 以及更新所安装的 zip，不生成 Intel 或 Universal 产物。`package:win` 生成 x64 NSIS 安装程序，并要求 Windows Runner 可执行文件与 ripgrep 伴随程序。
+
+发布版本只经环境变量传入，不要再从别处传：electron-builder 命令行上的 `--config.extraMetadata.version` 覆盖会替换掉已校验的值，并可能悄悄恢复一个破坏更新的后缀。
 
 打包配置把 Runner 二进制文件复制到 Electron 资源中，并在应用元数据中记录已验证的 Control Plane 源。运行时，外壳在自己的应用数据目录下写入部署补丁，用该补丁启动 Team profile，并为子进程提供位于同一目录下的私有 `DSH_HOME`。
 
@@ -45,9 +49,12 @@ pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 
 | 变量 | 必需 | 携带什么 |
 |---|---|---|
+| `DSH_TEAM_APP_VERSION` | 是 | 本构建所属的发布版本：`MAJOR.MINOR.PATCH`，不带预发布标签，也不带构建元数据，每次发布递增一次。 |
+| `DSH_TEAM_UPDATE_ORIGIN` | 否 | 版本产物的获取地址，当它不是 Control Plane 本身时：对象存储或 CDN，适用于自身带宽撑不住每位成员几百兆下载的部署。 |
 | `DSH_TEAM_RUNNER_EXECUTABLE` | 是 | 构建好的 Runner 可执行文件；其 ripgrep 与 macOS spawn-helper 伴随程序按相邻的 `-rg` 与 `-spawn-helper` 名称读取。 |
 | `DSH_TEAM_CONTROL_PLANE_URL` | 是 | 这份构建所属的 Control Plane 源。 |
 | `DSH_TEAM_CONTROL_PLANE_CA` | 否 | 签发 Control Plane TLS 证书的那份证书。 |
+| `DSH_TEAM_RELEASE_KEY` | 否 | Ed25519 发布公钥的 base64url DER SPKI 编码。没有它的构建从不检查更新，因为它没有可据以判断更新的信任根。 |
 | `DSH_TEAM_PLUGIN_TREE` | 否 | 一个已安装 profile 的 `node_modules`，携带树外插件。 |
 | `DSH_TEAM_PRODUCT_NAME`、`DSH_TEAM_APP_ID` | 否 | 安装后应用的名称与 bundle 标识符。 |
 | `DSH_TEAM_APP_ICON`、`DSH_TEAM_TRAY_ICON` | 否 | 应用图标，以及菜单栏模板图像——其 `@2x` 相邻文件随它一同置入资源。 |
@@ -64,7 +71,7 @@ Runner 是一个 Node 进程，不读取操作系统信任库，因此位于企�
 
 位于 Runner 自身安装之外的插件以真实目录而非打包可执行文件内部的形式随附，因为它们的原生插件无法从打包可执行文件的虚拟文件系统中加载，而它们运行时的依赖复制需要真实文件。用 `dsh plugin --profile <name> add <package>` 把它们装进一个 profile，再让 `DSH_TEAM_PLUGIN_TREE` 指向该 profile 的 `node_modules`。层列表从这棵树挂载 `dsh-univer-office` 与 `@dsh-external/dsh-echarts`，因此树中必须同时带有两者；暂存 profile 中记录的 pnpm 补丁会随打过补丁的文件一同随附。
 
-外壳拥有这个私有 profile 的清单：它在每次启动时写入层列表，并按应用版本把随附的树物化为该 profile 自己的 `node_modules`。这些包必须是那里的真实文件，而不是指向应用资源的链接——插件通过自己的真实位置解析依赖，而 `dsh` 会在它们旁边补上插件作为 peer 从 Runner 安装取用的包。macOS 在写时复制卷上克隆这棵树，因此这份副本几乎不花时间也几乎不占磁盘空间。成员从不向这个 profile 安装插件，因此改变层列表的应用升级会在下次启动时生效。成员自己的 `cordis.patch.yml` 不会被触碰。
+外壳拥有这个私有 profile 的清单：它在每次启动时写入层列表，并按随附的树把它物化为该 profile 自己的 `node_modules`，该树由打包时记录的内容指纹标识。这些包必须是那里的真实文件，而不是指向应用资源的链接——插件通过自己的真实位置解析依赖，而 `dsh` 会在它们旁边补上插件作为 peer 从 Runner 安装取用的包。macOS 在写时复制卷上克隆这棵树，因此这份副本几乎不花时间也几乎不占磁盘空间。成员从不向这个 profile 安装插件，因此改变层列表的应用升级会在下次启动时生效。成员自己的 `cordis.patch.yml` 不会被触碰。
 
 ### 签名与公证 macOS 构建
 
@@ -78,12 +85,61 @@ Runner 是一个 Node 进程，不读取操作系统信任库，因此位于企�
 export APPLE_ID="you@example.com"
 export APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx"
 DSH_TEAM_APPLE_TEAM_ID="YOURTEAMID" \
+DSH_TEAM_APP_VERSION=1.0.0 \
 DSH_TEAM_RUNNER_EXECUTABLE=/absolute/path/to/dsh \
 DSH_TEAM_CONTROL_PLANE_URL=https://control.example.com \
 pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 ```
 
 随附的 `dsh` 可执行文件与 `runner/` 下的原生插件随应用一并签名；entitlements 关闭库校验，以便加固运行时的子进程可以加载它们。
+
+-----
+
+<a id="update-an-installed-build"></a>
+## 更新已安装的构建
+
+已安装的应用向它自己的 Control Plane 询问更新版本。打包配置把 `electron-updater` 指向 `<control plane origin>/updates/`，因此更新地址跟随本构建所属的部署，不需要另一个属于它自己的地址。
+
+由成员决定何时更新。外壳在启动一分钟后检查一次，此后每六小时检查一次并附加最多半小时的分散，把查到的结果发布给页面，仅在页面请求时才下载。下载完成后停止 Runner 并等待它退出——它的端口，以及在 Windows 上安装程序要替换的文件，都必须先被释放——然后应用重启进入新版本。检查或下载失败时，已安装的构建继续运行。
+
+`window.dshTeamDesktop` 是页面使用的桥：一个上下文隔离的 preload 脚本，暴露 `check`、`install` 与状态订阅，除此之外别无其他。同一个页面在普通浏览器中打开时找不到该对象，也就不显示更新控件。
+
+Electron 的网络栈读取操作系统信任库，因此即便 Runner 接受某个位于公司自有证书颁发机构之后的 Control Plane，这些请求仍会被拒绝。外壳自行针对这一个主机用暂存的 `DSH_TEAM_CONTROL_PLANE_CA` 进行校验，接受由该机构签发的证书，其余主机一律保留 Chromium 自己的判定。
+
+可以安装什么由部署在 `<control plane origin>/updates/manifest.json` 发布的签名清单决定，而不是由产物旁边的元数据决定。外壳经同一条固定了证书的连接读取该文档，用本构建携带的公钥检查其 Ed25519 签名，并拒绝一切该公钥未曾背书的内容：不比已安装构建更新的版本、元数据声称而清单并未覆盖的版本、本次发布没有对应产物的平台，以及跨越该发布所拒绝间隔的升级。拒绝原因会到达成员的提示气泡和外壳日志。
+
+下载完成后会再次对文件做哈希，并与签名清单中的摘要比对。更新程序已经校验过它自己元数据携带的哈希；而这一个，是同时替换了产物与那份元数据的攻击者也无法选择的。不匹配时，已安装的构建继续运行。
+
+发布目录中存放更新程序读取的内容：`latest-mac.yml` 或 `latest.yml`、各个产物，以及它们的 `.blockmap` 文件，后者使一次升级只需取回发生变化的块。macOS 构建同时产出磁盘映像与 zip，因为 Squirrel.Mac 从 zip 替换应用，而磁盘映像仍作为手动下载渠道；两者都在公证之后产出，因此落地的正是已公证的包。
+
+每个版本取下一个 `MAJOR.MINOR.PATCH`：修复用 patch，新能力或 Runner、插件树发生变化用 minor，需要成员配合的变更用 major。后缀在打包时就会被拒绝，而分批放量是 Control Plane 按设备做的判定、不是发布渠道，因此版本线始终保持为一条递增序列。
+### 发布一个版本
+
+在发布机上，构建完成签名、公证与 staple 之后：
+
+```sh
+node scripts/publish-release.mjs \
+  --directory release/<build> --version 1.0.0 --minimum-from 1.0.0 \
+  --base-url https://<control plane>/updates/ --key <release private key>
+```
+
+它读取 electron-builder 写下的更新元数据，拒绝描述了另一个版本的目录，对各平台更新所安装的那个产物做哈希，并在它们旁边写出 `manifest.json`。`--minimum-from` 给出本次发布可以在其之上应用的最旧已安装版本：低于它的构建会拒绝这次更新，而不是跨越该发布并不支持的间隔去安装。
+
+把产物、它们的 `.blockmap` 文件以及 `latest-mac.yml` 或 `latest.yml` 复制到部署在 `/updates/` 提供的目录，并以静态文件方式提供——差分下载会发出 `Range` 请求，而放在该目录之前的应用层代理必须自行回答它们。
+
+签名清单不放在那里。它在控制台中登记，由控制台决定把该版本提供给谁；以静态文件提供的清单会对每个构建给出同一份答复，从而绕开预发布通道。发布私钥留在发布机上：部署只分发收到的内容、不持有任何密钥，因此一台被攻陷的主机也无法发布一个版本。
+
+该目录在 nginx 中最小的一个 location，与控制台自己的那个并列：
+
+```nginx
+location /updates/ {
+    alias /opt/deepseek-harness/updates/;
+    add_header Cache-Control "no-cache";
+    limit_rate 4m;
+}
+```
+
+`no-cache` 让清单保持新鲜；产物名字里带着版本号，因此文件本身从不需要重新校验。限速则让一次发布不至于把同时还在应答模型调用的主机带宽占满。
 
 -----
 
@@ -109,7 +165,7 @@ pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 
 | 平台 | 安装程序目标 | 架构 |
 |---|---|---|
-| macOS 12 或更高版本 | DMG | Apple 芯片（`arm64`） |
+| macOS 12 或更高版本 | 安装用 DMG，更新用 zip | Apple 芯片（`arm64`） |
 | Windows | NSIS | x64 |
 
 Linux 桌面打包与 macOS Intel 支持不在本应用的平台集合内。
@@ -119,7 +175,7 @@ Linux 桌面打包与 macOS Intel 支持不在本应用的平台集合内。
 <a id="known-limitations"></a>
 ## 已知限制
 
-- 桌面外壳不下载或更新 Runner。部署方需要签名并分发完整的安装程序构建。
+- 一次更新替换整个应用。Runner、插件树与外壳都不会被单独替换，因此每个版本都携带三者。
 - Runner 可执行文件按平台在该平台上构建：它的原生插件置入拒绝跨平台目标，因此 Windows 安装程序需要先在 Windows x64 上构建 Runner。
 - 自动登录启动以操作系统用户为单位，而不是特权系统服务。因此 Runner 使用该成员的权限执行工作。
 - Runner 日志、外壳日志与部署补丁位于用户级应用数据目录下；支持工具需要从受影响的电脑收集它们。

@@ -17,6 +17,7 @@ The desktop build belongs to one enterprise deployment. Its package metadata car
 
 - [Build installers](#build-installers)
 - [Deployment inputs](#deployment-inputs)
+- [Update an installed build](#update-an-installed-build)
 - [Runtime behavior](#runtime-behavior)
 - [Platform support](#platform-support)
 - [Known limitations](#known-limitations)
@@ -29,12 +30,15 @@ The desktop build belongs to one enterprise deployment. Its package metadata car
 Build the Runner executable and its sidecars first, then supply the executable and deployment origin to the platform packaging command:
 
 ```sh
+DSH_TEAM_APP_VERSION=1.0.0 \
 DSH_TEAM_RUNNER_EXECUTABLE=/absolute/path/to/dsh \
 DSH_TEAM_CONTROL_PLANE_URL=https://control.example.com \
 pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 ```
 
-`package:mac` produces an Apple silicon DMG only. It does not produce Intel or Universal artifacts. `package:win` produces an x64 NSIS installer and expects the Windows Runner executable and ripgrep sidecar.
+`package:mac` produces an Apple silicon DMG and the zip an update installs from. It does not produce Intel or Universal artifacts. `package:win` produces an x64 NSIS installer and expects the Windows Runner executable and ripgrep sidecar.
+
+Pass the release version in the environment and nowhere else: an `--config.extraMetadata.version` override on the electron-builder command line replaces the validated value, and would silently restore a suffix that breaks updating.
 
 The packaging configuration copies the Runner binaries into Electron resources and records the validated Control Plane origin in application metadata. At runtime the shell writes a deployment patch under its own application-data directory, starts the Team profile with that patch, and gives the child a private `DSH_HOME` in the same directory.
 
@@ -45,9 +49,12 @@ Every deployment-varying fact is a packaging environment variable, so one source
 
 | Variable | Required | What it carries |
 |---|---|---|
+| `DSH_TEAM_APP_VERSION` | yes | The release this build is: `MAJOR.MINOR.PATCH`, with no prerelease tag and no build metadata, incremented once per release. |
+| `DSH_TEAM_UPDATE_ORIGIN` | no | Where release artifacts are fetched from, when that is not the Control Plane itself: object storage or a CDN, for a deployment whose own bandwidth a few hundred megabytes per member would exhaust. |
 | `DSH_TEAM_RUNNER_EXECUTABLE` | yes | The built Runner executable; its ripgrep and macOS spawn-helper sidecars are read from the neighbouring `-rg` and `-spawn-helper` names. |
 | `DSH_TEAM_CONTROL_PLANE_URL` | yes | The Control Plane origin this build belongs to. |
 | `DSH_TEAM_CONTROL_PLANE_CA` | no | The certificate that signed the Control Plane's TLS certificate. |
+| `DSH_TEAM_RELEASE_KEY` | no | Base64url DER SPKI of the Ed25519 release public key. A build without it never checks for an update, because it has no trust root for one. |
 | `DSH_TEAM_PLUGIN_TREE` | no | An installed profile's `node_modules`, carrying the out-of-tree plugins. |
 | `DSH_TEAM_PRODUCT_NAME`, `DSH_TEAM_APP_ID` | no | The installed application's name and bundle identifier. |
 | `DSH_TEAM_APP_ICON`, `DSH_TEAM_TRAY_ICON` | no | The application icon, and the menu bar template image whose `@2x` neighbour is staged with it. |
@@ -64,7 +71,7 @@ The Runner is a Node process and ignores the operating-system trust store, so a 
 
 Plugins outside the Runner's own installation ship as a real directory rather than inside the packaged executable, because their native addons cannot be loaded from a packaged executable's virtual filesystem and their runtime dependency copying expects real files. Install them into a profile with `dsh plugin --profile <name> add <package>`, then point `DSH_TEAM_PLUGIN_TREE` at that profile's `node_modules`. The layer list mounts `dsh-univer-office` and `@dsh-external/dsh-echarts` from that tree, so the tree must carry both; a pnpm patch recorded in the staging profile ships with the patched files.
 
-The shell owns the private profile's manifest: it writes the layer list on every launch and materializes the shipped tree as that profile's own `node_modules` once per application version. The packages have to be real files there rather than links into application resources — a plugin reaches its dependencies through its own real location, and `dsh` adds links beside them for the packages these plugins take as peers from the Runner installation. macOS clones the tree on a copy-on-write volume, so the duplicate costs little time and little disk space. A member never installs plugins into this profile, so an application upgrade that changes the layer list takes effect on the next launch. The member's own `cordis.patch.yml` is never touched.
+The shell owns the private profile's manifest: it writes the layer list on every launch and materializes the shipped tree as that profile's own `node_modules` once per shipped tree, identified by a fingerprint of its contents that packaging records. The packages have to be real files there rather than links into application resources — a plugin reaches its dependencies through its own real location, and `dsh` adds links beside them for the packages these plugins take as peers from the Runner installation. macOS clones the tree on a copy-on-write volume, so the duplicate costs little time and little disk space. A member never installs plugins into this profile, so an application upgrade that changes the layer list takes effect on the next launch. The member's own `cordis.patch.yml` is never touched.
 
 ### Signing and notarizing the macOS build
 
@@ -78,12 +85,61 @@ Without a signing identity the DMG is ad-hoc signed, and Gatekeeper blocks it un
 export APPLE_ID="you@example.com"
 export APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx"
 DSH_TEAM_APPLE_TEAM_ID="YOURTEAMID" \
+DSH_TEAM_APP_VERSION=1.0.0 \
 DSH_TEAM_RUNNER_EXECUTABLE=/absolute/path/to/dsh \
 DSH_TEAM_CONTROL_PLANE_URL=https://control.example.com \
 pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 ```
 
 The bundled `dsh` executable and the native addons under `runner/` are signed with the app; the entitlements disable library validation so the hardened-runtime child may load them.
+
+-----
+
+<a id="update-an-installed-build"></a>
+## Update an installed build
+
+An installed application asks its own Control Plane for a newer release. The packaging configuration points `electron-updater` at `<control plane origin>/updates/`, so the update address follows the deployment this build belongs to and needs no second address of its own.
+
+The member decides when. The shell checks a minute after launch and then every six hours with up to half an hour of spread, publishes what it found to the page, and downloads only when the page asks for it. After the download the Runner is stopped and waited for — its port, and on Windows the files the installer replaces, have to be free — and the application restarts into the new version. A failed check or download leaves the installed build running.
+
+`window.dshTeamDesktop` is the bridge the page uses: a context-isolated preload script exposing `check`, `install`, and a state subscription, and nothing else. The same page opened in a plain browser finds no such object and shows no update control.
+
+Electron's network stack reads the operating system's trust store, so a Control Plane behind a company authority would refuse these requests even though the Runner accepts it. The shell verifies that one host itself against the staged `DSH_TEAM_CONTROL_PLANE_CA`, accepting a certificate that authority issued and leaving every other host to Chromium's own verdict.
+
+What may be installed is decided by the deployment's signed release manifest at `<control plane origin>/updates/manifest.json`, not by the metadata beside the artifacts. The shell reads that document over the same pinned connection, checks its Ed25519 signature against the key this build carries, and refuses everything the key did not vouch for: a release no newer than the installed build, a version the metadata announced but the manifest does not cover, a platform this release has no artifact for, and an upgrade across a gap the release refuses. The refusal reaches the member's tooltip and the shell log.
+
+After the download the file is hashed again and compared with the digest inside the signed manifest. The updater already checked the hash its own metadata carried; this is the one an attacker who replaced both the artifact and that metadata could not choose. A mismatch leaves the installed build running.
+
+The release directory holds what the updater reads: `latest-mac.yml` or `latest.yml`, the artifacts, and their `.blockmap` files, which let an upgrade fetch only the blocks that changed. The macOS build produces both a disk image and a zip, because Squirrel.Mac replaces an application from a zip while the disk image stays the manual download; both are produced after notarization so the bundle that lands is the notarized one.
+
+Each release takes the next `MAJOR.MINOR.PATCH`: patch for a fix, minor for a new capability or a changed Runner or plugin tree, major for a change a member has to act on. A suffix is refused at packaging time, and a staged rollout is the Control Plane's decision per device rather than a release channel, so the version line stays one increasing sequence.
+### Publish a release
+
+On the release machine, once the build is signed, notarized, and stapled:
+
+```sh
+node scripts/publish-release.mjs \
+  --directory release/<build> --version 1.0.0 --minimum-from 1.0.0 \
+  --base-url https://<control plane>/updates/ --key <release private key>
+```
+
+It reads the update metadata electron-builder wrote, refuses a directory that describes another version, hashes the artifact each platform installs from, and writes `manifest.json` beside them. `--minimum-from` names the oldest installed version this release may be applied on top of: a build below it refuses the update instead of installing across a gap the release does not support.
+
+Copy the artifacts, their `.blockmap` files, and `latest-mac.yml` or `latest.yml` into the directory the deployment serves at `/updates/`, and serve them as static files — differential download issues `Range` requests, which an application-layer proxy in front of the directory would have to answer itself.
+
+The signed manifest does not go there. It is registered in the console, which is what decides who is offered the release; a manifest served as a static file would hand every build the same answer and step around the staged channel. The release private key stays on the release machine: the deployment serves what it is given and holds no key, so a compromised host cannot publish a release.
+
+A minimal nginx location for that directory, beside the console's own:
+
+```nginx
+location /updates/ {
+    alias /opt/deepseek-harness/updates/;
+    add_header Cache-Control "no-cache";
+    limit_rate 4m;
+}
+```
+
+`no-cache` keeps the manifest fresh; an artifact's name carries its version, so the files themselves never need revalidating. The rate limit is what keeps one release from saturating a host that also answers model calls.
 
 -----
 
@@ -109,7 +165,7 @@ The bundled `dsh` executable and the native addons under `runner/` are signed wi
 
 | Platform | Installer target | Architecture |
 |---|---|---|
-| macOS 12 or later | DMG | Apple silicon (`arm64`) |
+| macOS 12 or later | DMG to install, zip to update | Apple silicon (`arm64`) |
 | Windows | NSIS | x64 |
 
 Linux desktop packaging and macOS Intel support are outside this application's platform set.
@@ -119,7 +175,7 @@ Linux desktop packaging and macOS Intel support are outside this application's p
 <a id="known-limitations"></a>
 ## Known limitations
 
-- The desktop shell does not download or update the Runner. A deployment signs and distributes a complete installer build.
+- An update replaces the whole application. Neither the Runner, the plugin tree, nor the shell is replaced on its own, so every release carries all three.
 - The Runner executable is built per platform on that platform: its native addon staging refuses a cross-platform target, so a Windows installer needs the Runner built on Windows x64 first.
 - Automatic login startup is per operating-system user, not a privileged system service. The Runner therefore executes work with that member's permissions.
 - The Runner log, shell log, and deployment patch live under the per-user application-data directory; support tooling must collect them from the affected computer.

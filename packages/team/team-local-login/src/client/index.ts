@@ -20,6 +20,8 @@ import {
 } from './TeamAccountLauncher.tsx'
 import { en, zh, type TeamAccountKey } from './locales.ts'
 
+export type { TeamAccountActionOwnerProps } from './account-slots.ts'
+
 declare module '@deepseek-ai/dsh-client-ui-slots' {
   interface LocaleNamespaceMap {
     /** Team member launcher copy. */
@@ -81,6 +83,9 @@ export function apply(ctx: ClientContext): void {
   ctx.slots.inject('settings.launcher', () => ctx.slots.register({
     name: 'settings.launcher',
     locale: NS,
+    // The member row lays out its own trailing actions; the desktop update
+    // control is the one this deployment ships.
+    children: { 'team.account.action': { kind: 'list', scope: 'root' } },
     inject: operations,
   }, TeamAccountLauncher))
 

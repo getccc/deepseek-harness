@@ -21,6 +21,7 @@ export const CONSOLE_COMPONENTS = [
   'resources/ModelsPage',
   'resources/KnowledgeBasesPage',
   'resources/BiProjectsPage',
+  'resources/ReleasesPage',
 ] as const
 
 /** One page component this build ships. */

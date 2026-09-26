@@ -44,6 +44,7 @@ import { Login } from './pages/Login.tsx'
 import { Members } from './pages/Members.tsx'
 import { Menus } from './pages/Menus.tsx'
 import { BiProjects } from './pages/BiProjects.tsx'
+import { Releases } from './pages/Releases.tsx'
 import { KnowledgeBases } from './pages/KnowledgeBases.tsx'
 import { Models } from './pages/Models.tsx'
 import { Overview } from './pages/Overview.tsx'
@@ -77,6 +78,7 @@ const VIEWS: Record<ConsoleComponent, (props: ViewProps) => ReactNode> = {
   'resources/ModelsPage': ({ held }) => <Models held={held} />,
   'resources/KnowledgeBasesPage': ({ held }) => <KnowledgeBases held={held} />,
   'resources/BiProjectsPage': ({ held }) => <BiProjects held={held} />,
+  'resources/ReleasesPage': ({ held }) => <Releases held={held} />,
 }
 
 /** The icons this build draws, by the name a stored entry gives. */

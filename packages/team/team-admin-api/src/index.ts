@@ -53,6 +53,14 @@ import {
 } from '@deepseek-ai/dsh-model-gateway'
 import { BiError, BiProjectRef, isBiProjectRef } from '@deepseek-ai/dsh-bi'
 import {
+  RELEASE_MANAGE_ACTION,
+  RELEASE_RESOURCE_NAME,
+  RELEASE_RESOURCE_TYPE,
+  ReleaseVersionMismatchError,
+  type PublishedRelease,
+  type TeamReleaseStore,
+} from '@deepseek-ai/dsh-team-release'
+import {
   BI_CATALOG_RESOURCE,
   BI_QUERY_ACTION,
   BI_RESOURCE_TYPE,
@@ -103,6 +111,7 @@ import type {
   WireModel,
   WireOrganization,
   WireOverview,
+  WireRelease,
   WireRole,
 } from './types.ts'
 
@@ -128,6 +137,8 @@ export type {
   WirePermission,
   WireRefusal,
   WireRefusalReason,
+  WireRelease,
+  WireReleaseCatalog,
   WireRole,
   WireRoleRef,
   WireSecretPolicy,
@@ -533,6 +544,10 @@ export function apply(ctx: Context, config: Config): void {
       ['menu', organizationId, 'Console navigation administration'],
       ['device', organizationId, 'Device administration'],
       ['model', MODEL_CATALOG_RESOURCE, 'Model catalog administration'],
+      // Releases are governed from here rather than only when a Runner first
+      // asks for one: an administrator has to be able to publish before any
+      // installed build exists to ask.
+      [RELEASE_RESOURCE_TYPE, organizationId, RELEASE_RESOURCE_NAME],
     ] as const) {
       await ctx.accessControl.registerResource({ orgId: organizationId, type, externalRef, displayName })
     }
@@ -1059,6 +1074,19 @@ export function apply(ctx: Context, config: Config): void {
       }
       if (!await mayProceed(res, signed, 'knowledge.catalog.read', KNOWLEDGE_RESOURCE_TYPE, KNOWLEDGE_CATALOG_RESOURCE)) return
       json(res, 200, wireCatalog(await gateway.catalogView(org)))
+      return
+    }
+    if (segments[0] === 'releases' && segments.length === 1) {
+      const releases = releaseStore()
+      if (releases === undefined) {
+        refuse(res, 404, 'not-found')
+        return
+      }
+      if (!await mayProceed(res, signed, RELEASE_MANAGE_ACTION, RELEASE_RESOURCE_TYPE, org)) return
+      json(res, 200, {
+        releases: releases.list(org).map(wireRelease),
+        minimumVersion: releases.floor(org)?.version ?? null,
+      })
       return
     }
     if (segments[0] === 'bi-projects' && segments.length === 1) {
@@ -1766,6 +1794,75 @@ export function apply(ctx: Context, config: Config): void {
       return
     }
 
+    if (segments[0] === 'releases' && method === 'POST' && segments.length === 1) {
+      const releases = releaseStore()
+      if (releases === undefined) {
+        refuse(res, 404, 'not-found')
+        return
+      }
+      if (!await mayProceed(res, signed, RELEASE_MANAGE_ACTION, RELEASE_RESOURCE_TYPE, org)) return
+      const version = body['version']
+      const manifest = body['manifest']
+      const signature = body['signature']
+      const channel = body['channel']
+      if (typeof version !== 'string' || typeof manifest !== 'string' || typeof signature !== 'string'
+        || (channel !== 'staged' && channel !== 'general')) {
+        refuse(res, 400, 'malformed', {
+          reason: 'fields',
+          detail: 'A release carries a version, the signed manifest document, its signature, and a channel.',
+        })
+        return
+      }
+      try {
+        json(res, 200, wireRelease(releases.publish(org, {
+          version, manifest, signature, channel,
+        })))
+      } catch (error) {
+        // Both refusals describe the document the console was given, not this
+        // deployment's state: a manifest for another version, or a version
+        // this build cannot compare.
+        if (!(error instanceof ReleaseVersionMismatchError) && !(error instanceof Error)) throw error
+        refuse(res, 400, 'malformed', { reason: 'fields', detail: error.message })
+      }
+      return
+    }
+
+    if (segments[0] === 'releases' && segments[2] === 'withdraw' && method === 'POST' && segments.length === 3) {
+      const releases = releaseStore()
+      if (releases === undefined) {
+        refuse(res, 404, 'not-found')
+        return
+      }
+      if (!await mayProceed(res, signed, RELEASE_MANAGE_ACTION, RELEASE_RESOURCE_TYPE, org)) return
+      if (!releases.withdraw(org, decodeURIComponent(segments[1] as string))) {
+        refuse(res, 404, 'not-found')
+        return
+      }
+      json(res, 200, { withdrawn: true })
+      return
+    }
+
+    if (segments[0] === 'releases' && segments[1] === 'floor' && method === 'POST' && segments.length === 2) {
+      const releases = releaseStore()
+      if (releases === undefined) {
+        refuse(res, 404, 'not-found')
+        return
+      }
+      if (!await mayProceed(res, signed, RELEASE_MANAGE_ACTION, RELEASE_RESOURCE_TYPE, org)) return
+      const version = body['version']
+      if (version !== null && typeof version !== 'string') {
+        refuse(res, 400, 'malformed', { reason: 'fields', detail: 'The floor is a version, or null to accept every version.' })
+        return
+      }
+      try {
+        json(res, 200, { minimumVersion: releases.setFloor(org, version ?? undefined)?.version ?? null })
+      } catch (error) {
+        if (!(error instanceof Error)) throw error
+        refuse(res, 400, 'malformed', { reason: 'fields', detail: error.message })
+      }
+      return
+    }
+
     if (segments[0] === 'bi-projects' && segments[1] === 'sync' && method === 'POST' && segments.length === 2) {
       const gateway = biGateway()
       if (gateway === undefined) {
@@ -1904,6 +2001,9 @@ export function apply(ctx: Context, config: Config): void {
    */
   const biGateway = (): BiGateway | undefined => ctx.get('biGateway')
 
+  /** The release store, when this deployment composes one. */
+  const releaseStore = (): TeamReleaseStore | undefined => ctx.get('teamReleases')
+
   /**
    * Make one role's BI grants exactly what the editor asked for.
    *
@@ -2040,4 +2140,14 @@ export function apply(ctx: Context, config: Config): void {
   }
 
   ctx.effect(() => ctx.webServer.register(api), `team-admin-api: ${API_PREFIX}`)
+}
+
+/** One published release as the console reads it; the manifest itself stays in the store. */
+function wireRelease(release: PublishedRelease): WireRelease {
+  return {
+    version: release.version,
+    channel: release.channel,
+    publishedAt: release.publishedAt,
+    withdrawnAt: release.withdrawnAt ?? null,
+  }
 }

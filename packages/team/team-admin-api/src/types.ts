@@ -241,6 +241,23 @@ export type WireKnowledgeAccess =
   | { readonly mode: 'all' }
   | { readonly mode: 'selected'; readonly knowledgeRefs: readonly string[] }
 
+/** One published desktop release, as the console reads it. */
+export interface WireRelease {
+  readonly version: string
+  /** Whether this release is offered to everyone or only to staged members. */
+  readonly channel: 'staged' | 'general'
+  readonly publishedAt: number
+  /** When an administrator withdrew it, or null while it is still offered. */
+  readonly withdrawnAt: number | null
+}
+
+/** Every release this deployment published, and the floor it enforces. */
+export interface WireReleaseCatalog {
+  readonly releases: readonly WireRelease[]
+  /** The oldest version this deployment accepts, or null when it accepts every version. */
+  readonly minimumVersion: string | null
+}
+
 /** One governed BI project, as the console reads the catalog. */
 export interface WireBiProject {
   /** The stable reference that names it across upstream renames. */

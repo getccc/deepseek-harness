@@ -16,15 +16,21 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -b",
-    "package:mac": "npm run build && electron-builder --config electron-builder.config.mjs --mac dmg --arm64",
+    "build": "tsc -b && tsdown",
+    "package:mac": "npm run build && electron-builder --config electron-builder.config.mjs --mac dmg zip --arm64",
     "package:win": "npm run build && electron-builder --config electron-builder.config.mjs --win nsis --x64"
   },
   "license": "MIT",
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  },
   "devDependencies": {
+    "@deepseek-ai/dsh-team-update": "workspace:^",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^24.10.1",
     "electron": "44.0.0",
     "electron-builder": "26.15.3",
+    "js-yaml": "^4.2.0",
     "typescript": "^6.0.3"
   }
 }

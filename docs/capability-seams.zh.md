@@ -57,6 +57,9 @@ flowchart LR
   pkg_api_gateway["api-gateway"]
   pkg_host_frontend_static["host-frontend-static"]
   svc_browserSession["ctx.browserSession<br/>Browser sign-in cookies for Team surfaces"]
+  pkg_team_release["team-release"]
+  svc_teamReleases["ctx.teamReleases<br/>Published desktop releases"]
+  pkg_team_release_http["team-release-http"]
   pkg_mcp_resources["mcp-resources"]
   svc_mcpResources["ctx.mcpResources<br/>Scoped MCP resource access"]
   pkg_mcp_client["mcp-client"]
@@ -463,6 +466,7 @@ flowchart LR
   pkg_team_account_client --> svc_teamAccountClient
   pkg_team_console_menu --> svc_consoleMenu
   pkg_team_console_menu_sqlite --> svc_consoleMenu
+  pkg_team_release --> svc_teamReleases
   pkg_terminal --> svc_terminals
   pkg_terminal_bash --> svc_terminals
   pkg_token_meter --> svc_tokenMeter
@@ -622,6 +626,8 @@ flowchart LR
   svc_systemPrompt --> pkg_tools
   svc_teamAccountClient --> pkg_team_local_handoff
   svc_teamAccountClient --> pkg_team_local_login
+  svc_teamReleases --> pkg_team_admin_api
+  svc_teamReleases --> pkg_team_release_http
   svc_terminals --> pkg_tool_terminal
   svc_tokenMeter --> pkg_compaction_basic
   svc_toolResultPruner --> pkg_compaction_basic
@@ -667,6 +673,7 @@ flowchart LR
 | `ctx.profileContext` | `core` | [`app-boot`](../packages/boot/app-boot) | - | [`plugin-manager`](../packages/boot/plugin-manager) | - | dsh launcher 提供纯数据形式的 profile 位置与组合输入；重载调度由 dsh-hmr 负责。 |
 | `ctx.connection` | `core` | [`client-connection`](../packages/client/connection) | - | [`api-gateway`](../packages/api/gateway), [`host-frontend-static`](../packages/host/frontend-static) | - | 负责浏览器认证与共享 HTTP 请求分发；API 适配器注册端点和流。 |
 | `ctx.browserSession` | `core` | [`client-connection`](../packages/client/connection) | - | [`team-local-login`](../packages/team/team-local-login), [`team-local-handoff`](../packages/team/team-local-handoff) | - | 传输层强制执行的同一套浏览器认证，暴露给 Team 登录与交接路由，使其能够签发、读取并结束已登录的浏览器会话。 |
+| `ctx.teamReleases` | `seam` | [`team-release`](../packages/team/team-release) | - | [`team-release-http`](../packages/team/team-release-http), [`team-admin-api`](../packages/team/team-admin-api) | - | 保存发布机产出的签名清单、它提供给谁，以及版本下限。Control Plane 分发它收到的内容，无法签署属于自己的版本。 |
 | `ctx.mcpResources` | `seam` | [`mcp-resources`](../packages/mcp/mcp-resources) | [`mcp-client`](../packages/mcp/mcp-client) | [`mcp-resources`](../packages/mcp/mcp-resources) | - | 连接所有者提供的操作在调用 agent 的作用域内服务于共享资源工具。 |
 | `ctx.browserUse` | `seam` | [`browser-use`](../packages/browser-use/browser-use) | [`experimental-browser-use-playwright-mcp`](../packages/experimental/browser-use-playwright-mcp), [`experimental-browser-use-chrome-devtools-mcp`](../packages/experimental/browser-use-chrome-devtools-mcp), [`experimental-browser-use-stagehand-native`](../packages/experimental/browser-use-stagehand-native) | [`experimental-browser-use-playwright-mcp`](../packages/experimental/browser-use-playwright-mcp), [`experimental-browser-use-chrome-devtools-mcp`](../packages/experimental/browser-use-chrome-devtools-mcp), [`experimental-browser-use-stagehand-native`](../packages/experimental/browser-use-stagehand-native) | - | 每个服务实例注册一个提供方拥有的名称。提供方按实时 Session 拥有自己的工具与浏览器资源；共享服务不提供浏览器操作 API。 |
 | `ctx.computerUse` | `seam` | [`computer-use`](../packages/computer-use/computer-use) | [`experimental-computer-use-cua-driver-mcp`](../packages/experimental/computer-use-cua-driver-mcp), [`experimental-computer-use-cua-driver-native`](../packages/experimental/computer-use-cua-driver-native) | [`experimental-computer-use-cua-driver-mcp`](../packages/experimental/computer-use-cua-driver-mcp), [`experimental-computer-use-cua-driver-native`](../packages/experimental/computer-use-cua-driver-native) | - | 每个服务实例只注册一个提供方自定的名称。各提供方也拥有自己的模型工具；服务不提供通用操作 API、运行时选择或 Session 流程锁。 |

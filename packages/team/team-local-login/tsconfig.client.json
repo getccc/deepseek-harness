@@ -6,12 +6,13 @@
     "tsBuildInfoFile": "lib/tsconfig.client.tsbuildinfo"
   },
   "files": [
-    "src/client/index.ts",
-    "src/client/locales.ts",
-    "src/client/day-parts.ts",
     "src/client/AssistantIdentity.tsx",
     "src/client/HeroGreeting.tsx",
     "src/client/TeamAccountLauncher.tsx",
+    "src/client/account-slots.ts",
+    "src/client/day-parts.ts",
+    "src/client/index.ts",
+    "src/client/locales.ts",
     "src/css-modules.d.ts",
     "src/paths.ts",
     "src/xiaowei-avatar.ts"

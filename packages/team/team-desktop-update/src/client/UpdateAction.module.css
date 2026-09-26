@@ -1,0 +1,190 @@
+/* One circular control beside the member row, and the same circle above the
+   avatar when the sidebar is a rail. Its colour is its phase: the deployment
+   brand while a release waits to be taken, quiet while it downloads, and the
+   warning colour when the last attempt failed. */
+.action {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  corner-shape: round;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  cursor: pointer;
+  transition: background 150ms var(--ds-ease-in-out), color 150ms var(--ds-ease-in-out);
+}
+
+.action:disabled {
+  cursor: default;
+}
+
+.action:focus-visible {
+  outline: 2px solid var(--dsw-alias-brand-primary);
+  outline-offset: 1px;
+}
+
+.wide {
+  margin: 4px 0;
+}
+
+.rail {
+  margin: 4px 0 0;
+}
+
+.offered {
+  background: var(--dsw-alias-brand-primary);
+  color: var(--dsw-alias-label-primary-inverted);
+}
+
+.offered:hover {
+  background: color-mix(in srgb, var(--dsw-alias-brand-primary) 85%, black);
+}
+
+.working {
+  color: var(--dsw-alias-brand-primary);
+}
+
+.failed {
+  color: var(--dsw-alias-state-warn-primary);
+}
+
+.failed:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* The ring fills the button and the percentage sits inside it, so one 26px
+   control carries both how far along the transfer is and how to stop it. */
+.ringWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.ringLabel {
+  position: absolute;
+  color: var(--dsw-alias-label-primary);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.2px;
+}
+
+.ringTrack {
+  fill: none;
+  stroke: var(--dsw-alias-border-l3);
+  stroke-width: 3;
+}
+
+.ringHead {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dasharray 200ms linear;
+}
+
+/* A download whose total the stream did not report still has to look alive. */
+.spin {
+  animation: update-ring-spin 1200ms linear infinite;
+}
+
+@keyframes update-ring-spin {
+  from {
+    transform: rotate(-90deg);
+  }
+
+  to {
+    transform: rotate(270deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .action,
+  .ringHead {
+    transition: none;
+  }
+
+  .spin {
+    animation: none;
+  }
+}
+
+/* The deployment refuses the installed build: the member is told once, in
+   front of everything, because nothing they do in the application counts
+   until they take the update. */
+.blockade {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--dsw-alias-bg-layer-1) 82%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.blockadeCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+  width: min(420px, calc(100vw - 48px));
+  padding: 24px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 16px;
+  background: var(--dsw-alias-bg-layer-2);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 18%);
+}
+
+.blockadeTitle {
+  color: var(--dsw-alias-label-primary);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.blockadeBody {
+  color: var(--dsw-alias-label-secondary);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.blockadeButton {
+  align-self: flex-end;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 10px;
+  background: var(--dsw-alias-brand-primary);
+  color: var(--dsw-alias-label-primary-inverted);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.blockadeButton:disabled {
+  cursor: default;
+  opacity: 0.6;
+}

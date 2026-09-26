@@ -125,6 +125,7 @@ export function deploymentPatch(deployment: DesktopDeployment): string {
       id: 'team-local-login',
       config: { applicationPath: '/', maxRequestBodyBytes: 16_384, locale: deployment.locale },
     },
+    { id: 'team-update-source', config: address },
     { id: 'llm-http-transport', config: address },
     { id: 'knowledge', config: address },
     { id: 'bi', config: address },

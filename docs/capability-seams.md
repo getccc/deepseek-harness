@@ -55,6 +55,9 @@ flowchart LR
   pkg_api_gateway["api-gateway"]
   pkg_host_frontend_static["host-frontend-static"]
   svc_browserSession["ctx.browserSession<br/>Browser sign-in cookies for Team surfaces"]
+  pkg_team_release["team-release"]
+  svc_teamReleases["ctx.teamReleases<br/>Published desktop releases"]
+  pkg_team_release_http["team-release-http"]
   pkg_mcp_resources["mcp-resources"]
   svc_mcpResources["ctx.mcpResources<br/>Scoped MCP resource access"]
   pkg_mcp_client["mcp-client"]
@@ -461,6 +464,7 @@ flowchart LR
   pkg_team_account_client --> svc_teamAccountClient
   pkg_team_console_menu --> svc_consoleMenu
   pkg_team_console_menu_sqlite --> svc_consoleMenu
+  pkg_team_release --> svc_teamReleases
   pkg_terminal --> svc_terminals
   pkg_terminal_bash --> svc_terminals
   pkg_token_meter --> svc_tokenMeter
@@ -620,6 +624,8 @@ flowchart LR
   svc_systemPrompt --> pkg_tools
   svc_teamAccountClient --> pkg_team_local_handoff
   svc_teamAccountClient --> pkg_team_local_login
+  svc_teamReleases --> pkg_team_admin_api
+  svc_teamReleases --> pkg_team_release_http
   svc_terminals --> pkg_tool_terminal
   svc_tokenMeter --> pkg_compaction_basic
   svc_toolResultPruner --> pkg_compaction_basic
@@ -665,6 +671,7 @@ flowchart LR
 | `ctx.profileContext` | `core` | [`app-boot`](../packages/boot/app-boot) | - | [`plugin-manager`](../packages/boot/plugin-manager) | - | The dsh launcher supplies data-only profile locations and composition inputs; reload scheduling belongs to dsh-hmr. |
 | `ctx.connection` | `core` | [`client-connection`](../packages/client/connection) | - | [`api-gateway`](../packages/api/gateway), [`host-frontend-static`](../packages/host/frontend-static) | - | Owns browser authentication and shared HTTP request dispatch; API adapters register endpoints and streams. |
 | `ctx.browserSession` | `core` | [`client-connection`](../packages/client/connection) | - | [`team-local-login`](../packages/team/team-local-login), [`team-local-handoff`](../packages/team/team-local-handoff) | - | The same browser authentication the transport enforces, exposed to the Team login and handoff routes so they can issue, read, and end a signed-in browser session. |
+| `ctx.teamReleases` | `seam` | [`team-release`](../packages/team/team-release) | - | [`team-release-http`](../packages/team/team-release-http), [`team-admin-api`](../packages/team/team-admin-api) | - | Holds the signed manifest a release machine produced, who it is offered to, and the version floor. The Control Plane serves what it was given and cannot sign a release of its own. |
 | `ctx.mcpResources` | `seam` | [`mcp-resources`](../packages/mcp/mcp-resources) | [`mcp-client`](../packages/mcp/mcp-client) | [`mcp-resources`](../packages/mcp/mcp-resources) | - | Connection-owned providers serve shared resource tools in the calling agent scope. |
 | `ctx.browserUse` | `seam` | [`browser-use`](../packages/browser-use/browser-use) | [`experimental-browser-use-playwright-mcp`](../packages/experimental/browser-use-playwright-mcp), [`experimental-browser-use-chrome-devtools-mcp`](../packages/experimental/browser-use-chrome-devtools-mcp), [`experimental-browser-use-stagehand-native`](../packages/experimental/browser-use-stagehand-native) | [`experimental-browser-use-playwright-mcp`](../packages/experimental/browser-use-playwright-mcp), [`experimental-browser-use-chrome-devtools-mcp`](../packages/experimental/browser-use-chrome-devtools-mcp), [`experimental-browser-use-stagehand-native`](../packages/experimental/browser-use-stagehand-native) | - | One provider-owned name per service instance. Providers own their tools and browser resources per live Session; the shared service has no browser operation API. |
 | `ctx.computerUse` | `seam` | [`computer-use`](../packages/computer-use/computer-use) | [`experimental-computer-use-cua-driver-mcp`](../packages/experimental/computer-use-cua-driver-mcp), [`experimental-computer-use-cua-driver-native`](../packages/experimental/computer-use-cua-driver-native) | [`experimental-computer-use-cua-driver-mcp`](../packages/experimental/computer-use-cua-driver-mcp), [`experimental-computer-use-cua-driver-native`](../packages/experimental/computer-use-cua-driver-native) | - | One provider-owned name per service instance. Each provider also owns its model tools; the service has no common action API, runtime selection, or Session workflow lock. |

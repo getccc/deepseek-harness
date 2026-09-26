@@ -29,7 +29,7 @@ const COPY = {
 
 type DirectProps = Pick<
   TeamAccountLauncherProps,
-  'wide' | 'openSettings' | 'loadAccount' | 'signOut' | 't'
+  'wide' | 'openSettings' | 'loadAccount' | 'signOut' | 'renderSlot' | 't'
 >
 
 /** Direct component props; the renderer-owned global seats are unused here. */
@@ -39,6 +39,8 @@ function props(overrides: Partial<DirectProps> = {}): TeamAccountLauncherProps {
     openSettings: vi.fn(),
     loadAccount: vi.fn().mockResolvedValue({ loginName: 'alice', displayName: 'Alice' }),
     signOut: vi.fn(),
+    // No composition registers an action beside the member row in this suite.
+    renderSlot: () => null,
     t: key => COPY[key as keyof typeof COPY] ?? key,
     ...overrides,
   } as TeamAccountLauncherProps

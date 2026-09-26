@@ -4,9 +4,13 @@ import { useEffect, useState } from 'react'
 import {
   IconEllipsisOutline16, IconSettingsOutline16, Menu,
 } from '@deepseek-ai/dsh-client-ui-primitives'
-import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
+import type {
+  InjectFace, PropsLocale, PropsRenderSlots, PropsRuntime,
+} from '@deepseek-ai/dsh-client-ui-slots'
 // Type-only: pulls the settings.launcher slot declaration into this program.
 import type {} from '@deepseek-ai/dsh-client-ui-settings-general/client'
+// Type-only: pulls the team.account.action declaration into this program.
+import type {} from './account-slots.ts'
 import type { TeamAccountKey } from './locales.ts'
 import css from './TeamAccountLauncher.module.css'
 
@@ -29,6 +33,7 @@ export interface TeamAccountLauncherInjected {
 /** Complete slot props for the account launcher. */
 export type TeamAccountLauncherProps =
   PropsRuntime<'settings.launcher'>
+  & PropsRenderSlots<'team.account.action'>
   & PropsLocale<'team.account'>
   & InjectFace<TeamAccountLauncherInjected>
 
@@ -51,7 +56,9 @@ export function accountInitial(name: string): string {
  * @param props - composed slot props and local account operations.
  * @returns the sidebar account launcher.
  */
-export function TeamAccountLauncher({ wide, openSettings, loadAccount, signOut, t }: TeamAccountLauncherProps) {
+export function TeamAccountLauncher({
+  wide, openSettings, loadAccount, signOut, renderSlot, t,
+}: TeamAccountLauncherProps) {
   const [open, setOpen] = useState(false)
   const [member, setMember] = useState<TeamMemberIdentity | undefined>()
 
@@ -69,38 +76,41 @@ export function TeamAccountLauncher({ wide, openSettings, loadAccount, signOut, 
   const label = member?.displayName ?? member?.loginName ?? t('memberFallback')
 
   return (
-    <Menu
-      className={css.menu ?? ''}
-      open={open}
-      onClose={() => { setOpen(false) }}
-      side="top"
-      align="start"
-      portal
-      items={[
-        { id: 'settings', label: t('settings'), icon: <IconSettingsOutline16 /> },
-        { id: 'sign-out', label: t('signOut'), icon: <SignOutIcon />, danger: true },
-      ]}
-      onSelect={(id) => {
-        setOpen(false)
-        if (id === 'settings') openSettings()
-        else signOut()
-      }}
-      anchor={(
-        <button
-          type="button"
-          className={`${css.launcher} ${wide ? css.wide : css.rail} ${open ? css.open : ''}`}
-          aria-label={`${t('menu')}: ${label}`}
-          aria-haspopup="menu"
-          aria-expanded={open}
-          title={member?.loginName ?? label}
-          onClick={() => { setOpen(value => !value) }}
-        >
-          <span className={css.avatar} aria-hidden="true">{accountInitial(label)}</span>
-          {wide && <span className={css.name}>{label}</span>}
-          {wide && <IconEllipsisOutline16 className={css.more} />}
-        </button>
-      )}
-    />
+    <div className={`${css.row} ${wide ? css.rowWide : css.rowRail}`}>
+      <Menu
+        className={css.menu ?? ''}
+        open={open}
+        onClose={() => { setOpen(false) }}
+        side="top"
+        align="start"
+        portal
+        items={[
+          { id: 'settings', label: t('settings'), icon: <IconSettingsOutline16 /> },
+          { id: 'sign-out', label: t('signOut'), icon: <SignOutIcon />, danger: true },
+        ]}
+        onSelect={(id) => {
+          setOpen(false)
+          if (id === 'settings') openSettings()
+          else signOut()
+        }}
+        anchor={(
+          <button
+            type="button"
+            className={`${css.launcher} ${wide ? css.wide : css.rail} ${open ? css.open : ''}`}
+            aria-label={`${t('menu')}: ${label}`}
+            aria-haspopup="menu"
+            aria-expanded={open}
+            title={member?.loginName ?? label}
+            onClick={() => { setOpen(value => !value) }}
+          >
+            <span className={css.avatar} aria-hidden="true">{accountInitial(label)}</span>
+            {wide && <span className={css.name}>{label}</span>}
+            {wide && <IconEllipsisOutline16 className={css.more} />}
+          </button>
+        )}
+      />
+      {renderSlot('team.account.action', { wide })}
+    </div>
   )
 }
 

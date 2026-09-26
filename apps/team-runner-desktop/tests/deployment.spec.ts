@@ -19,6 +19,9 @@ describe('desktop deployment facts', () => {
         controlPlaneUrl: 'https://control.acme.example', runnerVersion: '2.4.1',
       } },
       { id: 'team-local-login', config: { locale: 'en-US' } },
+      // The Runner answers the desktop shell with what this deployment offers
+      // this member, because the shell holds no credential of its own.
+      { id: 'team-update-source', config: { controlPlaneUrl: 'https://control.acme.example' } },
       { id: 'llm-http-transport', config: { controlPlaneUrl: 'https://control.acme.example' } },
       // Knowledge takes the same origin from the same deployment fact: the
       // installer is the one place a build learns which company it belongs to.
@@ -42,7 +45,8 @@ describe('desktop deployment facts', () => {
       ...facts, controlPlaneCa: '/opt/welinkin/control-plane-ca.crt', locale: 'zh-CN',
     }))) as { id: string; disabled?: boolean; config: Record<string, unknown> }[]
     const pinned = patch.filter(row => row.config['controlPlaneCa'] === '/opt/welinkin/control-plane-ca.crt')
-    expect(pinned.map(row => row.id)).toEqual(['team-account-client', 'llm-http-transport', 'knowledge', 'bi', 'web-search-team'])
+    expect(pinned.map(row => row.id))
+      .toEqual(['team-account-client', 'team-update-source', 'llm-http-transport', 'knowledge', 'bi', 'web-search-team'])
     expect(patch[1]?.config).toMatchObject({ locale: 'zh-CN' })
   })
 

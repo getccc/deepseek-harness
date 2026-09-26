@@ -152,4 +152,31 @@ export const SHIPPED_CONSOLE_MENUS: readonly ShippedConsoleMenu[] = [
     icon: 'chart',
     sortOrder: 4,
   },
+  {
+    key: 'releases',
+    parentKey: 'resources',
+    name: 'Client releases',
+    labelKey: 'nav.releases',
+    kind: 'menu',
+    routePath: '/resources/releases',
+    componentPath: 'resources/ReleasesPage',
+    // Registered only where this Control Plane publishes desktop releases, so
+    // a deployment that distributes complete installers grants this to nobody
+    // and the entry stays hidden.
+    permission: 'release|release.manage',
+    icon: 'laptop',
+    sortOrder: 5,
+  },
+  {
+    key: 'release-staged',
+    parentKey: 'resources',
+    name: 'Staged releases',
+    labelKey: 'nav.releaseStaged',
+    kind: 'action',
+    // No page: the entry exists so a role can be offered a release before
+    // everyone else, which the Control Plane's release route decides on.
+    permission: 'release|release.staged',
+    icon: 'laptop',
+    sortOrder: 6,
+  },
 ]

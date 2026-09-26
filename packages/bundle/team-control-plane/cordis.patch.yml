@@ -160,6 +160,14 @@
         defaultChartPageSize: 20
         defaultMaxRows: 200
 
+    # Published desktop releases. The store holds the signed manifests the
+    # release machine produced; this deployment serves them and cannot sign
+    # one of its own.
+    - id: team-release
+      name: '@deepseek-ai/dsh-team-release'
+      config:
+        path: !!js dshHomePath('control-plane', 'releases.sqlite')
+
     # ── the two HTTP surfaces ────────────────────────────────────────────
     # Runner-facing: account authentication approves a transaction, then PKCE,
     # a device signature, and a one-time code bind the credential to the Runner.
@@ -170,6 +178,13 @@
         # service must not guess which account namespace it authenticates.
         pathPrefix: /team/device
         maxRequestBodyBytes: 16384
+    # Which release a member's Runner is offered, decided by the roles that
+    # member holds and answered with the document as it was published.
+    - id: team-release-http
+      name: '@deepseek-ai/dsh-team-release-http'
+      config:
+        maxRequestBodyBytes: 4096
+
     # Company model traffic: authorized by the device access token, and the
     # one place a provider credential is attached.
     - id: model-gateway-http
