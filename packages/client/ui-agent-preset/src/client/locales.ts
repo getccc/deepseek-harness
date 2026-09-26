@@ -45,7 +45,7 @@ export const en: Record<AgentPresetSettingsKey, string> = {
     'Single-tool coding agent with a persistent shell.',
   presetCordisName: 'Creator mode',
   presetCordisDescription:
-    'Built for creating custom agent presets, with all Standard mode capabilities plus runtime inspection, plugin experiments, and preset-authoring guidance.',
+    'Built for creating custom agent presets, with all Standard mode capabilities plus runtime inspection, persistent plugin management, and preset-authoring guidance.',
   presetChatName: 'Chat mode',
   presetChatDescription:
     'Fast conversation without a workspace: only the assistant persona and context compaction, so the first token waits for no directory scan or tool catalog; web search is a per-session switch, off by default.',
@@ -115,7 +115,7 @@ export const zh: Record<AgentPresetSettingsKey, string> = {
   presetMinimalName: '极简模式',
   presetMinimalDescription: '仅提供持久 shell 的单工具编码 Agent。',
   presetCordisName: '创造模式',
-  presetCordisDescription: '用于创建自定义 Agent preset：具备标准模式的全部能力，并提供运行时检查、插件实验和 preset 创作指导。',
+  presetCordisDescription: '用于创建自定义 Agent preset：具备标准模式的全部能力，并提供运行时检查、持久化插件管理和 preset 创作指导。',
   presetChatName: '聊天模式',
   presetChatDescription: '无工作区的快速对话：只有小微的身份提示和上下文压缩，首个 token 不等待任何目录扫描或工具目录；联网检索按会话开关，默认关闭。',
   duplicate: '复制',

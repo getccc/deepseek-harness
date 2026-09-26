@@ -1,8 +1,8 @@
 - textbox "筛选选项":
   - /placeholder: 搜索…
 - listbox "/permission 匹配项":
-  - option "只读" [selected]
-  - option "工作区可写":
+  - option "只读"
+  - option "工作区可写" [selected]:
     - text: 工作区可写
     - img
   - option "完全访问"

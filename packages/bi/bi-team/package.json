@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-bi-team",
   "description": "Runner-side BI-analysis provider (ctx.bi) for the DeepSeek Harness Team profile — an outbound Control Plane request carrying the current device token, and no BI address or credential",
-  "version": "0.1.6-alpha.1",
+  "version": "0.1.6-alpha.2",
   "publishConfig": {
     "access": "public"
   },

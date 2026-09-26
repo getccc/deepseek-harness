@@ -44,11 +44,11 @@ function props(overrides: Partial<DirectProps> = {}): TeamAccountLauncherProps {
   } as TeamAccountLauncherProps
 }
 
-/** Stand in for the Session selection the sign-in landing clears. */
-function provideSessions(ctx: Context): { clear: ReturnType<typeof vi.fn> } {
-  const sessions = { clear: vi.fn() }
-  ctx.provide('sessions', sessions)
-  return sessions
+/** Stand in for the navigation the sign-in landing clears. */
+function provideNavigation(ctx: Context): { clearSession: ReturnType<typeof vi.fn> } {
+  const uiWorkspace = { clearSession: vi.fn() }
+  ctx.provide('uiWorkspace', uiWorkspace)
+  return uiWorkspace
 }
 
 /** Declare the two slots this plugin fills, without the shells that own them. */
@@ -103,7 +103,7 @@ describe('Team local-login browser plugin', () => {
     ctx.provide('locale', locale)
     const slots = ctx.get('slots') as SlotRegistry
     declare(slots)
-    provideSessions(ctx)
+    provideNavigation(ctx)
     const fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ loginName: 'alice', displayName: 'Alice' }),
@@ -131,7 +131,7 @@ describe('Team local-login browser plugin', () => {
     ctx.provide('locale', locale)
     const slots = ctx.get('slots') as SlotRegistry
     declare(slots)
-    provideSessions(ctx)
+    provideNavigation(ctx)
     const fetch = vi.fn()
       .mockResolvedValueOnce({ ok: false, status: 401 })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ loginName: 4 }) })
@@ -153,10 +153,10 @@ describe('landing after a sign-in', () => {
     await ctx.plugin(SlotRegistry).await()
     ctx.provide('locale', new LocaleRuntime(ctx))
     declare(ctx.get('slots') as SlotRegistry)
-    const sessions = provideSessions(ctx)
+    const uiWorkspace = provideNavigation(ctx)
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }))
     await ctx.plugin({ inject: [...inject], apply }).await()
-    return { ctx, sessions }
+    return { ctx, uiWorkspace }
   }
 
   it('empties the conversation a member just signed in to, and forgets the mark', async () => {
@@ -164,14 +164,14 @@ describe('landing after a sign-in', () => {
     // browser's, so the next member to sign in would arrive inside the
     // previous member's conversation.
     const landed = await land('/app?signed-in=1&workspace=erc')
-    expect(landed.sessions.clear).toHaveBeenCalledTimes(1)
+    expect(landed.uiWorkspace.clearSession).toHaveBeenCalledTimes(1)
     expect(window.location.search).toBe('?workspace=erc')
     await landed.ctx.fiber.dispose()
   })
 
   it('leaves an ordinary load alone, so a reload keeps what is open', async () => {
     const landed = await land('/app')
-    expect(landed.sessions.clear).not.toHaveBeenCalled()
+    expect(landed.uiWorkspace.clearSession).not.toHaveBeenCalled()
     await landed.ctx.fiber.dispose()
   })
 })
@@ -275,7 +275,7 @@ describe('the hero greeting', () => {
     ctx.provide('locale', new LocaleRuntime(ctx))
     const slots = ctx.get('slots') as SlotRegistry
     declare(slots)
-    provideSessions(ctx)
+    provideNavigation(ctx)
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ loginName: 'test1', displayName: '测试一' }),

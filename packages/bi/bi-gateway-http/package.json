@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-bi-gateway-http",
   "description": "Runner-facing BI endpoints for the DeepSeek Harness Control Plane — device-token verification, protocol-version negotiation before any other field, strict request parsing, and closed refusal mapping",
-  "version": "0.1.6-alpha.1",
+  "version": "0.1.6-alpha.2",
   "publishConfig": {
     "access": "public"
   },

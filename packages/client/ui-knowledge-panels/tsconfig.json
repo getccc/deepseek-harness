@@ -51,7 +51,10 @@
       "path": "../ui-sidebar"
     },
     {
-      "path": "../ui-sidebar-documentpreview"
+      "path": "../ui-sidebar-documentpreview/tsconfig.client.json"
+    },
+    {
+      "path": "../ui-workspace"
     },
     {
       "path": "../ui-slots"

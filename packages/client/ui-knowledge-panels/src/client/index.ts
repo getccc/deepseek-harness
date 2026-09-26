@@ -35,6 +35,8 @@ import type {} from '@deepseek-ai/dsh-client-ui-sidebar/client'
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar-documentpreview/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
+// Type-only: pulls ctx.uiWorkspace, which owns main-view Session navigation.
+import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
 import { KnowledgeBasesGlyph, KnowledgeSearchGlyph } from './Glyphs.tsx'
 import { KnowledgeBasesPanel, type KnowledgeBasesInjected } from './KnowledgeBasesPanel.tsx'
 import { KnowledgeSearchPanel, type DiscussTarget, type KnowledgeSearchInjected } from './KnowledgeSearchPanel.tsx'
@@ -77,7 +79,7 @@ const BASES_ORDER = 10
 const SEARCH_ORDER = 20
 
 /** Required services: the panels' slot registry, the Remote face, and locale. */
-export const inject = ['locale', 'remote', 'slots']
+export const inject = ['locale', 'remote', 'slots', 'uiWorkspace']
 
 /**
  * Client plugin body: wait for the `knowledge` namespace, then register the
@@ -144,8 +146,9 @@ function registerUi(ctx: ClientContext): void {
     unwrap(target.docRef === undefined
       ? await ctx.remote.knowledge.choose(sessionId, 'selected', [target.knowledgeRef])
       : await ctx.remote.knowledge.chooseDocuments(sessionId, [{ docRef: target.docRef, title: target.title }]))
-    ctx.sessions.open(sessionId)
-    ctx.layout.selectPanel(null)
+    // Navigation belongs to ui-workspace: it retains the Session for the main
+    // view and leaves the panel, which this panel's own layout call cannot do.
+    ctx.uiWorkspace.openSession(sessionId)
   }
 
   ctx.slots.inject('sidebar.panellist', function* () {

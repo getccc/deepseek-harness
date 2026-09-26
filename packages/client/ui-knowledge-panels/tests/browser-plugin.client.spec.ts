@@ -67,9 +67,13 @@ async function bench(declareSeats = true) {
   ctx.provide('remote', { knowledge })
   ctx.provide('remote.knowledge', knowledge)
   ctx.provide('layout', { selectPanel: (id: string | null) => { panels.push(id) } })
-  ctx.provide('sessions', {
-    create: () => Promise.resolve(SID),
-    open: (id: string) => { opened.push(id) },
+  ctx.provide('sessions', { create: () => Promise.resolve(SID) })
+  // Navigation belongs to ui-workspace: opening a Session also leaves the panel.
+  ctx.provide('uiWorkspace', {
+    openSession: (id: string) => {
+      opened.push(id)
+      panels.push(null)
+    },
   })
   await ctx.plugin(SlotRegistry).await()
   const slots = ctx.get('slots') as SlotRegistry
@@ -99,7 +103,7 @@ function faceOf(b: Awaited<ReturnType<typeof bench>>, key: string): KnowledgeBas
 
 describe('ui-knowledge-panels browser apply', () => {
   it('declares every service it binds', () => {
-    expect(inject).toEqual(['locale', 'remote', 'slots'])
+    expect(inject).toEqual(['locale', 'remote', 'slots', 'uiWorkspace'])
   })
 
   it('node-half apply is an intentional no-op', () => {

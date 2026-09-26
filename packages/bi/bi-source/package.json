@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-bi-source",
   "description": "Abstract upstream BI-source seam (ctx.biSource) for the DeepSeek Harness Control Plane — listing a source's projects, one project's saved charts, and running one saved chart, in upstream terms",
-  "version": "0.1.6-alpha.1",
+  "version": "0.1.6-alpha.2",
   "publishConfig": {
     "access": "public"
   },

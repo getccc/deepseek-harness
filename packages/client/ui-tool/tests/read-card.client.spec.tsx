@@ -204,11 +204,14 @@ describe('GenericToolCard read body', () => {
 describe('ReadRow keyed toolview', () => {
   const list = () => createSnapshotStore<SessionListState>({
     ids: [SID],
-    byId: { [SID]: { id: SID, displayTitle: 'r', kind: 'work', running: false, blank: false, updatedAt: 0, cwd: '/w/app' } },
-    current: SID,
+    byId: {
+      [SID]: {
+        id: SID, displayTitle: 'r', kind: 'work', running: false,
+        retainedBy: {}, blank: false, updatedAt: 0, cwd: '/w/app',
+      },
+    },
     phase: 'ready',
     subagentsByParent: {}, jobsBySession: {},
-    currentAddress: undefined,
   })
 
   const rowProps = (block: RunningToolCall | ToolResultNode): Parameters<typeof ReadRow>[0] => ({

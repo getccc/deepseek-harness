@@ -1,12 +1,13 @@
 import { spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import { basename, dirname, isAbsolute, join, resolve } from 'node:path'
 import { createRequire } from 'node:module'
 import { describe, expect, it } from 'vitest'
 
 const packageRoot = resolve(import.meta.dirname, '..')
 const bundlePath = join(packageRoot, 'lib/client.js')
+const pdfChunkPath = join(packageRoot, 'lib/client.pdf.js')
 const require = createRequire(import.meta.url)
 const licenseNames = [
   'LICENSE',
@@ -40,23 +41,48 @@ function runPnpm(args: string[], cwd: string, timeout: number): string {
     : run(entrypoint, args, cwd, timeout)
 }
 
+/** One packed-tarball report, as `pack --json` writes it. */
+interface PackReport {
+  filename: string
+  files: { path: string }[]
+}
+
 describe('published PDF.js licenses', () => {
-  it.skipIf(!existsSync(bundlePath))('keeps every bundled license in the packed client artifact', ({ task }) => {
+  it.skipIf(!existsSync(bundlePath))('keeps every bundled license in the packed PDF chunk', ({ task }) => {
+    expect(existsSync(pdfChunkPath)).toBe(true)
     const output = mkdtempSync(join(tmpdir(), 'dsh-document-preview-pack-'))
     try {
-      const packed = JSON.parse(runPnpm([
+      // `npm_execpath` can name npm rather than pnpm, and npm reports one
+      // report object per packed tarball inside an array.
+      const report = JSON.parse(runPnpm([
         'pack', '--json', '--pack-destination', output,
-      ], packageRoot, task.timeout)) as { filename: string; files: { path: string }[] }
+      ], packageRoot, task.timeout)) as PackReport | [PackReport]
+      const packed = Array.isArray(report) ? report[0] : report
+      // npm reports the basename; pnpm reports the written path.
+      const tarball = isAbsolute(packed.filename)
+        ? packed.filename
+        : resolve(output, basename(packed.filename))
       expect(packed.files.map(file => file.path)).toContain('lib/client.js')
+      expect(packed.files.map(file => file.path)).toContain('lib/client.pdf.js')
       expect(packed.files.some(file => file.path.endsWith('pdfjs-NOTICES.txt'))).toBe(false)
 
-      const client = run('tar', ['-xOf', resolve(packageRoot, packed.filename), 'package/lib/client.js'], packageRoot, task.timeout)
-      expect(client).toContain('//! Bundled PDF.js license notices')
+      const client = run('tar', ['-xOf', tarball, 'package/lib/client.js'], packageRoot, task.timeout)
+      const pdf = run('tar', ['-xOf', tarball, 'package/lib/client.pdf.js'], packageRoot, task.timeout)
+      // The Sidebar body and the complete-document view each defer the same
+      // chunk, so the set is what the deferral states, not the call count.
+      expect([...new Set([...client.matchAll(/require\.async\("(\.\/client[^"/]*\.js)"\)/gu)].map(match => match[1]))])
+        .toEqual(['./client.pdf.js'])
+      expect(client).not.toMatch(/\brequire\("\.\/client[^"/]*\.js"\)/u)
+      expect([...pdf.matchAll(/require\("(\.\/client[^"/]*\.js)"\)/gu)].map(match => match[1]))
+        .toEqual([])
+      expect(client).not.toContain('//! Bundled PDF.js license notices')
+      expect(client).not.toContain('/pdfjs-dist/')
+      expect(pdf).toContain('//! Bundled PDF.js license notices')
       const pdfRoot = dirname(require.resolve('pdfjs-dist/package.json'))
       for (const name of licenseNames) {
         const source = readFileSync(join(pdfRoot, name), 'utf8').trimEnd()
         const commented = [`// ${name}`, '// ', ...source.split('\n').map(line => `// ${line}`)].join('\n')
-        expect(client, `${name} must be visible in package/lib/client.js`).toContain(commented)
+        expect(pdf, `${name} must be visible in package/lib/client.pdf.js`).toContain(commented)
       }
     } finally {
       rmSync(output, { recursive: true, force: true })

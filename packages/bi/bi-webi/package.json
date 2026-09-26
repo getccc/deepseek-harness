@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-bi-webi",
   "description": "webi BI-source provider (ctx.biSource) for the DeepSeek Harness Control Plane — the fixed webi routes, per-operation API-key resolution, row and cell bounds, and closed failure mapping",
-  "version": "0.1.6-alpha.1",
+  "version": "0.1.6-alpha.2",
   "publishConfig": {
     "access": "public"
   },

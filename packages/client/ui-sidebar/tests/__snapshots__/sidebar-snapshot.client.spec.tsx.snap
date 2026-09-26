@@ -1,5 +1,286 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`sidebar shell snapshots > renders Windows caption controls in expanded and collapsed states > windows collapsed 1`] = `
+<div
+  data-slot="sidebar"
+  style="display: contents;"
+>
+  <div
+    class="root collapsed railIn quietBars"
+    style=""
+  >
+    <div
+      class="logoRow"
+    >
+      <button
+        aria-label="Open sidebar"
+        class="iconButton toggle"
+        type="button"
+      >
+        <svg
+          class="panelIcon"
+          data-content="35f95b0c"
+          fill="none"
+          height="16"
+          viewBox="0 0 16 16"
+          width="16"
+          xmlns="http://www.w3.org/2000/svg"
+        />
+        <div
+          data-slot="sidebar.toggle.badge"
+          style="display: contents;"
+        />
+      </button>
+    </div>
+    <div
+      class="panelList"
+    >
+      <button
+        aria-label="New chat"
+        class="panelRow"
+        type="button"
+      >
+        <span
+          aria-hidden="true"
+          class="panelGlyph"
+        >
+          <svg
+            data-content="c0ce4dcc"
+            fill="none"
+            height="18"
+            viewBox="0 0 16 16"
+            width="18"
+            xmlns="http://www.w3.org/2000/svg"
+          />
+        </span>
+      </button>
+      <button
+        aria-label="New work task"
+        class="panelRow"
+        type="button"
+      >
+        <span
+          aria-hidden="true"
+          class="panelGlyph"
+        >
+          <svg
+            data-content="7d0b657c"
+            fill="none"
+            height="18"
+            viewBox="0 0 16 16"
+            width="18"
+          />
+        </span>
+      </button>
+    </div>
+    <div
+      class="regionFrame"
+    >
+      <div
+        class="regionArea"
+      >
+        <div
+          data-slot="sidebar.workspaces"
+          style="display: contents;"
+        />
+        <div
+          data-slot="sidebar.recent"
+          style="display: contents;"
+        />
+      </div>
+      <span
+        aria-hidden="true"
+        class="regionFade"
+      />
+    </div>
+    <div
+      class="footArea"
+    >
+      <div
+        class="footerActions"
+      >
+        <div
+          data-slot="sidebar.footer.action"
+          style="display: contents;"
+        />
+      </div>
+      <div
+        class="settingsArea"
+      >
+        <div
+          data-slot="sidebar.settings"
+          style="display: contents;"
+        />
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`sidebar shell snapshots > renders Windows caption controls in expanded and collapsed states > windows expanded 1`] = `
+<div
+  data-slot="sidebar"
+  style="display: contents;"
+>
+  <div
+    class="root quietBars"
+    style="width: 300px;"
+  >
+    <div
+      class="logoRow"
+    >
+      <button
+        aria-label="New work task"
+        class="brand wide"
+        type="button"
+      >
+        <span
+          aria-hidden="true"
+          class="brandIdentity"
+        >
+          <span
+            class="brandMark"
+          >
+            <div
+              data-slot="sidebar.brand.mark"
+              style="display: contents;"
+            >
+              <img
+                alt=""
+                aria-hidden="true"
+                height="27.75"
+                src="data:image/webp;base64#8f3efb7e"
+                width="32"
+              />
+            </div>
+          </span>
+          <span
+            class="brandName"
+          >
+            <div
+              data-slot="sidebar.brand.name"
+              style="display: contents;"
+            >
+              <span
+                class="fallbackBrandName"
+              >
+                WeWork
+              </span>
+            </div>
+          </span>
+        </span>
+      </button>
+      <button
+        aria-label="Collapse sidebar"
+        class="iconButton toggle"
+        type="button"
+      >
+        <svg
+          class="panelIcon"
+          data-content="35f95b0c"
+          fill="none"
+          height="16"
+          viewBox="0 0 16 16"
+          width="16"
+          xmlns="http://www.w3.org/2000/svg"
+        />
+      </button>
+    </div>
+    <div
+      class="panelList"
+    >
+      <button
+        aria-label="New chat"
+        class="panelRow"
+        type="button"
+      >
+        <span
+          aria-hidden="true"
+          class="panelGlyph"
+        >
+          <svg
+            data-content="c0ce4dcc"
+            fill="none"
+            height="16"
+            viewBox="0 0 16 16"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          />
+        </span>
+        <span
+          class="panelTitle wide"
+        >
+          New chat
+        </span>
+      </button>
+      <button
+        aria-label="New work task"
+        class="panelRow"
+        type="button"
+      >
+        <span
+          aria-hidden="true"
+          class="panelGlyph"
+        >
+          <svg
+            data-content="7d0b657c"
+            fill="none"
+            height="16"
+            viewBox="0 0 16 16"
+            width="16"
+          />
+        </span>
+        <span
+          class="panelTitle wide"
+        >
+          New work task
+        </span>
+      </button>
+    </div>
+    <div
+      class="regionFrame"
+    >
+      <div
+        class="regionArea"
+      >
+        <div
+          data-slot="sidebar.workspaces"
+          style="display: contents;"
+        />
+        <div
+          data-slot="sidebar.recent"
+          style="display: contents;"
+        />
+      </div>
+      <span
+        aria-hidden="true"
+        class="regionFade"
+      />
+    </div>
+    <div
+      class="footArea"
+    >
+      <div
+        class="footerActions"
+      >
+        <div
+          data-slot="sidebar.footer.action"
+          style="display: contents;"
+        />
+      </div>
+      <div
+        class="settingsArea"
+      >
+        <div
+          data-slot="sidebar.settings"
+          style="display: contents;"
+        />
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
 exports[`sidebar shell snapshots > renders the collapsed rail after the crossfade settles, in place 1`] = `
 <div
   data-slot="sidebar"
@@ -42,6 +323,10 @@ exports[`sidebar shell snapshots > renders the collapsed rail after the crossfad
           viewBox="0 0 16 16"
           width="18"
           xmlns="http://www.w3.org/2000/svg"
+        />
+        <div
+          data-slot="sidebar.toggle.badge"
+          style="display: contents;"
         />
       </button>
     </div>

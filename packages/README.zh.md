@@ -47,6 +47,7 @@ harness 由 `packages/` 下的 npm 包组装而成，按能力系列分组：会
 | [`computer-use/`](computer-use/README.zh.md) | 按名称独占注册桌面提供方 |
 | [`browser-use/`](browser-use/README.zh.md) | 按名称独占注册浏览器提供方 |
 | [`sandbox/`](sandbox/README.zh.md) | 进程限制 seam；bwrap、Landlock、Seatbelt 后端 |
+| [`deliverables/`](deliverables/README.zh.md) | 轮次交付物：显式文件交付与记录的工作区改动 |
 | [`fs/`](fs/README.zh.md) | 文件系统能力系列：seam、本地实现、面向模型的文件工具、发现工具 |
 | [`lsp/`](lsp/README.zh.md) | LSP 能力系列：seam、通用 stdio 提供方和 `lsp` 工具 |
 | [`skill/`](skill/README.zh.md) | skill（技能）能力系列：提供方注册表、本地提供方、面向模型的目录／loader |
@@ -61,6 +62,7 @@ harness 由 `packages/` 下的 npm 包组装而成，按能力系列分组：会
 | [`bi/`](bi/README.zh.md) | BI 分析系列：项目目录、已保存图表的列表与执行、会话范围 |
 | [`office/`](office/README.zh.md) | 办公交付物选择系列：一次对话应生成的文档类型，及其提示词分节与选择器 |
 | [`web/`](web/README.zh.md) | Web 能力系列：seam、搜索／获取提供方、面向模型的 Web 工具 |
+| [`document/`](document/README.zh.md) | 共享宿主 Office 到 PDF 转换 |
 | [`attachment/`](attachment/README.zh.md) | 持久附件标识、校验、本地内容寻址存储 |
 | [`spill/`](spill/README.zh.md) | spill 能力系列：存储 seam、本地实现、工具结果 spill 策略 |
 | [`todo/`](todo/README.zh.md) | 面向模型的 `todo_write` 工具 |
