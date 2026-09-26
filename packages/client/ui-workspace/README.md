@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This package lets users browse grouped or flat Session lists, choose a Workspace for a new Session, and manage Workspaces and Sessions through add, rename, reorder, search, fork, archive, and Workspace deletion; the Session row menu and its hover buttons are slot lists that client plugins extend. Every Session row and search result leads its title with a kind glyph — a chat bubble for a chat, a briefcase for a work Session. Pending interactions appear as warning dots, and subagent-origin Sessions remain hidden. An idle, unarchived Session row with active scheduled tasks shows a clock mark, and its hover card lists those tasks. Canonically distinct folder paths remain separate Workspaces. Adding a Workspace requires a composed directory picker; without one, adding is unavailable.
+This package lets users browse grouped or flat Session lists, choose a Workspace for a new Session, and manage Workspaces and Sessions through add, rename, reorder, search, fork, archive, and Workspace deletion; client plugins extend the Session row menu and hover buttons. A kind glyph leads every Session title: a chat bubble for a chat, a briefcase for a work Session. Pending interactions show warning dots, and subagent-origin Sessions stay hidden. An idle Session row with active scheduled tasks shows a clock mark, and its hover card lists them. Adding a Workspace requires a composed directory picker.
 
 ## Table of Contents
 

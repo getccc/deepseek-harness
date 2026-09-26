@@ -4,6 +4,22 @@ This file is GENERATED from workspace manifests (`scripts/gen-plugin-packages.ts
 
 Every package below exports a Cordis plugin that a bundle patch can name in a Loader row. `Config` marks packages whose row accepts a `config` mapping; query `Config.listConfigs` through `cordis_inspect_query` (filter by `name`, then query the `entry` id) for the mounted schema. Packages under `experimental` are pre-stable.
 
+## access
+
+| Package | Config | Description |
+|---|---|---|
+| `@deepseek-ai/dsh-access-control-sqlite` | yes | SQLite-backed access control: roles, grants, governed resources, and the default-deny evaluation over them |
+| `@deepseek-ai/dsh-audit-sqlite` | yes | SQLite-backed audit trail: an append-only event table whose every text column holds a catalog word or a short token, so task content has nowhere to land |
+| `@deepseek-ai/dsh-quota-sqlite` | yes | SQLite-backed quota ledger: reservations, idempotent settlements, and the reconciler that closes the ones nobody settled |
+
+## account
+
+| Package | Config | Description |
+|---|---|---|
+| `@deepseek-ai/dsh-account-auth-password` | yes | Password authentication over the account store: scrypt derivation with self-describing parameters, rehash-on-verify, and the lockout policy |
+| `@deepseek-ai/dsh-account-store-sqlite` | yes | SQLite-backed account store: one database file holding an organization and its member accounts |
+| `@deepseek-ai/dsh-device-authorization-sqlite` | yes | SQLite-backed device authorization: the binding state machine, the device registry, and refresh-token families that revoke on reuse |
+
 ## acp
 
 | Package | Config | Description |
@@ -15,12 +31,16 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | Package | Config | Description |
 |---|---|---|
 | `@deepseek-ai/dsh-api-account-controller` | no | Expose safe account operations over authenticated Remote |
+| `@deepseek-ai/dsh-api-bi-controller` | no | Team-only Host Remote for BI analysis — the authorized project directory a browser reads and the Session project choice it records |
 | `@deepseek-ai/dsh-api-gateway` | yes | Typert Remote Host dispatcher and Client API endpoint |
 | `@deepseek-ai/dsh-api-job-controller` | yes | Job Remote observation stream and the reference-counted client job-output service |
+| `@deepseek-ai/dsh-api-knowledge-controller` | yes | Team-only Host Remote for private knowledge — the authorized directory a browser reads and the Session scope choice it records |
+| `@deepseek-ai/dsh-api-office-controller` | no | Host Remote owner for the Session office-deliverable choice: read what a conversation chose, and record a new choice from the browser |
 | `@deepseek-ai/dsh-api-remotes` | no | Remote BFF assembly for application-selected Host capabilities |
 | `@deepseek-ai/dsh-api-session-controller` | yes | Session Remote commands, cold reads, and live control transport |
 | `@deepseek-ai/dsh-api-settings-controller` | yes | Remote owner for the configuration surfaces over the settings-domain seams |
 | `@deepseek-ai/dsh-api-terminal-controller` | yes | Session-owned interactive terminals with shell discovery, screen recovery and typed Remote control |
+| `@deepseek-ai/dsh-api-web-access-controller` | no | Host Remote owner for the Session web switch: read whether a conversation's agent is offered the web tools, and set it from the browser without a command in the transcript |
 | `@deepseek-ai/dsh-api-workspace-controller` | yes | Workspace Remote commands and reconnect-safe state transport |
 | `@deepseek-ai/dsh-api-workspace-files` | yes | Workspace file service and Client resource provider: bounded reads, directory listing, and live metadata over the workspaceFiles Remote namespace |
 
@@ -29,6 +49,16 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | Package | Config | Description |
 |---|---|---|
 | `@deepseek-ai/dsh-attachment-local` | yes | Private content-addressed DSH_HOME attachment storage |
+
+## bi
+
+| Package | Config | Description |
+|---|---|---|
+| `@deepseek-ai/dsh-bi-gateway-http` | yes | Runner-facing BI endpoints for the DeepSeek Harness Control Plane — device-token verification, protocol-version negotiation before any other field, strict request parsing, and closed refusal mapping |
+| `@deepseek-ai/dsh-bi-gateway-sqlite` | yes | SQLite-backed governed BI gateway (ctx.biGateway) for the DeepSeek Harness Control Plane — the durable project catalog, synchronization against a BI source, per-project authorization, and audit |
+| `@deepseek-ai/dsh-bi-team` | yes | Runner-side BI-analysis provider (ctx.bi) for the DeepSeek Harness Team profile — an outbound Control Plane request carrying the current device token, and no BI address or credential |
+| `@deepseek-ai/dsh-bi-webi` | yes | webi BI-source provider (ctx.biSource) for the DeepSeek Harness Control Plane — the fixed webi routes, per-operation API-key resolution, row and cell bounds, and closed failure mapping |
+| `@deepseek-ai/dsh-tool-bi` | yes | Model-facing BI analysis for the DeepSeek Harness — the bi_list_charts and bi_query_chart tools, the Session scope prompt section, and scope-driven tool visibility |
 
 ## boot
 
@@ -67,7 +97,7 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-client-ui-agent-preset` | no | Agent-preset surfaces: the default for later sessions, this session's seat, and the composition editor |
 | `@deepseek-ai/dsh-client-ui-approval` | no | Approval composer takeover over the scoped Remote Event waterfall |
 | `@deepseek-ai/dsh-client-ui-attachment` | no | Dynamic attachment presentation plugin for conversation input, message-image, and trajectory image slots |
-| `@deepseek-ai/dsh-client-ui-brand-official` | no | Official DeepSeek Harness brand occupants for the Web client's sidebar slots |
+| `@deepseek-ai/dsh-client-ui-bi` | no | BI analysis composer control: the single-select naming which BI project this conversation analyzes, recorded through the Team-only bi Remote |
 | `@deepseek-ai/dsh-client-ui-chat` | no | Chat Conversation target, node definitions, renderers, and details surface |
 | `@deepseek-ai/dsh-client-ui-commands` | no | Client command surface: global directory cache, '/' source, three command UI kinds, popupSelect registry |
 | `@deepseek-ai/dsh-client-ui-conversation` | no | Target-neutral Conversation assembly, shell, composer, queue, and view navigation |
@@ -77,9 +107,12 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-client-ui-goal` | no | Session goal surface: GoalBar docked above the composer, read from the goal session projection |
 | `@deepseek-ai/dsh-client-ui-input-trigger` | no | Input trigger pipeline: '/' and '@' detection, candidate menu, pick routing to registered sources |
 | `@deepseek-ai/dsh-client-ui-jobs` | no | Session-header background-job list with on-demand streaming record panels |
+| `@deepseek-ai/dsh-client-ui-knowledge` | no | The /knowledge picker and the composer chip naming the knowledge this conversation may search |
+| `@deepseek-ai/dsh-client-ui-knowledge-panels` | no | Member-facing knowledge panels: the left-navigation rows, the authorized knowledge-base list, and the ranked retrieval a member runs for themselves |
 | `@deepseek-ai/dsh-client-ui-layout` | no | Shell plugin: three-column AppFrame with drag handles, ctx.layout viewing-state service (navigation + panels) |
 | `@deepseek-ai/dsh-client-ui-message-feedback` | no | The Web feedback surface: per-message Like/Dislike in the assistant-message action strip and the feedback dialog behind both ratings and /feedback, backed by the messageFeedback and sessionFeedback Host Remotes |
 | `@deepseek-ai/dsh-client-ui-model-selection` | no | Model selection over the shared model catalog, Session projection, and session.selectModel |
+| `@deepseek-ai/dsh-client-ui-office` | no | The composer chip choosing which office deliverable this conversation should produce: Word, PowerPoint, the Welinkin PowerPoint template, or Excel |
 | `@deepseek-ai/dsh-client-ui-open-in-app` | no | Web "Open In..." controls: the Session-header split button opening the workspace directory in an installed application, and the document preview's default-application controls for one file |
 | `@deepseek-ai/dsh-client-ui-permission-presets` | no | Permission surfaces: a new-session default in General settings and a current-session /permission popup over the permissions projection |
 | `@deepseek-ai/dsh-client-ui-plan` | no | Plan mode controls, persistent transcript plan cards, and sidebar Markdown previews |
@@ -111,6 +144,8 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-client-ui-tool` | no | Client Tool call-tree renderer and keyed per-tool presentation slot |
 | `@deepseek-ai/dsh-client-ui-trajectory` | no | Trajectory event ledger with an interactive timing overview: pure-consumer plugin registering into the conversation ViewMap (no service) |
 | `@deepseek-ai/dsh-client-ui-user-questions` | no | Web ask_user_question composer takeover and plan-review presentation UI |
+| `@deepseek-ai/dsh-client-ui-voice` | no | Composer voice controls: the record-and-transcribe chip in the tool row and the voice-input button beside the send action |
+| `@deepseek-ai/dsh-client-ui-web-access` | no | Web access composer control: the conversation.input.left switch over the webAccess projection and the webAccess Remote |
 | `@deepseek-ai/dsh-client-ui-workflow-run` | no | Durable workflow-run Conversation Node and nested member disclosure for dsh web |
 | `@deepseek-ai/dsh-client-ui-workspace` | no | Workspace picker plugin: one WorkspacePicker registered into the sidebar and empty-state workspace slots |
 
@@ -234,6 +269,7 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 |---|---|---|
 | `@deepseek-ai/dsh-repeat-tool-reminder` | yes | Repeat-tool-call guard plugin: advisory reminders when an agent loops on identical tool calls |
 | `@deepseek-ai/dsh-tool-call-timeout-policy` | no | Tool-call timeout policy: a tools/execute wrapper that arms a per-tool deadline on exec.signal and returns TOOL_TIMEOUT when it wins |
+| `@deepseek-ai/dsh-tool-restriction` | yes | Tool-catalog restriction plugin: masks the global tools the agents of one composition see, by allow-list or deny-list |
 
 ## hooks
 
@@ -272,6 +308,16 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-jobs-local` | yes | Process-local implementation of the DeepSeek Harness background job registry seam |
 | `@deepseek-ai/dsh-tool-jobs` | yes | Model-facing background job control tools (job_output, job_list, job_kill) over the ctx.jobs registry |
 
+## knowledge
+
+| Package | Config | Description |
+|---|---|---|
+| `@deepseek-ai/dsh-knowledge-gateway-http` | yes | Runner-facing knowledge endpoints for the DeepSeek Harness Control Plane — device-token verification, protocol-version negotiation, strict request parsing, and closed refusal mapping |
+| `@deepseek-ai/dsh-knowledge-gateway-sqlite` | yes | SQLite-backed governed knowledge gateway for the DeepSeek Harness Control Plane — durable catalog, synchronization against an upstream source, per-resource authorization, and audit |
+| `@deepseek-ai/dsh-knowledge-team` | yes | Runner-side private-knowledge provider for the DeepSeek Harness — reads the current device token per operation and reaches the company Control Plane, holding no knowledge address or credential |
+| `@deepseek-ai/dsh-knowledge-weknora` | yes | WeKnora knowledge-source provider for the DeepSeek Harness Control Plane — the fixed list and hybrid-search endpoints, per-operation credential resolution, and closed failure mapping |
+| `@deepseek-ai/dsh-tool-knowledge` | yes | Model-facing private-knowledge search for the DeepSeek Harness — the knowledge_search tool, the Session scope prompt section, and scope-driven tool visibility |
+
 ## llm
 
 | Package | Config | Description |
@@ -280,8 +326,11 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-llm` | no | Provider-neutral LLM service interface for the DeepSeek Harness |
 | `@deepseek-ai/dsh-llm-deepseek-account` | yes | DeepSeek account provider authentication and discovery |
 | `@deepseek-ai/dsh-llm-deepseek-api-key` | yes | DeepSeek api-key provider authentication and discovery |
+| `@deepseek-ai/dsh-llm-http-transport-team` | yes | The team transport: a company model request going out through the Control Plane, with no address and no credential of its own |
 | `@deepseek-ai/dsh-llm-pi-ai` | yes | pi-ai-backed DeepSeek adapter for the DeepSeek Harness LLM seam (design-verification twin of dsh-llm-deepseek) |
 | `@deepseek-ai/dsh-llm-retry` | yes | Provider-routed LLM request retry policy for the DeepSeek Harness |
+| `@deepseek-ai/dsh-model-gateway-http` | yes | The Control Plane's company model endpoint: authorize, attach the credential, stream the provider's answer, and settle from what it reported |
+| `@deepseek-ai/dsh-model-gateway-sqlite` | yes | SQLite-backed model gateway: the catalog store, and the authorization and reservation in front of it |
 | `@deepseek-ai/dsh-plugin-package-inventory-deepseek` | yes | Active Loader-backed plugin package inventory for official DeepSeek LLM API requests |
 | `@deepseek-ai/dsh-token-meter` | yes | Replay-aware token measurement service (ctx.tokenMeter) for the DeepSeek Harness |
 
@@ -299,6 +348,12 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 |---|---|---|
 | `@deepseek-ai/dsh-mcp-client` | yes | MCP client bridge: connects to MCP servers and registers their tools on ctx.tools |
 | `@deepseek-ai/dsh-mcp-resources` | no | Scoped MCP resource discovery and reading through shared model tools |
+
+## office
+
+| Package | Config | Description |
+|---|---|---|
+| `@deepseek-ai/dsh-tool-office` | yes | What a model sees of the office-deliverable choice: the prompt section naming the document kind to produce (with the Welinkin template path when configured), and the projection a composer chip reads |
 
 ## plan
 
@@ -445,6 +500,23 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 |---|---|---|
 | `@deepseek-ai/dsh-subprocess-local` | no | Local-subprocess implementation of the DeepSeek Harness subprocess seam |
 
+## team
+
+| Package | Config | Description |
+|---|---|---|
+| `@deepseek-ai/dsh-team-account-client` | yes | The Runner's team account: the device key it keeps, the credential it holds, and the calls it makes to the Control Plane |
+| `@deepseek-ai/dsh-team-admin-api` | yes | The administration console's browser API: JSON over the Control Plane session, with the same authorization and audit path a form post took |
+| `@deepseek-ai/dsh-team-admin-app` | no | Serving the administration console from the Control Plane: the built application's files under one address, and nothing else |
+| `@deepseek-ai/dsh-team-console-menu-sqlite` | yes | SQLite-backed console menus: one database file holding an organization's administration navigation and the shipped entries it starts from |
+| `@deepseek-ai/dsh-team-control-plane-http` | yes | The Control Plane's Runner-facing binding endpoints: open a transaction, redeem an authorization code, exchange a refresh token |
+| `@deepseek-ai/dsh-team-desktop-update` | no | Desktop update control: the sidebar member-row action over the desktop shell's update bridge |
+| `@deepseek-ai/dsh-team-local-handoff` | yes | The Runner local navigation endpoints that carry a member from the company site into the application on their own computer |
+| `@deepseek-ai/dsh-team-local-login` | yes | The Team Runner's local member sign-in and application-entry endpoints |
+| `@deepseek-ai/dsh-team-release` | yes | Published desktop releases: the signed manifests a deployment offers, who each one is offered to, and the oldest build it still accepts |
+| `@deepseek-ai/dsh-team-release-http` | yes | The Control Plane's Runner-facing release route: which published release a member is offered, and the version floor this deployment enforces |
+| `@deepseek-ai/dsh-team-shell` | yes | The Control Plane's device-confirmation page: what a member compares before a computer is bound to their account |
+| `@deepseek-ai/dsh-team-update-source` | yes | The Runner's loopback release route: the desktop shell asks it, and the Runner asks the Control Plane with the device credential the shell does not hold |
+
 ## terminal
 
 | Package | Config | Description |
@@ -480,7 +552,9 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-web-fetch-http` | yes | Anonymous public HTTP(S) fetch provider for the DeepSeek Harness web capability seam (ctx.web) |
 | `@deepseek-ai/dsh-web-search-deepseek` | yes | DeepSeek-backed search provider (native web_search via the Anthropic-compatible API) for the DeepSeek Harness web capability seam (ctx.web) |
 | `@deepseek-ai/dsh-web-search-exa` | yes | Exa-backed search provider for the DeepSeek Harness web capability seam (ctx.web) |
+| `@deepseek-ai/dsh-web-search-gateway-http` | yes | The Control Plane's Runner-facing web search route: device-token verification, a per-member web.search decision, the search through the Control Plane's own web service, and an audit record |
 | `@deepseek-ai/dsh-web-search-perplexity` | yes | Perplexity-backed search provider for the DeepSeek Harness web capability seam (ctx.web) |
+| `@deepseek-ai/dsh-web-search-team` | yes | The Team Runner's web search provider: one Control Plane request carrying the device token and the query, and no search credential or address of its own |
 
 ## webhook
 

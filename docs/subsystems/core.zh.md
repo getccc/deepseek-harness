@@ -521,6 +521,23 @@ async list(): Promise<AgentPreset[]>
  */
 async resolve(id?: string): Promise<AgentPreset>
 
+/**
+ * Resolve the preset one session location composes: the named preset, or
+ * the location's default — {@link defaultId} for a session that owns a
+ * cwd, {@link chatDefaultId} for one that owns none — refusing a preset
+ * whose declared workspace requirement disagrees with the location. This
+ * is where a misconfigured default fails: a `chatDefault` that declares no
+ * `workspace: none`, or a user default that does, is refused at the first
+ * session it would compose.
+ * @param workspace - `required` when the session owns a cwd, `none` otherwise.
+ * @param id - the preset id, or `undefined` for the location's default.
+ * @returns the resolved preset.
+ * @throws {RemoteError} `agent-preset/not-found` when no declaration supplies
+ * the preset or no `chatDefault` is configured, `agent-preset/workspace-mismatch`
+ * when the preset's requirement disagrees with the location.
+ */
+async resolveFor(workspace: PresetWorkspace, id?: string): Promise<AgentPreset>
+
 /** Read one declaration's child plugin list as YAML, for viewing only.
  * @param agentPreset Preset identity.
  * @returns The declared composition beside its published metadata.
@@ -565,6 +582,9 @@ async recompose(ctx: Context, id: string): Promise<AgentPreset>
  * @param agent Target Agent.
  * @param agentPreset Requested identity.
  * @returns Committed preset identity.
+ * @throws {RemoteError} `agent-preset/locked` once the session has started, and
+ * `agent-preset/workspace-mismatch` when the preset's workspace requirement
+ * disagrees with the session's location.
  */
 @Remote('select') async select(agent: Agent, agentPreset: string): Promise<string>
 

@@ -35,7 +35,7 @@ Every package lives in exactly one group; new packages join existing groups, and
 | [`schedule/`](schedule/README.md) | Host-owned scheduled follow-ups |
 | [`feedback/`](feedback/README.md) | Human feedback capture and command |
 | [`account/`](account/README.md) | Team Edition identity: organizations, member accounts, and sign-in state |
-| [`access/`](access/README.md) | Team Edition governance: the permission catalog, roles, grants, governed resources, and the audit trail |
+| [`access/`](access/README.md) | Team Edition governance: permission catalog, roles, grants, governed resources, and audit trail |
 | [`team/`](team/README.md) | Team Edition handoff: the Control Plane binding endpoints, the Runner account custody, and the local addresses a browser navigates to |
 | [`identity/`](identity/README.md) | Shared anonymous identity |
 | [`llm/`](llm/README.md) | LLM capability family: abstract service + provider adapters |

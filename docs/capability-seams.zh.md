@@ -9,6 +9,42 @@
 
 ```mermaid
 flowchart LR
+  pkg_account_store["account-store"]
+  svc_accountStore["ctx.accountStore<br/>Team Edition organizations and member accounts"]
+  pkg_account_store_sqlite["account-store-sqlite"]
+  pkg_account_auth_password["account-auth-password"]
+  pkg_access_control_sqlite["access-control-sqlite"]
+  pkg_team_admin_api["team-admin-api"]
+  pkg_team_control_plane_http["team-control-plane-http"]
+  pkg_team_shell["team-shell"]
+  pkg_account_auth["account-auth"]
+  svc_accountAuth["ctx.accountAuth<br/>Proving a member is who they claim"]
+  pkg_access_control["access-control"]
+  svc_accessControl["ctx.accessControl<br/>Default-deny authorization over roles and grants"]
+  pkg_model_gateway_sqlite["model-gateway-sqlite"]
+  pkg_team_console_menu["team-console-menu"]
+  svc_consoleMenu["ctx.consoleMenu<br/>Organization-owned administration navigation"]
+  pkg_team_console_menu_sqlite["team-console-menu-sqlite"]
+  pkg_audit["audit"]
+  svc_audit["ctx.audit<br/>The append-only audit trail"]
+  pkg_audit_sqlite["audit-sqlite"]
+  pkg_quota["quota"]
+  svc_quota["ctx.quota<br/>The budget ledger for company model calls"]
+  pkg_quota_sqlite["quota-sqlite"]
+  pkg_model_gateway["model-gateway"]
+  svc_modelGateway["ctx.modelGateway<br/>The company model catalog and the decision in front of it"]
+  pkg_model_gateway_http["model-gateway-http"]
+  pkg_llm_http_transport["llm-http-transport"]
+  svc_llmHttpTransport["ctx.llmHttpTransport<br/>How a model request reaches a provider"]
+  pkg_llm_http_transport_team["llm-http-transport-team"]
+  pkg_llm_deepseek["llm-deepseek"]
+  pkg_device_authorization["device-authorization"]
+  svc_deviceAuthorization["ctx.deviceAuthorization<br/>Binding a successful authentication to one computer"]
+  pkg_device_authorization_sqlite["device-authorization-sqlite"]
+  pkg_team_account_client["team-account-client"]
+  svc_teamAccountClient["ctx.teamAccountClient<br/>The Runner side of the team account"]
+  pkg_team_local_login["team-local-login"]
+  pkg_team_local_handoff["team-local-handoff"]
   pkg_hmr["hmr"]
   svc_hmr["ctx.hmr<br/>Serialized module and configuration reloads"]
   pkg_app_boot["app-boot"]
@@ -22,6 +58,10 @@ flowchart LR
   svc_connection["ctx.connection<br/>Authenticated browser transport"]
   pkg_api_gateway["api-gateway"]
   pkg_host_frontend_static["host-frontend-static"]
+  svc_browserSession["ctx.browserSession<br/>Browser sign-in cookies for Team surfaces"]
+  pkg_team_release["team-release"]
+  svc_teamReleases["ctx.teamReleases<br/>Published desktop releases"]
+  pkg_team_release_http["team-release-http"]
   pkg_mcp_resources["mcp-resources"]
   svc_mcpResources["ctx.mcpResources<br/>Scoped MCP resource access"]
   pkg_mcp_client["mcp-client"]
@@ -43,7 +83,6 @@ flowchart LR
   pkg_api_session_controller["api-session-controller"]
   pkg_tool_fs["tool-fs"]
   pkg_llm_pi_ai["llm-pi-ai"]
-  pkg_llm_deepseek["llm-deepseek"]
   pkg_client_file_upload["client-file-upload"]
   svc_fileUploads["ctx.fileUploads<br/>Agent-scoped staged file uploads"]
   pkg_llm["llm"]
@@ -242,6 +281,26 @@ flowchart LR
   svc_jobs["ctx.jobs<br/>Background job registry"]
   pkg_jobs_local["jobs-local"]
   pkg_tool_jobs["tool-jobs"]
+  pkg_bi["bi"]
+  svc_bi["ctx.bi<br/>BI analysis seam"]
+  pkg_bi_team["bi-team"]
+  pkg_tool_bi["tool-bi"]
+  pkg_bi_gateway["bi-gateway"]
+  svc_biGateway["ctx.biGateway<br/>Governed BI gateway"]
+  pkg_bi_gateway_sqlite["bi-gateway-sqlite"]
+  pkg_bi_source["bi-source"]
+  svc_biSource["ctx.biSource<br/>Upstream BI source seam"]
+  pkg_bi_webi["bi-webi"]
+  pkg_knowledge["knowledge"]
+  svc_knowledge["ctx.knowledge<br/>Private knowledge seam"]
+  pkg_knowledge_team["knowledge-team"]
+  pkg_tool_knowledge["tool-knowledge"]
+  pkg_knowledge_gateway["knowledge-gateway"]
+  svc_knowledgeGateway["ctx.knowledgeGateway<br/>Governed knowledge gateway"]
+  pkg_knowledge_gateway_sqlite["knowledge-gateway-sqlite"]
+  pkg_knowledge_source["knowledge-source"]
+  svc_knowledgeSource["ctx.knowledgeSource<br/>Upstream knowledge source seam"]
+  pkg_knowledge_weknora["knowledge-weknora"]
   pkg_web["web"]
   svc_web["ctx.web<br/>Web access provider registry"]
   pkg_web_search_exa["web-search-exa"]
@@ -273,6 +332,12 @@ flowchart LR
   pkg_cordis_host_runner["cordis-host-runner"]
   svc_dynamicCordisRunner["ctx.dynamicCordisRunner<br/>Dynamic Cordis package host runner"]
   svc_cordisInspect["ctx.cordisInspect<br/>Dynamic Cordis inspect registry"]
+  pkg_access_control --> svc_accessControl
+  pkg_access_control_sqlite --> svc_accessControl
+  pkg_account_auth --> svc_accountAuth
+  pkg_account_auth_password --> svc_accountAuth
+  pkg_account_store --> svc_accountStore
+  pkg_account_store_sqlite --> svc_accountStore
   pkg_agent --> svc_agents
   pkg_agent_default_model --> svc_agentDefaultModel
   pkg_agent_loop --> svc_agentLoop
@@ -291,10 +356,19 @@ flowchart LR
   pkg_app_boot --> svc_profileContext
   pkg_attachment --> svc_attachments
   pkg_attachment_local --> svc_attachments
+  pkg_audit --> svc_audit
+  pkg_audit_sqlite --> svc_audit
   pkg_authorization --> svc_authorization
   pkg_bash_local --> svc_shell
   pkg_bash_sandbox --> svc_shell
+  pkg_bi --> svc_bi
+  pkg_bi_gateway --> svc_biGateway
+  pkg_bi_gateway_sqlite --> svc_biGateway
+  pkg_bi_source --> svc_biSource
+  pkg_bi_team --> svc_bi
+  pkg_bi_webi --> svc_biSource
   pkg_browser_use --> svc_browserUse
+  pkg_client_connection --> svc_browserSession
   pkg_client_connection --> svc_connection
   pkg_client_file_upload --> svc_fileUploads
   pkg_client_modules --> svc_clientModules
@@ -313,6 +387,8 @@ flowchart LR
   pkg_deepseek_account --> svc_deepseekAccount
   pkg_deepseek_account_platform --> svc_deepseekAccount
   pkg_deepseek_llm_api_extensions --> svc_deepseekLlmApiExtensions
+  pkg_device_authorization --> svc_deviceAuthorization
+  pkg_device_authorization_sqlite --> svc_deviceAuthorization
   pkg_experimental_agent_team --> svc_agentTeams
   pkg_experimental_api_speech_to_text --> svc_speechController
   pkg_experimental_browser_use_chrome_devtools_mcp --> svc_browserUse
@@ -340,8 +416,16 @@ flowchart LR
   pkg_invariants --> svc_invariants
   pkg_jobs --> svc_jobs
   pkg_jobs_local --> svc_jobs
+  pkg_knowledge --> svc_knowledge
+  pkg_knowledge_gateway --> svc_knowledgeGateway
+  pkg_knowledge_gateway_sqlite --> svc_knowledgeGateway
+  pkg_knowledge_source --> svc_knowledgeSource
+  pkg_knowledge_team --> svc_knowledge
+  pkg_knowledge_weknora --> svc_knowledgeSource
   pkg_llm --> svc_llm
   pkg_llm_deepseek --> svc_llm
+  pkg_llm_http_transport --> svc_llmHttpTransport
+  pkg_llm_http_transport_team --> svc_llmHttpTransport
   pkg_llm_pi_ai --> svc_llm
   pkg_llm_replay --> svc_llm
   pkg_lsp --> svc_lsp
@@ -349,6 +433,8 @@ flowchart LR
   pkg_mcp_client --> svc_mcpResources
   pkg_mcp_resources --> svc_mcpResources
   pkg_message_feedback --> svc_messageFeedback
+  pkg_model_gateway --> svc_modelGateway
+  pkg_model_gateway_sqlite --> svc_modelGateway
   pkg_office_to_pdf --> svc_officeToPdf
   pkg_permission_presets --> svc_permissionPresets
   pkg_plan_mode --> svc_planMode
@@ -357,6 +443,8 @@ flowchart LR
   pkg_ptc_runtime --> svc_ptcRuntime
   pkg_ptc_runtime_node --> svc_ptcRuntime
   pkg_pwsh_local --> svc_shell
+  pkg_quota --> svc_quota
+  pkg_quota_sqlite --> svc_quota
   pkg_sandbox --> svc_sandbox
   pkg_sandbox_local --> svc_sandbox
   pkg_sandbox_policy --> svc_sandboxPolicy
@@ -401,6 +489,10 @@ flowchart LR
   pkg_subprocess_local --> svc_subprocess
   pkg_subprocess_ssh --> svc_subprocess
   pkg_system_prompt --> svc_systemPrompt
+  pkg_team_account_client --> svc_teamAccountClient
+  pkg_team_console_menu --> svc_consoleMenu
+  pkg_team_console_menu_sqlite --> svc_consoleMenu
+  pkg_team_release --> svc_teamReleases
   pkg_terminal --> svc_terminals
   pkg_terminal_bash --> svc_terminals
   pkg_token_meter --> svc_tokenMeter
@@ -419,6 +511,15 @@ flowchart LR
   pkg_workflow_ptc --> svc_workflowEngine
   pkg_workspace --> svc_workspaceRegistry
   pkg_workspace_changes --> svc_workspaceChanges
+  svc_accessControl --> pkg_model_gateway_sqlite
+  svc_accessControl --> pkg_team_admin_api
+  svc_accountAuth --> pkg_team_admin_api
+  svc_accountAuth --> pkg_team_control_plane_http
+  svc_accountStore --> pkg_access_control_sqlite
+  svc_accountStore --> pkg_account_auth_password
+  svc_accountStore --> pkg_team_admin_api
+  svc_accountStore --> pkg_team_control_plane_http
+  svc_accountStore --> pkg_team_shell
   svc_agentDefaultModel --> pkg_api_session_controller
   svc_agentDefaultModel --> pkg_headless
   svc_agentLoop --> pkg_base
@@ -434,7 +535,13 @@ flowchart LR
   svc_attachments --> pkg_llm_deepseek
   svc_attachments --> pkg_llm_pi_ai
   svc_attachments --> pkg_tool_fs
+  svc_audit --> pkg_team_admin_api
+  svc_audit --> pkg_team_control_plane_http
+  svc_audit --> pkg_team_shell
   svc_authorization --> pkg_llm_pi_ai
+  svc_bi --> pkg_tool_bi
+  svc_browserSession --> pkg_team_local_handoff
+  svc_browserSession --> pkg_team_local_login
   svc_browserUse --> pkg_experimental_browser_use_chrome_devtools_mcp
   svc_browserUse --> pkg_experimental_browser_use_playwright_mcp
   svc_browserUse --> pkg_experimental_browser_use_stagehand_native
@@ -446,6 +553,7 @@ flowchart LR
   svc_configEditor --> pkg_settings
   svc_connection --> pkg_api_gateway
   svc_connection --> pkg_host_frontend_static
+  svc_consoleMenu --> pkg_team_admin_api
   svc_cordisInspect --> pkg_tool_cordis
   svc_credentials --> pkg_api_settings_controller
   svc_credentials --> pkg_llm_deepseek
@@ -453,6 +561,9 @@ flowchart LR
   svc_deepseekAccount --> pkg_api_account_controller
   svc_deepseekAccount --> pkg_llm_deepseek
   svc_deepseekLlmApiExtensions --> pkg_llm_deepseek
+  svc_deviceAuthorization --> pkg_team_admin_api
+  svc_deviceAuthorization --> pkg_team_control_plane_http
+  svc_deviceAuthorization --> pkg_team_shell
   svc_directoryPicker --> pkg_api_workspace_controller
   svc_dynamicCordisRunner --> pkg_tool_cordis
   svc_fileReferences --> pkg_api_session_controller
@@ -469,10 +580,13 @@ flowchart LR
   svc_jobs --> pkg_tool_pwsh
   svc_jobs --> pkg_tool_subagent
   svc_jobs --> pkg_tool_terminal
+  svc_knowledge --> pkg_tool_knowledge
   svc_llm --> pkg_agent_loop
   svc_llm --> pkg_compaction_basic
+  svc_llmHttpTransport --> pkg_llm_deepseek
   svc_lsp --> pkg_tool_lsp
   svc_mcpResources --> pkg_mcp_resources
+  svc_modelGateway --> pkg_model_gateway_http
   svc_officeToPdf --> pkg_client_ui_sidebar_documentpreview
   svc_pluginManager --> pkg_plugin_manager
   svc_pluginManager --> pkg_ui_settings_plugin_inventory
@@ -480,6 +594,7 @@ flowchart LR
   svc_profileContext --> pkg_plugin_manager
   svc_ptcRuntime --> pkg_tools
   svc_ptcRuntime --> pkg_workflow_ptc
+  svc_quota --> pkg_model_gateway_sqlite
   svc_sandbox --> pkg_bash_sandbox
   svc_sandbox --> pkg_terminal_bash
   svc_sandboxPolicy --> pkg_bash_sandbox
@@ -539,6 +654,10 @@ flowchart LR
   svc_systemPrompt --> pkg_tool_terminal
   svc_systemPrompt --> pkg_tool_web
   svc_systemPrompt --> pkg_tools
+  svc_teamAccountClient --> pkg_team_local_handoff
+  svc_teamAccountClient --> pkg_team_local_login
+  svc_teamReleases --> pkg_team_admin_api
+  svc_teamReleases --> pkg_team_release_http
   svc_terminals --> pkg_tool_terminal
   svc_tokenMeter --> pkg_compaction_basic
   svc_toolResultPruner --> pkg_compaction_basic
@@ -569,11 +688,23 @@ flowchart LR
 
 | ctx 键 | 角色 | 所属包 | 实现 | 直接消费方 | 配套插件 | 说明 |
 | --- | --- | --- | --- | --- | --- | --- |
+| `ctx.accountStore` | `seam` | [`account-store`](../packages/account/account-store) | [`account-store-sqlite`](../packages/account/account-store-sqlite) | [`account-auth-password`](../packages/account/account-auth-password), [`access-control-sqlite`](../packages/access/access-control-sqlite), [`team-admin-api`](../packages/team/team-admin-api), [`team-control-plane-http`](../packages/team/team-control-plane-http), [`team-shell`](../packages/team/team-shell) | - | 只存在于服务端：由 Control Plane 组合，任何 Runner 都不挂载它。它同时持有每一份授权缓存据以作 Key 的组织策略修订号。 |
+| `ctx.accountAuth` | `seam` | [`account-auth`](../packages/account/account-auth) | [`account-auth-password`](../packages/account/account-auth-password) | [`team-admin-api`](../packages/team/team-admin-api), [`team-control-plane-http`](../packages/team/team-control-plane-http) | - | 验证与存储分离，于是第二种方式以 Provider 的形式到来。密码 Provider 存放自描述的哈希，并在一次成功验证时重新哈希。 |
+| `ctx.accessControl` | `seam` | [`access-control`](../packages/access/access-control) | [`access-control-sqlite`](../packages/access/access-control-sqlite) | [`team-admin-api`](../packages/team/team-admin-api), [`model-gateway-sqlite`](../packages/llm/model-gateway-sqlite) | - | 没有显式拒绝、没有继承、没有表达式语言，因此一个决定通过指名准许它的那些授权来解释。管理 API 在每一次管理动作之前询问它，模型网关在每一次调用之前询问它。 |
+| `ctx.consoleMenu` | `seam` | [`team-console-menu`](../packages/team/team-console-menu) | [`team-console-menu-sqlite`](../packages/team/team-console-menu-sqlite) | [`team-admin-api`](../packages/team/team-admin-api) | - | 条目声明导航和一项目录权限，但不做决定。管理 API 把角色菜单选择转换为访问控制授权，每个目标页面仍会再次鉴权自己的请求。 |
+| `ctx.audit` | `seam` | [`audit`](../packages/access/audit) | [`audit-sqlite`](../packages/access/audit-sqlite) | [`team-admin-api`](../packages/team/team-admin-api), [`team-control-plane-http`](../packages/team/team-control-plane-http), [`team-shell`](../packages/team/team-shell) | - | 封闭的动作与元数据目录，加上对每个调用方提供的字符串的 token 规则，因此一条记录装不下成员的工作内容。成员经由其行动的那些界面写入记录，因为它们才知道是哪个主体在行动。 |
+| `ctx.quota` | `seam` | [`quota`](../packages/access/quota) | [`quota-sqlite`](../packages/access/quota-sqlite) | [`model-gateway-sqlite`](../packages/llm/model-gateway-sqlite) | - | 预留是一个请求所能花费的上限，而结算只发生一次，因此崩溃不会在不留记录的情况下花费，重试也不会计费两次。模型网关正是它为之而建的消费方。 |
+| `ctx.modelGateway` | `seam` | [`model-gateway`](../packages/llm/model-gateway) | [`model-gateway-sqlite`](../packages/llm/model-gateway-sqlite) | [`model-gateway-http`](../packages/llm/model-gateway-http) | - | Runner 指名一个模型，拿回一个它自己构造不出来的调用：Endpoint、上游名和凭据全都来自目录。 |
+| `ctx.llmHttpTransport` | `seam` | [`llm-http-transport`](../packages/llm/llm-http-transport) | [`llm-http-transport-team`](../packages/llm/llm-http-transport-team) | [`llm-deepseek`](../packages/llm/llm-deepseek) | - | 请求指名的是封闭列表中的一个操作和一个模型，绝不是 URL，因此没有任何调用方决定凭据去往何处。远程策略归 Transport 所有时，DeepSeek Adapter 也会把模型发现委托给它。 |
+| `ctx.deviceAuthorization` | `seam` | [`device-authorization`](../packages/account/device-authorization) | [`device-authorization-sqlite`](../packages/account/device-authorization-sqlite) | [`team-admin-api`](../packages/team/team-admin-api), [`team-control-plane-http`](../packages/team/team-control-plane-http), [`team-shell`](../packages/team/team-shell) | - | 默认 Runner 流程认证账户并批准 Transaction；PKCE 与设备签名证明完成兑换的电脑持有密钥。可选的浏览器交接也可以提供批准。 |
+| `ctx.teamAccountClient` | `seam` | [`team-account-client`](../packages/team/team-account-client) | - | [`team-local-login`](../packages/team/team-local-login), [`team-local-handoff`](../packages/team/team-local-handoff) | - | 在成员电脑上持有设备密钥与凭据，并通过 HTTPS 调用 Control Plane。公司 Provider 凭据从不到达它。 |
 | `ctx.hmr` | `core` | [`hmr`](../packages/boot/hmr) | - | [`app-boot`](../packages/boot/app-boot) | - | 负责模块和精确配置监听；应用修改共用其队列，自动重载等待应用文件锁。 |
 | `ctx.pluginRegistryProbe` | `core` | [`client-ui-plugin-manager`](../packages/client/ui-plugin-manager) | - | [`client-ui-plugin-manager`](../packages/client/ui-plugin-manager) | - | 在 Host 上并发比较公共安装源响应；初始安装源推荐由 Client 负责。 |
 | `ctx.pluginManager` | `core` | [`plugin-manager`](../packages/boot/plugin-manager) | - | [`plugin-manager`](../packages/boot/plugin-manager), `ui-settings-plugin-inventory` | - | 与 CLI 共享 profile 包操作，并向 Web 和 Agent 调用方分别报告持久状态与运行状态。 |
 | `ctx.profileContext` | `core` | [`app-boot`](../packages/boot/app-boot) | - | [`plugin-manager`](../packages/boot/plugin-manager) | - | dsh launcher 提供纯数据形式的 profile 位置与组合输入；重载调度由 dsh-hmr 负责。 |
 | `ctx.connection` | `core` | [`client-connection`](../packages/client/connection) | - | [`api-gateway`](../packages/api/gateway), [`host-frontend-static`](../packages/host/frontend-static) | - | 负责浏览器认证与共享 HTTP 请求分发；API 适配器注册端点和流。 |
+| `ctx.browserSession` | `core` | [`client-connection`](../packages/client/connection) | - | [`team-local-login`](../packages/team/team-local-login), [`team-local-handoff`](../packages/team/team-local-handoff) | - | 传输层强制执行的同一套浏览器认证，暴露给 Team 登录与交接路由，使其能够签发、读取并结束已登录的浏览器会话。 |
+| `ctx.teamReleases` | `seam` | [`team-release`](../packages/team/team-release) | - | [`team-release-http`](../packages/team/team-release-http), [`team-admin-api`](../packages/team/team-admin-api) | - | 保存发布机产出的签名清单、它提供给谁，以及版本下限。Control Plane 分发它收到的内容，无法签署属于自己的版本。 |
 | `ctx.mcpResources` | `seam` | [`mcp-resources`](../packages/mcp/mcp-resources) | [`mcp-client`](../packages/mcp/mcp-client) | [`mcp-resources`](../packages/mcp/mcp-resources) | - | 连接所有者提供的操作在调用 agent 的作用域内服务于共享资源工具。 |
 | `ctx.browserUse` | `seam` | [`browser-use`](../packages/browser-use/browser-use) | [`experimental-browser-use-playwright-mcp`](../packages/experimental/browser-use-playwright-mcp), [`experimental-browser-use-chrome-devtools-mcp`](../packages/experimental/browser-use-chrome-devtools-mcp), [`experimental-browser-use-stagehand-native`](../packages/experimental/browser-use-stagehand-native) | [`experimental-browser-use-playwright-mcp`](../packages/experimental/browser-use-playwright-mcp), [`experimental-browser-use-chrome-devtools-mcp`](../packages/experimental/browser-use-chrome-devtools-mcp), [`experimental-browser-use-stagehand-native`](../packages/experimental/browser-use-stagehand-native) | - | 每个服务实例注册一个提供方拥有的名称。提供方按实时 Session 拥有自己的工具与浏览器资源；共享服务不提供浏览器操作 API。 |
 | `ctx.computerUse` | `seam` | [`computer-use`](../packages/computer-use/computer-use) | [`experimental-computer-use-cua-driver-mcp`](../packages/experimental/computer-use-cua-driver-mcp), [`experimental-computer-use-cua-driver-native`](../packages/experimental/computer-use-cua-driver-native) | [`experimental-computer-use-cua-driver-mcp`](../packages/experimental/computer-use-cua-driver-mcp), [`experimental-computer-use-cua-driver-native`](../packages/experimental/computer-use-cua-driver-native) | - | 每个服务实例只注册一个提供方自定的名称。各提供方也拥有自己的模型工具；服务不提供通用操作 API、运行时选择或 Session 流程锁。 |
@@ -649,6 +780,12 @@ flowchart LR
 | `ctx.agentTeams` | `core` | [`experimental-agent-team`](../packages/experimental/agent-team) | - | [`experimental-tool-agent-team`](../packages/experimental/tool-agent-team) | - | 负责隐式 Root roster、持久 peer mailbox、共享任务 DAG 与 continuable child 生命周期；tool-agent-team 提供模型控制工具。 |
 | `ctx.inspector` | `core` | `inspector` | - | - | - | 负责 Worker 托管的 CDP target，以及独立于传输的 Host 和 Client observation 与 Cordis tree query API。 |
 | `ctx.jobs` | `seam` | [`jobs`](../packages/jobs/jobs) | [`jobs-local`](../packages/jobs/jobs-local) | [`tool-bash`](../packages/shell/tool-bash), [`tool-pwsh`](../packages/shell/tool-pwsh), [`tool-terminal`](../packages/terminal/tool-terminal), [`tool-subagent`](../packages/subagent/tool-subagent), [`tool-jobs`](../packages/jobs/tool-jobs), [`api-job-controller`](../packages/api/job-controller) | - | 生产方（后台 bash/pwsh、PTY 发送和 subagent 委派）登记正在运行的工作；声明 record 的 job 还为非消费观察者流式提供原始输出；tool-jobs 是面向模型的控制器，用于读取、列出和终止这些工作；jobs-local 是进程本地注册表。 |
+| `ctx.bi` | `seam` | [`bi`](../packages/bi/bi) | [`bi-team`](../packages/bi/bi-team) | [`tool-bi`](../packages/bi/tool-bi) | - | 受治理部署所授权的项目目录、已保存图表列表与图表执行操作；bi-team 触达授权它们的 Control Plane，tool-bi 是模型所见的结果。 |
+| `ctx.biGateway` | `seam` | [`bi-gateway`](../packages/bi/bi-gateway) | [`bi-gateway-sqlite`](../packages/bi/bi-gateway-sqlite) | - | - | 位于成员 Runner 与 BI 数据源之间：管理员经由它维护持久项目目录，每个面向成员的目录、图表列表与图表执行都由它按项目授权。 |
+| `ctx.biSource` | `seam` | [`bi-source`](../packages/bi/bi-source) | [`bi-webi`](../packages/bi/bi-webi) | - | - | Control Plane 的一半：提供方说一种 BI 产品的协议并持有其凭据，而位于其前的受治理网关决定谁可以执行什么。 |
+| `ctx.knowledge` | `seam` | [`knowledge`](../packages/knowledge/knowledge) | [`knowledge-team`](../packages/knowledge/knowledge-team) | [`tool-knowledge`](../packages/knowledge/tool-knowledge) | - | 受治理部署所授权的目录与段落检索操作；knowledge-team 访问对其做授权判定的 Control Plane，而 tool-knowledge 是模型对结果所见的部分。 |
+| `ctx.knowledgeGateway` | `seam` | [`knowledge-gateway`](../packages/knowledge/knowledge-gateway) | [`knowledge-gateway-sqlite`](../packages/knowledge/knowledge-gateway-sqlite) | - | - | 站在成员 Runner 与知识源之间：管理员通过它维护持久化目录，每一次面向成员的目录读取与检索都由它逐知识库做授权判定。 |
+| `ctx.knowledgeSource` | `seam` | [`knowledge-source`](../packages/knowledge/knowledge-source) | [`knowledge-weknora`](../packages/knowledge/knowledge-weknora) | - | - | Control Plane 的那一半：提供方说某个知识产品的协议并持有其凭据，而它前面的受治理网关判定谁可以检索什么。 |
 | `ctx.web` | `seam` | [`web`](../packages/web/web) | [`web-search-exa`](../packages/web/web-search-exa), [`web-search-perplexity`](../packages/web/web-search-perplexity), [`web-search-deepseek`](../packages/web/web-search-deepseek), [`web-fetch-http`](../packages/web/web-fetch-http) | [`tool-web`](../packages/web/tool-web) | - | 搜索和抓取提供方注册到同一个 ctx.web seam；tool-web 负责稳定的面向模型名称。 |
 | `ctx.spillStore` | `seam` | [`spill`](../packages/spill/spill) | [`spill-local`](../packages/spill/spill-local) | [`spill-policy`](../packages/spill/spill-policy) | - | 后端保存过大的工具文本，并返回面向模型的定位信息和取回提示；spill-policy 是 tools/post-execute 消费方，负责决定何时 spill。 |
 | `ctx.directoryPicker` | `seam` | [`host-directory-picker`](../packages/host/directory-picker) | [`host-directory-picker-native`](../packages/host/directory-picker-native), [`host-directory-picker-browse`](../packages/host/directory-picker-browse) | [`api-workspace-controller`](../packages/api/workspace-controller) | - | 带判别标记的交互能力：原生后端在 Host 显示设备上打开一个操作系统选择器，浏览后端为应用内浏览器提供列表与创建原语；双端后端通过其浏览器侧填充 ui-workspace 目录流程的 slot（不通过协议发布）。 |
