@@ -111,7 +111,7 @@ it('creates and idempotently adopts the explicit Session id bound to seeded task
   await withDefaultWeb(test, async ({ root, url }) => {
     const rpc = await connect(url, test.signal)
     const create = { request: { sessionId, cwd: root } }
-    const expectedCreate = { ok: true, value: { sessionId, agentPreset: 'standard' } }
+    const expectedCreate = { ok: true, value: { sessionId, agentPreset: 'standard', cwd: root } }
     expect(await rpc('session/create', create)).toEqual(expectedCreate)
     expect(await rpc('session/create', create)).toEqual(expectedCreate)
     expect(await rpc('schedule/list', { request: { sessionId } })).toEqual(expectedList)

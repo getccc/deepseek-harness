@@ -1,52 +1,28 @@
 - banner:
-  - navigation "Session hierarchy":
-    - button "Reply exactly CHAT_PRESET_REQUEST_OK and" [disabled]
-  - img
+  - navigation "Session hierarchy": Reply exactly CHAT_PRESET_REQUEST_OK and
   - text: Chat mode
-  - button "More actions":
-    - img
-  - button "Open right sidebar":
-    - img
+  - button "More actions"
+  - button "Open right sidebar"
   - tablist:
     - tab "Chat" [selected]
     - tab "Trajectory"
-- img
-- text: "web Web access on: web search and page fetching are offered from the next step."
-- button "System prompt":
-  - img
-  - img
-  - text: System prompt
-- text: Reply exactly CHAT_PRESET_REQUEST_OK and stop. {{clock}}
-- button "Copy":
-  - img
+- text: "web Web access on: web search and page fetching are offered from the next step. Reply exactly CHAT_PRESET_REQUEST_OK and stop. {{clock}}"
+- button "Copy"
+- status: Xiaowei worked
+- button "Xiaowei took {{duration}}" [disabled]
 - paragraph: CHAT_PRESET_REQUEST_OK
-- button "Copy":
-  - img
-- button "Good response":
-  - img
-- button "Bad response":
-  - img
-- button "Branch into a new conversation":
-  - img
-- button "Ran for {{duration}}":
-  - img
-  - text: Ran for {{duration}}
+- button "Copy"
+- button "Good response"
+- button "Bad response"
+- button "Branch into a new conversation"
 - text: {{clock}}
 - textbox "Message or run a task, / commands, @ files or sessions"
-- button "Add files or run commands":
-  - img
+- button "Add files or run commands"
 - button "Web access on, press to turn off" [pressed]: Web
 - button "Transcribe" [disabled]
-- button "Select model, current DeepSeek-V4-Flash":
-  - text: DeepSeek-V4-Flash
-  - img
-- button "Voice input" [disabled]:
-  - img
+- button "Select model, current DeepSeek-V4-Flash": DeepSeek-V4-Flash
+- button "Voice input" [disabled]
 - button "Send message" [disabled]
-- button "1 turns 1 steps · {{throughput}} tok/s":
-  - img
-  - text: 1 turns 1 steps{{throughput}} tok/s
-- button "14 tok · Cache hit 0%":
-  - img
-  - text: 14 tokCache hit 0%
+- button "1 turns 1 steps · {{throughput}} tok/s": 1 turns 1 steps{{throughput}} tok/s
+- button "14 tok · Cache hit 0%": 14 tokCache hit 0%
 - button "0% of context used": 0%
