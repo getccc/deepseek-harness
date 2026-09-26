@@ -1,2 +1,2 @@
-- text: Running
+- text: Xiaowei is thinking
 - 'button "Think Next paragraph: inspect the loaded context and pending tools inspect the loaded context and pending tools inspect the loaded context and pending tools inspect the loaded context and pending tools inspect the loaded context and pending tools inspect the loaded context and pending tools inspect the loaded context and pending tools inspect the loaded context and pending tools"'

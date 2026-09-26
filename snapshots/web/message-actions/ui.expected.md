@@ -12,8 +12,8 @@
 - text: "Use the read tool twice in one assistant message: read a.txt and b.txt. Then reply with the single word DONE and stop. {{clock}}"
 - button "Copy"
 - tooltip "Copy"
-- status: Stopped
-- button "Stopped" [disabled] [expanded]
+- status: Xiaowei stopped
+- button "Xiaowei stopped" [disabled] [expanded]
 - button "Analysis completed"
 - paragraph: I will read both files before answering.
 - button "Read files"
@@ -23,8 +23,8 @@
 - button "Branch into a new conversation" [disabled]
 - text: Available only on the last message of a completed turn {{clock}} Now give the final answer. {{clock}}
 - button "Copy"
-- status: Worked
-- button "Took {{duration}}" [disabled]
+- status: Xiaowei worked
+- button "Xiaowei took {{duration}}" [disabled]
 - paragraph: DONE
 - button "Copy"
 - button "Good response"
@@ -32,8 +32,8 @@
 - button "Branch into a new conversation"
 - text: {{clock}} Keep this later input in the original conversation. {{clock}}
 - button "Copy"
-- status: Worked
-- button "Took {{duration}}" [disabled]
+- status: Xiaowei worked
+- button "Xiaowei took {{duration}}" [disabled]
 - paragraph: ORIGINAL ONLY
 - button "Copy"
 - button "Good response"

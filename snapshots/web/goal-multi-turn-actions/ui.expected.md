@@ -14,8 +14,8 @@
 - button "Continuing goal {{clock}}":
   - text: Continuing goal
   - time: {{clock}}
-- status: Worked
-- button "Took {{duration}}"
+- status: Xiaowei worked
+- button "Xiaowei took {{duration}}"
 - paragraph:
   - strong: Turn 1 / 2
   - text: — 随机选中的包：
@@ -38,8 +38,8 @@
 - button "Continuing goal {{clock}}":
   - text: Continuing goal
   - time: {{clock}}
-- status: Worked
-- button "Took {{duration}}"
+- status: Xiaowei worked
+- button "Xiaowei took {{duration}}"
 - paragraph: 两个 turn 都完成了 ✅
 - paragraph:
   - strong: 总结：

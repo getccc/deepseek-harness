@@ -1,6 +1,7 @@
-- button "新建会话"
+- button "新建工作任务"
 - button "收起侧边栏"
-- button "新建会话": 新会话
+- button "新建对话": 新对话
+- button "新建工作任务": 新工作任务
 - navigation "全局面板":
   - button "插件"
 - text: 工作区
@@ -11,15 +12,18 @@
 - tree "会话":
   - treeitem "workspace" [expanded]
   - treeitem "新会话" [selected]
+- text: 最近
+- button "筛选"
+- tree "最近": 暂无对话
 - button "设置"
 - banner:
   - button "打开右侧边栏"
-- text: 探索未至之境 预览版
+- text: 今天有什么计划？
 - button "选择工作区": workspace
 - button "标准模式"
 - textbox "描述你想要构建的内容, / 调用指令, @ 文件或对话"
 - button "添加文件或调用指令"
-- button "访问模式，当前：工作区内修改": 工作区内修改
+- button "访问模式，当前：工作区可写": 工作区可写
 - button "计划模式已开启，按下关闭": 计划
 - button "选择模型，当前 DeepSeek-V4-Flash": DeepSeek-V4-Flash
 - button "发送消息" [disabled]

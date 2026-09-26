@@ -8,8 +8,8 @@
     - tab "Trajectory"
 - text: Reply with a one-sentence description of event sourcing, then stop. {{clock}}
 - button "Copy"
-- status: Failed
-- button "Failed" [disabled] [expanded]
+- status: Xiaowei failed
+- button "Xiaowei failed" [disabled] [expanded]
 - group:
   - status: Xiaowei retried the model request (2/2) · {{duration}}
 - status:
