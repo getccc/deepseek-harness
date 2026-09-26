@@ -44,7 +44,7 @@ function isMemberIdentity(value: unknown): value is TeamMemberIdentity {
 
 /** Read the account belonging to the current local browser session. */
 async function loadAccount(): Promise<TeamMemberIdentity> {
-  const response = await fetch(ACCOUNT_PATH, {
+  const response = await fetch(ACCOUNT_PATH.slice(1), {
     credentials: 'same-origin',
     headers: { accept: 'application/json' },
   })

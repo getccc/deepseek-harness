@@ -319,7 +319,7 @@ describe('request-level dynamic configuration', () => {
 
     // Schema-valid but resolver-invalid: the registration and its policy stay.
     await account.update({ models: [{ id: 'dup' }, { id: 'dup' }] })
-    expect(warn).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('duplicate') }))
+    expect(warn).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('duplicate') as string }))
     expect(ctx.llm.listProviders().map(provider => provider.id)).toEqual(['deepseek-account'])
     expect(observed).toEqual([['deepseek-account']])
   })

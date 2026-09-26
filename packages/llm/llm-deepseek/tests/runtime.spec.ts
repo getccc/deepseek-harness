@@ -2056,7 +2056,7 @@ describe('plugin registration and config', () => {
     const ctx = new Context()
     await ctx.plugin(LlmRuntime)
     expect(() => {
-      LlmDeepSeek.apply(ctx, LlmDeepSeek.Config({
+      void LlmDeepSeek.apply(ctx, LlmDeepSeek.Config({
         baseURL: 'http://127.0.0.1:1',
         models: [{ id: 'invalid-context', contextWindow: 0 }],
       }))

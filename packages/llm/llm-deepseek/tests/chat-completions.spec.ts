@@ -78,7 +78,7 @@ function sseResponse(text = SSE_TEXT): TransportResponse {
 /** A body that stays open until the request's signal aborts, then fails with the abort reason. */
 function heldOpen(request: TransportRequest): Readable {
   const body = new Readable({ read() {} })
-  request.signal?.addEventListener('abort', () => { body.destroy(request.signal?.reason) }, { once: true })
+  request.signal?.addEventListener('abort', () => { body.destroy(new Error('carried request aborted')) }, { once: true })
   return body
 }
 
@@ -208,7 +208,7 @@ describe('ChatCompletionsAdapter on the built-in route', () => {
     expect(prepare).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
       purpose: 'session-title',
       sessionId: 'session-1',
-      signal: expect.any(AbortSignal),
+      signal: expect.any(AbortSignal) as AbortSignal,
     }))
     expect(transport.requests[0]?.body).toMatchObject({ thinking: { type: 'disabled' } })
   })
@@ -361,7 +361,7 @@ describe('ChatCompletionsAdapter on the built-in route', () => {
       messages: [{
         role: 'user',
         content: [
-          { type: 'text', text: expect.stringContaining('/world/img.png') },
+          { type: 'text', text: expect.stringContaining('/world/img.png') as string },
           { type: 'image_url', image_url: { url: 'data:image/png;base64,AQID' } },
         ],
       }],
@@ -388,8 +388,8 @@ describe('ChatCompletionsAdapter on the built-in route', () => {
     expect(readImageRequest).toHaveBeenCalledOnce()
     expect(transport.requests[0]?.body).toMatchObject({
       messages: [
-        { role: 'user', content: expect.stringContaining('[image omitted') },
-        { role: 'tool', tool_call_id: 'call-1', content: expect.stringMatching(/^caption\n/) },
+        { role: 'user', content: expect.stringContaining('[image omitted') as string },
+        { role: 'tool', tool_call_id: 'call-1', content: expect.stringMatching(/^caption\n/) as string },
         {
           role: 'user',
           content: [
@@ -551,7 +551,7 @@ describe('ChatCompletionsAdapter on the built-in route', () => {
   it('reports ABORTED when the caller aborts while the transport is carrying the request', async () => {
     const controller = new AbortController()
     const transport = new ScriptedTransport([COMPANY_TEXT], carried => new Promise((_resolve, reject) => {
-      carried.signal?.addEventListener('abort', () => { reject(carried.signal?.reason) }, { once: true })
+      carried.signal?.addEventListener('abort', () => { reject(new Error('carried request aborted')) }, { once: true })
       controller.abort()
     }))
 

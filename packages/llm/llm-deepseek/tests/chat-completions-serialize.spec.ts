@@ -670,7 +670,7 @@ describe('image serialization', () => {
       })],
     }), imageOptions([ref], 5))).toThrow(expect.objectContaining({
       code: 'IMAGE_OFFLOAD_REQUIRED',
-      failure: expect.objectContaining({ offloadImages: 2 }),
+      failure: expect.objectContaining({ offloadImages: 2 }) as object,
     }))
   })
 
@@ -686,7 +686,7 @@ describe('image serialization', () => {
     }), imageOptions([ref], 80, 40))).toThrow(expect.objectContaining({
       code: 'IMAGE_OFFLOAD_REQUIRED',
       message: 'DeepSeek base64 request images exceed the route budget; 11 more oldest occurrence(s) must be offloaded.',
-      failure: expect.objectContaining({ offloadImages: 11 }),
+      failure: expect.objectContaining({ offloadImages: 11 }) as object,
     }))
   })
 
@@ -698,7 +698,7 @@ describe('image serialization', () => {
     })]
     expect(() => serializeRequestWithImages(request({ messages }), {
       ...imageOptions([ref]), maxImagesPerRequest: 2, countQuantum: 2,
-    })).toThrow(expect.objectContaining({ code: 'IMAGE_OFFLOAD_REQUIRED', failure: expect.objectContaining({ offloadImages: 2 }) }))
+    })).toThrow(expect.objectContaining({ code: 'IMAGE_OFFLOAD_REQUIRED', failure: expect.objectContaining({ offloadImages: 2 }) as object }))
   })
 
   it('counts only retained occurrences against the bound', () => {

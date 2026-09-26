@@ -118,7 +118,7 @@ describe('Team local-login browser plugin', () => {
     expect(entry.locale).toBe(NS)
     const injected = (entry.inject as unknown as () => TeamAccountLauncherInjected)()
     await expect(injected.loadAccount()).resolves.toEqual({ loginName: 'alice', displayName: 'Alice' })
-    expect(fetch).toHaveBeenCalledWith('/team/account', {
+    expect(fetch).toHaveBeenCalledWith('team/account', {
       credentials: 'same-origin',
       headers: { accept: 'application/json' },
     })
