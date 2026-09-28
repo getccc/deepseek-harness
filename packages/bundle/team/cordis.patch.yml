@@ -88,6 +88,20 @@
 - id: ui-settings-account
   disabled: true
 
+# The beta-disclaimer welcome notice addresses DeepSeek Harness developers,
+# not company members, so a Team Runner starts with it acknowledged. The
+# value is the notice version `ui-settings-models` compares against; a
+# member's own acknowledgement in the profile layer still wins.
+- id: ui-settings-general
+  config:
+    welcomeNoticeVersion: '2026-08-13.1'
+
+# Members do not install or switch the Runner's plugins: the deployment
+# composes them. Without this row the sidebar has no Plugins entry, and the
+# configuration cards that live only on that page do not register.
+- id: ui-plugin-manager
+  disabled: true
+
 # Web search leaves this computer through the Control Plane, which holds the
 # company search credential and decides per member; the base row's
 # `deepseek-official` selection would spend a member's own key. Fetch stays

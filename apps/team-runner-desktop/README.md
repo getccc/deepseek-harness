@@ -156,7 +156,7 @@ location /updates/ {
 - A second desktop launch activates the existing instance instead of starting a second Runner on port `3090`.
 - Navigation outside the local Runner opens in the system browser; renderer Node integration is disabled and context isolation and the Chromium sandbox remain enabled.
 - The tray labels, the Runner-local login pages, and the composer permission and office pickers follow the operating system's language, in English or Chinese.
-- The first launch seeds the member's settings so the beta-disclaimer welcome notice never opens; a member's own settings are never overwritten.
+- The beta-disclaimer welcome notice never opens: the Team bundle composes it as already acknowledged.
 
 -----
 

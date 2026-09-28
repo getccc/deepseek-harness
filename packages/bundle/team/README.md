@@ -60,6 +60,8 @@ The package's substance is `cordis.patch.yml`, named by the `dsh.bundle.patch` m
 
 A patch replaces the targeted row's whole `config`, so the `webserver` and `web-runtime` overrides restate every key they own. The runtime entry is `/team/open`, which deliberately receives no standalone Web process token because local account authentication owns Team unlock. The layer also turns off the `session-log-deepseek` contribution that `dsh-base` enables by default, so model requests, including those the Control Plane carries to the company provider, never attach the Session log.
 
+The layer disables the DeepSeek account service, route, Remote, and settings section, because members use the company route and the Team account launcher; disables the sidebar Plugins page, because the deployment composes the Runner's plugins; and composes the beta-disclaimer welcome notice as acknowledged, because it addresses harness developers.
+
 ### Source map
 
 | Path | Role |

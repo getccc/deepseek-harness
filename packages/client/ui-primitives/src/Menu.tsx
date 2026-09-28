@@ -146,6 +146,8 @@ const MEASURE_STYLE: CSSProperties = { visibility: 'hidden', left: 0, top: 0 }
  * gap and a brief overshoot survivable; coming back cancels the close.
  * @param props.dense - reduce vertical row spacing without changing the standard typography or card width.
  * @param props.compact - use reduced menu typography and spacing.
+ * @param props.matchAnchorWidth - portal mode only: size the list to the
+ * anchor rect's width, so a menu opened from a full-width row lines up with it.
  * @param props.getAnchorRect - portal mode only: supply the anchor rect
  * directly (e.g. from a host-owned trigger button) instead of measuring the
  * Menu's own wrapper span. Required when the wrapper isn't itself laid out at
@@ -168,7 +170,7 @@ const MEASURE_STYLE: CSSProperties = { visibility: 'hidden', left: 0, top: 0 }
  * document.body outside the owner's DOM subtree.
  * @returns anchor wrapper with the conditional list.
  */
-export function Menu({ open, anchor, items = [], children, selectedId, selectedIds, multiple = false, onSelect, onClose, align = 'start', side = 'bottom', portal = false, closeOnPointerLeave = false, dense = false, compact = false, autoFocus = false, selection = 'check', getAnchorRect, footer, className, listClassName }: {
+export function Menu({ open, anchor, items = [], children, selectedId, selectedIds, multiple = false, onSelect, onClose, align = 'start', side = 'bottom', portal = false, closeOnPointerLeave = false, dense = false, compact = false, autoFocus = false, selection = 'check', matchAnchorWidth = false, getAnchorRect, footer, className, listClassName }: {
   open: boolean
   autoFocus?: boolean
   anchor: ReactNode
@@ -187,6 +189,7 @@ export function Menu({ open, anchor, items = [], children, selectedId, selectedI
   dense?: boolean
   compact?: boolean
   selection?: 'check' | 'fill'
+  matchAnchorWidth?: boolean
   getAnchorRect?: () => DOMRect | null
   className?: string | undefined
   listClassName?: string | undefined
@@ -260,7 +263,8 @@ export function Menu({ open, anchor, items = [], children, selectedId, selectedI
       const vw = window.innerWidth
       const vh = window.innerHeight
       const listEl = listRef.current
-      const lw = listEl?.offsetWidth ?? 0
+      const width = matchAnchorWidth ? r.width : undefined
+      const lw = width ?? listEl?.offsetWidth ?? 0
       const lh = listEl?.offsetHeight ?? 0
 
       let x: number
@@ -279,7 +283,9 @@ export function Menu({ open, anchor, items = [], children, selectedId, selectedI
       if (lw > 0) x = Math.min(Math.max(x, MARGIN), vw - lw - MARGIN)
       if (lh > 0) y = Math.min(Math.max(y, overlayTopMargin(MARGIN)), vh - lh - MARGIN)
 
-      setFixedPos(current => current?.left === x && current.top === y ? current : { left: x, top: y })
+      setFixedPos(current => current?.left === x && current.top === y && current.width === width
+        ? current
+        : { left: x, top: y, ...width === undefined ? {} : { width, maxWidth: 'none' } })
     }
     // First run measures the hidden pre-render (same commit as `open`), so
     // end/top alignment and clamping use real dimensions before anything
@@ -298,7 +304,7 @@ export function Menu({ open, anchor, items = [], children, selectedId, selectedI
       window.removeEventListener('scroll', place, true)
       window.removeEventListener('resize', place)
     }
-  }, [open, portal, align, side, getAnchorRect])
+  }, [open, portal, align, side, matchAnchorWidth, getAnchorRect])
 
   // Opening remembers where the keyboard was, so closing can hand it back to
   // that control — an anchor wrapping several (a split button) cannot be asked

@@ -494,6 +494,19 @@ describe('Menu', () => {
     expect(menu.style.top).toBe('132px')
   })
 
+  it('portal mode sizes the list to the anchor when asked to match its width', () => {
+    const rect = { left: 12, right: 252, top: 500, bottom: 546, width: 240, height: 46, x: 12, y: 500, toJSON: () => ({}) } as DOMRect
+    const { rerender } = render(
+      <Menu portal open matchAnchorWidth getAnchorRect={() => rect} anchor={null} items={items} onClose={() => {}} />)
+    const menu = screen.getByRole('menu')
+    expect(menu.style.left).toBe('12px')
+    expect(menu.style.width).toBe('240px')
+    expect(menu.style.maxWidth).toBe('none')
+    rerender(<Menu portal open getAnchorRect={() => rect} anchor={null} items={items} onClose={() => {}} />)
+    // Without the flag the card keeps its own width.
+    expect(screen.getByRole('menu').style.width).toBe('')
+  })
+
   it('portal mode skips the frame when getAnchorRect returns null (no menu until a rect exists)', () => {
     render(
       <Menu

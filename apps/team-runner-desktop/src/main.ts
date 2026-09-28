@@ -49,13 +49,6 @@ const PPT_TEMPLATE = 'templates/welinkin-ppt.pptx'
 const SKILL_DIR = 'skills'
 /** Records which plugin tree the profile's `node_modules` was materialized from. */
 const PLUGIN_TREE_STAMP = '.dsh-plugin-tree'
-/**
- * The welcome-notice version this build treats as already acknowledged, so the
- * beta-disclaimer modal never opens for a member. Mirrors
- * `WELCOME_NOTICE_VERSION` in `@deepseek-ai/dsh-client-ui-settings-models`
- * (`onboarding-copy.ts`); bump both together if that notice is reissued.
- */
-const ACKNOWLEDGED_WELCOME_NOTICE = '2026-08-13.1'
 /** The deployment's menu bar mark, drawn in the bar's own colour. */
 const TRAY_ICON = 'trayTemplate.png'
 /** The live Runner's process id, so the next launch can retire a survivor. */
@@ -308,19 +301,6 @@ function retireStaleRunner(executable: string): void {
   }
 }
 
-/**
- * Seed the member's durable settings so the beta-disclaimer welcome notice is
- * already acknowledged. Only the first launch writes the file; a member who
- * has settings keeps them, so this never overwrites a real settings document.
- * @param home - the private `DSH_HOME` given to the Runner.
- */
-function suppressWelcomeNotice(home: string): void {
-  const settings = join(home, 'settings.yaml')
-  if (existsSync(settings)) return
-  mkdirSync(home, { recursive: true })
-  writeFileSync(settings, `ui-onboarding:\n  welcomeNoticeVersion: ${JSON.stringify(ACKNOWLEDGED_WELCOME_NOTICE)}\n`, { mode: 0o600 })
-}
-
 /** Start the Runner and restart unexpected exits while the desktop app lives. */
 function startRunner(): void {
   const data = runnerData()
@@ -345,7 +325,6 @@ function startRunner(): void {
   writeFileSync(patchPath, deploymentPatch(deployment), { encoding: 'utf8', mode: 0o600 })
   const home = join(data, 'home')
   provisionProfile(home)
-  suppressWelcomeNotice(home)
   const executable = runnerExecutable()
   retireStaleRunner(executable)
   const logFd = openSync(join(data, 'runner.log'), 'a', 0o600)

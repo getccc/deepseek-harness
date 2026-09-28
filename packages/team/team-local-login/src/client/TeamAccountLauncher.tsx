@@ -1,6 +1,6 @@
 /** Team member identity and actions at the bottom of the Runner sidebar. */
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   IconEllipsisOutlineRegular, IconSettingsOutlineRegular, Menu,
 } from '@deepseek-ai/dsh-client-ui-primitives'
@@ -61,6 +61,10 @@ export function TeamAccountLauncher({
 }: TeamAccountLauncherProps) {
   const [open, setOpen] = useState(false)
   const [member, setMember] = useState<TeamMemberIdentity | undefined>()
+  // The menu lines up with the member row itself, whose negative margins make
+  // it wider than the wrapper the Menu would otherwise measure.
+  const launcherRef = useRef<HTMLButtonElement>(null)
+  const launcherRect = useCallback(() => launcherRef.current?.getBoundingClientRect() ?? null, [])
 
   useEffect(() => {
     let live = true
@@ -84,6 +88,8 @@ export function TeamAccountLauncher({
         side="top"
         align="start"
         portal
+        matchAnchorWidth={wide}
+        getAnchorRect={launcherRect}
         items={[
           { id: 'settings', label: t('settings'), icon: <IconSettingsOutlineRegular /> },
           { id: 'sign-out', label: t('signOut'), icon: <SignOutIcon />, danger: true },
@@ -95,6 +101,7 @@ export function TeamAccountLauncher({
         }}
         anchor={(
           <button
+            ref={launcherRef}
             type="button"
             className={`${css.launcher} ${wide ? css.wide : css.rail} ${open ? css.open : ''}`}
             aria-label={`${t('menu')}: ${label}`}
