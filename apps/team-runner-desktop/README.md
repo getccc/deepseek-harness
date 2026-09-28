@@ -36,7 +36,7 @@ DSH_TEAM_CONTROL_PLANE_URL=https://control.example.com \
 pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 ```
 
-`package:mac` produces an Apple silicon DMG and the zip an update installs from. It does not produce Intel or Universal artifacts. `package:win` produces an x64 NSIS installer and expects the Windows Runner executable and ripgrep sidecar.
+`package:mac` produces an Apple silicon DMG and the zip an update installs from. It does not produce Intel or Universal artifacts. `package:win` produces an x64 NSIS installer and expects the Windows Runner executable, its ripgrep sidecar, and its Office directory.
 
 Pass the release version in the environment and nowhere else: an `--config.extraMetadata.version` override on the electron-builder command line replaces the validated value, and would silently restore a suffix that breaks updating.
 
@@ -51,7 +51,7 @@ Every deployment-varying fact is a packaging environment variable, so one source
 |---|---|---|
 | `DSH_TEAM_APP_VERSION` | yes | The release this build is: `MAJOR.MINOR.PATCH`, with no prerelease tag and no build metadata, incremented once per release. |
 | `DSH_TEAM_UPDATE_ORIGIN` | no | Where release artifacts are fetched from, when that is not the Control Plane itself: object storage or a CDN, for a deployment whose own bandwidth a few hundred megabytes per member would exhaust. |
-| `DSH_TEAM_RUNNER_EXECUTABLE` | yes | The built Runner executable; its ripgrep and macOS spawn-helper sidecars are read from the neighbouring `-rg` and `-spawn-helper` names. |
+| `DSH_TEAM_RUNNER_EXECUTABLE` | yes | The built Runner executable; its ripgrep and macOS spawn-helper sidecars and its Office directory are read from the neighbouring `-rg`, `-spawn-helper`, and `-office` names, and packaging fails when the Office directory lacks `@deepseek-ai/libreoffice-kit`. |
 | `DSH_TEAM_CONTROL_PLANE_URL` | yes | The Control Plane origin this build belongs to. |
 | `DSH_TEAM_CONTROL_PLANE_CA` | no | The certificate that signed the Control Plane's TLS certificate. |
 | `DSH_TEAM_RELEASE_KEY` | no | Base64url DER SPKI of the Ed25519 release public key. A build without it never checks for an update, because it has no trust root for one. |
@@ -69,7 +69,7 @@ The Runner is a Node process and ignores the operating-system trust store, so a 
 
 ### Carrying out-of-tree plugins
 
-Plugins outside the Runner's own installation ship as a real directory rather than inside the packaged executable, because their native addons cannot be loaded from a packaged executable's virtual filesystem and their runtime dependency copying expects real files. Install them into a profile with `dsh plugin --profile <name> add <package>`, then point `DSH_TEAM_PLUGIN_TREE` at that profile's `node_modules`. The layer list mounts `dsh-univer-office` and `@dsh-external/dsh-echarts` from that tree, so the tree must carry both; a pnpm patch recorded in the staging profile ships with the patched files.
+Plugins outside the Runner's own installation ship as a real directory rather than inside the packaged executable, because their native addons cannot be loaded from a packaged executable's virtual filesystem and their runtime dependency copying expects real files. Install them into a profile with `dsh plugin --profile <name> add <package>`, then point `DSH_TEAM_PLUGIN_TREE` at that profile's `node_modules`. The layer list mounts `dsh-univer-office` and `@dsh-external/dsh-echarts` from that tree, so the tree must carry both; a pnpm patch recorded in the staging profile ships with the patched files. The Runner skips a bundle whose `@deepseek-ai/dsh-*` peer ranges exclude its own version, and this profile carries no `compatibility.json` exemption, so the tree must carry plugin releases that declare the Runner's version line.
 
 The shell owns the private profile's manifest: it writes the layer list on every launch and materializes the shipped tree as that profile's own `node_modules` once per shipped tree, identified by a fingerprint of its contents that packaging records. The packages have to be real files there rather than links into application resources — a plugin reaches its dependencies through its own real location, and `dsh` adds links beside them for the packages these plugins take as peers from the Runner installation. macOS clones the tree on a copy-on-write volume, so the duplicate costs little time and little disk space. A member never installs plugins into this profile, so an application upgrade that changes the layer list takes effect on the next launch. The member's own `cordis.patch.yml` is never touched.
 

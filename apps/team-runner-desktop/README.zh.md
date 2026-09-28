@@ -36,7 +36,7 @@ DSH_TEAM_CONTROL_PLANE_URL=https://control.example.com \
 pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 ```
 
-`package:mac` 生成 Apple 芯片 DMG 以及更新所安装的 zip，不生成 Intel 或 Universal 产物。`package:win` 生成 x64 NSIS 安装程序，并要求 Windows Runner 可执行文件与 ripgrep 伴随程序。
+`package:mac` 生成 Apple 芯片 DMG 以及更新所安装的 zip，不生成 Intel 或 Universal 产物。`package:win` 生成 x64 NSIS 安装程序，并要求 Windows Runner 可执行文件、其 ripgrep 伴随程序与 Office 目录。
 
 发布版本只经环境变量传入，不要再从别处传：electron-builder 命令行上的 `--config.extraMetadata.version` 覆盖会替换掉已校验的值，并可能悄悄恢复一个破坏更新的后缀。
 
@@ -51,7 +51,7 @@ pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 |---|---|---|
 | `DSH_TEAM_APP_VERSION` | 是 | 本构建所属的发布版本：`MAJOR.MINOR.PATCH`，不带预发布标签，也不带构建元数据，每次发布递增一次。 |
 | `DSH_TEAM_UPDATE_ORIGIN` | 否 | 版本产物的获取地址，当它不是 Control Plane 本身时：对象存储或 CDN，适用于自身带宽撑不住每位成员几百兆下载的部署。 |
-| `DSH_TEAM_RUNNER_EXECUTABLE` | 是 | 构建好的 Runner 可执行文件；其 ripgrep 与 macOS spawn-helper 伴随程序按相邻的 `-rg` 与 `-spawn-helper` 名称读取。 |
+| `DSH_TEAM_RUNNER_EXECUTABLE` | 是 | 构建好的 Runner 可执行文件；其 ripgrep 与 macOS spawn-helper 伴随程序以及 Office 目录按相邻的 `-rg`、`-spawn-helper` 与 `-office` 名称读取；Office 目录缺少 `@deepseek-ai/libreoffice-kit` 时打包失败。 |
 | `DSH_TEAM_CONTROL_PLANE_URL` | 是 | 这份构建所属的 Control Plane 源。 |
 | `DSH_TEAM_CONTROL_PLANE_CA` | 否 | 签发 Control Plane TLS 证书的那份证书。 |
 | `DSH_TEAM_RELEASE_KEY` | 否 | Ed25519 发布公钥的 base64url DER SPKI 编码。没有它的构建从不检查更新，因为它没有可据以判断更新的信任根。 |
@@ -69,7 +69,7 @@ Runner 是一个 Node 进程，不读取操作系统信任库，因此位于企�
 
 ### 携带树外插件
 
-位于 Runner 自身安装之外的插件以真实目录而非打包可执行文件内部的形式随附，因为它们的原生插件无法从打包可执行文件的虚拟文件系统中加载，而它们运行时的依赖复制需要真实文件。用 `dsh plugin --profile <name> add <package>` 把它们装进一个 profile，再让 `DSH_TEAM_PLUGIN_TREE` 指向该 profile 的 `node_modules`。层列表从这棵树挂载 `dsh-univer-office` 与 `@dsh-external/dsh-echarts`，因此树中必须同时带有两者；暂存 profile 中记录的 pnpm 补丁会随打过补丁的文件一同随附。
+位于 Runner 自身安装之外的插件以真实目录而非打包可执行文件内部的形式随附，因为它们的原生插件无法从打包可执行文件的虚拟文件系统中加载，而它们运行时的依赖复制需要真实文件。用 `dsh plugin --profile <name> add <package>` 把它们装进一个 profile，再让 `DSH_TEAM_PLUGIN_TREE` 指向该 profile 的 `node_modules`。层列表从这棵树挂载 `dsh-univer-office` 与 `@dsh-external/dsh-echarts`，因此树中必须同时带有两者；暂存 profile 中记录的 pnpm 补丁会随打过补丁的文件一同随附。Runner 会跳过 `@deepseek-ai/dsh-*` peer 范围不包含其自身版本的 bundle，而这个 profile 不带任何 `compatibility.json` 豁免，因此树中必须带有声明了 Runner 所在版本线的插件发布版本。
 
 外壳拥有这个私有 profile 的清单：它在每次启动时写入层列表，并按随附的树把它物化为该 profile 自己的 `node_modules`，该树由打包时记录的内容指纹标识。这些包必须是那里的真实文件，而不是指向应用资源的链接——插件通过自己的真实位置解析依赖，而 `dsh` 会在它们旁边补上插件作为 peer 从 Runner 安装取用的包。macOS 在写时复制卷上克隆这棵树，因此这份副本几乎不花时间也几乎不占磁盘空间。成员从不向这个 profile 安装插件，因此改变层列表的应用升级会在下次启动时生效。成员自己的 `cordis.patch.yml` 不会被触碰。
 

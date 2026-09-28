@@ -68,6 +68,13 @@ for (const [variable, path] of [['DSH_TEAM_APP_ICON', appIcon], ['DSH_TEAM_TRAY_
 }
 
 const windows = runner.endsWith('.exe')
+// Office conversion spawns LibreOffice helpers that cannot run from the
+// executable's virtual filesystem. The executable resolves them from the
+// `-office` directory beside its own path, so the staged name follows `dsh`.
+const officeSidecar = `${windows ? runner.slice(0, -4) : runner}-office`
+if (!existsSync(join(officeSidecar, 'node_modules', '@deepseek-ai', 'libreoffice-kit', 'package.json'))) {
+  throw new Error(`the Runner executable's Office directory ${officeSidecar} must carry @deepseek-ai/libreoffice-kit`)
+}
 // A menu bar template image is drawn at the bar's own scale, so macOS reads
 // the doubled variant from the same directory under the conventional name.
 const trayVariants = trayIcon === undefined
@@ -85,6 +92,9 @@ const extraResources = [
         { from: runner + '-rg', to: 'runner/dsh-rg' },
         { from: runner + '-spawn-helper', to: 'runner/dsh-spawn-helper' },
       ],
+  // electron-builder drops a `node_modules` directory nested under `from`, so
+  // the Office directory's only entry is staged as the source itself.
+  { from: join(officeSidecar, 'node_modules'), to: 'runner/dsh-office/node_modules' },
   ...controlPlaneCa === undefined ? [] : [{ from: controlPlaneCa, to: 'runner/control-plane-ca.crt' }],
   ...pluginTree === undefined ? [] : [{ from: pluginTree, to: 'runner/plugins' }],
   ...pptTemplate === undefined ? [] : [{ from: pptTemplate, to: 'runner/templates/welinkin-ppt.pptx' }],
