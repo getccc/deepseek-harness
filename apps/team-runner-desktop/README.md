@@ -149,12 +149,13 @@ location /updates/ {
 - Closing the application window hides it; the tray menu opens it again.
 - The operating-system login item starts Electron with `--background`, so the Runner is available without opening the window.
 - An unexpected Runner exit schedules one restart after ten seconds. A launch failure keeps Electron alive, reports the failure, and uses the same delayed retry.
-- The window shows a localized starting notice and waits up to five minutes for the Runner's first answer, because a first launch materializes the plugin tree and heals module links before listening. The Runner binds its port before the login route mounts and answers `404` in between; only the login redirect, the route's refusal of a non-navigation probe, or a signed-in page counts as ready. A page that fails to load or answers an error after a Runner restart sends the window back to polling.
+- The window shows a localized starting notice and waits up to five minutes for the Runner's first answer, because a first launch materializes the plugin tree and heals module links before listening. The Runner binds its port before the login route mounts and answers `404` in between; only the login redirect, the route's refusal of a non-navigation probe, or a signed-in page counts as ready. A page that fails to load or answers an error after a Runner restart sends the window back to polling; an aborted navigation, such as a download, leaves the page in place, and a renderer that crashes loads the page again.
 - A Runner left by a previous instance — the application was replaced while running, or force-quit — is stopped before the new one starts, so the fixed port is never contested. The process id is trusted only while that process still runs this build's own executable; Windows skips this step.
 - The login item is registered on the first packaged launch only, so later launches neither wait on that registration nor announce it again.
 - `shell.log` beside `runner.log` records each launch, Runner start and exit, the readiness probe outcome, and page-load failures with timestamps.
 - A second desktop launch activates the existing instance instead of starting a second Runner on port `3090`.
-- Navigation outside the local Runner opens in the system browser; renderer Node integration is disabled and context isolation and the Chromium sandbox remain enabled.
+- Navigation outside the local Runner opens in the system browser only for `http` and `https` addresses; any other scheme is refused and logged. Renderer Node integration is disabled and context isolation and the Chromium sandbox remain enabled.
+- Quitting stops the Runner and removes the tray icon. On Windows the Runner's whole process tree ends, so its shells and helpers do not outlive it, and a shutdown or sign-out closes the window instead of hiding it.
 - The tray labels, the Runner-local login pages, and the composer permission and office pickers follow the operating system's language, in English or Chinese.
 - The beta-disclaimer welcome notice never opens: the Team bundle composes it as already acknowledged.
 

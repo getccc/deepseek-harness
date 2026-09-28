@@ -347,6 +347,21 @@ function startRunner(): void {
 }
 
 /**
+ * Signal a Runner the shell started. On Windows `kill()` ends only `dsh.exe`
+ * itself, leaving its shells, search, and Office helpers running and holding
+ * files an update must replace, so the whole process tree ends there.
+ * @param child - the Runner process.
+ * @param signal - the POSIX signal; Windows always ends the tree outright.
+ */
+function signalRunner(child: ChildProcess, signal: 'SIGTERM' | 'SIGKILL'): void {
+  if (process.platform === 'win32' && child.pid !== undefined) {
+    spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true })
+    return
+  }
+  child.kill(signal)
+}
+
+/**
  * Stop the Runner and wait for it to leave, so its port is free and the files
  * an installer replaces are closed. A Runner that ignores the signal is killed
  * outright at the deadline; the shell is about to be replaced either way.
@@ -363,10 +378,10 @@ async function stopRunner(): Promise<void> {
   log('stopping runner before replacement')
   const exited = new Promise<boolean>((resolve) => { child.once('exit', () => { resolve(false) }) })
   const deadline = new Promise<boolean>((resolve) => { setTimeout(() => { resolve(true) }, RUNNER_STOP_MS).unref() })
-  child.kill()
+  signalRunner(child, 'SIGTERM')
   if (await Promise.race([exited, deadline])) {
     log('runner outlived its stop deadline; killing')
-    child.kill('SIGKILL')
+    signalRunner(child, 'SIGKILL')
   }
 }
 
@@ -557,6 +572,25 @@ function trayIcon(): Electron.NativeImage {
   return image
 }
 
+/** Chromium's `net::ERR_ABORTED`: a navigation superseded by another, or a response handed to the download manager. */
+const NAVIGATION_ABORTED = -3
+
+/**
+ * Hand a link that leaves the Runner to the system browser. Only web
+ * addresses leave: a `file:`, `ms-msdt:`, or other scheme in a page or a
+ * model-written link would otherwise reach whatever handler the operating
+ * system registered for it.
+ * @param url - the address the page tried to open.
+ */
+function openOutside(url: string): void {
+  const { protocol } = new URL(url)
+  if (protocol !== 'https:' && protocol !== 'http:') {
+    log(`refused to open a ${protocol} link outside the Runner`)
+    return
+  }
+  void shell.openExternal(url)
+}
+
 /** Create the hidden-on-close window and the resident tray control. */
 function createDesktop(): void {
   // Windows and Linux draw Electron's default menu as a bar inside the window.
@@ -581,21 +615,31 @@ function createDesktop(): void {
   })
   void window.loadURL(startingPage())
   window.webContents.setWindowOpenHandler(({ url }) => {
-    void shell.openExternal(url)
+    openOutside(url)
     return { action: 'deny' }
   })
   window.webContents.on('will-navigate', (event, url) => {
     if (new URL(url).origin === new URL(RUNNER_URL).origin) return
     event.preventDefault()
-    void shell.openExternal(url)
+    openOutside(url)
   })
   window.webContents.on('did-fail-load', (_event, code, description, _url, isMainFrame) => {
     // The Runner went away under the page (a restart after an unexpected
-    // exit); polling brings the page back when it listens again.
-    if (!isMainFrame) return
+    // exit); polling brings the page back when it listens again. An aborted
+    // navigation — a download, or one navigation replacing another — leaves
+    // the page as it is.
+    if (!isMainFrame || code === NAVIGATION_ABORTED) return
     log(`page failed to load: ${String(code)} ${description}`)
     void showRunner()
   })
+  window.webContents.on('render-process-gone', (_event, details) => {
+    // A crashed or killed renderer leaves a blank window; load the page again.
+    log(`page renderer gone: ${details.reason}`)
+    if (!quitting && details.reason !== 'clean-exit') void showRunner()
+  })
+  // Windows asks every window to close at shutdown or sign-out; hiding to
+  // the tray would hold that up.
+  window.on('session-end', () => { quitting = true })
   window.webContents.on('did-navigate', (_event, url, status) => {
     // A Runner answer the readiness probe accepted can still be gone by the
     // time the page asks; an error page in the window is never the surface.
@@ -629,7 +673,9 @@ if (!app.requestSingleInstanceLock()) {
     quitting = true
     if (restart !== undefined) clearTimeout(restart)
     log('quitting; stopping runner')
-    runner?.kill()
+    if (runner !== undefined) signalRunner(runner, 'SIGTERM')
+    tray?.destroy()
+    tray = undefined
   })
   app.on('window-all-closed', () => {
     // The tray and Runner intentionally remain alive after the window closes.
