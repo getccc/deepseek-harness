@@ -44,12 +44,10 @@ function send(
   })
 }
 
-beforeEach(async () => {
+/** Mount the endpoints over a fresh server with the given plugin config. */
+async function mount(config: Partial<login.Config>): Promise<void> {
   ctx = new Context()
   await ctx.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
-  authenticated = false
-  signIn = vi.fn(() => Promise.resolve({ bound: true }))
-  signOut = vi.fn(() => Promise.resolve())
   ctx.provide('teamAccountClient', {
     signIn,
     signOut,
@@ -72,8 +70,15 @@ beforeEach(async () => {
       return true
     },
   })
-  await ctx.plugin(login, login.Config({ applicationPath: '/app' } as never)).await()
+  await ctx.plugin(login, login.Config(config as never)).await()
   origin = `http://127.0.0.1:${String(ctx.webServer.port)}`
+}
+
+beforeEach(async () => {
+  authenticated = false
+  signIn = vi.fn(() => Promise.resolve({ bound: true }))
+  signOut = vi.fn(() => Promise.resolve())
+  await mount({ applicationPath: '/app' })
 })
 
 afterEach(async () => {
@@ -114,6 +119,24 @@ describe('the local account identity', () => {
     const account = await send(login.ACCOUNT_PATH)
     expect(account.status).toBe(200)
     expect(JSON.parse(account.body)).toEqual({ loginName: 'alice', displayName: 'Alice' })
+  })
+})
+
+describe('the installed product version', () => {
+  it('answers 404 when the deployment names no version, and only to an authenticated browser', async () => {
+    expect((await send(login.PRODUCT_PATH)).status).toBe(401)
+    authenticated = true
+    expect((await send(login.PRODUCT_PATH)).status).toBe(404)
+  })
+
+  it('serves the version the deployment names', async () => {
+    await ctx.fiber.dispose()
+    await mount({ applicationPath: '/app', productVersion: '1.0.0' })
+    authenticated = true
+    const named = await send(login.PRODUCT_PATH)
+    expect(named.status).toBe(200)
+    expect(JSON.parse(named.body)).toEqual({ version: '1.0.0' })
+    expect((await send(login.PRODUCT_PATH, { method: 'POST' })).status).toBe(405)
   })
 })
 

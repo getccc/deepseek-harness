@@ -12,9 +12,10 @@ import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {} from '@deepseek-ai/dsh-client-ui-chat/client'
 // Type-only: pulls ctx.uiWorkspace into the client Context.
 import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
-import { ACCOUNT_PATH, LOGOUT_PATH, SIGNED_IN_PARAM } from '../paths.ts'
+import { ACCOUNT_PATH, LOGOUT_PATH, PRODUCT_PATH, SIGNED_IN_PARAM } from '../paths.ts'
 import { AssistantIdentity } from './AssistantIdentity.tsx'
 import { HeroGreeting } from './HeroGreeting.tsx'
+import { ProductVersionRow } from './ProductVersionRow.tsx'
 import {
   TeamAccountLauncher, type TeamAccountLauncherInjected, type TeamMemberIdentity,
 } from './TeamAccountLauncher.tsx'
@@ -52,6 +53,21 @@ async function loadAccount(): Promise<TeamMemberIdentity> {
   const body: unknown = await response.json()
   if (!isMemberIdentity(body)) throw new Error('team account endpoint returned an invalid identity')
   return body
+}
+
+/** Read the installed product version; a deployment that names none answers 404. */
+async function loadProductVersion(): Promise<string | undefined> {
+  const response = await fetch(PRODUCT_PATH.slice(1), {
+    credentials: 'same-origin',
+    headers: { accept: 'application/json' },
+  })
+  if (response.status === 404) return undefined
+  if (!response.ok) throw new Error(`team product endpoint refused with ${String(response.status)}`)
+  const body: unknown = await response.json()
+  if (typeof body !== 'object' || body === null || !('version' in body) || typeof body.version !== 'string') {
+    throw new Error('team product endpoint returned an invalid version')
+  }
+  return body.version
 }
 
 /**
@@ -96,6 +112,18 @@ export function apply(ctx: ClientContext): void {
     locale: NS,
     inject: operations,
   }, HeroGreeting))
+
+  // Settings names the installed product's release, which is what a member
+  // reports and updates, in place of the client build's DSH version. The row
+  // shadows the General section's own version row by sharing its id.
+  ctx.slots.inject('settings.general.item', () => ctx.slots.register({
+    name: 'settings.general.item',
+    id: 'current-version',
+    order: 100,
+    priority: -1,
+    locale: NS,
+    inject: () => ({ loadProductVersion }),
+  }, ProductVersionRow))
 
   // Every reply in the transcript opens with the same face and name the hero uses.
   ctx.slots.inject('conversation.chat.assistant-identity', () => ctx.slots.register({

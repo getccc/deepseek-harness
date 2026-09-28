@@ -6,6 +6,8 @@ export const OPEN_PATH = '/team/open'
 export const LOGOUT_PATH = '/team/logout'
 /** Same-origin account identity read by the unlocked Team client. */
 export const ACCOUNT_PATH = '/team/account'
+/** Same-origin installed product version read by the unlocked Team client. */
+export const PRODUCT_PATH = '/team/product'
 /**
  * Query parameter the sign-in redirect carries into the application.
  *

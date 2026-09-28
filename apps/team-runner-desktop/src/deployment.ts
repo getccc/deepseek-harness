@@ -122,8 +122,12 @@ export function deploymentPatch(deployment: DesktopDeployment): string {
       },
     },
     {
+      // Settings shows the installed release a member reports and updates,
+      // which is the version this Runner reports to the Control Plane.
       id: 'team-local-login',
-      config: { applicationPath: '/', maxRequestBodyBytes: 16_384, locale: deployment.locale },
+      config: {
+        applicationPath: '/', maxRequestBodyBytes: 16_384, locale: deployment.locale, productVersion: deployment.runnerVersion,
+      },
     },
     { id: 'team-update-source', config: address },
     { id: 'llm-http-transport', config: address },

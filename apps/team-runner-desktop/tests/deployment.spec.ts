@@ -18,7 +18,7 @@ describe('desktop deployment facts', () => {
       { id: 'team-account-client', config: {
         controlPlaneUrl: 'https://control.acme.example', runnerVersion: '2.4.1',
       } },
-      { id: 'team-local-login', config: { locale: 'en-US' } },
+      { id: 'team-local-login', config: { locale: 'en-US', productVersion: '2.4.1' } },
       // The Runner answers the desktop shell with what this deployment offers
       // this member, because the shell holds no credential of its own.
       { id: 'team-update-source', config: { controlPlaneUrl: 'https://control.acme.example' } },

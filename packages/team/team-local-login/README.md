@@ -33,7 +33,7 @@ plugins:
     locale: en-US
 ```
 
-Compose it after `client-connection` and `team-account-client`. Configure the Web runtime to open `/team/open`; unlike the standalone Web root, this entry must not receive a process-token URL.
+Compose it after `client-connection` and `team-account-client`. Configure the Web runtime to open `/team/open`; unlike the standalone Web root, this entry must not receive a process-token URL. An installer also sets `productVersion` to the release it installed; without it, Settings shows the DSH version the client was built from.
 
 -----
 
@@ -60,6 +60,10 @@ The login document is a standalone responsive page with bilingual copy, keyboard
 
 The browser half occupies the Settings shell's optional `settings.launcher` slot. It reads `/team/account` with the local browser cookie, shows the returned display name and text avatar, and opens a menu containing Settings and Sign out. Settings calls the shell-owned panel action; Sign out navigates to `/team/logout`. The identity response contains only `loginName` and `displayName`.
 
+### Settings names the installed release
+
+The browser half registers a row in the Settings shell's `settings.general.item` list under the General section's own `current-version` id, one priority rank lower, so it replaces that row. It reads `/team/product` with the local browser cookie and shows the `productVersion` the deployment configured, which is the release a member reports and updates. The route answers `404` when the deployment names none, and the row then shows the client build's DSH version, as the General row would. The row renders nothing until the Runner answers, so it never shows one version and then another.
+
 ### The blank conversation greets the member by their own clock
 
 The same browser half fills the Conversation shell's `conversation.hero.headline` slot from the same `/team/account` read. The headline is 小微's whole figure over two lines: a greeting in which the assistant addresses the display name, and a tagline under it. The greeting belongs to the part of the day the member's browser clock is in — late night, early morning, the morning gathering, the rest of the morning, midday, afternoon, evening — and the tagline to the half hour, with the part boundaries in [`day-parts.ts`](src/client/day-parts.ts) and the copy in [`locales.ts`](src/client/locales.ts). A conversation left open crosses into the next half hour on its own. Until the identity arrives the headline stays empty rather than greeting nobody.
@@ -70,10 +74,10 @@ Every turn in the transcript then opens with a header from the same figure — h
 
 | Path | Role |
 |---|---|
-| [`src/index.ts`](src/index.ts) | Request validation and the four local routes |
+| [`src/index.ts`](src/index.ts) | Request validation and the five local routes |
 | [`src/pages.ts`](src/pages.ts) | Standalone HTML rendered before the application is unlocked |
 | [`src/paths.ts`](src/paths.ts) | Fixed local paths |
-| [`src/client/`](src/client/) | Localized member launcher, account menu, and hero greeting |
+| [`src/client/`](src/client/) | Localized member launcher, account menu, hero greeting, and Settings version row |
 | [`src/xiaowei-avatar.ts`](src/xiaowei-avatar.ts) | 小微's whole figure, inlined for the hero and the reply row |
 
 -----

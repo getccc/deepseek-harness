@@ -15,9 +15,9 @@ import type {} from '@deepseek-ai/dsh-client-connection'
 import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
 import type {} from '@deepseek-ai/dsh-team-account-client'
 import { LOGIN_LOCALES, loginPage, pageCopy, problemPage, type LoginLocale } from './pages.ts'
-import { ACCOUNT_PATH, LOGIN_PATH, LOGOUT_PATH, OPEN_PATH, SIGNED_IN_PARAM } from './paths.ts'
+import { ACCOUNT_PATH, LOGIN_PATH, LOGOUT_PATH, OPEN_PATH, PRODUCT_PATH, SIGNED_IN_PARAM } from './paths.ts'
 
-export { ACCOUNT_PATH, LOGIN_PATH, LOGOUT_PATH, OPEN_PATH, SIGNED_IN_PARAM } from './paths.ts'
+export { ACCOUNT_PATH, LOGIN_PATH, LOGOUT_PATH, OPEN_PATH, PRODUCT_PATH, SIGNED_IN_PARAM } from './paths.ts'
 
 /** Stable Cordis plugin name. */
 export const name = 'team-local-login'
@@ -32,6 +32,12 @@ export interface Config {
   maxRequestBodyBytes: number
   /** Locale used before the client application loads. */
   locale?: LoginLocale
+  /**
+   * Release version of the installed product, shown in Settings in place of
+   * the client build's DSH version. An installer knows it and writes it in;
+   * absent, Settings keeps the DSH version.
+   */
+  productVersion?: string
 }
 
 /** Plugin config schema. */
@@ -39,6 +45,7 @@ export const Config: z<Config> = z.object({
   applicationPath: z.string().default('/'),
   maxRequestBodyBytes: z.natural().min(1).default(16 * 1024),
   locale: z.union(LOGIN_LOCALES).default('en-US'),
+  productVersion: z.string().min(1),
 })
 
 /** Write one response that must not be cached or leak a referring address. */
@@ -217,7 +224,27 @@ export function apply(ctx: Context, config: Config): void {
     },
   }
 
-  for (const route of [login, open, logout, account]) {
+  const product: WebRoute = {
+    kind: 'exact',
+    path: PRODUCT_PATH,
+    handler: (req, res) => {
+      if (req.method !== 'GET') {
+        json(res, 405, { error: 'method not allowed' })
+        return
+      }
+      if (!ctx.browserSession.isAuthenticated(req)) {
+        json(res, 401, { error: 'unauthorized' })
+        return
+      }
+      if (config.productVersion === undefined) {
+        json(res, 404, { error: 'product version unavailable' })
+        return
+      }
+      json(res, 200, { version: config.productVersion })
+    },
+  }
+
+  for (const route of [login, open, logout, account, product]) {
     ctx.effect(() => ctx.webServer.register(route), `team-local-login: ${route.path}`)
   }
 }

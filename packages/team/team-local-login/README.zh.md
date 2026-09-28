@@ -33,7 +33,7 @@ plugins:
     locale: en-US
 ```
 
-把它组合在 `client-connection` 与 `team-account-client` 之后，并让 Web Runtime 打开 `/team/open`。与独立 Web 根路径不同，这个入口不能收到进程 Token URL。
+把它组合在 `client-connection` 与 `team-account-client` 之后，并让 Web Runtime 打开 `/team/open`。与独立 Web 根路径不同，这个入口不能收到进程 Token URL。安装器还会把 `productVersion` 设为它安装的发行版本；未设置时，设置页显示构建客户端所用的 DSH 版本。
 
 -----
 
@@ -60,6 +60,10 @@ HTML 表单由回环地址上的 Runner 提供。提交后，Runner 开启一个
 
 浏览器端占用设置 Shell 的可选 `settings.launcher` Slot。它携带本地浏览器 Cookie 读取 `/team/account`，展示返回的显示名与文字头像，并打开包含设置和退出登录的菜单。设置会调用 Shell 拥有的面板动作；退出登录会导航到 `/team/logout`。身份响应只包含 `loginName` 与 `displayName`。
 
+### 设置页显示已安装的发行版本
+
+浏览器端在设置 Shell 的 `settings.general.item` 列表中以通用分区自身的 `current-version` id、低一级的优先级注册一行，从而替换该行。它携带本地浏览器 Cookie 读取 `/team/product`，展示部署配置的 `productVersion`，即成员报告和更新时所用的发行版本。部署未指定版本时该路由返回 `404`，这一行随即显示客户端构建的 DSH 版本，与通用分区原有的行一致。Runner 应答之前这一行不渲染任何内容，因此不会先显示一个版本再换成另一个。
+
 ### 空白会话按成员自己的时钟问候
 
 同一个浏览器端用同一次 `/team/account` 读取填充 Conversation Shell 的 `conversation.hero.headline` Slot。标题是小微的全身形象加两行：一行是助手称呼显示名的问候，一行是它下面的寄语。问候属于成员浏览器时钟所处的时段——深夜、清晨、晨会、上午其余时间、中午、下午、晚上——寄语属于所处的半小时；时段边界写在 [`day-parts.ts`](src/client/day-parts.ts) 中，文案写在 [`locales.ts`](src/client/locales.ts) 中。一直开着的会话会自己跨入下一个半小时。身份到达之前，标题保持为空，而不是问候一个无名者。
@@ -70,10 +74,10 @@ HTML 表单由回环地址上的 Runner 提供。提交后，Runner 开启一个
 
 | 路径 | 角色 |
 |---|---|
-| [`src/index.ts`](src/index.ts) | 请求验证与四条本地路由 |
+| [`src/index.ts`](src/index.ts) | 请求验证与五条本地路由 |
 | [`src/pages.ts`](src/pages.ts) | 应用解锁前提供的独立 HTML |
 | [`src/paths.ts`](src/paths.ts) | 固定本地路径 |
-| [`src/client/`](src/client/) | 本地化成员入口、账户菜单与欢迎标题 |
+| [`src/client/`](src/client/) | 本地化成员入口、账户菜单、欢迎标题与设置页版本行 |
 | [`src/xiaowei-avatar.ts`](src/xiaowei-avatar.ts) | 小微的全身形象，内联供欢迎标题与回复署名行使用 |
 
 -----

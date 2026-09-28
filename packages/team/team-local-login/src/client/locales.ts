@@ -68,6 +68,7 @@ export const zh = {
   'hero.tagline.2300': '星空笼罩四野，抛开烦忧，静静等候来日的第一缕曙光。',
   'hero.tagline.2330': '临近子夜时分，安然沉静，静待下一轮破晓曙光！',
   'memberFallback': '团队成员',
+  'version.current': '当前版本：{version}',
 } satisfies Record<string, string>
 
 /** The account launcher namespace key union. */
@@ -136,4 +137,5 @@ export const en = {
   'hero.tagline.2300': 'The stars cover the fields — leave your worries and wait quietly for the first light of tomorrow.',
   'hero.tagline.2330': 'Midnight is near — be still and at ease, and wait for the next daybreak.',
   'memberFallback': 'Team member',
+  'version.current': 'Current version: {version}',
 } satisfies Record<TeamAccountKey, string>

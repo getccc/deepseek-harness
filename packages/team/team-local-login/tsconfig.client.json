@@ -8,6 +8,7 @@
   "files": [
     "src/client/AssistantIdentity.tsx",
     "src/client/HeroGreeting.tsx",
+    "src/client/ProductVersionRow.tsx",
     "src/client/TeamAccountLauncher.tsx",
     "src/client/account-slots.ts",
     "src/client/day-parts.ts",
