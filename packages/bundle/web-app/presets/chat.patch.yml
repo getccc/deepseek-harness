@@ -1,11 +1,12 @@
-# Agent preset chat: a conversation with no working directory and, by default,
-# no tools; web search and page fetching are a per-session switch. The
+# Agent preset chat: a conversation with no working directory and no tools
+# but web search and page fetching, which are a per-session switch that new
+# sessions start with on. The
 # registry's `chatDefault` names it for sessions created without a Workspace
 # or cwd, and `workspace: none` keeps it off every session that owns one.
 #
 # Nothing here may interpolate `{{cwd}}`, mount a filesystem or shell row, or
 # scan a project directory. What makes the first token fast is what is absent:
-# no tool schemas in the request while the web switch is off, no skill
+# no tool schemas beyond the two web tools, none while the switch is off, no skill
 # discovery, no AGENTS.md read, no runtime-context snapshot of a directory. The
 # persona row states the whole persona, suffix included, because the Web
 # deployment's suffix names the working directory.
@@ -46,10 +47,11 @@
 
           # The `web` service and its providers stay in the host composition;
           # the model-facing tools are this preset's, behind a switch every
-          # session starts with off. `/web on` (the composer's 联网 chip)
-          # offers `web_search` and `web_fetch` from the next step, and the
-          # log's `web/access` events own the state, so a resumed chat is
-          # offered exactly what it was last set to. Search is a full auxiliary
+          # new session starts with on, so a chat can answer with current
+          # information without the member asking first. `/web off` (the
+          # composer's 联网 chip) withholds `web_search` and `web_fetch` from
+          # the next step, and the log's `web/access` events own the state, so
+          # a resumed chat is offered exactly what it was last set to. Search is a full auxiliary
           # model request with server-side retrieval on the shipped DeepSeek
           # route, hence the 60s budget the standard preset also gives it.
           - id: tool-web
@@ -57,7 +59,7 @@
             config:
               fetch: true
               searchTimeoutMs: 60000
-              sessionSwitch: off
+              sessionSwitch: on
 
           # Same compaction group as the standard preset: a long chat still has
           # to fit the model's context, and the pruner is the service

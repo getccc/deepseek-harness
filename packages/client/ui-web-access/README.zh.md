@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-本包在 Web GUI 中渲染联网开关：composer 工具行里的「联网」徽章，显示本对话的 agent 是否被提供 `web_search` 与 `web_fetch`，并可一键切换。它只出现在宿主提供开关的地方：preset 挂载了开关（随附的 `chat` preset，默认关闭），且部署许可该成员搜索。它读取宿主计算的 `webAccess` 投影，因此重新加载、第二个浏览器与模型三方一致；并经 `webAccess` Remote 设置开关，所以点击不会留下命令节点；开关本身归 `dsh-tool-web` 所有。
+本包在 Web GUI 中渲染联网开关：composer 工具行里的「联网」徽章，显示本对话的 agent 是否被提供 `web_search` 与 `web_fetch`，并可一键切换。它只出现在宿主提供开关的地方：preset 挂载了开关（随附的 `chat` preset，每个新会话默认开启），且部署许可该成员搜索。它读取宿主计算的 `webAccess` 投影，因此重新加载、第二个浏览器与模型三方一致；并经 `webAccess` Remote 设置开关，所以点击不会留下命令节点；开关本身归 `dsh-tool-web` 所有。
 
 ## 目录
 
@@ -56,7 +56,7 @@ kind: "package-reference"
 
 - [dsh-api-web-access-controller](../../api/web-access-controller/README.zh.md)——徽章借以设置开关的 Remote。
 - [dsh-tool-web](../../web/tool-web/README.zh.md)——拥有 `sessionSwitch` 配置、`/web` 命令、`webAccess` 投影与按会话的工具限制。
-- [dsh-agent-preset-registry](../../preset/agent-preset-registry/README.zh.md)——随附的 `chat` preset（Web bundle 的 `presets/chat.patch.yml`）向其声明；该 preset 默认以关闭状态挂载该开关。
+- [dsh-agent-preset-registry](../../preset/agent-preset-registry/README.zh.md)——随附的 `chat` preset（Web bundle 的 `presets/chat.patch.yml`）向其声明；该 preset 为每个新会话以开启状态挂载该开关。
 - [ui-conversation](../ui-conversation/README.zh.md)——声明 composer 的 `conversation.input.left` 区域。
 - [客户端包映射](../README.zh.md)——相邻的浏览器 UI 包。
 

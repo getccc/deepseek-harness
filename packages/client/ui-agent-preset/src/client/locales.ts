@@ -61,7 +61,7 @@ export const en: Record<AgentPresetSettingsKey, string> = {
     'Customize DSH through conversation. Let the agent write plugins that add features or UI, or combine tools and prompts to create your own mode.',
   presetChatName: 'Chat mode',
   presetChatDescription:
-    'Fast conversation without a workspace: only the assistant persona and context compaction, so the first token waits for no directory scan or tool catalog; web search is a per-session switch, off by default.',
+    'Fast conversation without a workspace: only the assistant persona and context compaction, so the first token waits for no directory scan or tool catalog; web search is a per-session switch, on by default.',
 
   inUse: 'New task default',
   noWorkspace: 'No workspace',
@@ -102,7 +102,7 @@ export const zh: Record<AgentPresetSettingsKey, string> = {
   presetCordisName: '创造模式',
   presetCordisDescription: '用对话定制 DSH：让 Agent 编写插件，添加新功能或界面；也能组合工具和提示词，创建自己的模式。',
   presetChatName: '聊天模式',
-  presetChatDescription: '无工作区的快速对话：只有小微的身份提示和上下文压缩，首个 token 不等待任何目录扫描或工具目录；联网检索按会话开关，默认关闭。',
+  presetChatDescription: '无工作区的快速对话：只有小微的身份提示和上下文压缩，首个 token 不等待任何目录扫描或工具目录；联网检索按会话开关，默认开启。',
 
   inUse: '新任务默认',
   noWorkspace: '无工作区',

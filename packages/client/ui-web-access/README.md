@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This package renders the web access switch in the Web GUI: a 联网 chip in the composer tool row that shows whether this conversation's agent is offered `web_search` and `web_fetch`, and flips it with one click. It appears only where the Host offers a switch: the preset mounts one (the shipped `chat` preset, off by default) and the deployment permits this member to search. It reads the host-computed `webAccess` projection, so a reload, a second browser, and the model agree, and sets the switch through the `webAccess` Remote, so clicks leave no command node; `dsh-tool-web` owns the switch itself.
+This package renders the web access switch in the Web GUI: a 联网 chip in the composer tool row that shows whether this conversation's agent is offered `web_search` and `web_fetch`, and flips it with one click. It appears only where the Host offers a switch: the preset mounts one (the shipped `chat` preset, on for each new session) and the deployment permits this member to search. It reads the host-computed `webAccess` projection, so a reload, a second browser, and the model agree, and sets the switch through the `webAccess` Remote, so clicks leave no command node; `dsh-tool-web` owns the switch itself.
 
 ## Table of Contents
 
@@ -56,7 +56,7 @@ Read these pages when the chip is not enough. They move from the control to the 
 
 - [dsh-api-web-access-controller](../../api/web-access-controller/README.md) — the Remote the chip sets the switch through.
 - [dsh-tool-web](../../web/tool-web/README.md) — owns the `sessionSwitch` config, the `/web` command, the `webAccess` projection, and the per-session tool restriction.
-- [dsh-agent-preset-registry](../../preset/agent-preset-registry/README.md) — the registry the shipped `chat` preset (Web bundle `presets/chat.patch.yml`) is declared to; that preset mounts the switch off by default.
+- [dsh-agent-preset-registry](../../preset/agent-preset-registry/README.md) — the registry the shipped `chat` preset (Web bundle `presets/chat.patch.yml`) is declared to; that preset mounts the switch on for each new session.
 - [ui-conversation](../ui-conversation/README.md) — declares the composer's `conversation.input.left` zone.
 - [Client package map](../README.md) — adjacent browser UI packages.
 

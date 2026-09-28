@@ -35,7 +35,7 @@ function systemPromptText(session: Session): string | undefined {
 
 /**
  * The chat preset: a session created without a workspace, whose request
- * carries the persona and, once the member turns web access on, exactly the
+ * carries the persona and, with web access on from the start, exactly the
  * two web tool schemas, and which the sidebar lists among recent
  * conversations rather than under a Workspace.
  */
@@ -56,17 +56,13 @@ describe('chat agent preset', () => {
       agentOptions: { provider: 'deepseek-official', model: 'deepseek-v4-flash' },
       setup: agentCtx => scaffold.ctx.agentPresets.mount(agentCtx, 'chat').then(() => undefined),
     })
-    // Off by default: once the switch has asked the web service whether this
+    // On by default: once the switch has asked the web service whether this
     // member may search, it logs its initial value and registers /web on the
-    // agent; every tool stays withheld meanwhile. Turning it on is what the
-    // composer's 联网 chip records, so the pinned request is the switched-on one.
+    // agent, so the first request already offers the web tools.
     await vi.waitFor(() => {
       expect(agentHandle.agent.session.snapshotEvents().filter(event => event.type === 'web/access').map(event => event.data))
-        .toEqual([{ enabled: false }])
+        .toEqual([{ enabled: true }])
     })
-    expect(scaffold.ctx.tools.schemas(agentHandle.agent)).toEqual([])
-    const flipped = await scaffold.ctx.commands.execute(agentHandle.agent, '/web on', [], new AbortController().signal)
-    expect(flipped?.result).toEqual({ kind: 'success', text: 'Web access on: web search and page fetching are offered from the next step.' })
     agentHandle.agent.followup(createUserMessage({
       content: [{ type: 'text', text: PROMPT }],
       source: { kind: 'user' },
@@ -120,7 +116,7 @@ describe('chat agent preset', () => {
     await recent.waitFor({ timeout: 15_000 })
     await recent.getByRole('treeitem').first().click()
     await page.getByText('CHAT_PRESET_REQUEST_OK', { exact: true }).waitFor({ timeout: 15_000 })
-    // The composer's web switch reads the projected on state the /web command logged.
+    // The composer's web switch reads the projected on state the session started with.
     await page.getByRole('button', { name: 'Web access on, press to turn off' }).waitFor({ timeout: 15_000 })
 
     const snapshot = await captureStableAria(page, '[class*="centerCol"]', scaffold.workspaceCwd)

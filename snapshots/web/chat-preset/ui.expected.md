@@ -6,7 +6,7 @@
   - tablist:
     - tab "Chat" [selected]
     - tab "Trajectory"
-- text: "web Web access on: web search and page fetching are offered from the next step. Reply exactly CHAT_PRESET_REQUEST_OK and stop. {{clock}}"
+- text: Reply exactly CHAT_PRESET_REQUEST_OK and stop. {{clock}}
 - button "Copy"
 - status: Xiaowei worked
 - button "Xiaowei took {{duration}}" [disabled]
