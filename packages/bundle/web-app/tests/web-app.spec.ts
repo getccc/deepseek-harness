@@ -184,6 +184,36 @@ describe('web-app runtime glue', () => {
     await ctx.fiber.dispose()
   })
 
+  it('orients a member audience to the named product without the checkout or rebuild workflow', async () => {
+    stageDist()
+    const ctx = new Context()
+    ctx.provide('webServer', fakeHttpServer().server)
+    provideConnection(ctx)
+    const contributions: BashContribution[] = []
+    ctx.provide('shellEnv', {
+      register: (contribution: BashContribution) => {
+        contributions.push(contribution)
+        return () => {}
+      },
+    } as never)
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+    apply(ctx, new Config({
+      openBrowser: false, printUrl: false, surfaceContext: true, surfaceAudience: 'member', surfaceName: 'WeWork', trustedHosts: [],
+    }))
+    await ctx.plugin(SystemPrompt, { personaPrefix: '' })
+    await new Promise(resolve => setTimeout(resolve, 0))
+    const assembly = await ctx.systemPrompt.assemble()
+    expect(assembly.sections.find(entry => entry.name === 'app:web-surface')?.text).toBe(
+      'You are interacting with the user through WeWork at http://127.0.0.1:4567. '
+      + 'When the user refers to "this page", "this GUI", or "this app" without naming another target, they mean this GUI. '
+      + 'The browser provides no implicit DOM, route, or screenshot context.',
+    )
+    expect(assembly.sections.some(entry => entry.name === 'harness:source')).toBe(false)
+    const webRuntime = contributions.find(contribution => contribution.name === 'web-runtime')
+    expect(webRuntime?.variables['DSH_WEB_URL']?.description).toBe('Canonical local URL of WeWork serving this session.')
+    await ctx.fiber.dispose()
+  })
+
   it('skips the surface context when disabled (the one-shot layer): no prompt section, no bash variables', async () => {
     stageDist()
     const ctx = new Context()

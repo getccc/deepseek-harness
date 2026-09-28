@@ -55,6 +55,15 @@ export interface Config {
    * orientation text would be false.
    */
   surfaceContext: boolean
+  /**
+   * Who uses the GUI the surface context describes. `developer` also tells
+   * the model where this dsh checkout is and how Web changes reach the open
+   * page; `member` names only the product, for a deployment whose users have
+   * no checkout and never rebuild the GUI.
+   */
+  surfaceAudience: 'developer' | 'member'
+  /** The product the surface context says the user is interacting through. */
+  surfaceName: string
   /** Explicit `--trusted-host` authorities from this invocation. */
   trustedHosts: string[]
 }
@@ -64,6 +73,8 @@ export const Config: z<Config> = z.object({
   printUrl: z.boolean().default(true),
   entryPath: z.string().default('/'),
   surfaceContext: z.boolean().default(true),
+  surfaceAudience: z.union(['developer', 'member'] as const).default('developer'),
+  surfaceName: z.string().min(1).default('the DeepSeek Harness Web GUI'),
   trustedHosts: z.array(String).default([]),
 })
 
@@ -134,14 +145,16 @@ export function resolveLanTrust(bindHost: string, extra: readonly string[]): Web
   return { lanAddresses, trustedHosts: [...lanAddresses, ...extra] }
 }
 
-/** Model-visible orientation and acceptance boundary for sessions created through `dsh web`. */
-function webSurfacePrompt(webUrl: string): string {
+/** Model-visible orientation, plus the developer acceptance boundary, for sessions created through `dsh web`. */
+function webSurfacePrompt(config: Pick<Config, 'surfaceAudience' | 'surfaceName'>, webUrl: string): string {
+  const orientation = `You are interacting with the user through ${config.surfaceName} at ${webUrl}. `
+    + 'When the user refers to "this page", "this GUI", or "this app" without naming another target, they mean this GUI. '
+    + 'The browser provides no implicit DOM, route, or screenshot context.'
+  if (config.surfaceAudience === 'member') return orientation
   const updateContract = 'The client-plugin HMR receiver is active, but client-plugin changes reload without a refresh only while '
     + '`pnpm run dev:web` is also running from this same checkout to rebuild their bundles; verify that watcher before promising automatic updates. '
     + 'Every other change — the apps/web shell and plain packages — requires rebuilding the affected Web artifacts and verifying this existing URL after a page refresh. '
-  return `You are interacting with the user through the DeepSeek Harness Web GUI at ${webUrl}. `
-    + 'When the user refers to "this page", "this GUI", or "this app" without naming another target, they mean this GUI. '
-    + 'The browser provides no implicit DOM, route, or screenshot context. '
+  return `${orientation} `
     + updateContract
     + 'Starting another server does not update this GUI. '
     + 'The apps/web Vite entry builds the shell but is not a standalone application because only dsh web injects window.__DSH_BOOT__. '
@@ -239,18 +252,18 @@ export function apply(ctx: Context, config: Config): void {
   ctx.plugin(FrontendStatic, { distIndex: internals.resolveDistIndex() })
   if (config.surfaceContext) {
     ctx.inject(['systemPrompt'], (promptCtx) => {
-      addHarnessSourceSection(promptCtx, SOURCE_ROOT)
+      if (config.surfaceAudience === 'developer') addHarnessSourceSection(promptCtx, SOURCE_ROOT)
       promptCtx.systemPrompt.section({
         name: 'app:web-surface',
         order: promptCtx.systemPrompt.getSectionOrder('WEB_SURFACE'),
-        text: () => webSurfacePrompt(localWebUrl(promptCtx)),
+        text: () => webSurfacePrompt(config, localWebUrl(promptCtx)),
       })
     })
     ctx.inject(['shellEnv'], (runtimeCtx) => {
       runtimeCtx.shellEnv.register({
         name: 'web-runtime',
         variables: {
-          [DSH_WEB_URL]: { description: 'Canonical local URL of the DeepSeek Harness Web GUI serving this session.' },
+          [DSH_WEB_URL]: { description: `Canonical local URL of ${config.surfaceName} serving this session.` },
         },
         resolve: () => ({ [DSH_WEB_URL]: localWebUrl(runtimeCtx) }),
       })

@@ -4043,6 +4043,12 @@ export interface Config {
   maxRequestBodyBytes: number
   /** Locale used before the client application loads. */
   locale?: LoginLocale
+  /**
+   * Release version of the installed product, shown in Settings in place of
+   * the client build's DSH version. An installer knows it and writes it in;
+   * absent, Settings keeps the DSH version.
+   */
+  productVersion?: string
 }
 
 /** A locale available to the Runner-local login pages. */
@@ -5013,6 +5019,15 @@ export interface Config {
    * orientation text would be false.
    */
   surfaceContext: boolean
+  /**
+   * Who uses the GUI the surface context describes. `developer` also tells
+   * the model where this dsh checkout is and how Web changes reach the open
+   * page; `member` names only the product, for a deployment whose users have
+   * no checkout and never rebuild the GUI.
+   */
+  surfaceAudience: 'developer' | 'member'
+  /** The product the surface context says the user is interacting through. */
+  surfaceName: string
   /** Explicit `--trusted-host` authorities from this invocation. */
   trustedHosts: string[]
 }

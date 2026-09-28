@@ -32,12 +32,16 @@
 
 # Team opens a clean local entry. The local login owns authentication, so this
 # URL must not carry the process-token shortcut used by the standalone Web app.
+# Members use WeWork, not a dsh checkout: the model is told the product name
+# and nothing about the checkout path or rebuilding the GUI.
 - id: web-runtime
   config:
     openBrowser: !!js ctx.webStartup.openBrowser
     printUrl: true
     entryPath: /team/open
     surfaceContext: true
+    surfaceAudience: member
+    surfaceName: WeWork
     trustedHosts: !!js ctx.webStartup.trustedHosts
 
 # Company models use a distinct provider route from a member's own DeepSeek

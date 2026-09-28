@@ -49,6 +49,8 @@ Most users never set these; the command-line flags feed the four settings below 
 | `openBrowser` | `true` | Open the default browser after startup; SSH launches suppress it |
 | `printUrl` | `true` | Print the `dsh web:` URL line at startup |
 | `surfaceContext` | `true` | Give the agent GUI-orientation context and expose `DSH_WEB_URL` to its shell commands |
+| `surfaceAudience` | `developer` | `developer` adds the checkout location and the GUI rebuild workflow to that context; `member` omits both for a deployment whose users have no checkout |
+| `surfaceName` | `the DeepSeek Harness Web GUI` | The product the context says the user is interacting through |
 | `trustedHosts` | `[]` | Extra hosts allowed to reach the GUI from the network |
 
 The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-web-app) is the exhaustive source for every accepted field and its JSDoc. The shipped composition disables `schedule`, `ui-schedule`, and `time-context` by default.
@@ -129,7 +131,7 @@ Read these pages when you want to go deeper into the shared core, the browser re
 
 #### What the model sees
 
-When `surfaceContext` is true, the `harness:source` section identifies the on-disk Harness implementation without claiming it is the working directory, and the `app:web-surface` global section (first-party order 10100, after reusable instructions) orients the model to the GUI: the canonical local URL, the "this page" referent, the update contract (the reload receiver is always on; no-refresh reloads additionally need the `pnpm run dev:web` watcher), and the instruction not to start replacement servers. `DSH_WEB_URL` additionally appears in the managed bash environment with its description, resolved per invocation from the live server. When it is false, neither section nor the variable is registered.
+When `surfaceContext` is true, the `harness:source` section identifies the on-disk Harness implementation without claiming it is the working directory, and the `app:web-surface` global section (first-party order 10100, after reusable instructions) orients the model to the GUI: the canonical local URL, the "this page" referent, the update contract (the reload receiver is always on; no-refresh reloads additionally need the `pnpm run dev:web` watcher), and the instruction not to start replacement servers. `DSH_WEB_URL` additionally appears in the managed bash environment with its description, resolved per invocation from the live server. A `member` audience registers only the orientation part of `app:web-surface` — the product named by `surfaceName`, the URL, and the "this page" referent — and no `harness:source` section. When it is false, neither section nor the variable is registered.
 
 #### Token effect
 
