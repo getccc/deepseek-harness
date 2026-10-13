@@ -109,8 +109,12 @@ class ScriptedSource extends KnowledgeSource {
     return this.content instanceof Error ? Promise.reject(this.content) : Promise.resolve(this.content)
   }
 
+  /** Answers each search in place of {@link hits}, when a test needs per-call answers. */
+  answer: ((request: UpstreamSearchRequest) => Promise<readonly UpstreamPassage[]>) | undefined = undefined
+
   search(request: UpstreamSearchRequest): Promise<readonly UpstreamPassage[]> {
     this.searched.push(request)
+    if (this.answer !== undefined) return this.answer(request)
     return this.hits instanceof Error ? Promise.reject(this.hits) : Promise.resolve(this.hits)
   }
 }
@@ -487,21 +491,91 @@ describe('searching', () => {
     })).rejects.toMatchObject({ reason: 'not-allowed' })
   })
 
-  it('refuses a scope whose bases do not share one embedding model', async () => {
-    source.listing = [upstream(A), upstream(B, { embeddingModelId: 'emb-other' })]
-    await gateway.sync(ORG)
-    const role = await roleFor(ALICE, 'all-knowledge')
-    await access.grantType(role.id, KNOWLEDGE_RESOURCE_TYPE, 'knowledge.search')
-    await expect(gateway.search({
-      orgId: ORG, principalId: ALICE, scope: { mode: 'all' }, query: '年假',
-    })).rejects.toMatchObject({ reason: 'scope-incompatible' })
-    // Refused before the call, because the upstream declares no error for it.
-    expect(source.searched).toHaveLength(0)
-    // A single base out of that set still searches.
-    source.hits = [passage(A)]
-    await expect(gateway.search({
-      orgId: ORG, principalId: ALICE, scope: selected(REF_A), query: '年假',
-    })).resolves.toMatchObject({ passages: [expect.objectContaining({ ref: REF_A })] })
+  describe('across embedding models', () => {
+    /** Grant one member search on A and B, which two embedding models index. */
+    async function grantMixed(): Promise<void> {
+      source.listing = [upstream(A), upstream(B, { embeddingModelId: 'emb-other' })]
+      await gateway.sync(ORG)
+      const role = await roleFor(ALICE, 'all-knowledge')
+      await access.grantType(role.id, KNOWLEDGE_RESOURCE_TYPE, 'knowledge.search')
+    }
+
+    /** One passage of one base, carrying its own text, score, and document. */
+    function ranked(upstreamId: string, text: string, score: number, upstreamDocId?: string): UpstreamPassage {
+      return { ...passage(upstreamId), text, score, ...(upstreamDocId === undefined ? {} : { upstreamDocId }) }
+    }
+
+    it('searches each model with its own call and alternates the answers by rank', async () => {
+      await grantMixed()
+      source.answer = request => Promise.resolve(request.upstreamIds[0] === A
+        ? [ranked(A, 'a1', 0.9), ranked(A, 'a2', 0.8), ranked(A, 'a3', 0.7)]
+        : [ranked(B, 'b1', 0.01)])
+      const result = await gateway.search({
+        orgId: ORG, principalId: ALICE, scope: { mode: 'all' }, query: '年假', maxResults: 3,
+      })
+      // Catalog order: REF_B sorts before REF_A.
+      expect(source.searched.map(request => request.upstreamIds)).toEqual([[B], [A]])
+      expect(source.searched.map(request => request.maxResults)).toEqual([3, 3])
+      // B's lower score does not cost its first place: scores of separate calls are not compared.
+      expect(result.passages.map(hit => hit.text)).toEqual(['b1', 'a1', 'a2'])
+      expect(result.truncated).toBe(true)
+    })
+
+    it('alternates whole documents in a document ranking', async () => {
+      await grantMixed()
+      source.answer = request => Promise.resolve(request.upstreamIds[0] === A
+        ? [ranked(A, 'a1', 0.9, 'doc-1'), ranked(A, 'a1 again', 0.5, 'doc-1'), ranked(A, 'a2', 0.8, 'doc-3')]
+        // A passage naming no document stands for its title inside its base.
+        : [ranked(B, 'b1', 0.01)])
+      const result = await gateway.search({
+        orgId: ORG, principalId: ALICE, scope: { mode: 'all' }, query: '年度报告', maxDocuments: 2,
+      })
+      expect(source.searched.map(request => request.maxDocuments)).toEqual([2, 2])
+      expect(result.passages.map(hit => hit.text)).toEqual(['b1', 'a1', 'a1 again'])
+      expect(result.truncated).toBe(true)
+    })
+
+    it('aborts the other calls when one fails, and fails the whole search', async () => {
+      await grantMixed()
+      const signals: AbortSignal[] = []
+      source.answer = (request) => {
+        if (request.signal !== undefined) signals.push(request.signal)
+        if (request.upstreamIds[0] === B) return Promise.reject(new KnowledgeError('upstream-unavailable'))
+        // Settles only once aborted, as a provider's fetch does.
+        return new Promise((_resolve, reject) => {
+          request.signal?.addEventListener('abort', () => { reject(new KnowledgeError('upstream-unavailable')) })
+        })
+      }
+      await expect(gateway.search({
+        orgId: ORG, principalId: ALICE, scope: { mode: 'all' }, query: '年假',
+      })).rejects.toMatchObject({ reason: 'upstream-unavailable' })
+      expect(signals.map(signal => signal.aborted)).toEqual([true, true])
+    })
+
+    it('passes the caller’s cancellation to every call', async () => {
+      await grantMixed()
+      const caller = new AbortController()
+      const signals: AbortSignal[] = []
+      source.answer = (request) => {
+        if (request.signal !== undefined) signals.push(request.signal)
+        return Promise.resolve([])
+      }
+      await gateway.search({
+        orgId: ORG, principalId: ALICE, scope: { mode: 'all' }, query: '年假', signal: caller.signal,
+      })
+      expect(signals.map(signal => signal.aborted)).toEqual([false, false])
+      caller.abort()
+      expect(signals.map(signal => signal.aborted)).toEqual([true, true])
+    })
+
+    it('keeps a scope inside one model to one call', async () => {
+      await grantMixed()
+      source.hits = [passage(A)]
+      await expect(gateway.search({
+        orgId: ORG, principalId: ALICE, scope: selected(REF_A), query: '年假',
+      })).resolves.toMatchObject({ passages: [expect.objectContaining({ ref: REF_A })] })
+      expect(source.searched.map(request => request.upstreamIds)).toEqual([[A]])
+    })
   })
 
   it('drops a hit from a base the request did not scope', async () => {

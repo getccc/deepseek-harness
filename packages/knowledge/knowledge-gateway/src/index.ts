@@ -88,9 +88,10 @@ export interface KnowledgeCatalogEntry {
   /**
    * Which embedding model indexes it.
    *
-   * Read by the gateway before a multi-base search and shown on the
-   * administration page, because a set that does not share one is refused and
-   * an administrator otherwise cannot see why.
+   * Read by the gateway to search each model's knowledge bases with their own
+   * upstream call, and shown on the administration page, because an
+   * administrator otherwise cannot see why answers from some knowledge bases
+   * take turns rather than rank together.
    */
   readonly embeddingModelId: string
   /** Whether an administrator has switched this entry on. */

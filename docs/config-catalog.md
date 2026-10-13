@@ -1877,7 +1877,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-knowledge-gateway-sqlite`
 
 - `inject`: `accessControl` · `audit` · `knowledgeSource`
-- `source`: [`packages/knowledge/knowledge-gateway-sqlite/src/index.ts:56`](../packages/knowledge/knowledge-gateway-sqlite/src/index.ts)
+- `source`: [`packages/knowledge/knowledge-gateway-sqlite/src/index.ts:60`](../packages/knowledge/knowledge-gateway-sqlite/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: where the catalog lives, and what one operation may return. */

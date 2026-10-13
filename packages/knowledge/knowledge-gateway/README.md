@@ -66,7 +66,7 @@ No member-facing method returns a partial answer. A directory that could not be 
 
 ### Data model
 
-`KnowledgeCatalogEntry` carries `adminEnabled` because it is a policy choice synchronization must not override; a catalog holds only what the source still lists, so there is no second bit for whether a knowledge base is still there. `effectiveEnabled` is that choice conjoined with the governed resource's own state, so an interrupted write reads as disabled rather than as available. `embeddingModelId` is carried because a multi-base search over knowledge bases that do not share one is refused, and an administrator otherwise cannot see why.
+`KnowledgeCatalogEntry` carries `adminEnabled` because it is a policy choice synchronization must not override; a catalog holds only what the source still lists, so there is no second bit for whether a knowledge base is still there. `effectiveEnabled` is that choice conjoined with the governed resource's own state, so an interrupted write reads as disabled rather than as available. `embeddingModelId` is carried because a multi-base search makes one upstream call per embedding model, and an administrator otherwise cannot see why answers from some knowledge bases take turns rather than rank together.
 
 <a id="further-exploration"></a>
 ## Further Exploration

@@ -43,7 +43,11 @@ import {
   type KnowledgePrincipal,
   type KnowledgeSourceStatus,
 } from '@deepseek-ai/dsh-knowledge-gateway'
-import type { UpstreamKnowledgeBase } from '@deepseek-ai/dsh-knowledge-source'
+import type {
+  UpstreamKnowledgeBase,
+  UpstreamPassage,
+  UpstreamSearchRequest,
+} from '@deepseek-ai/dsh-knowledge-source'
 import type {} from '@deepseek-ai/dsh-audit'
 import { applySchema, type KnowledgeBaseRow, type SourceRow } from './schema.ts'
 
@@ -322,19 +326,19 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
       await this.record(request, 'denied', undefined, 'no-grant')
       throw new KnowledgeError('not-allowed', 'no authorized knowledge base is in scope')
     }
-    this.assertOneEmbeddingModel(scoped, request)
     const maxResults = request.maxResults ?? this.resolved.defaultMaxResults
     const byUpstream = new Map(scoped.map(row => [row.upstream_id, row]))
     let passages: readonly KnowledgePassage[]
     try {
-      const upstream = await this.ctx.knowledgeSource.search({
-        upstreamIds: scoped.map(row => row.upstream_id),
+      const answers = await this.searchByEmbeddingModel(scoped, request.signal, {
         ...(upstreamDocIds === undefined ? {} : { upstreamDocIds }),
         query: request.query,
         maxResults,
         ...(request.maxDocuments === undefined ? {} : { maxDocuments: request.maxDocuments }),
-        ...(request.signal === undefined ? {} : { signal: request.signal }),
       })
+      const upstream = request.maxDocuments === undefined
+        ? interleave(answers).slice(0, maxResults)
+        : interleave(answers.map(answer => documentRuns(answer))).slice(0, request.maxDocuments).flat()
       passages = upstream.flatMap((passage) => {
         const row = byUpstream.get(passage.upstreamId)
         // The source can answer with a base the request did not name; a hit
@@ -438,18 +442,45 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
   }
 
   /**
-   * Refuse a multi-base scope whose members do not share an embedding model.
+   * Search the scoped knowledge bases with one upstream call per embedding model.
    *
-   * Cross-knowledge-base retrieval is defined only for knowledge bases that
-   * share one, and a source declares no error for a set that does not — so the
-   * behavior of such a call is unspecified. Unspecified upstream behavior must
-   * not become a silent product behavior.
+   * One call may span several knowledge bases only when they share an embedding
+   * model; a source declares no behavior for a mixed set, and WeKnora answers
+   * one from a single base. Each answer keeps its source's order. Several
+   * calls run together under one controller: the first failure aborts the
+   * others, and this settles only after every call has.
+   * @param rows - the authorized knowledge bases, never empty.
+   * @param signal - the caller's cancellation.
+   * @param search - the request fields every call shares.
+   * @returns one answer per embedding model, in catalog order.
    */
-  private assertOneEmbeddingModel(rows: readonly KnowledgeBaseRow[], principal: KnowledgePrincipal): void {
-    const models = new Set(rows.map(row => row.embedding_model_id))
-    if (models.size <= 1) return
-    void this.record(principal, 'denied', undefined, undefined, 'scope-incompatible')
-    throw new KnowledgeError('scope-incompatible', 'the selected knowledge bases do not share one embedding model')
+  private async searchByEmbeddingModel(
+    rows: readonly KnowledgeBaseRow[],
+    signal: AbortSignal | undefined,
+    search: Omit<UpstreamSearchRequest, 'upstreamIds' | 'signal'>,
+  ): Promise<readonly (readonly UpstreamPassage[])[]> {
+    const groups = new Map<string, string[]>()
+    for (const row of rows) {
+      const group = groups.get(row.embedding_model_id)
+      if (group === undefined) groups.set(row.embedding_model_id, [row.upstream_id])
+      else group.push(row.upstream_id)
+    }
+    const searchEach = (each: AbortSignal | undefined): Promise<readonly UpstreamPassage[]>[] =>
+      [...groups.values()].map(upstreamIds => this.ctx.knowledgeSource.search({
+        ...search,
+        upstreamIds,
+        ...(each === undefined ? {} : { signal: each }),
+      }))
+    if (groups.size === 1) return await Promise.all(searchEach(signal))
+    const controller = new AbortController()
+    const calls = searchEach(signal === undefined ? controller.signal : AbortSignal.any([controller.signal, signal]))
+    try {
+      return await Promise.all(calls)
+    } catch (error) {
+      controller.abort()
+      await Promise.allSettled(calls)
+      throw error
+    }
   }
 
   /** Every catalog entry this principal currently holds `knowledge.search` on. */
@@ -748,6 +779,47 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
 function upstreamLabel(error: unknown): string | undefined {
   const reason = error instanceof KnowledgeError ? error.reason : 'upstream-invalid'
   return reason === 'upstream-unavailable' || reason === 'upstream-invalid' ? reason : undefined
+}
+
+/**
+ * Alternate between ranked answers, taking each answer's next entry in turn.
+ *
+ * Scores from separate upstream calls are not comparable, because each call
+ * ranks against its own candidates, so a merged answer keeps ranks instead:
+ * every answer keeps its own order, and no answer's second entry precedes
+ * another's first. A single answer comes back unchanged.
+ * @param answers - ranked answers, in the order they take turns.
+ * @returns the merged ranking.
+ */
+function interleave<T extends object>(answers: readonly (readonly T[])[]): T[] {
+  const merged: T[] = []
+  const longest = Math.max(0, ...answers.map(answer => answer.length))
+  for (let rank = 0; rank < longest; rank += 1) {
+    for (const answer of answers) {
+      const entry = answer[rank]
+      if (entry !== undefined) merged.push(entry)
+    }
+  }
+  return merged
+}
+
+/**
+ * Split one document-ranked answer into its documents, best first.
+ *
+ * A passage naming no document stands for its title inside its knowledge
+ * base, as the source groups it.
+ * @param answer - one document-ranked answer, grouped one document after another.
+ * @returns each document's passages, in the answer's order.
+ */
+function documentRuns(answer: readonly UpstreamPassage[]): (readonly UpstreamPassage[])[] {
+  const runs = new Map<string, UpstreamPassage[]>()
+  for (const passage of answer) {
+    const key = passage.upstreamDocId ?? `${passage.upstreamId}\u0000${passage.title}`
+    const run = runs.get(key)
+    if (run === undefined) runs.set(key, [passage])
+    else run.push(passage)
+  }
+  return [...runs.values()]
 }
 
 /** Project one catalog row for a reader, with its governed resource state. */

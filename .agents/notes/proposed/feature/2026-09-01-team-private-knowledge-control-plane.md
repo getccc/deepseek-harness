@@ -288,7 +288,7 @@ The provider forwards `content`, `score`, `knowledge_title`, and `knowledge_base
 
 The provider sends a fresh request correlation id, forwards cancellation, applies a bounded timeout, validates decoded JSON and required response fields, and maps failures onto closed DSH reasons by reading `AppError.code`, the numeric enum whose members include `ErrBadRequest`, `ErrUnauthorized`, `ErrForbidden`, `ErrNotFound`, `ErrTooManyRequests`, `ErrInternalServer`, `ErrServiceUnavailable`, `ErrTimeout`, and `ErrValidation`. It never forwards `AppError.message` or `AppError.details`. Contract fixtures pin every upstream path, method, header name, and read field against the live deployment, including both envelopes it actually returns: `{ "data": …, "success": true }` on success and `{ "error": { "code", "message", "details" }, "success": false }` on failure, the second nesting `AppError` rather than returning it flat as the OpenAPI document declares. An optional real-WeKnora e2e self-skips without deployment credentials.
 
-WeKnora qualifies multi-base retrieval in the field's own definition: `knowledge_base_ids` allows one retrieval call to span multiple knowledge bases that share the same embedding model, and the API declares no error for a set that does not share one. Undefined upstream behavior must not become a silent product behavior, so the catalog records each entry's `embedding_model_id` and the gateway refuses a multi-base operation whose members do not share one, with the closed `scope-incompatible` reason, before any upstream call. A single-base selection is unaffected. `all` mode expands to the authorized set and can therefore be refused for the same reason, which is why the refusal names the incompatible bases and the administration page shows the embedding model: the member narrows the selection, and the administrator can see why they had to.
+WeKnora qualifies multi-base retrieval in the field's own definition: `knowledge_base_ids` allows one retrieval call to span multiple knowledge bases that share the same embedding model, and the API declares no error for a set that does not share one; a live set spanning two spaces answered from one of its bases alone. Undefined upstream behavior must not become a silent product behavior, so the catalog records each entry's `embedding_model_id` and the gateway never sends a mixed set: it searches each embedding model's knowledge bases with their own upstream call, concurrently, and one failed call aborts the others and fails the whole search. Scores from separate calls are not comparable, so the answers are merged by rank — each keeps its own order and they take turns, whole documents at a time in a document ranking — rather than by a score no call produced. A single-model scope is one call, unchanged. The administration page shows the embedding model so an administrator can see why answers from some knowledge bases alternate rather than rank together.
 
 ## Audit and operational visibility
 
@@ -308,7 +308,7 @@ The knowledge catalog page shows last attempt, last success, source health, and 
 | Inactive member or revoked device | `unauthenticated` | None |
 | No matching grant, unknown reference, or disabled/missing resource | `not-allowed` | Refusal audit only |
 | Selected Session scope is stale | `scope-unavailable` | None; the choice is retained pending explicit member correction |
-| Selected bases do not share one embedding model | `scope-incompatible` | Refusal audit only; no upstream call is made |
+| One call of a search spanning embedding models fails | That call's upstream reason | Failure audit; the other calls are aborted and no partial result is returned |
 | WeKnora unavailable or timed out | `upstream-unavailable` | Failure audit; catalog snapshot and grants retained |
 | Malformed WeKnora response | `upstream-invalid` | Failure audit; no partial model-visible value |
 | WAN, DNS, proxy, TLS, or Control Plane failure | `control-plane-unreachable` | None; no stale private result is served |
@@ -345,7 +345,7 @@ Deliver through a dependent PR stack. Lower branches carry no UI dependency and 
 - Add `knowledge-weknora` and `knowledge-gateway-sqlite`, the SQLite schema, source configuration, credential resolution, sync reconciliation, and access-control managed-resource registration.
 - Add upstream contract fixtures for listing and explicitly scoped hybrid search, pinned against the live deployment's own responses; refuse every unregistered path and malformed response.
 - Prove the provider bounds results itself when context enrichment returns more than `match_count`, and that an unknown reference is refused in the Control Plane rather than left to an upstream that ignores it.
-- Prove a multi-base request whose entries do not share an embedding model is refused before any upstream call, and that a single-base request is unaffected.
+- Prove a multi-base request whose entries do not share an embedding model makes one upstream call per model and merges the answers by rank, that one failed call fails it whole, and that a single-model request is one call.
 - Add authorization tests for type grants, resource grants, multi-role union, disabled and missing resources, whole-request refusal, current policy revision, and the call after a role change.
 - Prove the administration catalog resource is never returned as a searchable knowledge base under an `all`-mode type grant.
 - Add the audit action entries and the upstream failure label key, and prove that queries, passages, filenames, URLs, and raw errors cannot satisfy or enter the audit schema.
@@ -421,7 +421,7 @@ An implementation reports only the commands it actually ran. Do not claim a full
 - The administration catalog resource is never returned to a Runner as a searchable knowledge base, including for a role holding an `all`-mode type grant on `knowledge_scope`.
 - Two principals with disjoint selected grants receive disjoint directories and search results for the same query form; a principal holding both roles receives the union.
 - An explicitly unauthorized or unknown knowledge reference refuses the whole request, confirms nothing about its existence, and returns no authorized partial result.
-- A multi-base search whose entries do not share one embedding model is refused before any upstream call, and no tool result, passage, or upstream URL is produced for it.
+- A multi-base search whose entries do not share one embedding model never names a mixed set upstream, and a failure of any of its calls produces no partial tool result.
 - `/knowledge` persists off, all, and selected in the Session log, survives resume, fork, and replay, cannot widen current authorization, and reports a stale choice instead of silently changing it.
 - Search audit rows carry only identity, governed resource, action, outcome, bounded counts, and correlation; tests prove member content and upstream detail are structurally inadmissible, and that no new `AuditReason` was required.
 - Retrieved passages are charged through the existing model reservation on the next request, and the knowledge gateway holds no quota reservation of its own.
@@ -448,7 +448,9 @@ An implementation reports only the commands it actually ran. Do not claim a full
 
 **Ship `knowledge_read` in the first delivery.** Deferred rather than rejected. It is the most operationally expensive part of the design — a signing key, its rotation, and a validity window that is wrong in one direction for some Session — and the first delivery's outcome is met by search passages alone. Fixing the `KnowledgeRef` format now keeps the second delivery from reworking identity.
 
-**Fan out one search per embedding model and merge the results.** Rejected for the first delivery because scores from separate WeKnora searches are normalized within their own rerank and are not comparable across calls, so merging would invent a ranking the provider never produced. It also contradicts the whole-request rule: a member asking one question would receive a silently reordered union rather than a result the gateway can explain. Refusing names the problem where an administrator can fix it.
+**Refuse a multi-base scope whose members do not share an embedding model.** Rejected because WeKnora's model rows belong to a space: a knowledge base another space shares in never shares a model id with the key's own space, so no deployment discipline can make such a set searchable, and `all` mode would fail for every role holding both.
+
+**Merge per-model answers by score.** Rejected because scores from separate searches are normalized within their own call and are not comparable, so a score merge would invent a ranking no call produced; alternating by rank keeps each call's order and is a rule the gateway can state.
 
 **Meter knowledge retrieval against `quota` in the knowledge gateway.** Rejected because `ReservationRequest` is keyed by `modelRef` and a knowledge search has no model; a synthetic ref would corrupt the model usage ledger. Passages are already charged as prompt tokens on the following model request, so a second meter would double-count what one already counts.
 
@@ -470,7 +472,7 @@ An implementation reports only the commands it actually ran. Do not claim a full
 
 ## Risks
 
-- Knowledge bases created with different embedding models cannot be searched together, and a deployment that grows such a set makes `all` mode refuse for roles holding broad access. The administration page surfaces the embedding model so this is diagnosable, but keeping one embedding model across a company's knowledge bases is a deployment discipline DSH cannot enforce.
+- Knowledge bases indexed by different embedding models are not ranked against each other: their answers alternate by rank, so one model's weak second passage can precede another's strong first. Each additional model also costs one more concurrent upstream call. The administration page surfaces the embedding model so this is diagnosable.
 - The published WeKnora API markdown and the deployed OpenAPI document disagree: the markdown describes a top-level `POST /knowledge-search` this build does not serve, its search result omits fields the deployment returns, and the deployment's failure envelope nests `AppError` under `error` rather than returning it flat. Fixtures are pinned against the deployment's own document, and the named upgrade owner re-reads that document rather than the upstream repository's prose on every WeKnora bump.
 - The WeKnora API may change independently. Contract fixtures and the optional real e2e detect drift, but the provider still needs a named upgrade owner.
 - Directory and `all`-mode authorization evaluate once per knowledge base. This is acceptable for the initial full-listing deployment; a future bulk access-control operation must preserve per-resource evaluation and policy-revision semantics rather than authorizing once for several operations.

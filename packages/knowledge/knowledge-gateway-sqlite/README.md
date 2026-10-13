@@ -52,7 +52,7 @@ Concurrent callers join the reconciliation already in flight rather than racing 
 
 Every member-facing call evaluates `knowledge.search` per knowledge base, freshly. `all` expands to what the principal currently holds; `selected` authorizes each named reference and refuses the whole request on the first failure. An unknown reference and an unauthorized one produce the same refusal, so a member holding nothing cannot learn that a knowledge base exists.
 
-A multi-base scope whose members do not share an embedding model is refused with `scope-incompatible` **before** the source is called. Cross-knowledge-base retrieval is defined only for bases that share one, and a source declares no error for a set that does not — so the behavior of such a call is unspecified, and unspecified upstream behavior must not become a silent product behavior.
+A multi-base scope whose members do not share an embedding model is searched with **one upstream call per model**. Cross-knowledge-base retrieval is defined only for bases that share one, and a source declares no error for a set that does not — WeKnora answers a set spanning two spaces from one of its bases — so no call names a mixed set. The calls run concurrently; the first failure aborts the others and fails the search, because a partial result is indistinguishable from a complete one to the model that reads it. Scores from separate calls are not comparable, so the answers are merged by rank: each keeps its own order and they take turns, the model of the catalog's first knowledge base first, whole documents at a time when the search ranks documents.
 
 <a id="understand-the-implementation"></a>
 ## Understand the implementation

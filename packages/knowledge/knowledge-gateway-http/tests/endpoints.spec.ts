@@ -324,6 +324,21 @@ describe('searching', () => {
     })
   })
 
+  it('answers a scope spanning embedding models with one upstream search per model', async () => {
+    await grantAll()
+    const B = '08f25606-8876-49cc-b509-70e84828db08'
+    source.listing = [
+      { upstreamId: A, name: 'A', description: '', kind: 'document', documentCount: 0, processingCount: 0, embeddingModelId: 'one', updatedAt: undefined, createdAt: undefined },
+      { upstreamId: B, name: 'B', description: '', kind: 'document', documentCount: 0, processingCount: 0, embeddingModelId: 'two', updatedAt: undefined, createdAt: undefined },
+    ]
+    await (cp.get('knowledgeGateway') as KnowledgeGateway).sync(orgId)
+    source.hits = []
+    const response = await post(KNOWLEDGE_SEARCH_PATH, searchBody())
+    expect(response.status).toBe(200)
+    // Catalog order: B's reference sorts before A's.
+    expect(source.searched.map(request => request.upstreamIds)).toEqual([[B], [A]])
+  })
+
   it('passes a selected scope through and refuses one that is not authorized', async () => {
     await grantAll()
     source.hits = []
@@ -422,18 +437,6 @@ describe('failures map onto closed reasons', () => {
     const body = await response.text()
     expect(JSON.parse(body)).toEqual({ error: 'internal' })
     expect(body).not.toMatch(/disk/u)
-  })
-
-  it('answers an incompatible scope with a reason a member can act on', async () => {
-    await grantAll()
-    source.listing = [
-      { upstreamId: A, name: 'A', description: '', kind: 'document', documentCount: 0, processingCount: 0, embeddingModelId: 'one', updatedAt: undefined, createdAt: undefined },
-      { upstreamId: '08f25606-8876-49cc-b509-70e84828db08', name: 'B', description: '', kind: 'document', documentCount: 0, processingCount: 0, embeddingModelId: 'two', updatedAt: undefined, createdAt: undefined },
-    ]
-    await (cp.get('knowledgeGateway') as KnowledgeGateway).sync(orgId)
-    const response = await post(KNOWLEDGE_SEARCH_PATH, searchBody())
-    expect(response.status).toBe(409)
-    expect(await response.json()).toEqual({ error: 'knowledge', reason: 'scope-incompatible' })
   })
 
   it('answers a directory failure with the gateway’s own reason', async () => {

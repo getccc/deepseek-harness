@@ -40,8 +40,9 @@ export interface UpstreamKnowledgeBase {
    * Which embedding model indexes this knowledge base.
    *
    * The catalog records it because multi-base retrieval is only defined for
-   * knowledge bases that share one: the gateway refuses a mixed set rather
-   * than sending an upstream request whose behavior nobody specified.
+   * knowledge bases that share one: the gateway splits a mixed set into one
+   * search per model rather than sending an upstream request whose behavior
+   * nobody specified.
    */
   readonly embeddingModelId: string
   /** Epoch milliseconds, or undefined when the source supplies no timestamp. */

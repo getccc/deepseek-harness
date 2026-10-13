@@ -307,7 +307,11 @@ export type KnowledgeFailureReason =
   | 'scope-unavailable'
   /** The document exists for the source but has no content it will serve. */
   | 'document-unavailable'
-  /** Selected knowledge bases do not share one embedding model. */
+  /**
+   * Selected knowledge bases cannot be searched together. The gateway in this
+   * build searches each embedding model separately and never raises it; a
+   * Runner still reads it from a Control Plane that refuses such a scope.
+   */
   | 'scope-incompatible'
   /** The upstream knowledge service did not answer in time or at all. */
   | 'upstream-unavailable'

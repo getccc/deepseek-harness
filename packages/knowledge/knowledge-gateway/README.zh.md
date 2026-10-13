@@ -66,7 +66,7 @@ Control Plane 组合挂载一个提供方，由它注册本服务；面向 Runne
 
 ### 数据模型
 
-`KnowledgeCatalogEntry` 携带 `adminEnabled`，因为它是同步不得覆盖的策略选择；目录只保留数据源仍在列出的条目，因此不再有第二个位来表示知识库是否还在。`effectiveEnabled` 是该选择与受治理资源自身状态的合取，因此中断的写入读作已停用，而不是可用。携带 `embeddingModelId` 是因为跨不共享同一模型的知识库的检索会被拒绝，而管理员否则看不到原因。
+`KnowledgeCatalogEntry` 携带 `adminEnabled`，因为它是同步不得覆盖的策略选择；目录只保留数据源仍在列出的条目，因此不再有第二个位来表示知识库是否还在。`effectiveEnabled` 是该选择与受治理资源自身状态的合取，因此中断的写入读作已停用，而不是可用。携带 `embeddingModelId` 是因为多库检索会按 embedding 模型各发一次上游调用，而管理员否则看不到为什么某些知识库的答案是轮流排列而不是一起排名。
 
 <a id="further-exploration"></a>
 ## 延伸阅读

@@ -75,14 +75,14 @@
   en: 6f139dc16334f03f
   zh: 2e2f0ba1555a2b29
 /agent-note-team-private-knowledge-stays-behind-the-control-plane/weknora-provider-behavior:
-  en: 1aa36d6cd509e550
-  zh: 75fab05d8d89e6c5
+  en: 894a166be0dc1d93
+  zh: dd26f64280506b20
 /agent-note-team-private-knowledge-stays-behind-the-control-plane/audit-and-operational-visibility:
   en: 17c7c14f70b50326
   zh: 821d3bf4b86eb721
 /agent-note-team-private-knowledge-stays-behind-the-control-plane/failure-semantics:
-  en: e69236f04d099de9
-  zh: 4aff0b2a3724b66c
+  en: 644a95a3425098eb
+  zh: 4a3ac43d7b77ec10
 /agent-note-team-private-knowledge-stays-behind-the-control-plane/administration-ui:
   en: 76025b1cb7c87280
   zh: 5d9a5a976177e00a
@@ -93,8 +93,8 @@
   en: e541a328f72d161b
   zh: 07d60e247b758316
 /agent-note-team-private-knowledge-stays-behind-the-control-plane/delivery-plan/pr-2-weknora-provider-and-governed-catalog:
-  en: 98d72dc5a1fe953b
-  zh: 6661ee0dea74d643
+  en: 22bc68e4090ec654
+  zh: 3e0836f1082344f5
 /agent-note-team-private-knowledge-stays-behind-the-control-plane/delivery-plan/pr-3-control-plane-http-and-administration-api:
   en: d0e505975b033c7b
   zh: 36d9c2e65bf57a39
@@ -111,11 +111,11 @@
   en: db4ca324f01a6eef
   zh: 15a7fb0636605831
 /agent-note-team-private-knowledge-stays-behind-the-control-plane/acceptance-criteria:
-  en: 9bd0a97a7a2148ad
-  zh: ee6bc2883f423a78
+  en: 4af77c5406ccc960
+  zh: d5e2c9a4a0fc5ef5
 /agent-note-team-private-knowledge-stays-behind-the-control-plane/alternatives-considered:
-  en: 2a994e3ed8dd20eb
-  zh: ca7e9aa3ce5b522f
+  en: e42666998dacc4e5
+  zh: 1148607b4d9f7e63
 /agent-note-team-private-knowledge-stays-behind-the-control-plane/risks:
-  en: 3c24075fc73cc50e
-  zh: a83f1ebc8e17440c
+  en: ce9c503713edfef2
+  zh: 35f9bfbd1388654d
