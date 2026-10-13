@@ -12,6 +12,7 @@ import { Context } from '@deepseek-ai/cordis'
 import { KnowledgeError } from '@deepseek-ai/dsh-knowledge'
 import WeknoraKnowledgeSource, {
   API_KEY_HEADER,
+  CHUNK_PAGE_SIZE,
   ERROR_CODES,
   LIST_PATH,
   RESOURCE_PLACEHOLDER,
@@ -602,7 +603,8 @@ function wireChunk(index: number, content: string, patch: Record<string, unknown
 }
 
 /**
- * A fake WeKnora that answers one JSON body, then one binary body.
+ * A fake WeKnora that answers one JSON body, then one binary body, then one
+ * chunk page per chunk request in order, and an empty page after those.
  *
  * The file endpoint is the one call that is not JSON, so it needs its own
  * answer rather than another scripted envelope.
@@ -613,6 +615,7 @@ function fakeFile(record: unknown, file: { bytes: Uint8Array<ArrayBuffer>; lengt
 } {
   const calls: Captured[] = []
   let index = 0
+  let chunkCalls = 0
   const fetchImpl = (input: string | URL, init?: RequestInit): Promise<Response> => {
     const url = input instanceof URL ? input.href : input
     calls.push({ url, method: init?.method ?? 'GET', headers: { ...(init?.headers as Record<string, string>) }, body: undefined })
@@ -624,7 +627,8 @@ function fakeFile(record: unknown, file: { bytes: Uint8Array<ArrayBuffer>; lengt
       }))
     }
     if (url.includes('/chunks/')) {
-      return Promise.resolve(new Response(JSON.stringify(after[0] ?? { data: [], success: true }), {
+      const page = after[chunkCalls++] ?? { data: [], success: true }
+      return Promise.resolve(new Response(JSON.stringify(page), {
         status: 200, headers: { 'content-type': 'application/json' },
       }))
     }
@@ -744,6 +748,73 @@ describe('one document’s content', () => {
       upstreamDocId: 'doc-1', maxBytes: 1024, maxTextChars: 1000,
     })
     expect(content).toMatchObject({ text: '一二', truncated: true })
+  })
+
+  describe('reading the paginated chunk listing', () => {
+    /** One full page of chunks starting at an index, each `text` long. */
+    function chunkPage(from: number, size: number, text: string, total?: number): unknown {
+      const data = Array.from({ length: size }, (_unused, offset) => wireChunk(from + offset, text))
+      return total === undefined ? { data, success: true } : { data, total, success: true }
+    }
+
+    /** The chunk requests the provider sent, as path and query. */
+    function chunkRequests(calls: readonly Captured[]): string[] {
+      return calls.filter(call => call.url.includes('/chunks/')).map(call => new URL(call.url).search)
+    }
+
+    it('reads every page the source counts', async () => {
+      const mounted = await mountFile(okRecord({ file_name: '' }), undefined, [
+        chunkPage(0, CHUNK_PAGE_SIZE, 'a', 150),
+        chunkPage(CHUNK_PAGE_SIZE, 50, 'b', 150),
+      ])
+      const content = await mounted.ctx.knowledgeSource.fetchDocument({
+        upstreamDocId: 'doc-1', maxBytes: 1024, maxTextChars: 10_000,
+      })
+      expect(chunkRequests(mounted.calls)).toEqual([
+        `?page=1&page_size=${String(CHUNK_PAGE_SIZE)}`,
+        `?page=2&page_size=${String(CHUNK_PAGE_SIZE)}`,
+      ])
+      expect(content).toEqual({
+        kind: 'text',
+        fileName: '',
+        text: [...Array<string>(CHUNK_PAGE_SIZE).fill('a'), ...Array<string>(50).fill('b')].join('\n\n'),
+        truncated: false,
+      })
+    })
+
+    it('stops reading once the text passes the bound', async () => {
+      const mounted = await mountFile(okRecord({ file_name: '' }), undefined, [
+        chunkPage(0, CHUNK_PAGE_SIZE, '一二三', 1000),
+        chunkPage(CHUNK_PAGE_SIZE, CHUNK_PAGE_SIZE, '四五六', 1000),
+      ])
+      const content = await mounted.ctx.knowledgeSource.fetchDocument({
+        upstreamDocId: 'doc-1', maxBytes: 1024, maxTextChars: 7,
+      })
+      expect(chunkRequests(mounted.calls)).toHaveLength(1)
+      expect(content).toMatchObject({ text: '一二三\n\n一二', truncated: true })
+    })
+
+    it.each<[string, readonly unknown[]]>([
+      ['a full page reports no total', [chunkPage(0, CHUNK_PAGE_SIZE, 'a')]],
+      ['an empty page arrives before the total', [chunkPage(0, CHUNK_PAGE_SIZE, 'a', 500), chunkPage(0, 0, 'a', 500)]],
+    ])('reports text that may miss chunks as truncated when %s', async (_label, pages) => {
+      const mounted = await mountFile(okRecord({ file_name: '' }), undefined, pages)
+      const content = await mounted.ctx.knowledgeSource.fetchDocument({
+        upstreamDocId: 'doc-1', maxBytes: 1024, maxTextChars: 10_000,
+      })
+      expect(chunkRequests(mounted.calls)).toHaveLength(pages.length)
+      expect(content).toMatchObject({ text: Array<string>(CHUNK_PAGE_SIZE).fill('a').join('\n\n'), truncated: true })
+    })
+
+    it('stops at the total even when the source answers the same page again', async () => {
+      const page = chunkPage(0, CHUNK_PAGE_SIZE, 'a', 2 * CHUNK_PAGE_SIZE)
+      const mounted = await mountFile(okRecord({ file_name: '' }), undefined, [page, page, page])
+      const content = await mounted.ctx.knowledgeSource.fetchDocument({
+        upstreamDocId: 'doc-1', maxBytes: 1024, maxTextChars: 100_000,
+      })
+      expect(chunkRequests(mounted.calls)).toHaveLength(2)
+      expect(content).toMatchObject({ truncated: false })
+    })
   })
 
   it('reports a document the source will serve nothing from as unavailable', async () => {

@@ -45,8 +45,7 @@ export function hybridSearchPath(upstreamId: string): string {
  * One page of the documents in one knowledge base.
  *
  * Paginated with `page` (counting from one) and `page_size`, and its envelope
- * carries `total` beside `data` — the only endpoint here whose answer says how
- * much more there is.
+ * carries `total` beside `data`.
  * @param upstreamId - an authorized knowledge base id.
  * @returns the path to GET, without its query.
  */
@@ -80,12 +79,23 @@ export function documentPreviewPath(upstreamDocId: string): string {
 /**
  * The parsed chunks of one document, which is what stands in for a file the
  * caller cannot accept or the source does not hold.
+ *
+ * Paginated with `page` and `page_size`, with `total` beside `data`; a
+ * document's chunks come in chunk-index order across pages.
  * @param upstreamDocId - the source's document id.
- * @returns the path to GET.
+ * @returns the path to GET, without its query.
  */
 export function documentChunksPath(upstreamDocId: string): string {
   return `${API_PREFIX}/chunks/${encodeURIComponent(upstreamDocId)}`
 }
+
+/**
+ * The page size the chunk listing is read with.
+ *
+ * WeKnora's own ceiling for that endpoint: it answers ten chunks a page when
+ * asked for none and clamps a larger request to this.
+ */
+export const CHUNK_PAGE_SIZE = 100
 
 /** The header WeKnora authenticates with. */
 export const API_KEY_HEADER = 'X-API-Key'

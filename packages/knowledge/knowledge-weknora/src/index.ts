@@ -35,6 +35,7 @@ import {
 } from '@deepseek-ai/dsh-knowledge-source'
 import {
   API_KEY_HEADER,
+  CHUNK_PAGE_SIZE,
   ERROR_CODES,
   LIST_PATH,
   REQUEST_ID_HEADER,
@@ -57,6 +58,7 @@ import {
 export {
   API_KEY_HEADER,
   API_PREFIX,
+  CHUNK_PAGE_SIZE,
   ERROR_CODES,
   LIST_PATH,
   REQUEST_ID_HEADER,
@@ -82,6 +84,9 @@ export const RESOURCE_PLACEHOLDER = '[attachment]'
  * a scheme it cannot use would only invite a call that cannot happen.
  */
 const RESOURCE_REFERENCE = /resource:\/\/\S*/gu
+
+/** What joins two chunks of a document's parsed text. */
+const CHUNK_SEPARATOR = '\n\n'
 
 /** Plugin config: which source, where it is, and what it may return. */
 export interface Config {
@@ -365,27 +370,49 @@ export default class WeknoraKnowledgeSource extends KnowledgeSource {
   /**
    * The parsed text of one document, as the chunk listing holds it.
    *
-   * Chunks are ordered by the index the source gives them, because their
-   * order in the answer is not the document's. A document with no text chunks
-   * at all is `document-unavailable`: the source has the document and nothing
-   * it will serve from it, which is a different fact from a failure.
+   * The listing is paginated, so it is read one page after another in the
+   * source's order — chunk index, for a document — until the text passes the
+   * bound or every chunk the source counts has been read. A page reporting no
+   * total ends the read, because the next page could not be told apart from a
+   * source ignoring `page`, and so does an empty page; text that may be missing
+   * chunks the source still holds is reported as truncated. Chunks are joined
+   * by their index, because an answer's order is not the document's. A document with no text chunks at
+   * all is `document-unavailable`: the source has the document and nothing it
+   * will serve from it, which is a different fact from a failure.
    */
   private async text(request: UpstreamDocumentRequest, fileName: string): Promise<UpstreamDocumentContent> {
-    const data = await this.call(documentChunksPath(request.upstreamDocId), undefined, request.signal)
-    const chunks = data.flatMap((entry) => {
-      const chunk = asRecord(entry) as unknown as WireChunk
-      const text = typeof chunk.content === 'string' ? chunk.content : ''
-      if (text === '' || (typeof chunk.chunk_type === 'string' && chunk.chunk_type !== 'text')) return []
-      return [{ index: count(chunk.chunk_index), text }]
-    })
+    const bound = Math.min(request.maxTextChars, this.resolved.maxDocumentTextChars)
+    const chunks: { readonly index: number; readonly text: string }[] = []
+    // The length the chunks read so far join to.
+    let length = 0
+    let read = 0
+    // Whether the source may hold chunks this read has not reached.
+    let rest = true
+    for (let page = 1; rest && length <= bound; page += 1) {
+      const query = new URLSearchParams({ page: String(page), page_size: String(CHUNK_PAGE_SIZE) })
+      const answer = await this.page(`${documentChunksPath(request.upstreamDocId)}?${query.toString()}`, request.signal)
+      read += answer.data.length
+      for (const entry of answer.data) {
+        const chunk = asRecord(entry) as unknown as WireChunk
+        const text = typeof chunk.content === 'string' ? chunk.content : ''
+        if (text === '' || (typeof chunk.chunk_type === 'string' && chunk.chunk_type !== 'text')) continue
+        length += (chunks.length === 0 ? 0 : CHUNK_SEPARATOR.length) + text.length
+        chunks.push({ index: count(chunk.chunk_index), text })
+      }
+      if (answer.total === undefined) {
+        rest = answer.data.length >= CHUNK_PAGE_SIZE
+        break
+      }
+      rest = read < answer.total
+      if (answer.data.length === 0) break
+    }
     if (chunks.length === 0) {
       throw new KnowledgeError('document-unavailable', 'the source serves neither a file nor text for this document')
     }
     chunks.sort((left, right) => left.index - right.index)
-    const joined = chunks.map(chunk => chunk.text).join('\n\n')
-    const bound = Math.min(request.maxTextChars, this.resolved.maxDocumentTextChars)
-    const truncated = joined.length > bound
-    return { kind: 'text', fileName, text: truncated ? joined.slice(0, bound) : joined, truncated }
+    const joined = chunks.map(chunk => chunk.text).join(CHUNK_SEPARATOR)
+    const cut = joined.length > bound
+    return { kind: 'text', fileName, text: cut ? joined.slice(0, bound) : joined, truncated: cut || rest }
   }
 
   /**
@@ -459,9 +486,9 @@ export default class WeknoraKnowledgeSource extends KnowledgeSource {
   /**
    * Perform one upstream GET and return its page, total included.
    *
-   * Separate from {@link call} because only this envelope carries counts, and a
-   * caller that read them off the other one would be reading a field the
-   * endpoint does not send.
+   * Separate from {@link call} because only the paginated listings carry
+   * counts, and a caller that read them off another endpoint would be reading
+   * a field it does not send.
    */
   private async page(
     path: string,

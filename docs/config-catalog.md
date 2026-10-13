@@ -1945,7 +1945,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-knowledge-weknora`
 
 - `inject`: `credentials`
-- `source`: [`packages/knowledge/knowledge-weknora/src/index.ts:87`](../packages/knowledge/knowledge-weknora/src/index.ts)
+- `source`: [`packages/knowledge/knowledge-weknora/src/index.ts:92`](../packages/knowledge/knowledge-weknora/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: which source, where it is, and what it may return. */
