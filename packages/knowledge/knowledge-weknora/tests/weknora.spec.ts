@@ -15,6 +15,7 @@ import WeknoraKnowledgeSource, {
   ERROR_CODES,
   LIST_PATH,
   RESOURCE_PLACEHOLDER,
+  SHARED_LIST_PATH,
   contentTypeOf,
   hybridSearchPath,
   type Config,
@@ -190,6 +191,57 @@ describe('listing a source', () => {
   ])('refuses %s as upstream-invalid', async (_label, body) => {
     const { ctx } = await mount([body])
     await expect(ctx.knowledgeSource.list()).rejects.toMatchObject({ reason: 'upstream-invalid' })
+  })
+})
+
+describe('listing what other spaces shared', () => {
+  /** A share row as `GET /shared-knowledge-bases` returns one, the knowledge base nested. */
+  function wireShare(base: Record<string, unknown>): Record<string, unknown> {
+    return {
+      knowledge_base: base,
+      share_id: 'b0985b8e-aeca-4e4f-b8a3-bf13b89ca4e4',
+      organization_id: 'f929358a-e5f4-4342-bb05-3b5c657ef44c',
+      org_name: 'AMEC',
+      permission: 'viewer',
+      source_tenant_id: 10001,
+      shared_at: '2026-10-13T15:03:19.021303+08:00',
+    }
+  }
+
+  it('lists only the space’s own knowledge bases unless a deployment asks for shares', async () => {
+    const { ctx, calls } = await mount([ok([wireBase(A)])])
+    expect((await ctx.knowledgeSource.list()).map(base => base.upstreamId)).toEqual([A])
+    expect(calls.map(call => call.url)).toEqual([`http://127.0.0.1:8080${LIST_PATH}`])
+  })
+
+  it('appends each shared knowledge base once, after the space’s own', async () => {
+    const { ctx, calls } = await mount([
+      ok([wireBase(A)]),
+      ok([
+        wireShare(wireBase(B, { name: 'QEHS', embedding_model_id: '1b15c04e-d34d-43e4-93e7-8cb9ab6d394e' })),
+        wireShare(wireBase(A, { name: '另一空间的副本' })),
+        wireShare(wireBase(B, { name: 'QEHS again' })),
+      ]),
+    ], { includeShared: true })
+    expect((await ctx.knowledgeSource.list()).map(base => [base.upstreamId, base.name, base.embeddingModelId])).toEqual([
+      [A, '临港知识库', '7cb36a0d-83b2-490e-b887-d561b2fb3258'],
+      [B, 'QEHS', '1b15c04e-d34d-43e4-93e7-8cb9ab6d394e'],
+    ])
+    expect(calls.map(call => call.url)).toEqual([LIST_PATH, SHARED_LIST_PATH].map(path => `http://127.0.0.1:8080${path}`))
+    expect(calls[1]?.headers[API_KEY_HEADER]).toBe(KEY)
+  })
+
+  it.each([
+    ['a share carrying no knowledge base', ok([{ share_id: 'b0985b8e-aeca-4e4f-b8a3-bf13b89ca4e4' }])],
+    ['a share that is not an object', ok(['QEHS'])],
+  ])('refuses %s as upstream-invalid', async (_label, body) => {
+    const { ctx } = await mount([ok([]), body], { includeShared: true })
+    await expect(ctx.knowledgeSource.list()).rejects.toMatchObject({ reason: 'upstream-invalid' })
+  })
+
+  it('fails the whole listing for a key WeKnora will not list shares to', async () => {
+    const { ctx } = await mount([ok([wireBase(A)]), fail(ERROR_CODES.forbidden)], { includeShared: true })
+    await expect(ctx.knowledgeSource.list()).rejects.toMatchObject({ reason: 'upstream-unavailable' })
   })
 })
 

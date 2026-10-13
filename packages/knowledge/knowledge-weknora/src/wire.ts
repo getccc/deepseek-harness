@@ -17,6 +17,16 @@ export const API_PREFIX = '/api/v1'
 export const LIST_PATH = `${API_PREFIX}/knowledge-bases`
 
 /**
+ * Lists the knowledge bases other spaces shared into the API key's space
+ * through a shared space (`organization` upstream).
+ *
+ * One row per knowledge base, its own space's shares excluded, with the
+ * knowledge base nested under `knowledge_base`. WeKnora admits a space key
+ * here only when it has full access or the `manage_spaces` capability.
+ */
+export const SHARED_LIST_PATH = `${API_PREFIX}/shared-knowledge-bases`
+
+/**
  * Vector-plus-keyword retrieval within one knowledge base, or across several
  * when the body names them.
  *
@@ -114,6 +124,17 @@ export interface WireKnowledgeBase {
   readonly embedding_model_id?: unknown
   readonly updated_at?: unknown
   readonly created_at?: unknown
+}
+
+/**
+ * One shared knowledge base as `GET /shared-knowledge-bases` returns it.
+ *
+ * Only `knowledge_base` is read. The share's own fields — the shared space,
+ * the permission, the source space — describe how the key reaches it, which
+ * the gateway does not govern by.
+ */
+export interface WireSharedKnowledgeBase {
+  readonly knowledge_base?: unknown
 }
 
 /**

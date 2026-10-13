@@ -46,6 +46,7 @@ Choose it when a deployment's private knowledge lives in WeKnora. A deployment w
 | `sourceCode` | — | This deployment's code for the source, the second `KnowledgeRef` segment |
 | `baseUrl` | — | Origin the WeKnora API is served from |
 | `credentialRef` | — | Credential reference resolving to a WeKnora **space** key |
+| `includeShared` | `false` | Also list the knowledge bases other spaces shared into the key's space |
 | `requestTimeoutMs` | `30000` | How long one upstream call may take |
 | `maxSearchResults` | `20` | The most passages one search may return |
 | `maxSearchDocuments` | `20` | The most documents one document-ranked search may answer |
@@ -58,6 +59,12 @@ Choose it when a deployment's private knowledge lives in WeKnora. A deployment w
 ### Use a space key, not a platform key
 
 WeKnora authenticates with `X-API-Key`. A **space** key is fixed to the space it belongs to; a **platform** key reaches any space and takes an `X-Tenant-ID` header to say which. A Control Plane holding a platform key could read knowledge outside the space it governs, so a deployment configures a space key — which is also why this provider has no tenant field: with a space key there is nothing to name.
+
+### Knowledge another space shared
+
+Every WeKnora account owns a space, so a knowledge base another member created sits in that member's space, which a space key does not list. WeKnora reaches across spaces only through a shared space (`organization` upstream): the spaces join it, and each owner shares chosen knowledge bases into it. With `includeShared: true` the provider also lists what other spaces shared into the key's space, and the gateway governs those knowledge bases like the space's own. It is off unless a deployment asks, because it widens what this Control Plane reads from one space to whatever other members choose to share into it. WeKnora lists shares only to a key with full access or the `manage_spaces` capability, so with a narrower key every listing fails.
+
+A shared knowledge base keeps its own space's embedding model, which no knowledge base of the key's space shares, so a search across both is one upstream call per embedding model.
 
 ### Bounds and cost
 
@@ -83,7 +90,7 @@ Nothing upstream is forwarded that a decision did not put there. The provider re
 
 ### The endpoints
 
-`GET /api/v1/knowledge-bases` lists the space's knowledge bases. `POST /api/v1/knowledge-bases/{id}/hybrid-search` retrieves passages; its body's `knowledge_base_ids` overrides the scope, but the path still requires an id and that id must be a member of the list — a path id outside it is refused with `ErrNotFound`. The provider therefore puts an authorized id in the path and the full authorized set in the body, so the path can never widen scope.
+`GET /api/v1/knowledge-bases` lists the space's knowledge bases, and `GET /api/v1/shared-knowledge-bases` the ones shared into it, each nested under `knowledge_base`; a knowledge base both list is the space's own. Searching, listing documents, and reading one work on a shared knowledge base through the same endpoints, which WeKnora authorizes through the share. `POST /api/v1/knowledge-bases/{id}/hybrid-search` retrieves passages; its body's `knowledge_base_ids` overrides the scope, but the path still requires an id and that id must be a member of the list — a path id outside it is refused with `ErrNotFound`. The provider therefore puts an authorized id in the path and the full authorized set in the body, so the path can never widen scope.
 
 `GET /api/v1/knowledge-bases/{id}/knowledge?page&page_size` lists one knowledge base's documents, and is the only endpoint here whose envelope carries counts beside `data`. The provider reads `total` only when it is a whole count, bounds `page_size` by `maxDocumentsPerPage`, and refuses a row whose `id` a governed document reference could not carry. A row's `description` is the source's generated summary and stays empty until its summarization has run; it is carried as display text, like a passage.
 
@@ -128,7 +135,7 @@ No request prefix changes here. Retrieved passages become model-visible only aft
 
 These limits define when the provider is incomplete on its own. They are current package constraints.
 
-- **Multi-base retrieval needs one embedding model** — WeKnora's `knowledge_base_ids` spans several knowledge bases only when they share an embedding model, and the API declares no error for a set that does not. The provider reports `embeddingModelId` so the gateway can refuse a mixed set before calling; it does not fan out per model and merge, because scores from separate calls are normalized within their own rerank and are not comparable.
+- **Multi-base retrieval needs one embedding model** — WeKnora's `knowledge_base_ids` spans several knowledge bases only when they share an embedding model, and the API declares no error for a set that does not; a set spanning two spaces answers from one of its bases alone. The provider reports `embeddingModelId` so the gateway can split a mixed set into one call per model. Scores from separate calls are not comparable, so the gateway alternates their answers by rank instead of ranking across them.
 - **An unknown knowledge base id is silently ignored upstream** — a list mixing a real id with an unknown one answers `success` with results from the real base alone. The provider drops hits from bases the request did not name, but existence and authorization must be settled before the call, not after it.
 - **No paged document text** — the parsed text of one document is assembled in one read and cut to a bound. A document longer than the bound cannot be read past it, because nothing here carries an offset.
 - **No chunk-level addressing** — the text arrives as one string. A passage a search returned cannot be located inside it, because a chunk id never leaves this module.

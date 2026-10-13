@@ -21,11 +21,14 @@
   en: ac1118e9400af1f1
   zh: e5887b7550bd8de5
 /deepseek-ai-dsh-knowledge-weknora/use-this-package/minimal-configuration:
-  en: b0c9a47b6130b70c
-  zh: 12537396905d2f6c
+  en: 2c6d05ab0d0c68bf
+  zh: ae04309ef22fe6b6
 /deepseek-ai-dsh-knowledge-weknora/use-this-package/use-a-space-key-not-a-platform-key:
   en: 0c22aa9cd962ff6c
   zh: d9c23f8f4d500b46
+/deepseek-ai-dsh-knowledge-weknora/use-this-package/knowledge-another-space-shared:
+  en: b700e4ac58b0a60d
+  zh: 9b330ac466441cc4
 /deepseek-ai-dsh-knowledge-weknora/use-this-package/bounds-and-cost:
   en: f54e2ad98e954ef0
   zh: 9e24c509a1e945a2
@@ -39,8 +42,8 @@
   en: caf5949d73d533ef
   zh: d3ac4354a8112042
 /deepseek-ai-dsh-knowledge-weknora/understand-the-implementation/the-endpoints:
-  en: 4e5e8e31524082d9
-  zh: 02892719357b7936
+  en: cc4c706463f1ea97
+  zh: bd9910e67f8afb6b
 /deepseek-ai-dsh-knowledge-weknora/understand-the-implementation/no-loadable-url-can-come-back:
   en: 06ca53a5e73c059e
   zh: a8a8a6cd7ca9770f
@@ -57,8 +60,8 @@
   en: 5100276efc3618db
   zh: 366908aff2c9a97d
 /deepseek-ai-dsh-knowledge-weknora/known-limitations-and-deferred-work:
-  en: 30a84600a3618762
-  zh: a65d63208e46e9bb
+  en: f3d27029e1d761fe
+  zh: 35e40ebb00371b14
 /deepseek-ai-dsh-knowledge-weknora/known-limitations-and-deferred-work/dev-note:
   en: 64ee46559b704be8
   zh: 5354dccd41099de5

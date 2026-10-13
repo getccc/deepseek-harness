@@ -38,6 +38,7 @@ import {
   ERROR_CODES,
   LIST_PATH,
   REQUEST_ID_HEADER,
+  SHARED_LIST_PATH,
   documentChunksPath,
   documentPath,
   documentPreviewPath,
@@ -50,6 +51,7 @@ import {
   type WireKnowledge,
   type WireKnowledgeBase,
   type WireSearchResult,
+  type WireSharedKnowledgeBase,
 } from './wire.ts'
 
 export {
@@ -58,6 +60,7 @@ export {
   ERROR_CODES,
   LIST_PATH,
   REQUEST_ID_HEADER,
+  SHARED_LIST_PATH,
   documentChunksPath,
   documentPath,
   documentPreviewPath,
@@ -96,6 +99,17 @@ export interface Config {
    * to name.
    */
   credentialRef: string
+  /**
+   * Also list the knowledge bases other spaces shared into the key's space.
+   *
+   * Off unless a deployment asks, because it widens this source from the
+   * space the key belongs to onto what other spaces' members chose to share
+   * into it. WeKnora serves that listing only to a key with full access or
+   * the `manage_spaces` capability; a key without either fails every listing.
+   * A shared knowledge base keeps its own space's embedding model, so the
+   * gateway searches it with its own upstream call.
+   */
+  includeShared?: boolean
   /** How long one upstream call may take before it is abandoned. */
   requestTimeoutMs?: number
   /** The most passages one search may return, after enrichment. */
@@ -166,6 +180,7 @@ export default class WeknoraKnowledgeSource extends KnowledgeSource {
     sourceCode: z.string().required(),
     baseUrl: z.string().required(),
     credentialRef: z.string().required(),
+    includeShared: z.boolean().default(false),
     requestTimeoutMs: z.natural().default(DEFAULT_REQUEST_TIMEOUT_MS),
     maxSearchResults: z.natural().default(DEFAULT_MAX_SEARCH_RESULTS),
     maxSearchDocuments: z.natural().min(1).default(DEFAULT_MAX_SEARCH_DOCUMENTS),
@@ -214,8 +229,19 @@ export default class WeknoraKnowledgeSource extends KnowledgeSource {
   }
 
   async list(signal?: AbortSignal): Promise<readonly UpstreamKnowledgeBase[]> {
-    const data = await this.call(LIST_PATH, undefined, signal)
-    return data.map(entry => toKnowledgeBase(entry))
+    const bases = (await this.call(LIST_PATH, undefined, signal)).map(entry => toKnowledgeBase(entry))
+    if (!this.resolved.includeShared) return bases
+    const listed = new Set(bases.map(base => base.upstreamId))
+    for (const entry of await this.call(SHARED_LIST_PATH, undefined, signal)) {
+      const share: WireSharedKnowledgeBase = asRecord(entry)
+      const base = toKnowledgeBase(share.knowledge_base)
+      // One knowledge base is one catalog row, listed as its own space's when
+      // it is one.
+      if (listed.has(base.upstreamId)) continue
+      listed.add(base.upstreamId)
+      bases.push(base)
+    }
+    return bases
   }
 
   async listDocuments(request: UpstreamDocumentsRequest): Promise<UpstreamDocumentPage> {
@@ -725,4 +751,4 @@ const CONTENT_TYPES: Readonly<Record<string, string>> = {
 }
 
 /** The row shapes this provider reads, for a fixture author. */
-export type { WireChunk, WireKnowledge, WireKnowledgeBase, WireSearchResult }
+export type { WireChunk, WireKnowledge, WireKnowledgeBase, WireSearchResult, WireSharedKnowledgeBase }

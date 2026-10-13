@@ -1947,7 +1947,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-knowledge-weknora`
 
 - `inject`: `credentials`
-- `source`: [`packages/knowledge/knowledge-weknora/src/index.ts:84`](../packages/knowledge/knowledge-weknora/src/index.ts)
+- `source`: [`packages/knowledge/knowledge-weknora/src/index.ts:87`](../packages/knowledge/knowledge-weknora/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: which source, where it is, and what it may return. */
@@ -1966,6 +1966,17 @@ export interface Config {
    * to name.
    */
   credentialRef: string
+  /**
+   * Also list the knowledge bases other spaces shared into the key's space.
+   *
+   * Off unless a deployment asks, because it widens this source from the
+   * space the key belongs to onto what other spaces' members chose to share
+   * into it. WeKnora serves that listing only to a key with full access or
+   * the `manage_spaces` capability; a key without either fails every listing.
+   * A shared knowledge base keeps its own space's embedding model, so the
+   * gateway searches it with its own upstream call.
+   */
+  includeShared?: boolean
   /** How long one upstream call may take before it is abandoned. */
   requestTimeoutMs?: number
   /** The most passages one search may return, after enrichment. */

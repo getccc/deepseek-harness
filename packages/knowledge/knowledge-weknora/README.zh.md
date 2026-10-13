@@ -46,6 +46,7 @@ kind: "package-reference"
 | `sourceCode` | — | 本部署对该数据源的代码，`KnowledgeRef` 的第二个分段 |
 | `baseUrl` | — | WeKnora API 所在的来源 |
 | `credentialRef` | — | 解析为 WeKnora **空间** Key 的凭据引用 |
+| `includeShared` | `false` | 同时列出其他空间共享进该 Key 所属空间的知识库 |
 | `requestTimeoutMs` | `30000` | 一次上游调用可用的时长 |
 | `maxSearchResults` | `20` | 一次检索最多返回的段落数 |
 | `maxSearchDocuments` | `20` | 一次按文档排名的检索至多回答的文档数 |
@@ -58,6 +59,12 @@ kind: "package-reference"
 ### 使用空间 Key，不要用平台 Key
 
 WeKnora 以 `X-API-Key` 认证。**空间** Key 固定访问其所属空间；**平台** Key 能访问任意空间，并通过 `X-Tenant-ID` 请求头指定是哪一个。持有平台 Key 的 Control Plane 可以读到它所治理空间之外的知识，因此部署配置的是空间 Key——这也是本提供方没有租户字段的原因：使用空间 Key 时无需指名任何租户。
+
+### 其他空间共享的知识
+
+每个 WeKnora 账号都拥有一个空间，所以其他成员创建的知识库位于该成员的空间里，空间 Key 列不到它。WeKnora 只通过共享空间（上游称 `organization`）跨空间访问：各空间加入共享空间，各自的所有者把选定的知识库共享进去。`includeShared: true` 时，提供方还会列出其他空间共享进该 Key 所属空间的知识库，网关像治理本空间的知识库一样治理它们。除非部署要求，它保持关闭，因为它把本 Control Plane 读取的范围从一个空间扩大到其他成员选择共享进来的任何内容。WeKnora 只向拥有完全访问权限或 `manage_spaces` 能力的 Key 列出共享，因此权限更窄的 Key 会让每次列举都失败。
+
+共享知识库保留其所在空间的 embedding 模型，而该 Key 所属空间的任何知识库都不与之共享这个模型，因此跨越两者的检索按 embedding 模型各发一次上游调用。
 
 ### 上界与成本
 
@@ -83,7 +90,7 @@ WeKnora 以 `X-API-Key` 认证。**空间** Key 固定访问其所属空间；**
 
 ### 这些端点
 
-`GET /api/v1/knowledge-bases` 列出该空间的知识库。`POST /api/v1/knowledge-bases/{id}/hybrid-search` 检索段落；其请求体的 `knowledge_base_ids` 覆盖范围，但路径仍要求一个 id，且该 id 必须是列表的成员——列表之外的路径 id 会以 `ErrNotFound` 被拒。因此提供方把一个已授权 id 放在路径上、把完整已授权集合放在请求体里，使路径永远无法扩大范围。
+`GET /api/v1/knowledge-bases` 列出该空间的知识库，`GET /api/v1/shared-knowledge-bases` 列出共享进该空间的知识库，每个都嵌套在 `knowledge_base` 下；两边都列出的知识库算作本空间的。检索、列文档和读取单个文档在共享知识库上走同样的端点，由 WeKnora 通过共享关系授权。`POST /api/v1/knowledge-bases/{id}/hybrid-search` 检索段落；其请求体的 `knowledge_base_ids` 覆盖范围，但路径仍要求一个 id，且该 id 必须是列表的成员——列表之外的路径 id 会以 `ErrNotFound` 被拒。因此提供方把一个已授权 id 放在路径上、把完整已授权集合放在请求体里，使路径永远无法扩大范围。
 
 `GET /api/v1/knowledge-bases/{id}/knowledge?page&page_size` 列出某个知识库中的文档，也是这里唯一在 `data` 旁携带计数的信封。提供方只在 `total` 是整数计数时读取它，用 `maxDocumentsPerPage` 限制 `page_size`，并拒绝 `id` 无法装进受治理文档引用的行。行上的 `description` 是知识源生成的摘要，在其摘要任务运行之前为空；它作为展示文本携带，与段落相同。
 
@@ -128,7 +135,7 @@ WeKnora 以 `X-API-Key` 认证。**空间** Key 固定访问其所属空间；**
 
 这些限制界定了本提供方自身在何处不完整。它们是当前的包约束。
 
-- **多库检索需要同一个 embedding 模型** —— WeKnora 的 `knowledge_base_ids` 只在各知识库共享同一 embedding 模型时跨越多个库，而 API 没有为不满足该条件的集合声明任何错误。提供方上报 `embeddingModelId`，使网关能在调用之前拒绝混合集合；它不按模型扇出再合并，因为不同调用的分数各自在自己的 rerank 内归一化，不可比较。
+- **多库检索需要同一个 embedding 模型** —— WeKnora 的 `knowledge_base_ids` 只在各知识库共享同一 embedding 模型时跨越多个库，而 API 没有为不满足该条件的集合声明任何错误；跨越两个空间的集合只从其中一个知识库返回结果。提供方上报 `embeddingModelId`，使网关能把混合集合拆成每个模型一次调用。不同调用的分数不可比较，因此网关按名次交替合并各调用的答案，而不是跨调用排序。
 - **未知知识库 id 在上游被静默忽略** —— 一个真实 id 与一个未知 id 混在一起的列表会以 `success` 返回，且结果只来自那个真实知识库。提供方会丢弃请求未指名的知识库的命中，但存在性与授权必须在调用之前定下来，而不是之后。
 - **解析文本不分页** —— 一份文档的解析文本一次读完并截到上界。超过上界的文档无法继续往后读，因为这里没有任何东西携带偏移量。
 - **没有分块级寻址** —— 文本以一个字符串到达。检索返回的某个段落无法在其中定位，因为分块 id 从不离开本模块。
