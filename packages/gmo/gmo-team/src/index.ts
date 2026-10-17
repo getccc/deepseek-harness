@@ -35,7 +35,6 @@ import {
   type GmoStage,
 } from '@deepseek-ai/dsh-gmo'
 import {
-  ACCESS_TOKEN_HEADER,
   GMO_ASK_PATH,
   GMO_CATALOG_PATH,
   GMO_DESCRIBE_PATH,
@@ -45,15 +44,15 @@ import {
 import {
   controlPlaneConfigFields,
   controlPlaneFetch,
-  type ControlPlaneFetch,
-  type Response,
 } from '@deepseek-ai/dsh-team-account-client'
+import {
+  COMMON_REFUSAL_REASONS,
+  governedClient,
+  type GovernedClient,
+} from '@deepseek-ai/dsh-team-governed-wire'
 
-/** Every reason the Control Plane may answer with, for decoding one back. */
-const KNOWN_REASONS: readonly string[] = [
-  'unauthenticated', 'not-allowed', 'scope-unavailable', 'result-unavailable', 'unsupported', 'invalid-query',
-  'upstream-unavailable', 'upstream-invalid', 'too-large', 'control-plane-unreachable', 'update-required', 'cancelled',
-]
+/** Every reason the Control Plane may answer with, for decoding one back: the shared words and this capability's own. */
+const KNOWN_REASONS: readonly GmoFailureReason[] = [...COMMON_REFUSAL_REASONS, 'result-unavailable', 'unsupported', 'invalid-query', 'too-large']
 
 /** Plugin config: which Control Plane this Runner belongs to. */
 export interface Config {
@@ -89,23 +88,29 @@ export default class TeamGmo extends Gmo {
 
   static Config: z<Config> = z.object({ ...controlPlaneConfigFields })
 
-  /** The fetch every Control Plane call goes through, carrying this deployment's trust. */
-  private readonly fetch: ControlPlaneFetch
+  /** One call to this capability's Control Plane endpoints, carrying this deployment's trust. */
+  private readonly call: GovernedClient
 
   constructor(ctx: Context, public config: Config) {
     super(ctx)
-    this.fetch = controlPlaneFetch(ctx, config.controlPlaneCa)
+    this.call = governedClient({
+      fail: (reason, message) => new GmoError(reason, message),
+      reasons: KNOWN_REASONS,
+      fetch: controlPlaneFetch(ctx, config.controlPlaneCa),
+      baseUrl: config.controlPlaneUrl,
+      account: ctx.teamAccountClient,
+    })
   }
 
   async catalog(signal?: AbortSignal): Promise<readonly GmoCategoryEntry[]> {
-    const body = await this.call(GMO_CATALOG_PATH, {}, signal)
+    const body = await this.call(GMO_CATALOG_PATH, GMO_PROTOCOL_VERSION, {}, signal)
     const entries = body['entries']
     if (!Array.isArray(entries)) throw new GmoError('upstream-invalid', 'directory is not a list')
     return entries.map(entry => readEntry(entry))
   }
 
   async results(request: GmoResultsRequest): Promise<GmoResultPage> {
-    const body = await this.call(GMO_RESULTS_PATH, {
+    const body = await this.call(GMO_RESULTS_PATH, GMO_PROTOCOL_VERSION, {
       ref: request.ref,
       ...(request.page === undefined ? {} : { page: request.page }),
       ...(request.pageSize === undefined ? {} : { pageSize: request.pageSize }),
@@ -127,7 +132,7 @@ export default class TeamGmo extends Gmo {
   }
 
   async describe(request: GmoDescribeRequest): Promise<GmoDescription> {
-    const body = await this.call(GMO_DESCRIBE_PATH, { resultRef: request.resultRef }, request.signal)
+    const body = await this.call(GMO_DESCRIBE_PATH, GMO_PROTOCOL_VERSION, { resultRef: request.resultRef }, request.signal)
     const ref = body['ref']
     if (typeof ref !== 'string' || !isGmoCategoryRef(ref)) {
       throw new GmoError('upstream-invalid', 'description is missing its category')
@@ -156,7 +161,7 @@ export default class TeamGmo extends Gmo {
   }
 
   async ask(request: GmoAskRequest): Promise<GmoAnswer> {
-    const body = await this.call(GMO_ASK_PATH, { resultRef: request.resultRef, query: request.query }, request.signal)
+    const body = await this.call(GMO_ASK_PATH, GMO_PROTOCOL_VERSION, { resultRef: request.resultRef, query: request.query }, request.signal)
     const ref = body['ref']
     const data = body['data']
     if (typeof ref !== 'string' || !isGmoCategoryRef(ref) || !isRecord(data)) {
@@ -169,77 +174,6 @@ export default class TeamGmo extends Gmo {
       data: data as { readonly [key: string]: GmoJson },
     }
   }
-
-  /**
-   * Perform one Control Plane call and return its decoded object.
-   *
-   * Every failure that is not an answer this build can read becomes
-   * `control-plane-unreachable`: from a member's seat, a DNS failure, a TLS
-   * failure, a proxy that ate the request, and a Control Plane that is down
-   * are the same fact, and none of them is something they can act on
-   * differently.
-   */
-  private async call(
-    path: string,
-    fields: Record<string, unknown>,
-    signal: AbortSignal | undefined,
-  ): Promise<Record<string, unknown>> {
-    const token = await this.accessToken()
-    let response: Response
-    try {
-      response = await this.fetch(new URL(path, this.config.controlPlaneUrl), {
-        method: 'POST',
-        headers: {
-          [ACCESS_TOKEN_HEADER]: `Bearer ${token}`,
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({ protocolVersion: GMO_PROTOCOL_VERSION, ...fields }),
-        ...(signal === undefined ? {} : { signal }),
-      })
-    } catch {
-      // Includes the caller's own abort, which reaches the tool as a
-      // cancellation through its execution signal rather than through here.
-      throw new GmoError('control-plane-unreachable', 'the Control Plane did not answer')
-    }
-    let decoded: unknown
-    try {
-      decoded = await response.json()
-    } catch {
-      // A reverse proxy error page rather than a Control Plane answer.
-      throw new GmoError('control-plane-unreachable', 'the answer was not a Control Plane answer')
-    }
-    if (!isRecord(decoded)) {
-      throw new GmoError('control-plane-unreachable', 'the answer was not an object')
-    }
-    if (response.ok) return decoded
-    throw new GmoError(refusalOf(decoded), `the Control Plane answered HTTP ${String(response.status)}`)
-  }
-
-  /** The Runner's current access token, or the reason there is none. */
-  private async accessToken(): Promise<string> {
-    try {
-      return await this.ctx.teamAccountClient.accessToken()
-    } catch {
-      // Not bound and refused are the same to a GMO caller: neither is a GMO
-      // failure, and both are answered by signing this computer in.
-      throw new GmoError('unauthenticated', 'this computer is not signed in')
-    }
-  }
-}
-
-/**
- * Read the reason out of a refusal.
- *
- * An unknown word is treated as unreachable rather than passed through: a
- * Control Plane speaking reasons this build does not know is one this build
- * cannot act on, and inventing a meaning would tell a member to do something
- * that may not help.
- */
-function refusalOf(body: Record<string, unknown>): GmoFailureReason {
-  const reason = body['reason']
-  return typeof reason === 'string' && KNOWN_REASONS.includes(reason)
-    ? reason as GmoFailureReason
-    : 'control-plane-unreachable'
 }
 
 /** Validate one directory entry at the wire. */

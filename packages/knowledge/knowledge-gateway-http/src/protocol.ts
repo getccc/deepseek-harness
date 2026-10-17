@@ -20,8 +20,7 @@ export const KNOWLEDGE_DOCUMENT_PATH = '/team/knowledge/document'
 /** Path the Control Plane serves governed knowledge search under. */
 export const KNOWLEDGE_SEARCH_PATH = '/team/knowledge/search'
 
-/** Header carrying the Runner's device access token. */
-export const ACCESS_TOKEN_HEADER = 'authorization'
+export { ACCESS_TOKEN_HEADER } from '@deepseek-ai/dsh-team-governed-wire'
 
 /**
  * The newest knowledge protocol version this Control Plane answers.

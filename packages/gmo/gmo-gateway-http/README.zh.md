@@ -80,8 +80,9 @@ kind: "package-reference"
 
 | 文件 | 内容 |
 |---|---|
-| [`src/index.ts`](src/index.ts) | 插件、四条路由与拒绝映射 |
+| [`src/index.ts`](src/index.ts) | 插件、四条路由，以及每条路由如何解码自己的字段 |
 | [`src/protocol.ts`](src/protocol.ts) | 路径、协议版本范围，以及 Runner 提供方导入的请求体类型 |
+| [`dsh-team-governed-wire`](../../team/team-governed-wire/README.zh.md) | 开场序列、路由处理函数、共用的拒绝状态，以及 Runner 的调用 |
 
 <a id="further-exploration"></a>
 ## 延伸阅读

@@ -33,7 +33,6 @@ import {
   type KnowledgeSearchResult,
 } from '@deepseek-ai/dsh-knowledge'
 import {
-  ACCESS_TOKEN_HEADER,
   KNOWLEDGE_CATALOG_PATH,
   KNOWLEDGE_CATALOG_VERSION,
   KNOWLEDGE_DOCUMENTS_PATH,
@@ -47,16 +46,15 @@ import {
 import {
   controlPlaneConfigFields,
   controlPlaneFetch,
-  type ControlPlaneFetch,
-  type Response,
 } from '@deepseek-ai/dsh-team-account-client'
+import {
+  COMMON_REFUSAL_REASONS,
+  governedClient,
+  type GovernedClient,
+} from '@deepseek-ai/dsh-team-governed-wire'
 
-/** Every reason the Control Plane may answer with, for decoding one back. */
-const KNOWN_REASONS: readonly string[] = [
-  'unauthenticated', 'not-allowed', 'document-unavailable', 'scope-unavailable',
-  'scope-incompatible', 'upstream-unavailable', 'upstream-invalid',
-  'control-plane-unreachable', 'update-required', 'cancelled',
-]
+/** Every reason the Control Plane may answer with, for decoding one back: the shared words and this capability's own. */
+const KNOWN_REASONS: readonly KnowledgeFailureReason[] = [...COMMON_REFUSAL_REASONS, 'document-unavailable', 'scope-incompatible']
 
 /** Plugin config: which Control Plane this Runner belongs to. */
 export interface Config {
@@ -92,12 +90,24 @@ export default class TeamKnowledge extends Knowledge {
 
   static Config: z<Config> = z.object({ ...controlPlaneConfigFields })
 
-  /** The fetch every Control Plane call goes through, carrying this deployment's trust. */
-  private readonly fetch: ControlPlaneFetch
+  /**
+   * One call to this capability's Control Plane endpoints, carrying this deployment's trust.
+   *
+   * The version is the operation's own, not this build's newest: a deployment
+   * that predates one route keeps serving the others, so a Runner updated
+   * first still reads its directory and still searches ([rule](../../knowledge-gateway-http/README.md#the-version-is-decided-first)).
+   */
+  private readonly call: GovernedClient
 
   constructor(ctx: Context, public config: Config) {
     super(ctx)
-    this.fetch = controlPlaneFetch(ctx, config.controlPlaneCa)
+    this.call = governedClient({
+      fail: (reason, message) => new KnowledgeError(reason, message),
+      reasons: KNOWN_REASONS,
+      fetch: controlPlaneFetch(ctx, config.controlPlaneCa),
+      baseUrl: config.controlPlaneUrl,
+      account: ctx.teamAccountClient,
+    })
   }
 
   async catalog(signal?: AbortSignal): Promise<readonly KnowledgeBaseEntry[]> {
@@ -177,83 +187,6 @@ export default class TeamKnowledge extends Knowledge {
       truncated: body['truncated'],
     }
   }
-
-  /**
-   * Perform one Control Plane call and return its decoded object.
-   *
-   * The version is the operation's own, not this build's newest: a deployment
-   * that predates one route keeps serving the others, so a Runner updated
-   * first still reads its directory and still searches ([rule](../../knowledge-gateway-http/README.md#the-version-is-decided-first)).
-   *
-   * Every failure that is not an answer this build can read becomes
-   * `control-plane-unreachable`: from a member's seat, a DNS failure, a TLS
-   * failure, a proxy that ate the request, and a Control Plane that is down
-   * are the same fact, and none of them is something they can act on
-   * differently.
-   */
-  private async call(
-    path: string,
-    protocolVersion: number,
-    fields: Record<string, unknown>,
-    signal: AbortSignal | undefined,
-  ): Promise<Record<string, unknown>> {
-    const token = await this.accessToken()
-    let response: Response
-    try {
-      response = await this.fetch(new URL(path, this.config.controlPlaneUrl), {
-        method: 'POST',
-        headers: {
-          [ACCESS_TOKEN_HEADER]: `Bearer ${token}`,
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({ protocolVersion, ...fields }),
-        ...(signal === undefined ? {} : { signal }),
-      })
-    } catch {
-      // Includes the caller's own abort, which reaches the tool as a
-      // cancellation through its execution signal rather than through here.
-      throw new KnowledgeError('control-plane-unreachable', 'the Control Plane did not answer')
-    }
-    let decoded: unknown
-    try {
-      decoded = await response.json()
-    } catch {
-      // A reverse proxy error page rather than a Control Plane answer.
-      throw new KnowledgeError('control-plane-unreachable', 'the answer was not a Control Plane answer')
-    }
-    if (typeof decoded !== 'object' || decoded === null || Array.isArray(decoded)) {
-      throw new KnowledgeError('control-plane-unreachable', 'the answer was not an object')
-    }
-    const body = decoded as Record<string, unknown>
-    if (response.ok) return body
-    throw new KnowledgeError(refusalOf(body), `the Control Plane answered HTTP ${String(response.status)}`)
-  }
-
-  /** The Runner's current access token, or the reason there is none. */
-  private async accessToken(): Promise<string> {
-    try {
-      return await this.ctx.teamAccountClient.accessToken()
-    } catch {
-      // Not bound and refused are the same to a knowledge caller: neither is a
-      // knowledge failure, and both are answered by signing this computer in.
-      throw new KnowledgeError('unauthenticated', 'this computer is not signed in')
-    }
-  }
-}
-
-/**
- * Read the reason out of a refusal.
- *
- * An unknown word is treated as unreachable rather than passed through: a
- * Control Plane speaking reasons this build does not know is one this build
- * cannot act on, and inventing a meaning would tell a member to do something
- * that may not help.
- */
-function refusalOf(body: Record<string, unknown>): KnowledgeFailureReason {
-  const reason = body['reason']
-  return typeof reason === 'string' && KNOWN_REASONS.includes(reason)
-    ? reason as KnowledgeFailureReason
-    : 'control-plane-unreachable'
 }
 
 /** Validate one directory entry at the wire. */

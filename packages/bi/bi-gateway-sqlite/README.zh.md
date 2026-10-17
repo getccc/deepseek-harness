@@ -64,8 +64,9 @@ kind: "package-reference"
 
 | 文件 | 内容 |
 |---|---|
-| [`src/schema.ts`](src/schema.ts) | 两张表、其约束，以及应用 id 与 schema 版本 |
-| [`src/index.ts`](src/index.ts) | 同步、授权、列表、执行与审计 |
+| [`src/schema.ts`](src/schema.ts) | 两张表、其约束，以及应用 id 与 schema 版本；检查本身由引擎负责 |
+| [`src/index.ts`](src/index.ts) | 网关、它的配置、交给共用引擎的目录 spec、列表、执行与审计用词 |
+| [`dsh-governed-catalog-sqlite`](../../access/governed-catalog-sqlite/README.zh.md) | 与另外两个受治理目录共用的同步、准入、目录视图与审计记录 |
 
 ### 一次操作记录什么
 
@@ -106,11 +107,7 @@ kind: "package-reference"
 <details>
 <summary>维护者工作上下文——点击展开</summary>
 
-本开发备注是维护者的工作上下文：开放问题与未决方向。它明确不具权威——已发布的行为、限制与理由在上面各节。
-
-#### 对账形态与知识库网关共享
-
-来源行、串行化同步、全有或全无的列表应用、先于行的退役、资源注册和审计记录，与 `dsh-knowledge-gateway-sqlite` 承载的机制相同，只是这里针对项目目录而非知识库目录书写。克隆检测器会报告这些共享片段。抽取一个由两个网关参数化的受治理目录辅助模块是后续工作；它会触及知识库网关及其测试，这正是它没有随新增本包的变更一起进行的原因。
+无。
 
 </details>
 

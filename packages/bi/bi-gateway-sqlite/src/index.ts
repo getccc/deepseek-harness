@@ -8,10 +8,13 @@
  * what a project is. Reconciliation is therefore idempotent and repeated: a
  * write that failed after the first of the pair is discovered and repaired by
  * the next synchronization rather than left as a permanent disagreement.
+ *
+ * The catalog mechanics belong to `dsh-governed-catalog-sqlite`, shared with
+ * the knowledge and GMO gateways. This module supplies the project tables'
+ * description and the two member operations.
  * @module @deepseek-ai/dsh-bi-gateway-sqlite
  */
 
-import { DatabaseSync } from 'node:sqlite'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type { ManagedResource } from '@deepseek-ai/dsh-access-control'
@@ -35,13 +38,13 @@ import {
   type BiCatalogEntry,
   type BiCatalogView,
   type BiPrincipal,
-  type BiSourceStatus,
   type GovernedChartsRequest,
   type GovernedQueryRequest,
 } from '@deepseek-ai/dsh-bi-gateway'
 import type { UpstreamChart, UpstreamProject } from '@deepseek-ai/dsh-bi-source'
 import type {} from '@deepseek-ai/dsh-audit'
-import { applySchema, type ProjectRow, type SourceRow } from './schema.ts'
+import { GovernedCatalog } from '@deepseek-ai/dsh-governed-catalog-sqlite'
+import { applySchema, type ProjectRow } from './schema.ts'
 
 export {
   BI_GATEWAY_SQLITE_APPLICATION_ID,
@@ -105,55 +108,57 @@ export default class SqliteBiGateway extends BiGateway {
     defaultMaxRows: z.natural().min(1).default(DEFAULT_MAX_ROWS),
   })
 
-  private readonly db: DatabaseSync
   private readonly resolved: ResolvedConfig
-  /** The synchronization in flight, so concurrent callers join it. */
-  private running: Promise<BiCatalogView> | undefined
+  private readonly catalog: GovernedCatalog<'project_ref', ProjectRow, BiCatalogEntry, UpstreamProject>
 
   constructor(ctx: Context, public config: Config) {
     super(ctx)
-    this.db = new DatabaseSync(config.path, { timeout: config.busyTimeoutMs })
-    applySchema(this.db)
-    this.db.exec(`PRAGMA journal_mode = ${(config as Required<Config>).journalMode}`)
-    // SQLite builds may default WAL to NORMAL, which can lose a resolved write to power loss.
-    this.db.exec('PRAGMA synchronous = FULL')
     // schemastery (Config) has already filled every defaulted field.
     this.resolved = config as ResolvedConfig
-    ctx.effect(() => () => { this.db.close() }, 'bi-gateway-sqlite: close the catalog')
-  }
-
-  async sync(orgId: OrgId): Promise<BiCatalogView> {
-    // Concurrent callers join the operation in flight rather than racing two
-    // reconciliations over the same rows.
-    this.running ??= this.reconcile(orgId).finally(() => { this.running = undefined })
-    return this.running
-  }
-
-  async catalogView(orgId: OrgId): Promise<BiCatalogView> {
-    const resources = await this.resourcesByRef(orgId)
-    return {
-      source: this.sourceStatus(orgId),
-      entries: this.rows(orgId).flatMap((row) => {
-        const resource = resources.get(row.project_ref)
-        // A row whose managed resource is missing is an interrupted
-        // registration, which the next synchronization repairs. Showing it as
-        // governed would offer a role editor an id no grant could name.
-        return resource === undefined ? [] : [toEntry(row, resource)]
+    this.catalog = new GovernedCatalog(ctx, this.resolved, {
+      name,
+      table: 'bi_project',
+      sourceTable: 'bi_source',
+      refColumn: 'project_ref',
+      resourceType: BI_RESOURCE_TYPE,
+      catalogResource: BI_CATALOG_RESOURCE,
+      syncAction: 'bi.catalog.sync',
+      failureKey: 'biFailure',
+      startsEnabled: true,
+      listedColumns: ['description', 'project_type', 'warehouse_type'],
+      applySchema,
+      source: () => {
+        const source = ctx.biSource
+        return { sourceCode: source.sourceCode, providerKind: source.providerKind, list: () => source.listProjects() }
+      },
+      describe: (project, source) => ({
+        ref: formatBiProjectRef({
+          providerKind: source.providerKind, sourceCode: source.sourceCode, upstreamId: project.upstreamId,
+        }),
+        upstreamId: project.upstreamId,
+        displayName: project.name,
+        values: [project.description, project.projectType, project.warehouseType],
       }),
-    }
+      failureReason: error => error instanceof BiError ? error.reason : 'upstream-invalid',
+      unknownEntry: () => new BiError('not-allowed', 'no such project'),
+      entry: toEntry,
+    })
   }
 
-  async setEnabled(orgId: OrgId, ref: BiProjectRef, enabled: boolean): Promise<void> {
-    const row = this.row(orgId, ref)
-    if (row === undefined) throw new BiError('not-allowed', 'no such project')
-    this.db.prepare('UPDATE bi_project SET admin_enabled = ? WHERE org_id = ? AND project_ref = ?')
-      .run(enabled ? 1 : 0, orgId, ref)
-    const resource = (await this.resourcesByRef(orgId)).get(ref)
-    if (resource !== undefined) await this.ctx.accessControl.setResourceEnabled(resource.id, enabled)
+  sync(orgId: OrgId): Promise<BiCatalogView> {
+    return this.catalog.sync(orgId)
+  }
+
+  catalogView(orgId: OrgId): Promise<BiCatalogView> {
+    return this.catalog.view(orgId)
+  }
+
+  setEnabled(orgId: OrgId, ref: BiProjectRef, enabled: boolean): Promise<void> {
+    return this.catalog.setEnabled(orgId, ref, enabled)
   }
 
   async directory(principal: BiPrincipal): Promise<readonly BiProjectEntry[]> {
-    const entries = await this.authorizedEntries(principal)
+    const entries = await this.catalog.authorizedEntries(principal, BI_QUERY_ACTION)
     return entries.map(entry => ({ ref: entry.ref, displayName: entry.displayName }))
   }
 
@@ -243,245 +248,12 @@ export default class SqliteBiGateway extends BiGateway {
    * the same way, so a member holding nothing cannot learn that one exists.
    */
   private async admitted(principal: BiPrincipal, ref: BiProjectRef, action: MemberAction): Promise<ProjectRow> {
-    const row = this.row(principal.orgId, ref)
-    const usable = row !== undefined && row.admin_enabled === 1
-    const allowed = usable && await this.may(principal, ref)
-    if (!allowed) {
+    const row = await this.catalog.admit(principal, ref, BI_QUERY_ACTION)
+    if (row === undefined) {
       await this.record(principal, ref, action, 'denied', undefined, undefined, 'no-grant')
       throw new BiError('not-allowed', 'that project is not available')
     }
     return row
-  }
-
-  /** Every catalog entry this principal currently holds `bi.query` on. */
-  private async authorizedEntries(principal: BiPrincipal): Promise<readonly BiCatalogEntry[]> {
-    const resources = await this.resourcesByRef(principal.orgId)
-    const entries: BiCatalogEntry[] = []
-    // The durable catalog is enumerated, never `listResources`: the catalog
-    // administration resource shares this resource type, and an `all`-mode
-    // type grant on bi.query would otherwise admit it as a project.
-    for (const row of this.rows(principal.orgId)) {
-      if (row.admin_enabled !== 1) continue
-      const resource = resources.get(row.project_ref)
-      if (resource === undefined) continue
-      if (!await this.may(principal, BiProjectRef(row.project_ref))) continue
-      entries.push(toEntry(row, resource))
-    }
-    return entries
-  }
-
-  /** One access decision, asked fresh so a revoked grant lands on this call. */
-  private async may(principal: BiPrincipal, ref: BiProjectRef): Promise<boolean> {
-    const decision = await this.ctx.accessControl.authorize({
-      orgId: principal.orgId,
-      principalId: principal.principalId,
-      ...(principal.deviceId === undefined ? {} : { deviceId: principal.deviceId }),
-      action: BI_QUERY_ACTION,
-      resourceType: BI_RESOURCE_TYPE,
-      resourceId: ref,
-      ...(principal.correlationId === undefined
-        ? {}
-        : { context: { sessionCorrelationId: principal.correlationId } }),
-    })
-    return decision.allowed
-  }
-
-  /** Reconcile the catalog against one full listing, then access control. */
-  private async reconcile(orgId: OrgId): Promise<BiCatalogView> {
-    const now = Date.now()
-    const source = this.ctx.biSource
-    this.touchSource(orgId, source.sourceCode, source.providerKind, now)
-    let listed: readonly UpstreamProject[]
-    try {
-      listed = await source.listProjects()
-    } catch (error) {
-      // A failed listing leaves the last successful snapshot in place. One
-      // outage must not disable every project an organization governs.
-      const reason = error instanceof BiError ? error.reason : 'upstream-invalid'
-      this.db.prepare('UPDATE bi_source SET last_failure = ? WHERE org_id = ? AND source_code = ?')
-        .run(reason, orgId, source.sourceCode)
-      await this.recordSync(orgId, 'error', undefined, reason)
-      return this.catalogView(orgId)
-    }
-    // Every reference is minted before anything is written or retired: a
-    // listing this build cannot express changes nothing at all.
-    const named = listed.map(project => ({
-      ref: formatBiProjectRef({
-        providerKind: source.providerKind, sourceCode: source.sourceCode, upstreamId: project.upstreamId,
-      }) as string,
-      project,
-    }))
-    await this.retire(orgId, source.sourceCode, new Set(named.map(item => item.ref)))
-    this.applyListing(orgId, source.sourceCode, named, now)
-    await this.registerResources(orgId)
-    await this.recordSync(orgId, 'allowed', listed.length)
-    return this.catalogView(orgId)
-  }
-
-  /**
-   * Write one successful listing into the catalog in a single transaction.
-   * @param orgId - the organization being synchronized.
-   * @param sourceCode - the source whose listing this is.
-   * @param named - the listing, each entry beside the reference it was minted under.
-   * @param now - the discovery time to stamp.
-   */
-  private applyListing(
-    orgId: OrgId,
-    sourceCode: string,
-    named: readonly { readonly ref: string; readonly project: UpstreamProject }[],
-    now: number,
-  ): void {
-    this.db.exec('BEGIN')
-    try {
-      for (const { ref, project } of named) {
-        this.db.prepare(
-          `INSERT INTO bi_project (
-             org_id, project_ref, source_code, upstream_id, display_name, description, project_type, warehouse_type,
-             admin_enabled, last_discovered_at
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
-           ON CONFLICT (org_id, project_ref) DO UPDATE SET
-             display_name = excluded.display_name,
-             description = excluded.description,
-             project_type = excluded.project_type,
-             warehouse_type = excluded.warehouse_type,
-             last_discovered_at = excluded.last_discovered_at`,
-        ).run(
-          orgId, ref, sourceCode, project.upstreamId, project.name, project.description,
-          project.projectType, project.warehouseType, now,
-        )
-      }
-      for (const ref of this.absent(orgId, sourceCode, new Set(named.map(item => item.ref)))) {
-        this.db.prepare('DELETE FROM bi_project WHERE org_id = ? AND project_ref = ?').run(orgId, ref)
-      }
-      this.db.prepare('UPDATE bi_source SET last_success_at = ?, last_failure = NULL WHERE org_id = ? AND source_code = ?')
-        .run(now, orgId, sourceCode)
-      this.db.exec('COMMIT')
-    } catch (error) {
-      this.db.exec('ROLLBACK')
-      throw error
-    }
-  }
-
-  /**
-   * The references this source governs that its listing no longer names.
-   *
-   * Scoped to one source: another source's projects are not missing from a
-   * listing that never covered them.
-   */
-  private absent(orgId: OrgId, sourceCode: string, seen: ReadonlySet<string>): readonly string[] {
-    return this.rows(orgId)
-      .filter(row => row.source_code === sourceCode && !seen.has(row.project_ref))
-      .map(row => row.project_ref)
-  }
-
-  /**
-   * Stop governing what the source has stopped listing.
-   *
-   * The governed resources go before the catalog rows, and their grants with
-   * them: a member cannot be granted a project that no longer exists, and an
-   * interrupted retirement leaves a row whose resource the next
-   * synchronization registers afresh, with no grants, which is the outcome
-   * either way.
-   */
-  private async retire(orgId: OrgId, sourceCode: string, seen: ReadonlySet<string>): Promise<void> {
-    const absent = this.absent(orgId, sourceCode, seen)
-    if (absent.length === 0) return
-    const resources = await this.resourcesByRef(orgId)
-    for (const ref of absent) {
-      const resource = resources.get(ref)
-      /* v8 ignore next -- every catalog row is registered before it can be retired; the lookup answers its optional type. */
-      if (resource === undefined) continue
-      await this.ctx.accessControl.deleteResource(resource.id)
-    }
-  }
-
-  /** Bring access control's governed resources up to the catalog. */
-  private async registerResources(orgId: OrgId): Promise<void> {
-    for (const row of this.rows(orgId)) {
-      const resource = await this.ctx.accessControl.registerResource({
-        orgId,
-        type: BI_RESOURCE_TYPE,
-        externalRef: row.project_ref,
-        displayName: row.display_name,
-      })
-      const shouldEnable = row.admin_enabled === 1
-      if (resource.enabled !== shouldEnable) {
-        await this.ctx.accessControl.setResourceEnabled(resource.id, shouldEnable)
-      }
-    }
-  }
-
-  /** The governed BI resources of one organization, keyed by reference. */
-  private async resourcesByRef(orgId: OrgId): Promise<ReadonlyMap<string, ManagedResource>> {
-    const resources = await this.ctx.accessControl.listResources(orgId, BI_RESOURCE_TYPE)
-    return new Map(resources.map(resource => [resource.externalRef, resource]))
-  }
-
-  /** Every catalog row of one organization, in reference order. */
-  private rows(orgId: OrgId): readonly ProjectRow[] {
-    return this.db.prepare('SELECT * FROM bi_project WHERE org_id = ? ORDER BY project_ref')
-      .all(orgId) as unknown as ProjectRow[]
-  }
-
-  /** One catalog row, or undefined when the catalog holds none. */
-  private row(orgId: OrgId, ref: string): ProjectRow | undefined {
-    return this.db.prepare('SELECT * FROM bi_project WHERE org_id = ? AND project_ref = ?')
-      .get(orgId, ref) as unknown as ProjectRow | undefined
-  }
-
-  /** Record that an attempt happened, creating the source row on first sight. */
-  private touchSource(orgId: OrgId, sourceCode: string, providerKind: string, now: number): void {
-    this.db.prepare(
-      `INSERT INTO bi_source (org_id, source_code, provider_kind, last_attempt_at)
-       VALUES (?, ?, ?, ?)
-       ON CONFLICT (org_id, source_code) DO UPDATE SET
-         provider_kind = excluded.provider_kind,
-         last_attempt_at = excluded.last_attempt_at`,
-    ).run(orgId, sourceCode, providerKind, now)
-  }
-
-  /** How the configured source is doing, as the administration page reads it. */
-  private sourceStatus(orgId: OrgId): BiSourceStatus {
-    const row = this.db.prepare('SELECT * FROM bi_source WHERE org_id = ? LIMIT 1')
-      .get(orgId) as unknown as SourceRow | undefined
-    const source = this.ctx.biSource
-    if (row === undefined) {
-      return {
-        sourceCode: source.sourceCode,
-        providerKind: source.providerKind,
-        health: 'never-synced',
-        lastAttemptAt: undefined,
-        lastSuccessAt: undefined,
-        lastFailure: undefined,
-      }
-    }
-    return {
-      sourceCode: row.source_code,
-      providerKind: row.provider_kind,
-      health: row.last_failure !== null ? 'failing' : 'healthy',
-      lastAttemptAt: row.last_attempt_at,
-      lastSuccessAt: row.last_success_at ?? undefined,
-      lastFailure: row.last_failure ?? undefined,
-    }
-  }
-
-  /** Record one synchronization against the catalog administration resource. */
-  private async recordSync(
-    orgId: OrgId,
-    outcome: 'allowed' | 'error',
-    itemCount: number | undefined,
-    failure?: string,
-  ): Promise<void> {
-    await this.ctx.audit.record({
-      orgId,
-      action: 'bi.catalog.sync',
-      outcome,
-      resourceId: BI_CATALOG_RESOURCE,
-      metadata: {
-        ...(itemCount === undefined ? {} : { itemCount }),
-        ...(failure === undefined ? {} : { biFailure: failure }),
-      },
-    })
   }
 
   /**
@@ -497,19 +269,12 @@ export default class SqliteBiGateway extends BiGateway {
     failure?: string,
     reason?: 'no-grant',
   ): Promise<void> {
-    await this.ctx.audit.record({
-      orgId: principal.orgId,
+    await this.catalog.record(principal, {
       action,
       outcome,
-      principalId: principal.principalId,
-      ...(ref === undefined ? {} : { resourceId: ref }),
-      ...(principal.deviceId === undefined ? {} : { deviceId: principal.deviceId }),
-      ...(principal.correlationId === undefined ? {} : { correlationId: principal.correlationId }),
-      ...(reason === undefined ? {} : { reason }),
-      metadata: {
-        ...(itemCount === undefined ? {} : { itemCount }),
-        ...(failure === undefined ? {} : { biFailure: failure }),
-      },
+      resourceId: ref,
+      reason,
+      metadata: { itemCount, biFailure: failure },
     })
   }
 }

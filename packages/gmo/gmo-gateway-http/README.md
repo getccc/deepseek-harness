@@ -80,8 +80,9 @@ Everything a route does before it diverges â€” method, body, version, identity â
 
 | File | Holds |
 |---|---|
-| [`src/index.ts`](src/index.ts) | The plugin, the four routes, and the refusal mapping |
+| [`src/index.ts`](src/index.ts) | The plugin, the four routes, and how each decodes its fields |
 | [`src/protocol.ts`](src/protocol.ts) | The paths, the protocol version range, and the request body types the Runner provider imports |
+| [`dsh-team-governed-wire`](../../team/team-governed-wire/README.md) | The opening sequence, the route handler, the shared refusal statuses, and the Runner call |
 
 <a id="further-exploration"></a>
 ## Further Exploration

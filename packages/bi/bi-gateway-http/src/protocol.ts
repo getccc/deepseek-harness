@@ -17,8 +17,7 @@ export const BI_CHARTS_PATH = '/team/bi/charts'
 /** Path the Control Plane serves one saved chart's run under. */
 export const BI_QUERY_PATH = '/team/bi/query'
 
-/** Header carrying the Runner's device access token. */
-export const ACCESS_TOKEN_HEADER = 'authorization'
+export { ACCESS_TOKEN_HEADER } from '@deepseek-ai/dsh-team-governed-wire'
 
 /**
  * The newest BI protocol version this Control Plane answers.

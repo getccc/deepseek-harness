@@ -28,6 +28,9 @@
     },
     {
       "path": "../../host/webserver"
+    },
+    {
+      "path": "../../team/team-governed-wire"
     }
   ]
 }

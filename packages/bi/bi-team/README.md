@@ -66,7 +66,8 @@ Every field of an answer is validated at the wire before it becomes a BI value. 
 
 | File | Holds |
 |---|---|
-| [`src/index.ts`](src/index.ts) | The provider: the three calls, the wire validation, and the failure mapping |
+| [`src/index.ts`](src/index.ts) | The provider: the three calls and the wire validation |
+| [`dsh-team-governed-wire`](../../team/team-governed-wire/README.md) | The opening sequence, the route handler, the shared refusal statuses, and the Runner call |
 
 <a id="further-exploration"></a>
 ## Further Exploration
@@ -100,11 +101,7 @@ These limits define when the provider is incomplete on its own. They are current
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-This Dev Note is working context for maintainers: open questions and undecided directions. It is explicitly non-authoritative — shipped behavior, limits, and rationale live in the sections above.
-
-#### The call shape is shared with the knowledge provider
-
-The constructor, the per-call token read, and the request-and-decode stretch are the same mechanics `dsh-knowledge-team` carries, written here against three BI routes rather than the knowledge ones. The clone detector reports the shared stretches. Extracting one Control Plane call helper the two providers parameterize is the follow-up; it touches the knowledge provider and its tests, which is why it did not ride the change that added this package.
+None.
 
 </details>
 

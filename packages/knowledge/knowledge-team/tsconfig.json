@@ -25,6 +25,9 @@
     },
     {
       "path": "../../team/team-account-client"
+    },
+    {
+      "path": "../../team/team-governed-wire"
     }
   ]
 }

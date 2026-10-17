@@ -22,8 +22,7 @@ export const GMO_DESCRIBE_PATH = '/team/gmo/describe'
 /** Path the Control Plane answers one question about one result under. */
 export const GMO_ASK_PATH = '/team/gmo/ask'
 
-/** Header carrying the Runner's device access token. */
-export const ACCESS_TOKEN_HEADER = 'authorization'
+export { ACCESS_TOKEN_HEADER } from '@deepseek-ai/dsh-team-governed-wire'
 
 /**
  * The newest GMO protocol version this Control Plane answers.

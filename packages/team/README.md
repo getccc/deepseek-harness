@@ -22,7 +22,7 @@ The `team/` group carries a member from the company site into the application ru
 <a id="packages"></a>
 ## Packages
 
-Nine packages, split by which side of the network they run on; each child README owns the full contract.
+Sixteen packages, split by which side of the network they run on; each child README owns the full contract.
 
 | Package | Side | Role | ctx key |
 |---|---|---|---|
@@ -41,6 +41,7 @@ Nine packages, split by which side of the network they run on; each child README
 | [`team-browser-session/`](team-browser-session/README.md) | Control Plane | The session cookie, its CSRF value, and the same-origin decision | — |
 | [`team-shell/`](team-shell/README.md) | Control Plane | Optional browser confirmation for `team-local-handoff` | — |
 | [`team-update/`](team-update/README.md) | Runner | Whether an offered release may be installed, and the service definition an installer writes | — |
+| [`team-governed-wire/`](team-governed-wire/README.md) | Both | Library: the request opening and the call the knowledge, BI, and GMO endpoints share | — |
 
 -----
 

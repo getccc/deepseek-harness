@@ -65,8 +65,9 @@ kind: "package-reference"
 
 | 文件 | 内容 |
 |---|---|
-| [`src/index.ts`](src/index.ts) | 网关、它的配置、同步、授权与审计 |
-| [`src/schema.ts`](src/schema.ts) | 表、schema 版本与 application id 检查 |
+| [`src/index.ts`](src/index.ts) | 网关、它的配置、交给共用引擎的目录 spec，以及它的三个操作 |
+| [`src/schema.ts`](src/schema.ts) | 表、schema 版本与 application id；检查本身由引擎负责 |
+| [`dsh-governed-catalog-sqlite`](../../access/governed-catalog-sqlite/README.zh.md) | 与另外两个受治理目录共用的同步、准入、目录视图与审计记录 |
 
 ### 数据模型
 
@@ -103,7 +104,7 @@ kind: "package-reference"
 <details>
 <summary>维护者工作上下文——点击展开</summary>
 
-同步、目录与授权的代码是知识库和 BI 网关的第三份副本，`pnpm run duplication` 会报告这些重复。抽取共用的受治理目录助手是后续项：它会动到已发布、且没有任何已录制会话测试覆盖的知识库与 BI 代码，所以本次变更没有做。
+无。
 
 </details>
 

@@ -22,7 +22,7 @@ kind: "package-group"
 <a id="packages"></a>
 ## 包
 
-三个能力接缝、六个包；完整契约由各自的子 README 拥有。
+三个能力接缝、六个包和一个库；完整契约由各自的子 README 拥有。
 
 | 包 | 作用 | ctx key |
 |---|---|---|
@@ -32,6 +32,7 @@ kind: "package-group"
 | [`audit-sqlite/`](audit-sqlite/README.zh.md) | 存放只追加的审计，并把同一套规则声明给数据库 | 注册 `ctx.audit` |
 | [`quota/`](quota/README.zh.md) | Service Definition：上游调用前预留，事后结算一次 | `ctx.quota` |
 | [`quota-sqlite/`](quota-sqlite/README.zh.md) | 保管账本，并对账无人结算的那些 | 注册 `ctx.quota` |
+| [`governed-catalog-sqlite/`](governed-catalog-sqlite/README.zh.md) | 库：知识库、BI 与 GMO 网关共用的目录 | — |
 
 -----
 

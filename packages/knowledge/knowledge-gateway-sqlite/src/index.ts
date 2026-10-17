@@ -9,10 +9,13 @@
  * repeated: a write that failed after the first of the pair is discovered and
  * repaired by the next synchronization rather than left as a permanent
  * disagreement.
+ *
+ * The catalog mechanics belong to `dsh-governed-catalog-sqlite`, shared with
+ * the BI and GMO gateways. This module supplies the knowledge-base tables'
+ * description and the member operations.
  * @module @deepseek-ai/dsh-knowledge-gateway-sqlite
  */
 
-import { DatabaseSync } from 'node:sqlite'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type { ManagedResource } from '@deepseek-ai/dsh-access-control'
@@ -41,7 +44,6 @@ import {
   type KnowledgeCatalogEntry,
   type KnowledgeCatalogView,
   type KnowledgePrincipal,
-  type KnowledgeSourceStatus,
 } from '@deepseek-ai/dsh-knowledge-gateway'
 import type {
   UpstreamKnowledgeBase,
@@ -49,7 +51,8 @@ import type {
   UpstreamSearchRequest,
 } from '@deepseek-ai/dsh-knowledge-source'
 import type {} from '@deepseek-ai/dsh-audit'
-import { applySchema, type KnowledgeBaseRow, type SourceRow } from './schema.ts'
+import { GovernedCatalog } from '@deepseek-ai/dsh-governed-catalog-sqlite'
+import { applySchema, type KnowledgeBaseRow } from './schema.ts'
 
 export {
   KNOWLEDGE_GATEWAY_SQLITE_APPLICATION_ID,
@@ -146,55 +149,63 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
     defaultMaxDocumentTextChars: z.natural().min(1).default(DEFAULT_MAX_DOCUMENT_TEXT_CHARS),
   })
 
-  private readonly db: DatabaseSync
   private readonly resolved: ResolvedConfig
-  /** The synchronization in flight, so concurrent callers join it. */
-  private running: Promise<KnowledgeCatalogView> | undefined
+  private readonly catalog: GovernedCatalog<'knowledge_ref', KnowledgeBaseRow, KnowledgeCatalogEntry, UpstreamKnowledgeBase>
 
   constructor(ctx: Context, public config: Config) {
     super(ctx)
-    this.db = new DatabaseSync(config.path, { timeout: config.busyTimeoutMs })
-    applySchema(this.db)
-    this.db.exec(`PRAGMA journal_mode = ${(config as Required<Config>).journalMode}`)
-    // SQLite builds may default WAL to NORMAL, which can lose a resolved write to power loss.
-    this.db.exec('PRAGMA synchronous = FULL')
     // schemastery (Config) has already filled every defaulted field.
     this.resolved = config as ResolvedConfig
-    ctx.effect(() => () => { this.db.close() }, 'knowledge-gateway-sqlite: close the catalog')
-  }
-
-  async sync(orgId: OrgId): Promise<KnowledgeCatalogView> {
-    // Concurrent callers join the operation in flight rather than racing two
-    // reconciliations over the same rows.
-    this.running ??= this.reconcile(orgId).finally(() => { this.running = undefined })
-    return this.running
-  }
-
-  async catalogView(orgId: OrgId): Promise<KnowledgeCatalogView> {
-    const resources = await this.resourcesByRef(orgId)
-    return {
-      source: this.sourceStatus(orgId),
-      entries: this.rows(orgId).flatMap((row) => {
-        const resource = resources.get(row.knowledge_ref)
-        // A row whose managed resource is missing is an interrupted
-        // registration, which the next synchronization repairs. Showing it as
-        // governed would offer a role editor an id no grant could name.
-        return resource === undefined ? [] : [toEntry(row, resource)]
+    this.catalog = new GovernedCatalog(ctx, this.resolved, {
+      name,
+      table: 'knowledge_base',
+      sourceTable: 'knowledge_source',
+      refColumn: 'knowledge_ref',
+      resourceType: KNOWLEDGE_RESOURCE_TYPE,
+      catalogResource: KNOWLEDGE_CATALOG_RESOURCE,
+      syncAction: 'knowledge.catalog.sync',
+      failureKey: 'knowledgeFailure',
+      startsEnabled: true,
+      listedColumns: [
+        'description', 'kind', 'document_count', 'processing_count', 'embedding_model_id',
+        'upstream_updated_at', 'upstream_created_at',
+      ],
+      applySchema,
+      source: () => {
+        const source = ctx.knowledgeSource
+        return { sourceCode: source.sourceCode, providerKind: source.providerKind, list: () => source.list() }
+      },
+      describe: (base, source) => ({
+        ref: formatKnowledgeRef({
+          providerKind: source.providerKind, sourceCode: source.sourceCode, upstreamId: base.upstreamId,
+        }),
+        upstreamId: base.upstreamId,
+        displayName: base.name,
+        values: [
+          base.description, base.kind, base.documentCount, base.processingCount, base.embeddingModelId,
+          base.updatedAt ?? null, base.createdAt ?? null,
+        ],
       }),
-    }
+      failureReason: error => error instanceof KnowledgeError ? error.reason : 'upstream-invalid',
+      unknownEntry: () => new KnowledgeError('not-allowed', 'no such knowledge base'),
+      entry: toEntry,
+    })
   }
 
-  async setEnabled(orgId: OrgId, ref: KnowledgeRef, enabled: boolean): Promise<void> {
-    const row = this.row(orgId, ref)
-    if (row === undefined) throw new KnowledgeError('not-allowed', 'no such knowledge base')
-    this.db.prepare('UPDATE knowledge_base SET admin_enabled = ? WHERE org_id = ? AND knowledge_ref = ?')
-      .run(enabled ? 1 : 0, orgId, ref)
-    const resource = (await this.resourcesByRef(orgId)).get(ref)
-    if (resource !== undefined) await this.ctx.accessControl.setResourceEnabled(resource.id, enabled)
+  sync(orgId: OrgId): Promise<KnowledgeCatalogView> {
+    return this.catalog.sync(orgId)
+  }
+
+  catalogView(orgId: OrgId): Promise<KnowledgeCatalogView> {
+    return this.catalog.view(orgId)
+  }
+
+  setEnabled(orgId: OrgId, ref: KnowledgeRef, enabled: boolean): Promise<void> {
+    return this.catalog.setEnabled(orgId, ref, enabled)
   }
 
   async directory(principal: KnowledgePrincipal): Promise<readonly KnowledgeBaseEntry[]> {
-    const entries = await this.authorizedEntries(principal)
+    const entries = await this.catalog.authorizedEntries(principal, SEARCH_ACTION)
     return entries.map(entry => ({
       ref: entry.ref,
       displayName: entry.displayName,
@@ -208,10 +219,8 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
   }
 
   async documents(request: GovernedDocumentsRequest): Promise<KnowledgeDocumentPage> {
-    const row = this.row(request.orgId, request.ref)
-    const usable = row !== undefined && row.admin_enabled === 1
-    const allowed = usable && await this.may(request, request.ref, DOCUMENT_LIST_ACTION)
-    if (!allowed) {
+    const row = await this.catalog.admit(request, request.ref, DOCUMENT_LIST_ACTION)
+    if (row === undefined) {
       // An unknown, disabled, and unauthorized knowledge base are one refusal,
       // so a member holding nothing cannot learn that one exists.
       await this.record(
@@ -264,10 +273,8 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
 
   async documentContent(request: GovernedDocumentRequest): Promise<KnowledgeDocumentContent> {
     const parts = parseKnowledgeDocRef(request.docRef)
-    const row = parts === undefined ? undefined : this.row(request.orgId, parts.ref)
-    const usable = parts !== undefined && row !== undefined && row.admin_enabled === 1
-    const allowed = usable && await this.may(request, parts.ref, DOCUMENT_READ_ACTION)
-    if (!allowed) {
+    const row = parts === undefined ? undefined : await this.catalog.admit(request, parts.ref, DOCUMENT_READ_ACTION)
+    if (parts === undefined || row === undefined) {
       await this.record(
         { ...request, resourceRef: parts?.ref ?? request.docRef }, 'denied', undefined, 'no-grant',
         undefined, 'knowledge.document.read',
@@ -411,8 +418,8 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
     if (request.scope.mode === 'all') {
       // Every authorized entry came from a catalog row, so the lookup cannot
       // miss: `authorizedEntries` enumerates the same table.
-      const authorized = new Set<string>((await this.authorizedEntries(request)).map(entry => entry.ref))
-      return this.rows(request.orgId).filter(row => authorized.has(row.knowledge_ref))
+      const authorized = new Set<string>((await this.catalog.authorizedEntries(request, SEARCH_ACTION)).map(entry => entry.ref))
+      return this.catalog.rows(request.orgId).filter(row => authorized.has(row.knowledge_ref))
     }
     return this.resolveSelected(request, request.scope.refs)
   }
@@ -429,10 +436,8 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
   ): Promise<readonly KnowledgeBaseRow[]> {
     const rows: KnowledgeBaseRow[] = []
     for (const ref of refs) {
-      const row = this.row(request.orgId, ref)
-      const usable = row !== undefined && row.admin_enabled === 1
-      const allowed = usable && await this.may(request, ref, SEARCH_ACTION)
-      if (!allowed) {
+      const row = await this.catalog.admit(request, ref, SEARCH_ACTION)
+      if (row === undefined) {
         await this.record({ ...request, resourceRef: ref }, 'denied', undefined, 'no-grant')
         throw new KnowledgeError('not-allowed', 'a knowledge base in scope is not available')
       }
@@ -483,254 +488,6 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
     }
   }
 
-  /** Every catalog entry this principal currently holds `knowledge.search` on. */
-  private async authorizedEntries(principal: KnowledgePrincipal): Promise<readonly KnowledgeCatalogEntry[]> {
-    const resources = await this.resourcesByRef(principal.orgId)
-    const entries: KnowledgeCatalogEntry[] = []
-    // The durable catalog is enumerated, never `listResources`: the catalog
-    // administration resource shares this resource type, and an `all`-mode type
-    // grant on knowledge.search would otherwise admit it as a knowledge base.
-    for (const row of this.rows(principal.orgId)) {
-      if (row.admin_enabled !== 1) continue
-      const resource = resources.get(row.knowledge_ref)
-      if (resource === undefined) continue
-      if (!await this.may(principal, KnowledgeRef(row.knowledge_ref), SEARCH_ACTION)) continue
-      entries.push(toEntry(row, resource))
-    }
-    return entries
-  }
-
-  /** One access decision, asked fresh so a revoked grant lands on this call. */
-  private async may(principal: KnowledgePrincipal, ref: KnowledgeRef, action: string): Promise<boolean> {
-    const decision = await this.ctx.accessControl.authorize({
-      orgId: principal.orgId,
-      principalId: principal.principalId,
-      ...(principal.deviceId === undefined ? {} : { deviceId: principal.deviceId }),
-      action,
-      resourceType: KNOWLEDGE_RESOURCE_TYPE,
-      resourceId: ref,
-      ...(principal.correlationId === undefined
-        ? {}
-        : { context: { sessionCorrelationId: principal.correlationId } }),
-    })
-    return decision.allowed
-  }
-
-  /** Reconcile the catalog against one full listing, then access control. */
-  private async reconcile(orgId: OrgId): Promise<KnowledgeCatalogView> {
-    const now = Date.now()
-    const source = this.ctx.knowledgeSource
-    this.touchSource(orgId, source.sourceCode, source.providerKind, now)
-    let listed: readonly UpstreamKnowledgeBase[]
-    try {
-      listed = await source.list()
-    } catch (error) {
-      // A failed listing leaves the last successful snapshot in place. One
-      // outage must not disable every knowledge base an organization governs.
-      const reason = error instanceof KnowledgeError ? error.reason : 'upstream-invalid'
-      this.db.prepare('UPDATE knowledge_source SET last_failure = ? WHERE org_id = ? AND source_code = ?')
-        .run(reason, orgId, source.sourceCode)
-      await this.recordSync(orgId, 'error', undefined, reason)
-      return this.catalogView(orgId)
-    }
-    // Every reference is minted before anything is written or retired: a
-    // listing this build cannot express changes nothing at all.
-    const named = listed.map(base => ({
-      ref: formatKnowledgeRef({
-        providerKind: source.providerKind, sourceCode: source.sourceCode, upstreamId: base.upstreamId,
-      }) as string,
-      base,
-    }))
-    await this.retire(orgId, source.sourceCode, new Set(named.map(item => item.ref)))
-    this.applyListing(orgId, source.sourceCode, named, now)
-    await this.registerResources(orgId)
-    await this.recordSync(orgId, 'allowed', listed.length)
-    return this.catalogView(orgId)
-  }
-
-  /**
-   * Write one successful listing into the catalog in a single transaction.
-   * @param orgId - the organization being synchronized.
-   * @param sourceCode - the source whose listing this is.
-   * @param named - the listing, each entry beside the reference it was minted under.
-   * @param now - the discovery time to stamp.
-   */
-  private applyListing(
-    orgId: OrgId,
-    sourceCode: string,
-    named: readonly { readonly ref: string; readonly base: UpstreamKnowledgeBase }[],
-    now: number,
-  ): void {
-    this.db.exec('BEGIN')
-    try {
-      for (const { ref, base } of named) {
-        this.db.prepare(
-          `INSERT INTO knowledge_base (
-             org_id, knowledge_ref, source_code, upstream_id, display_name, description, kind,
-             document_count, processing_count, embedding_model_id,
-             admin_enabled, last_discovered_at, upstream_updated_at, upstream_created_at
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)
-           ON CONFLICT (org_id, knowledge_ref) DO UPDATE SET
-             display_name = excluded.display_name,
-             description = excluded.description,
-             kind = excluded.kind,
-             document_count = excluded.document_count,
-             processing_count = excluded.processing_count,
-             embedding_model_id = excluded.embedding_model_id,
-             last_discovered_at = excluded.last_discovered_at,
-             upstream_updated_at = excluded.upstream_updated_at,
-             upstream_created_at = excluded.upstream_created_at`,
-        ).run(
-          orgId, ref, sourceCode, base.upstreamId, base.name, base.description, base.kind,
-          base.documentCount, base.processingCount, base.embeddingModelId,
-          now, base.updatedAt ?? null, base.createdAt ?? null,
-        )
-      }
-      for (const ref of this.absent(orgId, sourceCode, new Set(named.map(item => item.ref)))) {
-        this.db.prepare('DELETE FROM knowledge_base WHERE org_id = ? AND knowledge_ref = ?').run(orgId, ref)
-      }
-      this.db.prepare('UPDATE knowledge_source SET last_success_at = ?, last_failure = NULL WHERE org_id = ? AND source_code = ?')
-        .run(now, orgId, sourceCode)
-      this.db.exec('COMMIT')
-    } catch (error) {
-      this.db.exec('ROLLBACK')
-      throw error
-    }
-  }
-
-  /**
-   * The references this source governs that its listing no longer names.
-   *
-   * Scoped to one source: another source's knowledge bases are not missing
-   * from a listing that never covered them.
-   * @param orgId - the organization being synchronized.
-   * @param sourceCode - the source whose listing this is.
-   * @param seen - the references the listing named.
-   * @returns the references to retire.
-   */
-  private absent(orgId: OrgId, sourceCode: string, seen: ReadonlySet<string>): readonly string[] {
-    return this.rows(orgId)
-      .filter(row => row.source_code === sourceCode && !seen.has(row.knowledge_ref))
-      .map(row => row.knowledge_ref)
-  }
-
-  /**
-   * Stop governing what the source has stopped listing.
-   *
-   * The governed resources go before the catalog rows, and their grants with
-   * them: a member cannot be granted a knowledge base that no longer exists,
-   * and an interrupted retirement leaves a row whose resource the next
-   * synchronization registers afresh — with no grants, which is the outcome
-   * either way.
-   * @param orgId - the organization being synchronized.
-   * @param sourceCode - the source whose listing this is.
-   * @param seen - the references the listing named.
-   */
-  private async retire(
-    orgId: OrgId,
-    sourceCode: string,
-    seen: ReadonlySet<string>,
-  ): Promise<void> {
-    const absent = this.absent(orgId, sourceCode, seen)
-    if (absent.length === 0) return
-    const resources = await this.resourcesByRef(orgId)
-    for (const ref of absent) {
-      const resource = resources.get(ref)
-      /* v8 ignore next -- every catalog row is registered before it can be retired; the lookup answers its optional type. */
-      if (resource === undefined) continue
-      await this.ctx.accessControl.deleteResource(resource.id)
-    }
-  }
-
-  /** Bring access control's governed resources up to the catalog. */
-  private async registerResources(orgId: OrgId): Promise<void> {
-    for (const row of this.rows(orgId)) {
-      const resource = await this.ctx.accessControl.registerResource({
-        orgId,
-        type: KNOWLEDGE_RESOURCE_TYPE,
-        externalRef: row.knowledge_ref,
-        displayName: row.display_name,
-      })
-      const shouldEnable = row.admin_enabled === 1
-      if (resource.enabled !== shouldEnable) {
-        await this.ctx.accessControl.setResourceEnabled(resource.id, shouldEnable)
-      }
-    }
-  }
-
-  /** The governed knowledge resources of one organization, keyed by reference. */
-  private async resourcesByRef(orgId: OrgId): Promise<ReadonlyMap<string, ManagedResource>> {
-    const resources = await this.ctx.accessControl.listResources(orgId, KNOWLEDGE_RESOURCE_TYPE)
-    return new Map(resources.map(resource => [resource.externalRef, resource]))
-  }
-
-  /** Every catalog row of one organization, in reference order. */
-  private rows(orgId: OrgId): readonly KnowledgeBaseRow[] {
-    return this.db.prepare('SELECT * FROM knowledge_base WHERE org_id = ? ORDER BY knowledge_ref')
-      .all(orgId) as unknown as KnowledgeBaseRow[]
-  }
-
-  /** One catalog row, or undefined when the catalog holds none. */
-  private row(orgId: OrgId, ref: string): KnowledgeBaseRow | undefined {
-    return this.db.prepare('SELECT * FROM knowledge_base WHERE org_id = ? AND knowledge_ref = ?')
-      .get(orgId, ref) as unknown as KnowledgeBaseRow | undefined
-  }
-
-  /** Record that an attempt happened, creating the source row on first sight. */
-  private touchSource(orgId: OrgId, sourceCode: string, providerKind: string, now: number): void {
-    this.db.prepare(
-      `INSERT INTO knowledge_source (org_id, source_code, provider_kind, last_attempt_at)
-       VALUES (?, ?, ?, ?)
-       ON CONFLICT (org_id, source_code) DO UPDATE SET
-         provider_kind = excluded.provider_kind,
-         last_attempt_at = excluded.last_attempt_at`,
-    ).run(orgId, sourceCode, providerKind, now)
-  }
-
-  /** How the configured source is doing, as the administration page reads it. */
-  private sourceStatus(orgId: OrgId): KnowledgeSourceStatus {
-    const row = this.db.prepare('SELECT * FROM knowledge_source WHERE org_id = ? LIMIT 1')
-      .get(orgId) as unknown as SourceRow | undefined
-    const source = this.ctx.knowledgeSource
-    if (row === undefined) {
-      return {
-        sourceCode: source.sourceCode,
-        providerKind: source.providerKind,
-        health: 'never-synced',
-        lastAttemptAt: undefined,
-        lastSuccessAt: undefined,
-        lastFailure: undefined,
-      }
-    }
-    return {
-      sourceCode: row.source_code,
-      providerKind: row.provider_kind,
-      health: row.last_failure !== null ? 'failing' : 'healthy',
-      lastAttemptAt: row.last_attempt_at,
-      lastSuccessAt: row.last_success_at ?? undefined,
-      lastFailure: row.last_failure ?? undefined,
-    }
-  }
-
-  /** Record one synchronization against the catalog administration resource. */
-  private async recordSync(
-    orgId: OrgId,
-    outcome: 'allowed' | 'error',
-    itemCount: number | undefined,
-    failure?: string,
-  ): Promise<void> {
-    await this.ctx.audit.record({
-      orgId,
-      action: 'knowledge.catalog.sync',
-      outcome,
-      resourceId: KNOWLEDGE_CATALOG_RESOURCE,
-      metadata: {
-        ...(itemCount === undefined ? {} : { itemCount }),
-        ...(failure === undefined ? {} : { knowledgeFailure: failure }),
-      },
-    })
-  }
-
   /** Record one member-facing outcome against one governed knowledge resource. */
   private async record(
     principal: KnowledgePrincipal & { resourceRef?: string },
@@ -740,19 +497,12 @@ export default class SqliteKnowledgeGateway extends KnowledgeGateway {
     failure?: string,
     action: 'knowledge.search' | 'knowledge.document.list' | 'knowledge.document.read' = 'knowledge.search',
   ): Promise<void> {
-    await this.ctx.audit.record({
-      orgId: principal.orgId,
+    await this.catalog.record(principal, {
       action,
       outcome,
-      principalId: principal.principalId,
-      ...(principal.resourceRef === undefined ? {} : { resourceId: principal.resourceRef }),
-      ...(principal.deviceId === undefined ? {} : { deviceId: principal.deviceId }),
-      ...(principal.correlationId === undefined ? {} : { correlationId: principal.correlationId }),
-      ...(reason === undefined ? {} : { reason }),
-      metadata: {
-        ...(itemCount === undefined ? {} : { itemCount }),
-        ...(failure === undefined ? {} : { knowledgeFailure: failure }),
-      },
+      resourceId: principal.resourceRef,
+      reason,
+      metadata: { itemCount, knowledgeFailure: failure },
     })
   }
 

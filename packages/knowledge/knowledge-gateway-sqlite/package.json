@@ -31,6 +31,7 @@
     "@deepseek-ai/dsh-access-control": "workspace:*",
     "@deepseek-ai/dsh-account-store": "workspace:*",
     "@deepseek-ai/dsh-audit": "workspace:*",
+    "@deepseek-ai/dsh-governed-catalog-sqlite": "workspace:*",
     "@deepseek-ai/dsh-knowledge": "workspace:*",
     "@deepseek-ai/dsh-knowledge-gateway": "workspace:*",
     "@deepseek-ai/dsh-knowledge-source": "workspace:*"
@@ -43,6 +44,7 @@
     "@deepseek-ai/dsh-account-store-sqlite": "workspace:*",
     "@deepseek-ai/dsh-audit": "workspace:*",
     "@deepseek-ai/dsh-audit-sqlite": "workspace:*",
+    "@deepseek-ai/dsh-governed-catalog-sqlite": "workspace:*",
     "@deepseek-ai/dsh-knowledge": "workspace:*",
     "@deepseek-ai/dsh-knowledge-gateway": "workspace:*",
     "@deepseek-ai/dsh-knowledge-source": "workspace:*"

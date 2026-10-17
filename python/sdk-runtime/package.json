@@ -40,6 +40,7 @@
     "@deepseek-ai/dsh-gmo-gateway": "workspace:*",
     "@deepseek-ai/dsh-gmo-gateway-http": "workspace:*",
     "@deepseek-ai/dsh-gmo-source": "workspace:*",
+    "@deepseek-ai/dsh-governed-catalog-sqlite": "workspace:*",
     "@deepseek-ai/dsh-brand": "workspace:*",
     "@deepseek-ai/dsh-client-connection": "workspace:*",
     "@deepseek-ai/dsh-client-file-upload": "workspace:*",

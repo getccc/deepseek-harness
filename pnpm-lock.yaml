@@ -1097,6 +1097,30 @@ importers:
         specifier: workspace:~
         version: link:../../../vendor/cordis
 
+  packages/access/governed-catalog-sqlite:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../access-control
+      '@deepseek-ai/dsh-access-control-sqlite':
+        specifier: workspace:*
+        version: link:../access-control-sqlite
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:*
+        version: link:../../account/account-store-sqlite
+      '@deepseek-ai/dsh-audit':
+        specifier: workspace:*
+        version: link:../audit
+      '@deepseek-ai/dsh-audit-sqlite':
+        specifier: workspace:*
+        version: link:../audit-sqlite
+
   packages/access/quota:
     dependencies:
       '@deepseek-ai/dsh-account-store':
@@ -2012,6 +2036,9 @@ importers:
 
   packages/bi/bi-gateway-http:
     dependencies:
+      '@deepseek-ai/dsh-team-governed-wire':
+        specifier: workspace:*
+        version: link:../../team/team-governed-wire
       '@deepseek-ai/schemastery':
         specifier: link:../../../vendor/schemastery
         version: link:../../../vendor/schemastery
@@ -2092,6 +2119,9 @@ importers:
       '@deepseek-ai/dsh-bi-source':
         specifier: workspace:*
         version: link:../bi-source
+      '@deepseek-ai/dsh-governed-catalog-sqlite':
+        specifier: workspace:*
+        version: link:../../access/governed-catalog-sqlite
 
   packages/bi/bi-source:
     devDependencies:
@@ -2107,6 +2137,9 @@ importers:
       '@deepseek-ai/dsh-team-account-client':
         specifier: workspace:*
         version: link:../../team/team-account-client
+      '@deepseek-ai/dsh-team-governed-wire':
+        specifier: workspace:*
+        version: link:../../team/team-governed-wire
       '@deepseek-ai/schemastery':
         specifier: link:../../../vendor/schemastery
         version: link:../../../vendor/schemastery
@@ -9642,6 +9675,9 @@ importers:
 
   packages/gmo/gmo-gateway-http:
     dependencies:
+      '@deepseek-ai/dsh-team-governed-wire':
+        specifier: workspace:*
+        version: link:../../team/team-governed-wire
       '@deepseek-ai/schemastery':
         specifier: link:../../../vendor/schemastery
         version: link:../../../vendor/schemastery
@@ -9722,6 +9758,9 @@ importers:
       '@deepseek-ai/dsh-gmo-source':
         specifier: workspace:*
         version: link:../gmo-source
+      '@deepseek-ai/dsh-governed-catalog-sqlite':
+        specifier: workspace:*
+        version: link:../../access/governed-catalog-sqlite
 
   packages/gmo/gmo-source:
     devDependencies:
@@ -9737,6 +9776,9 @@ importers:
       '@deepseek-ai/dsh-team-account-client':
         specifier: workspace:*
         version: link:../../team/team-account-client
+      '@deepseek-ai/dsh-team-governed-wire':
+        specifier: workspace:*
+        version: link:../../team/team-governed-wire
       '@deepseek-ai/schemastery':
         specifier: link:../../../vendor/schemastery
         version: link:../../../vendor/schemastery
@@ -10629,6 +10671,9 @@ importers:
 
   packages/knowledge/knowledge-gateway-http:
     dependencies:
+      '@deepseek-ai/dsh-team-governed-wire':
+        specifier: workspace:*
+        version: link:../../team/team-governed-wire
       '@deepseek-ai/schemastery':
         specifier: link:../../../vendor/schemastery
         version: link:../../../vendor/schemastery
@@ -10700,6 +10745,9 @@ importers:
       '@deepseek-ai/dsh-audit-sqlite':
         specifier: workspace:*
         version: link:../../access/audit-sqlite
+      '@deepseek-ai/dsh-governed-catalog-sqlite':
+        specifier: workspace:*
+        version: link:../../access/governed-catalog-sqlite
       '@deepseek-ai/dsh-knowledge':
         specifier: workspace:*
         version: link:../knowledge
@@ -10724,6 +10772,9 @@ importers:
       '@deepseek-ai/dsh-team-account-client':
         specifier: workspace:*
         version: link:../../team/team-account-client
+      '@deepseek-ai/dsh-team-governed-wire':
+        specifier: workspace:*
+        version: link:../../team/team-governed-wire
       '@deepseek-ai/schemastery':
         specifier: link:../../../vendor/schemastery
         version: link:../../../vendor/schemastery
@@ -14570,6 +14621,21 @@ importers:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
 
+  packages/team/team-governed-wire:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-team-account-client':
+        specifier: workspace:*
+        version: link:../team-account-client
+      undici:
+        specifier: ^8.10.0
+        version: 8.10.0
+
   packages/team/team-local-handoff:
     dependencies:
       '@deepseek-ai/dsh-client-connection':
@@ -16176,6 +16242,9 @@ importers:
       '@deepseek-ai/dsh-goal-round-driver':
         specifier: workspace:*
         version: link:../../packages/goal/goal-round-driver
+      '@deepseek-ai/dsh-governed-catalog-sqlite':
+        specifier: workspace:*
+        version: link:../../packages/access/governed-catalog-sqlite
       '@deepseek-ai/dsh-home-paths':
         specifier: workspace:*
         version: link:../../packages/util/home-paths

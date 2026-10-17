@@ -33,7 +33,8 @@
     "@deepseek-ai/dsh-audit": "workspace:*",
     "@deepseek-ai/dsh-bi": "workspace:*",
     "@deepseek-ai/dsh-bi-gateway": "workspace:*",
-    "@deepseek-ai/dsh-bi-source": "workspace:*"
+    "@deepseek-ai/dsh-bi-source": "workspace:*",
+    "@deepseek-ai/dsh-governed-catalog-sqlite": "workspace:*"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "workspace:~",
@@ -45,7 +46,8 @@
     "@deepseek-ai/dsh-audit-sqlite": "workspace:*",
     "@deepseek-ai/dsh-bi": "workspace:*",
     "@deepseek-ai/dsh-bi-gateway": "workspace:*",
-    "@deepseek-ai/dsh-bi-source": "workspace:*"
+    "@deepseek-ai/dsh-bi-source": "workspace:*",
+    "@deepseek-ai/dsh-governed-catalog-sqlite": "workspace:*"
   },
   "dependencies": {
     "@deepseek-ai/schemastery": "workspace:~"

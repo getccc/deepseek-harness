@@ -54,6 +54,8 @@ const KIND_TEMPLATES: Readonly<Record<string, string>> = {
  * library; the check re-derives the entry shape so a stale entry fails loud.
  */
 const PACKAGE_LIBRARIES: Readonly<Record<string, string>> = {
+  'packages/access/governed-catalog-sqlite': 'Catalog engine the knowledge, BI, and GMO gateways construct; plain class and function exports.',
+  'packages/team/team-governed-wire': 'Request-opening and Runner-call functions the governed endpoints import; plain function exports.',
   'packages/experimental/browser-use-runtime': 'Provider-owned browser resource management and MCP integration helpers; no plugin entry.',
   'packages/boot/app-boot': 'Boot library the app bins import; plain helper exports.',
   'packages/boot/cmdline': 'Command-line library the app bins import; plain module exports.',

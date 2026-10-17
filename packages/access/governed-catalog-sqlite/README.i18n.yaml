@@ -1,0 +1,43 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/access/governed-catalog-sqlite/README.md
+/:
+  en: 5900661e794d5d8b
+  zh: a5d956abc47d657f
+/deepseek-ai-dsh-governed-catalog-sqlite:
+  en: 7290abf8f6dac0b7
+  zh: ff188ebd80257667
+/deepseek-ai-dsh-governed-catalog-sqlite/summary:
+  en: cd467f0d49448b5f
+  zh: e24c0efb47af0459
+/deepseek-ai-dsh-governed-catalog-sqlite/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 9f0336825ccdaacd
+/deepseek-ai-dsh-governed-catalog-sqlite/use-this-package:
+  en: bbff250eba0f1b89
+  zh: 0a618f05cc88ee2b
+/deepseek-ai-dsh-governed-catalog-sqlite/use-this-package/when-to-use-it:
+  en: 2f01be073ba9ddd4
+  zh: 4487871384dfab37
+/deepseek-ai-dsh-governed-catalog-sqlite/use-this-package/entry-point:
+  en: 0eb759d097480bfe
+  zh: 2ef79b320612705a
+/deepseek-ai-dsh-governed-catalog-sqlite/understand-the-implementation:
+  en: 8de6e7ef7b1e0e5a
+  zh: bca8a22de7e0508f
+/deepseek-ai-dsh-governed-catalog-sqlite/further-exploration:
+  en: 44a4adbcf0c138f2
+  zh: 9ade33312cbe287d
+/deepseek-ai-dsh-governed-catalog-sqlite/model-experience:
+  en: 59f652be79e88680
+  zh: b64cf1186868114a
+/deepseek-ai-dsh-governed-catalog-sqlite/model-experience/kv-cache-effect:
+  en: 14c1112fcaa45b72
+  zh: ebaa66da56e3d135
+/deepseek-ai-dsh-governed-catalog-sqlite/known-limitations-and-deferred-work:
+  en: 28269e8f66c61a65
+  zh: bb8a8949a4d2991d
+/deepseek-ai-dsh-governed-catalog-sqlite/known-limitations-and-deferred-work/dev-note:
+  en: add9b6ca6c80c959
+  zh: ecff3b278d6fe5ce

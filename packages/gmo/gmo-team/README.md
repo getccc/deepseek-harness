@@ -59,7 +59,8 @@ The provider validates what comes back at the wire: references must parse, field
 
 | File | Holds |
 |---|---|
-| [`src/index.ts`](src/index.ts) | The provider, its config, the call, and the readers of the Control Plane's answers |
+| [`src/index.ts`](src/index.ts) | The provider, its config, and the readers of the Control Plane's answers |
+| [`dsh-team-governed-wire`](../../team/team-governed-wire/README.md) | The opening sequence, the route handler, the shared refusal statuses, and the Runner call |
 
 <a id="further-exploration"></a>
 ## Further Exploration
@@ -91,7 +92,7 @@ These limits define when the package is incomplete on its own. They are current 
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-The reconciliation, catalog, and authorization code is a third copy of the knowledge and BI gateways', and `pnpm run duplication` reports the clones. Extracting a shared governed-catalog helper is the follow-up: it touches shipped knowledge and BI code that no recorded-session test covers, which is why this change did not.
+None.
 
 </details>
 

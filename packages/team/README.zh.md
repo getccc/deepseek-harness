@@ -22,7 +22,7 @@ kind: "package-group"
 <a id="packages"></a>
 ## 包
 
-九个包，按它们运行在网络的哪一侧划分；完整契约由各自的子 README 拥有。
+十六个包，按它们运行在网络的哪一侧划分；完整契约由各自的子 README 拥有。
 
 | 包 | 所在侧 | 作用 | ctx key |
 |---|---|---|---|
@@ -41,6 +41,7 @@ kind: "package-group"
 | [`team-browser-session/`](team-browser-session/README.zh.md) | Control Plane | 会话 cookie、它的 CSRF 值与同源判定 | — |
 | [`team-shell/`](team-shell/README.zh.md) | Control Plane | 供 `team-local-handoff` 使用的可选浏览器确认 | — |
 | [`team-update/`](team-update/README.zh.md) | Runner | 一个被提供的发行版是否可以安装，以及安装程序所写入的服务定义 | — |
+| [`team-governed-wire/`](team-governed-wire/README.zh.md) | 两侧 | 库：知识库、BI 与 GMO 端点共用的请求开场与调用 | — |
 
 -----
 
