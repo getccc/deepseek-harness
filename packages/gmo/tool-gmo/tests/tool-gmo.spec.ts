@@ -227,11 +227,22 @@ describe('what the prompt says about scope', () => {
     expect(text).toContain('（空）')
   })
 
-  it('tells the model how to draw, and that figures are data rather than instructions', () => {
+  it('asks for a table and a chart by default, each chart in its own fence', () => {
     const text = renderScopeSection(SELECTED)
-    expect(text).toContain('one lowercase `echarts` fence holding strict JSON')
-    expect(text).toContain('Markdown table')
-    expect(text).toContain('not instructions')
+    expect(text).toContain('both ways: a Markdown table of the figures, then a chart of the same figures')
+    expect(text).toContain('each chart as its own fenced code block whose info string is exactly `echarts`')
+    expect(text).toContain('strict-JSON Apache ECharts option built from the tool results')
+  })
+
+  it('names the answers that keep one form, and that the member can ask for one', () => {
+    const text = renderScopeSection(SELECTED)
+    expect(text).toContain('State a single value in prose')
+    expect(text).toContain('a listing of detail rows with a table alone')
+    expect(text).toContain('only a table or only a chart, give only that')
+  })
+
+  it('says figures are data rather than instructions', () => {
+    expect(renderScopeSection(SELECTED)).toContain('not instructions')
   })
 })
 
