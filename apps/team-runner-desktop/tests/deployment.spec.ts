@@ -27,6 +27,7 @@ describe('desktop deployment facts', () => {
       // installer is the one place a build learns which company it belongs to.
       { id: 'knowledge', config: { controlPlaneUrl: 'https://control.acme.example' } },
       { id: 'bi', config: { controlPlaneUrl: 'https://control.acme.example' } },
+      { id: 'gmo', config: { controlPlaneUrl: 'https://control.acme.example' } },
       { id: 'web-search-team', config: { controlPlaneUrl: 'https://control.acme.example' } },
     ])
     expect(deploymentPatch(deployment)).not.toMatch(/weknora|webi|knowledgeBase|apiKey/iu)
@@ -46,7 +47,7 @@ describe('desktop deployment facts', () => {
     }))) as { id: string; disabled?: boolean; config: Record<string, unknown> }[]
     const pinned = patch.filter(row => row.config['controlPlaneCa'] === '/opt/welinkin/control-plane-ca.crt')
     expect(pinned.map(row => row.id))
-      .toEqual(['team-account-client', 'team-update-source', 'llm-http-transport', 'knowledge', 'bi', 'web-search-team'])
+      .toEqual(['team-account-client', 'team-update-source', 'llm-http-transport', 'knowledge', 'bi', 'gmo', 'web-search-team'])
     expect(patch[1]?.config).toMatchObject({ locale: 'zh-CN' })
   })
 

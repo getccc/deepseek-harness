@@ -1,0 +1,52 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/api/gmo-controller/README.md
+/:
+  en: 13e8eed5a5b8d25f
+  zh: a0c1e81d5b86c8ca
+/deepseek-ai-dsh-api-gmo-controller:
+  en: df0d342553031b01
+  zh: 85f2d72ba7bdc271
+/deepseek-ai-dsh-api-gmo-controller/summary:
+  en: 0319f9ab48c2a7e9
+  zh: 56838f6aeea24419
+/deepseek-ai-dsh-api-gmo-controller/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 9f0336825ccdaacd
+/deepseek-ai-dsh-api-gmo-controller/use-this-package:
+  en: 5053e48701ddd9bc
+  zh: 77015aea4543cec7
+/deepseek-ai-dsh-api-gmo-controller/use-this-package/the-remote:
+  en: c5b9fff100603298
+  zh: 0db5183f3af5ad4e
+/deepseek-ai-dsh-api-gmo-controller/use-this-package/what-a-choice-records:
+  en: bf65ef875686921d
+  zh: f65fe75b78d23491
+/deepseek-ai-dsh-api-gmo-controller/use-this-package/failures:
+  en: 823c0a66ed8a7e96
+  zh: 4047e9825c576368
+/deepseek-ai-dsh-api-gmo-controller/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-api-gmo-controller/understand-the-implementation/design-philosophy:
+  en: d8e1776539546495
+  zh: 77ce1b703c489965
+/deepseek-ai-dsh-api-gmo-controller/understand-the-implementation/source-map:
+  en: 95242f9e4a7d9f6f
+  zh: 4176d4af13abbc23
+/deepseek-ai-dsh-api-gmo-controller/further-exploration:
+  en: b45996b7c91fd8ed
+  zh: c6a8bfa225f8352e
+/deepseek-ai-dsh-api-gmo-controller/model-experience:
+  en: b1d6fa27c49457ef
+  zh: db6f1516af0661e7
+/deepseek-ai-dsh-api-gmo-controller/model-experience/kv-cache-effect:
+  en: 1407a18c5f116479
+  zh: 0fc311784c2e7127
+/deepseek-ai-dsh-api-gmo-controller/known-limitations-and-deferred-work:
+  en: 9cc7eb768376f05e
+  zh: b80259b6f156a770
+/deepseek-ai-dsh-api-gmo-controller/known-limitations-and-deferred-work/dev-note:
+  en: ae45a8581f913808
+  zh: 10cfe275691c7e1f

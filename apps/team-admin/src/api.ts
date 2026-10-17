@@ -9,6 +9,8 @@
 import type {
   WireBiAccess,
   WireBiCatalog,
+  WireGmoAccess,
+  WireGmoCatalog,
   WireDepartment,
   WireDevice,
   WireMember,
@@ -28,7 +30,7 @@ import type {
 } from '@deepseek-ai/dsh-team-admin-api'
 
 export type {
-  SecretCharacterClass, WireBiAccess, WireBiCatalog, WireBiProject,
+  SecretCharacterClass, WireBiAccess, WireBiCatalog, WireBiProject, WireGmoAccess, WireGmoCatalog, WireGmoCategory,
   WireDepartment, WireDevice, WireGrant, WireKnowledgeAccess,
   WireKnowledgeBase, WireKnowledgeCatalog, WireMember, WireMenu, WireModel,
   WireOrganization, WireOverview, WirePermission, WireRelease, WireReleaseCatalog,
@@ -251,6 +253,9 @@ export const api = {
   /** Make one role's BI grants exactly what this mode describes. */
   setRoleBi: (id: string, access: WireBiAccess): Promise<WireRole[]> =>
     call('POST', `/roles/${encodeURIComponent(id)}/bi-projects`, access),
+  /** Make one role's GMO grants exactly what this mode describes. */
+  setRoleGmo: (id: string, access: WireGmoAccess): Promise<WireRole[]> =>
+    call('POST', `/roles/${encodeURIComponent(id)}/gmo-categories`, access),
   /** Make one role's model grants match these exact managed models. */
   setRoleModels: (id: string, modelIds: readonly string[]): Promise<WireRole[]> =>
     call('POST', `/roles/${encodeURIComponent(id)}/models`, { modelIds }),
@@ -292,6 +297,13 @@ export const api = {
   /** Switch one BI project on or off for the whole organization. */
   setBiProjectEnabled: (projectRef: string, enabled: boolean): Promise<WireBiCatalog> =>
     call('PATCH', `/bi-projects/${encodeURIComponent(projectRef)}`, { enabled }),
+  /** The governed GMO category catalog and how its source is doing. */
+  gmoCategories: (): Promise<WireGmoCatalog> => call('GET', '/gmo-categories'),
+  /** Reconcile the GMO catalog against the source and answer the result. */
+  syncGmoCategories: (): Promise<WireGmoCatalog> => call('POST', '/gmo-categories/sync', {}),
+  /** Switch one GMO category on or off for the whole organization. */
+  setGmoCategoryEnabled: (categoryRef: string, enabled: boolean): Promise<WireGmoCatalog> =>
+    call('PATCH', `/gmo-categories/${encodeURIComponent(categoryRef)}`, { enabled }),
   /**
    * Put one model in the catalog, or update the one already there. The stable
    * ref is the identity, so a write naming a stored one is the edit.

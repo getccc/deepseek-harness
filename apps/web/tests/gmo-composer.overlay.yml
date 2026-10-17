@@ -1,0 +1,13 @@
+# Local look-at-it composition: the Team GMO rows over the scaffold's stable
+# base, with the Control Plane provider left out — the test process mounts a
+# fixture `ctx.gmo` instead.
+- insert:
+    - id: tool-gmo
+      name: '@deepseek-ai/dsh-tool-gmo'
+
+    - id: api-gmo-controller
+      name: '@deepseek-ai/dsh-api-gmo-controller'
+
+- insert:
+    - id: client-ui-gmo
+      name: '@deepseek-ai/dsh-client-ui-gmo'

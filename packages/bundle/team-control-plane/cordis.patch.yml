@@ -160,6 +160,35 @@
         defaultChartPageSize: 20
         defaultMaxRows: 200
 
+    # ── which GMO supply-chain categories a member may analyze ───────────
+    # The same arrangement again: the excel-tools provider holds the gateway
+    # token and speaks its fixed read-only routes; the governed gateway owns
+    # the durable category catalog and authorizes every listing, description,
+    # and question against current grants. Only the gateway is reachable from
+    # outside this process.
+    #
+    # `sourceCode`, `baseUrl`, and `credentialRef` are deliberately absent, and
+    # the row fails to load without them. The credential must resolve to a
+    # gateway token created in excel-tools' 管理 → 对话网关 page: it reads
+    # statistics only and serves no export, download, deletion, or tool run. A
+    # category the source starts serving is switched off until an administrator
+    # enables it, so a role granted every category does not gain a business
+    # line the moment it appears.
+    - id: gmo-source
+      name: '@deepseek-ai/dsh-gmo-excel-tools'
+      config:
+        requestTimeoutMs: 60000
+        # Figures are charged as prompt tokens on the member's next model
+        # request, so the bound that matters is what a deployment is willing to
+        # put in front of a model rather than a transport limit.
+        maxItems: 200
+        maxResponseBytes: 700000
+    - id: gmo-gateway
+      name: '@deepseek-ai/dsh-gmo-gateway-sqlite'
+      config:
+        path: !!js dshHomePath('control-plane', 'gmo.sqlite')
+        defaultResultPageSize: 20
+
     # Published desktop releases. The store holds the signed manifests the
     # release machine produced; this deployment serves them and cannot sign
     # one of its own.
@@ -212,6 +241,14 @@
       name: '@deepseek-ai/dsh-bi-gateway-http'
       config:
         maxRequestBodyBytes: 16384
+    # Company GMO traffic: authorized by the device access token, and refused
+    # before any other field is read when the Runner speaks a GMO protocol
+    # version this build does not. A question lists filter values, so the body
+    # bound is larger than BI's.
+    - id: gmo-gateway-http
+      name: '@deepseek-ai/dsh-gmo-gateway-http'
+      config:
+        maxRequestBodyBytes: 65536
 
     # ── company web search ───────────────────────────────────────────────
     # The search seam and its DeepSeek provider run here, where the company

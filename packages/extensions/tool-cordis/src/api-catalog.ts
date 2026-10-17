@@ -1732,6 +1732,145 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'gmo',
+    summary: 'GMO supply-chain analysis, as a Runner sees it.',
+    description: 'GMO supply-chain analysis, as a Runner sees it. A provider mounts this service; consumers inject `gmo`.\n\nEvery method fails with GmoError carrying a closed reason. None returns a partial answer: a directory that could not be authorized, a listing on a refused category, and a question about a result outside its category all raise, because a quietly narrowed result is indistinguishable from a correct one to the model that reads it.',
+    methods: [
+      {
+        signature: 'abstract catalog(signal?: AbortSignal): Promise<readonly GmoCategoryEntry[]>',
+        description: 'The categories the current principal may analyze right now.',
+        parameters: [{ name: 'signal', description: 'aborts the operation.' }],
+        returns: 'the authorized directory, empty when the principal holds nothing.',
+        throws: ['{GmoError} when the principal cannot be established or the directory cannot be read.'],
+      },
+      {
+        signature: 'abstract results(request: GmoResultsRequest): Promise<GmoResultPage>',
+        description: 'One page of the processing results in one authorized category, newest first.\n\nThe category is authorized on this call, like every other operation: a reference that was in the directory a moment ago is not standing permission to list it now.',
+        parameters: [{ name: 'request', description: 'the category and which page.' }],
+        returns: 'the page, empty when the category holds no result.',
+        throws: ['{GmoError} when the category is refused or the upstream does not answer usably.'],
+      },
+      {
+        signature: 'abstract describe(request: GmoDescribeRequest): Promise<GmoDescription>',
+        description: 'Describe one result: its columns with their business meaning, its dashboard dimensions, the upstream\'s current date, and the category\'s written business rules.\n\nThe result\'s category is resolved from the source and authorized on this call, so holding a reference proves nothing.',
+        parameters: [{ name: 'request', description: 'the result to describe.' }],
+        returns: 'the description.',
+        throws: ['{GmoError} when the category is refused, the result is unknown or misplaced (`result-unavailable`), or the upstream does not answer usably.'],
+      },
+      {
+        signature: 'abstract ask(request: GmoAskRequest): Promise<GmoAnswer>',
+        description: 'Ask one question of one result: a free-form aggregation, one of the ready-made dashboards, or a page of detail rows.\n\nThe result\'s category is resolved from the source and authorized on this call, and a result the source places in another category is refused before any figure is read.',
+        parameters: [{ name: 'request', description: 'the result and the question.' }],
+        returns: 'the upstream\'s bounded answer.',
+        throws: ['{GmoError} when the category is refused, the result is unknown or misplaced (`result-unavailable`), the result has no such view (`unsupported`), the source refuses the question (`invalid-query`), the answer is too large (`too-large`), or the upstream does not answer usably.'],
+      },
+    ],
+  },
+  {
+    key: 'gmoGateway',
+    summary: 'The governed catalog and the decision in front of it.',
+    description: 'The governed catalog and the decision in front of it. A provider mounts this service; consumers inject `gmoGateway`.\n\nAdministration methods take an organization because an administrator has already been authorized by the route that called them. Member-facing methods take a principal because they authorize it themselves, per category, on every call.',
+    methods: [
+      {
+        signature: 'abstract sync(orgId: OrgId): Promise<GmoCatalogView>',
+        description: 'Reconcile the durable catalog against one successful full listing.\n\nSerialized: concurrent callers join the operation already in flight rather than racing two reconciliations over the same rows. A source that does not answer leaves the last successful snapshot in place and records the failure, because one failed listing must not disable every category an organization governs. A category the source newly lists starts disabled: a role granted every category must not gain a business line the moment the source starts serving it.',
+        parameters: [{ name: 'orgId', description: 'the organization whose catalog is reconciled.' }],
+        returns: 'the catalog as it stands after the attempt, successful or not.',
+      },
+      {
+        signature: 'abstract catalogView(orgId: OrgId): Promise<GmoCatalogView>',
+        description: 'Read the durable catalog without contacting the source.',
+        parameters: [{ name: 'orgId', description: 'the organization to read.' }],
+        returns: 'every governed entry and the source\'s health.',
+      },
+      {
+        signature: 'abstract setEnabled(orgId: OrgId, ref: GmoCategoryRef, enabled: boolean): Promise<void>',
+        description: 'Switch one entry on or off for the whole organization.\n\nSynchronization never overrides this choice: an administrator who enabled or disabled a category finds it still so after the next listing.',
+        parameters: [{ name: 'orgId', description: 'the organization the entry belongs to.' }, { name: 'ref', description: 'the entry to change.' }, { name: 'enabled', description: 'whether it may be analyzed at all.' }],
+        throws: ['{GmoError} `not-allowed` when the catalog holds no such entry.'],
+      },
+      {
+        signature: 'abstract directory(principal: GmoPrincipal): Promise<readonly GmoCategoryEntry[]>',
+        description: 'The categories this principal may analyze right now.',
+        parameters: [{ name: 'principal', description: 'who is asking, from a verified token.' }],
+        returns: 'the authorized directory, empty when the principal holds nothing.',
+      },
+      {
+        signature: 'abstract results(request: GovernedResultsRequest): Promise<GmoResultPage>',
+        description: 'Authorize one result listing and perform it.\n\nThe category is evaluated on this call, as every other operation\'s is. A member who may ask a category\'s results may see which results are in it: the decision is the same permission, asked separately so it can be tightened without a new authorization path.',
+        parameters: [{ name: 'request', description: 'who is asking, which category, and which page.' }],
+        returns: 'the page, with results addressed by governed references.',
+        throws: ['{GmoError} with the reason the operation was refused or failed.'],
+      },
+      {
+        signature: 'abstract describe(request: GovernedDescribeRequest): Promise<GmoDescription>',
+        description: 'Authorize one description and perform it.\n\nTwo things are proved before anything is read: the category the reference names admits this principal now, and the source agrees that the result belongs to that category. The second is what makes an unsigned reference safe: a reference whose halves disagree is refused, and possession of one is never authority.',
+        parameters: [{ name: 'request', description: 'who is asking and which result.' }],
+        returns: 'the description, with references in place of upstream ids.',
+        throws: ['{GmoError} with the reason the operation was refused or failed.'],
+      },
+      {
+        signature: 'abstract ask(request: GovernedAskRequest): Promise<GmoAnswer>',
+        description: 'Authorize one question and perform it, on the same two proofs as describe, and refuse an answer the source attributes to a different category than the one authorized.',
+        parameters: [{ name: 'request', description: 'who is asking, which result, and the question.' }],
+        returns: 'the source\'s bounded answer.',
+        throws: ['{GmoError} with the reason the operation was refused or failed.'],
+      },
+    ],
+  },
+  {
+    key: 'gmoSource',
+    summary: 'One upstream GMO service.',
+    description: 'One upstream GMO service. A provider mounts this service; the governed gateway injects `gmoSource`.\n\nFailures are raised as `GmoError` with `upstream-unavailable`, `upstream-invalid`, `result-unavailable`, `unsupported`, `invalid-query`, or `too-large`. A provider never raises an authorization reason: it does not know who is asking, which is the point.',
+    methods: [
+      {
+        signature: 'abstract readonly providerKind: string',
+        description: 'Which upstream product this is, as the first segment of a `GmoCategoryRef`.\n\nA constant of the provider rather than configuration: it names the code that speaks the protocol, and a deployment renaming it would change the identity of every category already governed.',
+        parameters: [],
+      },
+      {
+        signature: 'abstract readonly sourceCode: string',
+        description: 'The deployment\'s code for this source, as the second `GmoCategoryRef` segment. Configuration, because one company\'s `prod` is another\'s `gmo`.',
+        parameters: [],
+      },
+      {
+        signature: 'abstract listCategories(signal?: AbortSignal): Promise<readonly UpstreamCategory[]>',
+        description: 'Every category the configured source holds that has at least one tool.',
+        parameters: [{ name: 'signal', description: 'aborts the operation.' }],
+        returns: 'every category, in whatever order the source lists them.',
+        throws: ['{GmoError} `upstream-unavailable` or `upstream-invalid`.'],
+      },
+      {
+        signature: 'abstract listResults(request: UpstreamResultsRequest): Promise<UpstreamResultListing>',
+        description: 'One page of an already-authorized category\'s results, newest first.',
+        parameters: [{ name: 'request', description: 'the authorized upstream id and the page.' }],
+        returns: 'the page, empty when the category holds no result.',
+        throws: ['{GmoError} `upstream-unavailable` or `upstream-invalid`.'],
+      },
+      {
+        signature: 'abstract placeResult(upstreamResultId: string, signal?: AbortSignal): Promise<UpstreamPlacement>',
+        description: 'Where one result sits, cheaply and without reading any figure, so the gateway can authorize the category that holds it before asking anything.',
+        parameters: [{ name: 'upstreamResultId', description: 'the source\'s own result id.' }, { name: 'signal', description: 'aborts the operation.' }],
+        returns: 'the category it belongs to.',
+        throws: ['{GmoError} `upstream-unavailable`, `upstream-invalid`, or `result-unavailable` when the source holds no such result.'],
+      },
+      {
+        signature: 'abstract describeResult(upstreamResultId: string, signal?: AbortSignal): Promise<UpstreamDescription>',
+        description: 'Describe one already-authorized result.',
+        parameters: [{ name: 'upstreamResultId', description: 'the source\'s own result id.' }, { name: 'signal', description: 'aborts the operation.' }],
+        returns: 'the description, with the category the source says holds it.',
+        throws: ['{GmoError} `upstream-unavailable`, `upstream-invalid`, `result-unavailable`, or `too-large`.'],
+      },
+      {
+        signature: 'abstract ask(request: UpstreamAskRequest): Promise<UpstreamAnswer>',
+        description: 'Ask one already-authorized result one question.',
+        parameters: [{ name: 'request', description: 'the category, the result, and the question.' }],
+        returns: 'the bounded answer and the category the source says answered.',
+        throws: ['{GmoError} `upstream-unavailable`, `upstream-invalid`, `result-unavailable`, `unsupported` when the result has no such view, `invalid-query` when the source refuses a column, filter, or value, or `too-large` when the answer exceeds the source\'s size bound.'],
+      },
+    ],
+  },
+  {
     key: 'goals',
     summary: 'Goal service (`ctx.goals`) backed exclusively by the owning session log.',
     description: 'Goal service (`ctx.goals`) backed exclusively by the owning session log.',
@@ -6334,6 +6473,106 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface GenericResultView {\n    card: \'generic\';\n    title?: string;\n    content?: ContentBlock[];\n}',
   },
   {
+    name: 'GmoAggregateQuery',
+    declaration: 'export interface GmoAggregateQuery {\n    readonly kind: \'aggregate\';\n    readonly metric: \'sum\' | \'count\' | \'distinct\';\n    readonly field?: string;\n    readonly groupBy?: readonly string[];\n    readonly dateGrain?: \'day\' | \'week\' | \'month\';\n    readonly orderBy?: \'value_desc\' | \'value_asc\' | \'group_asc\';\n    readonly limit?: number;\n    readonly filters?: GmoFilters;\n}',
+  },
+  {
+    name: 'GmoAnswer',
+    declaration: 'export interface GmoAnswer {\n    readonly resultRef: GmoResultRef;\n    readonly ref: GmoCategoryRef;\n    readonly kind: GmoQuery[\'kind\'];\n    readonly data: {\n        readonly [key: string]: GmoJson;\n    };\n}',
+  },
+  {
+    name: 'GmoAskRequest',
+    declaration: 'export interface GmoAskRequest {\n    readonly resultRef: GmoResultRef;\n    readonly query: GmoQuery;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
+    name: 'GmoCatalogEntry',
+    declaration: 'export interface GmoCatalogEntry {\n    readonly ref: GmoCategoryRef;\n    readonly resourceId: ResourceId;\n    readonly displayName: string;\n    readonly resultCount: number | undefined;\n    readonly adminEnabled: boolean;\n    readonly effectiveEnabled: boolean;\n    readonly lastDiscoveredAt: number;\n}',
+  },
+  {
+    name: 'GmoCatalogView',
+    declaration: 'export interface GmoCatalogView {\n    readonly source: GmoSourceStatus;\n    readonly entries: readonly GmoCatalogEntry[];\n}',
+  },
+  {
+    name: 'GmoCategoryEntry',
+    declaration: 'export interface GmoCategoryEntry {\n    readonly ref: GmoCategoryRef;\n    readonly displayName: string;\n}',
+  },
+  {
+    name: 'GmoCategoryRef',
+    declaration: 'export type GmoCategoryRef = Branded<\'GmoCategoryRef\'>;',
+  },
+  {
+    name: 'GmoDashboard',
+    declaration: 'export interface GmoDashboard {\n    readonly measure: string;\n    readonly measureLabel: string;\n    readonly dateFields: readonly {\n        readonly key: string;\n        readonly label: string;\n    }[];\n    readonly dims: Readonly<Record<string, string>>;\n    readonly stackDims: readonly string[];\n    readonly rankDims: readonly string[];\n    readonly heatDims: readonly string[];\n    readonly flow: readonly string[];\n    readonly subDim: string;\n    readonly balance: boolean;\n    readonly structure: boolean;\n}',
+  },
+  {
+    name: 'GmoDescribeRequest',
+    declaration: 'export interface GmoDescribeRequest {\n    readonly resultRef: GmoResultRef;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
+    name: 'GmoDescription',
+    declaration: 'export interface GmoDescription {\n    readonly resultRef: GmoResultRef;\n    readonly ref: GmoCategoryRef;\n    readonly categoryLabel: string;\n    readonly name: string;\n    readonly toolName: string;\n    readonly period: string;\n    readonly rows: number;\n    readonly createdAt: string;\n    readonly today: string;\n    readonly weekStart: string;\n    readonly stages: readonly GmoStage[];\n    readonly fields: readonly GmoField[];\n    readonly dashboard?: GmoDashboard;\n    readonly sources: readonly {\n        readonly name: string;\n        readonly slot: string;\n        readonly rows: number | undefined;\n    }[];\n    readonly glossary: string;\n}',
+  },
+  {
+    name: 'GmoField',
+    declaration: 'export interface GmoField {\n    readonly key: string;\n    readonly label: string;\n    readonly type: string;\n    readonly filter: string;\n    readonly description: string;\n}',
+  },
+  {
+    name: 'GmoFilters',
+    declaration: 'export interface GmoFilters {\n    readonly multi?: Readonly<Record<string, readonly string[]>>;\n    readonly search?: Readonly<Record<string, string>>;\n    readonly range?: Readonly<Record<string, {\n        readonly from?: string;\n        readonly to?: string;\n    }>>;\n    readonly empty?: readonly string[];\n}',
+  },
+  {
+    name: 'GmoJson',
+    declaration: 'export type GmoJson = string | number | boolean | null | GmoJson[] | {\n    [key: string]: GmoJson;\n};',
+  },
+  {
+    name: 'GmoOverviewQuery',
+    declaration: 'export interface GmoOverviewQuery {\n    readonly kind: \'overview\';\n    readonly widget: GmoWidget;\n    readonly filters?: GmoFilters;\n    readonly dateField?: string;\n    readonly stack?: string;\n    readonly sub?: string;\n    readonly grain?: \'week\' | \'month\';\n    readonly metric?: \'qty\' | \'rows\';\n    readonly dim?: string;\n    readonly top?: number;\n    readonly search?: string;\n    readonly material?: string;\n}',
+  },
+  {
+    name: 'GmoPrincipal',
+    declaration: 'export interface GmoPrincipal {\n    readonly orgId: OrgId;\n    readonly principalId: UserId;\n    readonly deviceId?: string;\n    readonly correlationId?: string;\n}',
+  },
+  {
+    name: 'GmoQuery',
+    declaration: 'export type GmoQuery = GmoAggregateQuery | GmoOverviewQuery | GmoRowsQuery;',
+  },
+  {
+    name: 'GmoResultPage',
+    declaration: 'export interface GmoResultPage {\n    readonly ref: GmoCategoryRef;\n    readonly results: readonly GmoResultSummary[];\n    readonly page: number;\n    readonly pageSize: number;\n    readonly total: number;\n}',
+  },
+  {
+    name: 'GmoResultRef',
+    declaration: 'export type GmoResultRef = Branded<\'GmoResultRef\'>;',
+  },
+  {
+    name: 'GmoResultsRequest',
+    declaration: 'export interface GmoResultsRequest {\n    readonly ref: GmoCategoryRef;\n    readonly page?: number;\n    readonly pageSize?: number;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
+    name: 'GmoResultSummary',
+    declaration: 'export interface GmoResultSummary {\n    readonly resultRef: GmoResultRef;\n    readonly ref: GmoCategoryRef;\n    readonly name: string;\n    readonly toolName: string;\n    readonly period: string;\n    readonly rows: number;\n    readonly createdAt: string;\n    readonly stages: readonly GmoStage[];\n}',
+  },
+  {
+    name: 'GmoRowsQuery',
+    declaration: 'export interface GmoRowsQuery {\n    readonly kind: \'rows\';\n    readonly filters?: GmoFilters;\n    readonly sort?: {\n        readonly field: string;\n        readonly dir: \'asc\' | \'desc\';\n    };\n    readonly page?: number;\n    readonly pageSize?: number;\n}',
+  },
+  {
+    name: 'GmoSourceHealth',
+    declaration: 'export type GmoSourceHealth = \'never-synced\' | \'healthy\' | \'failing\';',
+  },
+  {
+    name: 'GmoSourceStatus',
+    declaration: 'export interface GmoSourceStatus {\n    readonly sourceCode: string;\n    readonly providerKind: string;\n    readonly health: GmoSourceHealth;\n    readonly lastAttemptAt: number | undefined;\n    readonly lastSuccessAt: number | undefined;\n    readonly lastFailure: string | undefined;\n}',
+  },
+  {
+    name: 'GmoStage',
+    declaration: 'export interface GmoStage {\n    readonly key: string;\n    readonly label: string;\n    readonly resultRef: GmoResultRef;\n}',
+  },
+  {
+    name: 'GmoWidget',
+    declaration: 'export type GmoWidget = \'kpi\' | \'timeline\' | \'ranking\' | \'flow\' | \'heatmap\' | \'structure\' | \'quality\' | \'balance\' | \'balance_analysis\' | \'balance_material\';',
+  },
+  {
     name: 'GoalActivation',
     declaration: 'export type GoalActivation = \'armed\' | \'disarmed\';',
   },
@@ -6374,8 +6613,16 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface GoalView extends GoalSnapshot {\n    readonly roundsStarted: number;\n    readonly createdAt: number;\n    readonly updatedAt: number;\n    readonly activation: GoalActivation;\n}',
   },
   {
+    name: 'GovernedAskRequest',
+    declaration: 'export interface GovernedAskRequest extends GmoPrincipal {\n    readonly resultRef: GmoResultRef;\n    readonly query: GmoQuery;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
     name: 'GovernedChartsRequest',
     declaration: 'export interface GovernedChartsRequest extends BiPrincipal {\n    readonly ref: BiProjectRef;\n    readonly query?: string;\n    readonly page?: number;\n    readonly pageSize?: number;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
+    name: 'GovernedDescribeRequest',
+    declaration: 'export interface GovernedDescribeRequest extends GmoPrincipal {\n    readonly resultRef: GmoResultRef;\n    readonly signal?: AbortSignal;\n}',
   },
   {
     name: 'GovernedDocumentRequest',
@@ -6388,6 +6635,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'GovernedQueryRequest',
     declaration: 'export interface GovernedQueryRequest extends BiPrincipal {\n    readonly chartRef: BiChartRef;\n    readonly limit?: number;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
+    name: 'GovernedResultsRequest',
+    declaration: 'export interface GovernedResultsRequest extends GmoPrincipal {\n    readonly ref: GmoCategoryRef;\n    readonly page?: number;\n    readonly pageSize?: number;\n    readonly signal?: AbortSignal;\n}',
   },
   {
     name: 'GovernedSearchRequest',
@@ -9170,6 +9421,18 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface UpdateTeamTaskRequest {\n    readonly taskId: TeamTaskId;\n    readonly expectedRevision: number;\n    readonly action: TeamTaskAction;\n    readonly subject?: string;\n    readonly description?: string;\n    readonly blockedBy?: readonly TeamTaskId[];\n    readonly writeScopes?: readonly string[];\n    readonly owner?: string;\n}',
   },
   {
+    name: 'UpstreamAnswer',
+    declaration: 'export interface UpstreamAnswer {\n    readonly upstreamId: string;\n    readonly data: {\n        readonly [key: string]: GmoJson;\n    };\n}',
+  },
+  {
+    name: 'UpstreamAskRequest',
+    declaration: 'export interface UpstreamAskRequest {\n    readonly upstreamId: string;\n    readonly upstreamResultId: string;\n    readonly query: GmoQuery;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
+    name: 'UpstreamCategory',
+    declaration: 'export interface UpstreamCategory {\n    readonly upstreamId: string;\n    readonly name: string;\n    readonly resultCount: number | undefined;\n}',
+  },
+  {
     name: 'UpstreamChart',
     declaration: 'export interface UpstreamChart {\n    readonly upstreamChartId: string;\n    readonly name: string;\n    readonly spaceName: string;\n    readonly description: string;\n    readonly kind: BiChartKind;\n    readonly updatedAt: number | undefined;\n}',
   },
@@ -9184,6 +9447,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'UpstreamChartsRequest',
     declaration: 'export interface UpstreamChartsRequest {\n    readonly upstreamId: string;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
+    name: 'UpstreamDescription',
+    declaration: 'export interface UpstreamDescription extends Omit<GmoDescription, \'resultRef\' | \'ref\' | \'stages\'> {\n    readonly upstreamId: string;\n    readonly upstreamResultId: string;\n    readonly stages: readonly UpstreamStage[];\n}',
   },
   {
     name: 'UpstreamDocument',
@@ -9218,8 +9485,24 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface UpstreamPassage {\n    readonly upstreamId: string;\n    readonly upstreamDocId?: string;\n    readonly title: string;\n    readonly text: string;\n    readonly truncated: boolean;\n    readonly score: number;\n}',
   },
   {
+    name: 'UpstreamPlacement',
+    declaration: 'export interface UpstreamPlacement {\n    readonly upstreamId: string;\n}',
+  },
+  {
     name: 'UpstreamProject',
     declaration: 'export interface UpstreamProject {\n    readonly upstreamId: string;\n    readonly name: string;\n    readonly description: string;\n    readonly projectType: string;\n    readonly warehouseType: string;\n}',
+  },
+  {
+    name: 'UpstreamResult',
+    declaration: 'export interface UpstreamResult {\n    readonly upstreamResultId: string;\n    readonly name: string;\n    readonly toolName: string;\n    readonly period: string;\n    readonly rows: number;\n    readonly createdAt: string;\n    readonly stages: readonly UpstreamStage[];\n}',
+  },
+  {
+    name: 'UpstreamResultListing',
+    declaration: 'export interface UpstreamResultListing {\n    readonly results: readonly UpstreamResult[];\n    readonly pageSize: number;\n    readonly total: number;\n}',
+  },
+  {
+    name: 'UpstreamResultsRequest',
+    declaration: 'export interface UpstreamResultsRequest {\n    readonly upstreamId: string;\n    readonly page: number;\n    readonly pageSize: number;\n    readonly signal?: AbortSignal;\n}',
   },
   {
     name: 'UpstreamRun',
@@ -9232,6 +9515,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'UpstreamSearchRequest',
     declaration: 'export interface UpstreamSearchRequest {\n    readonly upstreamIds: readonly string[];\n    readonly upstreamDocIds?: readonly string[];\n    readonly query: string;\n    readonly maxResults: number;\n    readonly maxDocuments?: number;\n    readonly signal?: AbortSignal;\n}',
+  },
+  {
+    name: 'UpstreamStage',
+    declaration: 'export interface UpstreamStage {\n    readonly key: string;\n    readonly label: string;\n    readonly upstreamResultId: string;\n}',
   },
   {
     name: 'UserGroup',

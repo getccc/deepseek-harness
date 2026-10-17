@@ -1,0 +1,49 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/client/ui-gmo/README.md
+/:
+  en: 0fe37b8a6dc2692d
+  zh: 6bbf1d8e895e5bf7
+/deepseek-ai-dsh-client-ui-gmo:
+  en: a1a6ac54eacd26fa
+  zh: 19ede488c1b8028b
+/deepseek-ai-dsh-client-ui-gmo/summary:
+  en: b3e555cfd971193f
+  zh: 26e4ded46290b10e
+/deepseek-ai-dsh-client-ui-gmo/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 9f0336825ccdaacd
+/deepseek-ai-dsh-client-ui-gmo/use-this-package:
+  en: 947fdbf231dc882b
+  zh: 54ab92f961aafc12
+/deepseek-ai-dsh-client-ui-gmo/use-this-package/what-the-control-does:
+  en: 86a69135a602d2aa
+  zh: 8f8f240e9b383b9e
+/deepseek-ai-dsh-client-ui-gmo/use-this-package/copy:
+  en: fbcc8184cff3a89c
+  zh: 11bf6d785fd57dd7
+/deepseek-ai-dsh-client-ui-gmo/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-client-ui-gmo/understand-the-implementation/design-philosophy:
+  en: 059a28459e40107d
+  zh: ded70d09961b7129
+/deepseek-ai-dsh-client-ui-gmo/understand-the-implementation/source-map:
+  en: fa1941b8acbb2f5c
+  zh: bdcc0bf94a48b865
+/deepseek-ai-dsh-client-ui-gmo/further-exploration:
+  en: 4d764f1fd385cfc1
+  zh: e4557a0daed5d517
+/deepseek-ai-dsh-client-ui-gmo/model-experience:
+  en: 4230acced160846a
+  zh: be864b17bffe05c1
+/deepseek-ai-dsh-client-ui-gmo/model-experience/kv-cache-effect:
+  en: 08bfad1dc54a19e8
+  zh: d3854717f742dfc1
+/deepseek-ai-dsh-client-ui-gmo/known-limitations-and-deferred-work:
+  en: ed2470dbbf9146a9
+  zh: 5125a1c785dd6fdf
+/deepseek-ai-dsh-client-ui-gmo/known-limitations-and-deferred-work/dev-note:
+  en: 79c38fda416cd5c9
+  zh: e08aec104d30f0b5

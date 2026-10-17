@@ -1,0 +1,55 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/gmo/gmo-gateway-http/README.md
+/:
+  en: 497398e03bf06adb
+  zh: c5860790a9ad98ba
+/deepseek-ai-dsh-gmo-gateway-http:
+  en: e6b3bf486289a215
+  zh: 4796bf2b1d50b52d
+/deepseek-ai-dsh-gmo-gateway-http/summary:
+  en: 2e039a512f15ed22
+  zh: 5c1e473d2ad809ad
+/deepseek-ai-dsh-gmo-gateway-http/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 9f0336825ccdaacd
+/deepseek-ai-dsh-gmo-gateway-http/use-this-package:
+  en: 40fc11e570776c22
+  zh: 807c82306e5b9599
+/deepseek-ai-dsh-gmo-gateway-http/use-this-package/minimal-configuration:
+  en: 85df16e831037926
+  zh: 66b648659cceee6e
+/deepseek-ai-dsh-gmo-gateway-http/use-this-package/the-routes:
+  en: 774d29f31deb17c4
+  zh: d9af5de7159fa86c
+/deepseek-ai-dsh-gmo-gateway-http/use-this-package/questions-are-parsed-not-trusted:
+  en: c1a925a0893bdf34
+  zh: 329baffaa9daec33
+/deepseek-ai-dsh-gmo-gateway-http/use-this-package/refusals:
+  en: 5bf1c2b09564870f
+  zh: 4e846214c49a69b7
+/deepseek-ai-dsh-gmo-gateway-http/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-gmo-gateway-http/understand-the-implementation/design-philosophy:
+  en: 6b1fa3486ca96ebe
+  zh: e3b09667aea9ee7b
+/deepseek-ai-dsh-gmo-gateway-http/understand-the-implementation/source-map:
+  en: e6a8f265289816de
+  zh: 695a00af866899c7
+/deepseek-ai-dsh-gmo-gateway-http/further-exploration:
+  en: e3b041075242ea3c
+  zh: 97e3c05653067bd4
+/deepseek-ai-dsh-gmo-gateway-http/model-experience:
+  en: 16e3ad6cca12e1b6
+  zh: a9ff8e6dbef54764
+/deepseek-ai-dsh-gmo-gateway-http/model-experience/kv-cache-effect:
+  en: 14c1112fcaa45b72
+  zh: ebaa66da56e3d135
+/deepseek-ai-dsh-gmo-gateway-http/known-limitations-and-deferred-work:
+  en: ecdebca2fc24af96
+  zh: 814c03768ff9d7e4
+/deepseek-ai-dsh-gmo-gateway-http/known-limitations-and-deferred-work/dev-note:
+  en: dd115165629d2e1b
+  zh: a33feb49ccf96954

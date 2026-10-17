@@ -39,6 +39,7 @@ The [format references](persistence-changes/historical-formats/README.md) cover 
 | `event:feedback/message-delete` | event | `3ee93b06f3a125850337602bcdf155d2538c43a5c944ec55b1b3c365152d6796` | [`{ type: "feedback/message-delete" }`](#persistence-type-sha256-3ee93b06f3a125850337602bcdf155d2538c43a5c944ec55b1b3c365152d6796) |
 | `event:feedback/message-put` | event | `b5086d249e8502e9ead1d39156bb8d559bde7951cac0f14ce150345b4e42a2bf` | [`{ type: "feedback/message-put" }`](#persistence-type-sha256-b5086d249e8502e9ead1d39156bb8d559bde7951cac0f14ce150345b4e42a2bf) |
 | `event:feedback/record` | event | `b54940ff095c17e874c5be03815f4c2145a256cf3a1d34dae4ab2f7769dfffe8` | [`{ type: "feedback/record" }`](#persistence-type-sha256-b54940ff095c17e874c5be03815f4c2145a256cf3a1d34dae4ab2f7769dfffe8) |
+| `event:gmo/scope` | event | `05bb8105eb0fe4d3eec7cb103a8540bb4e8d5f07b0b59fbd96ab9835e946741f` | [`{ type: "gmo/scope" }`](#persistence-type-sha256-05bb8105eb0fe4d3eec7cb103a8540bb4e8d5f07b0b59fbd96ab9835e946741f) |
 | `event:goal/change` | event | `763c8a20af487263a0080548274f7437ef4a86e0ba8769127d1ced10a72c664d` | [`{ type: "goal/change" }`](#persistence-type-sha256-763c8a20af487263a0080548274f7437ef4a86e0ba8769127d1ced10a72c664d) |
 | `event:hook/invoked` | event | `8a6e1ec9e8db346b0e02f027db73c07a94f067a26d40c1aef1abd09c47ce7ba0` | [`{ type: "hook/invoked" }`](#persistence-type-sha256-8a6e1ec9e8db346b0e02f027db73c07a94f067a26d40c1aef1abd09c47ce7ba0) |
 | `event:hook/result` | event | `e75916628f3f10c2d50658bd143052a46285fbf1a9a700ba54947614603d26b4` | [`{ type: "hook/result" }`](#persistence-type-sha256-e75916628f3f10c2d50658bd143052a46285fbf1a9a700ba54947614603d26b4) |
@@ -565,6 +566,28 @@ Source: [`packages/feedback/message-feedback/src/types.ts:56`](../packages/feedb
 ```
 
 Source: [`packages/feedback/command-feedback/src/types.ts:40`](../packages/feedback/command-feedback/src/types.ts)
+
+### `gmo/*`
+
+<a id="gmoscope--log-only"></a>
+
+#### `gmo/scope` — log-only
+
+```ts persistence-catalog
+/**
+ * Which GMO category this Session analyzes from this point on: whole-value
+ * replace, last one wins, and a log with none folds to `off` through
+ * {@link foldGmoScope}.
+ *
+ * Model-visible: the folded value decides both the `gmo:scope` prompt
+ * section and whether the GMO tools are offered, so the display name a
+ * `selected` scope carries is recorded here rather than resolved at
+ * assembly time.
+ */
+'gmo/scope': GmoScope
+```
+
+Source: [`packages/gmo/gmo/src/scope.ts:29`](../packages/gmo/gmo/src/scope.ts)
 
 ### `goal/*`
 
@@ -1924,6 +1947,14 @@ SHA-256: `dd2780e7e07684332f7a9ab047237798d260e7eaffb1321cb38eca695d184c3d`
 
 `"fresh"`
 
+<a id="persistence-type-sha256-c8c5ca0dc383bb3755912331afae3d7f88caca551edfdfa6fdf227ffc001acc0"></a>
+
+### `"gmo/scope"`
+
+SHA-256: `c8c5ca0dc383bb3755912331afae3d7f88caca551edfdfa6fdf227ffc001acc0`
+
+`"gmo/scope"`
+
 <a id="persistence-type-sha256-b815d7b91cdd9fc6ccc7dcba05cfc5ce1d55fab5fc0c0801803cd3630cedb602"></a>
 
 ### `"goal"`
@@ -3258,13 +3289,17 @@ One of:
 
 <a id="persistence-type-biscopeproject"></a>
 
+<a id="persistence-type-gmoscopecategory"></a>
+
 <a id="persistence-type-packagesbibisrctypestsbiscopeproject"></a>
+
+<a id="persistence-type-packagesgmogmosrctypestsgmoscopecategory"></a>
 
 ### `BiScopeProject`
 
 SHA-256: `e7b9271f26f0cae70218b256b456f0bb4c37a1908499fc2d970c7ce08c6fe3c1`
 
-Sources: [`packages/bi/bi/src/types.ts:167`](../packages/bi/bi/src/types.ts)
+Sources: [`packages/bi/bi/src/types.ts:167`](../packages/bi/bi/src/types.ts) · [`packages/gmo/gmo/src/types.ts:259`](../packages/gmo/gmo/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -3556,6 +3591,23 @@ Sources: [`packages/llm/llm/src/types.ts:165`](../packages/llm/llm/src/types.ts)
 | `max-tokens` | not declared | none | [`{ kind: "max-tokens" }`](#persistence-type-sha256-ab7ec5f9eb2c6dfacca5da4c37cf7ba85d04172053ee6b1ebf1709ffcd99c1a7) |
 | `stop` | not declared | none | [`{ kind: "stop" }`](#persistence-type-sha256-1d76406cbb2ddadb0dbbb51e9d8bc6cf678fed455cf8eb512f36f7c86d37a62f) |
 | `tool-calls` | not declared | none | [`{ kind: "tool-calls" }`](#persistence-type-sha256-287211846beea1eccb5f9acee00d20388a38fcb2e95858fa2332d6f58529379a) |
+
+<a id="persistence-type-sha256-8ba30620d0268250447d83fe941dd67d1fc662cecbdd4b9eb25d39543e5aff8b"></a>
+
+<a id="persistence-type-gmoscope"></a>
+
+<a id="persistence-type-packagesgmogmosrctypestsgmoscope"></a>
+
+### `GmoScope`
+
+SHA-256: `8ba30620d0268250447d83fe941dd67d1fc662cecbdd4b9eb25d39543e5aff8b`
+
+Sources: [`packages/gmo/gmo/src/types.ts:272`](../packages/gmo/gmo/src/types.ts)
+
+One of:
+
+- [`{ category, mode, version }`](#persistence-type-sha256-c7f24ab6218cc955a34d4a94ee5466d3849a8ae1a8ddb95d631f1efa7edd8643)
+- [`{ mode, version }`](#persistence-type-sha256-ac44e4667f7f878b329a55172d9619994b18e891428860b8fd2e530fc2490a9c)
 
 <a id="persistence-type-sha256-84ac8c1a66ffc697262e181f42e851259eae14038c113ca329fb4700ccdb1f7c"></a>
 
@@ -5557,6 +5609,8 @@ Array of `number`.
 
 <a id="persistence-type-compactionid"></a>
 
+<a id="persistence-type-gmocategoryref"></a>
+
 <a id="persistence-type-goalid"></a>
 
 <a id="persistence-type-knowledgedocref"></a>
@@ -5584,6 +5638,8 @@ Array of `number`.
 <a id="persistence-type-packagesexperimentalagent-teamsrctypeststeamtaskid"></a>
 
 <a id="persistence-type-packagesfeedbackmessage-feedbacksrctypestsmessagefeedbackversion"></a>
+
+<a id="persistence-type-packagesgmogmosrcbrandtsgmocategoryref"></a>
 
 <a id="persistence-type-packagesgoalgoalsrctypestsgoalid"></a>
 
@@ -5653,7 +5709,7 @@ Array of `number`.
 
 SHA-256: `4cd48f3e5108bd6ebedf7301c3638839b8b2b9db8dbd493974177fbdeb91a01b`
 
-Sources: [`packages/api/session-controller/src/types.ts:435`](../packages/api/session-controller/src/types.ts) · [`packages/attachment/attachment/src/brand.ts:6`](../packages/attachment/attachment/src/brand.ts) · [`packages/bi/bi/src/brand.ts:17`](../packages/bi/bi/src/brand.ts) · [`packages/compaction/compaction/src/brand.ts:4`](../packages/compaction/compaction/src/brand.ts) · [`packages/core/session/src/types.ts:20`](../packages/core/session/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:20`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:32`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:8`](../packages/experimental/agent-team/src/types.ts) · [`packages/feedback/message-feedback/src/types.ts:14`](../packages/feedback/message-feedback/src/types.ts) · [`packages/goal/goal/src/types.ts:17`](../packages/goal/goal/src/types.ts) · [`packages/interaction/commands/src/brand.ts:31`](../packages/interaction/commands/src/brand.ts) · [`packages/interaction/user-approval/src/types.ts:17`](../packages/interaction/user-approval/src/types.ts) · [`packages/knowledge/knowledge/src/brand.ts:145`](../packages/knowledge/knowledge/src/brand.ts) · [`packages/knowledge/knowledge/src/brand.ts:16`](../packages/knowledge/knowledge/src/brand.ts) · [`packages/llm/llm-retry/src/brand.ts:4`](../packages/llm/llm-retry/src/brand.ts) · [`packages/llm/llm/src/brand.ts:16`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:31`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:43`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:67`](../packages/llm/llm/src/brand.ts) · [`packages/schedule/schedule/src/types.ts:14`](../packages/schedule/schedule/src/types.ts) · [`packages/session/session-title/src/index.ts:42`](../packages/session/session-title/src/index.ts) · [`packages/session/session-title/src/types.ts:17`](../packages/session/session-title/src/types.ts) · [`packages/webhook/webhook/src/brand.ts:12`](../packages/webhook/webhook/src/brand.ts) · [`packages/webhook/webhook/src/brand.ts:6`](../packages/webhook/webhook/src/brand.ts) · [`packages/webhook/webhook/src/brand.ts:9`](../packages/webhook/webhook/src/brand.ts) · [`packages/workflow/workflow/src/types.ts:13`](../packages/workflow/workflow/src/types.ts)
+Sources: [`packages/api/session-controller/src/types.ts:435`](../packages/api/session-controller/src/types.ts) · [`packages/attachment/attachment/src/brand.ts:6`](../packages/attachment/attachment/src/brand.ts) · [`packages/bi/bi/src/brand.ts:17`](../packages/bi/bi/src/brand.ts) · [`packages/compaction/compaction/src/brand.ts:4`](../packages/compaction/compaction/src/brand.ts) · [`packages/core/session/src/types.ts:20`](../packages/core/session/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:20`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:32`](../packages/experimental/agent-team/src/types.ts) · [`packages/experimental/agent-team/src/types.ts:8`](../packages/experimental/agent-team/src/types.ts) · [`packages/feedback/message-feedback/src/types.ts:14`](../packages/feedback/message-feedback/src/types.ts) · [`packages/gmo/gmo/src/brand.ts:17`](../packages/gmo/gmo/src/brand.ts) · [`packages/goal/goal/src/types.ts:17`](../packages/goal/goal/src/types.ts) · [`packages/interaction/commands/src/brand.ts:31`](../packages/interaction/commands/src/brand.ts) · [`packages/interaction/user-approval/src/types.ts:17`](../packages/interaction/user-approval/src/types.ts) · [`packages/knowledge/knowledge/src/brand.ts:145`](../packages/knowledge/knowledge/src/brand.ts) · [`packages/knowledge/knowledge/src/brand.ts:16`](../packages/knowledge/knowledge/src/brand.ts) · [`packages/llm/llm-retry/src/brand.ts:4`](../packages/llm/llm-retry/src/brand.ts) · [`packages/llm/llm/src/brand.ts:16`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:31`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:43`](../packages/llm/llm/src/brand.ts) · [`packages/llm/llm/src/brand.ts:67`](../packages/llm/llm/src/brand.ts) · [`packages/schedule/schedule/src/types.ts:14`](../packages/schedule/schedule/src/types.ts) · [`packages/session/session-title/src/index.ts:42`](../packages/session/session-title/src/index.ts) · [`packages/session/session-title/src/types.ts:17`](../packages/session/session-title/src/types.ts) · [`packages/webhook/webhook/src/brand.ts:12`](../packages/webhook/webhook/src/brand.ts) · [`packages/webhook/webhook/src/brand.ts:6`](../packages/webhook/webhook/src/brand.ts) · [`packages/webhook/webhook/src/brand.ts:9`](../packages/webhook/webhook/src/brand.ts) · [`packages/workflow/workflow/src/types.ts:13`](../packages/workflow/workflow/src/types.ts)
 
 `string`
 
@@ -5960,6 +6016,20 @@ Sources: [`packages/context/session-reference/src/types.ts:18`](../packages/cont
 SHA-256: `df843efd87c78cf8de98f8e0d0216956cd568d0d0e56a22c853663e274aa1a18`
 
 Array of [`{ capturedFormatVersion?, capturedThroughSeq, compacted, inputIndex, … }`](#persistence-type-sha256-4f91f187baeabef5c7950c4780d31bbe39f3345dff591a6cf26ac7e135ac1cf4).
+
+<a id="persistence-type-sha256-c7f24ab6218cc955a34d4a94ee5466d3849a8ae1a8ddb95d631f1efa7edd8643"></a>
+
+### `{ category, mode, version }`
+
+SHA-256: `c7f24ab6218cc955a34d4a94ee5466d3849a8ae1a8ddb95d631f1efa7edd8643`
+
+Sources: [`packages/gmo/gmo/src/types.ts:274`](../packages/gmo/gmo/src/types.ts)
+
+| Property | Presence | Type |
+|---|---|---|
+| `category` | required | [`BiScopeProject`](#persistence-type-sha256-e7b9271f26f0cae70218b256b456f0bb4c37a1908499fc2d970c7ce08c6fe3c1) |
+| `mode` | required | `"selected"` |
+| `version` | required | `1` |
 
 <a id="persistence-type-sha256-0e10d7c096b47e61defe372a5fc8bd37d835199410eac44367f95c45082498bd"></a>
 
@@ -7834,7 +7904,7 @@ Sources: [`packages/knowledge/knowledge/src/types.ts:207`](../packages/knowledge
 
 SHA-256: `ac44e4667f7f878b329a55172d9619994b18e891428860b8fd2e530fc2490a9c`
 
-Sources: [`packages/bi/bi/src/types.ts:181`](../packages/bi/bi/src/types.ts) · [`packages/knowledge/knowledge/src/types.ts:206`](../packages/knowledge/knowledge/src/types.ts)
+Sources: [`packages/bi/bi/src/types.ts:181`](../packages/bi/bi/src/types.ts) · [`packages/gmo/gmo/src/types.ts:273`](../packages/gmo/gmo/src/types.ts) · [`packages/knowledge/knowledge/src/types.ts:206`](../packages/knowledge/knowledge/src/types.ts)
 
 | Property | Presence | Type |
 |---|---|---|
@@ -8359,6 +8429,22 @@ Sources: [`packages/llm/llm/src/types.ts:461`](../packages/llm/llm/src/types.ts)
 | `reason` | required | [`FinishReason`](#persistence-type-sha256-5808e36c95355f0e745201b5db1b6bcec4ebf5adb75d3e82d7d59cc89635ab80) |
 | `replayState` | optional | [`ReplayEnvelope`](#persistence-type-sha256-0acd94fe8794574c9ae72c7855ee16d29c546096d4af760d16d1225385764555) |
 | `type` | required | `"finish"` |
+
+<a id="persistence-type-sha256-05bb8105eb0fe4d3eec7cb103a8540bb4e8d5f07b0b59fbd96ab9835e946741f"></a>
+
+<a id="persistence-type-eventgmoscope"></a>
+
+### `{ type: "gmo/scope" }`
+
+SHA-256: `05bb8105eb0fe4d3eec7cb103a8540bb4e8d5f07b0b59fbd96ab9835e946741f`
+
+| Property | Presence | Type |
+|---|---|---|
+| `data` | required | [`GmoScope`](#persistence-type-sha256-8ba30620d0268250447d83fe941dd67d1fc662cecbdd4b9eb25d39543e5aff8b) |
+| `ignorable` | optional | `true` |
+| `seq` | required | `number` |
+| `time` | required | `number` |
+| `type` | required | `"gmo/scope"` |
 
 <a id="persistence-type-sha256-763c8a20af487263a0080548274f7437ef4a86e0ba8769127d1ced10a72c664d"></a>
 

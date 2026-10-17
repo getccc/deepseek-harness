@@ -72,6 +72,7 @@ import * as ToolSubagent from '@deepseek-ai/dsh-tool-subagent'
 import { registerListSubagentModels } from '../packages/subagent/tool-subagent/src/list-models.ts'
 import * as ToolKnowledge from '@deepseek-ai/dsh-tool-knowledge'
 import * as ToolBi from '@deepseek-ai/dsh-tool-bi'
+import * as ToolGmo from '@deepseek-ai/dsh-tool-gmo'
 import * as ToolWeb from '@deepseek-ai/dsh-tool-web'
 import WorkflowEngine from '@deepseek-ai/dsh-workflow'
 import type { WorkflowRun, WorkflowStartRequest } from '@deepseek-ai/dsh-workflow'
@@ -692,6 +693,30 @@ const TOOL_PACKAGES: ToolPackage[] = [
     },
     note:
       'Both tools are registered globally and hidden per agent while a Session has chosen no BI project, so a catalogued schema is what a Session analyzing a project sees. The scope prompt section is folded from the Session log and is absent from this catalog, which mounts no Session.',
+  },
+  {
+    pkg: '@deepseek-ai/dsh-tool-gmo',
+    dir: 'tool-gmo',
+    source: 'packages/gmo/tool-gmo/src/index.ts',
+    requires: ['ctx.tools', 'ctx.gmo', 'ctx.systemPrompt', 'ctx.agents'],
+    writes: ['tool/call', 'tool/result'],
+    async mount(ctx) {
+      // The schemas do not depend on which GMO provider backs the service, or on
+      // any Session's scope; a stub answers the injection so all five tools
+      // register and their schemas can be read.
+      ctx.provide('gmo', {
+        catalog: () => Promise.resolve([]),
+        results: () => Promise.resolve({ ref: '', results: [], page: 1, pageSize: 0, total: 0 }),
+        describe: () => Promise.reject(new Error('the catalog asks no question')),
+        ask: () => Promise.reject(new Error('the catalog asks no question')),
+      })
+      // No Session is mounted here, so no agent drives one; the tools read
+      // the registry only to fold a Session's scope, which this catalog has none of.
+      ctx.provide('agents', { currentInitiator: () => undefined, get: () => undefined })
+      await ctx.plugin(ToolGmo, ToolGmo.Config({}))
+    },
+    note:
+      'All five tools are registered globally and hidden per agent while a Session has chosen no GMO category, so a catalogued schema is what a Session analyzing a category sees. The scope prompt section is folded from the Session log and is absent from this catalog, which mounts no Session.',
   },
   {
     pkg: '@deepseek-ai/dsh-tool-workspace-dependencies',

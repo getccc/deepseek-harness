@@ -11,6 +11,8 @@ import {
   api,
   type WireBiAccess,
   type WireBiCatalog,
+  type WireGmoAccess,
+  type WireGmoCatalog,
   type WireGrant,
   type WireKnowledgeAccess,
   type WireKnowledgeCatalog,
@@ -40,6 +42,9 @@ const KNOWLEDGE_ALL_KEY = 'knowledge-all'
 /** The tree row standing for whole-catalog BI access, on the knowledge row's terms. */
 const BI_ALL_KEY = 'bi-all'
 
+/** The tree row standing for whole-catalog GMO access, on the same terms. */
+const GMO_ALL_KEY = 'gmo-all'
+
 /** Which dialog is open, and what it is about. */
 type Dialog =
   | { readonly kind: 'add' }
@@ -48,6 +53,7 @@ type Dialog =
   | { readonly kind: 'models'; readonly role: WireRole }
   | { readonly kind: 'knowledge'; readonly role: WireRole }
   | { readonly kind: 'bi'; readonly role: WireRole }
+  | { readonly kind: 'gmo'; readonly role: WireRole }
   | { readonly kind: 'revoke'; readonly grant: WireGrant }
   | { readonly kind: 'delete'; readonly role: WireRole }
 
@@ -108,6 +114,14 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
       ? api.biProjects()
       : Promise.resolve({ source: { sourceCode: '', providerKind: '', health: 'never-synced' }, projects: [] })),
     [mayReadBi]),
+    report,
+  )
+  const mayReadGmo = held.has('gmo_category|gmo.catalog.read')
+  const gmo = useLoaded<WireGmoCatalog>(
+    useMemo(() => (): Promise<WireGmoCatalog> => (mayReadGmo
+      ? api.gmoCategories()
+      : Promise.resolve({ source: { sourceCode: '', providerKind: '', health: 'never-synced' }, categories: [] })),
+    [mayReadGmo]),
     report,
   )
   const [dialog, setDialog] = useState<Dialog | undefined>(undefined)
@@ -239,6 +253,24 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
     setDialog({ kind: 'bi', role })
   }
 
+  /** Open GMO access with the mode this role's grants already describe. */
+  const openGmo = (role: WireRole): void => {
+    const all = role.grants.some(grant =>
+      grant.scope === 'type'
+      && grant.resourceType === 'gmo_category'
+      && grant.action === 'gmo.query')
+    const exact = role.grants.flatMap(grant =>
+      grant.scope === 'resource'
+      && grant.resourceType === 'gmo_category'
+      && grant.action === 'gmo.query'
+      && grant.resourceId !== undefined
+        ? [grant.resourceId]
+        : [])
+    setChosen(all ? (gmo.data?.categories ?? []).map(category => category.resourceId) : exact)
+    setOpened([GMO_ALL_KEY])
+    setDialog({ kind: 'gmo', role })
+  }
+
   const columns: ColumnsType<WireRole> = [
     { title: t('roles.name'), key: 'name', render: (_value, role) => role.name },
     {
@@ -314,6 +346,12 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
               label: t('bi.access.title'),
               disabled: !mayManageGrants || !mayReadBi,
               onClick: () => { openBi(role) },
+            },
+            {
+              key: 'gmo',
+              label: t('gmo.access.title'),
+              disabled: !mayManageGrants || !mayReadGmo,
+              onClick: () => { openGmo(role) },
             },
             {
               key: 'delete',
@@ -396,6 +434,22 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
       projectRefs: selectableBi
         .filter(project => chosen.includes(project.resourceId))
         .map(project => project.projectRef),
+    }
+  }
+
+  const showingGmo = dialog?.kind === 'gmo' ? dialog.role : undefined
+  /** Every GMO category a role may be given: the catalog holds only what the source still lists. */
+  const selectableGmo = gmo.data?.categories ?? []
+
+  /** What the ticked rows ask the Control Plane to store, on the knowledge dialog's terms. */
+  const gmoChoice = (): WireGmoAccess => {
+    if (chosen.length === 0) return { mode: 'none' }
+    if (selectableGmo.every(category => chosen.includes(category.resourceId))) return { mode: 'all' }
+    return {
+      mode: 'selected',
+      categoryRefs: selectableGmo
+        .filter(category => chosen.includes(category.resourceId))
+        .map(category => category.categoryRef),
     }
   }
 
@@ -593,6 +647,35 @@ export function Roles({ held }: { readonly held: ReadonlySet<string> }): ReactNo
             children: selectableBi.map(project => ({
               key: project.resourceId,
               title: project.displayName,
+            })),
+          }]}
+        />
+      </FormModal>
+
+      <FormModal<Record<string, never>>
+        title={t('gmo.access.title')}
+        open={dialog?.kind === 'gmo'}
+        okText={t('action.save')}
+        onCancel={() => { setDialog(undefined) }}
+        onSubmit={() => act(() => api.setRoleGmo(showingGmo?.id ?? '', gmoChoice()))}
+      >
+        <Typography.Paragraph type="secondary">{t('gmo.access.hint')}</Typography.Paragraph>
+        <Tree
+          checkable
+          selectable={false}
+          expandedKeys={[...opened]}
+          onExpand={(keys) => { setOpened(keys as string[]) }}
+          checkedKeys={[...chosen]}
+          onCheck={(keys) => {
+            const checked = Array.isArray(keys) ? keys : keys.checked
+            setChosen((checked as string[]).filter(key => key !== GMO_ALL_KEY))
+          }}
+          treeData={[{
+            key: GMO_ALL_KEY,
+            title: t('gmo.access.all'),
+            children: selectableGmo.map(category => ({
+              key: category.resourceId,
+              title: category.displayName,
             })),
           }]}
         />

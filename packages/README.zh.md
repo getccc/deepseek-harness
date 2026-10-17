@@ -60,6 +60,7 @@ harness 由 `packages/` 下的 npm 包组装而成，按能力系列分组：会
 | [`webhook/`](webhook/README.zh.md) | 已验证外部事件、受信规则与即发即弃 Workspace 会话 |
 | [`knowledge/`](knowledge/README.zh.md) | 私有知识系列：已授权目录、段落检索、会话范围 |
 | [`bi/`](bi/README.zh.md) | BI 分析系列：项目目录、已保存图表的列表与执行、会话范围 |
+| [`gmo/`](gmo/README.zh.md) | GMO供应链系列：分类目录、结果列表与提问、会话范围 |
 | [`office/`](office/README.zh.md) | 办公交付物选择系列：一次对话应生成的文档类型，及其提示词分节与选择器 |
 | [`web/`](web/README.zh.md) | Web 能力系列：seam、搜索／获取提供方、面向模型的 Web 工具 |
 | [`document/`](document/README.zh.md) | 共享宿主 Office 到 PDF 转换 |

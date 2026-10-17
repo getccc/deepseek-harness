@@ -129,6 +129,27 @@ describe('dsh-team bundle', () => {
       .toEqual({ maxRows: 200, chartPageSize: 20, timeoutMs: 90000 })
   })
 
+  it('adds every half of GMO supply-chain analysis: the provider, the tools, the Remote, and the control', () => {
+    const inserted = new Map(patchRows().flatMap(row => row.insert ?? [])
+      .map(row => [row.id as string, row.name as string]))
+    const manifest = JSON.parse(
+      readFileSync(resolve(root, 'package.json'), 'utf8'),
+    ) as { dependencies?: Record<string, string> }
+    for (const [id, name] of [
+      ['gmo', '@deepseek-ai/dsh-gmo-team'],
+      ['tool-gmo', '@deepseek-ai/dsh-tool-gmo'],
+      ['api-gmo-controller', '@deepseek-ai/dsh-api-gmo-controller'],
+      ['client-ui-gmo', '@deepseek-ai/dsh-client-ui-gmo'],
+    ] as const) {
+      expect(inserted.get(id), id).toBe(name)
+      expect(manifest.dependencies ?? {}, id).toHaveProperty(name)
+    }
+    // The bounds a model may ask for are deployment choices, written here so
+    // an installer patch changes them without a rebuild.
+    expect(patchRows().flatMap(row => row.insert ?? []).find(row => row.id === 'tool-gmo')?.config)
+      .toEqual({ maxItems: 200, resultPageSize: 20, timeoutMs: 90000 })
+  })
+
   it('opens a clean local login entry instead of a process-token URL', () => {
     const patch = patchRows()
     const runtime = patch.find(row => row.id === 'web-runtime')

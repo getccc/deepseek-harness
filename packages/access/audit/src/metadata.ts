@@ -66,6 +66,13 @@ export const METADATA_KEYS = {
   knowledgeFailure: { kind: 'label', members: ['upstream-unavailable', 'upstream-invalid', 'scope-incompatible'] },
   /** Why a BI operation failed upstream of the authorization decision; a label for the reason `knowledgeFailure` is one. */
   biFailure: { kind: 'label', members: ['upstream-unavailable', 'upstream-invalid', 'chart-unavailable', 'query-failed'] },
+  /** Why a GMO operation failed upstream of the authorization decision; a label for the same reason `biFailure` is one. */
+  gmoFailure: {
+    kind: 'label',
+    members: ['upstream-unavailable', 'upstream-invalid', 'result-unavailable', 'unsupported', 'invalid-query', 'too-large'],
+  },
+  /** Which kind of question a GMO operation asked; the question itself, its columns, and its filters are never recorded. */
+  queryKind: { kind: 'label', members: ['aggregate', 'overview', 'rows'] },
   webFailure: { kind: 'label', members: ['upstream-unavailable', 'upstream-invalid', 'cancelled'] },
 } as const satisfies Record<string, MetadataSpec>
 

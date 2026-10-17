@@ -1,0 +1,55 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/gmo/gmo-excel-tools/README.md
+/:
+  en: 75640b1f8349b3b3
+  zh: 51ebbbf33a5a3ba8
+/deepseek-ai-dsh-gmo-excel-tools:
+  en: f61dfdb466bfa19e
+  zh: 71c53de8598f53d3
+/deepseek-ai-dsh-gmo-excel-tools/summary:
+  en: 7e19efef8dd09f06
+  zh: 1698e542ee85ed8e
+/deepseek-ai-dsh-gmo-excel-tools/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 9f0336825ccdaacd
+/deepseek-ai-dsh-gmo-excel-tools/use-this-package:
+  en: f175204ccc5ae415
+  zh: a4b7e26ab68c9271
+/deepseek-ai-dsh-gmo-excel-tools/use-this-package/minimal-configuration:
+  en: 35b827ddb6a42a8c
+  zh: 8cd6f4b38b0b766e
+/deepseek-ai-dsh-gmo-excel-tools/use-this-package/what-leaves-the-process:
+  en: da0e3a4a3dcb0261
+  zh: d078eb393b1376c0
+/deepseek-ai-dsh-gmo-excel-tools/use-this-package/result-ids-and-statuses:
+  en: abae4b06e9324112
+  zh: 7cd38aad098a69f9
+/deepseek-ai-dsh-gmo-excel-tools/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-gmo-excel-tools/understand-the-implementation/design-philosophy:
+  en: 1c5fe8fd129991f1
+  zh: 1bd8fd64bd92f403
+/deepseek-ai-dsh-gmo-excel-tools/understand-the-implementation/source-map:
+  en: 4b149804cf77e67e
+  zh: d94cb82c04254670
+/deepseek-ai-dsh-gmo-excel-tools/understand-the-implementation/data-model:
+  en: 492b954ac1bee10d
+  zh: 6d3a6bec66f17f96
+/deepseek-ai-dsh-gmo-excel-tools/further-exploration:
+  en: 41c2f2b6651b0630
+  zh: 3e02f57ee4b1abb9
+/deepseek-ai-dsh-gmo-excel-tools/model-experience:
+  en: 4f2e053220da6b48
+  zh: 9342b0fa3174009b
+/deepseek-ai-dsh-gmo-excel-tools/model-experience/kv-cache-effect:
+  en: 14c1112fcaa45b72
+  zh: ebaa66da56e3d135
+/deepseek-ai-dsh-gmo-excel-tools/known-limitations-and-deferred-work:
+  en: c232d51f47749066
+  zh: 0e168d34d041c873
+/deepseek-ai-dsh-gmo-excel-tools/known-limitations-and-deferred-work/dev-note:
+  en: da5ff2231ca278c3
+  zh: d9962ebbb672b0a7

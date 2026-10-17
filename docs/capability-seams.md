@@ -289,6 +289,16 @@ flowchart LR
   pkg_bi_source["bi-source"]
   svc_biSource["ctx.biSource<br/>Upstream BI source seam"]
   pkg_bi_webi["bi-webi"]
+  pkg_gmo["gmo"]
+  svc_gmo["ctx.gmo<br/>GMO supply-chain analysis seam"]
+  pkg_gmo_team["gmo-team"]
+  pkg_tool_gmo["tool-gmo"]
+  pkg_gmo_gateway["gmo-gateway"]
+  svc_gmoGateway["ctx.gmoGateway<br/>Governed GMO gateway"]
+  pkg_gmo_gateway_sqlite["gmo-gateway-sqlite"]
+  pkg_gmo_source["gmo-source"]
+  svc_gmoSource["ctx.gmoSource<br/>Upstream GMO source seam"]
+  pkg_gmo_excel_tools["gmo-excel-tools"]
   pkg_knowledge["knowledge"]
   svc_knowledge["ctx.knowledge<br/>Private knowledge seam"]
   pkg_knowledge_team["knowledge-team"]
@@ -403,6 +413,12 @@ flowchart LR
   pkg_fs_local --> svc_fs
   pkg_fs_sandbox --> svc_fs
   pkg_fs_ssh --> svc_fs
+  pkg_gmo --> svc_gmo
+  pkg_gmo_excel_tools --> svc_gmoSource
+  pkg_gmo_gateway --> svc_gmoGateway
+  pkg_gmo_gateway_sqlite --> svc_gmoGateway
+  pkg_gmo_source --> svc_gmoSource
+  pkg_gmo_team --> svc_gmo
   pkg_goal --> svc_goals
   pkg_hmr --> svc_hmr
   pkg_host_directory_picker --> svc_directoryPicker
@@ -567,6 +583,7 @@ flowchart LR
   svc_fileReferences --> pkg_api_session_controller
   svc_fileUploads --> pkg_api_session_controller
   svc_fs --> pkg_tool_fs
+  svc_gmo --> pkg_tool_gmo
   svc_hmr --> pkg_app_boot
   svc_invariants --> pkg_agent
   svc_invariants --> pkg_agent_loop
@@ -781,6 +798,9 @@ flowchart LR
 | `ctx.bi` | `seam` | [`bi`](../packages/bi/bi) | [`bi-team`](../packages/bi/bi-team) | [`tool-bi`](../packages/bi/tool-bi) | - | The project directory, saved-chart listing, and chart-run operations a governed deployment authorizes; bi-team reaches the Control Plane that authorizes them, and tool-bi is what a model sees of the result. |
 | `ctx.biGateway` | `seam` | [`bi-gateway`](../packages/bi/bi-gateway) | [`bi-gateway-sqlite`](../packages/bi/bi-gateway-sqlite) | - | - | Stands between a member's Runner and a BI source: an administrator curates the durable project catalog through it, and every member-facing directory, chart listing, and chart run is authorized per project by it. |
 | `ctx.biSource` | `seam` | [`bi-source`](../packages/bi/bi-source) | [`bi-webi`](../packages/bi/bi-webi) | - | - | The Control Plane half: a provider speaks one BI product's protocol and holds its credential, while the governed gateway in front of it decides who may run what. |
+| `ctx.gmo` | `seam` | [`gmo`](../packages/gmo/gmo) | [`gmo-team`](../packages/gmo/gmo-team) | [`tool-gmo`](../packages/gmo/tool-gmo) | - | The category directory, result listing, description, and question operations a governed deployment authorizes; gmo-team reaches the Control Plane that authorizes them, and tool-gmo is what a model sees of the answer. |
+| `ctx.gmoGateway` | `seam` | [`gmo-gateway`](../packages/gmo/gmo-gateway) | [`gmo-gateway-sqlite`](../packages/gmo/gmo-gateway-sqlite) | - | - | Stands between a member's Runner and the GMO source: an administrator curates the durable category catalog through it, and every member-facing directory, listing, description, and question is authorized per category by it. |
+| `ctx.gmoSource` | `seam` | [`gmo-source`](../packages/gmo/gmo-source) | [`gmo-excel-tools`](../packages/gmo/gmo-excel-tools) | - | - | The Control Plane half: a provider speaks one GMO service's protocol and holds its token, while the governed gateway in front of it decides who may ask what. |
 | `ctx.knowledge` | `seam` | [`knowledge`](../packages/knowledge/knowledge) | [`knowledge-team`](../packages/knowledge/knowledge-team) | [`tool-knowledge`](../packages/knowledge/tool-knowledge) | - | The directory and passage-search operations a governed deployment authorizes; knowledge-team reaches the Control Plane that authorizes them, and tool-knowledge is what a model sees of the result. |
 | `ctx.knowledgeGateway` | `seam` | [`knowledge-gateway`](../packages/knowledge/knowledge-gateway) | [`knowledge-gateway-sqlite`](../packages/knowledge/knowledge-gateway-sqlite) | - | - | Stands between a member's Runner and a knowledge source: an administrator curates the durable catalog through it, and every member-facing directory and search is authorized per knowledge base by it. |
 | `ctx.knowledgeSource` | `seam` | [`knowledge-source`](../packages/knowledge/knowledge-source) | [`knowledge-weknora`](../packages/knowledge/knowledge-weknora) | - | - | The Control Plane half: a provider speaks one knowledge product's protocol and holds its credential, while the governed gateway in front of it decides who may search what. |

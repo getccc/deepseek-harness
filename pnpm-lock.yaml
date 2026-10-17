@@ -749,7 +749,7 @@ importers:
         version: 18.3.7(@types/react@18.3.31)
       '@vitejs/plugin-react':
         specifier: ^4.0.0
-        version: 4.7.0(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))
+        version: 4.7.0(supports-color@9.4.0)(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))
       antd:
         specifier: ^6.0.0
         version: 6.6.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1351,6 +1351,28 @@ importers:
       zod:
         specifier: ^4.4.3
         version: 4.4.3
+
+  packages/api/gmo-controller:
+    dependencies:
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:*
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../../gmo/gmo
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-typert-protocol':
+        specifier: workspace:*
+        version: link:../../typert/protocol
 
   packages/api/job-controller:
     dependencies:
@@ -2871,6 +2893,9 @@ importers:
       '@deepseek-ai/dsh-api-bi-controller':
         specifier: workspace:*
         version: link:../../api/bi-controller
+      '@deepseek-ai/dsh-api-gmo-controller':
+        specifier: workspace:*
+        version: link:../../api/gmo-controller
       '@deepseek-ai/dsh-api-knowledge-controller':
         specifier: workspace:*
         version: link:../../api/knowledge-controller
@@ -2883,6 +2908,9 @@ importers:
       '@deepseek-ai/dsh-client-ui-bi':
         specifier: workspace:*
         version: link:../../client/ui-bi
+      '@deepseek-ai/dsh-client-ui-gmo':
+        specifier: workspace:*
+        version: link:../../client/ui-gmo
       '@deepseek-ai/dsh-client-ui-knowledge':
         specifier: workspace:*
         version: link:../../client/ui-knowledge
@@ -2892,6 +2920,9 @@ importers:
       '@deepseek-ai/dsh-client-ui-office':
         specifier: workspace:*
         version: link:../../client/ui-office
+      '@deepseek-ai/dsh-gmo-team':
+        specifier: workspace:*
+        version: link:../../gmo/gmo-team
       '@deepseek-ai/dsh-knowledge-team':
         specifier: workspace:*
         version: link:../../knowledge/knowledge-team
@@ -2916,6 +2947,9 @@ importers:
       '@deepseek-ai/dsh-tool-bi':
         specifier: workspace:*
         version: link:../../bi/tool-bi
+      '@deepseek-ai/dsh-tool-gmo':
+        specifier: workspace:*
+        version: link:../../gmo/tool-gmo
       '@deepseek-ai/dsh-tool-knowledge':
         specifier: workspace:*
         version: link:../../knowledge/tool-knowledge
@@ -2962,6 +2996,15 @@ importers:
       '@deepseek-ai/dsh-device-authorization-sqlite':
         specifier: workspace:*
         version: link:../../account/device-authorization-sqlite
+      '@deepseek-ai/dsh-gmo-excel-tools':
+        specifier: workspace:*
+        version: link:../../gmo/gmo-excel-tools
+      '@deepseek-ai/dsh-gmo-gateway-http':
+        specifier: workspace:*
+        version: link:../../gmo/gmo-gateway-http
+      '@deepseek-ai/dsh-gmo-gateway-sqlite':
+        specifier: workspace:*
+        version: link:../../gmo/gmo-gateway-sqlite
       '@deepseek-ai/dsh-host-webserver':
         specifier: workspace:*
         version: link:../../host/webserver
@@ -4418,6 +4461,63 @@ importers:
       react-dom:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
+
+  packages/client/ui-gmo:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-api-gmo-controller':
+        specifier: workspace:*
+        version: link:../../api/gmo-controller
+      '@deepseek-ai/dsh-api-remotes':
+        specifier: workspace:*
+        version: link:../../api/remotes
+      '@deepseek-ai/dsh-api-session-controller':
+        specifier: workspace:*
+        version: link:../../api/session-controller
+      '@deepseek-ai/dsh-client-locale':
+        specifier: workspace:*
+        version: link:../locale
+      '@deepseek-ai/dsh-client-store':
+        specifier: workspace:*
+        version: link:../store
+      '@deepseek-ai/dsh-client-test-runtime':
+        specifier: workspace:*
+        version: link:../../test-support/client-runtime
+      '@deepseek-ai/dsh-client-ui-conversation':
+        specifier: workspace:*
+        version: link:../ui-conversation
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: workspace:*
+        version: link:../ui-primitives
+      '@deepseek-ai/dsh-client-ui-renderer':
+        specifier: workspace:*
+        version: link:../ui-renderer
+      '@deepseek-ai/dsh-client-ui-session':
+        specifier: workspace:*
+        version: link:../ui-session
+      '@deepseek-ai/dsh-client-ui-slots':
+        specifier: workspace:*
+        version: link:../ui-slots
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../../gmo/gmo
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-tool-gmo':
+        specifier: workspace:*
+        version: link:../../gmo/tool-gmo
+      '@types/react':
+        specifier: ~18.3.1
+        version: 18.3.31
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
 
   packages/client/ui-goal:
     devDependencies:
@@ -9490,6 +9590,204 @@ importers:
         specifier: workspace:*
         version: link:../../core/tools
 
+  packages/gmo/gmo:
+    dependencies:
+      '@deepseek-ai/dsh-brand':
+        specifier: workspace:*
+        version: link:../../util/brand
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+
+  packages/gmo/gmo-excel-tools:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-credentials':
+        specifier: workspace:*
+        version: link:../../credentials/credentials
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../gmo
+      '@deepseek-ai/dsh-gmo-source':
+        specifier: workspace:*
+        version: link:../gmo-source
+      '@deepseek-ai/dsh-util-crypto':
+        specifier: workspace:*
+        version: link:../../util/crypto
+
+  packages/gmo/gmo-gateway:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../gmo
+
+  packages/gmo/gmo-gateway-http:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-access-control-sqlite':
+        specifier: workspace:*
+        version: link:../../access/access-control-sqlite
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:*
+        version: link:../../account/account-store-sqlite
+      '@deepseek-ai/dsh-audit-sqlite':
+        specifier: workspace:*
+        version: link:../../access/audit-sqlite
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:*
+        version: link:../../account/device-authorization
+      '@deepseek-ai/dsh-device-authorization-sqlite':
+        specifier: workspace:*
+        version: link:../../account/device-authorization-sqlite
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../gmo
+      '@deepseek-ai/dsh-gmo-gateway':
+        specifier: workspace:*
+        version: link:../gmo-gateway
+      '@deepseek-ai/dsh-gmo-gateway-sqlite':
+        specifier: workspace:*
+        version: link:../gmo-gateway-sqlite
+      '@deepseek-ai/dsh-gmo-source':
+        specifier: workspace:*
+        version: link:../gmo-source
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:*
+        version: link:../../host/webserver
+
+  packages/gmo/gmo-gateway-sqlite:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-access-control-sqlite':
+        specifier: workspace:*
+        version: link:../../access/access-control-sqlite
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:*
+        version: link:../../account/account-store-sqlite
+      '@deepseek-ai/dsh-audit':
+        specifier: workspace:*
+        version: link:../../access/audit
+      '@deepseek-ai/dsh-audit-sqlite':
+        specifier: workspace:*
+        version: link:../../access/audit-sqlite
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../gmo
+      '@deepseek-ai/dsh-gmo-gateway':
+        specifier: workspace:*
+        version: link:../gmo-gateway
+      '@deepseek-ai/dsh-gmo-source':
+        specifier: workspace:*
+        version: link:../gmo-source
+
+  packages/gmo/gmo-source:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../gmo
+
+  packages/gmo/gmo-team:
+    dependencies:
+      '@deepseek-ai/dsh-team-account-client':
+        specifier: workspace:*
+        version: link:../../team/team-account-client
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../gmo
+      '@deepseek-ai/dsh-gmo-gateway-http':
+        specifier: workspace:*
+        version: link:../gmo-gateway-http
+
+  packages/gmo/tool-gmo:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:*
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../gmo
+      '@deepseek-ai/dsh-llm':
+        specifier: workspace:*
+        version: link:../../llm/llm
+      '@deepseek-ai/dsh-scope':
+        specifier: workspace:*
+        version: link:../../core/scope
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-session-projection':
+        specifier: workspace:*
+        version: link:../../session/session-projection
+      '@deepseek-ai/dsh-system-prompt':
+        specifier: workspace:*
+        version: link:../../core/system-prompt
+      '@deepseek-ai/dsh-tools':
+        specifier: workspace:*
+        version: link:../../core/tools
+
   packages/goal/command-goal:
     devDependencies:
       '@deepseek-ai/cordis':
@@ -14116,6 +14414,18 @@ importers:
       '@deepseek-ai/dsh-bi-source':
         specifier: workspace:*
         version: link:../../bi/bi-source
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../../gmo/gmo
+      '@deepseek-ai/dsh-gmo-gateway':
+        specifier: workspace:*
+        version: link:../../gmo/gmo-gateway
+      '@deepseek-ai/dsh-gmo-gateway-sqlite':
+        specifier: workspace:*
+        version: link:../../gmo/gmo-gateway-sqlite
+      '@deepseek-ai/dsh-gmo-source':
+        specifier: workspace:*
+        version: link:../../gmo/gmo-source
       '@deepseek-ai/dsh-host-webserver':
         specifier: workspace:*
         version: link:../../host/webserver
@@ -15848,6 +16158,18 @@ importers:
       '@deepseek-ai/dsh-fs-sandbox':
         specifier: workspace:*
         version: link:../../packages/fs/fs-sandbox
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../../packages/gmo/gmo
+      '@deepseek-ai/dsh-gmo-gateway':
+        specifier: workspace:*
+        version: link:../../packages/gmo/gmo-gateway
+      '@deepseek-ai/dsh-gmo-gateway-http':
+        specifier: workspace:*
+        version: link:../../packages/gmo/gmo-gateway-http
+      '@deepseek-ai/dsh-gmo-source':
+        specifier: workspace:*
+        version: link:../../packages/gmo/gmo-source
       '@deepseek-ai/dsh-goal':
         specifier: workspace:*
         version: link:../../packages/goal/goal
@@ -17958,10 +18280,12 @@ packages:
 
   '@modelcontextprotocol/server-everything@2026.7.4':
     resolution: {integrity: sha512-ydMW/M6rk9tK23b+U38trsNLHhd5eF+ntiv2Vr+RPMDhbiKY/IKrZU25ukvSXVPUBvy7TxTPWpeV4KcYcXg72w==}
+    deprecated: 'Date-based versions are no longer published. This package has resumed semantic versioning at 1.0.0: install the latest version.'
     hasBin: true
 
   '@modelcontextprotocol/server-filesystem@2026.7.10':
     resolution: {integrity: sha512-Mmjg4anFBD5OzbPnGJOA0jPPN8645ERhQk38HQLpSenx1ox9bfdPkmAzUnNjeQtqQGFLtKe13J20RtLBmUKMZA==}
+    deprecated: 'Date-based versions are no longer published. This package has resumed semantic versioning at 1.0.0: install the latest version.'
     hasBin: true
 
   '@modelcontextprotocol/server@2.0.0':
@@ -24565,6 +24889,26 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@babel/core@7.29.7(supports-color@9.4.0)':
+    dependencies:
+      '@babel/code-frame': 7.29.7
+      '@babel/generator': 7.29.7
+      '@babel/helper-compilation-targets': 7.29.7
+      '@babel/helper-module-transforms': 7.29.7(@babel/core@7.29.7(supports-color@9.4.0))
+      '@babel/helpers': 7.29.7
+      '@babel/parser': 7.29.7
+      '@babel/template': 7.29.7
+      '@babel/traverse': 7.29.7(supports-color@9.4.0)
+      '@babel/types': 7.29.7
+      '@jridgewell/remapping': 2.3.5
+      convert-source-map: 2.0.0
+      debug: 4.4.3(supports-color@9.4.0)
+      gensync: 1.0.0-beta.2
+      json5: 2.2.3
+      semver: 6.3.1
+    transitivePeerDependencies:
+      - supports-color
+
   '@babel/generator@7.29.7':
     dependencies:
       '@babel/parser': 7.29.7
@@ -24596,6 +24940,15 @@ snapshots:
     dependencies:
       '@babel/traverse': 7.29.7(supports-color@9.4.0)
       '@babel/types': 7.29.7
+    transitivePeerDependencies:
+      - supports-color
+
+  '@babel/helper-module-transforms@7.29.7(@babel/core@7.29.7(supports-color@9.4.0))':
+    dependencies:
+      '@babel/core': 7.29.7(supports-color@9.4.0)
+      '@babel/helper-module-imports': 7.29.7
+      '@babel/helper-validator-identifier': 7.29.7
+      '@babel/traverse': 7.29.7(supports-color@9.4.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -24633,9 +24986,19 @@ snapshots:
     dependencies:
       '@babel/types': 8.0.0-rc.6
 
+  '@babel/plugin-transform-react-jsx-self@7.29.7(@babel/core@7.29.7(supports-color@9.4.0))':
+    dependencies:
+      '@babel/core': 7.29.7(supports-color@9.4.0)
+      '@babel/helper-plugin-utils': 7.29.7
+
   '@babel/plugin-transform-react-jsx-self@7.29.7(@babel/core@7.29.7)':
     dependencies:
       '@babel/core': 7.29.7
+      '@babel/helper-plugin-utils': 7.29.7
+
+  '@babel/plugin-transform-react-jsx-source@7.29.7(@babel/core@7.29.7(supports-color@9.4.0))':
+    dependencies:
+      '@babel/core': 7.29.7(supports-color@9.4.0)
       '@babel/helper-plugin-utils': 7.29.7
 
   '@babel/plugin-transform-react-jsx-source@7.29.7(@babel/core@7.29.7)':
@@ -27231,6 +27594,18 @@ snapshots:
       d3-selection: 3.0.0
       d3-transition: 3.0.1(d3-selection@3.0.0)
 
+  '@vitejs/plugin-react@4.7.0(supports-color@9.4.0)(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))':
+    dependencies:
+      '@babel/core': 7.29.7(supports-color@9.4.0)
+      '@babel/plugin-transform-react-jsx-self': 7.29.7(@babel/core@7.29.7(supports-color@9.4.0))
+      '@babel/plugin-transform-react-jsx-source': 7.29.7(@babel/core@7.29.7(supports-color@9.4.0))
+      '@rolldown/pluginutils': 1.0.0-beta.27
+      '@types/babel__core': 7.20.5
+      react-refresh: 0.17.0
+      vite: 6.4.3(@types/node@26.1.2)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0)
+    transitivePeerDependencies:
+      - supports-color
+
   '@vitejs/plugin-react@4.7.0(vite@6.4.3(@types/node@22.20.0)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))':
     dependencies:
       '@babel/core': 7.29.7
@@ -27240,18 +27615,6 @@ snapshots:
       '@types/babel__core': 7.20.5
       react-refresh: 0.17.0
       vite: 6.4.3(@types/node@22.20.0)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0)
-    transitivePeerDependencies:
-      - supports-color
-
-  '@vitejs/plugin-react@4.7.0(vite@6.4.3(@types/node@26.1.2)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))':
-    dependencies:
-      '@babel/core': 7.29.7
-      '@babel/plugin-transform-react-jsx-self': 7.29.7(@babel/core@7.29.7)
-      '@babel/plugin-transform-react-jsx-source': 7.29.7(@babel/core@7.29.7)
-      '@rolldown/pluginutils': 1.0.0-beta.27
-      '@types/babel__core': 7.20.5
-      react-refresh: 0.17.0
-      vite: 6.4.3(@types/node@26.1.2)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0)
     transitivePeerDependencies:
       - supports-color
 

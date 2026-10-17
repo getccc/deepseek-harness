@@ -60,6 +60,7 @@ Every package lives in exactly one group; new packages join existing groups, and
 | [`webhook/`](webhook/README.md) | Verified external events, trusted rules, and fire-and-forget Workspace Sessions |
 | [`knowledge/`](knowledge/README.md) | Private knowledge family: authorized directory, passage search, Session scope |
 | [`bi/`](bi/README.md) | BI analysis family: project directory, saved-chart listing and run, Session scope |
+| [`gmo/`](gmo/README.md) | GMO supply-chain family: category directory, results and questions, Session scope |
 | [`office/`](office/README.md) | Office-deliverable choice family: the document kind a conversation should produce, its prompt section and picker |
 | [`web/`](web/README.md) | Web capability family: seam, search/fetch providers, model-facing web tools |
 | [`document/`](document/README.md) | Shared Host Office-to-PDF conversion |

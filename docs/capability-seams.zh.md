@@ -291,6 +291,16 @@ flowchart LR
   pkg_bi_source["bi-source"]
   svc_biSource["ctx.biSource<br/>Upstream BI source seam"]
   pkg_bi_webi["bi-webi"]
+  pkg_gmo["gmo"]
+  svc_gmo["ctx.gmo<br/>GMO supply-chain analysis seam"]
+  pkg_gmo_team["gmo-team"]
+  pkg_tool_gmo["tool-gmo"]
+  pkg_gmo_gateway["gmo-gateway"]
+  svc_gmoGateway["ctx.gmoGateway<br/>Governed GMO gateway"]
+  pkg_gmo_gateway_sqlite["gmo-gateway-sqlite"]
+  pkg_gmo_source["gmo-source"]
+  svc_gmoSource["ctx.gmoSource<br/>Upstream GMO source seam"]
+  pkg_gmo_excel_tools["gmo-excel-tools"]
   pkg_knowledge["knowledge"]
   svc_knowledge["ctx.knowledge<br/>Private knowledge seam"]
   pkg_knowledge_team["knowledge-team"]
@@ -405,6 +415,12 @@ flowchart LR
   pkg_fs_local --> svc_fs
   pkg_fs_sandbox --> svc_fs
   pkg_fs_ssh --> svc_fs
+  pkg_gmo --> svc_gmo
+  pkg_gmo_excel_tools --> svc_gmoSource
+  pkg_gmo_gateway --> svc_gmoGateway
+  pkg_gmo_gateway_sqlite --> svc_gmoGateway
+  pkg_gmo_source --> svc_gmoSource
+  pkg_gmo_team --> svc_gmo
   pkg_goal --> svc_goals
   pkg_hmr --> svc_hmr
   pkg_host_directory_picker --> svc_directoryPicker
@@ -569,6 +585,7 @@ flowchart LR
   svc_fileReferences --> pkg_api_session_controller
   svc_fileUploads --> pkg_api_session_controller
   svc_fs --> pkg_tool_fs
+  svc_gmo --> pkg_tool_gmo
   svc_hmr --> pkg_app_boot
   svc_invariants --> pkg_agent
   svc_invariants --> pkg_agent_loop
@@ -783,6 +800,9 @@ flowchart LR
 | `ctx.bi` | `seam` | [`bi`](../packages/bi/bi) | [`bi-team`](../packages/bi/bi-team) | [`tool-bi`](../packages/bi/tool-bi) | - | 受治理部署所授权的项目目录、已保存图表列表与图表执行操作；bi-team 触达授权它们的 Control Plane，tool-bi 是模型所见的结果。 |
 | `ctx.biGateway` | `seam` | [`bi-gateway`](../packages/bi/bi-gateway) | [`bi-gateway-sqlite`](../packages/bi/bi-gateway-sqlite) | - | - | 位于成员 Runner 与 BI 数据源之间：管理员经由它维护持久项目目录，每个面向成员的目录、图表列表与图表执行都由它按项目授权。 |
 | `ctx.biSource` | `seam` | [`bi-source`](../packages/bi/bi-source) | [`bi-webi`](../packages/bi/bi-webi) | - | - | Control Plane 的一半：提供方说一种 BI 产品的协议并持有其凭据，而位于其前的受治理网关决定谁可以执行什么。 |
+| `ctx.gmo` | `seam` | [`gmo`](../packages/gmo/gmo) | [`gmo-team`](../packages/gmo/gmo-team) | [`tool-gmo`](../packages/gmo/tool-gmo) | - | 受治理部署所授权的分类目录、结果列表、结果说明与提问操作；gmo-team 触达授权它们的 Control Plane，tool-gmo 是模型所见的答案。 |
+| `ctx.gmoGateway` | `seam` | [`gmo-gateway`](../packages/gmo/gmo-gateway) | [`gmo-gateway-sqlite`](../packages/gmo/gmo-gateway-sqlite) | - | - | 位于成员 Runner 与 GMO 数据源之间：管理员经由它维护持久分类目录，每个面向成员的目录、列表、说明与提问都由它按分类授权。 |
+| `ctx.gmoSource` | `seam` | [`gmo-source`](../packages/gmo/gmo-source) | [`gmo-excel-tools`](../packages/gmo/gmo-excel-tools) | - | - | Control Plane 的一半：提供方说一种 GMO 服务的协议并持有其令牌，而位于其前的受治理网关决定谁可以问什么。 |
 | `ctx.knowledge` | `seam` | [`knowledge`](../packages/knowledge/knowledge) | [`knowledge-team`](../packages/knowledge/knowledge-team) | [`tool-knowledge`](../packages/knowledge/tool-knowledge) | - | 受治理部署所授权的目录与段落检索操作；knowledge-team 访问对其做授权判定的 Control Plane，而 tool-knowledge 是模型对结果所见的部分。 |
 | `ctx.knowledgeGateway` | `seam` | [`knowledge-gateway`](../packages/knowledge/knowledge-gateway) | [`knowledge-gateway-sqlite`](../packages/knowledge/knowledge-gateway-sqlite) | - | - | 站在成员 Runner 与知识源之间：管理员通过它维护持久化目录，每一次面向成员的目录读取与检索都由它逐知识库做授权判定。 |
 | `ctx.knowledgeSource` | `seam` | [`knowledge-source`](../packages/knowledge/knowledge-source) | [`knowledge-weknora`](../packages/knowledge/knowledge-weknora) | - | - | Control Plane 的那一半：提供方说某个知识产品的协议并持有其凭据，而它前面的受治理网关判定谁可以检索什么。 |

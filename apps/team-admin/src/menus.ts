@@ -21,6 +21,7 @@ export const CONSOLE_COMPONENTS = [
   'resources/ModelsPage',
   'resources/KnowledgeBasesPage',
   'resources/BiProjectsPage',
+  'resources/GmoCategoriesPage',
   'resources/ReleasesPage',
 ] as const
 

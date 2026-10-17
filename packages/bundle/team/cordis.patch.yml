@@ -200,6 +200,23 @@
         chartPageSize: 20
         timeoutMs: 90000
 
+    # GMO supply-chain analysis over the same Control Plane: one request per
+    # directory read, result listing, description, or question, carrying the
+    # device token and a governed reference, never an excel-tools address or
+    # credential. `controlPlaneUrl` is absent for the reason it is absent above.
+    - id: gmo
+      name: '@deepseek-ai/dsh-gmo-team'
+
+    # What a model sees of it: five tools and one prompt section, all folded
+    # from the Session log, and none present while the member has chosen no
+    # GMO category for this conversation.
+    - id: tool-gmo
+      name: '@deepseek-ai/dsh-tool-gmo'
+      config:
+        maxItems: 200
+        resultPageSize: 20
+        timeoutMs: 90000
+
     # What the browser sees of it: the authorized directory the `/knowledge`
     # picker offers, and the choice it records. Team-only, so it is mounted
     # here rather than on the session controller every Web build carries.
@@ -247,6 +264,19 @@
     # in the boot graph, and only a Team build has a `bi` namespace to serve it.
     - id: client-ui-bi
       name: '@deepseek-ai/dsh-client-ui-bi'
+
+    # The Remote the GMO control calls: the categories a member may analyze and
+    # the one this conversation chose, recorded as the `gmo/scope` event the
+    # tools and the prompt section fold.
+    - id: api-gmo-controller
+      name: '@deepseek-ai/dsh-api-gmo-controller'
+
+    # The GMO supply-chain control, to the right of the BI chip in the work
+    # composer: a single-select over the authorized categories. Like the BI
+    # control, it carries no Host behavior, and only a Team build has a `gmo`
+    # namespace to serve it.
+    - id: client-ui-gmo
+      name: '@deepseek-ai/dsh-client-ui-gmo'
 
     # The update control beside the member row at the sidebar foot. The plugin
     # carries no Host behavior; its browser half registers only when the page

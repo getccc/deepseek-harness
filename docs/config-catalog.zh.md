@@ -1554,6 +1554,116 @@ export type Config = LocalConfig
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-fs-sandbox -->
 
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-gmo-excel-tools -->
+<a id="deepseek-aidsh-gmo-excel-tools"></a>
+
+## `@deepseek-ai/dsh-gmo-excel-tools`
+
+- `inject`: `credentials`
+- `source`: [`packages/gmo/gmo-excel-tools/src/index.ts:43`](../packages/gmo/gmo-excel-tools/src/index.ts)
+
+```ts config-catalog
+/** Plugin config: which source, where it is, and what it may return. */
+export interface Config {
+  /** This deployment's code for the source, the second `GmoCategoryRef` segment. */
+  sourceCode: string
+  /** Origin the excel-tools service is served from, such as `http://10.1.120.90:8700`. */
+  baseUrl: string
+  /**
+   * Credential reference resolving to an excel-tools gateway token, created in
+   * its 管理 → 对话网关 page. The token reads statistics only: the gateway
+   * serves no export, download, deletion, upload, or tool run.
+   */
+  credentialRef: string
+  /** How long one upstream HTTP call may take before it is abandoned. */
+  requestTimeoutMs?: number
+  /** The most rows, groups, results, or ranked entries one request asks the source for. */
+  maxItems?: number
+  /** The most bytes of one upstream answer this process reads. */
+  maxResponseBytes?: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-gmo-excel-tools -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-gmo-gateway-http -->
+<a id="deepseek-aidsh-gmo-gateway-http"></a>
+
+## `@deepseek-ai/dsh-gmo-gateway-http`
+
+- `inject`: `webServer` · `gmoGateway` · `deviceAuthorization`
+- `source`: [`packages/gmo/gmo-gateway-http/src/index.ts:68`](../packages/gmo/gmo-gateway-http/src/index.ts)
+
+```ts config-catalog
+/** Plugin config: how much of a request the endpoints read. */
+export interface Config {
+  /** Largest request body accepted, in bytes. */
+  maxRequestBodyBytes?: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-gmo-gateway-http -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-gmo-gateway-sqlite -->
+<a id="deepseek-aidsh-gmo-gateway-sqlite"></a>
+
+## `@deepseek-ai/dsh-gmo-gateway-sqlite`
+
+- `inject`: `accessControl` · `audit` · `gmoSource`
+- `source`: [`packages/gmo/gmo-gateway-sqlite/src/index.ts:56`](../packages/gmo/gmo-gateway-sqlite/src/index.ts)
+
+```ts config-catalog
+/** Plugin config: where the catalog lives, and what one operation may return. */
+export interface Config {
+  /** Path to the catalog database. */
+  path: string
+  /**
+   * SQLite journal mode. `wal` lets readers run beside the one writer and
+   * commits with a single sync of the log; a rollback journal (`delete`,
+   * `truncate`, `persist`) serves filesystems where WAL's shared-memory file
+   * does not work, such as network mounts.
+   */
+  journalMode?: 'wal' | 'delete' | 'truncate' | 'persist'
+  /**
+   * How long a statement waits for another connection's lock before failing
+   * with `SQLITE_BUSY`, in milliseconds. The driver is synchronous, so the
+   * wait blocks every request this process serves.
+   */
+  busyTimeoutMs?: number
+  /** How many results one listing page holds when a caller names no size. */
+  defaultResultPageSize?: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-gmo-gateway-sqlite -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-gmo-team -->
+<a id="deepseek-aidsh-gmo-team"></a>
+
+## `@deepseek-ai/dsh-gmo-team`
+
+- `inject`: `teamAccountClient`
+- `source`: [`packages/gmo/gmo-team/src/index.ts:59`](../packages/gmo/gmo-team/src/index.ts)
+
+```ts config-catalog
+/** Plugin config: which Control Plane this Runner belongs to. */
+export interface Config {
+  /**
+   * Origin of the company Control Plane, such as `https://dsh.company.com`.
+   *
+   * Carried per row rather than read from the account client, matching the
+   * company model transport. The desktop installer's generated profile patch
+   * writes every row from one deployment fact, which is where a single source
+   * of truth belongs.
+   */
+  controlPlaneUrl: string
+  /**
+   * Path to a PEM file whose certificates are the only ones this Runner
+   * accepts for the Control Plane, carried per row for the same reason
+   * `controlPlaneUrl` is.
+   */
+  controlPlaneCa?: string
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-gmo-team -->
+
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-goal -->
 <a id="deepseek-aidsh-goal"></a>
 
@@ -3879,7 +3989,7 @@ export interface Config {
 
 ## `@deepseek-ai/dsh-system-prompt`
 
-- `source`: [`packages/core/system-prompt/src/index.ts:250`](../packages/core/system-prompt/src/index.ts)
+- `source`: [`packages/core/system-prompt/src/index.ts:251`](../packages/core/system-prompt/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: the deployment-authored fragment of the system prompt (see {@link Config.personaPrefix} for its contract). */
@@ -3947,7 +4057,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-team-admin-api`
 
 - `inject`: `webServer` · `accountStore` · `accountAuth` · `accessControl` · `audit` · `consoleMenu` · `deviceAuthorization` · `modelGateway`
-- `source`: [`packages/team/team-admin-api/src/index.ts:184`](../packages/team/team-admin-api/src/index.ts)
+- `source`: [`packages/team/team-admin-api/src/index.ts:199`](../packages/team/team-admin-api/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: which organization, and how a browser session behaves. */
@@ -4375,6 +4485,27 @@ export interface Config {
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-tool-fs-search -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-tool-gmo -->
+<a id="deepseek-aidsh-tool-gmo"></a>
+
+## `@deepseek-ai/dsh-tool-gmo`
+
+- `inject`: `tools` · `gmo` · `systemPrompt` · `agents`
+- `source`: [`packages/gmo/tool-gmo/src/index.ts:70`](../packages/gmo/tool-gmo/src/index.ts)
+
+```ts config-catalog
+/** Plugin config: what one call may ask for. */
+export interface Config {
+  /** The most detail rows or groups one call may request; the deployment's own bound still applies. */
+  maxItems?: number
+  /** How many results one listing page holds; the deployment's own size still applies. */
+  resultPageSize?: number
+  /** How long one call may take before it is abandoned. */
+  timeoutMs?: number
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-tool-gmo -->
 
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-tool-goal -->
 <a id="deepseek-aidsh-tool-goal"></a>
@@ -5275,6 +5406,7 @@ export interface Config {
 | `@deepseek-ai/dsh-agent` | — | [`packages/core/agent/src/index.ts`](../packages/core/agent/src/index.ts) |
 | `@deepseek-ai/dsh-api-account-controller` | `deepseekAccount` · `agents` | [`packages/api/account-controller/src/index.ts`](../packages/api/account-controller/src/index.ts) |
 | `@deepseek-ai/dsh-api-bi-controller` | `agents` · `bi` · `typert` | [`packages/api/bi-controller/src/index.ts`](../packages/api/bi-controller/src/index.ts) |
+| `@deepseek-ai/dsh-api-gmo-controller` | `agents` · `gmo` · `typert` | [`packages/api/gmo-controller/src/index.ts`](../packages/api/gmo-controller/src/index.ts) |
 | `@deepseek-ai/dsh-api-office-controller` | `agents` · `typert` | [`packages/api/office-controller/src/index.ts`](../packages/api/office-controller/src/index.ts) |
 | `@deepseek-ai/dsh-api-remotes` | `typertGateway` | [`packages/api/remotes/src/index.ts`](../packages/api/remotes/src/index.ts) |
 | `@deepseek-ai/dsh-api-web-access-controller` | `agents` · `typert` · `web` | [`packages/api/web-access-controller/src/index.ts`](../packages/api/web-access-controller/src/index.ts) |
@@ -5295,6 +5427,7 @@ export interface Config {
 | `@deepseek-ai/dsh-client-ui-deliverables` | `systemPrompt` · `connection` · `sessionQuery` · `sessionController` · `workspaceFiles` · `fs` · `sandboxPolicy` · `workspaceChanges` | [`packages/client/ui-deliverables/src/index.ts`](../packages/client/ui-deliverables/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-directory-picker-browse` | — | [`packages/client/ui-directory-picker-browse/src/index.ts`](../packages/client/ui-directory-picker-browse/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-directory-picker-native` | — | [`packages/client/ui-directory-picker-native/src/index.ts`](../packages/client/ui-directory-picker-native/src/index.ts) |
+| `@deepseek-ai/dsh-client-ui-gmo` | — | [`packages/client/ui-gmo/src/index.ts`](../packages/client/ui-gmo/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-goal` | — | [`packages/client/ui-goal/src/index.ts`](../packages/client/ui-goal/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-input-trigger` | — | [`packages/client/ui-input-trigger/src/index.ts`](../packages/client/ui-input-trigger/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-jobs` | — | [`packages/client/ui-jobs/src/index.ts`](../packages/client/ui-jobs/src/index.ts) |
@@ -5439,6 +5572,9 @@ export interface Config {
 | `@deepseek-ai/dsh-experimental-voice-input-bundle` | — | [`packages/experimental/voice-input-bundle/src/index.ts`](../packages/experimental/voice-input-bundle/src/index.ts) |
 | `@deepseek-ai/dsh-experimental-webworker-packer` | — | [`packages/experimental/webworker-packer/src/index.ts`](../packages/experimental/webworker-packer/src/index.ts) |
 | `@deepseek-ai/dsh-experimental-webworker-runtime` | — | [`packages/experimental/webworker-runtime/src/index.ts`](../packages/experimental/webworker-runtime/src/index.ts) |
+| `@deepseek-ai/dsh-gmo` | — | [`packages/gmo/gmo/src/index.ts`](../packages/gmo/gmo/src/index.ts) |
+| `@deepseek-ai/dsh-gmo-gateway` | — | [`packages/gmo/gmo-gateway/src/index.ts`](../packages/gmo/gmo-gateway/src/index.ts) |
+| `@deepseek-ai/dsh-gmo-source` | — | [`packages/gmo/gmo-source/src/index.ts`](../packages/gmo/gmo-source/src/index.ts) |
 | `@deepseek-ai/dsh-home-paths` | — | [`packages/util/home-paths/src/index.ts`](../packages/util/home-paths/src/index.ts) |
 | `@deepseek-ai/dsh-hook-protocol` | — | [`packages/hooks/hook-protocol/src/index.ts`](../packages/hooks/hook-protocol/src/index.ts) |
 | `@deepseek-ai/dsh-http-proxy` | — | [`packages/util/http-proxy/src/index.ts`](../packages/util/http-proxy/src/index.ts) |

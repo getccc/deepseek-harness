@@ -52,6 +52,7 @@ import {
   type ModelStatus,
 } from '@deepseek-ai/dsh-model-gateway'
 import { BiError, BiProjectRef, isBiProjectRef } from '@deepseek-ai/dsh-bi'
+import { GmoCategoryRef, GmoError, isGmoCategoryRef } from '@deepseek-ai/dsh-gmo'
 import {
   RELEASE_MANAGE_ACTION,
   RELEASE_RESOURCE_NAME,
@@ -68,6 +69,14 @@ import {
   type BiCatalogView,
   type BiGateway,
 } from '@deepseek-ai/dsh-bi-gateway'
+import {
+  GMO_CATALOG_RESOURCE,
+  GMO_QUERY_ACTION,
+  GMO_RESOURCE_TYPE,
+  type GmoCatalogEntry,
+  type GmoCatalogView,
+  type GmoGateway,
+} from '@deepseek-ai/dsh-gmo-gateway'
 import { KnowledgeError, isKnowledgeRef, KnowledgeRef } from '@deepseek-ai/dsh-knowledge'
 import {
   KNOWLEDGE_CATALOG_RESOURCE,
@@ -101,6 +110,8 @@ import { CSRF_HEADER, json, patchBoolean, patchInteger, patchText, readJson, ref
 import type {
   WireBiCatalog,
   WireBiProject,
+  WireGmoCatalog,
+  WireGmoCategory,
   WireDepartment,
   WireDevice,
   WireGrant,
@@ -122,6 +133,10 @@ export type {
   WireBiCatalog,
   WireBiProject,
   WireBiSource,
+  WireGmoAccess,
+  WireGmoCatalog,
+  WireGmoCategory,
+  WireGmoSource,
   WireDepartment,
   WireDevice,
   WireGrant,
@@ -424,6 +439,34 @@ function wireBiCatalog(view: BiCatalogView): WireBiCatalog {
   }
 }
 
+/**
+ * Project the GMO category catalog for the console.
+ *
+ * The upstream id is absent by construction, the gateway never returns one,
+ * so this projection drops nothing; it renames for a reader.
+ */
+function wireGmoCatalog(view: GmoCatalogView): WireGmoCatalog {
+  return {
+    source: {
+      sourceCode: view.source.sourceCode,
+      providerKind: view.source.providerKind,
+      health: view.source.health,
+      ...(view.source.lastAttemptAt === undefined ? {} : { lastAttemptAt: view.source.lastAttemptAt }),
+      ...(view.source.lastSuccessAt === undefined ? {} : { lastSuccessAt: view.source.lastSuccessAt }),
+      ...(view.source.lastFailure === undefined ? {} : { lastFailure: view.source.lastFailure }),
+    },
+    categories: view.entries.map((entry): WireGmoCategory => ({
+      categoryRef: entry.ref,
+      resourceId: entry.resourceId,
+      displayName: entry.displayName,
+      ...(entry.resultCount === undefined ? {} : { resultCount: entry.resultCount }),
+      adminEnabled: entry.adminEnabled,
+      effectiveEnabled: entry.effectiveEnabled,
+      lastDiscoveredAt: entry.lastDiscoveredAt,
+    })),
+  }
+}
+
 /** Project one catalog entry. */
 function wireModel(entry: ModelEntry, resourceId: ResourceId): WireModel {
   return {
@@ -521,6 +564,7 @@ function adminResourceOf(resourceType: string, orgId: OrgId): string {
   if (resourceType === 'model') return MODEL_CATALOG_RESOURCE
   if (resourceType === KNOWLEDGE_RESOURCE_TYPE) return KNOWLEDGE_CATALOG_RESOURCE
   if (resourceType === BI_RESOURCE_TYPE) return BI_CATALOG_RESOURCE
+  if (resourceType === GMO_RESOURCE_TYPE) return GMO_CATALOG_RESOURCE
   return orgId
 }
 
@@ -598,6 +642,19 @@ export function apply(ctx: Context, config: Config): void {
       })
       return () => {}
     }, 'team-admin-api: govern the BI catalog')
+  })
+
+  // The GMO catalog, on the same terms again.
+  ctx.inject(['gmoGateway'], (gmo: Context) => {
+    gmo.effect(async () => {
+      await gmo.accessControl.registerResource({
+        orgId: organizationId,
+        type: GMO_RESOURCE_TYPE,
+        externalRef: GMO_CATALOG_RESOURCE,
+        displayName: 'GMO catalog administration',
+      })
+      return () => {}
+    }, 'team-admin-api: govern the GMO catalog')
   })
 
   /** Record one administrative act, naming who performed it. */
@@ -1097,6 +1154,16 @@ export function apply(ctx: Context, config: Config): void {
       }
       if (!await mayProceed(res, signed, 'bi.catalog.read', BI_RESOURCE_TYPE, BI_CATALOG_RESOURCE)) return
       json(res, 200, wireBiCatalog(await gateway.catalogView(org)))
+      return
+    }
+    if (segments[0] === 'gmo-categories' && segments.length === 1) {
+      const gateway = gmoGateway()
+      if (gateway === undefined) {
+        refuse(res, 404, 'not-found')
+        return
+      }
+      if (!await mayProceed(res, signed, 'gmo.catalog.read', GMO_RESOURCE_TYPE, GMO_CATALOG_RESOURCE)) return
+      json(res, 200, wireGmoCatalog(await gateway.catalogView(org)))
       return
     }
     refuse(res, 404, 'not-found')
@@ -1916,6 +1983,59 @@ export function apply(ctx: Context, config: Config): void {
       return
     }
 
+    if (segments[0] === 'gmo-categories' && segments[1] === 'sync' && method === 'POST' && segments.length === 2) {
+      const gateway = gmoGateway()
+      if (gateway === undefined) {
+        refuse(res, 404, 'not-found')
+        return
+      }
+      if (!await mayProceed(res, signed, 'gmo.catalog.manage', GMO_RESOURCE_TYPE, GMO_CATALOG_RESOURCE)) return
+      // The gateway records its own sync audit row and serializes concurrent
+      // callers, so this route neither repeats the record nor guards the race.
+      json(res, 200, wireGmoCatalog(await gateway.sync(org)))
+      return
+    }
+
+    if (segments[0] === 'gmo-categories' && method === 'PATCH' && segments.length === 2) {
+      const gateway = gmoGateway()
+      if (gateway === undefined) {
+        refuse(res, 404, 'not-found')
+        return
+      }
+      if (!await mayProceed(res, signed, 'gmo.catalog.manage', GMO_RESOURCE_TYPE, GMO_CATALOG_RESOURCE)) return
+      const ref = decodeURIComponent(segments[1] as string)
+      const enabled = body['enabled']
+      if (typeof enabled !== 'boolean' || !isGmoCategoryRef(ref)) {
+        refuse(res, 400, 'malformed', { reason: 'fields', detail: 'A GMO category is switched by reference and a boolean.' })
+        return
+      }
+      try {
+        await gateway.setEnabled(org, GmoCategoryRef(ref), enabled)
+      } catch (error) {
+        // The one refusal this raises is an entry the catalog does not hold.
+        if (!(error instanceof GmoError)) throw error
+        refuse(res, 404, 'not-found')
+        return
+      }
+      await record(enabled ? 'resource.enable' : 'resource.disable', signed, 'allowed', { resourceId: ref })
+      json(res, 200, wireGmoCatalog(await gateway.catalogView(org)))
+      return
+    }
+
+    if (segments[0] === 'roles' && segments[2] === 'gmo-categories' && method === 'POST' && segments.length === 3) {
+      const gateway = gmoGateway()
+      if (gateway === undefined) {
+        refuse(res, 404, 'not-found')
+        return
+      }
+      if (!await mayProceed(res, signed, 'role.grant.manage', 'role', org)) return
+      const applied = await setRoleGmo(res, gateway, org, RoleId(segments[1] as string), body)
+      if (!applied) return
+      await record('grant.add', signed, 'allowed', { resourceId: segments[1] as string })
+      json(res, 200, await readRoles(org))
+      return
+    }
+
     if (segments[0] === 'models' && segments.length === 2 && method === 'DELETE') {
       if (!await mayProceed(res, signed, 'model.catalog.manage', 'model', MODEL_CATALOG_RESOURCE)) return
       const modelRef = segments[1] as string
@@ -1994,12 +2114,75 @@ export function apply(ctx: Context, config: Config): void {
   }
 
   /**
+   * Make one role's GMO grants exactly what the editor asked for.
+   *
+   * The mode is explicit rather than inferred from the set, for the reason
+   * {@link setRoleBi} states: "none" and "an empty selection" are the same list
+   * and different intentions.
+   * @returns true when the grants were written.
+   */
+  async function setRoleGmo(
+    res: ServerResponse,
+    gateway: GmoGateway,
+    orgId: OrgId,
+    roleId: RoleId,
+    body: Record<string, unknown>,
+  ): Promise<boolean> {
+    const mode = body['mode']
+    const refs = body['categoryRefs']
+    if (mode !== 'none' && mode !== 'all' && mode !== 'selected') {
+      refuse(res, 400, 'malformed', { reason: 'fields', detail: 'GMO access is none, all, or selected.' })
+      return false
+    }
+    if (mode === 'selected' && (!Array.isArray(refs) || refs.some(ref => typeof ref !== 'string'))) {
+      refuse(res, 400, 'malformed', { reason: 'fields', detail: 'Selected GMO access is a list of category references.' })
+      return false
+    }
+    if (!(await ctx.accessControl.listRoles(orgId)).some(role => role.id === roleId)) {
+      refuse(res, 404, 'not-found')
+      return false
+    }
+    // The durable catalog decides what is selectable, never `listResources`:
+    // the catalog administration resource shares this resource type, and
+    // offering it as a category would let a role be granted a question on it.
+    const entries = new Map((await gateway.catalogView(orgId)).entries.map(entry => [entry.ref as string, entry]))
+    const wanted = mode === 'selected' ? (refs as string[]) : []
+    const selected = wanted.map(ref => entries.get(ref))
+    if (selected.includes(undefined)) {
+      refuse(res, 400, 'malformed', { reason: 'fields', detail: 'That GMO category is not in this organization.' })
+      return false
+    }
+    for (const grant of await ctx.accessControl.listRoleGrants(roleId)) {
+      if (grant.resourceType !== GMO_RESOURCE_TYPE || grant.action !== GMO_QUERY_ACTION) continue
+      await ctx.accessControl.revokeGrant(grant.id)
+    }
+    if (mode === 'all') {
+      await ctx.accessControl.grantType(roleId, GMO_RESOURCE_TYPE, GMO_QUERY_ACTION)
+    }
+    for (const entry of selected as GmoCatalogEntry[]) {
+      await ctx.accessControl.grantResource(roleId, entry.resourceId, GMO_QUERY_ACTION)
+    }
+    // Anything narrower than the whole permission catalog means the role no
+    // longer covers it, so start-up must stop bringing it back up to one.
+    if (mode !== 'all') await ctx.accessControl.updateRole(roleId, { coversCatalog: false })
+    return true
+  }
+
+  /**
    * The BI gateway, when this Control Plane governs BI.
    *
    * Read per request rather than injected, for the reason the knowledge
    * gateway is: a deployment without BI is a complete Control Plane.
    */
   const biGateway = (): BiGateway | undefined => ctx.get('biGateway')
+
+  /**
+   * The GMO gateway, when this Control Plane governs GMO.
+   *
+   * Read per request rather than injected, for the reason the knowledge
+   * gateway is: a deployment without GMO is a complete Control Plane.
+   */
+  const gmoGateway = (): GmoGateway | undefined => ctx.get('gmoGateway')
 
   /** The release store, when this deployment composes one. */
   const releaseStore = (): TeamReleaseStore | undefined => ctx.get('teamReleases')

@@ -1,0 +1,52 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/gmo/gmo-gateway/README.md
+/:
+  en: e1b3028e13bf007d
+  zh: e4d56d490e1b97a0
+/deepseek-ai-dsh-gmo-gateway:
+  en: 0b832f5b891cded8
+  zh: 3f74faec0b88c98e
+/deepseek-ai-dsh-gmo-gateway/summary:
+  en: d7c01e7e48ea1842
+  zh: 28931256fc52d31b
+/deepseek-ai-dsh-gmo-gateway/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 9f0336825ccdaacd
+/deepseek-ai-dsh-gmo-gateway/use-this-package:
+  en: a572a7cedf220b43
+  zh: f245828f869d2b5b
+/deepseek-ai-dsh-gmo-gateway/use-this-package/what-the-package-exports:
+  en: 5559c027f7e3fb22
+  zh: 65a6f5b0ff23d8d7
+/deepseek-ai-dsh-gmo-gateway/use-this-package/who-is-asking:
+  en: 3f286e16defef79a
+  zh: fda2673b8d96a56e
+/deepseek-ai-dsh-gmo-gateway/use-this-package/new-categories-start-off:
+  en: a3a3809a07c03729
+  zh: 8788b45c6b00e0f0
+/deepseek-ai-dsh-gmo-gateway/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-gmo-gateway/understand-the-implementation/design-philosophy:
+  en: eebae7feec337de3
+  zh: e71462082beae8b8
+/deepseek-ai-dsh-gmo-gateway/understand-the-implementation/source-map:
+  en: de16d7b77ef034d8
+  zh: 4e9b2b4e529df7ca
+/deepseek-ai-dsh-gmo-gateway/further-exploration:
+  en: 9bc15a943a2649a4
+  zh: d3bce88e7a796619
+/deepseek-ai-dsh-gmo-gateway/model-experience:
+  en: 8447199c3dd6028a
+  zh: ff560bc20a784e4e
+/deepseek-ai-dsh-gmo-gateway/model-experience/kv-cache-effect:
+  en: 14c1112fcaa45b72
+  zh: ebaa66da56e3d135
+/deepseek-ai-dsh-gmo-gateway/known-limitations-and-deferred-work:
+  en: f476b672f949d35d
+  zh: 14250c8f5b1dd352
+/deepseek-ai-dsh-gmo-gateway/known-limitations-and-deferred-work/dev-note:
+  en: 114faf9d69c55563
+  zh: 5f5863d762718a3f

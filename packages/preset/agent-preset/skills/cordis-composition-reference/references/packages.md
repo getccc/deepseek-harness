@@ -33,6 +33,7 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-api-account-controller` | no | Expose safe account operations over authenticated Remote |
 | `@deepseek-ai/dsh-api-bi-controller` | no | Team-only Host Remote for BI analysis — the authorized project directory a browser reads and the Session project choice it records |
 | `@deepseek-ai/dsh-api-gateway` | yes | Typert Remote Host dispatcher and Client API endpoint |
+| `@deepseek-ai/dsh-api-gmo-controller` | no | Team-only Host Remote for GMO supply-chain analysis — the authorized category directory a browser reads and the Session category choice it records |
 | `@deepseek-ai/dsh-api-job-controller` | yes | Job Remote observation stream and the reference-counted client job-output service |
 | `@deepseek-ai/dsh-api-knowledge-controller` | yes | Team-only Host Remote for private knowledge — the authorized directory a browser reads and the Session scope choice it records |
 | `@deepseek-ai/dsh-api-office-controller` | no | Host Remote owner for the Session office-deliverable choice: read what a conversation chose, and record a new choice from the browser |
@@ -104,6 +105,7 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-client-ui-deliverables` | no | Changed-files card with per-file comparison tabs, delivery cards, and clickable final-response file references for Web |
 | `@deepseek-ai/dsh-client-ui-directory-picker-browse` | no | In-app directory browsing surface: the workspace directory-flow owner rendering the host's listing and creation primitives |
 | `@deepseek-ai/dsh-client-ui-directory-picker-native` | no | Native directory-picker surface: the renderless workspace directory-flow occupant driving the local Desktop or Host OS chooser |
+| `@deepseek-ai/dsh-client-ui-gmo` | no | GMO supply-chain composer control: the single-select naming which GMO category this conversation analyzes, recorded through the Team-only gmo Remote |
 | `@deepseek-ai/dsh-client-ui-goal` | no | Session goal surface: GoalBar docked above the composer, read from the goal session projection |
 | `@deepseek-ai/dsh-client-ui-input-trigger` | no | Input trigger pipeline: '/' and '@' detection, candidate menu, pick routing to registered sources |
 | `@deepseek-ai/dsh-client-ui-jobs` | no | Session-header background-job list with on-demand streaming record panels |
@@ -253,6 +255,16 @@ Every package below exports a Cordis plugin that a bundle patch can name in a Lo
 | `@deepseek-ai/dsh-tool-fs` | yes | Model-facing filesystem tools (read, write, edit) over the DeepSeek Harness filesystem seam (ctx.fs) |
 | `@deepseek-ai/dsh-tool-fs-search` | yes | Model-facing filesystem discovery tools (glob, grep) backed by the packaged ripgrep binary (@vscode/ripgrep) |
 | `@deepseek-ai/dsh-tool-str-replace-editor` | yes | Model-facing view, create, literal replace, and line insert tool over the Harness filesystem service |
+
+## gmo
+
+| Package | Config | Description |
+|---|---|---|
+| `@deepseek-ai/dsh-gmo-excel-tools` | yes | GMO supply-chain source provider for the DeepSeek Harness Control Plane — the one place that holds the excel-tools gateway token and speaks its fixed read-only routes, with row, group, time, and size bounds |
+| `@deepseek-ai/dsh-gmo-gateway-http` | yes | Runner-facing GMO supply-chain HTTP endpoints for the DeepSeek Harness Control Plane — token-verified, version-checked directory, result listing, description, and question routes |
+| `@deepseek-ai/dsh-gmo-gateway-sqlite` | yes | SQLite-backed governed GMO supply-chain gateway for the DeepSeek Harness Control Plane — the durable category catalog, its reconciliation against the source, access-control registration, per-operation authorization, and audit |
+| `@deepseek-ai/dsh-gmo-team` | yes | Team Runner GMO supply-chain provider (ctx.gmo) for the DeepSeek Harness — authorized category directory, result listing, description, and questions over the company Control Plane, carrying the current device token and no source address or credential |
+| `@deepseek-ai/dsh-tool-gmo` | yes | Model-facing GMO supply-chain analysis for the DeepSeek Harness — the gmo_list_results, gmo_describe_result, gmo_aggregate, gmo_overview, and gmo_rows tools, the Session scope prompt section, and scope-driven tool visibility |
 
 ## goal
 

@@ -307,6 +307,51 @@ export type WireBiAccess =
   | { readonly mode: 'all' }
   | { readonly mode: 'selected'; readonly projectRefs: readonly string[] }
 
+/** One governed GMO category (a business line such as GB / GL), as the console reads the catalog. */
+export interface WireGmoCategory {
+  /** The stable reference that names it across upstream renames. */
+  readonly categoryRef: string
+  /** Access-control resource id used when a role is granted this exact category. */
+  readonly resourceId: string
+  readonly displayName: string
+  /** How many results the source reported when it last listed the category. */
+  readonly resultCount?: number
+  /** Whether an administrator has switched this entry on. A newly discovered category starts off. */
+  readonly adminEnabled: boolean
+  /** Whether it can be analyzed at all. */
+  readonly effectiveEnabled: boolean
+  /** Epoch milliseconds when a successful listing last named it. */
+  readonly lastDiscoveredAt: number
+}
+
+/** How the configured GMO source is doing. */
+export interface WireGmoSource {
+  readonly sourceCode: string
+  readonly providerKind: string
+  readonly health: string
+  readonly lastAttemptAt?: number
+  readonly lastSuccessAt?: number
+  /**
+   * Why the last attempt failed, as a closed word.
+   *
+   * A category rather than the source's own message: an operator diagnoses the
+   * detail in the excel-tools deployment, not in a console page.
+   */
+  readonly lastFailure?: string
+}
+
+/** What the GMO catalog page reads in one call. */
+export interface WireGmoCatalog {
+  readonly source: WireGmoSource
+  readonly categories: readonly WireGmoCategory[]
+}
+
+/** How much GMO one role is given. */
+export type WireGmoAccess =
+  | { readonly mode: 'none' }
+  | { readonly mode: 'all' }
+  | { readonly mode: 'selected'; readonly categoryRefs: readonly string[] }
+
 /** One `(resourceType, action)` pair a grant may name. */
 export interface WirePermission {
   readonly resourceType: string

@@ -142,6 +142,7 @@ flowchart TD
     pkg_api_account_controller["api-account-controller"]
     pkg_api_bi_controller["api-bi-controller"]
     pkg_api_gateway["api-gateway"]
+    pkg_api_gmo_controller["api-gmo-controller"]
     pkg_api_job_controller["api-job-controller"]
     pkg_api_knowledge_controller["api-knowledge-controller"]
     pkg_api_office_controller["api-office-controller"]
@@ -207,6 +208,7 @@ flowchart TD
     pkg_client_ui_directory_picker_browse["client-ui-directory-picker-browse"]
     pkg_client_ui_directory_picker_native["client-ui-directory-picker-native"]
     pkg_client_ui_dockkit["client-ui-dockkit"]
+    pkg_client_ui_gmo["client-ui-gmo"]
     pkg_client_ui_goal["client-ui-goal"]
     pkg_client_ui_input_trigger["client-ui-input-trigger"]
     pkg_client_ui_jobs["client-ui-jobs"]
@@ -318,6 +320,16 @@ flowchart TD
   subgraph group_feedback["packages/feedback"]
     pkg_command_feedback["command-feedback"]
     pkg_message_feedback["message-feedback"]
+  end
+  subgraph group_gmo["packages/gmo"]
+    pkg_gmo["gmo"]
+    pkg_gmo_excel_tools["gmo-excel-tools"]
+    pkg_gmo_gateway["gmo-gateway"]
+    pkg_gmo_gateway_http["gmo-gateway-http"]
+    pkg_gmo_gateway_sqlite["gmo-gateway-sqlite"]
+    pkg_gmo_source["gmo-source"]
+    pkg_gmo_team["gmo-team"]
+    pkg_tool_gmo["tool-gmo"]
   end
   subgraph group_guard["packages/guard"]
     pkg_repeat_tool_reminder["repeat-tool-reminder"]
@@ -582,6 +594,7 @@ flowchart TD
   pkg_experimental_webworker_runtime --> pkg_client_connection
   pkg_experimental_webworker_runtime --> pkg_client_modules
   pkg_experimental_webworker_runtime --> pkg_host_webserver
+  pkg_gmo --> pkg_session
   pkg_host_frontend_static --> pkg_client_connection
   pkg_host_frontend_static --> pkg_host_webserver
   pkg_knowledge --> pkg_session
@@ -616,6 +629,10 @@ flowchart TD
   pkg_hmr --> pkg_app_boot
   pkg_hmr --> pkg_cmdline
   pkg_experimental_speech_to_text --> pkg_settings
+  pkg_gmo_gateway --> pkg_access_control
+  pkg_gmo_gateway --> pkg_account_store
+  pkg_gmo_gateway --> pkg_gmo
+  pkg_gmo_source --> pkg_gmo
   pkg_knowledge_gateway --> pkg_access_control
   pkg_knowledge_gateway --> pkg_account_store
   pkg_knowledge_gateway --> pkg_knowledge
@@ -700,6 +717,20 @@ flowchart TD
   pkg_experimental_ptc_runtime_python --> pkg_util_values
   pkg_experimental_speech_to_text_sensevoice --> pkg_experimental_speech_to_text
   pkg_experimental_speech_to_text_sensevoice --> pkg_subprocess
+  pkg_gmo_excel_tools --> pkg_credentials
+  pkg_gmo_excel_tools --> pkg_gmo
+  pkg_gmo_excel_tools --> pkg_gmo_source
+  pkg_gmo_excel_tools --> pkg_util_crypto
+  pkg_gmo_gateway_http --> pkg_device_authorization
+  pkg_gmo_gateway_http --> pkg_gmo
+  pkg_gmo_gateway_http --> pkg_gmo_gateway
+  pkg_gmo_gateway_http --> pkg_host_webserver
+  pkg_gmo_gateway_sqlite --> pkg_access_control
+  pkg_gmo_gateway_sqlite --> pkg_account_store
+  pkg_gmo_gateway_sqlite --> pkg_audit
+  pkg_gmo_gateway_sqlite --> pkg_gmo
+  pkg_gmo_gateway_sqlite --> pkg_gmo_gateway
+  pkg_gmo_gateway_sqlite --> pkg_gmo_source
   pkg_knowledge_gateway_http --> pkg_device_authorization
   pkg_knowledge_gateway_http --> pkg_host_webserver
   pkg_knowledge_gateway_http --> pkg_knowledge
@@ -729,6 +760,8 @@ flowchart TD
   pkg_team_admin_api --> pkg_account_auth
   pkg_team_admin_api --> pkg_bi
   pkg_team_admin_api --> pkg_bi_gateway
+  pkg_team_admin_api --> pkg_gmo
+  pkg_team_admin_api --> pkg_gmo_gateway
   pkg_team_admin_api --> pkg_host_webserver
   pkg_team_admin_api --> pkg_knowledge
   pkg_team_admin_api --> pkg_knowledge_gateway
@@ -763,6 +796,10 @@ flowchart TD
   pkg_api_bi_controller --> pkg_bi
   pkg_api_bi_controller --> pkg_session
   pkg_api_bi_controller --> pkg_typert_protocol
+  pkg_api_gmo_controller --> pkg_agent
+  pkg_api_gmo_controller --> pkg_gmo
+  pkg_api_gmo_controller --> pkg_session
+  pkg_api_gmo_controller --> pkg_typert_protocol
   pkg_api_knowledge_controller --> pkg_agent
   pkg_api_knowledge_controller --> pkg_knowledge
   pkg_api_knowledge_controller --> pkg_session
@@ -787,6 +824,9 @@ flowchart TD
   pkg_deepseek_account --> pkg_agent
   pkg_deepseek_account --> pkg_brand
   pkg_deepseek_account --> pkg_llm
+  pkg_gmo_team --> pkg_gmo
+  pkg_gmo_team --> pkg_gmo_gateway_http
+  pkg_gmo_team --> pkg_team_account_client
   pkg_commands --> pkg_agent
   pkg_commands --> pkg_attachment
   pkg_commands --> pkg_brand
@@ -1058,6 +1098,12 @@ flowchart TD
   pkg_message_feedback --> pkg_session
   pkg_message_feedback --> pkg_session_persistence
   pkg_message_feedback --> pkg_typert_protocol
+  pkg_tool_gmo --> pkg_agent
+  pkg_tool_gmo --> pkg_gmo
+  pkg_tool_gmo --> pkg_session
+  pkg_tool_gmo --> pkg_session_projection
+  pkg_tool_gmo --> pkg_system_prompt
+  pkg_tool_gmo --> pkg_tools
   pkg_repeat_tool_reminder --> pkg_agent
   pkg_repeat_tool_reminder --> pkg_tools
   pkg_tool_call_timeout_policy --> pkg_llm
@@ -1609,6 +1655,7 @@ flowchart TD
 | [`client-ui-directory-picker-browse`](../packages/client/ui-directory-picker-browse) | `client` | — |
 | [`client-ui-directory-picker-native`](../packages/client/ui-directory-picker-native) | `client` | — |
 | [`client-ui-dockkit`](../packages/client/ui-dockkit) | `client` | — |
+| [`client-ui-gmo`](../packages/client/ui-gmo) | `client` | — |
 | [`client-ui-goal`](../packages/client/ui-goal) | `client` | — |
 | [`client-ui-input-trigger`](../packages/client/ui-input-trigger) | `client` | — |
 | [`client-ui-jobs`](../packages/client/ui-jobs) | `client` | — |
@@ -1735,6 +1782,7 @@ flowchart TD
 | [`bi`](../packages/bi/bi) | `bi` | [`session`](../packages/core/session) |
 | [`app-boot`](../packages/boot/app-boot) | `boot` | [`home-paths`](../packages/util/home-paths), [`launch-environment`](../packages/util/launch-environment), [`system-prompt`](../packages/core/system-prompt) |
 | [`experimental-webworker-runtime`](../packages/experimental/webworker-runtime) | `experimental` | [`client-connection`](../packages/client/connection), [`client-modules`](../packages/client/modules), [`host-webserver`](../packages/host/webserver) |
+| [`gmo`](../packages/gmo/gmo) | `gmo` | [`session`](../packages/core/session) |
 | [`host-frontend-static`](../packages/host/frontend-static) | `host` | [`client-connection`](../packages/client/connection), [`host-webserver`](../packages/host/webserver) |
 | [`knowledge`](../packages/knowledge/knowledge) | `knowledge` | [`session`](../packages/core/session) |
 | [`office`](../packages/office/office) | `office` | [`session`](../packages/core/session) |
@@ -1753,6 +1801,8 @@ flowchart TD
 | [`bi-source`](../packages/bi/bi-source) | `bi` | [`bi`](../packages/bi/bi) |
 | [`hmr`](../packages/boot/hmr) | `boot` | [`app-boot`](../packages/boot/app-boot), [`cmdline`](../packages/boot/cmdline) |
 | [`experimental-speech-to-text`](../packages/experimental/speech-to-text) | `experimental` | [`settings`](../packages/settings/settings) |
+| [`gmo-gateway`](../packages/gmo/gmo-gateway) | `gmo` | [`access-control`](../packages/access/access-control), [`account-store`](../packages/account/account-store), [`gmo`](../packages/gmo/gmo) |
+| [`gmo-source`](../packages/gmo/gmo-source) | `gmo` | [`gmo`](../packages/gmo/gmo) |
 | [`knowledge-gateway`](../packages/knowledge/knowledge-gateway) | `knowledge` | [`access-control`](../packages/access/access-control), [`account-store`](../packages/account/account-store), [`knowledge`](../packages/knowledge/knowledge) |
 | [`knowledge-source`](../packages/knowledge/knowledge-source) | `knowledge` | [`knowledge`](../packages/knowledge/knowledge) |
 | [`ptc-runtime`](../packages/ptc-runtime/ptc-runtime) | `ptc-runtime` | [`sandbox`](../packages/sandbox/sandbox) |
@@ -1777,19 +1827,23 @@ flowchart TD
 | [`experimental-api-speech-to-text`](../packages/experimental/api-speech-to-text) | `experimental` | [`experimental-speech-to-text`](../packages/experimental/speech-to-text), [`typert-protocol`](../packages/typert/protocol) |
 | [`experimental-ptc-runtime-python`](../packages/experimental/ptc-runtime-python) | `experimental` | [`ptc-runtime`](../packages/ptc-runtime/ptc-runtime), [`timeout`](../packages/util/timeout), [`util-values`](../packages/util/values) |
 | [`experimental-speech-to-text-sensevoice`](../packages/experimental/speech-to-text-sensevoice) | `experimental` | [`experimental-speech-to-text`](../packages/experimental/speech-to-text), [`subprocess`](../packages/subprocess/subprocess) |
+| [`gmo-excel-tools`](../packages/gmo/gmo-excel-tools) | `gmo` | [`credentials`](../packages/credentials/credentials), [`gmo`](../packages/gmo/gmo), [`gmo-source`](../packages/gmo/gmo-source), [`util-crypto`](../packages/util/crypto) |
+| [`gmo-gateway-http`](../packages/gmo/gmo-gateway-http) | `gmo` | [`device-authorization`](../packages/account/device-authorization), [`gmo`](../packages/gmo/gmo), [`gmo-gateway`](../packages/gmo/gmo-gateway), [`host-webserver`](../packages/host/webserver) |
+| [`gmo-gateway-sqlite`](../packages/gmo/gmo-gateway-sqlite) | `gmo` | [`access-control`](../packages/access/access-control), [`account-store`](../packages/account/account-store), [`audit`](../packages/access/audit), [`gmo`](../packages/gmo/gmo), [`gmo-gateway`](../packages/gmo/gmo-gateway), [`gmo-source`](../packages/gmo/gmo-source) |
 | [`knowledge-gateway-http`](../packages/knowledge/knowledge-gateway-http) | `knowledge` | [`device-authorization`](../packages/account/device-authorization), [`host-webserver`](../packages/host/webserver), [`knowledge`](../packages/knowledge/knowledge), [`knowledge-gateway`](../packages/knowledge/knowledge-gateway) |
 | [`knowledge-gateway-sqlite`](../packages/knowledge/knowledge-gateway-sqlite) | `knowledge` | [`access-control`](../packages/access/access-control), [`account-store`](../packages/account/account-store), [`audit`](../packages/access/audit), [`knowledge`](../packages/knowledge/knowledge), [`knowledge-gateway`](../packages/knowledge/knowledge-gateway), [`knowledge-source`](../packages/knowledge/knowledge-source) |
 | [`knowledge-weknora`](../packages/knowledge/knowledge-weknora) | `knowledge` | [`credentials`](../packages/credentials/credentials), [`knowledge`](../packages/knowledge/knowledge), [`knowledge-source`](../packages/knowledge/knowledge-source), [`util-crypto`](../packages/util/crypto) |
 | [`lsp-stdio`](../packages/lsp/lsp-stdio) | `lsp` | [`brand`](../packages/util/brand), [`fs`](../packages/fs/fs), [`llm`](../packages/llm/llm), [`lsp`](../packages/lsp/lsp), [`subprocess`](../packages/subprocess/subprocess), [`timeout`](../packages/util/timeout) |
 | [`bash-local`](../packages/shell/bash-local) | `shell` | [`shell`](../packages/shell/shell), [`subprocess`](../packages/subprocess/subprocess), [`timeout`](../packages/util/timeout) |
 | [`pwsh-local`](../packages/shell/pwsh-local) | `shell` | [`shell`](../packages/shell/shell), [`subprocess`](../packages/subprocess/subprocess), [`timeout`](../packages/util/timeout) |
-| [`team-admin-api`](../packages/team/team-admin-api) | `team` | [`account-auth`](../packages/account/account-auth), [`bi`](../packages/bi/bi), [`bi-gateway`](../packages/bi/bi-gateway), [`host-webserver`](../packages/host/webserver), [`knowledge`](../packages/knowledge/knowledge), [`knowledge-gateway`](../packages/knowledge/knowledge-gateway) |
+| [`team-admin-api`](../packages/team/team-admin-api) | `team` | [`account-auth`](../packages/account/account-auth), [`bi`](../packages/bi/bi), [`bi-gateway`](../packages/bi/bi-gateway), [`gmo`](../packages/gmo/gmo), [`gmo-gateway`](../packages/gmo/gmo-gateway), [`host-webserver`](../packages/host/webserver), [`knowledge`](../packages/knowledge/knowledge), [`knowledge-gateway`](../packages/knowledge/knowledge-gateway) |
 | [`llm-deepseek-api-key`](../packages/llm/llm-deepseek-api-key) | `llm` | [`credentials`](../packages/credentials/credentials), [`launch-environment`](../packages/util/launch-environment), [`llm`](../packages/llm/llm), [`llm-deepseek`](../packages/llm/llm-deepseek), [`llm-http-transport`](../packages/llm/llm-http-transport) |
 | [`llm-retry`](../packages/llm/llm-retry) | `llm` | [`agent`](../packages/core/agent), [`brand`](../packages/util/brand), [`invariants`](../packages/runtime-diagnostics/invariants), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`session-projection`](../packages/session/session-projection), [`timeout`](../packages/util/timeout) |
 | [`agent-default-model`](../packages/core/agent-default-model) | `core` | [`agent`](../packages/core/agent), [`llm`](../packages/llm/llm) |
 | [`goal`](../packages/goal/goal) | `goal` | [`agent`](../packages/core/agent), [`brand`](../packages/util/brand), [`invariants`](../packages/runtime-diagnostics/invariants), [`llm`](../packages/llm/llm), [`scope`](../packages/core/scope), [`session`](../packages/core/session), [`session-projection`](../packages/session/session-projection), [`typert-protocol`](../packages/typert/protocol) |
 | [`web-search-deepseek`](../packages/web/web-search-deepseek) | `web` | [`agent`](../packages/core/agent), [`credentials`](../packages/credentials/credentials), [`launch-environment`](../packages/util/launch-environment), [`session`](../packages/core/session), [`web`](../packages/web/web) |
 | [`api-bi-controller`](../packages/api/bi-controller) | `api` | [`agent`](../packages/core/agent), [`bi`](../packages/bi/bi), [`session`](../packages/core/session), [`typert-protocol`](../packages/typert/protocol) |
+| [`api-gmo-controller`](../packages/api/gmo-controller) | `api` | [`agent`](../packages/core/agent), [`gmo`](../packages/gmo/gmo), [`session`](../packages/core/session), [`typert-protocol`](../packages/typert/protocol) |
 | [`api-knowledge-controller`](../packages/api/knowledge-controller) | `api` | [`agent`](../packages/core/agent), [`knowledge`](../packages/knowledge/knowledge), [`session`](../packages/core/session), [`typert-protocol`](../packages/typert/protocol) |
 | [`api-office-controller`](../packages/api/office-controller) | `api` | [`agent`](../packages/core/agent), [`office`](../packages/office/office), [`session`](../packages/core/session), [`typert-protocol`](../packages/typert/protocol) |
 | [`bi-team`](../packages/bi/bi-team) | `bi` | [`bi`](../packages/bi/bi), [`bi-gateway-http`](../packages/bi/bi-gateway-http), [`team-account-client`](../packages/team/team-account-client) |
@@ -1797,6 +1851,7 @@ flowchart TD
 | [`time-context`](../packages/context/time-context) | `context` | [`agent`](../packages/core/agent), [`invariants`](../packages/runtime-diagnostics/invariants), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`session-projection`](../packages/session/session-projection) |
 | [`tmux-context`](../packages/context/tmux-context) | `context` | [`agent`](../packages/core/agent), [`session`](../packages/core/session), [`session-projection`](../packages/session/session-projection), [`shell`](../packages/shell/shell) |
 | [`deepseek-account`](../packages/credentials/deepseek-account) | `credentials` | [`agent`](../packages/core/agent), [`brand`](../packages/util/brand), [`llm`](../packages/llm/llm) |
+| [`gmo-team`](../packages/gmo/gmo-team) | `gmo` | [`gmo`](../packages/gmo/gmo), [`gmo-gateway-http`](../packages/gmo/gmo-gateway-http), [`team-account-client`](../packages/team/team-account-client) |
 | [`commands`](../packages/interaction/commands) | `interaction` | [`agent`](../packages/core/agent), [`attachment`](../packages/attachment/attachment), [`brand`](../packages/util/brand), [`invariants`](../packages/runtime-diagnostics/invariants), [`llm`](../packages/llm/llm), [`scope`](../packages/core/scope), [`session`](../packages/core/session), [`typert-protocol`](../packages/typert/protocol) |
 | [`user-approval`](../packages/interaction/user-approval) | `interaction` | [`agent`](../packages/core/agent), [`brand`](../packages/util/brand), [`invariants`](../packages/runtime-diagnostics/invariants), [`llm`](../packages/llm/llm), [`scope`](../packages/core/scope), [`session`](../packages/core/session), [`system-prompt`](../packages/core/system-prompt) |
 | [`user-questions`](../packages/interaction/user-questions) | `interaction` | [`agent`](../packages/core/agent), [`llm`](../packages/llm/llm), [`scope`](../packages/core/scope) |
@@ -1850,6 +1905,7 @@ flowchart TD
 | [`experimental-computer-use-cua-driver-native`](../packages/experimental/computer-use-cua-driver-native) | `experimental` | [`computer-use`](../packages/computer-use/computer-use), [`system-prompt`](../packages/core/system-prompt), [`tools`](../packages/core/tools) |
 | [`cordis-host-runner`](../packages/extensions/cordis-host-runner) | `extensions` | [`agent`](../packages/core/agent), [`brand`](../packages/util/brand), [`llm`](../packages/llm/llm), [`scope`](../packages/core/scope), [`session`](../packages/core/session), [`tools`](../packages/core/tools), [`typert-protocol`](../packages/typert/protocol) |
 | [`message-feedback`](../packages/feedback/message-feedback) | `feedback` | [`brand`](../packages/util/brand), [`command-feedback`](../packages/feedback/command-feedback), [`llm`](../packages/llm/llm), [`session`](../packages/core/session), [`session-persistence`](../packages/session/session-persistence), [`typert-protocol`](../packages/typert/protocol) |
+| [`tool-gmo`](../packages/gmo/tool-gmo) | `gmo` | [`agent`](../packages/core/agent), [`gmo`](../packages/gmo/gmo), [`session`](../packages/core/session), [`session-projection`](../packages/session/session-projection), [`system-prompt`](../packages/core/system-prompt), [`tools`](../packages/core/tools) |
 | [`repeat-tool-reminder`](../packages/guard/repeat-tool-reminder) | `guard` | [`agent`](../packages/core/agent), [`tools`](../packages/core/tools) |
 | [`tool-call-timeout-policy`](../packages/guard/timeout-policy) | `guard` | [`llm`](../packages/llm/llm), [`timeout`](../packages/util/timeout), [`tools`](../packages/core/tools) |
 | [`tool-restriction`](../packages/guard/tool-restriction) | `guard` | [`tools`](../packages/core/tools) |

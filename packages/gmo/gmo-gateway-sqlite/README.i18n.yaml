@@ -1,0 +1,58 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/gmo/gmo-gateway-sqlite/README.md
+/:
+  en: f7f3e799802942c2
+  zh: 6bf25826ffce3764
+/deepseek-ai-dsh-gmo-gateway-sqlite:
+  en: a395d4400f10f2f2
+  zh: fd4deb7ea1d7301e
+/deepseek-ai-dsh-gmo-gateway-sqlite/summary:
+  en: db1979a33833d026
+  zh: 435c83934b2b42d2
+/deepseek-ai-dsh-gmo-gateway-sqlite/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 9f0336825ccdaacd
+/deepseek-ai-dsh-gmo-gateway-sqlite/use-this-package:
+  en: 8ca6cb13a39caade
+  zh: a25f8bf590abfccc
+/deepseek-ai-dsh-gmo-gateway-sqlite/use-this-package/minimal-configuration:
+  en: 0bd313d24116f0b1
+  zh: d6daa62000827c67
+/deepseek-ai-dsh-gmo-gateway-sqlite/use-this-package/synchronization:
+  en: f107d55d3ded3e5d
+  zh: 4b14381043df726b
+/deepseek-ai-dsh-gmo-gateway-sqlite/use-this-package/authorization:
+  en: a76e17f97e9bd54f
+  zh: a2d6e893910eb1c3
+/deepseek-ai-dsh-gmo-gateway-sqlite/use-this-package/audit:
+  en: 0af1e1cd2164c294
+  zh: 094e981cee945307
+/deepseek-ai-dsh-gmo-gateway-sqlite/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-gmo-gateway-sqlite/understand-the-implementation/design-philosophy:
+  en: ace4f1266440f8f7
+  zh: c65bde7a97dc328b
+/deepseek-ai-dsh-gmo-gateway-sqlite/understand-the-implementation/source-map:
+  en: 67e9adf9c08c2f54
+  zh: ba7ba52c814293cd
+/deepseek-ai-dsh-gmo-gateway-sqlite/understand-the-implementation/data-model:
+  en: 52d34cf05a0d6e7c
+  zh: df0cc4aa90ed996f
+/deepseek-ai-dsh-gmo-gateway-sqlite/further-exploration:
+  en: b550c0cfff7a72f8
+  zh: ac69dd13c77fadc2
+/deepseek-ai-dsh-gmo-gateway-sqlite/model-experience:
+  en: 5d76068f43c36106
+  zh: 5b7d151ad2545ee5
+/deepseek-ai-dsh-gmo-gateway-sqlite/model-experience/kv-cache-effect:
+  en: 14c1112fcaa45b72
+  zh: ebaa66da56e3d135
+/deepseek-ai-dsh-gmo-gateway-sqlite/known-limitations-and-deferred-work:
+  en: 766b66247c96e1a0
+  zh: a5618a592d0ebe06
+/deepseek-ai-dsh-gmo-gateway-sqlite/known-limitations-and-deferred-work/dev-note:
+  en: 0959e877b5a027b6
+  zh: 7c62424694655a85

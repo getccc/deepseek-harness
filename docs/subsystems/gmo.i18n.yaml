@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for gmo.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/subsystems/gmo.md
+/gmo-supply-chain-analysis:
+  en: 1b12a107017097ee
+  zh: 04f9ad1b7df1a705
+/gmo-supply-chain-analysis/naming-a-category:
+  en: 570f367d6ae2f634
+  zh: 2c4a7deedb3cb3b1
+/gmo-supply-chain-analysis/naming-a-result:
+  en: 373c3e0c5b8c775d
+  zh: 83d43ec13e4a88e0
+/gmo-supply-chain-analysis/the-session-gmo-scope:
+  en: 4fc2668f1ea3441c
+  zh: 0b7ef3c5057a35c5
+/gmo-supply-chain-analysis/directory-results-description-and-questions:
+  en: e6d09fe5104793d9
+  zh: f14065a146e716af
+/gmo-supply-chain-analysis/failures:
+  en: d0b371cbdcae6b5f
+  zh: 7974fc0c055e3cc4

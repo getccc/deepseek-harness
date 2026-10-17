@@ -16,7 +16,7 @@ import {
 describe('the permission catalog', () => {
   it('governs exactly the resource types Team Edition authorizes', () => {
     expect([...GOVERNED_RESOURCE_TYPES].sort()).toEqual([
-      'bi_project', 'department', 'device', 'knowledge_scope', 'mcp_server', 'mcp_tool',
+      'bi_project', 'department', 'device', 'gmo_category', 'knowledge_scope', 'mcp_server', 'mcp_tool',
       'member', 'menu', 'model', 'organization', 'plugin', 'release', 'role', 'skill', 'usage', 'web_search',
     ])
   })
@@ -28,6 +28,10 @@ describe('the permission catalog', () => {
     expect(isRegisteredPermission('bi_project', 'bi.query')).toBe(true)
     expect(isRegisteredPermission('bi_project', 'bi.catalog.read')).toBe(true)
     expect(isRegisteredPermission('bi_project', 'bi.catalog.manage')).toBe(true)
+    expect(isRegisteredPermission('gmo_category', 'gmo.query')).toBe(true)
+    expect(isRegisteredPermission('gmo_category', 'gmo.catalog.read')).toBe(true)
+    expect(isRegisteredPermission('gmo_category', 'gmo.catalog.manage')).toBe(true)
+    expect(isRegisteredPermission('bi_project', 'gmo.query')).toBe(false)
     expect(isRegisteredPermission('knowledge_scope', 'bi.query')).toBe(false)
   })
 

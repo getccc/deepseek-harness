@@ -44,6 +44,12 @@
       "path": "../../bi/bi-gateway"
     },
     {
+      "path": "../../gmo/gmo"
+    },
+    {
+      "path": "../../gmo/gmo-gateway"
+    },
+    {
       "path": "../../knowledge/knowledge"
     },
     {

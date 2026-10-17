@@ -1,0 +1,70 @@
+# Bilingual-pair consistency record for 2026-10-16-team-gmo-supply-chain-through-the-control-plane.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/proposed/feature/2026-10-16-team-gmo-supply-chain-through-the-control-plane.md
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane:
+  en: 7051177b4134e9d6
+  zh: 7e9999f1ddcf70c9
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/problem:
+  en: 479983ef5d9cc25f
+  zh: 1657f1dd9cfead4e
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/proposal:
+  en: 669916b05fe692c4
+  zh: 31b56e8f69d68e68
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/proposal/product-outcome:
+  en: a5cc89016ebe0284
+  zh: a7fe47ab0baa11a7
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/proposal/non-goals-for-the-first-delivery:
+  en: d39d5963db492aca
+  zh: f20c46ce7912764b
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/security-invariants:
+  en: 112622aad3f13264
+  zh: c642203d9522eeaa
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/runtime-architecture:
+  en: 29eaac43a5295afe
+  zh: 017d1daeb51967bf
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/runtime-architecture/capability-and-package-topology:
+  en: 8503a34824e7c84d
+  zh: caf9b642887d3693
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/runtime-architecture/the-authorization-unit:
+  en: b2e0c245128ea87e
+  zh: bd30c3fe397bf7c0
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/runtime-architecture/stable-references:
+  en: 80a5309da707b345
+  zh: bf5afd08c5a30045
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/the-excel-tools-gateway:
+  en: 93ab0084c9d4238d
+  zh: 84b09d3165dcaf7e
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/teaching-the-model-the-business:
+  en: 7de6a37be6d8e94b
+  zh: c8c0648a9c7e118c
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/teaching-the-model-the-business/what-the-model-sees:
+  en: 9db6f8ab57406349
+  zh: 465dc7e17700a36b
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/teaching-the-model-the-business/session-scope-state:
+  en: 7ed191396bde0af1
+  zh: 72f54d2ea46fc84d
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/control-plane-api:
+  en: 0daec46978c188f9
+  zh: 0daec46978c188f9
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/control-plane-api/administration-api:
+  en: 340853a8a482f710
+  zh: c0f91cdab5865cac
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/control-plane-api/runner-api:
+  en: 30831a0fad5ff1fb
+  zh: 789e8a8bcd41cc51
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/failure-semantics:
+  en: 134e5e887494e6c8
+  zh: 99194657339ec30d
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/delivery-plan:
+  en: 73b69bdac91e69c1
+  zh: d66c57b1b176654c
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/alternatives-considered:
+  en: 472f5d775c4250b6
+  zh: 66f82336a3e2c400
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/acceptance-criteria:
+  en: 84cb8ba56f8f8704
+  zh: aa22f93b561ca5fd
+/agent-note-team-gmo-supply-chain-analysis-through-the-control-plane/risks:
+  en: 3a2a59b51d08c9c1
+  zh: 31f824f723052a32

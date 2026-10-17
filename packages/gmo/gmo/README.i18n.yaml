@@ -1,0 +1,61 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/gmo/gmo/README.md
+/:
+  en: 753b01dde68fb15c
+  zh: e91724077bac6bbe
+/deepseek-ai-dsh-gmo:
+  en: a7bb0fab4e215546
+  zh: 4d4c62a9503630af
+/deepseek-ai-dsh-gmo/summary:
+  en: 14814d1a19933594
+  zh: 5a4aa0bd1fce0cf2
+/deepseek-ai-dsh-gmo/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 9f0336825ccdaacd
+/deepseek-ai-dsh-gmo/use-this-package:
+  en: b17bd83d18a13d95
+  zh: 65e46a51dd36c073
+/deepseek-ai-dsh-gmo/use-this-package/when-to-choose-it:
+  en: 9a20bbb12b16f7e9
+  zh: 8cb0c474c90a2d4b
+/deepseek-ai-dsh-gmo/use-this-package/minimal-configuration:
+  en: 8386a7648969dac0
+  zh: 82c9ccdf6d4c44d7
+/deepseek-ai-dsh-gmo/use-this-package/naming-a-category-and-a-result:
+  en: 164792d29c051688
+  zh: e65745ea0dee0db7
+/deepseek-ai-dsh-gmo/use-this-package/asking-a-question:
+  en: 890c8edf9219d3ad
+  zh: 7ec4820d1082e6a4
+/deepseek-ai-dsh-gmo/use-this-package/reading-the-session-scope:
+  en: 047ab83059d75b0d
+  zh: 5b9eed8c48867a79
+/deepseek-ai-dsh-gmo/understand-the-implementation:
+  en: ee4615a04fa6503d
+  zh: ee2c5fb2204a43cf
+/deepseek-ai-dsh-gmo/understand-the-implementation/design-philosophy:
+  en: 93d70c7f441ee18f
+  zh: 8e486faf2c469d4a
+/deepseek-ai-dsh-gmo/understand-the-implementation/source-map:
+  en: 08b75b2e5fd799a7
+  zh: 25d783a111d3a720
+/deepseek-ai-dsh-gmo/understand-the-implementation/data-model:
+  en: 4e5d6c9cc4fa468f
+  zh: f753e21d1d700396
+/deepseek-ai-dsh-gmo/further-exploration:
+  en: 496e3b5c43e951ba
+  zh: 8bf2a575c243e79d
+/deepseek-ai-dsh-gmo/model-experience:
+  en: 5e70f35250f42fd5
+  zh: 0eae089f6662530a
+/deepseek-ai-dsh-gmo/model-experience/kv-cache-effect:
+  en: 5fbbd6268573e9a3
+  zh: 06f3d3ea72f6c0bb
+/deepseek-ai-dsh-gmo/known-limitations-and-deferred-work:
+  en: 9b4ef05327b05d99
+  zh: 03f9a4bd70f5d0b1
+/deepseek-ai-dsh-gmo/known-limitations-and-deferred-work/dev-note:
+  en: e07767facb51c8ab
+  zh: 2f7a058409d97eda

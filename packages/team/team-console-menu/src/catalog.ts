@@ -153,6 +153,21 @@ export const SHIPPED_CONSOLE_MENUS: readonly ShippedConsoleMenu[] = [
     sortOrder: 4,
   },
   {
+    key: 'gmo-categories',
+    parentKey: 'resources',
+    name: 'GMO supply chain',
+    labelKey: 'nav.gmoCategories',
+    kind: 'menu',
+    routePath: '/resources/gmo-categories',
+    componentPath: 'resources/GmoCategoriesPage',
+    // Registered only when this Control Plane governs GMO, like the BI
+    // catalog, so a deployment without it grants this to nobody and the entry
+    // stays hidden.
+    permission: 'gmo_category|gmo.catalog.read',
+    icon: 'chart',
+    sortOrder: 7,
+  },
+  {
     key: 'releases',
     parentKey: 'resources',
     name: 'Client releases',

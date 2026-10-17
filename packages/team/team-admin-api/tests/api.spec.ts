@@ -27,6 +27,16 @@ import SqliteKnowledgeGateway from '@deepseek-ai/dsh-knowledge-gateway-sqlite'
 import { KNOWLEDGE_CATALOG_RESOURCE } from '@deepseek-ai/dsh-knowledge-gateway'
 import SqliteBiGateway from '@deepseek-ai/dsh-bi-gateway-sqlite'
 import { BI_CATALOG_RESOURCE } from '@deepseek-ai/dsh-bi-gateway'
+import SqliteGmoGateway from '@deepseek-ai/dsh-gmo-gateway-sqlite'
+import { GMO_CATALOG_RESOURCE } from '@deepseek-ai/dsh-gmo-gateway'
+import {
+  GmoSource,
+  type UpstreamAnswer,
+  type UpstreamCategory,
+  type UpstreamDescription,
+  type UpstreamPlacement,
+  type UpstreamResultListing,
+} from '@deepseek-ai/dsh-gmo-source'
 import {
   BiSource,
   type UpstreamChartListing,
@@ -83,6 +93,8 @@ let knowledgeHome: string
 let source: ScriptedKnowledgeSource
 /** The scripted BI upstream this assembly's project catalog reads. */
 let biSource: ScriptedBiSource
+/** The scripted GMO upstream this assembly's category catalog reads. */
+let gmoSource: ScriptedGmoSource
 
 const PASSWORD = 'Correct-Horse-Battery-1'
 
@@ -156,6 +168,38 @@ class ScriptedBiSource extends BiSource {
   }
 }
 
+const GMO_REF_A = 'stub:gmo:gb'
+
+/** A GMO source a test scripts, so the category catalog has something to hold. */
+class ScriptedGmoSource extends GmoSource {
+  override readonly providerKind = 'stub'
+  override readonly sourceCode = 'gmo'
+  listing: readonly UpstreamCategory[] = [{ upstreamId: 'gb', name: 'GB / GL 分配', resultCount: 39 }]
+
+  /** What the next listing raises instead of answering, when a test sets one. */
+  failure: Error | undefined
+
+  listCategories(): Promise<readonly UpstreamCategory[]> {
+    return this.failure === undefined ? Promise.resolve(this.listing) : Promise.reject(this.failure)
+  }
+
+  listResults(): Promise<UpstreamResultListing> {
+    return Promise.resolve({ results: [], pageSize: 20, total: 0 })
+  }
+
+  placeResult(): Promise<UpstreamPlacement> {
+    return Promise.reject(new Error('the administration API places no result'))
+  }
+
+  describeResult(): Promise<UpstreamDescription> {
+    return Promise.reject(new Error('the administration API describes no result'))
+  }
+
+  ask(): Promise<UpstreamAnswer> {
+    return Promise.reject(new Error('the administration API asks no question'))
+  }
+}
+
 const ADMIN_PERMISSIONS = [
   ['organization', 'organization.admin.access'],
   ['organization', 'organization.read'], ['organization', 'organization.settings.manage'],
@@ -170,6 +214,7 @@ const ADMIN_PERMISSIONS = [
   ['model', 'model.catalog.read'], ['model', 'model.catalog.manage'],
   ['knowledge_scope', 'knowledge.catalog.read'], ['knowledge_scope', 'knowledge.catalog.manage'],
   ['bi_project', 'bi.catalog.read'], ['bi_project', 'bi.catalog.manage'],
+  ['gmo_category', 'gmo.catalog.read'], ['gmo_category', 'gmo.catalog.manage'],
 ] as const
 
 /** A model registration the catalog accepts, for tests that break one field. */
@@ -330,6 +375,9 @@ beforeEach(async () => {
   await ctx.plugin(ScriptedBiSource).await()
   biSource = ctx.get('biSource') as ScriptedBiSource
   await ctx.plugin(SqliteBiGateway, { path: join(knowledgeHome, 'bi.sqlite') }).await()
+  await ctx.plugin(ScriptedGmoSource).await()
+  gmoSource = ctx.get('gmoSource') as ScriptedGmoSource
+  await ctx.plugin(SqliteGmoGateway, { path: join(knowledgeHome, 'gmo.sqlite') }).await()
 
   store = ctx.get('accountStore') as AccountStore
   access = ctx.get('accessControl') as AccessControl
@@ -2410,6 +2458,205 @@ describe('administering the BI project catalog', () => {
     const cookie = (head(landed, 'set-cookie') ?? '').split(';')[0] ?? ''
     const answer = await sendTo(bareOrigin, '/team/api/bi-projects', { headers: { cookie } })
     expect(answer.status).toBe(404)
+    await bare.fiber.dispose()
+  })
+})
+
+describe('administering the GMO category catalog', () => {
+  /** One catalog read, projected the way the console receives it. */
+  interface WireCatalog {
+    source: { health: string; lastFailure?: string }
+    categories: {
+      categoryRef: string
+      resourceId: string
+      displayName: string
+      resultCount?: number
+      adminEnabled: boolean
+      effectiveEnabled: boolean
+    }[]
+  }
+
+  it('answers an empty catalog before anyone synchronizes', async () => {
+    const held = await signIn()
+    const answer = await send('/team/api/gmo-categories', { headers: { cookie: held.cookie } })
+    expect(answer.status).toBe(200)
+    const view = payload(answer) as WireCatalog
+    expect(view.categories).toEqual([])
+    expect(view.source.health).toBe('never-synced')
+  })
+
+  it('synchronizes, starts a new category switched off, and keeps the catalog through a failed listing', async () => {
+    const held = await signIn()
+    const synced = await write('POST', '/team/api/gmo-categories/sync', held, {})
+    expect(synced.status).toBe(200)
+    expect((payload(synced) as WireCatalog).categories).toEqual([expect.objectContaining({
+      categoryRef: GMO_REF_A, displayName: 'GB / GL 分配', resultCount: 39, adminEnabled: false, effectiveEnabled: false,
+    })])
+    // No upstream identifier field: the reference is the only category id
+    // that leaves this Control Plane.
+    expect(Object.keys((payload(synced) as WireCatalog).categories[0] ?? {})).not.toContain('upstreamId')
+    gmoSource.failure = new Error('the GMO host is unreachable')
+    const failed = await write('POST', '/team/api/gmo-categories/sync', held, {})
+    gmoSource.failure = undefined
+    const view = payload(failed) as WireCatalog
+    expect(view.source).toMatchObject({ health: 'failing' })
+    expect(view.source.lastFailure).toBeTypeOf('string')
+    expect(view.categories).toHaveLength(1)
+  })
+
+  it('leaves the result count out of a category whose source gave none', async () => {
+    const held = await signIn()
+    gmoSource.listing = [{ upstreamId: 'gb', name: 'GB / GL 分配', resultCount: undefined }]
+    const synced = await write('POST', '/team/api/gmo-categories/sync', held, {})
+    expect(Object.keys((payload(synced) as WireCatalog).categories[0] ?? {})).not.toContain('resultCount')
+  })
+
+  it('switches one entry on and off and records both', async () => {
+    const held = await signIn()
+    await write('POST', '/team/api/gmo-categories/sync', held, {})
+    const enabled = await write('PATCH', `/team/api/gmo-categories/${encodeURIComponent(GMO_REF_A)}`, held, { enabled: true })
+    expect(enabled.status).toBe(200)
+    expect((payload(enabled) as WireCatalog).categories[0]).toMatchObject({ adminEnabled: true, effectiveEnabled: true })
+    expect((await audit.query({ orgId, action: 'resource.enable' }))[0]).toMatchObject({ resourceId: GMO_REF_A })
+    const disabled = await write('PATCH', `/team/api/gmo-categories/${encodeURIComponent(GMO_REF_A)}`, held, { enabled: false })
+    expect((payload(disabled) as WireCatalog).categories[0]).toMatchObject({ adminEnabled: false, effectiveEnabled: false })
+    expect((await audit.query({ orgId, action: 'resource.disable' }))[0]).toMatchObject({ resourceId: GMO_REF_A })
+  })
+
+  it.each([
+    ['a reference the catalog does not hold', 'stub:gmo:nope', { enabled: true }, 404],
+    ['a reference that is not one', 'not-a-reference', { enabled: true }, 400],
+    ['a switch that is not a boolean', GMO_REF_A, { enabled: 'on' }, 400],
+  ])('refuses %s', async (_label, ref, body, status) => {
+    const held = await signIn()
+    await write('POST', '/team/api/gmo-categories/sync', held, {})
+    const answer = await write('PATCH', `/team/api/gmo-categories/${encodeURIComponent(ref)}`, held, body)
+    expect(answer.status).toBe(status)
+  })
+
+  it('gives a role none, all, or selected GMO — and nothing else changes', async () => {
+    const held = await signIn()
+    await write('POST', '/team/api/gmo-categories/sync', held, {})
+    const analysts = (await access.createRole({ orgId, name: 'analysts' })).id
+    await access.grantType(analysts, 'model', 'model.invoke')
+
+    const all = await write('POST', `/team/api/roles/${analysts}/gmo-categories`, held, { mode: 'all' })
+    expect(all.status).toBe(200)
+    expect((await access.listRoleGrants(analysts)).filter(grant => grant.action === 'gmo.query'))
+      .toEqual([expect.objectContaining({ kind: 'type', resourceType: 'gmo_category' })])
+
+    const resourceId = (await access.listResources(orgId, 'gmo_category')).find(resource => resource.externalRef === GMO_REF_A)?.id
+    const some = await write('POST', `/team/api/roles/${analysts}/gmo-categories`, held, { mode: 'selected', categoryRefs: [GMO_REF_A] })
+    expect(some.status).toBe(200)
+    expect((await access.listRoleGrants(analysts)).filter(grant => grant.action === 'gmo.query'))
+      .toEqual([expect.objectContaining({ kind: 'resource', resourceId })])
+
+    const none = await write('POST', `/team/api/roles/${analysts}/gmo-categories`, held, { mode: 'none' })
+    expect(none.status).toBe(200)
+    const afterNone = await access.listRoleGrants(analysts)
+    expect(afterNone.filter(grant => grant.action === 'gmo.query')).toEqual([])
+    // The unrelated model grant survived every one of those replacements.
+    expect(afterNone.some(grant => grant.action === 'model.invoke')).toBe(true)
+  })
+
+  it('refuses to grant a question on the catalog administration resource', async () => {
+    const held = await signIn()
+    await write('POST', '/team/api/gmo-categories/sync', held, {})
+    const analysts = (await access.createRole({ orgId, name: 'analysts' })).id
+    const answer = await write('POST', `/team/api/roles/${analysts}/gmo-categories`, held, {
+      mode: 'selected', categoryRefs: [GMO_CATALOG_RESOURCE],
+    })
+    expect(answer.status).toBe(400)
+    expect(await access.listRoleGrants(analysts)).toEqual([])
+  })
+
+  it.each([
+    ['no mode', {}],
+    ['an unknown mode', { mode: 'everything' }],
+    ['a selection that is not a list', { mode: 'selected', categoryRefs: 'all of them' }],
+    ['a selection holding a non-string', { mode: 'selected', categoryRefs: [7] }],
+    ['a category this organization does not govern', { mode: 'selected', categoryRefs: ['stub:gmo:nope'] }],
+  ])('refuses a role GMO editor sent %s', async (_label, body) => {
+    const held = await signIn()
+    await write('POST', '/team/api/gmo-categories/sync', held, {})
+    const analysts = (await access.createRole({ orgId, name: 'analysts' })).id
+    const answer = await write('POST', `/team/api/roles/${analysts}/gmo-categories`, held, body)
+    expect(answer.status).toBe(400)
+  })
+
+  it('refuses a role this organization does not administer', async () => {
+    const held = await signIn()
+    const elsewhere = (await store.createOrganization('Other')).id
+    const outsiders = (await access.createRole({ orgId: elsewhere, name: 'outsiders' })).id
+    const answer = await write('POST', `/team/api/roles/${outsiders}/gmo-categories`, held, { mode: 'all' })
+    expect(answer.status).toBe(404)
+  })
+
+  it('refuses every GMO route to a member without the permission', async () => {
+    const bob = (await store.createUser({ orgId, loginName: 'bob', displayName: 'Bob' })).id
+    await ctx.accountAuth.setSecret(bob, PASSWORD)
+    const console_ = (await access.createRole({ orgId, name: 'console-only' })).id
+    await access.grantType(console_, 'organization', 'organization.admin.access')
+    await access.bindUserRole(bob, console_)
+    const held = await signIn('bob')
+    expect((await send('/team/api/gmo-categories', { headers: { cookie: held.cookie } })).status).toBe(403)
+    expect((await write('POST', '/team/api/gmo-categories/sync', held, {})).status).toBe(403)
+    expect((await write('PATCH', `/team/api/gmo-categories/${encodeURIComponent(GMO_REF_A)}`, held, { enabled: true })).status).toBe(403)
+  })
+
+  it('projects the GMO permissions a console member actually holds', async () => {
+    const held = await signIn()
+    const session = await send('/team/api/session', { headers: { cookie: held.cookie } })
+    expect((payload(session) as { permissions: string[] }).permissions)
+      .toEqual(expect.arrayContaining(['gmo_category|gmo.catalog.read', 'gmo_category|gmo.catalog.manage']))
+  })
+
+  it('answers every GMO route as not found on a Control Plane that governs no GMO', async () => {
+    // A deployment without a GMO gateway is a complete Control Plane: the
+    // routes are absent rather than broken.
+    const bare = new Context()
+    await bare.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
+    await bare.plugin(SqliteAccountStore, { path: ':memory:' }).await()
+    await bare.plugin(PasswordAccountAuth, {
+      minSecretLength: 8, requiredClasses: ['uppercase', 'lowercase', 'digit'],
+      maxFailedAttempts: 5, lockDurationMs: 60_000,
+      cost: 2, blockSize: 8, parallelization: 1,
+    }).await()
+    await bare.plugin(SqliteAccessControl, { path: ':memory:' }).await()
+    await bare.plugin(SqliteAudit, { path: ':memory:', maxQueryRows: 100 }).await()
+    await bare.plugin(SqliteDeviceAuthorization, {
+      path: ':memory:', transactionTtlMs: 300_000, codeTtlMs: 60_000,
+      accessTokenTtlMs: 900_000, refreshTokenTtlMs: 2_592_000_000,
+    }).await()
+    await bare.plugin(SqliteQuota, { path: ':memory:', reservationTtlMs: 900_000 }).await()
+    await bare.plugin(SqliteModelGateway, { path: ':memory:' }).await()
+    await bare.plugin(SqliteConsoleMenuStore, { path: ':memory:' }).await()
+    const bareStore = bare.get('accountStore') as AccountStore
+    const bareOrg = (await bareStore.createOrganization('Bare')).id
+    const carol = (await bareStore.createUser({ orgId: bareOrg, loginName: 'carol', displayName: 'Carol' })).id
+    await bare.accountAuth.setSecret(carol, PASSWORD)
+    await bare.plugin(api, api.Config({ organizationId: bareOrg, secureCookie: false } as never)).await()
+    const bareAccess = bare.get('accessControl') as AccessControl
+    const role = (await bareAccess.createRole({ orgId: bareOrg, name: 'admin' })).id
+    await bareAccess.grantType(role, 'organization', 'organization.admin.access')
+    await bareAccess.bindUserRole(carol, role)
+    const bareOrigin = `http://127.0.0.1:${String(bare.webServer.port)}`
+    const landed = await sendTo(bareOrigin, '/team/api/session', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', origin: bareOrigin },
+      body: JSON.stringify({ loginName: 'carol', secret: PASSWORD }),
+    })
+    const cookie = (head(landed, 'set-cookie') ?? '').split(';')[0] ?? ''
+    const answer = await sendTo(bareOrigin, '/team/api/gmo-categories', { headers: { cookie } })
+    expect(answer.status).toBe(404)
+    const attempt = (method: string, path: string, body: Record<string, unknown>) => sendTo(bareOrigin, path, {
+      method,
+      headers: { 'content-type': 'application/json', origin: bareOrigin, cookie, 'x-dsh-csrf': (payload(landed) as WireSession).csrf },
+      body: JSON.stringify(body),
+    })
+    expect((await attempt('POST', '/team/api/gmo-categories/sync', {})).status).toBe(404)
+    expect((await attempt('PATCH', `/team/api/gmo-categories/${encodeURIComponent(GMO_REF_A)}`, { enabled: true })).status).toBe(404)
+    expect((await attempt('POST', `/team/api/roles/${role}/gmo-categories`, { mode: 'all' })).status).toBe(404)
     await bare.fiber.dispose()
   })
 })

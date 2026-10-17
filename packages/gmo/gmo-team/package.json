@@ -1,0 +1,44 @@
+{
+  "name": "@deepseek-ai/dsh-gmo-team",
+  "description": "Team Runner GMO supply-chain provider (ctx.gmo) for the DeepSeek Harness — authorized category directory, result listing, description, and questions over the company Control Plane, carrying the current device token and no source address or credential",
+  "version": "0.1.7-rc.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "packages/gmo/gmo-team"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/types/**/*.d.ts"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-gmo": "workspace:*",
+    "@deepseek-ai/dsh-gmo-gateway-http": "workspace:*",
+    "@deepseek-ai/dsh-team-account-client": "workspace:*"
+  },
+  "dependencies": {
+    "@deepseek-ai/dsh-team-account-client": "workspace:*",
+    "@deepseek-ai/schemastery": "workspace:~"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-gmo": "workspace:*",
+    "@deepseek-ai/dsh-gmo-gateway-http": "workspace:*"
+  }
+}

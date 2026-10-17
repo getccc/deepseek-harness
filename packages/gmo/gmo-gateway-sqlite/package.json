@@ -1,0 +1,53 @@
+{
+  "name": "@deepseek-ai/dsh-gmo-gateway-sqlite",
+  "description": "SQLite-backed governed GMO supply-chain gateway for the DeepSeek Harness Control Plane — the durable category catalog, its reconciliation against the source, access-control registration, per-operation authorization, and audit",
+  "version": "0.1.7-rc.2",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepseek-ai/deepseek-harness.git",
+    "directory": "packages/gmo/gmo-gateway-sqlite"
+  },
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/index.js",
+    "lib/types/**/*.d.ts"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-access-control": "workspace:*",
+    "@deepseek-ai/dsh-account-store": "workspace:*",
+    "@deepseek-ai/dsh-audit": "workspace:*",
+    "@deepseek-ai/dsh-gmo": "workspace:*",
+    "@deepseek-ai/dsh-gmo-gateway": "workspace:*",
+    "@deepseek-ai/dsh-gmo-source": "workspace:*"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "workspace:~",
+    "@deepseek-ai/dsh-access-control": "workspace:*",
+    "@deepseek-ai/dsh-access-control-sqlite": "workspace:*",
+    "@deepseek-ai/dsh-account-store": "workspace:*",
+    "@deepseek-ai/dsh-account-store-sqlite": "workspace:*",
+    "@deepseek-ai/dsh-audit": "workspace:*",
+    "@deepseek-ai/dsh-audit-sqlite": "workspace:*",
+    "@deepseek-ai/dsh-gmo": "workspace:*",
+    "@deepseek-ai/dsh-gmo-gateway": "workspace:*",
+    "@deepseek-ai/dsh-gmo-source": "workspace:*"
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "workspace:~"
+  }
+}

@@ -44,6 +44,7 @@ import { Login } from './pages/Login.tsx'
 import { Members } from './pages/Members.tsx'
 import { Menus } from './pages/Menus.tsx'
 import { BiProjects } from './pages/BiProjects.tsx'
+import { GmoCategories } from './pages/GmoCategories.tsx'
 import { Releases } from './pages/Releases.tsx'
 import { KnowledgeBases } from './pages/KnowledgeBases.tsx'
 import { Models } from './pages/Models.tsx'
@@ -78,6 +79,7 @@ const VIEWS: Record<ConsoleComponent, (props: ViewProps) => ReactNode> = {
   'resources/ModelsPage': ({ held }) => <Models held={held} />,
   'resources/KnowledgeBasesPage': ({ held }) => <KnowledgeBases held={held} />,
   'resources/BiProjectsPage': ({ held }) => <BiProjects held={held} />,
+  'resources/GmoCategoriesPage': ({ held }) => <GmoCategories held={held} />,
   'resources/ReleasesPage': ({ held }) => <Releases held={held} />,
 }
 
