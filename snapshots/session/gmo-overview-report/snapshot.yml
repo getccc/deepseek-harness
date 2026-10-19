@@ -1,0 +1,8 @@
+version: 1
+scenario: gmo-overview-report
+profile: headless
+composition: gmo-overview
+recording: authored
+header:
+  class: gmo-overview
+  pin: true

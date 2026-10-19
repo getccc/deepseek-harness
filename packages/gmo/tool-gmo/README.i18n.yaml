@@ -36,8 +36,8 @@
   en: 14c14dac14bf0229
   zh: ca98500d6a6c85cd
 /deepseek-ai-dsh-tool-gmo/understand-the-implementation/why-the-business-rules-are-not-in-the-prompt:
-  en: fa7dca314f396ad7
-  zh: bae341d060c517a3
+  en: affeecf678c941bf
+  zh: 99af8aae42d53e53
 /deepseek-ai-dsh-tool-gmo/understand-the-implementation/source-map:
   en: 71fdc7be919401c8
   zh: 20ea54d6cc18de3a
@@ -51,14 +51,14 @@
   en: cf78b9dd5596495f
   zh: bd44560f8c2435e8
 /deepseek-ai-dsh-tool-gmo/model-experience/system-prompt/what-the-model-sees:
-  en: 1883782b7f62c016
-  zh: 4fae5dc5cfc8f75c
+  en: c99ea7cb4309649c
+  zh: 91c5f0515c64ebd1
 /deepseek-ai-dsh-tool-gmo/model-experience/system-prompt/what-the-model-sees/with-a-category-in-scope:
   en: f297c0df67d11eb2
   zh: 27b1a902a1e9accf
 /deepseek-ai-dsh-tool-gmo/model-experience/system-prompt/token-effect:
-  en: 5b1a6f27664c2ae4
-  zh: 7c48ab2952f66eb3
+  en: 0aff6e1ee5151556
+  zh: 4a32583e62930467
 /deepseek-ai-dsh-tool-gmo/model-experience/system-prompt/kv-cache-effect:
   en: db5ef6bf22a77343
   zh: aaa5496b119cc2b4
@@ -123,8 +123,8 @@
   en: 3241295f9591f589
   zh: 10d481c12b30c0e5
 /deepseek-ai-dsh-tool-gmo/known-limitations-and-deferred-work:
-  en: a17cb3841099ee3b
-  zh: b9e02de5ff31fb98
+  en: a45a718a32681403
+  zh: 3e44bae41105ef5c
 /deepseek-ai-dsh-tool-gmo/known-limitations-and-deferred-work/dev-note:
   en: 75696978931b34fd
   zh: 3a17b0c25af90171

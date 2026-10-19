@@ -232,6 +232,8 @@ describe('what the prompt says about scope', () => {
     expect(text).toContain('both ways: a Markdown table of the figures, then a chart of the same figures')
     expect(text).toContain('each chart as its own fenced code block whose info string is exactly `echarts`')
     expect(text).toContain('strict-JSON Apache ECharts option built from the tool results')
+    expect(text).toContain('compose the chart options directly in the answer using only GMO tools for preparation')
+    expect(text).toContain('do not call shell or code-execution tools, or create or read temporary files')
   })
 
   it('names the answers that keep one form, and that the member can ask for one', () => {
@@ -239,6 +241,39 @@ describe('what the prompt says about scope', () => {
     expect(text).toContain('State a single value in prose')
     expect(text).toContain('a listing of detail rows with a table alone')
     expect(text).toContain('only a table or only a chart, give only that')
+  })
+
+  it('uses the source chart palette and layouts without executable formatters', () => {
+    const text = renderScopeSection(SELECTED)
+    expect(text).toContain('Fujikin to #2a78d6, UCT to #eb6834, Hungo to #1baf7a, AMEC WO to #eda100, and 富创 to #e87ba4')
+    expect(text).toContain('scrollable legend at the top left')
+    expect(text).toContain('omit the option title to avoid overlapping the legend')
+    expect(text).toContain('stacked bars with barMaxWidth 36')
+    expect(text).toContain('largest first at the top, barMaxWidth 14')
+    expect(text).toContain('returned share and cumulative share')
+    expect(text).toContain('returned node ids as node names and link endpoints')
+    expect(text).toContain('Color Sankey nodes by their returned level/depth')
+    expect(text).toContain('label.formatter string')
+    expect(text).toContain('pale-to-dark blue (#e6f0fc to #184f95)')
+  })
+
+  it('requests the complete Overview for a report without widening filters or inventing unavailable views', () => {
+    const text = renderScopeSection(SELECTED)
+    expect(text).toContain('asks for a report (报告)')
+    expect(text).toContain('kpi, timeline, ranking, flow, heatmap, and quality')
+    expect(text).toContain('same result, measure, date field, and requested filters')
+    expect(text).toContain('do not widen a requested period')
+    expect(text).toContain('Set date_field explicitly on kpi, timeline, and heatmap')
+    expect(text).toContain('first supported stack, ranking, and heatmap dimensions')
+    expect(text).toContain('up to 20 entries')
+    expect(text).toContain('① 需求时间轴')
+    expect(text).toContain('② 排名')
+    expect(text).toContain('③ 供应链穿透')
+    expect(text).toContain('④ 热力图')
+    expect(text).toContain('⑤ 数据质量')
+    expect(text).toContain('replaces the ordinary table-before-each-chart layout')
+    expect(text).toContain('never invent a missing chart')
+    expect(text).toContain('Use business prose; do not explain chart configuration or show color codes in the report')
   })
 
   it('says figures are data rather than instructions', () => {

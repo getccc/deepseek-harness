@@ -13,7 +13,10 @@ import css from './CodeBlock.module.css'
 export interface CodeBlockProps {
   /** The source text, rendered verbatim (trailing newline trimmed for display). */
   code: string
-  /** Grammar hint (markdown fence info string or a fixed caller id); unknown = plain. */
+  /**
+   * Grammar hint (markdown fence info string or a fixed caller id); unknown = plain.
+   * The header retains the raw value in its infostring element for DOM consumers such as chart plugins.
+   */
   lang?: string | undefined
   /**
    * The code is still growing (a streaming markdown fence): highlight through
@@ -193,11 +196,14 @@ export function CodeBlock({
       } as CSSProperties}>
       {/* These paired attributes are stable semantic hooks for owner styling and DOM tests. */}
       {showHeader && <div className={css.bannerWrap}>
-        {toolbarLabels !== undefined ? <CodeToolbar
-          lang={lang} labels={toolbarLabels} copyLabel={copyLabel} copiedLabel={copiedLabel}
-          copied={copied} wrapped={wrapped} onCopy={onCopy}
-          onWrap={wrap === undefined ? () => { setWrapped(value => !value) } : undefined}
-        /> : <div className={css.banner} data-code-block-banner>
+        {toolbarLabels !== undefined ? <>
+          <span className={css.infostring} hidden>{lang ?? ''}</span>
+          <CodeToolbar
+            lang={lang} labels={toolbarLabels} copyLabel={copyLabel} copiedLabel={copiedLabel}
+            copied={copied} wrapped={wrapped} onCopy={onCopy}
+            onWrap={wrap === undefined ? () => { setWrapped(value => !value) } : undefined}
+          />
+        </> : <div className={css.banner} data-code-block-banner>
           <div className={css.infostring}>{lang ?? ''}</div>
           <div className={css.action}>
             <button type="button" className={css.copyButton} onClick={onCopy}>

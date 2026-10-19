@@ -26,8 +26,24 @@ describe('code-card controls', () => {
 
   it('keeps a known grammar name while its highlighter is not yet visible', () => {
     render(<CodeBlock code="const x = 1" lang="typescript" {...labels} />)
-    expect(screen.getByText('typescript')).toBeTruthy()
+    expect(screen.getByText('typescript', { selector: 'span:not([hidden])' })).toBeTruthy()
     expect(screen.queryByText('Code block')).toBeNull()
+  })
+
+  it.each([false, true])('keeps echarts discoverable behind the localized toolbar (streaming=%s)', (streaming) => {
+    const source = '{"series":[{"type":"bar","data":[1,2]}]}'
+    const view = render(<MarkdownText text={'```echarts\n' + source + '\n```'} streaming={streaming}
+      labels={{ code: labels, footnotes: 'Footnotes' }} />)
+
+    expect(screen.getByText('Code block')).toBeTruthy()
+    const info = view.container.querySelector<HTMLElement>('.md-code-block [class*="infostring"]')
+    expect(info?.textContent).toBe('echarts')
+    expect(info?.hidden).toBe(true)
+    expect(view.container.querySelector('pre')?.textContent).toBe(source)
+
+    view.rerender(<MarkdownText text={'```json\n' + source + '\n```'}
+      labels={{ code: labels, footnotes: 'Footnotes' }} />)
+    expect(view.container.querySelector('.md-code-block [class*="infostring"]')?.textContent).toBe('json')
   })
 
   it.each(['code', 'read', 'diff'] as const)('toggles %s wrapping without changing source text', (kind) => {

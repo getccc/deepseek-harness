@@ -1,0 +1,5 @@
+- insert:
+    - id: gmo-report-fixture
+      name: '../../../packages/gmo/tool-gmo/tests/fixtures/report-source.ts'
+    - id: tool-gmo
+      name: '@deepseek-ai/dsh-tool-gmo'
