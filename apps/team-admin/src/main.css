@@ -392,36 +392,111 @@ body {
   white-space: nowrap;
 }
 
-/* The token monitoring chart: one bar per time bucket, each bucket a faint
-   track so an empty hour or day still reads as a gap rather than as missing. */
+/* The token monitoring chart: a value axis with grid lines, one column per
+   time bucket (a faint track so an empty bucket still reads as a gap), and the
+   time axis laid out on the same columns. */
 .usage-chart {
-  display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 180px;
+  width: 100%;
 }
 
-.usage-bar {
+.usage-chart-body {
+  display: flex;
+  margin-top: 20px;
+}
+
+.usage-yaxis {
+  position: relative;
+  flex: none;
+  font-size: 12px;
+}
+
+.usage-yaxis span {
+  position: absolute;
+  right: 10px;
+  transform: translateY(50%);
+  white-space: nowrap;
+}
+
+.usage-plot {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.usage-grid {
+  position: absolute;
+  right: 0;
+  left: 0;
+  border-top: 1px dashed;
+  pointer-events: none;
+}
+
+.usage-bars {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: 2px;
+}
+
+.usage-col {
+  position: relative;
   display: flex;
   flex: 1 1 0;
   align-items: flex-end;
-  min-width: 2px;
+  min-width: 0;
   height: 100%;
   border-radius: 2px;
-  background: rgb(0 0 0 / 4%);
 }
 
 .usage-bar-fill {
   width: 100%;
-  border-radius: 2px 2px 0 0;
+  max-width: 44px;
+  margin: 0 auto;
+  border-radius: 3px 3px 0 0;
+  transition: background 0.1s;
 }
 
-.usage-chart-axis {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 4px;
-  color: rgb(0 0 0 / 45%);
+.usage-bar-value {
+  position: absolute;
+  right: 0;
+  left: 0;
+  font-size: 11px;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.usage-tooltip {
+  position: absolute;
+  top: 8px;
+  z-index: 2;
+  padding: 8px 12px;
+  border-radius: 6px;
   font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.usage-xaxis {
+  display: flex;
+  gap: 2px;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.usage-xlabel {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  min-height: 34px;
+  white-space: nowrap;
+}
+
+.usage-xdate {
+  opacity: 0.65;
 }
 
 .usage-row-selected > td {

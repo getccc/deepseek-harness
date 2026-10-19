@@ -15,6 +15,8 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
   ApiOutlined,
+  CloudUploadOutlined,
+  FolderOutlined,
   ReadOutlined,
   AppstoreOutlined,
   BankOutlined,
@@ -100,6 +102,8 @@ const ICONS: Record<MenuIcon, ReactNode> = {
   read: <ReadOutlined />,
   chart: <BarChartOutlined />,
   monitor: <MonitorOutlined />,
+  folder: <FolderOutlined />,
+  release: <CloudUploadOutlined />,
 }
 
 /** Width below which the sider is an icon rail, matching Ant Design's `lg`. */
@@ -225,11 +229,13 @@ function Console({
     .filter(menu => menu.parentId === undefined)
     .map((menu) => {
       const children = reachable.filter(child => child.parentId === menu.id)
-      const icon = menu.icon === undefined ? undefined : ICONS[menu.icon as MenuIcon]
+      // A group an administrator made without an icon, or one named outside this
+      // build's set, still gets a folder, so the sidebar's top level stays aligned.
+      const icon = ICONS[menu.icon as MenuIcon] ?? ICONS.folder
       return {
         key: menu.id,
         label: menuLabel(menu, t),
-        ...(icon === undefined ? {} : { icon }),
+        icon,
         ...(children.length === 0
           ? {}
           : {

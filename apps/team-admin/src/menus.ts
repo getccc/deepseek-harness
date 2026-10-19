@@ -32,7 +32,7 @@ export type ConsoleComponent = typeof CONSOLE_COMPONENTS[number]
 /** The icons this build draws, as a stored entry names them. */
 export const MENU_ICONS = [
   'dashboard', 'setting', 'bank', 'team', 'safety', 'menu', 'appstore', 'laptop', 'api', 'read', 'chart',
-  'monitor',
+  'monitor', 'folder', 'release',
 ] as const
 
 /** One icon this build draws. */

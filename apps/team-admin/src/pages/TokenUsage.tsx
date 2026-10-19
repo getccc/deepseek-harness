@@ -6,7 +6,7 @@
  * the report and the call list are fetched again whenever either changes.
  */
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from 'react'
 import {
   App, Button, Card, Col, DatePicker, Empty, Input, Progress, Row, Segmented, Statistic, Table, Tag, Tooltip,
   Typography, theme,
@@ -17,7 +17,6 @@ import {
   api,
   type UsageRange,
   type WireMemberUsage,
-  type WireUsageBucket,
   type WireUsageRecord,
   type WireUsageRecords,
   type WireUsageReport,
@@ -78,12 +77,11 @@ function formatMoment(at: number): string {
     + `${pad(day.getHours())}:${pad(day.getMinutes())}:${pad(day.getSeconds())}`
 }
 
-/** How a bucket is named on the chart's axis and in its tooltip, by its length. */
-function bucketLabel(start: number, bucketMs: number, full: boolean): string {
+/** A bucket's start as a local date, with the hour when buckets are shorter than a day. */
+function bucketStart(start: number, bucketMs: number): string {
   const day = new Date(start)
-  const year = full ? `${String(day.getFullYear())}-` : ''
-  const date = `${pad(day.getMonth() + 1)}-${pad(day.getDate())}`
-  return bucketMs < DAY_MS ? `${year}${date} ${pad(day.getHours())}:00` : `${year}${date}`
+  const date = `${String(day.getFullYear())}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`
+  return bucketMs < DAY_MS ? `${date} ${pad(day.getHours())}:00` : date
 }
 
 /** The name a member row or call shows, whether or not the account still exists. */
@@ -136,48 +134,195 @@ function useReport(
   return { data, loading }
 }
 
+/** Height of the chart's plotting area in pixels. */
+const PLOT_HEIGHT = 320
+
+/** Width reserved for the value axis in pixels. */
+const Y_AXIS_WIDTH = 56
+
+/** How many intervals the value axis is cut into. */
+const Y_INTERVALS = 4
+
+/** Room, in pixels, a time-axis name needs: `MM-DD` and `HH:00` at the axis font. */
+const AXIS_LABEL_WIDTH = 38
+
+/** The narrowest bar pitch, in pixels, at which each bar can carry its own value. */
+const VALUE_LABEL_PITCH = 42
+
+/**
+ * The step between value-axis ticks: 1, 2, or 5 times a power of ten, and at
+ * least 1 so every tick is a whole number of tokens.
+ * @param peak - the largest bar, in tokens.
+ * @returns the tick step.
+ */
+function tickStep(peak: number): number {
+  const raw = peak / Y_INTERVALS
+  const power = 10 ** Math.floor(Math.log10(raw))
+  const unit = raw / power
+  const nice = unit <= 1 ? 1 : unit <= 2 ? 2 : unit <= 5 ? 5 : 10
+  return Math.max(1, nice * power)
+}
+
+/**
+ * The width of one element, kept current as it is resized.
+ * @returns a ref for the element and its content width in pixels.
+ */
+function useElementWidth(): readonly [RefObject<HTMLDivElement>, number] {
+  const ref = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState(0)
+  useLayoutEffect(() => {
+    const element = ref.current
+    if (element === null) return undefined
+    setWidth(element.clientWidth)
+    const observer = new ResizeObserver((entries) => { setWidth(entries[0]?.contentRect.width ?? 0) })
+    observer.observe(element)
+    return () => { observer.disconnect() }
+  }, [])
+  return [ref, width]
+}
+
 /**
  * The spending of one range as bars, one per bucket, with empty buckets drawn.
+ *
+ * The value axis is cut into whole-number ticks with grid lines, every bar is
+ * named on the time axis (thinned only when the bars are too narrow for their
+ * names), bars wide enough carry their own value, and hovering a bar opens its
+ * full breakdown at once.
  * @param props.report - the report whose series is drawn.
  * @returns the chart, or the sentence that says there is nothing to draw.
  */
 function UsageChart({ report }: { readonly report: WireUsageReport }): ReactNode {
-  const { t } = useLocale()
+  const { t, locale } = useLocale()
   const { token } = theme.useToken()
-  if (report.series.length === 0) {
-    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('usage.chartEmpty')} />
-  }
+  const [ref, width] = useElementWidth()
+  const [hovered, setHovered] = useState<number | undefined>(undefined)
+  const compact = useMemo(() => new Intl.NumberFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
+    notation: 'compact', maximumFractionDigits: 1,
+  }), [locale])
+
+  const hourly = report.bucketMs < DAY_MS
   const offsetMs = localOffsetMinutes() * 60_000
   const first = Math.floor((report.from + offsetMs) / report.bucketMs) * report.bucketMs - offsetMs
-  const byStart = new Map(report.series.map(bucket => [bucket.start, bucket] as const))
   const starts: number[] = []
   for (let at = first; at < report.to; at += report.bucketMs) starts.push(at)
-  const peak = Math.max(...report.series.map(bucket => bucket.chargedTokens))
-  const last = starts[starts.length - 1] as number
-  const tip = (start: number, bucket: WireUsageBucket | undefined): string => t('usage.chartTip', {
-    time: bucketLabel(start, report.bucketMs, true),
-    tokens: (bucket?.chargedTokens ?? 0).toLocaleString(),
-    calls: (bucket?.calls ?? 0).toLocaleString(),
-  })
+  const byStart = new Map(report.series.map(bucket => [bucket.start, bucket] as const))
+  const peak = Math.max(1, ...report.series.map(bucket => bucket.chargedTokens))
+  const step = tickStep(peak)
+  const top = step * Math.ceil(peak / step)
+  const ticks = Array.from({ length: top / step + 1 }, (_unused, index) => index * step)
+
+  const pitch = Math.max(width - Y_AXIS_WIDTH, 0) / starts.length
+  const labelEvery = pitch === 0 ? 1 : Math.max(1, Math.ceil(AXIS_LABEL_WIDTH / pitch))
+  const showValues = pitch >= VALUE_LABEL_PITCH
+
+  /** The text under a bar: the hour, with the date where a day starts; or the date. */
+  const axisLabel = (start: number, index: number): ReactNode => {
+    const day = new Date(start)
+    const date = `${pad(day.getMonth() + 1)}-${pad(day.getDate())}`
+    if (!hourly) return date
+    return (
+      <>
+        <span>{`${pad(day.getHours())}:00`}</span>
+        {(day.getHours() === 0 || index === 0) && <span className="usage-xdate">{date}</span>}
+      </>
+    )
+  }
+
+  /** The tooltip's heading: the day, or the hour with its end. */
+  const heading = (start: number): string => {
+    const end = new Date(start + report.bucketMs)
+    return hourly
+      ? `${bucketStart(start, report.bucketMs)} – ${pad(end.getHours())}:00`
+      : bucketStart(start, report.bucketMs)
+  }
+
+  const open = hovered === undefined ? undefined : starts[hovered]
+  const openBucket = open === undefined ? undefined : byStart.get(open)
+
   return (
-    <>
-      <Typography.Text type="secondary" style={{ fontSize: 12 }}>{peak.toLocaleString()}</Typography.Text>
-      <div className="usage-chart">
-        {starts.map((start) => {
-          const bucket = byStart.get(start)
-          const height = bucket === undefined || peak === 0 ? 0 : Math.max((bucket.chargedTokens / peak) * 100, 1.5)
-          return (
-            <div key={start} className="usage-bar" title={tip(start, bucket)}>
-              <div className="usage-bar-fill" style={{ height: `${String(height)}%`, background: token.colorPrimary }} />
+    <div ref={ref} className="usage-chart">
+      {report.series.length === 0
+        ? <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('usage.chartEmpty')} />
+        : (
+          <>
+            <div className="usage-chart-body">
+              <div className="usage-yaxis" style={{ width: Y_AXIS_WIDTH, height: PLOT_HEIGHT, color: token.colorTextSecondary }}>
+                {ticks.map(tick => (
+                  <span key={tick} style={{ bottom: `${String((tick / top) * 100)}%` }}>{compact.format(tick)}</span>
+                ))}
+              </div>
+              <div className="usage-plot" style={{ height: PLOT_HEIGHT }}>
+                {ticks.map(tick => (
+                  <div
+                    key={tick}
+                    className="usage-grid"
+                    style={{ bottom: `${String((tick / top) * 100)}%`, borderColor: token.colorBorderSecondary }}
+                  />
+                ))}
+                <div className="usage-bars">
+                  {starts.map((start, index) => {
+                    const bucket = byStart.get(start)
+                    const percent = bucket === undefined ? 0 : Math.max((bucket.chargedTokens / top) * 100, 0.6)
+                    return (
+                      <div
+                        key={start}
+                        className="usage-col"
+                        style={hovered === index ? { background: token.colorFillTertiary } : undefined}
+                        onMouseEnter={() => { setHovered(index) }}
+                        onMouseLeave={() => { setHovered(undefined) }}
+                      >
+                        {showValues && bucket !== undefined && (
+                          <span className="usage-bar-value" style={{ bottom: `calc(${String(percent)}% + 3px)`, color: token.colorTextSecondary }}>
+                            {compact.format(bucket.chargedTokens)}
+                          </span>
+                        )}
+                        <div
+                          className="usage-bar-fill"
+                          style={{
+                            height: `${String(percent)}%`,
+                            background: hovered === index ? token.colorPrimaryActive : token.colorPrimary,
+                          }}
+                        />
+                      </div>
+                    )
+                  })}
+                </div>
+                {hovered !== undefined && open !== undefined && (
+                  <div
+                    className="usage-tooltip"
+                    style={{
+                      left: `${String(((hovered + 0.5) / starts.length) * 100)}%`,
+                      transform: hovered > starts.length / 2 ? 'translateX(calc(-100% - 14px))' : 'translateX(14px)',
+                      background: token.colorBgElevated,
+                      boxShadow: token.boxShadowSecondary,
+                      color: token.colorText,
+                    }}
+                  >
+                    <strong>{heading(open)}</strong>
+                    {openBucket === undefined
+                      ? <div style={{ color: token.colorTextSecondary }}>{t('usage.noCall')}</div>
+                      : (
+                        <>
+                          <div>{t('usage.total')}: <strong>{openBucket.chargedTokens.toLocaleString()}</strong></div>
+                          <div>{t('usage.input')}: {openBucket.inputTokens.toLocaleString()}</div>
+                          <div>{t('usage.output')}: {openBucket.outputTokens.toLocaleString()}</div>
+                          <div>{t('usage.calls')}: {openBucket.calls.toLocaleString()}</div>
+                        </>
+                      )}
+                  </div>
+                )}
+              </div>
             </div>
-          )
-        })}
-      </div>
-      <div className="usage-chart-axis">
-        <span>{bucketLabel(first, report.bucketMs, false)}</span>
-        <span>{bucketLabel(last, report.bucketMs, false)}</span>
-      </div>
-    </>
+            <div className="usage-xaxis" style={{ marginLeft: Y_AXIS_WIDTH, color: token.colorTextSecondary }}>
+              {starts.map((start, index) => (
+                <div key={start} className="usage-xlabel">
+                  {index % labelEvery === 0 && axisLabel(start, index)}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+    </div>
   )
 }
 
@@ -405,7 +550,13 @@ export function TokenUsage(): ReactNode {
     [t('usage.total'), data.totals.chargedTokens, t('usage.totalNote')],
     [t('usage.input'), data.totals.inputTokens, ''],
     [t('usage.output'), data.totals.outputTokens, ''],
-    [t('usage.calls'), data.totals.calls, ''],
+    [
+      t('usage.calls'),
+      data.totals.calls,
+      data.totals.calls === 0
+        ? ''
+        : t('usage.avgPerCall', { n: Math.round(data.totals.chargedTokens / data.totals.calls).toLocaleString() }),
+    ],
     [
       t('usage.activeMembers'),
       data.totals.activeMembers,
@@ -475,9 +626,12 @@ export function TokenUsage(): ReactNode {
       <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
         {stats.map(([title, value, note]) => (
           <Col key={title} xs={12} lg={{ flex: '1 1 0' }}>
-            <Card>
+            <Card style={{ height: '100%' }}>
               <Statistic title={title} value={value} />
-              <Typography.Text type="secondary" style={{ fontSize: 12 }}>{note === '' ? ' ' : note}</Typography.Text>
+              {/* Every card keeps a note line, empty or not, so the five stay one height. */}
+              <Typography.Text type="secondary" style={{ display: 'block', minHeight: 20, fontSize: 12 }}>
+                {note}
+              </Typography.Text>
             </Card>
           </Col>
         ))}
