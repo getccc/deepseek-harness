@@ -8,6 +8,11 @@ import { assertReleasedV0Keys, releasedV0Record } from './validation-helpers.ts'
 
 type JsonRecord = Record<string, SessionFormatJsonValue>
 
+/** Every kind a released WeWork office picker recorded, including rows later retired. */
+const RELEASED_OFFICE_KINDS = ['none', 'word', 'excel', 'ppt', 'chart', 'amec-ppt', 'welinkin-ppt'] as const
+/** One `<providerKind>:<sourceCode>:<upstreamId>` segment in the released knowledge-reference alphabet. */
+const KNOWLEDGE_REF_SEGMENT = /^[A-Za-z0-9._@-]+$/u
+
 /**
  * Validate nested released payload semantics for one known event.
  * @param event - known event with exact top-level members.
@@ -116,6 +121,9 @@ export function assertReleasedPayloadSemantics(event: SessionFormatEvent, versio
         throw new SessionFormatError(`${label} durationMs must be non-negative`)
       }
       return
+    case 'knowledge/scope':
+      knowledgeScopeValue(data, label)
+      return
     case 'llm/retry':
       nonEmptyString(data['retryId'], `${label} retryId`)
       coordinatePair(data, label)
@@ -145,6 +153,10 @@ export function assertReleasedPayloadSemantics(event: SessionFormatEvent, versio
       nonEmptyString(data['provider'], `${label} provider`)
       nonEmptyString(data['model'], `${label} model`)
       if (data['reasoningEffort'] !== undefined) nonEmptyString(data['reasoningEffort'], `${label} reasoningEffort`)
+      return
+    case 'office/kind':
+      literalValue(data['version'], [1], `${label} version`)
+      literalValue(data['kind'], RELEASED_OFFICE_KINDS, `${label} kind`)
       return
     case 'permission/preset':
       nonEmptyString(data['preset'], `${label} preset`)
@@ -1059,4 +1071,30 @@ function deepSeekSearchBodyValue(value: SessionFormatJsonValue | undefined, labe
     positiveIntegerValue(tool['max_uses'], `${memberLabel} max_uses`)
   })
   if (tools.length !== 1) throw new SessionFormatError(`${label} tools must contain one web search tool`)
+}
+
+function knowledgeScopeValue(data: JsonRecord, label: string): void {
+  literalValue(data['version'], [1], `${label} version`)
+  literalValue(data['mode'], ['off', 'all', 'selected'], `${label} mode`)
+  if (data['mode'] !== 'selected') {
+    if (data['bases'] !== undefined) throw new SessionFormatError(`${label} bases requires selected mode`)
+    return
+  }
+  const bases = arrayValue(data['bases'], `${label} bases`, (member, memberLabel) => {
+    const base = exactRecord(member, memberLabel, ['ref', 'displayName'])
+    knowledgeRefValue(base['ref'], `${memberLabel} ref`)
+    nonEmptyString(base['displayName'], `${memberLabel} displayName`)
+  })
+  if (bases.length === 0) throw new SessionFormatError(`${label} bases must be non-empty`)
+}
+
+function knowledgeRefValue(value: SessionFormatJsonValue | undefined, label: string): void {
+  stringValue(value, label)
+  const segments = value.split(':')
+  if (value.length > 64
+    || segments.length !== 3
+    || !segments.every(segment => KNOWLEDGE_REF_SEGMENT.test(segment))
+    || (segments[1] as string).length > 19) {
+    throw new SessionFormatError(`${label} must be a released knowledge reference`)
+  }
 }

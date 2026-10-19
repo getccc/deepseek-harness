@@ -31,6 +31,6 @@ Status: implemented
 
 工作区依赖范围遵循上游规则（DSH 包用 `workspace:*`，vendor 与 native 用 `workspace:~`），fork 包使用根版本号。
 
-对本机 Session 存储做 V4 迁移时，全部 V3 日志（含 fork 事件）都转换成功。九个记录了 `knowledge/scope` 或 `office/kind` 的早期 v0 日志仍在冻结的 v0 边界失败，因为该边界的载荷表未列出这两个类型；同样的日志在本次合并之前的分支上也会失败，因此本次合并既不导致也不修复这一问题。
+对本机 Session 存储做 V4 迁移时，全部 V3 日志（含 fork 事件）都转换成功。九个记录了 `knowledge/scope` 或 `office/kind` 的早期 v0 日志在本次合并前后都会在冻结的 v0 迁移边失败，直到 [V3 之前的 WeWork 事件处置](../bug-fix/2026-09-26-wework-pre-v3-session-events.zh.md)收录了它们。
 
 在 macOS 上收起侧边栏时，侧边栏的前置控件变为三个（切换、新对话、新工作任务），因此 frame 的前置留白增至 196px，全屏时为 120px。新建会话快捷键开始一个工作任务。

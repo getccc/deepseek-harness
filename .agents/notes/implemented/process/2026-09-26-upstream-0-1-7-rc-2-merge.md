@@ -31,6 +31,6 @@ Fork behavior re-seated on upstream's new structure:
 
 Workspace dependency ranges follow upstream's rule (`workspace:*` for DSH packages, `workspace:~` for vendor and native), and fork packages carry the root version.
 
-A V4 migration of this machine's Session store converted every V3 log, fork events included. Nine early v0 logs that recorded `knowledge/scope` or `office/kind` still fail at the frozen v0 edge, whose payload table does not list them; the same logs fail on the branch before this merge, so the merge neither causes nor fixes it.
+A V4 migration of this machine's Session store converted every V3 log, fork events included. Nine early v0 logs that recorded `knowledge/scope` or `office/kind` failed at the frozen v0 edge, before and after this merge, until [the pre-V3 WeWork event dispositions](../bug-fix/2026-09-26-wework-pre-v3-session-events.md) admitted them.
 
 The sidebar's leading controls are three on macOS with the sidebar collapsed (toggle, New chat, New work task), so the frame's leading clearance grows to 196px, or 120px in fullscreen. The new-session shortcut starts a work task.
