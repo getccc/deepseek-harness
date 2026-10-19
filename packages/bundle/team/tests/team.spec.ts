@@ -33,6 +33,19 @@ function patchRows(): PatchRow[] {
 }
 
 describe('dsh-team bundle', () => {
+  it('starts with the current welcome notice acknowledged', () => {
+    // Upstream bumps the notice version to show it to everyone again; a stale
+    // seed would put a developer-facing dialog in front of every member.
+    const source = readFileSync(
+      resolve(root, '../../client/ui-settings-models/src/onboarding-copy.ts'),
+      'utf8',
+    )
+    const current = /WELCOME_NOTICE_VERSION = '([^']+)'/u.exec(source)?.[1]
+    expect(current).toBeDefined()
+    const row = patchRows().find(candidate => candidate.id === 'ui-settings-general')
+    expect(row?.config?.['welcomeNoticeVersion']).toBe(current)
+  })
+
   it('declares a parseable patch list through the dsh.bundle.patch manifest field', () => {
     const manifest = JSON.parse(
       readFileSync(resolve(root, 'package.json'), 'utf8'),
