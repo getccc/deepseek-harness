@@ -15,7 +15,7 @@ export type HeaderLeadingControlsProps =
   & PropsLocale<'sidebar'>
 
 /**
- * Sidebar-open, New chat, and New work task controls in the frame's
+ * Sidebar-open, New work task, and New chat controls in the frame's
  * window-chrome seat. On macOS desktop a collapsed sidebar hides entirely (no
  * rail), taking these controls off screen; this occupant puts them back
  * beside the traffic lights. The frame mounts the seat only in that state and
@@ -39,16 +39,6 @@ export function HeaderLeadingControls({ toggleSidebar, startChat, startSession, 
           <IconPanelLeftOutlineRegular size={16} />
         </button>
       </Tooltip>
-      <Tooltip label={t('chat.new.label')} delayMs={500}>
-        <button
-          type="button"
-          className={css.iconButton}
-          aria-label={t('chat.new.label')}
-          onClick={() => { startChat() }}
-        >
-          <IconNewChatOutlineRegular size={16} />
-        </button>
-      </Tooltip>
       <Tooltip label={t('work.new.label')} shortcutKeys={newShortcut?.keys} delayMs={500}>
         <button
           type="button"
@@ -58,6 +48,16 @@ export function HeaderLeadingControls({ toggleSidebar, startChat, startSession, 
           onClick={() => { startSession() }}
         >
           <IconFolderOpenOutlineRegular size={16} />
+        </button>
+      </Tooltip>
+      <Tooltip label={t('chat.new.label')} delayMs={500}>
+        <button
+          type="button"
+          className={css.iconButton}
+          aria-label={t('chat.new.label')}
+          onClick={() => { startChat() }}
+        >
+          <IconNewChatOutlineRegular size={16} />
         </button>
       </Tooltip>
     </div>

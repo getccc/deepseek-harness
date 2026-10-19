@@ -1,10 +1,10 @@
 - button "新建工作任务"
 - button "收起侧边栏"
-- button "新建对话": 新对话
 - button "新建工作任务": 新工作任务
+- button "新建对话": 新对话
 - navigation "全局面板":
   - button "插件"
-  - button "自动化任务"
+  - button "定时任务"
 - text: 工作区
 - button "搜索会话"
 - textbox "搜索会话名称"

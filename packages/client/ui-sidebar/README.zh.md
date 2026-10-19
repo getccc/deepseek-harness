@@ -31,7 +31,7 @@ dsh Web 客户端的侧边栏让用户识别当前构建、开始新对话或新
 
 ### 品牌、新对话与新工作任务
 
-展开的品牌行把 `sidebar.brand.mark` 与 `sidebar.brand.name` 渲染为两个独立的 single slot；收起轨道则渲染同一个 mark slot。在 Web 和 Windows 桌面端，点击展开态的品牌会新建会话，悬停或聚焦时不显示 tooltip。没有占位者时，外壳使用 WeWork 标志和本地化的本地构建标签。品牌行之后以面板行样式排着两个入口：**新对话**通过 `uiWorkspace.startChat()` 开始一个没有 Workspace 的对话，**新工作任务**优先使用作用域操作明确指定的 Workspace，否则使用当前 Session 所属 Workspace，再否则使用最近活跃 Workspace，一个 Workspace 都没有时则清空选择，进入空白 New Session 页面；品牌行本身保留工作任务动作。新工作任务承载 New Session 命令的当前有效绑定：它的轨道 tooltip、品牌 tooltip 以及常驻的 macOS 窗口 chrome 控件都以平台键位样式显示该绑定，这些控件均提供 `aria-keyshortcuts`。新对话没有命令绑定。
+展开的品牌行把 `sidebar.brand.mark` 与 `sidebar.brand.name` 渲染为两个独立的 single slot；收起轨道则渲染同一个 mark slot。在 Web 和 Windows 桌面端，点击展开态的品牌会新建会话，悬停或聚焦时不显示 tooltip。没有占位者时，外壳使用 WeWork 标志和本地化的本地构建标签。品牌行之后以面板行样式排着两个入口，新工作任务在前，新对话在后：**新对话**通过 `uiWorkspace.startChat()` 开始一个没有 Workspace 的对话，**新工作任务**优先使用作用域操作明确指定的 Workspace，否则使用当前 Session 所属 Workspace，再否则使用最近活跃 Workspace，一个 Workspace 都没有时则清空选择，进入空白 New Session 页面；品牌行本身保留工作任务动作。新工作任务承载 New Session 命令的当前有效绑定：它的轨道 tooltip、品牌 tooltip 以及常驻的 macOS 窗口 chrome 控件都以平台键位样式显示该绑定，这些控件均提供 `aria-keyshortcuts`。新对话没有命令绑定。
 
 ### 全局面板入口
 

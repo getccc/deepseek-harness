@@ -57,7 +57,7 @@ export const zh = {
   'message.trigger.subagent': '子任务状态更新',
   'message.trigger.github': '收到 GitHub 事件',
   'message.trigger.webhook': '收到外部事件',
-  'message.trigger.schedule': '自动化任务',
+  'message.trigger.schedule': '定时任务',
   'message.trigger.job': '后台任务状态更新',
   'message.trigger.plugin': '插件状态更新',
   'message.trigger.explanation': '这条通知触发了本轮回复。',

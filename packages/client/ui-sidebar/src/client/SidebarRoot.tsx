@@ -277,16 +277,9 @@ export function SidebarRoot({
         {!darwinDesktop && toggle}
       </div>
 
-      {/* The two ways to start: a chat (no Workspace), or a work task in the
-          current or recent Workspace. Same row style as the panel rows. */}
+      {/* The two ways to start: a work task in the current or recent Workspace,
+          then a chat with no Workspace. Same row style as the panel rows. */}
       <div className={css.panelList}>
-        <ActionRow
-          name={t('chat.new.label')}
-          label={t('chat.new')}
-          icon={<IconNewChatOutlineRegular size={wide ? 16 : 18} />}
-          wide={wide}
-          onClick={() => { startChat() }}
-        />
         <ActionRow
           name={t('work.new.label')}
           label={t('work.new')}
@@ -294,6 +287,13 @@ export function SidebarRoot({
           wide={wide}
           shortcut={newShortcut}
           onClick={() => { startSession() }}
+        />
+        <ActionRow
+          name={t('chat.new.label')}
+          label={t('chat.new')}
+          icon={<IconNewChatOutlineRegular size={wide ? 16 : 18} />}
+          wide={wide}
+          onClick={() => { startChat() }}
         />
       </div>
 

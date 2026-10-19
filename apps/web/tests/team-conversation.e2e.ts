@@ -45,6 +45,11 @@ describe('Team conversation layout', () => {
     }))
     await page.goto(scaffold.authenticatedUrl, { waitUntil: 'load' })
     await page.waitForSelector('[class*="frame"]')
+    const work = page.getByRole('button', { name: '新建工作任务', exact: true }).last()
+    const chat = page.getByRole('button', { name: '新建对话', exact: true })
+    expect((await work.boundingBox())!.y).toBeLessThan((await chat.boundingBox())!.y)
+    await page.getByRole('navigation', { name: '全局面板' })
+      .getByRole('button', { name: '定时任务', exact: true }).waitFor()
     await page.getByRole('button', { name: '新建对话', exact: true }).click()
     await writeComposerDraft(page, page.locator('[data-composer-input]').first(),
       'Reply exactly CHAT_PRESET_REQUEST_OK and stop.')

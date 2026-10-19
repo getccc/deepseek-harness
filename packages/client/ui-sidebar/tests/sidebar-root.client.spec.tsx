@@ -146,10 +146,10 @@ describe('SidebarRoot shell', () => {
     for (const button of starters) fireEvent.click(button)
     expect(b.startSession).toHaveBeenCalledTimes(2)
     expect(b.startChat).not.toHaveBeenCalled()
-    // The chat row is listed first and starts a chat.
+    // The work row precedes the chat row; each keeps its own action.
     const chat = screen.getByRole('button', { name: 'New chat' })
     expect(chat.textContent).toBe('New chat')
-    expect(chat.compareDocumentPosition(starters[1]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(starters[1]!.compareDocumentPosition(chat) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     fireEvent.click(chat)
     expect(b.startChat).toHaveBeenCalledOnce()
     expect(b.startSession).toHaveBeenCalledTimes(2)

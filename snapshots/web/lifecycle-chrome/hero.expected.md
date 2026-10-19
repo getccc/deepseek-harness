@@ -1,7 +1,7 @@
 - button "New work task"
 - button "Collapse sidebar"
-- button "New chat"
 - button "New work task"
+- button "New chat"
 - navigation "Global panels":
   - button "Plugins"
   - button "Automation tasks"

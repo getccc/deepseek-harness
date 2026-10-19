@@ -39,27 +39,6 @@ exports[`sidebar shell snapshots > renders Windows caption controls in expanded 
       class="panelList"
     >
       <button
-        aria-label="New chat"
-        class="panelRow"
-        type="button"
-      >
-        <span
-          aria-hidden="true"
-          class="panelGlyph"
-        >
-          <svg
-            aria-hidden="true"
-            data-content="47b5e433"
-            fill="none"
-            height="18"
-            stroke-width="1"
-            viewBox="0 0 16 16"
-            width="18"
-            xmlns="http://www.w3.org/2000/svg"
-          />
-        </span>
-      </button>
-      <button
         aria-label="New work task"
         class="panelRow"
         type="button"
@@ -71,6 +50,27 @@ exports[`sidebar shell snapshots > renders Windows caption controls in expanded 
           <svg
             aria-hidden="true"
             data-content="964807f4"
+            fill="none"
+            height="18"
+            stroke-width="1"
+            viewBox="0 0 16 16"
+            width="18"
+            xmlns="http://www.w3.org/2000/svg"
+          />
+        </span>
+      </button>
+      <button
+        aria-label="New chat"
+        class="panelRow"
+        type="button"
+      >
+        <span
+          aria-hidden="true"
+          class="panelGlyph"
+        >
+          <svg
+            aria-hidden="true"
+            data-content="47b5e433"
             fill="none"
             height="18"
             stroke-width="1"
@@ -201,32 +201,6 @@ exports[`sidebar shell snapshots > renders Windows caption controls in expanded 
       class="panelList"
     >
       <button
-        aria-label="New chat"
-        class="panelRow"
-        type="button"
-      >
-        <span
-          aria-hidden="true"
-          class="panelGlyph"
-        >
-          <svg
-            aria-hidden="true"
-            data-content="47b5e433"
-            fill="none"
-            height="16"
-            stroke-width="1"
-            viewBox="0 0 16 16"
-            width="16"
-            xmlns="http://www.w3.org/2000/svg"
-          />
-        </span>
-        <span
-          class="panelTitle wide"
-        >
-          New chat
-        </span>
-      </button>
-      <button
         aria-label="New work task"
         class="panelRow"
         type="button"
@@ -250,6 +224,32 @@ exports[`sidebar shell snapshots > renders Windows caption controls in expanded 
           class="panelTitle wide"
         >
           New work task
+        </span>
+      </button>
+      <button
+        aria-label="New chat"
+        class="panelRow"
+        type="button"
+      >
+        <span
+          aria-hidden="true"
+          class="panelGlyph"
+        >
+          <svg
+            aria-hidden="true"
+            data-content="47b5e433"
+            fill="none"
+            height="16"
+            stroke-width="1"
+            viewBox="0 0 16 16"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          />
+        </span>
+        <span
+          class="panelTitle wide"
+        >
+          New chat
         </span>
       </button>
     </div>
@@ -353,27 +353,6 @@ exports[`sidebar shell snapshots > renders the collapsed rail after the crossfad
       class="panelList"
     >
       <button
-        aria-label="New chat"
-        class="panelRow"
-        type="button"
-      >
-        <span
-          aria-hidden="true"
-          class="panelGlyph"
-        >
-          <svg
-            aria-hidden="true"
-            data-content="47b5e433"
-            fill="none"
-            height="18"
-            stroke-width="1"
-            viewBox="0 0 16 16"
-            width="18"
-            xmlns="http://www.w3.org/2000/svg"
-          />
-        </span>
-      </button>
-      <button
         aria-label="New work task"
         class="panelRow"
         type="button"
@@ -385,6 +364,27 @@ exports[`sidebar shell snapshots > renders the collapsed rail after the crossfad
           <svg
             aria-hidden="true"
             data-content="964807f4"
+            fill="none"
+            height="18"
+            stroke-width="1"
+            viewBox="0 0 16 16"
+            width="18"
+            xmlns="http://www.w3.org/2000/svg"
+          />
+        </span>
+      </button>
+      <button
+        aria-label="New chat"
+        class="panelRow"
+        type="button"
+      >
+        <span
+          aria-hidden="true"
+          class="panelGlyph"
+        >
+          <svg
+            aria-hidden="true"
+            data-content="47b5e433"
             fill="none"
             height="18"
             stroke-width="1"
@@ -515,32 +515,6 @@ exports[`sidebar shell snapshots > renders the expanded column (wordmark, entry 
       class="panelList"
     >
       <button
-        aria-label="New chat"
-        class="panelRow"
-        type="button"
-      >
-        <span
-          aria-hidden="true"
-          class="panelGlyph"
-        >
-          <svg
-            aria-hidden="true"
-            data-content="47b5e433"
-            fill="none"
-            height="16"
-            stroke-width="1"
-            viewBox="0 0 16 16"
-            width="16"
-            xmlns="http://www.w3.org/2000/svg"
-          />
-        </span>
-        <span
-          class="panelTitle wide"
-        >
-          New chat
-        </span>
-      </button>
-      <button
         aria-label="New work task"
         class="panelRow"
         type="button"
@@ -564,6 +538,32 @@ exports[`sidebar shell snapshots > renders the expanded column (wordmark, entry 
           class="panelTitle wide"
         >
           New work task
+        </span>
+      </button>
+      <button
+        aria-label="New chat"
+        class="panelRow"
+        type="button"
+      >
+        <span
+          aria-hidden="true"
+          class="panelGlyph"
+        >
+          <svg
+            aria-hidden="true"
+            data-content="47b5e433"
+            fill="none"
+            height="16"
+            stroke-width="1"
+            viewBox="0 0 16 16"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          />
+        </span>
+        <span
+          class="panelTitle wide"
+        >
+          New chat
         </span>
       </button>
     </div>
@@ -687,32 +687,6 @@ exports[`sidebar shell snapshots > renders the expanded column in the default lo
       class="panelList"
     >
       <button
-        aria-label="新建对话"
-        class="panelRow"
-        type="button"
-      >
-        <span
-          aria-hidden="true"
-          class="panelGlyph"
-        >
-          <svg
-            aria-hidden="true"
-            data-content="47b5e433"
-            fill="none"
-            height="16"
-            stroke-width="1"
-            viewBox="0 0 16 16"
-            width="16"
-            xmlns="http://www.w3.org/2000/svg"
-          />
-        </span>
-        <span
-          class="panelTitle wide"
-        >
-          新对话
-        </span>
-      </button>
-      <button
         aria-label="新建工作任务"
         class="panelRow"
         type="button"
@@ -736,6 +710,32 @@ exports[`sidebar shell snapshots > renders the expanded column in the default lo
           class="panelTitle wide"
         >
           新工作任务
+        </span>
+      </button>
+      <button
+        aria-label="新建对话"
+        class="panelRow"
+        type="button"
+      >
+        <span
+          aria-hidden="true"
+          class="panelGlyph"
+        >
+          <svg
+            aria-hidden="true"
+            data-content="47b5e433"
+            fill="none"
+            height="16"
+            stroke-width="1"
+            viewBox="0 0 16 16"
+            width="16"
+            xmlns="http://www.w3.org/2000/svg"
+          />
+        </span>
+        <span
+          class="panelTitle wide"
+        >
+          新对话
         </span>
       </button>
     </div>
