@@ -4,6 +4,7 @@
 - button "新建工作任务": 新工作任务
 - navigation "全局面板":
   - button "插件"
+  - button "自动化任务"
 - text: 工作区
 - button "搜索会话"
 - textbox "搜索会话名称"
@@ -15,7 +16,7 @@
 - text: 最近
 - button "筛选"
 - tree "最近": 暂无对话
-- button "设置"
+- button "账号菜单": 更多
 - banner:
   - button "打开右侧边栏"
 - text: 今天有什么计划？

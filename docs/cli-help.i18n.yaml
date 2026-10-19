@@ -1,0 +1,37 @@
+# Bilingual-pair consistency record for cli-help.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write docs/cli-help.md
+/:
+  en: d11ca88bdc409249
+  zh: d11ca88bdc409249
+/dsh-cli-help:
+  en: b7174eab3476579d
+  zh: 5ddab967320e3cff
+/dsh-cli-help/contents:
+  en: 29622274456b6e19
+  zh: da72780d97f5ab4f
+/dsh-cli-help/dsh:
+  en: e0695abcf7d8b521
+  zh: 712c23b3c8a115ca
+/dsh-cli-help/dsh-plugin:
+  en: adad99c125d0ac51
+  zh: f11024971184f737
+/dsh-cli-help/dsh-acp:
+  en: bcb0f84577ce5f03
+  zh: 4382e617006849db
+/dsh-cli-help/dsh-headless:
+  en: 878a1dd78017964d
+  zh: bb43d91b4beb9bda
+/dsh-cli-help/dsh-sdk:
+  en: 701f239c5157dedb
+  zh: ee11be2932b05ce4
+/dsh-cli-help/dsh-sdk-minimal:
+  en: 8a52cbae88118144
+  zh: ea52bf1cc77284c2
+/dsh-cli-help/dsh-team:
+  en: 46a38b3dc0999b09
+  zh: b8599bb059c432d1
+/dsh-cli-help/dsh-team-control-plane:
+  en: 27353e69663491b7
+  zh: b91294e764075525

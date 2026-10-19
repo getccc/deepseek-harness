@@ -18,6 +18,14 @@
 # a service started from anywhere finds the same data.
 
 - insert:
+    # The command line. Every row below waits for the service this row
+    # publishes on a successful parse, so `--help` opens no store and binds no
+    # listener.
+    - id: team-control-plane-startup
+      name: '@deepseek-ai/dsh-team-control-plane'
+      config:
+        profile: team-control-plane
+
     # The HTTP transport, and currently the whole application. It registers no
     # routes of its own; the company services above claim theirs as they land.
     #
@@ -27,6 +35,7 @@
     # every key this row owns.
     - id: webserver
       name: '@deepseek-ai/dsh-host-webserver'
+      inject: [teamControlPlaneStartup]
       config:
         host: 127.0.0.1
         port: 3095
@@ -37,10 +46,12 @@
     # ── who a member is ──────────────────────────────────────────────────
     - id: account-store
       name: '@deepseek-ai/dsh-account-store-sqlite'
+      inject: [teamControlPlaneStartup]
       config:
         path: !!js dshHomePath('control-plane', 'accounts.sqlite')
     - id: account-auth
       name: '@deepseek-ai/dsh-account-auth-password'
+      inject: [teamControlPlaneStartup]
       config:
         minSecretLength: 8
         requiredClasses:
@@ -56,10 +67,12 @@
     # ── what a member may do, and what they did ──────────────────────────
     - id: access-control
       name: '@deepseek-ai/dsh-access-control-sqlite'
+      inject: [teamControlPlaneStartup]
       config:
         path: !!js dshHomePath('control-plane', 'access.sqlite')
     - id: audit
       name: '@deepseek-ai/dsh-audit-sqlite'
+      inject: [teamControlPlaneStartup]
       config:
         path: !!js dshHomePath('control-plane', 'audit.sqlite')
         maxQueryRows: 500
@@ -70,12 +83,14 @@
     # knows which organization this Control Plane serves.
     - id: team-console-menu
       name: '@deepseek-ai/dsh-team-console-menu-sqlite'
+      inject: [teamControlPlaneStartup]
       config:
         path: !!js dshHomePath('control-plane', 'menus.sqlite')
 
     # ── which computer a member is at ────────────────────────────────────
     - id: device-authorization
       name: '@deepseek-ai/dsh-device-authorization-sqlite'
+      inject: [teamControlPlaneStartup]
       config:
         path: !!js dshHomePath('control-plane', 'devices.sqlite')
         transactionTtlMs: 300000
@@ -88,6 +103,7 @@
     # access control and quota, so it mounts after them.
     - id: quota
       name: '@deepseek-ai/dsh-quota-sqlite'
+      inject: [teamControlPlaneStartup]
       config:
         path: !!js dshHomePath('control-plane', 'quota.sqlite')
         # Above the slowest completion a deployment expects and nowhere near
@@ -95,6 +111,7 @@
         reservationTtlMs: 900000
     - id: model-gateway
       name: '@deepseek-ai/dsh-model-gateway-sqlite'
+      inject: [teamControlPlaneStartup]
       config:
         path: !!js dshHomePath('control-plane', 'models.sqlite')
 
@@ -115,6 +132,7 @@
     # Plane holding one could read knowledge outside the space it governs.
     - id: knowledge-source
       name: '@deepseek-ai/dsh-knowledge-weknora'
+      inject: [teamControlPlaneStartup]
       config:
         requestTimeoutMs: 30000
         # High on purpose: retrieved passages are charged as prompt tokens on
@@ -125,6 +143,7 @@
         maxPassageChars: 4000
     - id: knowledge-gateway
       name: '@deepseek-ai/dsh-knowledge-gateway-sqlite'
+      inject: [teamControlPlaneStartup]
       config:
         path: !!js dshHomePath('control-plane', 'knowledge.sqlite')
         defaultMaxResults: 10
@@ -143,6 +162,7 @@
     # made it.
     - id: bi-source
       name: '@deepseek-ai/dsh-bi-webi'
+      inject: [teamControlPlaneStartup]
       config:
         requestTimeoutMs: 30000
         # Rows are charged as prompt tokens on the member's next model request,
@@ -155,6 +175,7 @@
         queryTimeoutMs: 60000
     - id: bi-gateway
       name: '@deepseek-ai/dsh-bi-gateway-sqlite'
+      inject: [teamControlPlaneStartup]
       config:
         path: !!js dshHomePath('control-plane', 'bi.sqlite')
         defaultChartPageSize: 20
@@ -176,6 +197,7 @@
     # line the moment it appears.
     - id: gmo-source
       name: '@deepseek-ai/dsh-gmo-excel-tools'
+      inject: [teamControlPlaneStartup]
       config:
         requestTimeoutMs: 60000
         # Figures are charged as prompt tokens on the member's next model
@@ -185,6 +207,7 @@
         maxResponseBytes: 700000
     - id: gmo-gateway
       name: '@deepseek-ai/dsh-gmo-gateway-sqlite'
+      inject: [teamControlPlaneStartup]
       config:
         path: !!js dshHomePath('control-plane', 'gmo.sqlite')
         defaultResultPageSize: 20
@@ -194,6 +217,7 @@
     # one of its own.
     - id: team-release
       name: '@deepseek-ai/dsh-team-release'
+      inject: [teamControlPlaneStartup]
       config:
         path: !!js dshHomePath('control-plane', 'releases.sqlite')
 
@@ -202,6 +226,7 @@
     # a device signature, and a one-time code bind the credential to the Runner.
     - id: team-control-plane-http
       name: '@deepseek-ai/dsh-team-control-plane-http'
+      inject: [teamControlPlaneStartup]
       config:
         # `organizationId` is deliberately absent. This single-organization
         # service must not guess which account namespace it authenticates.
@@ -211,6 +236,7 @@
     # member holds and answered with the document as it was published.
     - id: team-release-http
       name: '@deepseek-ai/dsh-team-release-http'
+      inject: [teamControlPlaneStartup]
       config:
         maxRequestBodyBytes: 4096
 
@@ -218,6 +244,7 @@
     # one place a provider credential is attached.
     - id: model-gateway-http
       name: '@deepseek-ai/dsh-model-gateway-http'
+      inject: [teamControlPlaneStartup]
       config:
         # Images ride inline as base64 in the body the Runner's adapter built,
         # up to the adapter's 20 MiB inline budget before encoding.
@@ -231,6 +258,7 @@
     # protocol version this build does not.
     - id: knowledge-gateway-http
       name: '@deepseek-ai/dsh-knowledge-gateway-http'
+      inject: [teamControlPlaneStartup]
       config:
         maxRequestBodyBytes: 65536
     # Company BI traffic: authorized by the device access token, and refused
@@ -239,6 +267,7 @@
     # at most, so the body bound is small.
     - id: bi-gateway-http
       name: '@deepseek-ai/dsh-bi-gateway-http'
+      inject: [teamControlPlaneStartup]
       config:
         maxRequestBodyBytes: 16384
     # Company GMO traffic: authorized by the device access token, and refused
@@ -247,6 +276,7 @@
     # bound is larger than BI's.
     - id: gmo-gateway-http
       name: '@deepseek-ai/dsh-gmo-gateway-http'
+      inject: [teamControlPlaneStartup]
       config:
         maxRequestBodyBytes: 65536
 
@@ -257,17 +287,20 @@
     # auxiliary model request with server-side retrieval on this route.
     - id: web
       name: '@deepseek-ai/dsh-web'
+      inject: [teamControlPlaneStartup]
       config:
         searchProvider: deepseek-official
 
     - id: web-search-deepseek
       name: '@deepseek-ai/dsh-web-search-deepseek'
+      inject: [teamControlPlaneStartup]
       config:
         apiKeyEnv: DEEPSEEK_API_KEY
 
     # The Runner-facing route: token, `web.search` decision, search, record.
     - id: web-search-gateway-http
       name: '@deepseek-ai/dsh-web-search-gateway-http'
+      inject: [teamControlPlaneStartup]
       config:
         maxRequestBodyBytes: 16384
     # Administrator-facing: the administration console's API and application.
@@ -277,6 +310,7 @@
     # and a browser would drop the cookie if it did not.
     - id: team-admin-api
       name: '@deepseek-ai/dsh-team-admin-api'
+      inject: [teamControlPlaneStartup]
       config:
         # `organizationId` is deliberately absent. It has no sensible default,
         # and a Control Plane that guessed which organization it serves would
@@ -291,3 +325,4 @@
     # application addresses the API above by an absolute path.
     - id: team-admin-app
       name: '@deepseek-ai/dsh-team-admin-app'
+      inject: [teamControlPlaneStartup]

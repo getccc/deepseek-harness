@@ -3,6 +3,7 @@
 import { createHmac } from 'node:crypto'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CredentialProvider } from '@deepseek-ai/dsh-credentials'
+import type { PeerId } from '@deepseek-ai/dsh-typert-protocol'
 import { BrowserAuth } from '../src/browser-auth.ts'
 import type { ConnectionIndexRequest, ConnectionIndexResponse } from '../src/rpc.ts'
 import { RecordCredentials } from './browser-credentials.ts'
@@ -76,11 +77,12 @@ function request(url: string, authority = '127.0.0.1:3080', init?: {
 function exchange(
   auth: BrowserAuth,
   authority = '127.0.0.1:3080',
+  secure = false,
 ): { cookie: string; launchUrl: string; state: ResponseState } {
   const launchUrl = auth.authenticatedUrl(`http://${authority}`)
   const target = new URL(launchUrl)
   const res = response()
-  expect(auth.authorizeIndex(request(`${target.pathname}${target.search}`, authority), res.value)).toBe(false)
+  expect(auth.authorizeIndex(request(`${target.pathname}${target.search}`, authority), res.value, secure)).toBe(false)
   const setCookie = res.state.headers?.['set-cookie']
   if (setCookie === undefined) throw new Error('token exchange did not set a cookie')
   return { cookie: setCookie.split(';', 1)[0]!, launchUrl, state: res.state }
@@ -88,6 +90,73 @@ function exchange(
 
 afterEach(() => {
   vi.useRealTimers()
+})
+
+describe('API credentials', () => {
+  it('refuses a request without a URL before publishing an API operator', async () => {
+    const auth = await createAuth(new RecordCredentials())
+    const publish = vi.fn(() => 'api-operator' as PeerId)
+    const res = response()
+
+    auth.authorizeConnect({ method: 'GET', headers: { host: 'localhost' } }, res.value, false, publish)
+
+    expect(res.state).toEqual({
+      status: 401,
+      headers: { 'cache-control': 'no-store', 'content-type': 'text/plain; charset=utf-8' },
+      body: 'dsh web authentication required; reopen the URL printed by dsh web.\n',
+    })
+    expect(publish).not.toHaveBeenCalled()
+  })
+
+  it('signs the published id and rejects browser confusion, tampering, audience mismatch, and expiry', async () => {
+    vi.useFakeTimers()
+    const store = new RecordCredentials()
+    const auth = await createAuth(store)
+    const authority = '127.0.0.1:3080'
+    const id = 'api-operator' as PeerId
+    const issuedAt = Date.now()
+    const publish = vi.fn(() => id)
+    const res = response()
+    auth.authorizeConnect(request(auth.authenticatedUrl(`http://${authority}/connect`)), {
+      ...res.value,
+      writeHead(status, headers) {
+        expect(publish).toHaveBeenCalledExactlyOnceWith('none')
+        return res.value.writeHead(status, headers)
+      },
+    }, false, publish)
+    const cookie = res.state.headers?.['set-cookie']?.split(';', 1)[0]
+    if (cookie === undefined) throw new Error('API connect did not set a cookie')
+    const [name, value] = cookie.split('=') as [string, string]
+    const payload = { version: 2, authority, id, issuedAt, expiresAt: issuedAt + 30 * 86_400_000 }
+    expect(JSON.parse(Buffer.from(value.split('.')[1]!, 'base64url').toString('utf8'))).toEqual(payload)
+    expect(auth.authenticateApi(request('/', authority, { cookie }))).toBe(id)
+    expect(auth.isAuthenticated(request('/', authority, { cookie }))).toBe(false)
+    expect(auth.authenticateApi(request('/', authority, { cookie: exchange(auth).cookie }))).toBeUndefined()
+    expect(auth.isAuthenticated(request('/', authority, { cookie: cookie.replace('=v2.', '=v1.') }))).toBe(false)
+    expect(auth.authenticateApi(request('/', authority, { cookie: `${cookie.slice(0, -1)}!` }))).toBeUndefined()
+    expect(auth.authenticateApi(request('/', 'localhost:3080', { cookie }))).toBeUndefined()
+    expect(auth.authenticateApi(request('/', '127.0.0.1:3081', { cookie }))).toBeUndefined()
+    expect(auth.authenticateApi(request('/', authority, { cookie }), true)).toBeUndefined()
+    for (const invalid of [
+      { ...payload, version: 3 },
+      { ...payload, authority: 'localhost:3080' },
+      { ...payload, id: '' },
+      { ...payload, id: 42 },
+      { ...payload, id: undefined },
+      { ...payload, issuedAt: issuedAt + 1 },
+      { ...payload, issuedAt: 0.5 },
+      { ...payload, expiresAt: 'later' },
+      { ...payload, expiresAt: issuedAt - 1 },
+    ]) {
+      const invalidCookie = signedCookie(store, name, invalid).replace('=v1.', '=v2.')
+      expect(auth.authenticateApi(request('/', authority, { cookie: invalidCookie }))).toBeUndefined()
+      expect(auth.isAuthenticated(request('/', authority, { cookie: invalidCookie }))).toBe(false)
+    }
+    const shorter = await createAuth(store, 1)
+    expect(shorter.authenticateApi(request('/', authority, { cookie }))).toBeUndefined()
+    vi.setSystemTime(payload.expiresAt)
+    expect(auth.authenticateApi(request('/', authority, { cookie }))).toBeUndefined()
+  })
 })
 
 describe('BrowserAuth', () => {
@@ -138,6 +207,34 @@ describe('BrowserAuth', () => {
         'referrer-policy': 'no-referrer',
       },
     })
+  })
+
+  it('keeps HTTPS port 443 distinct from HTTP port 80 with one signing secret', async () => {
+    const auth = await createAuth(new RecordCredentials())
+    const plain = exchange(auth, 'harness.example')
+    const tls = exchange(auth, 'harness.example', true)
+    expect(auth.isAuthenticated(request('/', 'harness.example', { cookie: plain.cookie }), true)).toBe(false)
+    expect(auth.isAuthenticated(request('/', 'harness.example', { cookie: tls.cookie }), true)).toBe(true)
+    expect(auth.isAuthenticated(request('/', 'harness.example:443', { cookie: tls.cookie }), true)).toBe(true)
+    expect(auth.isAuthenticated(request('/', 'harness.example', { cookie: tls.cookie }))).toBe(false)
+  })
+
+  it('rejects HTTP cookie replay after enabling TLS on the same authority', async () => {
+    const store = new RecordCredentials()
+    const authority = 'harness.example:3080'
+    const plain = exchange(await createAuth(store), authority)
+    const restarted = await createAuth(store)
+    const denied = response()
+    expect(restarted.authorizeIndex(request('/', authority, { cookie: plain.cookie }), denied.value, true)).toBe(false)
+    expect(denied.state.status).toBe(401)
+
+    const tls = exchange(restarted, authority, true)
+    expect(tls.state.headers?.['set-cookie']).toContain('; Secure')
+    expect(restarted.isAuthenticated(request('/', authority, { cookie: tls.cookie }), true)).toBe(true)
+    expect(restarted.isAuthenticated(request('/', authority, { cookie: tls.cookie }))).toBe(false)
+    const tlsName = tls.cookie.slice(0, tls.cookie.indexOf('='))
+    const plainValue = plain.cookie.slice(plain.cookie.indexOf('=') + 1)
+    expect(restarted.isAuthenticated(request('/', authority, { cookie: `${tlsName}=${plainValue}` }), true)).toBe(false)
   })
 
   it('preserves the caller authority and mount while adding only this process token', async () => {
@@ -277,7 +374,7 @@ describe('BrowserAuth', () => {
     const login = exchange(auth)
 
     const locked = response()
-    expect(auth.lock(request('/lock', '127.0.0.1:3080', { cookie: login.cookie }), locked.value)).toBe(true)
+    expect(auth.lock(request('/lock', '127.0.0.1:3080', { cookie: login.cookie }), locked.value, false)).toBe(true)
     expect(locked.state).toMatchObject({
       status: 200,
       headers: { 'cache-control': 'no-store', 'referrer-policy': 'no-referrer' },
@@ -302,7 +399,7 @@ describe('BrowserAuth', () => {
     expect(auth.endSession(
       request('/team/logout', '127.0.0.1:3080', { cookie: login.cookie }),
       ended.value,
-      '/team/login',
+      '/team/login', false,
     )).toBe(true)
     expect(ended.state).toMatchObject({
       status: 303,
@@ -322,13 +419,13 @@ describe('BrowserAuth', () => {
     // A cross-site navigation is exactly this shape: SameSite=Strict withholds
     // the cookie, so another site cannot lock a person out by linking here.
     const anonymous = response()
-    expect(auth.lock(request('/lock'), anonymous.value)).toBe(false)
+    expect(auth.lock(request('/lock'), anonymous.value, false)).toBe(false)
     expect(anonymous.state.headers).not.toHaveProperty('set-cookie')
     expect(anonymous.state.status).toBe(200)
     expect(anonymous.state.body).toContain('nothing to lock')
 
     const forged = response()
-    expect(auth.lock(request('/lock', '127.0.0.1:3080', { cookie: 'dsh-auth-nope=v1.aaa.bbb' }), forged.value)).toBe(false)
+    expect(auth.lock(request('/lock', '127.0.0.1:3080', { cookie: 'dsh-auth-nope=v1.aaa.bbb' }), forged.value, false)).toBe(false)
     expect(forged.state.headers).not.toHaveProperty('set-cookie')
   })
 
@@ -336,7 +433,7 @@ describe('BrowserAuth', () => {
     const store = new RecordCredentials()
     const auth = await createAuth(store)
     const hostless = response()
-    expect(auth.lock({ method: 'GET', url: '/lock', headers: {} }, hostless.value)).toBe(false)
+    expect(auth.lock({ method: 'GET', url: '/lock', headers: {} }, hostless.value, false)).toBe(false)
     expect(hostless.state.headers).not.toHaveProperty('set-cookie')
   })
 
@@ -345,7 +442,7 @@ describe('BrowserAuth', () => {
     const auth = await createAuth(store)
     const login = exchange(auth)
     const head = response()
-    expect(auth.lock(request('/lock', '127.0.0.1:3080', { cookie: login.cookie, method: 'HEAD' }), head.value)).toBe(true)
+    expect(auth.lock(request('/lock', '127.0.0.1:3080', { cookie: login.cookie, method: 'HEAD' }), head.value, false)).toBe(true)
     expect(head.state.body).toBeUndefined()
     expect(head.state.headers).toHaveProperty('set-cookie')
   })

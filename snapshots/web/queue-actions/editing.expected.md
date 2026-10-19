@@ -8,9 +8,9 @@
     - tab "Trajectory"
 - text: Reply with a one-sentence description of event sourcing, then stop. {{clock}}
 - button "Copy"
-- status: Xiaowei is deep diving...
-- button "Xiaowei has been deep diving for {{duration}}" [disabled] [expanded]
 - paragraph: partial
+- status: Xiaowei is deep diving
+- text: Xiaowei has been deep diving for {{duration}} ···
 - button "2 queued messages" [disabled] [expanded]
 - list:
   - listitem:

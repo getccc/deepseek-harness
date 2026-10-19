@@ -16,7 +16,7 @@
  * @module @deepseek-ai/dsh-governed-catalog-sqlite
  */
 
-import { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync } from 'node:sqlite'
 import type { Context } from '@deepseek-ai/cordis'
 import type { ManagedResource } from '@deepseek-ai/dsh-access-control'
 import type { OrgId } from '@deepseek-ai/dsh-account-store'
@@ -80,7 +80,9 @@ export class GovernedCatalog<
     config: CatalogDatabaseConfig,
     private readonly spec: GovernedCatalogSpec<C, Row, Entry, Listed>,
   ) {
-    this.db = new DatabaseSync(config.path, { timeout: config.busyTimeoutMs })
+    // Loaded at open, not import, so a `--help` that only imports this module stays quiet on Node 22.
+    const { DatabaseSync: Database } = process.getBuiltinModule('node:sqlite')
+    this.db = new Database(config.path, { timeout: config.busyTimeoutMs })
     spec.applySchema(this.db)
     this.db.exec(`PRAGMA journal_mode = ${config.journalMode}`)
     // SQLite builds may default WAL to NORMAL, which can lose a resolved write to power loss.

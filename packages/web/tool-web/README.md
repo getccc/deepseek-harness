@@ -110,7 +110,6 @@ The package is built on one separation and one registration rule:
 | [`src/fetch.ts`](src/fetch.ts) | The `web_fetch` tool: HTML→markdown conversion, output caps, formatting, presentation meta |
 | [`src/access.ts`](src/access.ts) | The per-session switch: the `/web` command, the `webAccess` projection, and the live per-agent restriction |
 | [`src/types.ts`](src/types.ts) | The `web/access` event and `webAccess` projection declarations, projected to browsers through `./client` |
-| — | No runtime invariant companion is published; this model-facing adapter has no independent lifecycle stream; execution relations are owned by the capability seam it calls. |
 
 ### Search flow
 

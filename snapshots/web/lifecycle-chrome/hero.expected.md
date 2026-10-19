@@ -4,6 +4,7 @@
 - button "New work task"
 - navigation "Global panels":
   - button "Plugins"
+  - button "Automation tasks"
 - text: Workspaces
 - button "Search sessions"
 - textbox "Search session names"
@@ -15,7 +16,7 @@
 - text: Recent
 - button "Filter"
 - tree "Recent": No conversations yet
-- button "Settings"
+- button "Account menu": More
 - banner:
   - button "Open right sidebar"
 - text: What is the plan today?

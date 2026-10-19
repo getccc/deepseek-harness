@@ -23,8 +23,8 @@
 - button "Branch into a new conversation" [disabled]
 - text: Available only on the last message of a completed turn {{clock}} Now give the final answer. {{clock}}
 - button "Copy"
-- status: Xiaowei worked
-- button "Xiaowei took {{duration}}" [disabled]
+- status: Xiaowei completed
+- button "Xiaowei completed in {{duration}}" [disabled]
 - paragraph: DONE
 - button "Copy"
 - button "Good response"
@@ -32,8 +32,8 @@
 - button "Branch into a new conversation"
 - text: {{clock}} Keep this later input in the original conversation. {{clock}}
 - button "Copy"
-- status: Xiaowei worked
-- button "Xiaowei took {{duration}}" [disabled]
+- status: Xiaowei completed
+- button "Xiaowei completed in {{duration}}" [disabled]
 - paragraph: ORIGINAL ONLY
 - button "Copy"
 - button "Good response"

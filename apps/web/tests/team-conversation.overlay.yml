@@ -1,0 +1,15 @@
+# The Team identity over the shipped Web composition, with an isolated account
+# client. Browser tests supply the member response; no company request is made.
+- id: ui-settings-account
+  disabled: true
+- id: ui-web-access
+  disabled: true
+- insert:
+    - id: team-account-client
+      name: '@deepseek-ai/dsh-team-account-client'
+      config:
+        controlPlaneUrl: http://127.0.0.1:1
+        callbackUri: http://127.0.0.1:1/team/callback
+        runnerVersion: 0.2.1-rc.2
+    - id: team-local-login
+      name: '@deepseek-ai/dsh-team-local-login'

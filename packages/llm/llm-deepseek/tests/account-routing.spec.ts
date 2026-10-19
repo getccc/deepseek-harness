@@ -17,8 +17,15 @@ const contexts: Context[] = []
 afterEach(async () => {
   vi.restoreAllMocks()
   vi.unstubAllEnvs()
+  vi.unstubAllGlobals()
   for (const ctx of contexts.splice(0)) await ctx.fiber.dispose()
 })
+
+/** Fail the account listing request fast, so the route serves its bundled catalog and fetch mocks see only Messages traffic. */
+function listingRequest(input: string | URL | Request): Response | undefined {
+  const url = new URL(input instanceof Request ? input.url : input)
+  return url.pathname === '/models' ? new Response(null, { status: 404 }) : undefined
+}
 
 async function harness() {
   const ctx = new Context()
@@ -177,7 +184,9 @@ it('propagates account sign-out to the HTTP request signal', async () => {
   const ctx = await harness()
   ctx.provide('deepseekAccount', { resolveToken: async (_url: string) => 'fixture-account-token' } as DeepSeekAccount)
   const started = Promise.withResolvers<AbortSignal>()
-  vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+  vi.spyOn(globalThis, 'fetch').mockImplementation(async (url, init) => {
+    const listed = listingRequest(url)
+    if (listed !== undefined) return listed
     const signal = init!.signal!
     expect(new Headers(init!.headers).get('x-dsh-auth-token')).toBe('fixture-account-token')
     started.resolve(signal)

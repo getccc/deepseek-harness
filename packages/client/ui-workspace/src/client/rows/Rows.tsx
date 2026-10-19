@@ -46,7 +46,7 @@ type RowRenderSlots = PropsRenderSlots<
 
 /** Row display title: blank rows show the localized placeholder of their kind (New chat / New Session). */
 function displayTitle(node: SessionNode, t: RowTranslate): string {
-  if (!node.blank) return node.title
+  if (!node.blank) return node.title || t('session.untitled')
   return node.kind === 'chat' ? t('session.blank.chat') : t('session.new')
 }
 
@@ -295,7 +295,7 @@ export function ProjectRowItem({ group, containsCurrentDescendant = false, onTog
             )}
           />
         )}
-        <Tooltip label={t('actions.newSession')} shortcutKeys={newShortcut?.keys} side="bottom" align="end" delayMs={500}>
+        <Tooltip label={t('actions.newSession')} shortcutKeys={newShortcut?.keys} side="bottom" align="end" delayMs={500} portal>
           <button
             type="button"
             className={css.iconButton}
@@ -321,6 +321,7 @@ export function ProjectRowItem({ group, containsCurrentDescendant = false, onTog
         t={t}
       />}
       openDelayMs={800}
+      grouped
       disabled={menuOpen}
       copyText={row.cwd}
       copyLabel={t('copy')}
@@ -510,10 +511,10 @@ export function SearchResultItem({ result, currentId, onOpen, onUnarchive, t }: 
           )}
         </span>
         <SessionKindIcon kind={result.kind} />
-        <span className={css.searchResultTitle}>{result.title}</span>
+        <span className={css.searchResultTitle}>{result.title || t('session.untitled')}</span>
         {result.archived && (
           <span className={css.rowActions}>
-            <Tooltip label={t('actions.unarchive')} side="bottom" align="end" delayMs={500}>
+            <Tooltip label={t('actions.unarchive')} side="bottom" align="end" delayMs={500} portal>
               <button
                 type="button"
                 className={css.iconButton}
@@ -711,8 +712,9 @@ export function SessionNodeItem({
       anchor={ownRow}
       content={<SessionHoverContent node={node} now={now} renderSlot={renderSlot} t={t} />}
       openDelayMs={800}
+      grouped
       disabled={menuOpen || drag?.active === true}
-      copyText={row.blank ? undefined : row.title}
+      copyText={row.blank || row.title === '' ? undefined : row.title}
       copyLabel={t('copy')}
       copiedLabel={t('hover.copied')}
     />

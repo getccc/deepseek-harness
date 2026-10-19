@@ -40,6 +40,7 @@ describe.skipIf(webSnapshotMode() === 'record')('web e2e: DeepSeek Messages sett
     // configurable declaration keeps the first-run key prompt reachable.
     expect(scaffold.ctx.llm.listProviders().filter(provider => provider.id === 'deepseek-official')).toEqual([])
     expect(scaffold.ctx.agentDefaultModel.currentSelection()).toEqual({ provider: 'deepseek-official', model: 'deepseek-flash' })
+    await page.getByRole('dialog', { name: '开始使用', exact: true }).getByRole('button', { name: '添加 API Key', exact: true }).click()
     const onboarding = page.getByRole('dialog', { name: '添加一个 API Key 开始使用' })
     await onboarding.getByLabel('API 密钥', { exact: true }).fill('sk-messages-onboarding')
     await onboarding.getByRole('button', { name: '保存并继续' }).click()
@@ -55,7 +56,7 @@ describe.skipIf(webSnapshotMode() === 'record')('web e2e: DeepSeek Messages sett
     const messages = dialog
     await messages.getByText('自定义设置', { exact: true }).click()
     expect(await messages.getByLabel('API 地址', { exact: true }).getAttribute('placeholder'))
-      .toBe('https://api.deepseek.com/anthropic')
+      .toBe('https://api.deepseek.com/anthropic（默认使用环境 DEEPSEEK_BASE_URL）')
     await compareOrRefreshGolden(join(EXPECTED, 'cards.expected.md'),
       await captureStableAria(page, '[role="dialog"]', scaffold.workspaceCwd), webSnapshotMode())
     await messages.getByLabel('API 密钥', { exact: true }).fill('sk-e2e-messages')
@@ -83,7 +84,13 @@ describe.skipIf(webSnapshotMode() === 'record')('web e2e: DeepSeek Messages sett
     await page.getByRole('menuitem', { name: /模型/ }).click()
     await page.getByRole('menuitemradio', { name: 'Messages Flash', exact: true }).waitFor()
     await compareOrRefreshGolden(join(EXPECTED, 'picker.expected.md'),
-      await captureStableAria(page, '[role="menu"]', scaffold.workspaceCwd), webSnapshotMode())
+      await captureStableAria(page, '[role="group"][aria-label="模型与推理等级"]', scaffold.workspaceCwd), webSnapshotMode())
+    await page.keyboard.press('Escape')
+    await page.getByRole('menuitem', { name: /推理等级/ }).click()
+    const effortWeights = await page.getByRole('menuitemradio').evaluateAll(rows => rows.map(row =>
+      getComputedStyle(row.querySelector('span span')!).fontWeight,
+    ))
+    expect(new Set(effortWeights)).toEqual(new Set(['400']))
     expect(tripwire.pageErrors).toEqual([])
   }, 60_000)
 
@@ -97,6 +104,9 @@ describe.skipIf(webSnapshotMode() === 'record')('web e2e: DeepSeek Messages sett
     // its own names the first model the catalog lists instead of the stale id.
     const trigger = page.getByRole('button', { name: /^选择模型.*Messages Flash/ })
     await trigger.waitFor()
+    expect(scaffold.ctx.agentDefaultModel.currentSelection()).toEqual({
+      provider: 'deepseek-official', model: 'deepseek-v4-flash',
+    })
     await expect.poll(() => input.getAttribute('contenteditable')).toBe('true')
     await trigger.click()
     await page.getByRole('menuitem', { name: /模型/ }).click()

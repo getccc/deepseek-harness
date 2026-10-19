@@ -68,15 +68,9 @@ export const BASES_PANEL = 'knowledge' as MainPanelId
 /** The retrieval panel: its sidebar row id, and the main panel it addresses. */
 export const SEARCH_PANEL = 'knowledge-search' as MainPanelId
 
-/**
- * Where these rows sit among the sidebar's panel rows.
- *
- * The list is ordered by this number and nothing else registers into it today,
- * so the two knowledge rows keep the order a member reads them in: what there
- * is, then how to search it.
- */
-const BASES_ORDER = 10
-const SEARCH_ORDER = 20
+/** Knowledge bases and retrieval follow the automation entry in the sidebar. */
+const BASES_ORDER = 20
+const SEARCH_ORDER = 30
 
 /** Required services: the panels' slot registry, the Remote face, and locale. */
 export const inject = ['locale', 'remote', 'slots', 'uiWorkspace']

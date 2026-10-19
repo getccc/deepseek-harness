@@ -5,7 +5,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import {
-  bindSnapshotSelector, makeTranslate, SlotTestRuntime, usePinnedBrowserLanguages,
+  allowAllAccess, bindSnapshotSelector, makeTranslate, SlotTestRuntime, usePinnedBrowserLanguages,
 } from '@deepseek-ai/dsh-client-test-runtime'
 import { apply, inject } from '@deepseek-ai/dsh-client-ui-workspace/client'
 import type { SessionListState, SessionSummary } from '@deepseek-ai/dsh-api-session-controller/client'
@@ -33,7 +33,7 @@ const t: RecentBrowserProps['t'] = makeTranslate(zh, commonZh)
 
 const sid = (id: string) => id as SessionId
 const summary = (id: string, updatedAt: number, overrides: Partial<SessionSummary> = {}): SessionSummary => ({
-  id: sid(id), displayTitle: id, kind: 'chat', running: false, blank: false, updatedAt, ...overrides,
+  id: sid(id), title: overrides.displayTitle ?? id, displayTitle: id, kind: 'chat', running: false, blank: false, updatedAt, ...overrides,
   retainedBy: overrides.retainedBy ?? {},
 })
 const sessionState = (items: readonly SessionSummary[]): SessionListState => ({
@@ -65,6 +65,7 @@ const noSeats: SessionRowSeats = { renderSlot: () => null }
 function mount(overrides: Partial<RecentBrowserProps> = {}) {
   const store = createWorkspaceViewStore().create()
   const props: RecentBrowserProps = {
+    ...allowAllAccess,
     wide: true,
     expandSidebar: vi.fn(),
     useSessions: hook(mixed),
@@ -235,7 +236,7 @@ describe('RecentBrowser assembled with the Workspace browser', () => {
     const row = (await view.findByText('Chat title')).closest('[role="treeitem"]')!
     fireEvent.click(within(row as HTMLElement).getByLabelText('会话“Chat title”的操作'))
     expect(view.getAllByRole('menuitem').map(item => item.textContent)).toEqual([
-      '置顶会话', '重命名', '分叉会话', '归档会话',
+      '置顶会话', '重命名', '分叉会话', '归档会话', '复制 Session ID',
     ])
     // The rename row raises the overlay dialog the tree's rows use.
     fireEvent.click(view.getByRole('menuitem', { name: '重命名' }))

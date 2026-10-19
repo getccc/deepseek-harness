@@ -79,7 +79,7 @@ That absence is a composition fact rather than a runtime one, so tests hold it i
 | Path | Role |
 |---|---|
 | [`cordis.patch.yml`](cordis.patch.yml) | The complete tree this profile boots |
-| [`src/index.ts`](src/index.ts) | Module identity only; the bundle exposes no runtime API |
+| [`src/index.ts`](src/index.ts) | The `team-control-plane-startup` row: parses the command line and publishes `teamControlPlaneStartup`, which every other row injects, so `--help` opens no store and binds no listener |
 
 ### Invariant ownership
 

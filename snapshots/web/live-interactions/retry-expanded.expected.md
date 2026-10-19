@@ -8,8 +8,8 @@
     - tab "Trajectory"
 - text: Reply with a one-sentence description of event sourcing, then stop. {{clock}}
 - button "Copy"
-- status: Xiaowei worked
-- button "Xiaowei took {{duration}}" [expanded]
+- status: Xiaowei completed
+- button "Xiaowei completed in {{duration}}" [expanded]
 - group:
   - status: Xiaowei retried the model request (1/5) · {{duration}}
 - button "Analysis completed" [expanded]

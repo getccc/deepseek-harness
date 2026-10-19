@@ -54,7 +54,7 @@ export interface SessionNode {
   id: SessionId
   /** Which kind of Session the row is; a blank row's placeholder label follows it. */
   kind: SessionKind
-  /** Stored display title; the renderer substitutes the localized New Session label for blank rows. */
+  /** Stored title, or empty; the renderer localizes blank and unnamed row labels. */
   title: string
   /** The provisional blank session (renderer shows the localized New Session title). */
   blank: boolean
@@ -307,10 +307,11 @@ function sectionMembers(
 /**
  * A blank session is the selected Workspace's provisional New Session row;
  * its canonical title never enters search (blank rows are query-excluded)
- * and the renderer localizes its display label.
+ * and the renderer localizes its display label. Unnamed history also yields an
+ * empty title for localization and does not match a directory-name title search.
  */
 function sessionTitle(session: SessionSummary): string {
-  return session.blank ? '' : session.displayTitle
+  return session.blank ? '' : (session.title?.trim() ?? '')
 }
 
 /** Build one group without projecting session lineage into presentation. */

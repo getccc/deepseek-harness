@@ -318,8 +318,8 @@ describe('request-level dynamic configuration', () => {
     expect(observed).toEqual([['deepseek-account']])
 
     // Schema-valid but resolver-invalid: the registration and its policy stay.
-    await account.update({ models: [{ id: 'dup' }, { id: 'dup' }] })
-    expect(warn).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('duplicate') as string }))
+    await account.update({ modelOverrides: { 'deepseek-flash': { inputModalities: ['text'], imageMaxBytes: 1 } } })
+    expect(warn).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('modelOverrides.deepseek-flash is invalid') as string }))
     expect(ctx.llm.listProviders().map(provider => provider.id)).toEqual(['deepseek-account'])
     expect(observed).toEqual([['deepseek-account']])
   })

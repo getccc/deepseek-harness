@@ -12,10 +12,22 @@ import type { DeepSeekAdapterOptions, DeepSeekConnectionOptions } from './types.
 
 /** The Host services both adapters read per request: attachments, image access, and request extensions. */
 function hostServices(ctx: Context): Pick<DeepSeekAdapterOptions,
-  'onExtensionsOmitted' | 'resolveAttachments' | 'resolveImageAccess' | 'prepareExtensions'> {
+  'onExtensionsOmitted' | 'onExtensionsUnaccepted' | 'resolveAttachments' | 'resolveImageAccess' | 'prepareExtensions'> {
+  // These conditions repeat on every request of a route; log each first occurrence only.
+  const omittedRoutes = new Set<string>()
+  const unacceptedRoutes = new Set<string>()
   return {
     onExtensionsOmitted: ({ provider, model, fields, error }) => {
-      ctx.logger.warn(`llm-deepseek: sending route "${provider}/${model}" without request extension fields ${fields.join(', ')} because they failed to serialize: %o`, error)
+      const route = `${provider}/${model}`
+      if (omittedRoutes.has(route)) return
+      omittedRoutes.add(route)
+      ctx.logger.warn(`llm-deepseek: sending route "${route}" without request extension fields ${fields.join(', ')} because they failed to serialize: %o`, error)
+    },
+    onExtensionsUnaccepted: ({ provider, model, error }) => {
+      const route = `${provider}/${model}`
+      if (unacceptedRoutes.has(route)) return
+      unacceptedRoutes.add(route)
+      ctx.logger.warn(`llm-deepseek: route "${route}" request extension acceptance failed; contributors resend on a later request: %o`, error)
     },
     resolveAttachments: () => ctx.get('attachments'),
     resolveImageAccess: (attachments, ref) => resolveImageAttachmentAccess(
@@ -34,14 +46,19 @@ function hostServices(ctx: Context): Pick<DeepSeekAdapterOptions,
  */
 export function createDeepSeekAdapter<C extends DeepSeekConnectionOptions>(
   ctx: Context, dependencies: Pick<DeepSeekAdapterOptions<C>,
-  'options' | 'resolveAuth' | 'providerName' | 'discoverModels'>): DeepSeekAdapter<C> {
+  'options' | 'resolveAuth' | 'providerName' | 'discoverModels' | 'connect' | 'admit'>): DeepSeekAdapter<C> {
   ctx.inject(['settings'], (child) => { child.effect(() => child.settings.configure({ auto: false }, ctx.fiber)) })
   let userId: AnonymousUserId | undefined
+  // A degraded replay repeats on every request of a route; log each first occurrence only.
+  const degradedReplays = new Set<string>()
   return new DeepSeekAdapter({
     ...dependencies,
     ...hostServices(ctx),
     resolveUserId: () => userId ??= getOrCreateAnonymousUserId(),
     onReplayDegrade: ({ provider, model, reason }) => {
+      const key = `${provider}/${model}\u0000${reason}`
+      if (degradedReplays.has(key)) return
+      degradedReplays.add(key)
       ctx.logger.warn(`llm-deepseek: unusable Messages replay state on assistant history for route "${provider}/${model}"; sending provider-neutral content (${reason})`)
     },
   })
@@ -68,7 +85,7 @@ export function createBuiltInAdapter(
  */
 export function registerDeepSeekProvider<C extends DeepSeekConnectionOptions>(
   ctx: Context, provider: string, dependencies: Pick<DeepSeekAdapterOptions<C>,
-  'options' | 'resolveAuth' | 'providerName' | 'discoverModels'>): void {
+  'options' | 'resolveAuth' | 'providerName' | 'discoverModels' | 'connect' | 'admit'>): void {
   const adapter = createDeepSeekAdapter(ctx, dependencies)
   const registration = ctx.llm.registerAdapter([provider], adapter)
   let registeredPolicy = dependencies.options().retryPolicy

@@ -81,7 +81,8 @@ describe('CodeBody', () => {
     [absoluteFileAddress('C:/project/module.MJS'), 'javascript'],
   ])('selects language from the decoded file address %s', (resourceAddress, language) => {
     const view = render(<CodeBody {...props(contents(['const answer = 42'], true), { resourceAddress })} />)
-    expect(view.getByText(language, { exact: true })).toBeTruthy()
+    // The header keeps the raw info string in a hidden element for DOM consumers; the visible label is the one asserted.
+    expect(view.getByText(language, { exact: true, ignore: 'script, style, [hidden]' })).toBeTruthy()
     expect(element(view.container, '.shiki').textContent).toBe('const answer = 42')
     expect(view.container.querySelector('[data-line-numbers]')).not.toBeNull()
     const copy = view.getByRole('button', { name: 'Copy' })

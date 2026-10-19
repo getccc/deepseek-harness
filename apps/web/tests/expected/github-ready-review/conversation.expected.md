@@ -19,8 +19,8 @@
 - button "GitHub event received {{clock}}":
   - text: GitHub event received
   - time: {{clock}}
-- status: Xiaowei worked
-- button "Xiaowei took {{duration}}" [disabled]
+- status: Xiaowei completed
+- button "Xiaowei completed in {{duration}}" [disabled]
 - paragraph: "Review complete: no actionable findings."
 - button "Copy"
 - button "Good response"

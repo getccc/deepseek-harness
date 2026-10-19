@@ -8,9 +8,9 @@
     - tab "Trajectory"
 - text: Reply with a one-sentence description of event sourcing, then stop. {{clock}}
 - button "Copy"
-- status: Xiaowei is deep diving...
-- button "Xiaowei has been deep diving for {{duration}}" [disabled] [expanded]
 - paragraph: partial
+- status: Xiaowei is deep diving
+- text: Xiaowei has been deep diving for {{duration}} ···
 - textbox "Message or run a task, / commands, @ files or sessions":
   - paragraph: Queue this follow-up while the current turn is running.
 - button "Add files or run commands"

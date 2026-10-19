@@ -20,7 +20,6 @@ import { SessionLogOffset, SessionSeq } from '@deepseek-ai/dsh-session'
 import type { SessionEvent, SessionHeader, SessionId, UserMessage } from '@deepseek-ai/dsh-session'
 import { SessionQueryError, type SessionObservation } from '@deepseek-ai/dsh-session-query'
 import { SessionTitleInvalidError } from '@deepseek-ai/dsh-session-title'
-import { canonicalClientTimeZone } from '@deepseek-ai/dsh-util-time'
 import { assertNever } from '@deepseek-ai/dsh-util-values'
 import { RemoteError, remoteErrorOf } from '@deepseek-ai/dsh-typert-protocol'
 import type { Workspace } from '@deepseek-ai/dsh-workspace'
@@ -33,6 +32,7 @@ import {
   apiSessionSubagentOwnershipError,
   hasApiSessionSubagentOwner,
   inspectApiSession,
+  type ApiSessionCreated,
 } from './agent.ts'
 import type {
   SessionAttachmentRequest,
@@ -64,7 +64,12 @@ type PromptContentCandidate =
   | SessionPromptRequest['content'][number]
   | Extract<SessionUpdateQueueRequest['action'], { readonly kind: 'edit' }>['content'][number]
 
-function hasPromptContent(content: readonly PromptContentCandidate[]): boolean {
+/**
+ * Whether prompt content carries non-whitespace text or an attachment.
+ * @param content - submitted or edited prompt parts.
+ * @returns false for content the Agent must not receive.
+ */
+export function hasPromptContent(content: readonly PromptContentCandidate[]): boolean {
   return content.some(part => part.type !== 'text' || part.text.trim().length > 0)
 }
 
@@ -96,22 +101,22 @@ export class SessionCommandController {
   ) {}
 
   /**
-   * Create or idempotently adopt one ordinary Session.
+   * Create one ordinary Session for a new conversation, reusing the named
+   * blank Session while it is an unarchived member of the requested Workspace.
    *
    * The location decides the composition: a Workspace or cwd composes the
    * named preset or the roster's default, and no location composes the
    * named preset or the roster's `chatDefault`, whose sessions record no
    * cwd. The roster refuses a preset declared for the other kind of
    * location, and a deployment composing no roster requires a location.
-   * @param request - requested identity, location, and Agent preset.
-   * @returns the Session identity, the resolved preset when configured, and
-   * the cwd the Session owns when it owns one.
+   * @param request - optional blank Session to reuse, location, and Agent preset.
+   * @returns the created or reused Session identity, its preset when configured,
+   * and the cwd the Session owns when it owns one.
    */
   async create(request: SessionCreateRequest): Promise<SessionCreateValue> {
     if (request.workspaceId !== undefined && request.cwd !== undefined) {
       throw new RemoteError('gateway/bad-request', 'session.create accepts workspaceId or cwd, not both', {})
     }
-    const sessionId = request.sessionId ?? brandString<SessionId>(`session-${randomUUID()}`)
     let workspace: Workspace | undefined
     if (request.workspaceId !== undefined) {
       workspace = this.ctx.workspaceRegistry.get(request.workspaceId)
@@ -126,20 +131,22 @@ export class SessionCommandController {
       throw new RemoteError(
         'session/location-required',
         'session.create names neither a workspaceId nor a cwd, and this deployment composes no agent preset that runs without one',
-        { sessionId },
+        request.sessionId === undefined ? {} : { sessionId: request.sessionId },
       )
     }
-    let adopted: Agent
+    let created: ApiSessionCreated
     try {
-      adopted = await this.agents.ensureSession(
-        sessionId,
+      created = await this.agents.createSession({
+        ...(request.sessionId === undefined ? {} : { sessionId: request.sessionId }),
         cwd,
-        request.sessionId !== undefined,
-        request.agentPreset,
-      )
+        ...(request.agentPreset === undefined ? {} : { agentPreset: request.agentPreset }),
+        reusable: sessionId => !this.ctx.workspaceRegistry.archivedSessionIds.includes(sessionId)
+          && (workspace === undefined || workspace.sessionIds.includes(sessionId)),
+      })
     } catch (error) {
-      this.rejectCreation(sessionId, error)
+      this.rejectCreation(error)
     }
+    const sessionId = created.agent.id
     if (workspace !== undefined) {
       try {
         await workspace.attachSession(sessionId)
@@ -151,10 +158,9 @@ export class SessionCommandController {
         )
       }
     }
-    const composed = this.agents.presetForSession(adopted.session)
     return {
       sessionId,
-      ...(composed === undefined ? {} : { agentPreset: composed }),
+      ...(created.agentPreset === undefined ? {} : { agentPreset: created.agentPreset }),
       ...(cwd === undefined ? {} : { cwd }),
     }
   }
@@ -320,36 +326,16 @@ export class SessionCommandController {
   }
 
   /**
-   * Reject empty content, then admit one prompt after Agent and attachment validation.
-   * @param request - Session identity, prompt content, source metadata, and delivery mode.
+   * Admit one prompt after Agent and attachment validation; the Remote method
+   * has already validated the content and built the durable message source.
+   * @param request - Session identity, prompt content, and delivery mode.
+   * @param source - the `user-rpc` source recorded on the accepted message.
    * @returns acknowledgement that the Agent accepted the prompt.
    */
-  async prompt(request: SessionPromptRequest): Promise<SessionPromptValue> {
-    if (!hasPromptContent(request.content)) {
-      throw new RemoteError(
-        'gateway/bad-request',
-        'prompt content must include non-whitespace text or an attachment',
-        {},
-      )
-    }
-    const clientTimeZone = request.clientTimeZone === undefined
-      ? undefined
-      : canonicalClientTimeZone(request.clientTimeZone)
-    if (request.clientTimeZone !== undefined && clientTimeZone === undefined) {
-      throw new RemoteError(
-        'session/invalid-time-zone',
-        'clientTimeZone must be UTC or a valid IANA Area/Location name',
-        { value: request.clientTimeZone },
-      )
-    }
+  async prompt(request: SessionPromptRequest, source: MessageSource): Promise<SessionPromptValue> {
     const agent = await this.resolveAgent(request.sessionId)
     if (hasPromptRequest(agent, request.requestId)) return { accepted: true }
     await this.agents.settleDefaultSelection(agent)
-    const source: MessageSource = {
-      kind: 'user',
-      rpcId: request.requestId,
-      ...(clientTimeZone === undefined ? {} : { clientTimeZone }),
-    }
     const hasImage = request.content.some(part => part.type === 'image')
     const admit = async (): Promise<SessionPromptValue> => {
       try {
@@ -547,16 +533,12 @@ export class SessionCommandController {
     return found.agent
   }
 
-  private rejectCreation(sessionId: SessionId, error: unknown): never {
+  private rejectCreation(error: unknown): never {
     if (remoteErrorOf(error) !== undefined) throw error
-    if (error instanceof Error && error.name === 'SessionAlreadyOwnedError') {
-      throw new RemoteError('session/writer-held', error.message, { sessionId })
-    }
     if (error instanceof ApiSessionPresetConflict) {
       throw new RemoteError('agent-preset/conflict', error.message, {
         sessionId: error.sessionId,
         requestedPreset: error.requestedPreset,
-        ...(error.existingPreset === undefined ? {} : { existingPreset: error.existingPreset }),
       })
     }
     if (error instanceof ApiSessionCwdConflict) {
@@ -569,7 +551,7 @@ export class SessionCommandController {
     if (error instanceof ApiSessionSubagentOwnership) {
       throw apiSessionSubagentOwnershipError(error.sessionId)
     }
-    throw new RemoteError('gateway/internal', `failed to create session "${sessionId}": ${String(error)}`, {})
+    throw new RemoteError('gateway/internal', `failed to create session: ${String(error)}`, {})
   }
 
   private async readSessionState(sessionId: SessionId): Promise<SessionReadState> {

@@ -517,7 +517,9 @@ describe('when things do not work', () => {
 
     // The cookie is bound to the authority it was issued for, so a request that
     // names none cannot be given one.
-    const raw = await rawRequest(runner.webServer.port, [
+    const port = runner.webServer.port
+    if (port === undefined) throw new Error('the Runner web server is not listening')
+    const raw = await rawRequest(port, [
       'GET /team/open HTTP/1.0',
       'Sec-Fetch-Mode: navigate',
       'Sec-Fetch-Dest: document',

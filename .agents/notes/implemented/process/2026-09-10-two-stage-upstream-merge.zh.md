@@ -6,7 +6,7 @@ Status: implemented
 
 ## 问题
 
-在[选择性挑选](2026-09-10-selective-upstream-0-1-5-picks.zh.md)之后，本线还想要三项上游能力，而它们都不是可挑选的提交：带后台进度的通用文件上传（[记录](../feature/2026-08-26-generic-file-upload.zh.md)）、带可 steer 队列的可继续子代理（[记录](../feature/2026-07-28-continuable-subagent-conversations.zh.md)），以及带标签、分栏、全屏、文档预览与显式文件交付的右侧 Sidebar（[记录](../architecture/2026-09-05-sidebar-tab-types-and-navigation.zh.md)）。三者都建立在会话格式 v2 与 v3、`SessionHandle` 持久化、apiremote 错误契约和聊天表面重写之上，而挑选恰恰把这些基础留在了后面；逐项移植意味着手工搬运每一项基础。
+在[选择性挑选](2026-09-10-selective-upstream-0-1-5-picks.zh.md)之后，本线还想要三项上游能力，而它们都不是可挑选的提交：带后台进度的通用文件上传（[记录](../feature/2026-08-26-generic-file-upload.zh.md)）、带可 steer 队列的可继续子代理（[记录](../feature/2026-07-28-continuable-subagent-conversations.zh.md)），以及带标签、分栏、全屏、文档预览与显式文件交付的右侧 Sidebar（[记录](../../archived/architecture/2026-09-05-sidebar-tab-types-and-navigation.md)）。三者都建立在会话格式 v2 与 v3、`SessionHandle` 持久化、apiremote 错误契约和聊天表面重写之上，而挑选恰恰把这些基础留在了后面；逐项移植意味着手工搬运每一项基础。
 
 ## 决策
 

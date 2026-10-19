@@ -226,7 +226,7 @@ describe('ui-permission browser plugin', () => {
     })
     b.locale.setLocale('zh')
     const localized = await b.popup().options(proj, new AbortController().signal)
-    expect(localized.map(option => option.label)).toEqual(['只读', '工作区可写', '完全访问', 'Auto review'])
+    expect(localized.map(option => option.label)).toEqual(['只读', '工作区可写', '完全访问', '自动审查'])
     expect(localized.find(option => option.id === 'danger-full-access')?.confirmation).toEqual({
       title: '确认启用完全访问？',
       description: accessZh['confirm.description'],

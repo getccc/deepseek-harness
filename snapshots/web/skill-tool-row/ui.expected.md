@@ -7,8 +7,8 @@
     - tab "Trajectory"
 - text: Load the editing-cordis-compositions skill with the skill tool, then reply DONE. {{date}} {{clock}}
 - button "Copy"
-- status: Xiaowei worked
-- button "Xiaowei took {{duration}}" [expanded]
+- status: Xiaowei completed
+- button "Xiaowei completed in {{duration}}" [expanded]
 - button "Called tools" [expanded]
 - button "Think Load the requested skill."
 - button "Skill editing-cordis-compositions" [expanded]
