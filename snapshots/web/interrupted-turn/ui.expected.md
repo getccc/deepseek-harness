@@ -7,8 +7,8 @@
     - tab "Trajectory"
 - text: "Use the read tool twice in one assistant message: read a.txt and b.txt. Then reply with the single word DONE and stop. {{clock}}"
 - button "Copy"
-- status: Stopped
-- button "Stopped" [disabled] [expanded]
+- status: Xiaowei stopped
+- button "Xiaowei stopped" [disabled] [expanded]
 - button "Read files"
 - paragraph: DONE
 - status: Task stoppedThe DSH process exited before this turn finished (for example, it was killed, crashed, or timed out while shutting down), so the turn was closed when DSH restarted. Unfinished tool calls have unknown outcomes.

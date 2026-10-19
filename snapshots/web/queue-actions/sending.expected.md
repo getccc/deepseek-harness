@@ -9,8 +9,8 @@
 - text: Reply with a one-sentence description of event sourcing, then stop. {{clock}}
 - button "Copy"
 - paragraph: partial
-- status: Deep diving
-- text: Deep diving for {{duration}} ···
+- status: Xiaowei is deep diving
+- text: Xiaowei has been deep diving for {{duration}} ···
 - list:
   - listitem:
     - text: Queue item to remove

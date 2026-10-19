@@ -76,7 +76,8 @@ it('replays highlighted Python stubs, PowerShell and CSV reads with their docume
         await page.getByRole('menuitem', { name: 'Code', exact: true }).click()
       }
       await expect.poll(() => preview.locator('[data-code-preview] .shiki span[style*="color:"]').count()).toBeGreaterThan(0)
-      expect(await preview.getByText(file.previewLang, { exact: true }).count()).toBe(1)
+      // The header also keeps the raw info string in a hidden element for DOM consumers.
+      expect(await preview.getByText(file.previewLang, { exact: true }).filter({ visible: true }).count()).toBe(1)
       snapshots.push(`## Preview ${file.name}\n\n${await captureStableAria(page, '[data-code-preview]', scaffold.workspaceCwd)}`)
       await read.locator('[data-disclosure-row]').click()
     }

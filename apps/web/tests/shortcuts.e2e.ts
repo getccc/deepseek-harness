@@ -326,7 +326,7 @@ describe('web e2e: shortcut reference', () => {
   it.each([
     { platform: 'Win32', primary: 'Control', keys: 'Ctrl + Alt + N', aria: 'Control+Alt+N' },
     { platform: 'MacIntel', primary: 'Meta', keys: '⌥ ⇧ ⌘ F12', aria: 'Alt+Shift+Meta+F12' },
-  ])('announces the New Session shortcut on New work task and the brand row, and shows it in their tooltips on $platform', async ({ platform, primary, keys, aria }) => {
+  ])('announces the New Session shortcut on New work task and the brand row, and shows it in the rail tooltip on $platform', async ({ platform, primary, keys, aria }) => {
     const context = await browser.newContext({ locale: 'en-US', viewport: { width: 1440, height: 1000 } })
     try {
       await context.addInitScript((value) => { Object.defineProperty(navigator, 'platform', { value }) }, platform)
@@ -349,10 +349,6 @@ describe('web e2e: shortcut reference', () => {
         await page.mouse.up()
         await expect.poll(() => workTask.getAttribute('aria-keyshortcuts')).toBe(aria)
         expect(await brand.getAttribute('aria-keyshortcuts')).toBe(aria)
-        await brand.hover()
-        await hint.waitFor()
-        await page.mouse.move(700, 100)
-        await hint.waitFor({ state: 'hidden' })
       }
       // The wide row shows its label; the rail row shows the label and keys in its tooltip.
       await page.getByRole('button', { name: 'Collapse sidebar', exact: true }).click()

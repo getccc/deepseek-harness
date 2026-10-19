@@ -8,8 +8,8 @@
     - tab "Trajectory"
 - text: "Use the bash tool to run exactly: echo WEB_E2E_OK. Then reply with the single word DONE and stop. {{clock}}"
 - button "Copy"
-- status: Completed
-- button "Completed in {{duration}}"
+- status: Xiaowei completed
+- button "Xiaowei completed in {{duration}}"
 - paragraph: DONE
 - button "Copy"
 - button "Good response"

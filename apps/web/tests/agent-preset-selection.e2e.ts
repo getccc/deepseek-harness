@@ -382,7 +382,7 @@ describe('web e2e: agent-preset selection', () => {
     await expect.poll(async () => (await scaffold.ctx.agentPresets.remoteExportList()).presets.find(preset => preset.isDefault)?.id).toBe('standard')
 
     const creation = page.waitForResponse('**/api/session/create')
-    await page.getByRole('button', { name: 'New session', exact: true }).last().click()
+    await page.getByRole('button', { name: 'New work task', exact: true }).last().click()
     const created = await creation
     expect(created.request().postDataJSON()).not.toHaveProperty('payload.args.request.sessionId')
     const createdBody = await created.json() as { result: { value: { sessionId: SessionId; agentPreset: string } } }
@@ -486,7 +486,7 @@ it.each([false, true])('starts Creator from Plugins with Coding Tools=%s without
     creator.session.append('turn/end', { turn: 1, reason: { kind: 'completed' } })
     await scaffold.ctx.sessions.flush(creator.session)
     await page.getByText('Creator fixture completed without a model call.', { exact: true }).waitFor()
-    const newSession = page.getByRole('button', { name: 'New session', exact: true }).filter({ hasText: 'New Session' })
+    const newSession = page.getByRole('button', { name: 'New work task', exact: true }).filter({ hasText: 'New work task' })
     await Promise.all([page.waitForResponse('**/api/session/create'), newSession.click()])
     expect(scaffold.ctx.agents.list().find(agent => agent.id !== creator.id)).toBeDefined()
     const next = scaffold.ctx.agents.list().find(agent => agent.id !== creator.id)!

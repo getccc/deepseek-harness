@@ -12,8 +12,8 @@
 - button "Ask question waiting"
 - text: "Interjection: include the word BANANA in your final reply."
 - button "Copy"
-- status: Deep diving
-- text: Deep diving for {{duration}} ···
+- status: Xiaowei is deep diving
+- text: Xiaowei has been deep diving for {{duration}} ···
 - region "Ready to continue?":
   - text: Checkpoint
   - heading "Ready to continue?" [level=2]

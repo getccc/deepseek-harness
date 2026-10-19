@@ -62,7 +62,7 @@ describe.skipIf(MODE === 'record')('web e2e: turn interrupted by a DSH stop', ()
     await notice.waitFor({ timeout: 15_000 })
     expect(await notice.textContent()).toContain('The DSH process exited before this turn finished')
     expect(await notice.textContent()).not.toContain('INTERRUPTED')
-    expect(await page.locator('[data-turn-process="1"]').textContent()).toBe('Stopped')
+    expect(await page.locator('[data-turn-process="1"]').textContent()).toBe('Xiaowei stopped')
 
     const snapshot = (await captureStableAria(page, '[class*="centerCol"]', scaffold.workspaceCwd))
       .split(SEED_ID).join('{{seededId}}')

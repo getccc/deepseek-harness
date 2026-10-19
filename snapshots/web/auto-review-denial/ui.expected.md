@@ -9,8 +9,8 @@
     - tab "Trajectory"
 - text: Inspect the protected operation, but do not run it unless authorized. {{clock}}
 - button "Copy"
-- status: Completed
-- button "Completed in {{duration}}" [expanded]
+- status: Xiaowei completed
+- button "Xiaowei completed in {{duration}}" [expanded]
 - button "Called tools, ran code, ran commands" [expanded]
 - text: Failed
 - button "Tool call Rejected by Auto review"
@@ -35,8 +35,8 @@
     - tab "Trajectory"
 - text: Inspect the protected operation, but do not run it unless authorized. {{clock}}
 - button "Copy"
-- status: Completed
-- button "Completed in {{duration}}" [expanded]
+- status: Xiaowei completed
+- button "Xiaowei completed in {{duration}}" [expanded]
 - button "Called tools, ran code, ran commands" [expanded]
 - text: Failed
 - button "Tool call Rejected by Auto review" [expanded]

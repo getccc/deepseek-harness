@@ -11,8 +11,8 @@
   - img "reference-1.png"
 - text: Read the attached file with the read tool, reply with exactly the single word it contains, and stop. {{clock}}
 - button "Copy"
-- status: Completed
-- button "Completed in {{duration}}"
+- status: Xiaowei completed
+- button "Xiaowei completed in {{duration}}"
 - paragraph: UPLOAD_ROUND_OK
 - button "Copy"
 - button "Good response"

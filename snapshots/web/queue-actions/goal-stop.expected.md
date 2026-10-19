@@ -15,28 +15,28 @@
 - button "Continuing goal {{clock}}":
   - text: Continuing goal
   - time: {{clock}}
-- status: Stopped
-- button "Stopped" [disabled]
+- status: Xiaowei stopped
+- button "Xiaowei stopped" [disabled]
 - paragraph: partial
-- text: Stopped
+- text: Xiaowei stopped
 - button "Copy"
 - button "Good response"
 - button "Bad response"
 - button "Branch into a new conversation"
 - text: {{clock}} Queue item to remove {{clock}}
 - button "Copy"
-- status: Stopped
-- button "Stopped" [disabled]
+- status: Xiaowei stopped
+- button "Xiaowei stopped" [disabled]
 - paragraph: partial
-- text: Stopped
+- text: Xiaowei stopped
 - button "Copy"
 - button "Good response"
 - button "Bad response"
 - button "Branch into a new conversation"
 - text: {{clock}} Wake the preserved queue {{clock}}
 - button "Copy"
-- status: Completed
-- button "Completed in {{duration}}"
+- status: Xiaowei completed
+- button "Xiaowei completed in {{duration}}"
 - paragraph: Event sourcing is a pattern where all changes to an application's state are stored as an immutable, append-only sequence of events, rather than persisting only the current state, enabling full auditability, temporal queries, and event-driven architectures.
 - button "Copy"
 - button "Good response"

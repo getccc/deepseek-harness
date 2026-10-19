@@ -9,8 +9,8 @@
     - tab "Trajectory"
 - text: Clean up the stale build log. {{clock}}
 - button "Copy"
-- status: Completed
-- button "Completed in {{duration}}" [expanded]
+- status: Xiaowei completed
+- button "Xiaowei completed in {{duration}}" [expanded]
 - button "Called tools" [expanded]
 - text: Failed
 - 'button "Tool call Error: the user rejected tool \"mystery\""'
@@ -34,8 +34,8 @@
     - tab "Trajectory"
 - text: Clean up the stale build log. {{clock}}
 - button "Copy"
-- status: Completed
-- button "Completed in {{duration}}" [expanded]
+- status: Xiaowei completed
+- button "Xiaowei completed in {{duration}}" [expanded]
 - button "Called tools" [expanded]
 - text: Failed
 - 'button "Tool call Error: the user rejected tool \"mystery\"" [expanded]'

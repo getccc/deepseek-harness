@@ -1,7 +1,7 @@
 - text: "Use the read tool twice in one assistant message: read a.txt and b.txt. Then reply with the single word DONE and stop. {{clock}}"
 - button "Copy"
-- status: Completed
-- button "Completed in {{duration}}"
+- status: Xiaowei completed
+- button "Xiaowei completed in {{duration}}"
 - paragraph: DONE
 - button "Copy"
 - button "Good response"
@@ -9,8 +9,8 @@
 - button "Branch into a new conversation"
 - text: "{{clock}} Use the read tool twice in one assistant message: read a.txt and b.txt. Then reply with the single word DONE and stop. {{clock}}"
 - button "Copy"
-- status: Completed
-- button "Completed in {{duration}}" [expanded]
+- status: Xiaowei completed
+- button "Xiaowei completed in {{duration}}" [expanded]
 - button "Tools updated 31 added"
 - button "Think Both files have been read. a.txt contains \"alpha\" and b.txt contains \"beta\". I'll now reply with DONE as instructed."
 - paragraph: DONE

@@ -8,8 +8,8 @@
     - tab "Trajectory"
 - text: Use read_image to inspect red.png. Then reply exactly MINIMAL_IMAGE_OK and stop. {{clock}}
 - button "Copy"
-- status: Completed
-- button "Completed in {{duration}}" [expanded]
+- status: Xiaowei completed
+- button "Xiaowei completed in {{duration}}" [expanded]
 - button "Read images" [expanded]
 - button "Read image red.png" [expanded]:
   - text: Read image

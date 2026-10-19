@@ -14,10 +14,10 @@
   - button "Jump to turn 2"
 - text: "Explain event sourcing in one sentence.Your parent agent id is \"session-{{uuid}}\". Before you finish, send your result to that agent with send_message({ agent_id: \"session-{{uuid}}\", message: \"<self-contained result>\" }). The parent shares your workspace but does not automatically receive your transcript, tool output, or reasoning. Send earlier messages as well when a finding changes what the parent should do next; sending a message does not end your turn. {{clock}}"
 - button "Copy"
-- status: Stopped
-- button "Stopped" [disabled]
+- status: Xiaowei stopped
+- button "Xiaowei stopped" [disabled]
 - paragraph: partial
-- text: Stopped
+- text: Xiaowei stopped
 - button "Copy"
 - button "Good response"
 - button "Bad response"
@@ -25,8 +25,8 @@
 - text: {{clock}} Keep working until I stop you again. {{clock}}
 - button "Copy"
 - paragraph: partial
-- status: Deep diving
-- text: Deep diving for {{duration}} ···
+- status: Xiaowei is deep diving
+- text: Xiaowei has been deep diving for {{duration}} ···
 - button "3 queued messages" [expanded]
 - list:
   - listitem:

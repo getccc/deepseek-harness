@@ -27,8 +27,11 @@ describe('web e2e: blank Session reuse under the requested preset', () => {
     await scaffold?.close()
   })
 
-  /** Store a blank Session recorded under `agentPreset`, with a plan-mode switch, as the only member of a new Workspace. */
-  async function storeBlank(sessionId: SessionId, folder: string, agentPreset: string): Promise<void> {
+  /**
+   * Store a blank Session recorded under `agentPreset` as the only member of a new Workspace.
+   * A plan-mode switch ends the Session's pristine state, so startup no longer reuses it.
+   */
+  async function storeBlank(sessionId: SessionId, folder: string, agentPreset: string, planMode = true): Promise<void> {
     const path = join(scaffold.workspaceCwd, folder)
     await mkdir(path)
     const workspace = await scaffold.ctx.workspaceRegistry.create(path)
@@ -38,7 +41,7 @@ describe('web e2e: blank Session reuse under the requested preset', () => {
       agentOptions: scaffold.ctx.agentDefaultModel.currentSelection(),
     })
     try {
-      handle.agent.session.append('plan/mode', { active: true })
+      if (planMode) handle.agent.session.append('plan/mode', { active: true })
       await workspace.attachSession(sessionId)
     } finally {
       await handle.dispose()
@@ -90,13 +93,11 @@ describe('web e2e: blank Session reuse under the requested preset', () => {
 
   it('reuses a blank recorded under an undeclared preset under the default when startup connects its Workspace', async () => {
     const stale = SessionId('blank-undeclared')
-    await storeBlank(stale, 'undeclared', UNDECLARED)
+    await storeBlank(stale, 'undeclared', UNDECLARED, false)
 
     const page = await openPage()
     await expect.poll(() => selected(page)).toBe(stale)
-    await expect.poll(() => liveComposition(stale)).toMatchObject({
-      mounted: 'standard', projected: 'standard', plan: { active: true },
-    })
+    await expect.poll(() => liveComposition(stale)).toMatchObject({ mounted: 'standard', projected: 'standard' })
     expect(await storedSelections(stale)).toEqual([{ agentPreset: 'standard' }])
     expect(scaffold.ctx.workspaceRegistry.list().find(item => item.sessionIds.includes(stale))?.sessionIds).toEqual([stale])
     expect(await page.getByRole('alert').count()).toBe(0)

@@ -315,7 +315,7 @@ describe('web e2e: live-turn interactions (cancel / error / retry)', () => {
       expect(geometry.width).toBeLessThanOrEqual(200)
       expect(geometry.scrollWidth).toBe(geometry.clientWidth)
       expect(geometry.height).toBeGreaterThan(geometry.lineHeight)
-      expect(await retry.getByRole('status').textContent()).toContain('Retrying')
+      expect(await retry.getByRole('status').textContent()).toContain('Xiaowei is retrying')
     } finally {
       await retry.evaluate((element, style) => {
         if (style === null) element.removeAttribute('style')
