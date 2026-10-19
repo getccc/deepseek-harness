@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-gmo-excel-tools",
   "description": "GMO supply-chain source provider for the DeepSeek Harness Control Plane — the one place that holds the excel-tools gateway token and speaks its fixed read-only routes, with row, group, time, and size bounds",
-  "version": "0.1.7-rc.2",
+  "version": "0.2.1-rc.2",
   "publishConfig": {
     "access": "public"
   },

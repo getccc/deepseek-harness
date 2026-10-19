@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-gmo-gateway-http",
   "description": "Runner-facing GMO supply-chain HTTP endpoints for the DeepSeek Harness Control Plane — token-verified, version-checked directory, result listing, description, and question routes",
-  "version": "0.1.7-rc.2",
+  "version": "0.2.1-rc.2",
   "publishConfig": {
     "access": "public"
   },

@@ -9,7 +9,6 @@ overrides:
   '@deepseek-ai/cosmokit': link:vendor/cosmokit
   '@deepseek-ai/schemastery': link:vendor/schemastery
 
-
 patchedDependencies:
   '@earendil-works/pi-ai@1.1.0': 66eaf960054f10441b93ac3857114e96c1901f6d183713e2f21437b007111644
   '@electron/osx-sign@1.3.3': 280e7b2816caf01423097d24e79107a66afeb563a348630ce9928ae8499a5861
@@ -18269,9 +18268,6 @@ importers:
       '@deepseek-ai/dsh-web-search-perplexity':
         specifier: workspace:*
         version: link:../../packages/web/web-search-perplexity
-      '@deepseek-ai/dsh-webhook':
-        specifier: workspace:*
-        version: link:../../packages/experimental/webhook
       '@deepseek-ai/dsh-workflow':
         specifier: workspace:*
         version: link:../../packages/workflow/workflow

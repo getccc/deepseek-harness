@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-tool-gmo",
   "description": "Model-facing GMO supply-chain analysis for the DeepSeek Harness — the gmo_list_results, gmo_describe_result, gmo_aggregate, gmo_overview, and gmo_rows tools, the Session scope prompt section, and scope-driven tool visibility",
-  "version": "0.1.7-rc.2",
+  "version": "0.2.1-rc.2",
   "publishConfig": {
     "access": "public"
   },

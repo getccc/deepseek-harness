@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-client-ui-gmo",
   "description": "GMO supply-chain composer control: the single-select naming which GMO category this conversation analyzes, recorded through the Team-only gmo Remote",
-  "version": "0.1.7-rc.2",
+  "version": "0.2.1-rc.2",
   "publishConfig": {
     "access": "public"
   },

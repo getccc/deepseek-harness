@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-audit-sqlite",
   "description": "SQLite-backed audit trail: an append-only event table whose every text column holds a catalog word or a short token, so task content has nowhere to land",
-  "version": "0.1.7-rc.2",
+  "version": "0.2.1-rc.2",
   "publishConfig": {
     "access": "public"
   },

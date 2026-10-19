@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team-release",
   "description": "Published desktop releases: the signed manifests a deployment offers, who each one is offered to, and the oldest build it still accepts",
-  "version": "0.1.7-rc.2",
+  "version": "0.2.1-rc.2",
   "publishConfig": {
     "access": "public"
   },

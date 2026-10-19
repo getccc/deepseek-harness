@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team-governed-wire",
   "description": "The wire shared by the governed knowledge, BI, and GMO endpoints between a Team Runner and the Control Plane — request opening and refusal envelopes on the Control Plane, the device-token call and refusal decoding on the Runner",
-  "version": "0.1.7-rc.2",
+  "version": "0.2.1-rc.2",
   "publishConfig": {
     "access": "public"
   },

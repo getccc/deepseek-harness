@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-governed-catalog-sqlite",
   "description": "SQLite engine shared by the governed knowledge, BI, and GMO gateways — the durable catalog, its reconciliation against a source listing, access-control registration, the per-operation authorization decision, and the audit record shape",
-  "version": "0.1.7-rc.2",
+  "version": "0.2.1-rc.2",
   "publishConfig": {
     "access": "public"
   },

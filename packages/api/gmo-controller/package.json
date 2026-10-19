@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-api-gmo-controller",
   "description": "Team-only Host Remote for GMO supply-chain analysis — the authorized category directory a browser reads and the Session category choice it records",
-  "version": "0.1.7-rc.2",
+  "version": "0.2.1-rc.2",
   "publishConfig": {
     "access": "public"
   },

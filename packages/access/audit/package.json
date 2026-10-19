@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-audit",
   "description": "Audit Service Definition: the closed action catalog, the metadata key catalog, and the value rules that keep task content out of an audit record",
-  "version": "0.1.7-rc.2",
+  "version": "0.2.1-rc.2",
   "publishConfig": {
     "access": "public"
   },

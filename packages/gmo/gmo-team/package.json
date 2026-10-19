@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-gmo-team",
   "description": "Team Runner GMO supply-chain provider (ctx.gmo) for the DeepSeek Harness — authorized category directory, result listing, description, and questions over the company Control Plane, carrying the current device token and no source address or credential",
-  "version": "0.1.7-rc.2",
+  "version": "0.2.1-rc.2",
   "publishConfig": {
     "access": "public"
   },
