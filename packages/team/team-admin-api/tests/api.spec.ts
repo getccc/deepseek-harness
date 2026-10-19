@@ -54,6 +54,7 @@ import {
 } from '@deepseek-ai/dsh-knowledge-source'
 import type { AccountStore, OrgId, UserId } from '@deepseek-ai/dsh-account-store'
 import type { AccessControl, GrantId, RoleId } from '@deepseek-ai/dsh-access-control'
+import type { Quota } from '@deepseek-ai/dsh-quota'
 import type { Audit } from '@deepseek-ai/dsh-audit'
 import {
   newSecret,
@@ -66,9 +67,10 @@ import {
 } from '@deepseek-ai/dsh-device-authorization'
 import { csrfToken, hashToken } from '@deepseek-ai/dsh-team-browser-session'
 import * as api from '../src/index.ts'
+import { MAX_USAGE_PAGE, MAX_USAGE_WINDOW_MS } from '../src/usage.ts'
 import type {
   WireDepartment, WireDevice, WireMember, WireMenu, WireModel, WireOrganization, WireRole,
-  WireSession,
+  WireSession, WireUsageRecords, WireUsageReport,
 } from '../src/types.ts'
 
 /** One response, read the way the console reads it. */
@@ -215,6 +217,7 @@ const ADMIN_PERMISSIONS = [
   ['knowledge_scope', 'knowledge.catalog.read'], ['knowledge_scope', 'knowledge.catalog.manage'],
   ['bi_project', 'bi.catalog.read'], ['bi_project', 'bi.catalog.manage'],
   ['gmo_category', 'gmo.catalog.read'], ['gmo_category', 'gmo.catalog.manage'],
+  ['usage', 'usage.organization.read'],
 ] as const
 
 /** A model registration the catalog accepts, for tests that break one field. */
@@ -586,6 +589,7 @@ describe('what a role does not carry', () => {
     for (const path of [
       '/team/api/overview', '/team/api/organization', '/team/api/members',
       '/team/api/departments', '/team/api/roles', '/team/api/devices', '/team/api/models',
+      '/team/api/usage?from=1&to=2', '/team/api/usage/records?from=1&to=2',
     ]) {
       const refused = await send(path, { headers: { cookie: held.cookie } })
       expect(refused.status, path).toBe(403)
@@ -1131,6 +1135,198 @@ describe('what the console reads', () => {
     const held = await signIn()
     const read = await send('/team/api/members', { headers: { cookie: held.cookie } })
     expect(head(read, 'cache-control')).toBe('no-store')
+  })
+})
+
+describe('monitoring token usage', () => {
+  const HOUR = 3_600_000
+  const DAY = 24 * HOUR
+
+  /** Send and settle one company-model call as an account, at the current moment. */
+  async function spend(
+    who: UserId,
+    tokens: { inputTokens: number; outputTokens: number },
+    modelRef = 'deepseek-chat',
+  ): Promise<void> {
+    const quota = ctx.get('quota') as Quota
+    const held = await quota.reserve({
+      orgId, period: '2026-10', principalId: who, modelRef, inputTokens: 1_000, maxOutputTokens: 9_000,
+    })
+    await quota.settle(held.id, { kind: 'reported', ...tokens })
+  }
+
+  /** The query string for a range around now. */
+  function around(extra = '', before = HOUR, after = HOUR): string {
+    const now = Date.now()
+    return `from=${String(now - before)}&to=${String(now + after)}${extra}`
+  }
+
+  /** A second member, in a department, who has spent something. */
+  async function bobSpends(): Promise<UserId> {
+    const department = await store.createDepartment({ orgId, name: 'Finance', code: 'fin' })
+    const bob = (await store.createUser({
+      orgId, loginName: 'bob', displayName: 'Bob', departmentId: department.id,
+    })).id
+    await spend(bob, { inputTokens: 400, outputTokens: 100 })
+    await spend(alice, { inputTokens: 10, outputTokens: 5 })
+    return bob
+  }
+
+  it('totals the organization and lists every account, biggest spender first', async () => {
+    const bob = await bobSpends()
+    const carol = (await store.createUser({ orgId, loginName: 'carol', displayName: 'Carol' })).id
+    const held = await signIn()
+    const answered = await send(`/team/api/usage?${around()}`, { headers: { cookie: held.cookie } })
+    expect(answered.status).toBe(200)
+    const report = payload(answered) as WireUsageReport
+    expect(report.totals).toEqual({ calls: 2, inputTokens: 410, outputTokens: 105, chargedTokens: 515, activeMembers: 2 })
+    expect(report.bucketMs).toBe(HOUR)
+    expect(report.members.map(row => [row.memberId, row.chargedTokens])).toEqual([
+      [bob, 500], [alice, 15], [carol, 0],
+    ])
+    expect(report.members[0]).toMatchObject({
+      loginName: 'bob', displayName: 'Bob', departmentName: 'Finance', calls: 1, inputTokens: 400, outputTokens: 100,
+    })
+    expect(report.members[0]?.lastCallAt).toBeGreaterThan(Date.now() - HOUR)
+    // An account that spent nothing is listed, and says so rather than omitting the time.
+    expect(report.members[2]).not.toHaveProperty('lastCallAt')
+    expect(report.series).toHaveLength(1)
+    expect(report.series[0]).toMatchObject({ calls: 2, chargedTokens: 515 })
+  })
+
+  it('keeps a deleted account\'s spending on the report', async () => {
+    const bob = await bobSpends()
+    await store.deleteUser(bob)
+    const held = await signIn()
+    const report = payload(await send(`/team/api/usage?${around()}`, { headers: { cookie: held.cookie } })) as WireUsageReport
+    expect(report.members[0]).toMatchObject({ memberId: bob, chargedTokens: 500 })
+    expect(report.members[0]).not.toHaveProperty('displayName')
+    expect(report.totals.chargedTokens).toBe(515)
+    const { records } = payload(await send(`/team/api/usage/records?${around(`&member=${bob}`)}`, {
+      headers: { cookie: held.cookie },
+    })) as WireUsageRecords
+    expect(records[0]).toMatchObject({ memberId: bob, chargedTokens: 500 })
+    expect(records[0]).not.toHaveProperty('displayName')
+  })
+
+  it('orders accounts that spent the same by name, deleted accounts by id', async () => {
+    const carol = (await store.createUser({ orgId, loginName: 'carol', displayName: 'Carol' })).id
+    const dave = (await store.createUser({ orgId, loginName: 'dave', displayName: 'Dave' })).id
+    const gone = []
+    for (const login of ['x1', 'x2']) {
+      const id = (await store.createUser({ orgId, loginName: login, displayName: login })).id
+      await spend(id, { inputTokens: 10, outputTokens: 5 })
+      gone.push(id)
+    }
+    await spend(alice, { inputTokens: 10, outputTokens: 5 })
+    for (const id of gone) await store.deleteUser(id)
+    const held = await signIn()
+    const report = payload(await send(`/team/api/usage?${around()}`, { headers: { cookie: held.cookie } })) as WireUsageReport
+    const ids = report.members.map(row => row.memberId)
+    expect(ids.slice(0, 3).sort()).toEqual([alice, ...gone].sort())
+    // Alice is named, so she sorts by her name against the others' ids.
+    expect(ids.slice(3)).toEqual([carol, dave])
+  })
+
+  it('narrows the series to one account while the totals stay the organization\'s', async () => {
+    const bob = await bobSpends()
+    const held = await signIn()
+    const report = payload(await send(`/team/api/usage?${around(`&member=${bob}`)}`, {
+      headers: { cookie: held.cookie },
+    })) as WireUsageReport
+    expect(report.series[0]).toMatchObject({ calls: 1, chargedTokens: 500 })
+    expect(report.totals.chargedTokens).toBe(515)
+  })
+
+  it('cuts long ranges into days and starts a bucket at the reader\'s own clock', async () => {
+    await spend(alice, { inputTokens: 1, outputTokens: 1 })
+    const held = await signIn()
+    const days = payload(await send(`/team/api/usage?${around('', 3 * DAY, DAY)}`, {
+      headers: { cookie: held.cookie },
+    })) as WireUsageReport
+    expect(days.bucketMs).toBe(DAY)
+    const hours = payload(await send(`/team/api/usage?${around('&utcOffsetMinutes=330')}`, {
+      headers: { cookie: held.cookie },
+    })) as WireUsageReport
+    // An hour in UTC+5:30 begins half an hour after a UTC hour does.
+    expect(((hours.series[0]?.start as number) % HOUR + HOUR) % HOUR).toBe(HOUR / 2)
+  })
+
+  it('lists calls newest first with who sent them, a page at a time', async () => {
+    const bob = await bobSpends()
+    await spend(bob, { inputTokens: 1, outputTokens: 1 }, 'deepseek-reasoner')
+    const held = await signIn()
+    const first = payload(await send(`/team/api/usage/records?${around('&limit=2')}`, {
+      headers: { cookie: held.cookie },
+    })) as WireUsageRecords
+    expect(first.total).toBe(3)
+    expect(first.records).toHaveLength(2)
+    expect(first.records[0]).toMatchObject({
+      memberId: bob, displayName: 'Bob', modelRef: 'deepseek-reasoner', kind: 'reported',
+      reconciled: false, chargedTokens: 2,
+    })
+    expect(first.records[0]?.settledAt).toBeGreaterThanOrEqual(first.records[0]?.startedAt as number)
+    const rest = payload(await send(`/team/api/usage/records?${around('&limit=2&offset=2')}`, {
+      headers: { cookie: held.cookie },
+    })) as WireUsageRecords
+    expect(rest.records).toHaveLength(1)
+    const only = payload(await send(`/team/api/usage/records?${around(`&member=${alice}`)}`, {
+      headers: { cookie: held.cookie },
+    })) as WireUsageRecords
+    expect(only.records.map(record => record.memberId)).toEqual([alice])
+  })
+
+  it('names the call as an estimate or a reconciliation and keeps its device', async () => {
+    const quota = ctx.get('quota') as Quota
+    const held = await quota.reserve({
+      orgId, period: '2026-10', principalId: alice, deviceId: 'device-9',
+      modelRef: 'deepseek-chat', inputTokens: 10, maxOutputTokens: 10,
+    })
+    await quota.settle(held.id, { kind: 'estimated', inputTokens: 4, outputTokens: 0 })
+    const signed = await signIn()
+    const { records } = payload(await send(`/team/api/usage/records?${around()}`, {
+      headers: { cookie: signed.cookie },
+    })) as WireUsageRecords
+    expect(records[0]).toMatchObject({ kind: 'estimated', deviceId: 'device-9', chargedTokens: 4 })
+  })
+
+  it('refuses a range, page, or clock offset it cannot answer', async () => {
+    const held = await signIn()
+    for (const query of [
+      '', 'from=1', 'to=2', 'from=abc&to=2', 'from=2&to=2', 'from=3&to=2',
+      `from=0&to=${String(367 * DAY)}`,
+      'from=1&to=2&limit=0', `from=1&to=2&limit=${String(MAX_USAGE_PAGE + 1)}`, 'from=1&to=2&limit=x',
+      'from=1&to=2&offset=-1', 'from=1&to=2&utcOffsetMinutes=soon', 'from=1&to=2&utcOffsetMinutes=900',
+      'from=1&to=2&utcOffsetMinutes=-721',
+    ]) {
+      for (const path of ['/team/api/usage', '/team/api/usage/records']) {
+        const refused = await send(`${path}?${query}`, { headers: { cookie: held.cookie } })
+        expect(refused.status, `${path}?${query}`).toBe(400)
+        expect(payload(refused)).toMatchObject({ error: 'malformed', reason: 'usage-query' })
+      }
+    }
+  })
+
+  it('accepts the longest range and the largest page', async () => {
+    const held = await signIn()
+    const answered = await send(
+      `/team/api/usage/records?from=0&to=${String(MAX_USAGE_WINDOW_MS)}&limit=${String(MAX_USAGE_PAGE)}&member=`,
+      { headers: { cookie: held.cookie } },
+    )
+    expect(answered.status).toBe(200)
+  })
+
+  it('answers no address under usage other than the report and its records', async () => {
+    const held = await signIn()
+    for (const path of ['/team/api/usage/members', '/team/api/usage/records/1']) {
+      expect((await send(`${path}?from=1&to=2`, { headers: { cookie: held.cookie } })).status, path).toBe(404)
+    }
+  })
+
+  it('shows the permission to the console, so the page can be offered', async () => {
+    const held = await signIn()
+    const asked = await send('/team/api/session', { headers: { cookie: held.cookie } })
+    expect((payload(asked) as WireSession).permissions).toContain('usage|usage.organization.read')
   })
 })
 

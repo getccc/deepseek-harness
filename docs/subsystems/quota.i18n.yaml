@@ -23,6 +23,9 @@
 /quota/no-limit-means-no-ceiling:
   en: da43baaf96118edf
   zh: 56d040c03d318a2e
+/quota/usage-reports-are-reads-of-the-same-rows:
+  en: 90831b7cf6ea1d3b
+  zh: 3d1635ec3995b7c5
 /quota/what-the-ledger-does-not-decide:
   en: 64725f6491cc33d1
   zh: 61e64eae6f7ec838

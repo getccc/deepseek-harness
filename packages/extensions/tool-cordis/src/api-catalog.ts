@@ -2906,6 +2906,24 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         parameters: [{ name: 'orgId', description: 'the organization to report on.' }, { name: 'period', description: 'the period to report on.' }],
         returns: 'the limit, what is settled, what is reserved, and what remains.',
       },
+      {
+        signature: 'abstract usageByPrincipal(window: UsageWindow): Promise<PrincipalUsage[]>',
+        description: 'What each account spent in a window, largest spender first.\n\nOnly settled calls that produced tokens count: a reservation nothing has settled yet holds budget but has spent nothing, and a released one was never charged. An account that sent no such call is absent, not zero.',
+        parameters: [{ name: 'window', description: 'the organization and the time range to report on.' }],
+        returns: 'one entry per account that spent, by charged tokens descending.',
+      },
+      {
+        signature: 'abstract usageSeries(query: UsageSeriesQuery): Promise<UsageBucket[]>',
+        description: 'How a window\'s spending is spread over time.',
+        parameters: [{ name: 'query', description: 'the window, an optional account, and how to cut time.' }],
+        returns: 'the buckets that hold at least one call, oldest first.',
+      },
+      {
+        signature: 'abstract usageRecords(query: UsageRecordsQuery): Promise<UsageRecordPage>',
+        description: 'The individual calls in a window, newest first.',
+        parameters: [{ name: 'query', description: 'the window, an optional account, and the page wanted.' }],
+        returns: 'the page and the number of calls the filter matches in all.',
+      },
     ],
   },
   {
@@ -8061,6 +8079,10 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface PrincipalMap {\n    owner: {\n        readonly kind: \'owner\';\n    };\n}',
   },
   {
+    name: 'PrincipalUsage',
+    declaration: 'export interface PrincipalUsage {\n    readonly principalId: UserId;\n    readonly calls: number;\n    readonly inputTokens: number;\n    readonly outputTokens: number;\n    readonly chargedTokens: number;\n    readonly lastCallAt: number;\n}',
+  },
+  {
     name: 'ProductEvent',
     declaration: 'export type ProductEvent = {\n    [K in keyof ProductEventMap]: {\n        eventName: K;\n        attributes: ProductEventMap[K];\n        timestamp: number;\n    };\n}[keyof ProductEventMap];',
   },
@@ -10347,6 +10369,38 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'UpstreamStage',
     declaration: 'export interface UpstreamStage {\n    readonly key: string;\n    readonly label: string;\n    readonly upstreamResultId: string;\n}',
+  },
+  {
+    name: 'UsageBucket',
+    declaration: 'export interface UsageBucket {\n    readonly start: number;\n    readonly calls: number;\n    readonly inputTokens: number;\n    readonly outputTokens: number;\n    readonly chargedTokens: number;\n}',
+  },
+  {
+    name: 'UsageFilter',
+    declaration: 'export interface UsageFilter extends UsageWindow {\n    readonly principalId?: UserId;\n}',
+  },
+  {
+    name: 'UsageRecord',
+    declaration: 'export interface UsageRecord {\n    readonly reservationId: ReservationId;\n    readonly principalId: UserId;\n    readonly deviceId?: string;\n    readonly modelRef: string;\n    readonly createdAt: number;\n    readonly settledAt: number;\n    readonly kind: UsageSettlementKind;\n    readonly reconciled: boolean;\n    readonly inputTokens: number;\n    readonly outputTokens: number;\n    readonly chargedTokens: number;\n}',
+  },
+  {
+    name: 'UsageRecordPage',
+    declaration: 'export interface UsageRecordPage {\n    readonly records: readonly UsageRecord[];\n    readonly total: number;\n}',
+  },
+  {
+    name: 'UsageRecordsQuery',
+    declaration: 'export interface UsageRecordsQuery extends UsageFilter {\n    readonly limit: number;\n    readonly offset: number;\n}',
+  },
+  {
+    name: 'UsageSeriesQuery',
+    declaration: 'export interface UsageSeriesQuery extends UsageFilter {\n    readonly bucketMs: number;\n    readonly utcOffsetMs: number;\n}',
+  },
+  {
+    name: 'UsageSettlementKind',
+    declaration: 'export type UsageSettlementKind = Exclude<SettlementKind, \'released\'>;',
+  },
+  {
+    name: 'UsageWindow',
+    declaration: 'export interface UsageWindow {\n    readonly orgId: OrgId;\n    readonly from: number;\n    readonly to: number;\n}',
   },
   {
     name: 'UserGroup',

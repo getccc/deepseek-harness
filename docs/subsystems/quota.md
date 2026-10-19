@@ -40,6 +40,12 @@ A request that ran past its window is far more likely to have spent the budget t
 
 An organization an administrator has not limited is not silently limited to zero. `limitTokens` and `availableTokens` are absent rather than zero, so a caller cannot mistake "unlimited" for "exhausted".
 
+## Usage reports are reads of the same rows
+
+The ledger already keeps one row per call, so who spent what and when is a read of the reservation and settlement rows rather than a second record. `usageByPrincipal`, `usageSeries`, and `usageRecords` report one organization's calls inside a time window.
+
+Only settled calls that produced tokens count: a reservation nothing has settled holds budget but has spent nothing, and a `released` one was never charged. A call belongs to the window by when the member sent it, not by when it settled, so a long completion or a reconciled crash stays on the day the member asked. A reconciled call reports its whole reservation as charged and keeps the `reconciled` mark, so a reader can tell it from a reported one.
+
 ## What the ledger does not decide
 
 It does not decide who may use a model — that is [access control](access-control.md), asked separately on every request. It does not know what a month is: a deployment names its periods and the caller asks about the one a request belongs to.
@@ -115,6 +121,31 @@ abstract reconcile(now: number): Promise<SettlementRecord[]>
  * @returns the limit, what is settled, what is reserved, and what remains.
  */
 abstract usage(orgId: OrgId, period: PeriodKey): Promise<QuotaUsage>
+
+/**
+ * What each account spent in a window, largest spender first.
+ *
+ * Only settled calls that produced tokens count: a reservation nothing has
+ * settled yet holds budget but has spent nothing, and a released one was
+ * never charged. An account that sent no such call is absent, not zero.
+ * @param window - the organization and the time range to report on.
+ * @returns one entry per account that spent, by charged tokens descending.
+ */
+abstract usageByPrincipal(window: UsageWindow): Promise<PrincipalUsage[]>
+
+/**
+ * How a window's spending is spread over time.
+ * @param query - the window, an optional account, and how to cut time.
+ * @returns the buckets that hold at least one call, oldest first.
+ */
+abstract usageSeries(query: UsageSeriesQuery): Promise<UsageBucket[]>
+
+/**
+ * The individual calls in a window, newest first.
+ * @param query - the window, an optional account, and the page wanted.
+ * @returns the page and the number of calls the filter matches in all.
+ */
+abstract usageRecords(query: UsageRecordsQuery): Promise<UsageRecordPage>
 ```
 
 Types: [OrgId](account.md)

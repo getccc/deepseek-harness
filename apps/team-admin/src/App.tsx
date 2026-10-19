@@ -27,6 +27,7 @@ import {
   MenuFoldOutlined,
   MenuOutlined,
   MenuUnfoldOutlined,
+  MonitorOutlined,
   SafetyCertificateOutlined,
   SettingOutlined,
   TeamOutlined,
@@ -48,6 +49,7 @@ import { GmoCategories } from './pages/GmoCategories.tsx'
 import { Releases } from './pages/Releases.tsx'
 import { KnowledgeBases } from './pages/KnowledgeBases.tsx'
 import { Models } from './pages/Models.tsx'
+import { TokenUsage } from './pages/TokenUsage.tsx'
 import { Overview } from './pages/Overview.tsx'
 import { Roles } from './pages/Roles.tsx'
 import { useErrorReporter, useLoaded } from './ui.tsx'
@@ -81,6 +83,7 @@ const VIEWS: Record<ConsoleComponent, (props: ViewProps) => ReactNode> = {
   'resources/BiProjectsPage': ({ held }) => <BiProjects held={held} />,
   'resources/GmoCategoriesPage': ({ held }) => <GmoCategories held={held} />,
   'resources/ReleasesPage': ({ held }) => <Releases held={held} />,
+  'monitoring/TokenUsagePage': () => <TokenUsage />,
 }
 
 /** The icons this build draws, by the name a stored entry gives. */
@@ -96,6 +99,7 @@ const ICONS: Record<MenuIcon, ReactNode> = {
   api: <ApiOutlined />,
   read: <ReadOutlined />,
   chart: <BarChartOutlined />,
+  monitor: <MonitorOutlined />,
 }
 
 /** Width below which the sider is an icon rail, matching Ant Design's `lg`. */

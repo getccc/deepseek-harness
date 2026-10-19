@@ -40,6 +40,12 @@
 
 一个管理员没有设限的组织不会被悄悄限制为零。`limitTokens` 和 `availableTokens` 是缺席而不是零，因此调用方不会把"无限"误当成"已耗尽"。
 
+## 用量报告读的是同一批行
+
+账本本来就为每次调用留一行，所以"谁在什么时候花了多少"是对 Reservation 与结算行的一次读取，而不是第二份记录。`usageByPrincipal`、`usageSeries` 和 `usageRecords` 报告一个组织在某个时间窗口内的调用。
+
+只有已结算并产生了 Token 的调用才计入：一个没有结算的 Reservation 占着预算但什么也没花，`released` 的那条则从未被收费。调用归入窗口，看的是成员发出它的时刻，而不是它结算的时刻，所以耗时很长的一次完成或一次被对账的崩溃，仍然留在成员提出请求的那一天。被对账的调用把整份 Reservation 报告为已计费并保留 `reconciled` 标记，读者因而能把它和上游报告过的调用区分开。
+
 ## 这个账本不决定什么
 
 它不决定谁可以使用某个模型——那是[访问控制](access-control.zh.md)，在每一次请求上被单独询问。它也不知道"一个月"是什么：由部署为自己的周期命名，调用方询问某个请求所属的那一个。
@@ -115,6 +121,31 @@ abstract reconcile(now: number): Promise<SettlementRecord[]>
  * @returns the limit, what is settled, what is reserved, and what remains.
  */
 abstract usage(orgId: OrgId, period: PeriodKey): Promise<QuotaUsage>
+
+/**
+ * What each account spent in a window, largest spender first.
+ *
+ * Only settled calls that produced tokens count: a reservation nothing has
+ * settled yet holds budget but has spent nothing, and a released one was
+ * never charged. An account that sent no such call is absent, not zero.
+ * @param window - the organization and the time range to report on.
+ * @returns one entry per account that spent, by charged tokens descending.
+ */
+abstract usageByPrincipal(window: UsageWindow): Promise<PrincipalUsage[]>
+
+/**
+ * How a window's spending is spread over time.
+ * @param query - the window, an optional account, and how to cut time.
+ * @returns the buckets that hold at least one call, oldest first.
+ */
+abstract usageSeries(query: UsageSeriesQuery): Promise<UsageBucket[]>
+
+/**
+ * The individual calls in a window, newest first.
+ * @param query - the window, an optional account, and the page wanted.
+ * @returns the page and the number of calls the filter matches in all.
+ */
+abstract usageRecords(query: UsageRecordsQuery): Promise<UsageRecordPage>
 ```
 
 Types: [OrgId](account.zh.md)

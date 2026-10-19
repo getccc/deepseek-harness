@@ -101,3 +101,100 @@ export interface QuotaUsage {
   /** What a new reservation may still claim; undefined when no limit is set. */
   readonly availableTokens?: number
 }
+
+/**
+ * The settlement kinds that record tokens a model actually produced.
+ *
+ * `released` is left out: it names a request the upstream refused, which spent
+ * nothing, so a usage report neither counts it as a call nor lists it.
+ */
+export type UsageSettlementKind = Exclude<SettlementKind, 'released'>
+
+/**
+ * The calls a usage report covers.
+ *
+ * A call belongs to the window by when the member sent it (`createdAt`), not by
+ * when it settled, so a long completion or a reconciled crash stays on the day
+ * the member asked.
+ */
+export interface UsageWindow {
+  readonly orgId: OrgId
+  /** First moment included, in epoch milliseconds. */
+  readonly from: number
+  /** First moment excluded, in epoch milliseconds. */
+  readonly to: number
+}
+
+/** A window narrowed to one account. */
+export interface UsageFilter extends UsageWindow {
+  /** Only this account's calls, or every account's when undefined. */
+  readonly principalId?: UserId
+}
+
+/** What one account spent in a window. */
+export interface PrincipalUsage {
+  readonly principalId: UserId
+  /** Settled calls that produced tokens. */
+  readonly calls: number
+  readonly inputTokens: number
+  readonly outputTokens: number
+  /** What the calls charged against the budget. */
+  readonly chargedTokens: number
+  /** When the account last sent one of these calls, in epoch milliseconds. */
+  readonly lastCallAt: number
+}
+
+/** The calls sent inside one time bucket. */
+export interface UsageBucket {
+  /** First moment of the bucket, in epoch milliseconds. */
+  readonly start: number
+  readonly calls: number
+  readonly inputTokens: number
+  readonly outputTokens: number
+  readonly chargedTokens: number
+}
+
+/** How a usage series cuts time into buckets. */
+export interface UsageSeriesQuery extends UsageFilter {
+  /** Length of one bucket in milliseconds. */
+  readonly bucketMs: number
+  /**
+   * Offset of the reader's local time from UTC in milliseconds, so a day bucket
+   * starts at the reader's midnight rather than at UTC midnight.
+   */
+  readonly utcOffsetMs: number
+}
+
+/** Which slice of a window's calls to list, newest first. */
+export interface UsageRecordsQuery extends UsageFilter {
+  /** Most records to return. */
+  readonly limit: number
+  /** Records to skip from the newest. */
+  readonly offset: number
+}
+
+/** One settled call, as a usage report lists it. */
+export interface UsageRecord {
+  readonly reservationId: ReservationId
+  readonly principalId: UserId
+  /** The device the call arrived from, when one was bound to it. */
+  readonly deviceId?: string
+  readonly modelRef: string
+  /** When the member sent the call, in epoch milliseconds. */
+  readonly createdAt: number
+  /** When the ledger settled it, in epoch milliseconds. */
+  readonly settledAt: number
+  readonly kind: UsageSettlementKind
+  /** True when the reconciler settled it, which charges the whole reservation. */
+  readonly reconciled: boolean
+  readonly inputTokens: number
+  readonly outputTokens: number
+  readonly chargedTokens: number
+}
+
+/** One page of a window's calls. */
+export interface UsageRecordPage {
+  readonly records: readonly UsageRecord[]
+  /** Every call the filter matches, not only this page. */
+  readonly total: number
+}

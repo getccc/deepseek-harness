@@ -72,6 +72,10 @@ An organization an administrator has not limited is not silently limited to zero
 
 The seam does not know what a month is. A deployment names its periods and asks about the one a request belongs to, which keeps calendars, time zones, and billing cycles out of a ledger whose only job is arithmetic.
 
+### Usage reports read the same rows
+
+`usageByPrincipal`, `usageSeries`, and `usageRecords` report one organization's calls inside a window of epoch milliseconds, from the reservation and settlement rows the ledger already keeps. A call counts when it settled with tokens (`released` calls and unsettled reservations spent nothing), and it belongs to the window by when the member sent it. A reconciled call is reported at its whole reservation and keeps its `reconciled` mark. The Control Plane's token monitoring page is the consumer.
+
 ### Source map
 
 | Path | Role |

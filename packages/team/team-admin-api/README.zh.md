@@ -47,6 +47,7 @@ kind: "package-reference"
 | `/menus` | 一个会话，不需要授权 | `menu.manage` |
 | `/devices` | `device.inventory.read` | `device.revoke` |
 | `/models` | `model.catalog.read` | `model.catalog.manage` |
+| `/usage` | `usage.organization.read` | 只读 |
 
 导航是这张表里的例外。没有它控制台就画不出自己，它只命名本构建随附的内容，而它通向的每个页面都会再次询问访问控制，因此读取它只需要一个会话，别无其他——这与 `/permissions` 遵循的规则相同。
 
@@ -55,6 +56,8 @@ kind: "package-reference"
 `POST /roles/:id/models` 是针对具体资源的例外。它把目录模型 id 解析为受治理资源 id，替换该角色精确的 `model.discover` 与 `model.invoke` 授权，并清除 `coversCatalog`。Runner 使用当前设备访问 token 向模型网关请求发现，因此只会显示这些精确授权允许的活跃模型。
 
 `POST /models` 同时也是编辑。稳定模型引用是这条记录的身份，因此一次指名已存储记录的写入只替换它的路由，而不动它的状态和按该引用写下的授权；更改引用等于注册第二条记录。请求体里可选的 `inputModalities` 声明发往该模型的请求可以携带什么：只有 `text`，或 `text` 加 `image`；省略视为 `text`，为空、重复或含未知词的列表以 `modalities` 为由拒绝。成员的 Runner 从模型目录读到这份声明，对没有列出 `image` 的模型拒绝图片。`PATCH /models/:ref` 只让模型退出服务或把它放回来，而 `DELETE /models/:ref` 把记录连同所有指名它的授权一起移出目录。
+
+`GET /usage` 与 `GET /usage/records` 为 Token 监控页面读取结算账本。两者都需要以毫秒时间戳给出的 `from` 和 `to`（相隔不超过 366 天）；`GET /usage` 还接受 `utcOffsetMinutes` 和可选的 `member`，`GET /usage/records` 接受 `limit`（1 到 200）与 `offset`。报告列出每个账户的调用次数、输入、输出与计费 Token，随后是仍有调用的已删除账户，并把时间序列在两天及以内的范围里切成小时、更长的范围里切成天；`member` 只收窄序列，合计仍是整个组织的。调用记录按时间从新到旧，写明账户、模型，以及账本计的是估算还是对账。格式不对或过长的范围以 `usage-query` 为由拒绝。
 
 `POST /members` 要求在创建账户的同一次写入中提供成员初始密码。`PATCH /members/:id/password` 替换密码，撤销该账户拥有的每个浏览器会话与设备凭据族，并在管理员重置自己密码时让本次请求的管理 cookie 过期。
 
@@ -95,6 +98,7 @@ kind: "package-reference"
 |---|---|
 | [`src/index.ts`](src/index.ts) | 路由、三道证明、授权与审计记录 |
 | [`src/http.ts`](src/http.ts) | 读取有界的 JSON 请求体并以 JSON 答复 |
+| [`src/usage.ts`](src/usage.ts) | 读取用量查询，并把账本的回答整理成控制台所需的形状 |
 | [`src/types.ts`](src/types.ts) | 控制台收到的内容，仅类型 |
 
 -----

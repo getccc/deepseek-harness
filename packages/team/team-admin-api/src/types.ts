@@ -352,6 +352,83 @@ export type WireGmoAccess =
   | { readonly mode: 'all' }
   | { readonly mode: 'selected'; readonly categoryRefs: readonly string[] }
 
+/** One account's company-model spending in the report's time range. */
+export interface WireMemberUsage {
+  /** The account id; the ledger keeps it after the account itself is deleted. */
+  readonly memberId: string
+  /** Absent once the account has been deleted. */
+  readonly loginName?: string
+  /** Absent once the account has been deleted. */
+  readonly displayName?: string
+  readonly departmentName?: string
+  /** Settled calls that produced tokens. */
+  readonly calls: number
+  readonly inputTokens: number
+  readonly outputTokens: number
+  /** What the calls charged against the budget, which is what the ledger bills. */
+  readonly chargedTokens: number
+  /** When the account last sent a call in this range; absent when it sent none. */
+  readonly lastCallAt?: number
+}
+
+/** The calls sent inside one time bucket. */
+export interface WireUsageBucket {
+  /** First moment of the bucket, in epoch milliseconds. */
+  readonly start: number
+  readonly calls: number
+  readonly inputTokens: number
+  readonly outputTokens: number
+  readonly chargedTokens: number
+}
+
+/** Everything the token monitoring page reads for one time range. */
+export interface WireUsageReport {
+  readonly from: number
+  readonly to: number
+  /** Length of one `series` bucket, which the server chooses from the range. */
+  readonly bucketMs: number
+  readonly totals: {
+    readonly calls: number
+    readonly inputTokens: number
+    readonly outputTokens: number
+    readonly chargedTokens: number
+    /** Accounts that sent at least one call. */
+    readonly activeMembers: number
+  }
+  /** Every account of the organization, then any deleted account that still has calls. */
+  readonly members: readonly WireMemberUsage[]
+  /** Buckets holding at least one call, oldest first; narrowed to one account when the request named one. */
+  readonly series: readonly WireUsageBucket[]
+}
+
+/** One settled company-model call. */
+export interface WireUsageRecord {
+  readonly id: string
+  readonly memberId: string
+  /** Absent once the account has been deleted. */
+  readonly displayName?: string
+  readonly modelRef: string
+  readonly deviceId?: string
+  /** `estimated` means the provider reported no usage and the ledger charged its estimate. */
+  readonly kind: 'reported' | 'estimated'
+  /** True when the reconciler settled the call, which charges the whole reservation. */
+  readonly reconciled: boolean
+  readonly inputTokens: number
+  readonly outputTokens: number
+  readonly chargedTokens: number
+  /** When the member sent the call, in epoch milliseconds. */
+  readonly startedAt: number
+  /** When the ledger settled it, in epoch milliseconds. */
+  readonly settledAt: number
+}
+
+/** One page of calls, newest first. */
+export interface WireUsageRecords {
+  readonly records: readonly WireUsageRecord[]
+  /** Every call the filter matches, not only this page. */
+  readonly total: number
+}
+
 /** One `(resourceType, action)` pair a grant may name. */
 export interface WirePermission {
   readonly resourceType: string
@@ -457,6 +534,8 @@ export type WireRefusalReason =
   | 'model-status'
   /** The input modality list was empty, repeated a word, or named one this build does not carry. */
   | 'modalities'
+  /** A usage request's time range, page, or clock offset was missing, malformed, or out of range. */
+  | 'usage-query'
 
 /**
  * Why a request was not carried out.

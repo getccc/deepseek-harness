@@ -21,14 +21,26 @@ import {
   type ReservationId as ReservationIdType,
   type ReservationRequest,
   type Settlement,
+  type PrincipalUsage,
   type SettlementKind,
   type SettlementRecord,
+  type UsageBucket,
+  type UsageFilter,
+  type UsageRecord,
+  type UsageRecordPage,
+  type UsageRecordsQuery,
+  type UsageSeriesQuery,
+  type UsageSettlementKind,
+  type UsageWindow,
 } from '@deepseek-ai/dsh-quota'
 import {
   applySchema,
   type BudgetRow,
+  type PrincipalUsageRow,
   type ReservationRow,
   type SettlementRow,
+  type UsageBucketRow,
+  type UsageRecordRow,
 } from './schema.ts'
 
 export { QUOTA_SQLITE_APPLICATION_ID, SCHEMA_VERSION } from './schema.ts'
@@ -81,6 +93,37 @@ function toSettlement(row: SettlementRow): SettlementRecord {
     chargedTokens: row.charged_tokens,
     settledAt: row.settled_at,
     reconciled: row.reconciled !== 0,
+  }
+}
+
+/**
+ * The rows a usage report reads: calls of one organization sent inside a
+ * window that settled with tokens, optionally narrowed to one account. The
+ * released kind is excluded because the upstream refused that call.
+ */
+function usageScope(filter: UsageFilter): { where: string; params: (string | number)[] } {
+  const params: (string | number)[] = [filter.orgId, filter.from, filter.to]
+  let where = "r.org_id = ? AND r.created_at >= ? AND r.created_at < ? AND s.kind <> 'released'"
+  if (filter.principalId !== undefined) {
+    where += ' AND r.principal_id = ?'
+    params.push(filter.principalId)
+  }
+  return { where, params }
+}
+
+function toUsageRecord(row: UsageRecordRow): UsageRecord {
+  return {
+    reservationId: ReservationId(row.id),
+    principalId: UserId(row.principal_id),
+    ...(row.device_id === null ? {} : { deviceId: row.device_id }),
+    modelRef: row.model_ref,
+    createdAt: row.created_at,
+    settledAt: row.settled_at,
+    kind: row.kind as UsageSettlementKind,
+    reconciled: row.reconciled !== 0,
+    inputTokens: row.input_tokens,
+    outputTokens: row.output_tokens,
+    chargedTokens: row.charged_tokens,
   }
 }
 
@@ -219,6 +262,77 @@ export class SqliteQuota extends Quota {
 
   usage(orgId: OrgIdType, period: PeriodKey): Promise<QuotaUsage> {
     return Promise.resolve(this.standing(orgId, period))
+  }
+
+  usageByPrincipal(window: UsageWindow): Promise<PrincipalUsage[]> {
+    const { where, params } = usageScope(window)
+    const rows = this.db.prepare(
+      `SELECT r.principal_id AS principal_id,
+              COUNT(*) AS calls,
+              SUM(s.input_tokens) AS input_tokens,
+              SUM(s.output_tokens) AS output_tokens,
+              SUM(s.charged_tokens) AS charged_tokens,
+              MAX(r.created_at) AS last_call_at
+         FROM reservation r JOIN settlement s ON s.reservation_id = r.id
+        WHERE ${where}
+        GROUP BY r.principal_id
+        ORDER BY charged_tokens DESC, r.principal_id`,
+    ).all(...params) as PrincipalUsageRow[]
+    return Promise.resolve(rows.map(row => ({
+      principalId: UserId(row.principal_id),
+      calls: row.calls,
+      inputTokens: row.input_tokens,
+      outputTokens: row.output_tokens,
+      chargedTokens: row.charged_tokens,
+      lastCallAt: row.last_call_at,
+    })))
+  }
+
+  usageSeries(query: UsageSeriesQuery): Promise<UsageBucket[]> {
+    const { where, params } = usageScope(query)
+    // Bound as integers inside the expression: the driver may bind a whole
+    // JavaScript number as a real, and real division would put every call in
+    // its own bucket.
+    const rows = this.db.prepare(
+      `SELECT (CAST((r.created_at + CAST(? AS INTEGER)) / CAST(? AS INTEGER) AS INTEGER) * CAST(? AS INTEGER)
+                - CAST(? AS INTEGER)) AS start,
+              COUNT(*) AS calls,
+              SUM(s.input_tokens) AS input_tokens,
+              SUM(s.output_tokens) AS output_tokens,
+              SUM(s.charged_tokens) AS charged_tokens
+         FROM reservation r JOIN settlement s ON s.reservation_id = r.id
+        WHERE ${where}
+        GROUP BY start
+        ORDER BY start`,
+    ).all(query.utcOffsetMs, query.bucketMs, query.bucketMs, query.utcOffsetMs, ...params) as UsageBucketRow[]
+    return Promise.resolve(rows.map(row => ({
+      start: row.start,
+      calls: row.calls,
+      inputTokens: row.input_tokens,
+      outputTokens: row.output_tokens,
+      chargedTokens: row.charged_tokens,
+    })))
+  }
+
+  usageRecords(query: UsageRecordsQuery): Promise<UsageRecordPage> {
+    const { where, params } = usageScope(query)
+    const rows = this.db.prepare(
+      `SELECT r.id AS id, r.principal_id AS principal_id, r.device_id AS device_id,
+              r.model_ref AS model_ref, r.created_at AS created_at,
+              s.settled_at AS settled_at, s.kind AS kind, s.reconciled AS reconciled,
+              s.input_tokens AS input_tokens, s.output_tokens AS output_tokens,
+              s.charged_tokens AS charged_tokens
+         FROM reservation r JOIN settlement s ON s.reservation_id = r.id
+        WHERE ${where}
+        ORDER BY r.created_at DESC, r.rowid DESC
+        LIMIT ? OFFSET ?`,
+    ).all(...params, query.limit, query.offset) as UsageRecordRow[]
+    const { total } = this.db.prepare(
+      `SELECT COUNT(*) AS total
+         FROM reservation r JOIN settlement s ON s.reservation_id = r.id
+        WHERE ${where}`,
+    ).get(...params) as { total: number }
+    return Promise.resolve({ records: rows.map(toUsageRecord), total })
   }
 
   /** Write one settlement, bounded by what the reservation held. */

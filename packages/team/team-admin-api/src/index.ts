@@ -107,6 +107,15 @@ import {
 } from '@deepseek-ai/dsh-team-browser-session'
 import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
 import { CSRF_HEADER, json, patchBoolean, patchInteger, patchText, readJson, refuse, text } from './http.ts'
+import {
+  MAX_USAGE_PAGE,
+  MAX_USAGE_WINDOW_MS,
+  readUsageQuery,
+  wireMemberUsage,
+  wireUsageBucket,
+  wireUsageRecord,
+  type UsageQuery,
+} from './usage.ts'
 import type {
   WireBiCatalog,
   WireBiProject,
@@ -124,9 +133,12 @@ import type {
   WireOverview,
   WireRelease,
   WireRole,
+  WireUsageRecords,
+  WireUsageReport,
 } from './types.ts'
 
 export { CSRF_HEADER } from './http.ts'
+export { MAX_USAGE_PAGE, MAX_USAGE_WINDOW_MS } from './usage.ts'
 export type {
   SecretCharacterClass,
   WireBiAccess,
@@ -158,6 +170,11 @@ export type {
   WireRoleRef,
   WireSecretPolicy,
   WireSession,
+  WireMemberUsage,
+  WireUsageBucket,
+  WireUsageRecord,
+  WireUsageRecords,
+  WireUsageReport,
 } from './types.ts'
 
 /** Stable Cordis plugin name. */
@@ -166,7 +183,7 @@ export const name = 'team-admin-api'
 /** Services required before the API can claim its routes. */
 export const inject = [
   'webServer', 'accountStore', 'accountAuth', 'accessControl', 'audit',
-  'consoleMenu', 'deviceAuthorization', 'modelGateway',
+  'consoleMenu', 'deviceAuthorization', 'modelGateway', 'quota',
 ]
 
 /** The department statuses a request may ask for. */
@@ -183,6 +200,10 @@ const GENDERS: readonly MemberGender[] = ['male', 'female', 'unspecified']
 
 /** The department categories a request may name. */
 const DEPARTMENT_CATEGORIES: readonly DepartmentCategory[] = ['company', 'department']
+
+/** The governed resource type and action that gate the token monitoring page. */
+const USAGE_RESOURCE_TYPE = 'usage'
+const USAGE_READ_ACTION = 'usage.organization.read'
 
 /** Address prefix every administration endpoint lives under. */
 export const API_PREFIX = '/team/api'
@@ -592,6 +613,7 @@ export function apply(ctx: Context, config: Config): void {
       // asks for one: an administrator has to be able to publish before any
       // installed build exists to ask.
       [RELEASE_RESOURCE_TYPE, organizationId, RELEASE_RESOURCE_NAME],
+      [USAGE_RESOURCE_TYPE, organizationId, 'Usage monitoring'],
     ] as const) {
       await ctx.accessControl.registerResource({ orgId: organizationId, type, externalRef, displayName })
     }
@@ -966,6 +988,72 @@ export function apply(ctx: Context, config: Config): void {
     }
   }
 
+  /** The usage report: organization totals, every account's row, and the time series. */
+  const readUsageReport = async (orgId: OrgId, query: UsageQuery): Promise<WireUsageReport> => {
+    const window = { orgId, from: query.from, to: query.to }
+    const [spent, members, departments, series] = await Promise.all([
+      ctx.quota.usageByPrincipal(window),
+      ctx.accountStore.listUsers(orgId),
+      ctx.accountStore.listDepartments(orgId),
+      ctx.quota.usageSeries({
+        ...window,
+        ...(query.memberId === undefined ? {} : { principalId: UserId(query.memberId) }),
+        bucketMs: query.bucketMs,
+        utcOffsetMs: query.utcOffsetMs,
+      }),
+    ])
+    const spentBy = new Map(spent.map(row => [row.principalId, row]))
+    const departmentName = new Map(departments.map(department => [department.id, department.name]))
+    const current = new Set(members.map(member => member.id))
+    const rows = [
+      ...members.map(member => wireMemberUsage(
+        member.id,
+        member,
+        member.departmentId === undefined ? undefined : departmentName.get(member.departmentId),
+        spentBy.get(member.id),
+      )),
+      // A deleted account keeps its calls in the ledger, and its spending is
+      // still the organization's.
+      ...spent.filter(row => !current.has(row.principalId))
+        .map(row => wireMemberUsage(row.principalId, undefined, undefined, row)),
+    ].sort((a, b) => b.chargedTokens - a.chargedTokens
+      || (a.displayName ?? a.memberId).localeCompare(b.displayName ?? b.memberId))
+    return {
+      from: query.from,
+      to: query.to,
+      bucketMs: query.bucketMs,
+      totals: {
+        calls: spent.reduce((sum, row) => sum + row.calls, 0),
+        inputTokens: spent.reduce((sum, row) => sum + row.inputTokens, 0),
+        outputTokens: spent.reduce((sum, row) => sum + row.outputTokens, 0),
+        chargedTokens: spent.reduce((sum, row) => sum + row.chargedTokens, 0),
+        activeMembers: spent.length,
+      },
+      members: rows,
+      series: series.map(wireUsageBucket),
+    }
+  }
+
+  /** One page of settled calls, newest first, each naming the account that sent it. */
+  const readUsageRecords = async (orgId: OrgId, query: UsageQuery): Promise<WireUsageRecords> => {
+    const [page, members] = await Promise.all([
+      ctx.quota.usageRecords({
+        orgId,
+        from: query.from,
+        to: query.to,
+        ...(query.memberId === undefined ? {} : { principalId: UserId(query.memberId) }),
+        limit: query.limit,
+        offset: query.offset,
+      }),
+      ctx.accountStore.listUsers(orgId),
+    ])
+    const displayName = new Map(members.map(member => [member.id, member.displayName]))
+    return {
+      records: page.records.map(record => wireUsageRecord(record, displayName.get(record.principalId))),
+      total: page.total,
+    }
+  }
+
   /** Sign a member in, or refuse without saying which half was wrong. */
   const signIn = async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     // Signing in is a write like any other. Without this, a page on another
@@ -1066,7 +1154,7 @@ export function apply(ctx: Context, config: Config): void {
 
   /** Serve one read. */
   const read = async (
-    req: IncomingMessage, res: ServerResponse, segments: readonly string[],
+    req: IncomingMessage, res: ServerResponse, segments: readonly string[], params: URLSearchParams,
   ): Promise<void> => {
     if (segments[0] === 'session') {
       await readSession(req, res)
@@ -1121,6 +1209,21 @@ export function apply(ctx: Context, config: Config): void {
     if (segments[0] === 'models' && segments.length === 1) {
       if (!await mayProceed(res, signed, 'model.catalog.read', 'model', MODEL_CATALOG_RESOURCE)) return
       json(res, 200, await readModels(org))
+      return
+    }
+    if (segments[0] === 'usage' && (segments.length === 1 || (segments.length === 2 && segments[1] === 'records'))) {
+      if (!await mayProceed(res, signed, USAGE_READ_ACTION, USAGE_RESOURCE_TYPE, org)) return
+      const query = readUsageQuery(params)
+      if (query === undefined) {
+        refuse(res, 400, 'malformed', {
+          reason: 'usage-query',
+          detail: `Usage needs from and to in epoch milliseconds, at most ${MAX_USAGE_WINDOW_MS / 86_400_000} days apart; limit is 1 to ${MAX_USAGE_PAGE}.`,
+        })
+        return
+      }
+      json(res, 200, segments.length === 1
+        ? await readUsageReport(org, query)
+        : await readUsageRecords(org, query))
       return
     }
     if (segments[0] === 'knowledge-bases' && segments.length === 1) {
@@ -2307,7 +2410,7 @@ export function apply(ctx: Context, config: Config): void {
       /* v8 ignore next -- node:http always supplies method on server requests. */
       const method = req.method ?? 'GET'
       try {
-        if (method === 'GET') await read(req, res, segments)
+        if (method === 'GET') await read(req, res, segments, url.searchParams)
         else if (method === 'POST' || method === 'PATCH' || method === 'DELETE') {
           await write(req, res, method, segments)
         } else refuse(res, 405, 'malformed', { detail: 'This address does not accept that method.' })

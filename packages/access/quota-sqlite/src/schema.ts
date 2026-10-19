@@ -15,7 +15,7 @@ import { SETTLEMENT_KINDS } from '@deepseek-ai/dsh-quota'
  * Current physical schema. Monotonic: a database written by a newer build is
  * refused rather than migrated down.
  */
-export const SCHEMA_VERSION = 1
+export const SCHEMA_VERSION = 2
 
 /** Application id reserved for DeepSeek Harness SQLite quota databases. */
 export const QUOTA_SQLITE_APPLICATION_ID = 0x44534841 + 4
@@ -39,6 +39,46 @@ export interface ReservationRow {
   readonly correlation_id: string | null
   readonly created_at: number
   readonly expires_at: number
+}
+
+/*
+ * The three usage row shapes below are type aliases, not interfaces: only an
+ * alias is assignable to the driver's row record, which is what lets a query's
+ * row array be asserted to its shape without a cast through `unknown`.
+ */
+
+/** One account's totals over a window, as the usage report query returns it. */
+export type PrincipalUsageRow = {
+  readonly principal_id: string
+  readonly calls: number
+  readonly input_tokens: number
+  readonly output_tokens: number
+  readonly charged_tokens: number
+  readonly last_call_at: number
+}
+
+/** One time bucket's totals, as the usage series query returns it. */
+export type UsageBucketRow = {
+  readonly start: number
+  readonly calls: number
+  readonly input_tokens: number
+  readonly output_tokens: number
+  readonly charged_tokens: number
+}
+
+/** One settled call joined to its reservation, as the usage records query returns it. */
+export type UsageRecordRow = {
+  readonly id: string
+  readonly principal_id: string
+  readonly device_id: string | null
+  readonly model_ref: string
+  readonly created_at: number
+  readonly settled_at: number
+  readonly kind: string
+  readonly reconciled: number
+  readonly input_tokens: number
+  readonly output_tokens: number
+  readonly charged_tokens: number
 }
 
 /** One settlement row, as SQLite returns it. */
@@ -81,6 +121,8 @@ CREATE TABLE IF NOT EXISTS reservation (
 -- reconcile; both scan by these columns.
 CREATE INDEX IF NOT EXISTS reservation_period ON reservation (org_id, period);
 CREATE INDEX IF NOT EXISTS reservation_expiry ON reservation (expires_at);
+-- Usage reports read one organization's calls by when they were sent.
+CREATE INDEX IF NOT EXISTS reservation_created ON reservation (org_id, created_at);
 
 -- The primary key is the reservation, which is what makes settlement
 -- idempotent: a second settlement for the same reservation cannot be inserted,

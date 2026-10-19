@@ -72,6 +72,10 @@ await ctx.quota.settle(held.id, { kind: 'reported', inputTokens: 1_200, outputTo
 
 接缝不知道"一个月"是什么。由部署为自己的周期命名，并询问某个请求所属的那一个，这让日历、时区和账期都留在了一个唯一职责是做算术的账本之外。
 
+### 用量报告读的是同一批行
+
+`usageByPrincipal`、`usageSeries` 和 `usageRecords` 依据账本已有的 Reservation 与结算行，报告一个组织在某个毫秒时间窗口内的调用。一次调用以带 Token 结算为计入条件（`released` 的调用和未结算的 Reservation 什么也没花），并按成员发出它的时刻归入窗口。被对账的调用按整份 Reservation 报告，并保留 `reconciled` 标记。Control Plane 的 Token 监控页面是它的使用方。
+
 ### 源码地图
 
 | 路径 | 角色 |

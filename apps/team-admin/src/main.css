@@ -392,6 +392,42 @@ body {
   white-space: nowrap;
 }
 
+/* The token monitoring chart: one bar per time bucket, each bucket a faint
+   track so an empty hour or day still reads as a gap rather than as missing. */
+.usage-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 180px;
+}
+
+.usage-bar {
+  display: flex;
+  flex: 1 1 0;
+  align-items: flex-end;
+  min-width: 2px;
+  height: 100%;
+  border-radius: 2px;
+  background: rgb(0 0 0 / 4%);
+}
+
+.usage-bar-fill {
+  width: 100%;
+  border-radius: 2px 2px 0 0;
+}
+
+.usage-chart-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  color: rgb(0 0 0 / 45%);
+  font-size: 12px;
+}
+
+.usage-row-selected > td {
+  background: rgb(22 119 255 / 6%);
+}
+
 /* A dialog that puts two fields on a line lays its form items out as grid
    cells; a field that needs the whole line asks for it by name. */
 .form-grid {

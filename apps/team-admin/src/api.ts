@@ -27,6 +27,8 @@ import type {
   WireReleaseCatalog,
   WireRole,
   WireSession,
+  WireUsageRecords,
+  WireUsageReport,
 } from '@deepseek-ai/dsh-team-admin-api'
 
 export type {
@@ -34,7 +36,8 @@ export type {
   WireDepartment, WireDevice, WireGrant, WireKnowledgeAccess,
   WireKnowledgeBase, WireKnowledgeCatalog, WireMember, WireMenu, WireModel,
   WireOrganization, WireOverview, WirePermission, WireRelease, WireReleaseCatalog,
-  WireRole, WireSecretPolicy, WireSession,
+  WireRole, WireSecretPolicy, WireSession, WireMemberUsage, WireUsageBucket, WireUsageRecord,
+  WireUsageRecords, WireUsageReport,
 } from '@deepseek-ai/dsh-team-admin-api'
 
 /** The fields the company row's form collects; an empty string clears a stored one. */
@@ -82,6 +85,18 @@ export interface ModelInput {
   maxOutputTokens: number
   /** What a request may carry; `text` alone, or `text` and `image`. */
   inputModalities: WireModel['inputModalities']
+}
+
+/** The time range, and optional narrowing, a token usage read asks for. */
+export interface UsageRange {
+  /** First moment included, in epoch milliseconds. */
+  from: number
+  /** First moment excluded, in epoch milliseconds. */
+  to: number
+  /** The reader's offset from UTC in minutes, so day buckets start at local midnight. */
+  utcOffsetMinutes: number
+  /** Only this account's calls. */
+  member?: string
 }
 
 /** The account fields an administrator may edit after issuing the account. */
@@ -159,6 +174,17 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   if (response.ok) return answer as T
   const refusal = answer as WireRefusal
   throw new ApiError(refusal.error, refusal.reason, refusal.detail)
+}
+
+/** The query string a usage read carries. */
+function usageQuery(range: UsageRange): string {
+  const params = new URLSearchParams({
+    from: String(range.from),
+    to: String(range.to),
+    utcOffsetMinutes: String(range.utcOffsetMinutes),
+  })
+  if (range.member !== undefined) params.set('member', range.member)
+  return params.toString()
 }
 
 /** Everything the console asks the Control Plane for. */
@@ -279,6 +305,12 @@ export const api = {
   /** Stop one computer's credential working. */
   revokeDevice: (id: string): Promise<WireDevice[]> =>
     call('DELETE', `/devices/${encodeURIComponent(id)}`),
+
+  /** Token spending by member and over time, for one time range. */
+  usage: (range: UsageRange): Promise<WireUsageReport> => call('GET', `/usage?${usageQuery(range)}`),
+  /** One page of settled calls in a time range, newest first. */
+  usageRecords: (range: UsageRange, limit: number, offset: number): Promise<WireUsageRecords> =>
+    call('GET', `/usage/records?${usageQuery(range)}&limit=${String(limit)}&offset=${String(offset)}`),
 
   /** The company model catalog. */
   models: (): Promise<WireModel[]> => call('GET', '/models'),

@@ -15,17 +15,24 @@ import type { OrgId } from '@deepseek-ai/dsh-account-store'
 import type { ReservationId } from './brand.ts'
 import type {
   PeriodKey,
+  PrincipalUsage,
   QuotaUsage,
   Reservation,
   ReservationRefusal,
   ReservationRequest,
   Settlement,
   SettlementRecord,
+  UsageBucket,
+  UsageRecordPage,
+  UsageRecordsQuery,
+  UsageSeriesQuery,
+  UsageWindow,
 } from './types.ts'
 
 export { ReservationId } from './brand.ts'
 export type {
   PeriodKey,
+  PrincipalUsage,
   QuotaUsage,
   Reservation,
   ReservationRefusal,
@@ -33,6 +40,14 @@ export type {
   Settlement,
   SettlementKind,
   SettlementRecord,
+  UsageBucket,
+  UsageFilter,
+  UsageRecord,
+  UsageRecordPage,
+  UsageRecordsQuery,
+  UsageSeriesQuery,
+  UsageSettlementKind,
+  UsageWindow,
 } from './types.ts'
 export { RESERVATION_REFUSALS, SETTLEMENT_KINDS } from './vocabulary.ts'
 
@@ -121,4 +136,29 @@ export abstract class Quota extends Service {
    * @returns the limit, what is settled, what is reserved, and what remains.
    */
   abstract usage(orgId: OrgId, period: PeriodKey): Promise<QuotaUsage>
+
+  /**
+   * What each account spent in a window, largest spender first.
+   *
+   * Only settled calls that produced tokens count: a reservation nothing has
+   * settled yet holds budget but has spent nothing, and a released one was
+   * never charged. An account that sent no such call is absent, not zero.
+   * @param window - the organization and the time range to report on.
+   * @returns one entry per account that spent, by charged tokens descending.
+   */
+  abstract usageByPrincipal(window: UsageWindow): Promise<PrincipalUsage[]>
+
+  /**
+   * How a window's spending is spread over time.
+   * @param query - the window, an optional account, and how to cut time.
+   * @returns the buckets that hold at least one call, oldest first.
+   */
+  abstract usageSeries(query: UsageSeriesQuery): Promise<UsageBucket[]>
+
+  /**
+   * The individual calls in a window, newest first.
+   * @param query - the window, an optional account, and the page wanted.
+   * @returns the page and the number of calls the filter matches in all.
+   */
+  abstract usageRecords(query: UsageRecordsQuery): Promise<UsageRecordPage>
 }

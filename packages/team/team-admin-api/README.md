@@ -47,6 +47,7 @@ Reads are `GET`; writes are `POST`, `PATCH`, and `DELETE` under `/team/api`. Eve
 | `/menus` | a session, and no grant | `menu.manage` |
 | `/devices` | `device.inventory.read` | `device.revoke` |
 | `/models` | `model.catalog.read` | `model.catalog.manage` |
+| `/usage` | `usage.organization.read` | read only |
 
 Navigation is the exception in that table. The console cannot draw itself without it, it names only what this build ships, and every page it leads to asks access control again, so reading it needs a session and nothing more — the same rule `/permissions` follows.
 
@@ -55,6 +56,8 @@ Navigation is the exception in that table. The console cannot draw itself withou
 `POST /roles/:id/models` is the resource-specific exception. It resolves catalog model ids to their governed resource ids, replaces that role's exact `model.discover` and `model.invoke` grants, and clears `coversCatalog`. The Runner asks the model gateway for discovery under its current device access token, so only active models allowed by those exact grants appear.
 
 `POST /models` is also the edit. The stable model ref is the entry's identity, so a write naming one already stored replaces its route and leaves its status and the grants written against that ref alone; changing a ref means registering a second entry. The body's optional `inputModalities` declares what a request to the model may carry, `text` alone or `text` and `image`; an omitted list means `text`, and an empty, repetitive, or unknown list is refused with reason `modalities`. Member Runners read the declaration from the model catalog and refuse an image for a model that does not list `image`. `PATCH /models/:ref` only withdraws a model from service or returns it, while `DELETE /models/:ref` takes the entry out of the catalog with every grant that named it.
+
+`GET /usage` and `GET /usage/records` read the settlement ledger for the token monitoring page. Both need `from` and `to` in epoch milliseconds (at most 366 days apart); `GET /usage` also takes `utcOffsetMinutes` and an optional `member`, and `GET /usage/records` takes `limit` (1 to 200) and `offset`. The report lists every account with its calls, input, output, and charged tokens, then any deleted account that still has calls, and cuts the time series into hours for a range of two days or less and days for a longer one; `member` narrows only the series, while the totals stay the organization's. Records are newest first and name the account, model, and whether the ledger charged an estimate or a reconciliation. A malformed or oversized range is refused with reason `usage-query`.
 
 `POST /members` requires the member's initial password in the same write that creates the account. `PATCH /members/:id/password` replaces it, revokes every browser session and device credential family owned by that account, and expires the request's administration cookie when an administrator resets their own password.
 
@@ -95,6 +98,7 @@ An account's failed-attempt count and lock deadline are the authentication provi
 |---|---|
 | [`src/index.ts`](src/index.ts) | The routes, the three proofs, authorization, and the audit record |
 | [`src/http.ts`](src/http.ts) | Reading a bounded JSON body and answering with one |
+| [`src/usage.ts`](src/usage.ts) | Reading a usage query and shaping the ledger's answer |
 | [`src/types.ts`](src/types.ts) | What the console receives, types only |
 
 -----

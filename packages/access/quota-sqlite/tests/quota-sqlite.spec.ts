@@ -12,7 +12,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { DatabaseSync } from 'node:sqlite'
 import { Context } from '@deepseek-ai/cordis'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { OrgId, UserId } from '@deepseek-ai/dsh-account-store'
 import {
   ReservationRefusedError,
@@ -320,6 +320,154 @@ describe('the database refuses what the ledger refuses', () => {
     foreign.exec('PRAGMA application_id = 12345')
     expect(() => { applySchema(foreign) }).toThrow(/another application/u)
     foreign.close()
+  })
+})
+
+describe('reporting usage', () => {
+  const bob = UserId('user-bob')
+  const HOUR = 3_600_000
+  const DAY = 24 * HOUR
+  /** A Monday midnight UTC, so every offset below is easy to read. */
+  const T0 = Date.UTC(2026, 7, 3)
+
+  /** Send and settle one call at a chosen moment. */
+  async function call(
+    at: number,
+    who: ReturnType<typeof UserId>,
+    tokens: { inputTokens: number; outputTokens: number } | 'released' | 'estimated',
+    patch: Partial<ReservationRequest> = {},
+  ): Promise<ReservationId> {
+    vi.setSystemTime(at)
+    const held = await quota.reserve(request({ principalId: who, ...patch }))
+    if (tokens === 'released') await quota.settle(held.id, { kind: 'released' })
+    else if (tokens === 'estimated') await quota.settle(held.id, { kind: 'estimated', inputTokens: 10, outputTokens: 20 })
+    else await quota.settle(held.id, { kind: 'reported', ...tokens })
+    return held.id
+  }
+
+  beforeEach(() => { vi.useFakeTimers() })
+  afterEach(() => { vi.useRealTimers() })
+
+  it('totals each account in the window, largest spender first', async () => {
+    await call(T0 + HOUR, alice, { inputTokens: 100, outputTokens: 50 })
+    await call(T0 + 2 * HOUR, alice, { inputTokens: 10, outputTokens: 5 })
+    await call(T0 + 3 * HOUR, bob, { inputTokens: 400, outputTokens: 100 })
+    expect(await quota.usageByPrincipal({ orgId, from: T0, to: T0 + DAY })).toEqual([
+      { principalId: bob, calls: 1, inputTokens: 400, outputTokens: 100, chargedTokens: 500, lastCallAt: T0 + 3 * HOUR },
+      { principalId: alice, calls: 2, inputTokens: 110, outputTokens: 55, chargedTokens: 165, lastCallAt: T0 + 2 * HOUR },
+    ])
+  })
+
+  it('places a call in the window by when it was sent, and ends the window before its last moment', async () => {
+    await call(T0, alice, { inputTokens: 1, outputTokens: 1 })
+    await call(T0 + DAY, alice, { inputTokens: 1, outputTokens: 1 })
+    vi.setSystemTime(T0 + DAY - 1)
+    const lateStarted = await quota.reserve(request())
+    // Settled after the window ended: it still belongs to the day it was sent.
+    vi.setSystemTime(T0 + DAY + HOUR)
+    await quota.settle(lateStarted.id, { kind: 'reported', inputTokens: 5, outputTokens: 5 })
+    const [alicesDay] = await quota.usageByPrincipal({ orgId, from: T0, to: T0 + DAY })
+    expect(alicesDay).toMatchObject({ calls: 2, chargedTokens: 12 })
+  })
+
+  it('leaves out released calls, unsettled reservations, and other organizations', async () => {
+    await call(T0 + HOUR, alice, 'released')
+    vi.setSystemTime(T0 + 2 * HOUR)
+    await quota.reserve(request())
+    await call(T0 + 3 * HOUR, alice, { inputTokens: 1, outputTokens: 1 }, { orgId: OrgId('org-2') })
+    const window = { orgId, from: T0, to: T0 + DAY }
+    expect(await quota.usageByPrincipal(window)).toEqual([])
+    expect(await quota.usageRecords({ ...window, limit: 10, offset: 0 })).toEqual({ records: [], total: 0 })
+    expect(await quota.usageSeries({ ...window, bucketMs: HOUR, utcOffsetMs: 0 })).toEqual([])
+  })
+
+  it('cuts the window into buckets that start at the reader\'s local midnight', async () => {
+    await call(T0 + 20 * HOUR, alice, { inputTokens: 10, outputTokens: 0 })
+    await call(T0 + 22 * HOUR, alice, { inputTokens: 20, outputTokens: 0 })
+    await call(T0 + 30 * HOUR, alice, { inputTokens: 40, outputTokens: 0 })
+    const window = { orgId, from: T0, to: T0 + 3 * DAY, bucketMs: DAY }
+    expect(await quota.usageSeries({ ...window, utcOffsetMs: 0 })).toEqual([
+      { start: T0, calls: 2, inputTokens: 30, outputTokens: 0, chargedTokens: 30 },
+      { start: T0 + DAY, calls: 1, inputTokens: 40, outputTokens: 0, chargedTokens: 40 },
+    ])
+    // UTC+8: all three calls fall on one local day, which began at 16:00 UTC.
+    expect(await quota.usageSeries({ ...window, utcOffsetMs: 8 * HOUR })).toEqual([
+      { start: T0 + 16 * HOUR, calls: 3, inputTokens: 70, outputTokens: 0, chargedTokens: 70 },
+    ])
+  })
+
+  it('narrows a series and the records to one account', async () => {
+    await call(T0 + HOUR, alice, { inputTokens: 1, outputTokens: 1 })
+    await call(T0 + 2 * HOUR, bob, { inputTokens: 5, outputTokens: 5 })
+    const window = { orgId, from: T0, to: T0 + DAY, principalId: bob }
+    expect(await quota.usageSeries({ ...window, bucketMs: DAY, utcOffsetMs: 0 }))
+      .toEqual([{ start: T0, calls: 1, inputTokens: 5, outputTokens: 5, chargedTokens: 10 }])
+    const page = await quota.usageRecords({ ...window, limit: 10, offset: 0 })
+    expect(page.total).toBe(1)
+    expect(page.records[0]).toMatchObject({ principalId: bob, chargedTokens: 10 })
+  })
+
+  it('lists calls newest first in pages, with the total across all of them', async () => {
+    const ids = [
+      await call(T0 + HOUR, alice, { inputTokens: 1, outputTokens: 0 }),
+      await call(T0 + 2 * HOUR, alice, { inputTokens: 2, outputTokens: 0 }),
+      await call(T0 + 3 * HOUR, alice, { inputTokens: 3, outputTokens: 0 }),
+    ]
+    const window = { orgId, from: T0, to: T0 + DAY }
+    const first = await quota.usageRecords({ ...window, limit: 2, offset: 0 })
+    expect(first.total).toBe(3)
+    expect(first.records.map(record => record.reservationId)).toEqual([ids[2], ids[1]])
+    const second = await quota.usageRecords({ ...window, limit: 2, offset: 2 })
+    expect(second.records.map(record => record.reservationId)).toEqual([ids[0]])
+  })
+
+  it('shows what a record needs to be read on its own', async () => {
+    await call(T0 + HOUR, alice, 'estimated', { deviceId: 'device-1', modelRef: 'deepseek-v4-pro' })
+    await call(T0 + 2 * HOUR, alice, { inputTokens: 7, outputTokens: 3 })
+    vi.setSystemTime(T0 + 3 * HOUR)
+    await quota.reserve(request())
+    vi.setSystemTime(T0 + 3 * HOUR + 301_000)
+    // The reconciler charges the whole reservation of a call nobody settled.
+    await quota.reconcile(Date.now())
+    const { records } = await quota.usageRecords({ orgId, from: T0, to: T0 + DAY, limit: 10, offset: 0 })
+    expect(records.map(record => [record.kind, record.reconciled, record.chargedTokens])).toEqual([
+      ['estimated', true, 1_000],
+      ['reported', false, 10],
+      ['estimated', false, 30],
+    ])
+    expect(records[2]).toMatchObject({
+      deviceId: 'device-1', modelRef: 'deepseek-v4-pro', createdAt: T0 + HOUR, settledAt: T0 + HOUR,
+    })
+    expect(records[1]).not.toHaveProperty('deviceId')
+  })
+
+  it('upgrades a version 1 ledger in place and keeps its rows', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'quota-sqlite-upgrade-'))
+    try {
+      const path = join(root, 'quota.sqlite')
+      const old = new DatabaseSync(path)
+      applySchema(old)
+      old.exec('DROP INDEX reservation_created')
+      old.exec('PRAGMA user_version = 1')
+      old.prepare(
+        `INSERT INTO reservation (id, org_id, period, principal_id, model_ref, reserved_tokens, created_at, expires_at)
+         VALUES ('r1', 'org-1', ?, 'user-alice', 'm', 10, ?, ?)`,
+      ).run(PERIOD, T0 + HOUR, T0 + 2 * HOUR)
+      old.exec(`INSERT INTO settlement VALUES ('r1', 'reported', 4, 6, 10, ${T0 + HOUR}, 0)`)
+      old.close()
+      const opened = new Context()
+      await opened.plugin(SqliteQuota, { path, reservationTtlMs: 300_000 }).await()
+      const upgraded = opened.get('quota') as Quota
+      expect(await upgraded.usageByPrincipal({ orgId, from: T0, to: T0 + DAY })).toHaveLength(1)
+      await opened.fiber.dispose()
+      const probe = new DatabaseSync(path)
+      expect(probe.prepare('PRAGMA user_version').get()).toMatchObject({ user_version: SCHEMA_VERSION })
+      expect(probe.prepare("SELECT name FROM sqlite_master WHERE name = 'reservation_created'").get())
+        .toBeDefined()
+      probe.close()
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
   })
 })
 

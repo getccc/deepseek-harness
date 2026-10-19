@@ -16201,6 +16201,9 @@ importers:
       '@deepseek-ai/dsh-model-gateway':
         specifier: workspace:*
         version: link:../../llm/model-gateway
+      '@deepseek-ai/dsh-quota':
+        specifier: workspace:*
+        version: link:../../access/quota
       '@deepseek-ai/dsh-team-browser-session':
         specifier: workspace:*
         version: link:../team-browser-session

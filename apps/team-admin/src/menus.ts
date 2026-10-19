@@ -23,6 +23,7 @@ export const CONSOLE_COMPONENTS = [
   'resources/BiProjectsPage',
   'resources/GmoCategoriesPage',
   'resources/ReleasesPage',
+  'monitoring/TokenUsagePage',
 ] as const
 
 /** One page component this build ships. */
@@ -31,6 +32,7 @@ export type ConsoleComponent = typeof CONSOLE_COMPONENTS[number]
 /** The icons this build draws, as a stored entry names them. */
 export const MENU_ICONS = [
   'dashboard', 'setting', 'bank', 'team', 'safety', 'menu', 'appstore', 'laptop', 'api', 'read', 'chart',
+  'monitor',
 ] as const
 
 /** One icon this build draws. */

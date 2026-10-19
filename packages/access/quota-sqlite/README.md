@@ -51,6 +51,10 @@ Settled tokens sum the settlements; reserved tokens sum the reservations nothing
 
 An expired reservation is settled at its full amount with `kind: 'estimated'` and `reconciled: true`. Releasing would let a crash loop spend without recording; the mark is what lets a later reader tell a charge nobody reported from one somebody did, and lets an invoice reconciliation credit the difference.
 
+### Usage reads use the send time
+
+The usage queries join each reservation to its settlement and filter on `reservation.created_at`, the moment the member sent the call, through the `reservation_created (org_id, created_at)` index. Schema version 2 added that index: a version 1 database gets it in place when it is opened, and a build older than version 2 refuses the upgraded file. Day and hour buckets are cut in SQL from a caller-supplied UTC offset, so a bucket starts at the reader's midnight rather than at UTC midnight.
+
 ### Source map
 
 | Path | Role |

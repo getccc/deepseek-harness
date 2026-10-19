@@ -35,6 +35,9 @@
       "path": "../../llm/model-gateway"
     },
     {
+      "path": "../../access/quota"
+    },
+    {
       "path": "../team-browser-session"
     },
     {
