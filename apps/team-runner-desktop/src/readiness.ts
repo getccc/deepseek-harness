@@ -21,3 +21,14 @@
 export function runnerReady(status: number): boolean {
   return status === 200 || status === 303 || status === 405
 }
+
+/**
+ * Decide whether a loaded Runner page requires another readiness poll.
+ * Request refusals retain their rendered feedback, including sign-in errors.
+ * A missing route or server failure can indicate that the Runner is restarting.
+ * @param status - the HTTP status of the completed local navigation.
+ * @returns whether the shell should replace the page with Runner recovery.
+ */
+export function runnerPageNeedsRecovery(status: number): boolean {
+  return status === 404 || status >= 500
+}

@@ -24,7 +24,7 @@ import {
 import { acceptRelease, readManifest, verifyDownload, type ReleaseGate } from './release-gate.ts'
 import { deploymentPatch, resolveDeployment, runnerEnvironment, type LoginLocale, type OfficeSkills } from './deployment.ts'
 import { profileManifest } from './profile.ts'
-import { runnerReady } from './readiness.ts'
+import { runnerPageNeedsRecovery, runnerReady } from './readiness.ts'
 import { TeamUpdateCoordinator } from './update-coordinator.ts'
 import { UPDATE_IPC, type TeamUpdateState } from './update-state.ts'
 
@@ -645,8 +645,8 @@ function createDesktop(): void {
   window.on('session-end', () => { quitting = true })
   window.webContents.on('did-navigate', (_event, url, status) => {
     // A Runner answer the readiness probe accepted can still be gone by the
-    // time the page asks; an error page in the window is never the surface.
-    if (!url.startsWith(new URL(RUNNER_URL).origin) || status < 400) return
+    // time the page asks. Request refusals keep their visible error feedback.
+    if (!url.startsWith(new URL(RUNNER_URL).origin) || !runnerPageNeedsRecovery(status)) return
     log(`page answered ${String(status)}; polling again`)
     void showRunner()
   })

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { deploymentPatch, resolveDeployment, runnerEnvironment } from '../src/deployment.ts'
 import { profileManifest } from '../src/profile.ts'
-import { runnerReady } from '../src/readiness.ts'
+import { runnerPageNeedsRecovery, runnerReady } from '../src/readiness.ts'
 
 const facts = {
   controlPlaneUrl: 'https://control.acme.example/path',
@@ -145,6 +145,18 @@ describe('runner readiness', () => {
     expect(runnerReady(303)).toBe(true)
     expect(runnerReady(405)).toBe(true)
     expect(runnerReady(200)).toBe(true)
+  })
+
+  it.each([400, 401, 403, 405, 426])('retains the rendered request feedback for HTTP %i', (status) => {
+    expect(runnerPageNeedsRecovery(status)).toBe(false)
+  })
+
+  it.each([404, 500, 502, 503])('resumes readiness polling for HTTP %i', (status) => {
+    expect(runnerPageNeedsRecovery(status)).toBe(true)
+  })
+
+  it.each([200, 303])('keeps the loaded application for HTTP %i', (status) => {
+    expect(runnerPageNeedsRecovery(status)).toBe(false)
   })
 })
 
