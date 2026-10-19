@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { deploymentPatch, resolveDeployment } from '../src/deployment.ts'
+import { deploymentPatch, resolveDeployment, runnerEnvironment } from '../src/deployment.ts'
 import { profileManifest } from '../src/profile.ts'
 import { runnerReady } from '../src/readiness.ts'
 
@@ -145,5 +145,26 @@ describe('runner readiness', () => {
     expect(runnerReady(303)).toBe(true)
     expect(runnerReady(405)).toBe(true)
     expect(runnerReady(200)).toBe(true)
+  })
+})
+
+describe('Runner environment', () => {
+  it('names the staged Office sidecar and the private home, replacing inherited values', () => {
+    const environment = runnerEnvironment(
+      { PATH: '/usr/bin', DSH_HOME: '/member/home', DSH_OFFICE_SIDECAR: '/inherited/sidecar' },
+      '/app/runner/home',
+      '/app/Resources/runner/dsh-office',
+    )
+    expect(environment).toEqual({
+      PATH: '/usr/bin',
+      DSH_HOME: '/app/runner/home',
+      DSH_OFFICE_SIDECAR: '/app/Resources/runner/dsh-office',
+    })
+  })
+
+  it('leaves the sidecar variable as inherited when this build carries none', () => {
+    expect(runnerEnvironment({ DSH_OFFICE_SIDECAR: '/inherited/sidecar' }, '/home', undefined))
+      .toEqual({ DSH_HOME: '/home', DSH_OFFICE_SIDECAR: '/inherited/sidecar' })
+    expect(runnerEnvironment({}, '/home', undefined)).toEqual({ DSH_HOME: '/home' })
   })
 })

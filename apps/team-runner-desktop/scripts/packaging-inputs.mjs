@@ -1,7 +1,7 @@
 /** Packaging-time inputs an installed build carries: the release version and the plugin tree's identity. */
 
 import { createHash, createPublicKey } from 'node:crypto'
-import { readdirSync, statSync } from 'node:fs'
+import { existsSync, readdirSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 
 /** Environment variable naming the release this build is. */
@@ -114,4 +114,43 @@ export function resolveUpdateOrigin(env, controlPlaneUrl) {
     throw new Error(`${UPDATE_ORIGIN_ENV} must be an http or https address; received ${url.protocol}`)
   }
   return url.href.endsWith('/') ? url.href : `${url.href}/`
+}
+
+/** Environment variable naming the prepared Office sidecar directory this build carries. */
+export const OFFICE_SIDECAR_ENV = 'DSH_TEAM_OFFICE_SIDECAR'
+
+/**
+ * Validate the Office sidecar: the directory the Runner executable's bootstrap
+ * reads through `DSH_OFFICE_SIDECAR` to convert Office documents. It holds a
+ * Node runtime for the LibreOffice workers and the `@deepseek-ai/libreoffice-kit`
+ * packages, the same layout `DSH_RUNTIME_DOWNLOAD=office <runner>` publishes
+ * under the resource cache.
+ *
+ * A sidecar prepared for the other platform would install fine and fail only
+ * when a member opens a document, so the engine package this build's platform
+ * needs is checked here rather than discovered there.
+ * @param {NodeJS.ProcessEnv} env - the packaging environment.
+ * @param {boolean} windows - whether the Runner executable is a Windows build.
+ * @returns {string} the validated sidecar directory.
+ */
+export function resolveOfficeSidecar(env, windows) {
+  const value = env[OFFICE_SIDECAR_ENV]?.trim()
+  if (value === undefined || value === '') {
+    throw new Error(
+      `${OFFICE_SIDECAR_ENV} must name the prepared Office sidecar directory; `
+      + 'run the Runner executable with DSH_RUNTIME_DOWNLOAD=office to publish one',
+    )
+  }
+  const engine = windows ? 'libreoffice-kit-win32-x64' : 'libreoffice-kit-darwin-arm64'
+  const required = [
+    ['Node runtime', join('node', 'bin', windows ? 'node.exe' : 'node')],
+    ['@deepseek-ai/libreoffice-kit', join('node_modules', '@deepseek-ai', 'libreoffice-kit', 'package.json')],
+    [`@deepseek-ai/${engine}`, join('node_modules', '@deepseek-ai', engine, 'package.json')],
+  ]
+  for (const [what, path] of required) {
+    if (!existsSync(join(value, path))) {
+      throw new Error(`${OFFICE_SIDECAR_ENV} ${value} must carry the ${what} at ${path}`)
+    }
+  }
+  return value
 }

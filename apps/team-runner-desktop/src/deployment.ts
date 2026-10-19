@@ -149,3 +149,27 @@ export function deploymentPatch(deployment: DesktopDeployment): string {
       }],
   ], null, 2)}\n`
 }
+
+/**
+ * Compose the environment the Runner starts with.
+ *
+ * The Runner executable finds its Office sidecar through `DSH_OFFICE_SIDECAR`
+ * or, failing that, a resource cache a member's computer does not have, so the
+ * staged sidecar is named explicitly and replaces any value the shell itself
+ * inherited. A build that carries no sidecar leaves the variable as inherited.
+ * @param base - the environment the shell runs in.
+ * @param home - the private `DSH_HOME` of the Runner.
+ * @param officeSidecar - absolute path of the staged Office sidecar, when this build carries one.
+ * @returns the Runner's environment.
+ */
+export function runnerEnvironment(
+  base: NodeJS.ProcessEnv,
+  home: string,
+  officeSidecar: string | undefined,
+): NodeJS.ProcessEnv {
+  return {
+    ...base,
+    DSH_HOME: home,
+    ...officeSidecar === undefined ? {} : { DSH_OFFICE_SIDECAR: officeSidecar },
+  }
+}

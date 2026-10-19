@@ -3,7 +3,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
-  APP_VERSION_ENV, UPDATE_ORIGIN_ENV, pluginTreeFingerprint, resolveAppVersion, resolveUpdateOrigin,
+  APP_VERSION_ENV, OFFICE_SIDECAR_ENV, UPDATE_ORIGIN_ENV, pluginTreeFingerprint, resolveAppVersion,
+  resolveOfficeSidecar, resolveUpdateOrigin,
 } from '../scripts/packaging-inputs.mjs'
 
 const trees: string[] = []
@@ -95,5 +96,39 @@ describe('plugin tree fingerprint', () => {
     const linked = tree({ 'a/index.js': 'x' }, { 'b': '../elsewhere' })
     const plain = tree({ 'a/index.js': 'x' })
     expect(pluginTreeFingerprint(linked)).not.toBe(pluginTreeFingerprint(plain))
+  })
+})
+
+describe('Office sidecar', () => {
+  const mac = {
+    'node/bin/node': '',
+    'node_modules/@deepseek-ai/libreoffice-kit/package.json': '{}',
+    'node_modules/@deepseek-ai/libreoffice-kit-darwin-arm64/package.json': '{}',
+  }
+
+  it('accepts the directory the Runner executable publishes for this platform', () => {
+    const directory = tree(mac)
+    expect(resolveOfficeSidecar({ [OFFICE_SIDECAR_ENV]: directory }, false)).toBe(directory)
+    const windows = tree({
+      'node/bin/node.exe': '',
+      'node_modules/@deepseek-ai/libreoffice-kit/package.json': '{}',
+      'node_modules/@deepseek-ai/libreoffice-kit-win32-x64/package.json': '{}',
+    })
+    expect(resolveOfficeSidecar({ [OFFICE_SIDECAR_ENV]: windows }, true)).toBe(windows)
+  })
+
+  it('refuses a build that names no sidecar', () => {
+    expect(() => resolveOfficeSidecar({}, false)).toThrow(/DSH_RUNTIME_DOWNLOAD=office/u)
+    expect(() => resolveOfficeSidecar({ [OFFICE_SIDECAR_ENV]: ' ' }, false)).toThrow(/must name the prepared Office sidecar/u)
+  })
+
+  it('refuses a sidecar prepared for the other platform or missing its Node runtime', () => {
+    const windows = tree({ ...mac, 'node/bin/node.exe': '' })
+    // The engine package, not just the kit, decides whether a document converts.
+    expect(() => resolveOfficeSidecar({ [OFFICE_SIDECAR_ENV]: windows }, true)).toThrow(/libreoffice-kit-win32-x64/u)
+    const { 'node/bin/node': _node, ...withoutNode } = mac
+    expect(() => resolveOfficeSidecar({ [OFFICE_SIDECAR_ENV]: tree(withoutNode) }, false)).toThrow(/Node runtime/u)
+    const { 'node_modules/@deepseek-ai/libreoffice-kit/package.json': _kit, ...withoutKit } = mac
+    expect(() => resolveOfficeSidecar({ [OFFICE_SIDECAR_ENV]: tree(withoutKit) }, false)).toThrow(/libreoffice-kit at/u)
   })
 })

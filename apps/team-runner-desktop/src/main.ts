@@ -22,7 +22,7 @@ import {
   CERTIFICATE_VERDICT, pinnedCertificateVerdict, pinnedHost, type CertificateVerdict,
 } from './control-plane-certificate.ts'
 import { acceptRelease, readManifest, verifyDownload, type ReleaseGate } from './release-gate.ts'
-import { deploymentPatch, resolveDeployment, type LoginLocale, type OfficeSkills } from './deployment.ts'
+import { deploymentPatch, resolveDeployment, runnerEnvironment, type LoginLocale, type OfficeSkills } from './deployment.ts'
 import { profileManifest } from './profile.ts'
 import { runnerReady } from './readiness.ts'
 import { TeamUpdateCoordinator } from './update-coordinator.ts'
@@ -47,6 +47,8 @@ const PLUGIN_TREE = 'plugins'
 const PPT_TEMPLATE = 'templates/welinkin-ppt.pptx'
 /** The skill directory the office kinds' skills load from. */
 const SKILL_DIR = 'skills'
+/** The Node runtime and LibreOffice packages the Runner converts Office documents with. */
+const OFFICE_SIDECAR = 'dsh-office'
 /** Records which plugin tree the profile's `node_modules` was materialized from. */
 const PLUGIN_TREE_STAMP = '.dsh-plugin-tree'
 /** The deployment's menu bar mark, drawn in the bar's own colour. */
@@ -309,6 +311,7 @@ function startRunner(): void {
   const certificateAuthority = stagedResource(CONTROL_PLANE_CA, 'DSH_TEAM_CONTROL_PLANE_CA')
   const pptTemplate = stagedResource(PPT_TEMPLATE, 'DSH_TEAM_PPT_TEMPLATE')
   const skillDir = stagedResource(SKILL_DIR, 'DSH_TEAM_SKILLS')
+  const officeSidecar = stagedResource(OFFICE_SIDECAR, 'DSH_TEAM_OFFICE_SIDECAR')
   const skills = officeSkills()
   const deployment = resolveDeployment({
     controlPlaneUrl: app.isPackaged
@@ -329,7 +332,7 @@ function startRunner(): void {
   retireStaleRunner(executable)
   const logFd = openSync(join(data, 'runner.log'), 'a', 0o600)
   runner = spawn(executable, ['--profile', 'team', '--patch', patchPath, '--no-open'], {
-    env: { ...process.env, DSH_HOME: home },
+    env: runnerEnvironment(process.env, home, officeSidecar),
     stdio: ['ignore', logFd, logFd],
     windowsHide: true,
   })

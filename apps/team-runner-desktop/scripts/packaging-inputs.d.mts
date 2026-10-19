@@ -38,3 +38,15 @@ export declare const UPDATE_ORIGIN_ENV: 'DSH_TEAM_UPDATE_ORIGIN'
  * @throws when the variable names something other than an http(s) address.
  */
 export declare function resolveUpdateOrigin(env: NodeJS.ProcessEnv, controlPlaneUrl: string): string
+
+/** Environment variable naming the prepared Office sidecar directory this build carries. */
+export declare const OFFICE_SIDECAR_ENV: 'DSH_TEAM_OFFICE_SIDECAR'
+
+/**
+ * Validate the Office sidecar directory the Runner converts Office documents with.
+ * @param env - the packaging environment.
+ * @param windows - whether the Runner executable is a Windows build.
+ * @returns the validated sidecar directory.
+ * @throws when the variable is absent or the directory lacks the Node runtime or this platform's LibreOffice packages.
+ */
+export declare function resolveOfficeSidecar(env: NodeJS.ProcessEnv, windows: boolean): string
