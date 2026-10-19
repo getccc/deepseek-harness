@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-本包在 Web GUI 中渲染联网开关：composer 工具行里的「联网」徽章，显示本对话的 agent 是否被提供 `web_search` 与 `web_fetch`，并可一键切换。它只出现在宿主提供开关的地方：preset 挂载了开关（随附的 `chat` preset，每个新会话默认开启），且部署许可该成员搜索。它读取宿主计算的 `webAccess` 投影，因此重新加载、第二个浏览器与模型三方一致；并经 `webAccess` Remote 设置开关，所以点击不会留下命令节点；开关本身归 `dsh-tool-web` 所有。
+Web GUI 的 composer 工具行里的「联网」徽章显示本对话的 agent 是否被提供 `web_search` 与 `web_fetch`，并可一键切换。它只出现在宿主提供开关的地方：preset 挂载了开关（随附的 `chat` preset，每个新会话默认开启），且部署许可该成员搜索。它读取宿主计算的 `webAccess` 投影，因此重新加载、第二个浏览器与模型三方一致；并经 `webAccess` Remote 设置开关，所以点击不会留下命令节点；开关本身归 `dsh-tool-web` 所有。
 
 ## 目录
 

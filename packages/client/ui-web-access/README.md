@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This package renders the web access switch in the Web GUI: a 联网 chip in the composer tool row that shows whether this conversation's agent is offered `web_search` and `web_fetch`, and flips it with one click. It appears only where the Host offers a switch: the preset mounts one (the shipped `chat` preset, on for each new session) and the deployment permits this member to search. It reads the host-computed `webAccess` projection, so a reload, a second browser, and the model agree, and sets the switch through the `webAccess` Remote, so clicks leave no command node; `dsh-tool-web` owns the switch itself.
+The Web GUI's 联网 chip in the composer tool row shows whether this conversation's agent is offered `web_search` and `web_fetch`, and flips it with one click. It appears only where the Host offers a switch: the preset mounts one (the shipped `chat` preset, on for each new session) and the deployment permits this member to search. It reads the host-computed `webAccess` projection, so a reload, a second browser, and the model agree, and sets the switch through the `webAccess` Remote, so clicks leave no command node; `dsh-tool-web` owns the switch itself.
 
 ## Table of Contents
 
