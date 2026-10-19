@@ -22,6 +22,7 @@ Status: implemented
 - **Workspace 导航。** 新工作任务经上游的具名空白创建只复用未改动的空白 Session；新对话指名未改动的对话 Session，或创建不带位置的 Session；由宿主的复用规则取代客户端的 writer-held 回退。
 - **弹窗。** 多选弹窗类型携带上游的搜索文案与模式，并在上游的分组 listbox 中勾选行。
 - **公司模型。** `built-in` Chat Completions 适配器共享上游按路由仅记录一次的扩展日志，并报告接受失败。
+- **Control Plane 命令行。** 上游生成的 CLI 参考会执行每个随附 profile 的 `--help`，并要求 stderr 为空。`team-control-plane-startup` 行解析命令行并发布 `teamControlPlaneStartup`，其余每个 Control Plane 行都注入该服务，因此 help 不打开存储、不绑定监听器；fork 的 SQLite 存储在打开时才加载 `node:sqlite`。
 - **文案与品牌。** 小微文案落在上游重命名后的轮次过程键上（「小微已完成，用时」），权限标签保持「只读／工作区可写／完全访问」，`ui-brand-official` 继续移除。
 
 ## Alternatives considered

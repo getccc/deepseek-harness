@@ -22,6 +22,7 @@ Fork behavior re-seated on upstream's new structure:
 - **Workspace navigation.** New work tasks reuse only pristine blanks through upstream's named-blank creation; New chat names the pristine chat Session or creates one without a location, and the Host's reuse rule replaces the client's writer-held fallback.
 - **Popups.** The multi-select popup kind carries upstream's search copy and modes, and ticks rows inside upstream's grouped listbox.
 - **Company models.** The `built-in` Chat Completions adapter shares upstream's once-per-route extension logging and reports acceptance failures.
+- **Control Plane command line.** Upstream's generated CLI reference runs every shipped profile's `--help` and requires silent stderr. The `team-control-plane-startup` row parses the command line and publishes `teamControlPlaneStartup`, which every other Control Plane row injects, so help opens no store and binds no listener; the fork's SQLite stores load `node:sqlite` when they open.
 - **Wording and branding.** 小微 wording moves onto upstream's renamed turn-process keys ("小微已完成，用时"), the permission labels stay 只读／工作区可写／完全访问, and `ui-brand-official` stays removed.
 
 ## Alternatives considered
