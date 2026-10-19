@@ -282,19 +282,21 @@ describe('Session-list work slices', () => {
     expect(h.trace).toEqual([])
   })
 
-  it('omits cwd-less cold rows but retains cwd-less attached Sessions', async () => {
+  it('lists cwd-less cold rows and attached Sessions like any other', async () => {
+    // A Session without a cwd is a chat composed without a Workspace.
     const h = await harness([
-      { id: 'omitted-first', phase: 'cold', cwd: false },
+      { id: 'chat-first', phase: 'cold', cwd: false },
       { id: 'visible-cold', phase: 'cold' },
       { id: 'visible-live', phase: 'live', cwd: false },
-      { id: 'omitted-last', phase: 'cold', cwd: false },
+      { id: 'chat-last', phase: 'cold', cwd: false },
     ])
 
     const items = await h.list.list()
 
-    expect(h.trace).toEqual(['live:visible-live', 'cold:visible-cold'])
-    expect(items.map(item => item.sessionId)).toEqual(['visible-live', 'visible-cold'])
+    expect(h.trace).toEqual(['live:visible-live', 'cold:chat-first', 'cold:visible-cold', 'cold:chat-last'])
+    expect(items.map(item => item.sessionId)).toEqual(['visible-live', 'chat-first', 'visible-cold', 'chat-last'])
     expect(items[0]).not.toHaveProperty('cwd')
+    expect(items[1]).not.toHaveProperty('cwd')
   })
 
   it('keeps live-before-cold stable ties despite interleaved query order', async () => {

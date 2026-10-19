@@ -65,7 +65,8 @@ async function setup() {
   ctx.llm.registerAdapter(['mock'], adapter)
   const handle = await ctx.agents.create({
     sessionId: SessionId('parent'),
-    meta: { agentPreset: 'coding' },
+    // A Session with no cwd composes a workspace-less preset; these presets need a workspace.
+    meta: { agentPreset: 'coding', cwd: process.cwd() },
     agentOptions: { provider: 'mock', model: 'mock' },
     setup: async (agentCtx) => { await ctx.agentPresets.mount(agentCtx, 'coding') },
   })

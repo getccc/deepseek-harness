@@ -125,25 +125,24 @@ async function loadComposition(
 
 
 describe('llm-deepseek real dynamic composition', () => {
-  it('updates the model catalog when the stored API key is removed or added', async () => {
+  it('withdraws and restores the official route when the stored API key is removed or added', async () => {
     vi.stubEnv('DEEPSEEK_API_KEY', '')
     const { ctx } = await loadComposition({ withDynamic: true, baseURL: 'https://api.deepseek.com/anthropic' })
     const credentials = ctx.get('credentials')!
     const models = await ctx.llm.listModels('deepseek-official')
     expect(models).not.toHaveLength(0)
 
+    // The route is registered only while its key resolves; the settings entry stays declared.
     await credentials.unset(KEY_REF)
-    expect(await ctx.llm.listModels('deepseek-official')).toEqual([])
+    await vi.waitFor(async () => {
+      await expect(ctx.llm.listModels('deepseek-official')).rejects.toMatchObject({ code: 'NO_ADAPTER' })
+    })
     expect(ctx.llm.listConfigurableProviders().map(row => row.provider)).toContain('deepseek-official')
 
     await credentials.set(KEY_REF, 'stored-by-ui')
-    expect(await ctx.llm.listModels('deepseek-official')).toEqual(models)
-
-    const failure = new Error('credential lookup failed')
-    const resolve = vi.spyOn(credentials, 'resolve').mockRejectedValue(failure)
-    try {
-      await expect(ctx.llm.listModels('deepseek-official')).rejects.toBe(failure)
-    } finally { resolve.mockRestore() }
+    await vi.waitFor(async () => {
+      expect(await ctx.llm.listModels('deepseek-official')).toEqual(models)
+    })
   })
 
   it('keeps package inventory on when the Loader composition disables session upload', async () => {

@@ -93,8 +93,9 @@ describe('SessionSkillCatalog', () => {
   it.each([
     { cwd: undefined, workingDirectory: '/cold/current', expected: '/cold/current' },
     { cwd: '/cold/original', workingDirectory: null, expected: '/cold/original' },
-    { cwd: undefined, workingDirectory: null, expected: '/catalog/default' },
-    { cwd: undefined, workingDirectory: undefined, expected: '/catalog/default' },
+    // Neither directory: a Session composed without a Workspace lists against no project root.
+    { cwd: undefined, workingDirectory: null, expected: undefined },
+    { cwd: undefined, workingDirectory: undefined, expected: undefined },
   ])('resolves cold directory metadata $cwd / $workingDirectory to $expected without filesystem checks', async ({ cwd, workingDirectory, expected }) => {
     const ctx = await context()
     try {

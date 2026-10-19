@@ -237,7 +237,8 @@ describe('ui-model-selection dual entry', () => {
     expect(options.map((o: SelectOption) => o.label)).toEqual([
       'DeepSeek-V4-Flash', 'DeepSeek-V4-Pro', 'testModel', 'External Flash',
     ])
-    expect(options.map(option => option.group?.label)).toEqual(['DeepSeek', 'DeepSeek', '内置模型', 'External Provider'])
+    expect(options.map(option => option.group?.label))
+      .toEqual(['DeepSeek', 'DeepSeek', locale === 'zh' ? '内置模型' : 'Built-in Models', 'External Provider'])
     expect(options.every(option => option.detail === undefined)).toBe(true)
     expect(b.popup().searchMode).toBe('fuzzy-label')
     expect(options[0]?.active).toBe(true)
@@ -250,9 +251,10 @@ describe('ui-model-selection dual entry', () => {
   it('orders popup provider groups account-first while retaining third-party catalog order', async () => {
     const b = await bench()
     try {
+      const external = GROUPS.find(group => group.id === 'external')!
       b.setGroups([
-        GROUPS[1]!, GROUPS[0]!, { ...GROUPS[0]!, id: 'deepseek-account', name: 'DeepSeek Account' },
-        { ...GROUPS[1]!, id: 'last-provider', name: 'Last Provider' },
+        external, GROUPS[0]!, { ...GROUPS[0]!, id: 'deepseek-account', name: 'DeepSeek Account' },
+        { ...external, id: 'last-provider', name: 'Last Provider' },
       ])
       b.remote.emit('llm/adapters-updated', [])
       b.mint('s1')

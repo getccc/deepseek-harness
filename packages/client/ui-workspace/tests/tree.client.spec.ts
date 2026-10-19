@@ -636,7 +636,7 @@ describe('chat sessions outside the Workspace tree', () => {
   it('never enter Ungrouped or the flat list, while search still matches them', () => {
     const work = summary('loose-work', 1, '/other')
     const conversation = chat('conversation', 2)
-    conversation.displayTitle = 'Needle conversation'
+    conversation.title = conversation.displayTitle = 'Needle conversation'
     const sessions = list(work, conversation)
     const groups = deriveGroups(sessions, [], noRows, noAttention, view([UNGROUPED_KEY]))
     expect(groups.map(group => group.key)).toEqual([UNGROUPED_KEY])

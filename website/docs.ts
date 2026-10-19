@@ -152,7 +152,7 @@ const homeAndGuide = pairedPages([
     label: { root: '公开部署', en: 'Public deployments' },
     sidebar: { root: 'zh-guide', en: 'en-guide' },
     section: { root: '入门', en: 'Guide' },
-    order: 4,
+    order: 5,
   },
   {
     source: 'docs/user/guide/python-sdk.md',

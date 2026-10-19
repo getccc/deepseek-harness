@@ -9,8 +9,8 @@
   en: 6cc2cd9ced70bb09
   zh: 1c0e6cb4ba2ed637
 /tool-schema-catalog/tool-package-map:
-  en: e72ad7af437fa362
-  zh: d8f3683a4efe01b0
+  en: f122ccc71d2d6b88
+  zh: 984fa102297359c4
 /tool-schema-catalog/deepseek-ai-dsh-plugin-manager:
   en: e0143916bb634762
   zh: e0143916bb634762
@@ -312,8 +312,41 @@
   en: bb38a9d29f46563c
   zh: bb38a9d29f46563c
 /tool-schema-catalog/deepseek-ai-dsh-tool-workflow/workflow:
-  en: fdd667cfe21481e8
-  zh: 88864d3b958398a4
+  en: 21846b189a0cb016
+  zh: 3677b2e0666c5bcb
+/tool-schema-catalog/deepseek-ai-dsh-tool-knowledge:
+  en: 787f7ec3b854b55a
+  zh: 787f7ec3b854b55a
+/tool-schema-catalog/deepseek-ai-dsh-tool-knowledge/knowledge-search:
+  en: 9478a165f4be5635
+  zh: 9478a165f4be5635
+/tool-schema-catalog/deepseek-ai-dsh-tool-bi:
+  en: 9fe72fa592e760ec
+  zh: 9fe72fa592e760ec
+/tool-schema-catalog/deepseek-ai-dsh-tool-bi/bi-list-charts:
+  en: c5c701a64f82dfe8
+  zh: c5c701a64f82dfe8
+/tool-schema-catalog/deepseek-ai-dsh-tool-bi/bi-query-chart:
+  en: a167f23e8e53137b
+  zh: a167f23e8e53137b
+/tool-schema-catalog/deepseek-ai-dsh-tool-gmo:
+  en: d17f7a24f6ff36ed
+  zh: d17f7a24f6ff36ed
+/tool-schema-catalog/deepseek-ai-dsh-tool-gmo/gmo-aggregate:
+  en: 8ce087bc5f84a231
+  zh: 8ce087bc5f84a231
+/tool-schema-catalog/deepseek-ai-dsh-tool-gmo/gmo-describe-result:
+  en: fa0876080b8b4201
+  zh: fa0876080b8b4201
+/tool-schema-catalog/deepseek-ai-dsh-tool-gmo/gmo-list-results:
+  en: f32e517a3e2aaa88
+  zh: f32e517a3e2aaa88
+/tool-schema-catalog/deepseek-ai-dsh-tool-gmo/gmo-overview:
+  en: c18c398f1bbec624
+  zh: c18c398f1bbec624
+/tool-schema-catalog/deepseek-ai-dsh-tool-gmo/gmo-rows:
+  en: f6fe8a791d4c9448
+  zh: f6fe8a791d4c9448
 /tool-schema-catalog/deepseek-ai-dsh-tool-workspace-dependencies:
   en: 96bffc40b80df4b8
   zh: 96bffc40b80df4b8

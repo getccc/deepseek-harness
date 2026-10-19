@@ -41,6 +41,7 @@
     "@deepseek-ai/dsh-bi-gateway-http": "workspace:*",
     "@deepseek-ai/dsh-bi-gateway-sqlite": "workspace:*",
     "@deepseek-ai/dsh-bi-webi": "workspace:*",
+    "@deepseek-ai/dsh-cmdline": "workspace:*",
     "@deepseek-ai/dsh-device-authorization-sqlite": "workspace:*",
     "@deepseek-ai/dsh-gmo-excel-tools": "workspace:*",
     "@deepseek-ai/dsh-gmo-gateway-http": "workspace:*",
@@ -60,7 +61,9 @@
     "@deepseek-ai/dsh-team-release-http": "workspace:*",
     "@deepseek-ai/dsh-web": "workspace:*",
     "@deepseek-ai/dsh-web-search-deepseek": "workspace:*",
-    "@deepseek-ai/dsh-web-search-gateway-http": "workspace:*"
+    "@deepseek-ai/dsh-web-search-gateway-http": "workspace:*",
+    "@deepseek-ai/schemastery": "workspace:~",
+    "commander": "^15.0.0"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "workspace:~"

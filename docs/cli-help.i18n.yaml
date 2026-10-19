@@ -9,8 +9,8 @@
   en: b7174eab3476579d
   zh: 5ddab967320e3cff
 /dsh-cli-help/contents:
-  en: 00308bcc6dc90afd
-  zh: 16f7442b76686a02
+  en: 29622274456b6e19
+  zh: da72780d97f5ab4f
 /dsh-cli-help/dsh:
   en: e0695abcf7d8b521
   zh: 712c23b3c8a115ca
@@ -27,8 +27,11 @@
   en: 701f239c5157dedb
   zh: ee11be2932b05ce4
 /dsh-cli-help/dsh-sdk-minimal:
-  en: 8f0d7548d299ffd3
-  zh: fa2262e70d6819a0
-/dsh-cli-help/dsh-web:
-  en: 5d073104e8954cc8
-  zh: 91cd28f7c6ac96ac
+  en: 8a52cbae88118144
+  zh: ea52bf1cc77284c2
+/dsh-cli-help/dsh-team:
+  en: 46a38b3dc0999b09
+  zh: b8599bb059c432d1
+/dsh-cli-help/dsh-team-control-plane:
+  en: 27353e69663491b7
+  zh: b91294e764075525

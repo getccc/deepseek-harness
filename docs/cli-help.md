@@ -15,7 +15,8 @@ Run `pnpm run gen-cli-help` to regenerate; run `pnpm run verify-cli-help` to che
 - [`dsh headless`](#dsh-headless)
 - [`dsh sdk`](#dsh-sdk)
 - [`dsh sdk-minimal`](#dsh-sdk-minimal)
-- [`dsh web`](#dsh-web)
+- [`dsh team`](#dsh-team)
+- [`dsh team-control-plane`](#dsh-team-control-plane)
 
 <a id="dsh"></a>
 ## `dsh`
@@ -162,10 +163,10 @@ Example:
 
 ```
 
-<a id="dsh-web"></a>
-## `dsh web`
+<a id="dsh-team"></a>
+## `dsh team`
 
-Invocations: `dsh web --help`, `dsh --profile web --help`
+Invocations: `dsh team --help`, `dsh --profile team --help`, `dsh web --help`, `dsh --profile web --help`
 
 ```text
 Usage: dsh --profile web [options]
@@ -199,5 +200,23 @@ Examples:
                                              advertise a prefix-stripping HTTPS proxy entry and admit its authority
   dsh --profile web --tls-cert ./server-chain.pem --tls-key ./server-key.pem
                                              serve HTTPS with an existing certificate and key
+
+```
+
+<a id="dsh-team-control-plane"></a>
+## `dsh team-control-plane`
+
+Invocations: `dsh team-control-plane --help`, `dsh --profile team-control-plane --help`
+
+```text
+Usage: dsh --profile team-control-plane [options]
+
+Serve the DeepSeek Harness Team Edition Control Plane over HTTP.
+
+Options:
+  -h, --help  show this help
+
+Example:
+  dsh --profile team-control-plane     serve the Control Plane until the process is stopped
 
 ```

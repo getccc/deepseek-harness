@@ -3380,6 +3380,9 @@ importers:
       '@deepseek-ai/dsh-bi-webi':
         specifier: workspace:*
         version: link:../../bi/bi-webi
+      '@deepseek-ai/dsh-cmdline':
+        specifier: workspace:*
+        version: link:../../boot/cmdline
       '@deepseek-ai/dsh-device-authorization-sqlite':
         specifier: workspace:*
         version: link:../../account/device-authorization-sqlite
@@ -3440,6 +3443,12 @@ importers:
       '@deepseek-ai/dsh-web-search-gateway-http':
         specifier: workspace:*
         version: link:../../web/web-search-gateway-http
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+      commander:
+        specifier: ^15.0.0
+        version: 15.0.0
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:~

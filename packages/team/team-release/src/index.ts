@@ -9,7 +9,7 @@
  * @module @deepseek-ai/dsh-team-release
  */
 
-import { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync } from 'node:sqlite'
 import { Service, type Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type { OrgId } from '@deepseek-ai/dsh-account-store'
@@ -77,7 +77,10 @@ export class TeamReleaseStore extends Service {
 
   constructor(ctx: Context, public config: Config) {
     super(ctx, 'teamReleases')
-    this.db = new DatabaseSync(config.path, { timeout: config.busyTimeoutMs })
+    // Loaded at construction, not import: a Runner imports this module only for
+    // its release constants, and loading node:sqlite warns on Node 22.
+    const { DatabaseSync: Database } = process.getBuiltinModule('node:sqlite')
+    this.db = new Database(config.path, { timeout: config.busyTimeoutMs })
     applySchema(this.db)
     this.db.exec(`PRAGMA journal_mode = ${config.journalMode ?? 'wal'}`)
     // SQLite builds may default WAL to NORMAL, which can lose a resolved write to power loss.

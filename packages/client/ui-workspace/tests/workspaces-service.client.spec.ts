@@ -66,6 +66,7 @@ function workspace(
 function summary(id: string, overrides: Partial<SessionSummary> = {}): SessionSummary {
   return {
     id: sid(id),
+    title: overrides.displayTitle ?? id,
     displayTitle: id,
     kind: 'work',
     running: false,
@@ -1207,7 +1208,7 @@ describe('UiWorkspaceService', () => {
 
   it('reloads the projections of a blank the Host declined so a stale blank row is corrected', async () => {
     const b = bench({
-      sessions: sessionState([summary('stale', { blank: true, cwd: '/w/a' })], 'pending'),
+      sessions: sessionState([summary('stale', { blank: true, pristine: true, cwd: '/w/a' })], 'pending'),
       workspaces: workspaceState([workspace('a', [sid('stale')])]),
       configureSessions: (sessions) => { sessions.create.mockResolvedValueOnce(sid('fresh')) },
     })
@@ -1219,7 +1220,7 @@ describe('UiWorkspaceService', () => {
 
   it('leaves the projections of a reused blank to its own follow', async () => {
     const b = bench({
-      sessions: sessionState([summary('blank', { blank: true, cwd: '/w/a' })], 'pending'),
+      sessions: sessionState([summary('blank', { blank: true, pristine: true, cwd: '/w/a' })], 'pending'),
       workspaces: workspaceState([workspace('a', [sid('blank')])]),
     })
 
@@ -1232,7 +1233,7 @@ describe('UiWorkspaceService', () => {
     const failure = new Error('projection reader crashed')
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const b = bench({
-      sessions: sessionState([summary('stale', { blank: true, cwd: '/w/a' })], 'pending'),
+      sessions: sessionState([summary('stale', { blank: true, pristine: true, cwd: '/w/a' })], 'pending'),
       workspaces: workspaceState([workspace('a', [sid('stale')])]),
       configureSessions: (sessions) => {
         sessions.create.mockResolvedValueOnce(sid('fresh'))
@@ -1321,7 +1322,7 @@ describe('UiWorkspaceService', () => {
 
   it('requests the New Session preset from the Host with the reusable blank', async () => {
     const b = bench({
-      sessions: sessionState([summary('blank', { blank: true, cwd: '/w/a' })], 'pending'),
+      sessions: sessionState([summary('blank', { blank: true, pristine: true, cwd: '/w/a' })], 'pending'),
       workspaces: workspaceState([workspace('a', [sid('blank')])]),
     })
     b.uiWorkspace.startSession(wid('a'), { agentPreset: 'ptc' })
@@ -1334,7 +1335,7 @@ describe('UiWorkspaceService', () => {
   it('coalesces only Workspace connections that request the same preset', async () => {
     const acquired = Promise.withResolvers<SessionId>()
     const b = bench({
-      sessions: sessionState([summary('blank', { blank: true, cwd: '/w/a' })], 'pending'),
+      sessions: sessionState([summary('blank', { blank: true, pristine: true, cwd: '/w/a' })], 'pending'),
       workspaces: workspaceState([workspace('a', [sid('blank')])]),
       configureSessions: (sessions) => { sessions.create.mockReturnValue(acquired.promise) },
     })
@@ -1352,7 +1353,7 @@ describe('UiWorkspaceService', () => {
   it('does not join an earlier Workspace connection that a different preset request superseded', async () => {
     const earliest = Promise.withResolvers<SessionId>()
     const b = bench({
-      sessions: sessionState([summary('blank', { blank: true, cwd: '/w/a' })], 'pending'),
+      sessions: sessionState([summary('blank', { blank: true, pristine: true, cwd: '/w/a' })], 'pending'),
       workspaces: workspaceState([workspace('a', [sid('blank')])]),
       configureSessions: (sessions) => { sessions.create.mockReturnValueOnce(earliest.promise) },
     })
@@ -1374,7 +1375,7 @@ describe('UiWorkspaceService', () => {
     const created = Promise.withResolvers<SessionId>()
     const acquisitionDone = vi.fn()
     const b = bench({
-      sessions: sessionState([summary('saved', { blank: true, cwd: '/w/a' })]),
+      sessions: sessionState([summary('saved', { blank: true, pristine: true, cwd: '/w/a' })]),
       workspaces: workspaceState([workspace('a', [sid('saved')]), workspace('b')]),
       configureSessions: (sessions) => {
         sessions.create.mockImplementation(options => options?.sessionId === sid('saved')

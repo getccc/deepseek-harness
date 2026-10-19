@@ -164,10 +164,17 @@ async function harness(options: HarnessOptions = {}) {
     },
   }
   ctx.agents.setFactory(factory)
-  const remote = createSessionTestRemote(ctx, {
+  const direct = createSessionTestRemote(ctx, {
     defaultModelSelection: () => ({ provider: 'test', model: 'test-model' }),
     cwd,
   })
+  // `session.create` names no default directory: a request without a location
+  // composes a chat Session. These cases cover placement and reuse, so a
+  // request naming no location names the harness directory.
+  const remote: typeof direct = {
+    ...direct,
+    create: request => direct.create(request.cwd === undefined && request.workspaceId === undefined ? { ...request, cwd } : request),
+  }
   ctx.sessionProjections.register(turnBoundaryProjectionDefinition)
   if (presets !== undefined) ctx.sessionProjections.register(agentPresetProjectionDefinition)
   const presetOf = (id: SessionId): string | null | undefined => {

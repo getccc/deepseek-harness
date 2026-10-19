@@ -398,7 +398,7 @@ describe('ui-agent-preset apply', () => {
         throw new Error('expected the injected Create plugin actions')
       }
       await action.load()
-      expect(action.hooks.agentPresets.getSnapshot().options).toEqual([{ id: 'standard' }])
+      expect(action.hooks.agentPresets.getSnapshot().options).toEqual([{ id: 'standard', workspace: 'required' }])
 
       await setDeveloperTools(false)
       action.startCreatorDraft()
@@ -1382,7 +1382,7 @@ describe('AgentPresetSeatController reconciliation', () => {
     // roster's own "preset X failed to mount" frame would say it twice.
     expect(await controller.select('broken')).toBe(reason)
     const first = controller.store.getSnapshot().error
-    expect(first).toEqual({ preset: { id: 'broken' }, reason })
+    expect(first).toEqual({ preset: { id: 'broken', workspace: 'required' }, reason })
     await controller.select('broken')
     const second = controller.store.getSnapshot().error
     expect(second).toEqual(first)

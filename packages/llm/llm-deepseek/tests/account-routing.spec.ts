@@ -236,7 +236,7 @@ it('hides signed-out account models while retaining the official catalog of a st
   let token: string | undefined
   ctx.provide('deepseekAccount', { resolveToken: async (url: string) => new URL(url).origin === 'https://api.deepseek.com' ? token : undefined } as DeepSeekAccount)
   expect(await ctx.llm.listModels('deepseek-account')).toEqual([])
-  expect(await ctx.llm.listModels('deepseek-official')).toEqual([])
+  expect(await ctx.llm.listModels('deepseek-official')).not.toHaveLength(0)
   token = 'fixture-account-token'
   expect(await ctx.llm.listModels('deepseek-account')).not.toHaveLength(0)
   expect(await ctx.llm.listModels('deepseek-official')).not.toHaveLength(0)

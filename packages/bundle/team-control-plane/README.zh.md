@@ -79,7 +79,7 @@ BI 数据源接受同样三个没有默认值的配置项：webi 提供方上的
 | 路径 | 作用 |
 |---|---|
 | [`cordis.patch.yml`](cordis.patch.yml) | 该 profile 启动的完整配置树 |
-| [`src/index.ts`](src/index.ts) | 仅提供模块身份；本 bundle 不暴露运行时 API |
+| [`src/index.ts`](src/index.ts) | `team-control-plane-startup` 行：解析命令行并发布 `teamControlPlaneStartup`；其余每一行都注入该服务，因此 `--help` 不打开存储、不绑定监听器 |
 
 ### 不变量归属
 

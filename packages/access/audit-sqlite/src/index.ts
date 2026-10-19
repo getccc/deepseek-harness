@@ -4,7 +4,7 @@
  * @module @deepseek-ai/dsh-audit-sqlite
  */
 
-import { DatabaseSync } from 'node:sqlite'
+import type { DatabaseSync } from 'node:sqlite'
 import type { Context } from '@deepseek-ai/cordis'
 import { Service } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
@@ -91,7 +91,9 @@ export class SqliteAudit extends Audit {
 
   /** Open, bring the database to the current schema, and seed the catalogs. */
   protected async [Service.init](): Promise<void> {
-    const db = new DatabaseSync(this.config.path, { timeout: this.config.busyTimeoutMs })
+    // Loaded at open, not import, so a `--help` that only imports this module stays quiet on Node 22.
+    const { DatabaseSync: Database } = process.getBuiltinModule('node:sqlite')
+    const db = new Database(this.config.path, { timeout: this.config.busyTimeoutMs })
     applySchema(db)
     db.exec(`PRAGMA journal_mode = ${(this.config as Required<Config>).journalMode}`)
     // SQLite builds may default WAL to NORMAL, which can lose a resolved write to power loss.

@@ -6,7 +6,7 @@ English | [中文](2026-09-10-two-stage-upstream-merge.zh.md)
 
 ## Problem
 
-After the [selective picks](2026-09-10-selective-upstream-0-1-5-picks.md), three upstream capabilities were wanted on this line and none of them is a pick: generic file upload with background progress ([note](../feature/2026-08-26-generic-file-upload.md)), continuable subagents with a steerable queue ([note](../feature/2026-07-28-continuable-subagent-conversations.md)), and the right Sidebar with tabs, split, full screen, document previews, and explicit file delivery ([note](../architecture/2026-09-05-sidebar-tab-types-and-navigation.md)). All three sit on session format v2 and v3, `SessionHandle` persistence, the apiremote error contract, and the chat surface rewrite, which the picks had left behind; a piecemeal port would have carried each foundation by hand.
+After the [selective picks](2026-09-10-selective-upstream-0-1-5-picks.md), three upstream capabilities were wanted on this line and none of them is a pick: generic file upload with background progress ([note](../feature/2026-08-26-generic-file-upload.md)), continuable subagents with a steerable queue ([note](../feature/2026-07-28-continuable-subagent-conversations.md)), and the right Sidebar with tabs, split, full screen, document previews, and explicit file delivery ([note](../../archived/architecture/2026-09-05-sidebar-tab-types-and-navigation.md)). All three sit on session format v2 and v3, `SessionHandle` persistence, the apiremote error contract, and the chat surface rewrite, which the picks had left behind; a piecemeal port would have carried each foundation by hand.
 
 ## Decision
 

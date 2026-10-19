@@ -147,7 +147,7 @@ describe('PermissionSelect', () => {
     const autoGlyph = autoOption.querySelector('svg[aria-hidden="true"]')
     expect(autoGlyph).not.toBeNull()
     expect(autoGlyph!.innerHTML)
-      .not.toBe(screen.getByRole('menuitem', { name: '完全权限' }).querySelector('svg')!.innerHTML)
+      .not.toBe(screen.getByRole('menuitem', { name: '完全访问' }).querySelector('svg')!.innerHTML)
     fireEvent.click(autoOption)
 
     const dialog = screen.getByRole('dialog', { name: '确认启用自动审查（实验）？' })

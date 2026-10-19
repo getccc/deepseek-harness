@@ -33,7 +33,7 @@ const t: RecentBrowserProps['t'] = makeTranslate(zh, commonZh)
 
 const sid = (id: string) => id as SessionId
 const summary = (id: string, updatedAt: number, overrides: Partial<SessionSummary> = {}): SessionSummary => ({
-  id: sid(id), displayTitle: id, kind: 'chat', running: false, blank: false, updatedAt, ...overrides,
+  id: sid(id), title: overrides.displayTitle ?? id, displayTitle: id, kind: 'chat', running: false, blank: false, updatedAt, ...overrides,
   retainedBy: overrides.retainedBy ?? {},
 })
 const sessionState = (items: readonly SessionSummary[]): SessionListState => ({
@@ -236,7 +236,7 @@ describe('RecentBrowser assembled with the Workspace browser', () => {
     const row = (await view.findByText('Chat title')).closest('[role="treeitem"]')!
     fireEvent.click(within(row as HTMLElement).getByLabelText('会话“Chat title”的操作'))
     expect(view.getAllByRole('menuitem').map(item => item.textContent)).toEqual([
-      '置顶会话', '重命名', '分叉会话', '归档会话',
+      '置顶会话', '重命名', '分叉会话', '归档会话', '复制 Session ID',
     ])
     // The rename row raises the overlay dialog the tree's rows use.
     fireEvent.click(view.getByRole('menuitem', { name: '重命名' }))

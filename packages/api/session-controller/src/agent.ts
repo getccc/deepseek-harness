@@ -285,7 +285,9 @@ export class ApiSessionAgentController {
    */
   async createSession(request: ApiSessionCreateRequest): Promise<ApiSessionCreated> {
     const named = request.sessionId
-    if (named === undefined) return this.created(await this.createMinted(request.cwd, await this.composeAgent(request.agentPreset, request.cwd)))
+    if (named === undefined) {
+      return this.created(await this.createMinted(request.cwd, await this.composeAgent(request.agentPreset, request.cwd)))
+    }
     return this.inOrder(named, async () => this.created(await this.claim(named, request)))
   }
 

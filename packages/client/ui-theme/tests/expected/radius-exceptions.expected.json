@@ -5,6 +5,15 @@
   "ui-deliverables/src/client/Deliverables.module.css": [
     ".fileIcon: border-radius: 10px"
   ],
+  "ui-knowledge-panels/src/client/panels.module.css": [
+    ".pagerStep, .pagerPage: border-radius: 6px",
+    ".drawerAction: border-radius: 6px",
+    ".card: border-radius: 10px",
+    ".cardTag: border-radius: 6px",
+    ".queryBox: border-radius: 14px",
+    ".feedThumb: border-radius: 10px",
+    ".rankBadge: border-radius: 10px"
+  ],
   "ui-plan/src/client/PlanPreview.module.css": [
     ".cardIcon: border-radius: 10px"
   ],
