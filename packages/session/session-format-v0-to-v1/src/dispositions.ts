@@ -32,7 +32,9 @@ const disposition = defineReleasedPayloadDisposition
  * Every listed member is preserved by the identity edge. Members in `opaque`
  * remain lossless JSON without nested Session-sequence interpretation. Nested
  * merge-extensible discriminants validate known variants and preserve
- * unknown variants as owner-opaque JSON.
+ * unknown variants as owner-opaque JSON. The released WeWork v0 and v2
+ * writers also recorded `knowledge/scope` and `office/kind` as required
+ * events, so members' existing Sessions carry them.
  */
 export const RELEASED_V0_EVENT_DISPOSITIONS: Readonly<Record<string, ReleasedV0PayloadDisposition>> = Object.freeze({
   'agent-preset/selected': disposition(['agentPreset']),
@@ -67,12 +69,14 @@ export const RELEASED_V0_EVENT_DISPOSITIONS: Readonly<Record<string, ReleasedV0P
     ['turn', 'point', 'handlerId', 'decision', 'durationMs'],
     ['exitCode', 'stderrSummary'],
   ),
+  'knowledge/scope': disposition(['version', 'mode'], ['bases']),
   'llm/retry': disposition(
     ['retryId', 'turn', 'step', 'provider', 'mode', 'policyKey', 'retry', 'delayMs', 'failure'],
     ['maxRetries'],
   ),
   'llm/retry-started': disposition(['retryId', 'turn', 'step', 'retry']),
   'model/selection': disposition(['provider', 'model'], ['reasoningEffort']),
+  'office/kind': disposition(['version', 'kind']),
   'permission/preset': disposition(['preset']),
   'plan/mode': disposition(['active']),
   'request/context': disposition(['provider', 'model'], ['contextWindow']),

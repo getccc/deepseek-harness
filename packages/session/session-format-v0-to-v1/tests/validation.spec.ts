@@ -59,12 +59,17 @@ const validPayloads: Readonly<Record<string, SessionFormatJsonValue>> = {
   },
   'hook/invoked': { turn: 1, point: 'PreToolUse', dialect: 'claude-code', handlerId: 'hook-1' },
   'hook/result': { turn: 1, point: 'PreToolUse', handlerId: 'hook-1', decision: 'pass', durationMs: 1 },
+  'knowledge/scope': {
+    version: 1, mode: 'selected',
+    bases: [{ ref: 'weknora:prod:8dd1426d-c3a3-46fb-993f-cf1510fb9b18', displayName: '产品技术文档' }],
+  },
   'llm/retry': {
     retryId: 'retry-1', turn: 1, step: 0, provider: 'mock', mode: 'normal', policyKey: 'default',
     retry: 1, maxRetries: 2, delayMs: 10, failure: { message: 'retry', code: 'SERVER' },
   },
   'llm/retry-started': { retryId: 'retry-1', turn: 1, step: 0, retry: 1 },
   'model/selection': { provider: 'mock', model: 'mock', reasoningEffort: 'high' },
+  'office/kind': { version: 1, kind: 'amec-ppt' },
   'permission/preset': { preset: 'default' },
   'plan/mode': { active: true },
   'request/context': { provider: 'mock', model: 'mock', contextWindow: 8192 },
@@ -214,7 +219,7 @@ function replaceAtPath(value: SessionFormatJsonValue, path: string, replacement:
 describe('released event and payload inventory', () => {
   it('has an executable valid fixture for every frozen released-v0 event type', () => {
     expect(Object.keys(validPayloads).sort()).toEqual([...RELEASED_V0_EVENT_TYPES].sort())
-    expect(RELEASED_V0_EVENT_TYPES).toHaveLength(51)
+    expect(RELEASED_V0_EVENT_TYPES).toHaveLength(53)
     expect(RELEASED_V0_EVENT_TYPES.filter(type => !KNOWN_SESSION_EVENT_TYPES.has(type))).toEqual([
       'assistant/chunk',
       'tool/code-dispatch',
@@ -330,6 +335,55 @@ describe('released event and payload inventory', () => {
     const row = { type: 'plugin/unknown', seq: 0, time: 1, data: {}, ignorable: true }
     expect(() => restoreV0ToV1(v0Header, [row]))
       .toThrow(/unknown historical event.*refuses.*ignorable/)
+  })
+
+  it('preserves the released WeWork knowledge-scope and office-kind events through the identity edge', () => {
+    const rows = [
+      { type: 'knowledge/scope', seq: 0, time: 1, data: validPayloads['knowledge/scope'] },
+      { type: 'office/kind', seq: 1, time: 2, data: { version: 1, kind: 'welinkin-ppt' } },
+      { type: 'knowledge/scope', seq: 2, time: 3, data: { version: 1, mode: 'all' } },
+      { type: 'knowledge/scope', seq: 3, time: 4, data: { version: 1, mode: 'off' } },
+    ]
+    expect(restoreV0ToV1(v0Header, rows).events).toEqual(rows)
+  })
+
+  it('refuses WeWork events whose writers postdate every v0 and v2 writer', () => {
+    for (const [type, data] of [
+      ['bi/scope', { version: 1, mode: 'off' }],
+      ['web/access', { enabled: false }],
+    ] as const) {
+      expect(() => restoreV0ToV1(v0Header, [{ type, seq: 0, time: 1, data }]))
+        .toThrow(/unknown historical event/)
+    }
+  })
+
+  it('admits every released office kind and knowledge-scope mode and refuses drift', () => {
+    for (const kind of ['none', 'word', 'excel', 'ppt', 'chart', 'amec-ppt', 'welinkin-ppt']) {
+      expect(() => { assertPayload('office/kind', { version: 1, kind }) }, kind).not.toThrow()
+    }
+    const refused: Array<[string, SessionFormatJsonValue, RegExp]> = [
+      ['office/kind', { version: 1, kind: 'visualization' }, /kind must be one of/],
+      ['knowledge/scope', { version: 2, mode: 'all' }, /version must be one of 1/],
+      ['knowledge/scope', { version: 1, mode: 'document' }, /mode must be one of/],
+      ['knowledge/scope', { version: 1, mode: 'all', bases: [] }, /bases requires selected mode/],
+      ['knowledge/scope', { version: 1, mode: 'selected' }, /bases must be an array/],
+      ['knowledge/scope', { version: 1, mode: 'selected', bases: [] }, /bases must be non-empty/],
+      ...[
+        'weknora:prod',
+        'weknora:prod:doc:extra',
+        'weknora::doc',
+        'weknora:prod:doc id',
+        `weknora:${'s'.repeat(20)}:doc`,
+        `weknora:prod:${'d'.repeat(52)}`,
+      ].map((ref): [string, SessionFormatJsonValue, RegExp] => [
+        'knowledge/scope',
+        { version: 1, mode: 'selected', bases: [{ ref, displayName: 'Docs' }] },
+        /must be a released knowledge reference/,
+      ]),
+    ]
+    for (const [type, data, message] of refused) {
+      expect(() => { assertPayload(type, data) }, JSON.stringify(data)).toThrow(message)
+    }
   })
 
   it('exercises each released test validation policy', () => {
