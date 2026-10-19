@@ -165,6 +165,7 @@ describe('ModelSelect reasoning effort', () => {
       ],
     }))
     render(<ModelSelect
+      renderSlot={renderLabel}
       locked={false}
       available
       directory={directory}

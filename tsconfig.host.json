@@ -492,6 +492,7 @@
     { "path": "./packages/web/web-search-team" },
     { "path": "./packages/web/web-search-deepseek" },
     { "path": "./packages/web/web-search-gateway-http" },
+    { "path": "./packages/web/web-deepseek-api" },
     { "path": "./packages/web/web-fetch-http" },
     { "path": "./packages/web/tool-web" },
     { "path": "./packages/spill/spill" },

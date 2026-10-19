@@ -5,7 +5,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import {
-  bindSnapshotSelector, makeTranslate, SlotTestRuntime, usePinnedBrowserLanguages,
+  allowAllAccess, bindSnapshotSelector, makeTranslate, SlotTestRuntime, usePinnedBrowserLanguages,
 } from '@deepseek-ai/dsh-client-test-runtime'
 import { apply, inject } from '@deepseek-ai/dsh-client-ui-workspace/client'
 import type { SessionListState, SessionSummary } from '@deepseek-ai/dsh-api-session-controller/client'
@@ -65,6 +65,7 @@ const noSeats: SessionRowSeats = { renderSlot: () => null }
 function mount(overrides: Partial<RecentBrowserProps> = {}) {
   const store = createWorkspaceViewStore().create()
   const props: RecentBrowserProps = {
+    ...allowAllAccess,
     wide: true,
     expandSidebar: vi.fn(),
     useSessions: hook(mixed),

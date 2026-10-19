@@ -15,7 +15,7 @@ function provider(id: string, permitted?: (signal?: AbortSignal) => Promise<bool
   }
 }
 
-async function mount(config: ConstructorParameters<typeof WebRuntime>[1] = {}): Promise<Context> {
+async function mount(config: { searchProvider?: string } = {}): Promise<Context> {
   const ctx = new Context()
   await ctx.plugin(WebRuntime, config).await()
   return ctx

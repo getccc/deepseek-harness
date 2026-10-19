@@ -143,8 +143,9 @@ export class WebRuntime extends Service {
    */
   async searchPermitted(signal?: AbortSignal): Promise<boolean> {
     let provider: WebSearchProvider
-    if (this.searchProviderId !== undefined) {
-      const configured = this.searchProviders.get(this.searchProviderId)
+    const configuredId = this.config.searchProvider.get() ?? this.searchProviderEnv
+    if (configuredId !== undefined) {
+      const configured = this.searchProviders.get(configuredId)
       if (configured === undefined) return false
       provider = configured
     } else {

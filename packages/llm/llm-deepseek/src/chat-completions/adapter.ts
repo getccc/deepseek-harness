@@ -46,7 +46,8 @@ const STREAM_IDLE_TIMEOUT_CODE = 'LLM_STREAM_IDLE_TIMEOUT'
 
 /** Constructor options for {@link ChatCompletionsAdapter}. */
 export interface ChatCompletionsAdapterOptions extends Pick<DeepSeekAdapterOptions,
-  'options' | 'resolveAttachments' | 'resolveImageAccess' | 'prepareExtensions' | 'onExtensionsOmitted'> {
+  'options' | 'resolveAttachments' | 'resolveImageAccess' | 'prepareExtensions' | 'onExtensionsOmitted'
+  | 'onExtensionsUnaccepted'> {
   /** The mounted transport, read once per operation; absent fails the request with `TRANSPORT`. */
   transport: () => LlmHttpTransport | undefined
 }
@@ -325,6 +326,8 @@ export class ChatCompletionsAdapter extends LlmAdapter {
       ...options.purpose === undefined ? {} : { purpose: options.purpose },
     }, this.config.prepareExtensions, (fields, error) => {
       this.config.onExtensionsOmitted?.({ provider: options.provider, model: options.model, fields, error })
+    }, (error) => {
+      this.config.onExtensionsUnaccepted?.({ provider: options.provider, model: options.model, error })
     })
 
     let response: Response

@@ -374,7 +374,7 @@ describe('BrowserAuth', () => {
     const login = exchange(auth)
 
     const locked = response()
-    expect(auth.lock(request('/lock', '127.0.0.1:3080', { cookie: login.cookie }), locked.value)).toBe(true)
+    expect(auth.lock(request('/lock', '127.0.0.1:3080', { cookie: login.cookie }), locked.value, false)).toBe(true)
     expect(locked.state).toMatchObject({
       status: 200,
       headers: { 'cache-control': 'no-store', 'referrer-policy': 'no-referrer' },
@@ -399,7 +399,7 @@ describe('BrowserAuth', () => {
     expect(auth.endSession(
       request('/team/logout', '127.0.0.1:3080', { cookie: login.cookie }),
       ended.value,
-      '/team/login',
+      '/team/login', false,
     )).toBe(true)
     expect(ended.state).toMatchObject({
       status: 303,
@@ -419,13 +419,13 @@ describe('BrowserAuth', () => {
     // A cross-site navigation is exactly this shape: SameSite=Strict withholds
     // the cookie, so another site cannot lock a person out by linking here.
     const anonymous = response()
-    expect(auth.lock(request('/lock'), anonymous.value)).toBe(false)
+    expect(auth.lock(request('/lock'), anonymous.value, false)).toBe(false)
     expect(anonymous.state.headers).not.toHaveProperty('set-cookie')
     expect(anonymous.state.status).toBe(200)
     expect(anonymous.state.body).toContain('nothing to lock')
 
     const forged = response()
-    expect(auth.lock(request('/lock', '127.0.0.1:3080', { cookie: 'dsh-auth-nope=v1.aaa.bbb' }), forged.value)).toBe(false)
+    expect(auth.lock(request('/lock', '127.0.0.1:3080', { cookie: 'dsh-auth-nope=v1.aaa.bbb' }), forged.value, false)).toBe(false)
     expect(forged.state.headers).not.toHaveProperty('set-cookie')
   })
 
@@ -433,7 +433,7 @@ describe('BrowserAuth', () => {
     const store = new RecordCredentials()
     const auth = await createAuth(store)
     const hostless = response()
-    expect(auth.lock({ method: 'GET', url: '/lock', headers: {} }, hostless.value)).toBe(false)
+    expect(auth.lock({ method: 'GET', url: '/lock', headers: {} }, hostless.value, false)).toBe(false)
     expect(hostless.state.headers).not.toHaveProperty('set-cookie')
   })
 
@@ -442,7 +442,7 @@ describe('BrowserAuth', () => {
     const auth = await createAuth(store)
     const login = exchange(auth)
     const head = response()
-    expect(auth.lock(request('/lock', '127.0.0.1:3080', { cookie: login.cookie, method: 'HEAD' }), head.value)).toBe(true)
+    expect(auth.lock(request('/lock', '127.0.0.1:3080', { cookie: login.cookie, method: 'HEAD' }), head.value, false)).toBe(true)
     expect(head.state.body).toBeUndefined()
     expect(head.state.headers).toHaveProperty('set-cookie')
   })

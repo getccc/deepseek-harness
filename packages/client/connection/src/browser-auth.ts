@@ -170,6 +170,16 @@ function sessionCookie(
   return secure ? `${attributes}; Secure` : attributes
 }
 
+/**
+ * Serialize the expiry of an issued session cookie. A browser replaces a cookie
+ * only when name, path, and attributes match, so an attribute drift here would
+ * leave the original in place and silently fail to end the session.
+ */
+function expiredSessionCookie(name: string, secure: boolean): string {
+  const attributes = `${name}=; Max-Age=0; Path=/; HttpOnly; SameSite=Strict`
+  return secure ? `${attributes}; Secure` : attributes
+}
+
 function signature(secret: Buffer, body: string): Buffer {
   return createHmac('sha256', secret).update(body).digest()
 }
@@ -351,10 +361,16 @@ export class BrowserAuth {
    * @param req - the navigation request, which must carry a Host header.
    * @param res - the response, owned by this method when it returns true.
    * @param destination - same-origin path to hand the browser to, such as `/`.
+   * @param secure - whether the listener receiving this request serves TLS.
    * @returns true when the session was issued; false when the request carried no authority.
    */
-  issueSession(req: ConnectionIndexRequest, res: ConnectionIndexResponse, destination: string): boolean {
-    const authority = requestAuthority(req.headers)
+  issueSession(
+    req: ConnectionIndexRequest,
+    res: ConnectionIndexResponse,
+    destination: string,
+    secure: boolean,
+  ): boolean {
+    const authority = requestAudience(req.headers, secure)
     if (authority === undefined) {
       this.writeUnauthorized(req, res)
       return false
@@ -372,7 +388,7 @@ export class BrowserAuth {
       'content-type': 'text/html; charset=utf-8',
       'referrer-policy': 'no-referrer',
       'set-cookie': sessionCookie(
-        cookieName(authority), value, expiresAt, Math.floor(this.maxAgeMilliseconds / 1000),
+        cookieName(authority), value, expiresAt, Math.floor(this.maxAgeMilliseconds / 1000), secure,
       ),
     })
     // node:http drops the body of a HEAD response on its own, so there is no
@@ -475,21 +491,19 @@ export class BrowserAuth {
    * and restarting, which is deliberately not something one request can do.
    * @param req - the incoming lock request.
    * @param res - the response, owned by this method.
+   * @param secure - whether the listener receiving this request serves TLS.
    * @returns whether an authenticated session was ended.
    */
-  lock(req: ConnectionIndexRequest, res: ConnectionIndexResponse): boolean {
-    const authority = requestAuthority(req.headers)
-    const ended = authority !== undefined && this.isAuthenticated(req)
+  lock(req: ConnectionIndexRequest, res: ConnectionIndexResponse, secure: boolean): boolean {
+    const authority = requestAudience(req.headers, secure)
+    const ended = authority !== undefined && this.isAuthenticated(req, secure)
     const headers: Record<string, string> = {
       'cache-control': 'no-store',
       'content-type': 'text/plain; charset=utf-8',
       'referrer-policy': 'no-referrer',
     }
     if (ended) {
-      // Same name, path, and attributes as the issued cookie: a browser only
-      // replaces a cookie when all three match, so an attribute drift here
-      // would leave the original in place and silently fail to lock.
-      headers['set-cookie'] = `${cookieName(authority)}=; Max-Age=0; Path=/; HttpOnly; SameSite=Strict`
+      headers['set-cookie'] = expiredSessionCookie(cookieName(authority), secure)
     }
     res.writeHead(200, headers)
     res.end(req.method === 'HEAD'
@@ -505,22 +519,24 @@ export class BrowserAuth {
    * @param req - the incoming same-origin navigation request.
    * @param res - the redirect response, owned by this method.
    * @param destination - same-origin path opened after the session ends.
+   * @param secure - whether the listener receiving this request serves TLS.
    * @returns whether an authenticated session was ended.
    */
   endSession(
     req: ConnectionIndexRequest,
     res: ConnectionIndexResponse,
     destination: string,
+    secure: boolean,
   ): boolean {
-    const authority = requestAuthority(req.headers)
-    const ended = authority !== undefined && this.isAuthenticated(req)
+    const authority = requestAudience(req.headers, secure)
+    const ended = authority !== undefined && this.isAuthenticated(req, secure)
     const headers: Record<string, string> = {
       'cache-control': 'no-store',
       'location': destination,
       'referrer-policy': 'no-referrer',
     }
     if (ended) {
-      headers['set-cookie'] = `${cookieName(authority)}=; Max-Age=0; Path=/; HttpOnly; SameSite=Strict`
+      headers['set-cookie'] = expiredSessionCookie(cookieName(authority), secure)
     }
     res.writeHead(303, headers)
     res.end()

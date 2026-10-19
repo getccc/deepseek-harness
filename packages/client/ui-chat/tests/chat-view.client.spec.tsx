@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { useEffect, useMemo } from 'react'
 import type {
-  AssistantMessageNode, ChatFlowHookContext, ChatFlowOwnerProps, ChatFlowSlotProps,
+  AssistantIdentityOwnerProps, AssistantMessageNode, ChatFlowHookContext, ChatFlowOwnerProps, ChatFlowSlotProps,
   ChatNode, ChatNodeHookContext, ChatNodeOwnerProps, ChatSnapshot,
   ChatViewSlotProps, CommandNode, CompactionSummaryNode, ContextMessageNode, ConversationNode,
   LegacyConversationSlice, ModelRetryNode, StartedToolCall, SteeringMessageNode,
@@ -423,6 +423,9 @@ function makeHarness(
   const usePerformanceUsage = bindSnapshotSelector(performanceUsage)
   let nodeSlotOverride: NodeRenderer | undefined
   let imageSlotOverride: ImageRenderer | undefined
+  // The identity slot is a child of the flow; the flow wraps it into the
+  // `renderIdentity` function the Turn's leading seat renders.
+  let identityRenderer: ((owner: AssistantIdentityOwnerProps) => React.ReactNode) | undefined
   const renderImages = (name: string, owner: object, options?: { fallback?: React.ReactNode }) => {
     if ((name !== 'conversation.chat.user.images' && name !== 'conversation.chat.message.images') || !isImageOwner(owner)) {
       throw new Error(`Unexpected Chat image Slot: ${name}`)
@@ -443,6 +446,9 @@ function makeHarness(
   }) => {
     if (key === 'conversation.chat.node') {
       return renderNodeSlot(key, owner as RoutedChatNodeOwner, opts as Parameters<NodeRenderer>[2])
+    }
+    if (key === 'conversation.chat.assistant-identity') {
+      return identityRenderer === undefined ? null : identityRenderer(owner as AssistantIdentityOwnerProps)
     }
     throw new Error(`Undeclared flow child: ${key}`)
   }
@@ -548,6 +554,7 @@ function makeHarness(
     setCollapseTiming: (timing: CollapseTiming) => { collapseTiming.set(timing) },
     setNodeRenderer: (renderer: NodeRenderer) => { nodeSlotOverride = renderer },
     setImageRenderer: (renderer: ImageRenderer) => { imageSlotOverride = renderer },
+    setIdentityRenderer: (renderer: (owner: AssistantIdentityOwnerProps) => React.ReactNode) => { identityRenderer = renderer },
   }
 }
 

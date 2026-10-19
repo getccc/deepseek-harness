@@ -212,7 +212,7 @@ describe('open-in-app browser half', () => {
       expect(header(props)).toBeNull()
       for (const cwd of ['', '/first', '/second']) {
         list.set({ ...list.getSnapshot(), ids: [id], byId: {
-          [id]: { id, displayTitle: 'Main', cwd, running: false, blank: false, updatedAt: 0, retainedBy: {} },
+          [id]: { id, kind: 'work' as const, displayTitle: 'Main', cwd, running: false, blank: false, updatedAt: 0, retainedBy: {} },
         } })
         if (cwd === '') expect(header(props)).toBeNull()
         else expect(header(props)).toMatchObject({ type: OpenInAppAction, props: { absolutePath: cwd } })

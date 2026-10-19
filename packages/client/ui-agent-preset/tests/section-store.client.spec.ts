@@ -11,7 +11,7 @@ function fixture() {
   })
   const remote = { agentPresets: {
     list: vi.fn(async (): Promise<{ ok: true; value: { presets: AgentPresetRow[] } }> => ({
-      ok: true, value: { presets: [{ id: 'standard', isDefault: true, workspace: 'required' }] },
+      ok: true, value: { presets: [{ id: 'standard', isDefault: true, workspace: 'required' as const }] },
     })),
     read: vi.fn(async (id: string) => ({ ok: true as const, value: { agentPreset: id, name: 'Standard', content: '- name: fs\n' } })),
   }, settings: {
@@ -28,7 +28,7 @@ describe('the preset roster', () => {
     const { controller, remote, state } = fixture()
     await Promise.all([controller.load(), controller.load()])
     expect(remote.agentPresets.list).toHaveBeenCalledOnce()
-    expect(state()).toMatchObject({ status: 'ready', rows: [{ id: 'standard', isDefault: true, workspace: 'required' }], view: null })
+    expect(state()).toMatchObject({ status: 'ready', rows: [{ id: 'standard', isDefault: true, workspace: 'required' as const }], view: null })
     remote.agentPresets.list.mockRejectedValueOnce(new Error('offline'))
     await controller.load()
     expect(state()).toMatchObject({ status: 'error', error: 'offline' })
@@ -106,7 +106,7 @@ describe('the preset roster', () => {
     const sync = vi.fn(async (_id: string) => undefined)
     remote.agentPresets.list.mockResolvedValueOnce({ ok: true, value: { presets: [
       { id: 'chat', isDefault: true, workspace: 'none' },
-      { id: 'standard', isDefault: true, workspace: 'required' },
+      { id: 'standard', isDefault: true, workspace: 'required' as const },
     ] } } as never)
 
     await controller.makeDefault('standard', sync)
@@ -119,7 +119,7 @@ describe('the preset roster', () => {
   it('skips blank-session synchronization when the roster marks no default', async () => {
     const { controller, remote } = fixture()
     const sync = vi.fn(async () => undefined)
-    remote.agentPresets.list.mockResolvedValueOnce({ ok: true, value: { presets: [{ id: 'standard', isDefault: false, workspace: 'required' }] } })
+    remote.agentPresets.list.mockResolvedValueOnce({ ok: true, value: { presets: [{ id: 'standard', isDefault: false, workspace: 'required' as const }] } })
 
     await controller.makeDefault('standard', sync)
 
@@ -132,8 +132,8 @@ describe('Coding Tools default reconciliation', () => {
   function setup(defaultId = 'minimal', name?: string) {
     const f = fixture()
     let rows: AgentPresetRow[] = [
-      { id: 'standard', isDefault: defaultId === 'standard' },
-      ...(defaultId === 'standard' ? [] : [{ id: defaultId, isDefault: true, ...(name === undefined ? {} : { name }) }]),
+      { id: 'standard', isDefault: defaultId === 'standard', workspace: 'required' as const },
+      ...(defaultId === 'standard' ? [] : [{ id: defaultId, isDefault: true, workspace: 'required' as const, ...(name === undefined ? {} : { name }) }]),
     ]
     f.remote.agentPresets.list.mockImplementation(async () => ({ ok: true, value: { presets: rows } }))
     f.remote.settings.update.mockImplementation(async (_ns, patch) => {
@@ -174,11 +174,11 @@ describe('Coding Tools default reconciliation', () => {
 
   it.each([false, true])('waits for a pending default write and checks the latest toggle (re-enabled: %s)', async (reEnabled) => {
     const f = setup('standard')
-    f.setRows([{ id: 'standard', isDefault: true }, { id: 'minimal', isDefault: false }])
+    f.setRows([{ id: 'standard', isDefault: true, workspace: 'required' as const }, { id: 'minimal', isDefault: false, workspace: 'required' as const }])
     const reply = Promise.withResolvers<undefined>()
     f.remote.settings.update.mockImplementationOnce(async () => {
       await reply.promise
-      f.setRows([{ id: 'standard', isDefault: false }, { id: 'minimal', isDefault: true }])
+      f.setRows([{ id: 'standard', isDefault: false, workspace: 'required' as const }, { id: 'minimal', isDefault: true, workspace: 'required' as const }])
       return { ok: true, value: {} }
     })
     const pending = f.controller.makeDefault('minimal')
@@ -206,7 +206,7 @@ describe('Coding Tools default reconciliation', () => {
 
   it.each([false, true])('reports unavailable Standard without a default write (broken: %s)', async (broken) => {
     const f = setup()
-    f.setRows([{ id: 'minimal', isDefault: true }, ...(broken ? [{ id: 'standard', isDefault: false, broken: 'Missing plugin' }] : [])])
+    f.setRows([{ id: 'minimal', isDefault: true, workspace: 'required' as const }, ...(broken ? [{ id: 'standard', isDefault: false, broken: 'Missing plugin', workspace: 'required' as const }] : [])])
     await f.controller.reconcileCodingTools(() => true)
     expect(f.remote.settings.update).not.toHaveBeenCalled()
     expect(f.state().error).toBe(en.standardUnavailable)

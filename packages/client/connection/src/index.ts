@@ -222,7 +222,7 @@ export async function apply(ctx: Context, config?: ConnectionConfig): Promise<vo
           res.end('method not allowed\n')
           return
         }
-        browserAuth.lock(req, res)
+        browserAuth.lock(req, res, webCtx.webServer.protocol === 'https:')
       },
     }
     webCtx.effect(() => webCtx.webServer.register(lockRoute), 'client-connection: lock route')
@@ -232,8 +232,14 @@ export async function apply(ctx: Context, config?: ConnectionConfig): Promise<vo
     }), 'client-connection: /connect route')
   })
   // Published for local navigation endpoints that must hand a browser the same
-  // session this package checks — the team handoff is the current one.
-  ctx.provide('browserSession', browserAuth)
+  // session this package checks — the team handoff is the current one. The
+  // cookie audience follows the protocol of the listener that serves them.
+  const listenerSecure = (): boolean => ctx.get('webServer')?.protocol === 'https:'
+  ctx.provide('browserSession', {
+    isAuthenticated: request => browserAuth.isAuthenticated(request, listenerSecure()),
+    issueSession: (req, res, destination) => browserAuth.issueSession(req, res, destination, listenerSecure()),
+    endSession: (req, res, destination) => browserAuth.endSession(req, res, destination, listenerSecure()),
+  } satisfies BrowserSession)
   ctx.inject(['attachments'], (attachmentCtx) => {
     assertImageBodyCapacity(attachmentCtx, maxRequestBodyBytes)
   })

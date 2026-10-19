@@ -25,14 +25,14 @@ afterEach(cleanup)
 const ROSTER_READY: AgentPresetSettingsState = {
   status: 'ready',
   error: null,
-  options: [{ id: 'standard', workspace: 'required' }, { id: 'mine', workspace: 'required' }],
+  options: [{ id: 'standard', workspace: 'required' as const }, { id: 'mine', workspace: 'required' as const }],
 }
 
 const SEAT_READY: AgentPresetSeatState = {
   current: 'standard',
   options: [
-    { id: 'standard', workspace: 'required' },
-    { id: 'mine', workspace: 'required' },
+    { id: 'standard', workspace: 'required' as const },
+    { id: 'mine', workspace: 'required' as const },
   ],
   busy: false,
   error: null,
@@ -102,7 +102,7 @@ function renderLabel(
 describe('the new-session chip', () => {
   it.each([false, true])('offers Standard, Creator and custom presets with Developer tools %s', (enabled) => {
     const actions = renderSeat({ options: [
-      { id: 'standard' }, { id: 'ptc' }, { id: 'minimal' }, { id: 'cordis' }, { id: 'mine' },
+      { id: 'standard', workspace: 'required' as const }, { id: 'ptc', workspace: 'required' as const }, { id: 'minimal', workspace: 'required' as const }, { id: 'cordis', workspace: 'required' as const }, { id: 'mine', workspace: 'required' as const },
     ] }, undefined, undefined, enabled)
 
     fireEvent.click(screen.getByRole('button'))
@@ -116,13 +116,13 @@ describe('the new-session chip', () => {
   })
 
   it('keeps a named custom preset that overrides a development preset id', () => {
-    renderSeat({ options: [{ id: 'ptc', name: 'My workflow' }] }, undefined, undefined, false)
+    renderSeat({ options: [{ id: 'ptc', name: 'My workflow', workspace: 'required' as const }] }, undefined, undefined, false)
     fireEvent.click(screen.getByRole('button'))
     expect(screen.getByRole('menuitem', { name: /^My workflow/ })).toBeTruthy()
   })
 
   it('keeps the current mode visible without opening a picker when all options are hidden', () => {
-    const actions = renderSeat({ current: 'minimal', options: [{ id: 'ptc' }, { id: 'minimal' }] }, undefined, undefined, false)
+    const actions = renderSeat({ current: 'minimal', options: [{ id: 'ptc', workspace: 'required' as const }, { id: 'minimal', workspace: 'required' as const }] }, undefined, undefined, false)
     const trigger = screen.getByRole<HTMLButtonElement>('button', { name: en.presetMinimalName })
     expect(trigger.disabled).toBe(true)
     fireEvent.click(trigger)
@@ -132,12 +132,12 @@ describe('the new-session chip', () => {
   })
 
   it('closes a picker when its last visible option disappears and keeps it closed when options return', () => {
-    const options = [{ id: 'minimal' }, { id: 'mine' }]
+    const options = [{ id: 'minimal', workspace: 'required' as const }, { id: 'mine', workspace: 'required' as const }]
     const actions = renderSeat({ current: 'minimal', options }, undefined, undefined, false)
     const trigger = screen.getByRole<HTMLButtonElement>('button', { name: en.presetMinimalName })
     fireEvent.click(trigger)
     expect(screen.getByRole('menuitem', { name: /^mine/ })).toBeTruthy()
-    act(() => { actions.store.set({ ...actions.store.getSnapshot(), options: [{ id: 'ptc' }, { id: 'minimal' }] }) })
+    act(() => { actions.store.set({ ...actions.store.getSnapshot(), options: [{ id: 'ptc', workspace: 'required' as const }, { id: 'minimal', workspace: 'required' as const }] }) })
     expect(trigger.disabled).toBe(true)
     expect(trigger.getAttribute('aria-expanded')).toBe('false')
     expect(screen.queryByRole('menu')).toBeNull()
@@ -256,7 +256,7 @@ describe('a refused switch', () => {
     try {
       const reason = 'failed to import loader entry live-on-mac (@deepseek-ai/dsh-also-gone)'
       const actions = renderSeat({ current: '' }, undefined, undefined, false)
-      const refusal = { preset: { id: 'cordis' }, reason }
+      const refusal = { preset: { id: 'cordis', workspace: 'required' as const }, reason }
       act(() => { actions.store.set({ ...actions.store.getSnapshot(), error: refusal }) })
 
       // The host refuses a mount discovery reported healthy, so this banner is
@@ -309,7 +309,7 @@ describe('the chip introduce cue', () => {
     vi.useFakeTimers()
     const actions = renderSeat({
       current: 'creator',
-      options: [{ id: 'creator', name: 'CreatorMode', workspace: 'required' }],
+      options: [{ id: 'creator', name: 'CreatorMode', workspace: 'required' as const }],
       introduce: true,
     })
 
@@ -335,7 +335,7 @@ describe('the chip introduce cue', () => {
     vi.useFakeTimers()
     renderSeat({
       current: 'creator',
-      options: [{ id: 'creator', name: '创造模式', workspace: 'required' }],
+      options: [{ id: 'creator', name: '创造模式', workspace: 'required' as const }],
       introduce: true,
     })
 
@@ -351,7 +351,7 @@ describe('the chip introduce cue', () => {
     vi.useFakeTimers()
     const actions = renderSeat({
       current: 'creator',
-      options: [{ id: 'creator', name: 'C', workspace: 'required' }],
+      options: [{ id: 'creator', name: 'C', workspace: 'required' as const }],
       introduce: true,
     })
 
@@ -372,7 +372,7 @@ describe('the chip introduce cue', () => {
     vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false })))
     const actions = renderSeat({
       current: 'creator',
-      options: [{ id: 'creator', name: '', workspace: 'required' }],
+      options: [{ id: 'creator', name: '', workspace: 'required' as const }],
       introduce: true,
     })
 

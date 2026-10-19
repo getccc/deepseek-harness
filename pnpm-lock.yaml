@@ -9,6 +9,7 @@ overrides:
   '@deepseek-ai/cosmokit': link:vendor/cosmokit
   '@deepseek-ai/schemastery': link:vendor/schemastery
 
+
 patchedDependencies:
   '@earendil-works/pi-ai@1.1.0': 66eaf960054f10441b93ac3857114e96c1901f6d183713e2f21437b007111644
   '@electron/osx-sign@1.3.3': 280e7b2816caf01423097d24e79107a66afeb563a348630ce9928ae8499a5861
@@ -407,6 +408,12 @@ importers:
       '@deepseek-ai/dsh-skill-office':
         specifier: workspace:*
         version: link:../../packages/skill/skill-office
+      '@deepseek-ai/dsh-team':
+        specifier: workspace:*
+        version: link:../../packages/bundle/team
+      '@deepseek-ai/dsh-team-control-plane':
+        specifier: workspace:*
+        version: link:../../packages/bundle/team-control-plane
       '@deepseek-ai/dsh-terminal':
         specifier: workspace:*
         version: link:../../packages/terminal/terminal
@@ -865,6 +872,70 @@ importers:
         specifier: ^4.22.4
         version: 4.23.13
 
+  apps/team-admin:
+    devDependencies:
+      '@ant-design/icons':
+        specifier: ^6.0.0
+        version: 6.3.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@deepseek-ai/dsh-team-admin-api':
+        specifier: workspace:*
+        version: link:../../packages/team/team-admin-api
+      '@types/react':
+        specifier: ~18.3.1
+        version: 18.3.31
+      '@types/react-dom':
+        specifier: ~18.3.0
+        version: 18.3.7(@types/react@18.3.31)
+      '@vitejs/plugin-react':
+        specifier: ^4.0.0
+        version: 4.7.0(supports-color@9.4.0)(vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.23.13)(yaml@2.9.0))
+      antd:
+        specifier: ^6.0.0
+        version: 6.6.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      dayjs:
+        specifier: ^1.11.13
+        version: 1.11.23
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vite:
+        specifier: ^6.0.0
+        version: 6.4.3(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.23.13)(yaml@2.9.0)
+
+  apps/team-runner-desktop:
+    dependencies:
+      electron-updater:
+        specifier: ^6.8.9
+        version: 6.8.9(supports-color@9.4.0)
+    devDependencies:
+      '@deepseek-ai/dsh-team-update':
+        specifier: workspace:*
+        version: link:../../packages/team/team-update
+      '@types/js-yaml':
+        specifier: ^4.0.9
+        version: 4.0.9
+      '@types/node':
+        specifier: ^24.10.1
+        version: 24.13.3
+      electron:
+        specifier: 44.0.0
+        version: 44.0.0(supports-color@9.4.0)
+      electron-builder:
+        specifier: 26.15.3
+        version: 26.15.3(electron-builder-squirrel-windows@26.15.3)(supports-color@9.4.0)
+      js-yaml:
+        specifier: ^4.2.0
+        version: 4.3.2
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+
   apps/web:
     devDependencies:
       '@deepseek-ai/cordis-plugin-group':
@@ -1155,6 +1226,198 @@ importers:
 
   native/system/packages/linux-x64: {}
 
+  packages/access/access-control:
+    dependencies:
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-brand':
+        specifier: workspace:*
+        version: link:../../util/brand
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
+  packages/access/access-control-sqlite:
+    dependencies:
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../access-control
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:*
+        version: link:../../account/account-store-sqlite
+
+  packages/access/audit:
+    dependencies:
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
+  packages/access/audit-sqlite:
+    dependencies:
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-audit':
+        specifier: workspace:*
+        version: link:../audit
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
+  packages/access/governed-catalog-sqlite:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../access-control
+      '@deepseek-ai/dsh-access-control-sqlite':
+        specifier: workspace:*
+        version: link:../access-control-sqlite
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:*
+        version: link:../../account/account-store-sqlite
+      '@deepseek-ai/dsh-audit':
+        specifier: workspace:*
+        version: link:../audit
+      '@deepseek-ai/dsh-audit-sqlite':
+        specifier: workspace:*
+        version: link:../audit-sqlite
+
+  packages/access/quota:
+    dependencies:
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-brand':
+        specifier: workspace:*
+        version: link:../../util/brand
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
+  packages/access/quota-sqlite:
+    dependencies:
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-quota':
+        specifier: workspace:*
+        version: link:../quota
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
+  packages/account/account-auth:
+    dependencies:
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../account-store
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
+  packages/account/account-auth-password:
+    dependencies:
+      '@deepseek-ai/dsh-account-auth':
+        specifier: workspace:*
+        version: link:../account-auth
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../account-store
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:*
+        version: link:../account-store-sqlite
+
+  packages/account/account-store:
+    dependencies:
+      '@deepseek-ai/dsh-brand':
+        specifier: workspace:*
+        version: link:../../util/brand
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
+  packages/account/account-store-sqlite:
+    dependencies:
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../account-store
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
+  packages/account/device-authorization:
+    dependencies:
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../account-store
+      '@deepseek-ai/dsh-brand':
+        specifier: workspace:*
+        version: link:../../util/brand
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
+  packages/account/device-authorization-sqlite:
+    dependencies:
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../account-store
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:*
+        version: link:../device-authorization
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
   packages/acp/acp:
     dependencies:
       '@agentclientprotocol/sdk':
@@ -1232,6 +1495,28 @@ importers:
         specifier: workspace:*
         version: link:../../typert/protocol
 
+  packages/api/bi-controller:
+    dependencies:
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:*
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-bi':
+        specifier: workspace:*
+        version: link:../../bi/bi
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-typert-protocol':
+        specifier: workspace:*
+        version: link:../../typert/protocol
+
   packages/api/gateway:
     dependencies:
       '@deepseek-ai/dsh-deque':
@@ -1284,6 +1569,28 @@ importers:
         specifier: 4.4.3
         version: 4.4.3
 
+  packages/api/gmo-controller:
+    dependencies:
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:*
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../../gmo/gmo
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-typert-protocol':
+        specifier: workspace:*
+        version: link:../../typert/protocol
+
   packages/api/job-controller:
     dependencies:
       '@deepseek-ai/dsh-typert-protocol':
@@ -1323,6 +1630,53 @@ importers:
       '@deepseek-ai/dsh-typert-registry':
         specifier: workspace:*
         version: link:../../typert/registry
+
+  packages/api/knowledge-controller:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:*
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-knowledge':
+        specifier: workspace:*
+        version: link:../../knowledge/knowledge
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-typert-protocol':
+        specifier: workspace:*
+        version: link:../../typert/protocol
+
+  packages/api/office-controller:
+    dependencies:
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:*
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-office':
+        specifier: workspace:*
+        version: link:../../office/office
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-typert-protocol':
+        specifier: workspace:*
+        version: link:../../typert/protocol
 
   packages/api/remote-access:
     dependencies:
@@ -1743,6 +2097,31 @@ importers:
         specifier: workspace:*
         version: link:../../session/working-directory
 
+  packages/api/web-access-controller:
+    dependencies:
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:*
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-tool-web':
+        specifier: workspace:*
+        version: link:../../web/tool-web
+      '@deepseek-ai/dsh-typert-protocol':
+        specifier: workspace:*
+        version: link:../../typert/protocol
+      '@deepseek-ai/dsh-web':
+        specifier: workspace:*
+        version: link:../../web/web
+
   packages/api/workspace-controller:
     dependencies:
       '@deepseek-ai/dsh-deque':
@@ -1767,6 +2146,9 @@ importers:
       '@deepseek-ai/dsh-api-remote-access':
         specifier: workspace:*
         version: link:../remote-access
+      '@deepseek-ai/dsh-api-session-controller':
+        specifier: workspace:*
+        version: link:../session-controller
       '@deepseek-ai/dsh-client-connection':
         specifier: workspace:*
         version: link:../../client/connection
@@ -1877,6 +2259,213 @@ importers:
       '@deepseek-ai/dsh-home-paths':
         specifier: workspace:*
         version: link:../../util/home-paths
+
+  packages/bi/bi:
+    dependencies:
+      '@deepseek-ai/dsh-brand':
+        specifier: workspace:*
+        version: link:../../util/brand
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+
+  packages/bi/bi-gateway:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-bi':
+        specifier: workspace:*
+        version: link:../bi
+
+  packages/bi/bi-gateway-http:
+    dependencies:
+      '@deepseek-ai/dsh-team-governed-wire':
+        specifier: workspace:*
+        version: link:../../team/team-governed-wire
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-access-control-sqlite':
+        specifier: workspace:*
+        version: link:../../access/access-control-sqlite
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:*
+        version: link:../../account/account-store-sqlite
+      '@deepseek-ai/dsh-audit-sqlite':
+        specifier: workspace:*
+        version: link:../../access/audit-sqlite
+      '@deepseek-ai/dsh-bi':
+        specifier: workspace:*
+        version: link:../bi
+      '@deepseek-ai/dsh-bi-gateway':
+        specifier: workspace:*
+        version: link:../bi-gateway
+      '@deepseek-ai/dsh-bi-gateway-sqlite':
+        specifier: workspace:*
+        version: link:../bi-gateway-sqlite
+      '@deepseek-ai/dsh-bi-source':
+        specifier: workspace:*
+        version: link:../bi-source
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:*
+        version: link:../../account/device-authorization
+      '@deepseek-ai/dsh-device-authorization-sqlite':
+        specifier: workspace:*
+        version: link:../../account/device-authorization-sqlite
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:*
+        version: link:../../host/webserver
+
+  packages/bi/bi-gateway-sqlite:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-access-control-sqlite':
+        specifier: workspace:*
+        version: link:../../access/access-control-sqlite
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:*
+        version: link:../../account/account-store-sqlite
+      '@deepseek-ai/dsh-audit':
+        specifier: workspace:*
+        version: link:../../access/audit
+      '@deepseek-ai/dsh-audit-sqlite':
+        specifier: workspace:*
+        version: link:../../access/audit-sqlite
+      '@deepseek-ai/dsh-bi':
+        specifier: workspace:*
+        version: link:../bi
+      '@deepseek-ai/dsh-bi-gateway':
+        specifier: workspace:*
+        version: link:../bi-gateway
+      '@deepseek-ai/dsh-bi-source':
+        specifier: workspace:*
+        version: link:../bi-source
+      '@deepseek-ai/dsh-governed-catalog-sqlite':
+        specifier: workspace:*
+        version: link:../../access/governed-catalog-sqlite
+
+  packages/bi/bi-source:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-bi':
+        specifier: workspace:*
+        version: link:../bi
+
+  packages/bi/bi-team:
+    dependencies:
+      '@deepseek-ai/dsh-team-account-client':
+        specifier: workspace:*
+        version: link:../../team/team-account-client
+      '@deepseek-ai/dsh-team-governed-wire':
+        specifier: workspace:*
+        version: link:../../team/team-governed-wire
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-bi':
+        specifier: workspace:*
+        version: link:../bi
+      '@deepseek-ai/dsh-bi-gateway-http':
+        specifier: workspace:*
+        version: link:../bi-gateway-http
+
+  packages/bi/bi-webi:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-bi':
+        specifier: workspace:*
+        version: link:../bi
+      '@deepseek-ai/dsh-bi-source':
+        specifier: workspace:*
+        version: link:../bi-source
+      '@deepseek-ai/dsh-credentials':
+        specifier: workspace:*
+        version: link:../../credentials/credentials
+      '@deepseek-ai/dsh-util-crypto':
+        specifier: workspace:*
+        version: link:../../util/crypto
+
+  packages/bi/tool-bi:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:*
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-bi':
+        specifier: workspace:*
+        version: link:../bi
+      '@deepseek-ai/dsh-llm':
+        specifier: workspace:*
+        version: link:../../llm/llm
+      '@deepseek-ai/dsh-scope':
+        specifier: workspace:*
+        version: link:../../core/scope
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-session-projection':
+        specifier: workspace:*
+        version: link:../../session/session-projection
+      '@deepseek-ai/dsh-system-prompt':
+        specifier: workspace:*
+        version: link:../../core/system-prompt
+      '@deepseek-ai/dsh-tools':
+        specifier: workspace:*
+        version: link:../../core/tools
 
   packages/boot/app-boot:
     dependencies:
@@ -2686,6 +3275,179 @@ importers:
         specifier: workspace:~
         version: link:../../../vendor/cordis
 
+  packages/bundle/team:
+    dependencies:
+      '@deepseek-ai/dsh-api-bi-controller':
+        specifier: workspace:*
+        version: link:../../api/bi-controller
+      '@deepseek-ai/dsh-api-gmo-controller':
+        specifier: workspace:*
+        version: link:../../api/gmo-controller
+      '@deepseek-ai/dsh-api-knowledge-controller':
+        specifier: workspace:*
+        version: link:../../api/knowledge-controller
+      '@deepseek-ai/dsh-api-office-controller':
+        specifier: workspace:*
+        version: link:../../api/office-controller
+      '@deepseek-ai/dsh-bi-team':
+        specifier: workspace:*
+        version: link:../../bi/bi-team
+      '@deepseek-ai/dsh-client-ui-bi':
+        specifier: workspace:*
+        version: link:../../client/ui-bi
+      '@deepseek-ai/dsh-client-ui-gmo':
+        specifier: workspace:*
+        version: link:../../client/ui-gmo
+      '@deepseek-ai/dsh-client-ui-knowledge':
+        specifier: workspace:*
+        version: link:../../client/ui-knowledge
+      '@deepseek-ai/dsh-client-ui-knowledge-panels':
+        specifier: workspace:*
+        version: link:../../client/ui-knowledge-panels
+      '@deepseek-ai/dsh-client-ui-office':
+        specifier: workspace:*
+        version: link:../../client/ui-office
+      '@deepseek-ai/dsh-gmo-team':
+        specifier: workspace:*
+        version: link:../../gmo/gmo-team
+      '@deepseek-ai/dsh-knowledge-team':
+        specifier: workspace:*
+        version: link:../../knowledge/knowledge-team
+      '@deepseek-ai/dsh-llm-http-transport-team':
+        specifier: workspace:*
+        version: link:../../llm/llm-http-transport-team
+      '@deepseek-ai/dsh-office':
+        specifier: workspace:*
+        version: link:../../office/office
+      '@deepseek-ai/dsh-team-account-client':
+        specifier: workspace:*
+        version: link:../../team/team-account-client
+      '@deepseek-ai/dsh-team-desktop-update':
+        specifier: workspace:*
+        version: link:../../team/team-desktop-update
+      '@deepseek-ai/dsh-team-local-login':
+        specifier: workspace:*
+        version: link:../../team/team-local-login
+      '@deepseek-ai/dsh-team-update-source':
+        specifier: workspace:*
+        version: link:../../team/team-update-source
+      '@deepseek-ai/dsh-tool-bi':
+        specifier: workspace:*
+        version: link:../../bi/tool-bi
+      '@deepseek-ai/dsh-tool-gmo':
+        specifier: workspace:*
+        version: link:../../gmo/tool-gmo
+      '@deepseek-ai/dsh-tool-knowledge':
+        specifier: workspace:*
+        version: link:../../knowledge/tool-knowledge
+      '@deepseek-ai/dsh-tool-office':
+        specifier: workspace:*
+        version: link:../../office/tool-office
+      '@deepseek-ai/dsh-web-search-team':
+        specifier: workspace:*
+        version: link:../../web/web-search-team
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/cordis-plugin-include':
+        specifier: workspace:~
+        version: link:../../../vendor/include
+      '@deepseek-ai/cordis-plugin-loader':
+        specifier: workspace:~
+        version: link:../../../vendor/loader
+
+  packages/bundle/team-control-plane:
+    dependencies:
+      '@deepseek-ai/dsh-access-control-sqlite':
+        specifier: workspace:*
+        version: link:../../access/access-control-sqlite
+      '@deepseek-ai/dsh-account-auth-password':
+        specifier: workspace:*
+        version: link:../../account/account-auth-password
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:*
+        version: link:../../account/account-store-sqlite
+      '@deepseek-ai/dsh-audit-sqlite':
+        specifier: workspace:*
+        version: link:../../access/audit-sqlite
+      '@deepseek-ai/dsh-bi-gateway-http':
+        specifier: workspace:*
+        version: link:../../bi/bi-gateway-http
+      '@deepseek-ai/dsh-bi-gateway-sqlite':
+        specifier: workspace:*
+        version: link:../../bi/bi-gateway-sqlite
+      '@deepseek-ai/dsh-bi-webi':
+        specifier: workspace:*
+        version: link:../../bi/bi-webi
+      '@deepseek-ai/dsh-device-authorization-sqlite':
+        specifier: workspace:*
+        version: link:../../account/device-authorization-sqlite
+      '@deepseek-ai/dsh-gmo-excel-tools':
+        specifier: workspace:*
+        version: link:../../gmo/gmo-excel-tools
+      '@deepseek-ai/dsh-gmo-gateway-http':
+        specifier: workspace:*
+        version: link:../../gmo/gmo-gateway-http
+      '@deepseek-ai/dsh-gmo-gateway-sqlite':
+        specifier: workspace:*
+        version: link:../../gmo/gmo-gateway-sqlite
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:*
+        version: link:../../host/webserver
+      '@deepseek-ai/dsh-knowledge-gateway-http':
+        specifier: workspace:*
+        version: link:../../knowledge/knowledge-gateway-http
+      '@deepseek-ai/dsh-knowledge-gateway-sqlite':
+        specifier: workspace:*
+        version: link:../../knowledge/knowledge-gateway-sqlite
+      '@deepseek-ai/dsh-knowledge-weknora':
+        specifier: workspace:*
+        version: link:../../knowledge/knowledge-weknora
+      '@deepseek-ai/dsh-model-gateway-http':
+        specifier: workspace:*
+        version: link:../../llm/model-gateway-http
+      '@deepseek-ai/dsh-model-gateway-sqlite':
+        specifier: workspace:*
+        version: link:../../llm/model-gateway-sqlite
+      '@deepseek-ai/dsh-quota-sqlite':
+        specifier: workspace:*
+        version: link:../../access/quota-sqlite
+      '@deepseek-ai/dsh-team-admin-api':
+        specifier: workspace:*
+        version: link:../../team/team-admin-api
+      '@deepseek-ai/dsh-team-admin-app':
+        specifier: workspace:*
+        version: link:../../team/team-admin-app
+      '@deepseek-ai/dsh-team-console-menu-sqlite':
+        specifier: workspace:*
+        version: link:../../team/team-console-menu-sqlite
+      '@deepseek-ai/dsh-team-control-plane-http':
+        specifier: workspace:*
+        version: link:../../team/team-control-plane-http
+      '@deepseek-ai/dsh-team-release':
+        specifier: workspace:*
+        version: link:../../team/team-release
+      '@deepseek-ai/dsh-team-release-http':
+        specifier: workspace:*
+        version: link:../../team/team-release-http
+      '@deepseek-ai/dsh-web':
+        specifier: workspace:*
+        version: link:../../web/web
+      '@deepseek-ai/dsh-web-search-deepseek':
+        specifier: workspace:*
+        version: link:../../web/web-search-deepseek
+      '@deepseek-ai/dsh-web-search-gateway-http':
+        specifier: workspace:*
+        version: link:../../web/web-search-gateway-http
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/cordis-plugin-include':
+        specifier: workspace:~
+        version: link:../../../vendor/include
+
   packages/bundle/web-app:
     dependencies:
       '@deepseek-ai/dsh-agent-instructions':
@@ -2718,6 +3480,9 @@ importers:
       '@deepseek-ai/dsh-api-terminal-controller':
         specifier: workspace:*
         version: link:../../api/terminal-controller
+      '@deepseek-ai/dsh-api-web-access-controller':
+        specifier: workspace:*
+        version: link:../../api/web-access-controller
       '@deepseek-ai/dsh-api-workspace-controller':
         specifier: workspace:*
         version: link:../../api/workspace-controller
@@ -2760,9 +3525,6 @@ importers:
       '@deepseek-ai/dsh-client-ui-attachment':
         specifier: workspace:*
         version: link:../../client/ui-attachment
-      '@deepseek-ai/dsh-client-ui-brand-official':
-        specifier: workspace:*
-        version: link:../../client/ui-brand-official
       '@deepseek-ai/dsh-client-ui-chat':
         specifier: workspace:*
         version: link:../../client/ui-chat
@@ -2904,6 +3666,12 @@ importers:
       '@deepseek-ai/dsh-client-ui-user-questions':
         specifier: workspace:*
         version: link:../../client/ui-user-questions
+      '@deepseek-ai/dsh-client-ui-voice':
+        specifier: workspace:*
+        version: link:../../client/ui-voice
+      '@deepseek-ai/dsh-client-ui-web-access':
+        specifier: workspace:*
+        version: link:../../client/ui-web-access
       '@deepseek-ai/dsh-client-ui-workflow-run':
         specifier: workspace:*
         version: link:../../client/ui-workflow-run
@@ -3048,6 +3816,9 @@ importers:
       '@deepseek-ai/dsh-tool-pwsh-persistent':
         specifier: workspace:*
         version: link:../../shell/tool-pwsh-persistent
+      '@deepseek-ai/dsh-tool-restriction':
+        specifier: workspace:*
+        version: link:../../guard/tool-restriction
       '@deepseek-ai/dsh-tool-schedule':
         specifier: workspace:*
         version: link:../../schedule/tool-schedule
@@ -3121,6 +3892,9 @@ importers:
       '@deepseek-ai/dsh-shell-env':
         specifier: workspace:*
         version: link:../../shell/shell-env
+      '@deepseek-ai/dsh-system-prompt':
+        specifier: workspace:*
+        version: link:../../core/system-prompt
       '@deepseek-ai/dsh-typert-registry':
         specifier: workspace:*
         version: link:../../typert/registry
@@ -3551,29 +4325,62 @@ importers:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
 
-  packages/client/ui-brand-official:
+  packages/client/ui-bi:
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:~
         version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-api-bi-controller':
+        specifier: workspace:*
+        version: link:../../api/bi-controller
+      '@deepseek-ai/dsh-api-remotes':
+        specifier: workspace:*
+        version: link:../../api/remotes
+      '@deepseek-ai/dsh-api-session-controller':
+        specifier: workspace:*
+        version: link:../../api/session-controller
+      '@deepseek-ai/dsh-bi':
+        specifier: workspace:*
+        version: link:../../bi/bi
+      '@deepseek-ai/dsh-client-locale':
+        specifier: workspace:*
+        version: link:../locale
+      '@deepseek-ai/dsh-client-store':
+        specifier: workspace:*
+        version: link:../store
+      '@deepseek-ai/dsh-client-test-runtime':
+        specifier: workspace:*
+        version: link:../../test-support/client-runtime
+      '@deepseek-ai/dsh-client-ui-conversation':
+        specifier: workspace:*
+        version: link:../ui-conversation
       '@deepseek-ai/dsh-client-ui-primitives':
         specifier: workspace:*
         version: link:../ui-primitives
       '@deepseek-ai/dsh-client-ui-renderer':
         specifier: workspace:*
         version: link:../ui-renderer
-      '@deepseek-ai/dsh-client-ui-sidebar':
+      '@deepseek-ai/dsh-client-ui-session':
         specifier: workspace:*
-        version: link:../ui-sidebar
-      '@testing-library/react':
-        specifier: ^16.3.3
-        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+        version: link:../ui-session
+      '@deepseek-ai/dsh-client-ui-slots':
+        specifier: workspace:*
+        version: link:../ui-slots
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-tool-bi':
+        specifier: workspace:*
+        version: link:../../bi/tool-bi
+      '@types/react':
+        specifier: ~18.3.1
+        version: 18.3.31
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       react:
         specifier: ^18.2.0
         version: 18.3.1
-      react-dom:
-        specifier: ^18.2.0
-        version: 18.3.1(react@18.3.1)
 
   packages/client/ui-chat:
     dependencies:
@@ -4118,6 +4925,63 @@ importers:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
 
+  packages/client/ui-gmo:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-api-gmo-controller':
+        specifier: workspace:*
+        version: link:../../api/gmo-controller
+      '@deepseek-ai/dsh-api-remotes':
+        specifier: workspace:*
+        version: link:../../api/remotes
+      '@deepseek-ai/dsh-api-session-controller':
+        specifier: workspace:*
+        version: link:../../api/session-controller
+      '@deepseek-ai/dsh-client-locale':
+        specifier: workspace:*
+        version: link:../locale
+      '@deepseek-ai/dsh-client-store':
+        specifier: workspace:*
+        version: link:../store
+      '@deepseek-ai/dsh-client-test-runtime':
+        specifier: workspace:*
+        version: link:../../test-support/client-runtime
+      '@deepseek-ai/dsh-client-ui-conversation':
+        specifier: workspace:*
+        version: link:../ui-conversation
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: workspace:*
+        version: link:../ui-primitives
+      '@deepseek-ai/dsh-client-ui-renderer':
+        specifier: workspace:*
+        version: link:../ui-renderer
+      '@deepseek-ai/dsh-client-ui-session':
+        specifier: workspace:*
+        version: link:../ui-session
+      '@deepseek-ai/dsh-client-ui-slots':
+        specifier: workspace:*
+        version: link:../ui-slots
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../../gmo/gmo
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-tool-gmo':
+        specifier: workspace:*
+        version: link:../../gmo/tool-gmo
+      '@types/react':
+        specifier: ~18.3.1
+        version: 18.3.31
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+
   packages/client/ui-goal:
     devDependencies:
       '@deepseek-ai/cordis':
@@ -4264,6 +5128,132 @@ importers:
       react-dom:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
+
+  packages/client/ui-knowledge:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-api-knowledge-controller':
+        specifier: workspace:*
+        version: link:../../api/knowledge-controller
+      '@deepseek-ai/dsh-api-remotes':
+        specifier: workspace:*
+        version: link:../../api/remotes
+      '@deepseek-ai/dsh-api-session-controller':
+        specifier: workspace:*
+        version: link:../../api/session-controller
+      '@deepseek-ai/dsh-client-locale':
+        specifier: workspace:*
+        version: link:../locale
+      '@deepseek-ai/dsh-client-test-runtime':
+        specifier: workspace:*
+        version: link:../../test-support/client-runtime
+      '@deepseek-ai/dsh-client-ui-commands':
+        specifier: workspace:*
+        version: link:../ui-commands
+      '@deepseek-ai/dsh-client-ui-conversation':
+        specifier: workspace:*
+        version: link:../ui-conversation
+      '@deepseek-ai/dsh-client-ui-input-trigger':
+        specifier: workspace:*
+        version: link:../ui-input-trigger
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: workspace:*
+        version: link:../ui-primitives
+      '@deepseek-ai/dsh-client-ui-renderer':
+        specifier: workspace:*
+        version: link:../ui-renderer
+      '@deepseek-ai/dsh-client-ui-session':
+        specifier: workspace:*
+        version: link:../ui-session
+      '@deepseek-ai/dsh-client-ui-slots':
+        specifier: workspace:*
+        version: link:../ui-slots
+      '@deepseek-ai/dsh-knowledge':
+        specifier: workspace:*
+        version: link:../../knowledge/knowledge
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-tool-knowledge':
+        specifier: workspace:*
+        version: link:../../knowledge/tool-knowledge
+      '@types/react':
+        specifier: ~18.3.1
+        version: 18.3.31
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+
+  packages/client/ui-knowledge-panels:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-api-knowledge-controller':
+        specifier: workspace:*
+        version: link:../../api/knowledge-controller
+      '@deepseek-ai/dsh-api-remotes':
+        specifier: workspace:*
+        version: link:../../api/remotes
+      '@deepseek-ai/dsh-api-session-controller':
+        specifier: workspace:*
+        version: link:../../api/session-controller
+      '@deepseek-ai/dsh-client-locale':
+        specifier: workspace:*
+        version: link:../locale
+      '@deepseek-ai/dsh-client-store':
+        specifier: workspace:*
+        version: link:../store
+      '@deepseek-ai/dsh-client-test-runtime':
+        specifier: workspace:*
+        version: link:../../test-support/client-runtime
+      '@deepseek-ai/dsh-client-ui-conversation':
+        specifier: workspace:*
+        version: link:../ui-conversation
+      '@deepseek-ai/dsh-client-ui-knowledge':
+        specifier: workspace:*
+        version: link:../ui-knowledge
+      '@deepseek-ai/dsh-client-ui-layout':
+        specifier: workspace:*
+        version: link:../ui-layout
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: workspace:*
+        version: link:../ui-primitives
+      '@deepseek-ai/dsh-client-ui-renderer':
+        specifier: workspace:*
+        version: link:../ui-renderer
+      '@deepseek-ai/dsh-client-ui-session':
+        specifier: workspace:*
+        version: link:../ui-session
+      '@deepseek-ai/dsh-client-ui-sidebar':
+        specifier: workspace:*
+        version: link:../ui-sidebar
+      '@deepseek-ai/dsh-client-ui-sidebar-documentpreview':
+        specifier: workspace:*
+        version: link:../ui-sidebar-documentpreview
+      '@deepseek-ai/dsh-client-ui-slots':
+        specifier: workspace:*
+        version: link:../ui-slots
+      '@deepseek-ai/dsh-client-ui-workspace':
+        specifier: workspace:*
+        version: link:../ui-workspace
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@types/react':
+        specifier: ~18.3.1
+        version: 18.3.31
+      clsx:
+        specifier: ^2.0.0
+        version: 2.1.1
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
 
   packages/client/ui-layout:
     devDependencies:
@@ -4426,6 +5416,60 @@ importers:
       react-dom:
         specifier: ^18.2.0
         version: 18.3.1(react@18.3.1)
+
+  packages/client/ui-office:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-api-office-controller':
+        specifier: workspace:*
+        version: link:../../api/office-controller
+      '@deepseek-ai/dsh-api-remotes':
+        specifier: workspace:*
+        version: link:../../api/remotes
+      '@deepseek-ai/dsh-api-session-controller':
+        specifier: workspace:*
+        version: link:../../api/session-controller
+      '@deepseek-ai/dsh-client-locale':
+        specifier: workspace:*
+        version: link:../locale
+      '@deepseek-ai/dsh-client-test-runtime':
+        specifier: workspace:*
+        version: link:../../test-support/client-runtime
+      '@deepseek-ai/dsh-client-ui-conversation':
+        specifier: workspace:*
+        version: link:../ui-conversation
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: workspace:*
+        version: link:../ui-primitives
+      '@deepseek-ai/dsh-client-ui-renderer':
+        specifier: workspace:*
+        version: link:../ui-renderer
+      '@deepseek-ai/dsh-client-ui-session':
+        specifier: workspace:*
+        version: link:../ui-session
+      '@deepseek-ai/dsh-client-ui-slots':
+        specifier: workspace:*
+        version: link:../ui-slots
+      '@deepseek-ai/dsh-office':
+        specifier: workspace:*
+        version: link:../../office/office
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-tool-office':
+        specifier: workspace:*
+        version: link:../../office/tool-office
+      '@types/react':
+        specifier: ~18.3.1
+        version: 18.3.31
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
 
   packages/client/ui-open-in-app:
     devDependencies:
@@ -6413,6 +7457,90 @@ importers:
       clsx:
         specifier: ^2.0.0
         version: 2.1.1
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+
+  packages/client/ui-voice:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-client-locale':
+        specifier: workspace:*
+        version: link:../locale
+      '@deepseek-ai/dsh-client-store':
+        specifier: workspace:*
+        version: link:../store
+      '@deepseek-ai/dsh-client-test-runtime':
+        specifier: workspace:*
+        version: link:../../test-support/client-runtime
+      '@deepseek-ai/dsh-client-ui-conversation':
+        specifier: workspace:*
+        version: link:../ui-conversation
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: workspace:*
+        version: link:../ui-primitives
+      '@deepseek-ai/dsh-client-ui-renderer':
+        specifier: workspace:*
+        version: link:../ui-renderer
+      '@deepseek-ai/dsh-client-ui-session':
+        specifier: workspace:*
+        version: link:../ui-session
+      '@deepseek-ai/dsh-client-ui-slots':
+        specifier: workspace:*
+        version: link:../ui-slots
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@types/react':
+        specifier: ~18.3.1
+        version: 18.3.31
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+
+  packages/client/ui-web-access:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-api-remotes':
+        specifier: workspace:*
+        version: link:../../api/remotes
+      '@deepseek-ai/dsh-api-web-access-controller':
+        specifier: workspace:*
+        version: link:../../api/web-access-controller
+      '@deepseek-ai/dsh-client-locale':
+        specifier: workspace:*
+        version: link:../locale
+      '@deepseek-ai/dsh-client-test-runtime':
+        specifier: workspace:*
+        version: link:../../test-support/client-runtime
+      '@deepseek-ai/dsh-client-ui-conversation':
+        specifier: workspace:*
+        version: link:../ui-conversation
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: workspace:*
+        version: link:../ui-primitives
+      '@deepseek-ai/dsh-client-ui-renderer':
+        specifier: workspace:*
+        version: link:../ui-renderer
+      '@deepseek-ai/dsh-client-ui-session':
+        specifier: workspace:*
+        version: link:../ui-session
+      '@deepseek-ai/dsh-client-ui-slots':
+        specifier: workspace:*
+        version: link:../ui-slots
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-tool-web':
+        specifier: workspace:*
+        version: link:../../web/tool-web
+      '@types/react':
+        specifier: ~18.3.1
+        version: 18.3.31
       react:
         specifier: ^18.2.0
         version: 18.3.1
@@ -10263,6 +11391,213 @@ importers:
         specifier: workspace:*
         version: link:../../core/tools
 
+  packages/gmo/gmo:
+    dependencies:
+      '@deepseek-ai/dsh-brand':
+        specifier: workspace:*
+        version: link:../../util/brand
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+
+  packages/gmo/gmo-excel-tools:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-credentials':
+        specifier: workspace:*
+        version: link:../../credentials/credentials
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../gmo
+      '@deepseek-ai/dsh-gmo-source':
+        specifier: workspace:*
+        version: link:../gmo-source
+      '@deepseek-ai/dsh-util-crypto':
+        specifier: workspace:*
+        version: link:../../util/crypto
+
+  packages/gmo/gmo-gateway:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../gmo
+
+  packages/gmo/gmo-gateway-http:
+    dependencies:
+      '@deepseek-ai/dsh-team-governed-wire':
+        specifier: workspace:*
+        version: link:../../team/team-governed-wire
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-access-control-sqlite':
+        specifier: workspace:*
+        version: link:../../access/access-control-sqlite
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:*
+        version: link:../../account/account-store-sqlite
+      '@deepseek-ai/dsh-audit-sqlite':
+        specifier: workspace:*
+        version: link:../../access/audit-sqlite
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:*
+        version: link:../../account/device-authorization
+      '@deepseek-ai/dsh-device-authorization-sqlite':
+        specifier: workspace:*
+        version: link:../../account/device-authorization-sqlite
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../gmo
+      '@deepseek-ai/dsh-gmo-gateway':
+        specifier: workspace:*
+        version: link:../gmo-gateway
+      '@deepseek-ai/dsh-gmo-gateway-sqlite':
+        specifier: workspace:*
+        version: link:../gmo-gateway-sqlite
+      '@deepseek-ai/dsh-gmo-source':
+        specifier: workspace:*
+        version: link:../gmo-source
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:*
+        version: link:../../host/webserver
+
+  packages/gmo/gmo-gateway-sqlite:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-access-control-sqlite':
+        specifier: workspace:*
+        version: link:../../access/access-control-sqlite
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:*
+        version: link:../../account/account-store-sqlite
+      '@deepseek-ai/dsh-audit':
+        specifier: workspace:*
+        version: link:../../access/audit
+      '@deepseek-ai/dsh-audit-sqlite':
+        specifier: workspace:*
+        version: link:../../access/audit-sqlite
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../gmo
+      '@deepseek-ai/dsh-gmo-gateway':
+        specifier: workspace:*
+        version: link:../gmo-gateway
+      '@deepseek-ai/dsh-gmo-source':
+        specifier: workspace:*
+        version: link:../gmo-source
+      '@deepseek-ai/dsh-governed-catalog-sqlite':
+        specifier: workspace:*
+        version: link:../../access/governed-catalog-sqlite
+
+  packages/gmo/gmo-source:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../gmo
+
+  packages/gmo/gmo-team:
+    dependencies:
+      '@deepseek-ai/dsh-team-account-client':
+        specifier: workspace:*
+        version: link:../../team/team-account-client
+      '@deepseek-ai/dsh-team-governed-wire':
+        specifier: workspace:*
+        version: link:../../team/team-governed-wire
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../gmo
+      '@deepseek-ai/dsh-gmo-gateway-http':
+        specifier: workspace:*
+        version: link:../gmo-gateway-http
+
+  packages/gmo/tool-gmo:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:*
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../gmo
+      '@deepseek-ai/dsh-llm':
+        specifier: workspace:*
+        version: link:../../llm/llm
+      '@deepseek-ai/dsh-scope':
+        specifier: workspace:*
+        version: link:../../core/scope
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-session-projection':
+        specifier: workspace:*
+        version: link:../../session/session-projection
+      '@deepseek-ai/dsh-system-prompt':
+        specifier: workspace:*
+        version: link:../../core/system-prompt
+      '@deepseek-ai/dsh-tools':
+        specifier: workspace:*
+        version: link:../../core/tools
+
   packages/goal/command-goal:
     devDependencies:
       '@deepseek-ai/cordis':
@@ -10469,6 +11804,34 @@ importers:
       '@deepseek-ai/dsh-timeout':
         specifier: workspace:*
         version: link:../../util/timeout
+      '@deepseek-ai/dsh-tools':
+        specifier: workspace:*
+        version: link:../../core/tools
+
+  packages/guard/tool-restriction:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:*
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-llm':
+        specifier: workspace:*
+        version: link:../../llm/llm
+      '@deepseek-ai/dsh-scope':
+        specifier: workspace:*
+        version: link:../../core/scope
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-system-prompt':
+        specifier: workspace:*
+        version: link:../../core/system-prompt
       '@deepseek-ai/dsh-tools':
         specifier: workspace:*
         version: link:../../core/tools
@@ -10947,6 +12310,213 @@ importers:
         specifier: workspace:*
         version: link:../../core/tools
 
+  packages/knowledge/knowledge:
+    dependencies:
+      '@deepseek-ai/dsh-brand':
+        specifier: workspace:*
+        version: link:../../util/brand
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+
+  packages/knowledge/knowledge-gateway:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-knowledge':
+        specifier: workspace:*
+        version: link:../knowledge
+
+  packages/knowledge/knowledge-gateway-http:
+    dependencies:
+      '@deepseek-ai/dsh-team-governed-wire':
+        specifier: workspace:*
+        version: link:../../team/team-governed-wire
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-access-control-sqlite':
+        specifier: workspace:*
+        version: link:../../access/access-control-sqlite
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:*
+        version: link:../../account/account-store-sqlite
+      '@deepseek-ai/dsh-audit-sqlite':
+        specifier: workspace:*
+        version: link:../../access/audit-sqlite
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:*
+        version: link:../../account/device-authorization
+      '@deepseek-ai/dsh-device-authorization-sqlite':
+        specifier: workspace:*
+        version: link:../../account/device-authorization-sqlite
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:*
+        version: link:../../host/webserver
+      '@deepseek-ai/dsh-knowledge':
+        specifier: workspace:*
+        version: link:../knowledge
+      '@deepseek-ai/dsh-knowledge-gateway':
+        specifier: workspace:*
+        version: link:../knowledge-gateway
+      '@deepseek-ai/dsh-knowledge-gateway-sqlite':
+        specifier: workspace:*
+        version: link:../knowledge-gateway-sqlite
+      '@deepseek-ai/dsh-knowledge-source':
+        specifier: workspace:*
+        version: link:../knowledge-source
+
+  packages/knowledge/knowledge-gateway-sqlite:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-access-control-sqlite':
+        specifier: workspace:*
+        version: link:../../access/access-control-sqlite
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:*
+        version: link:../../account/account-store-sqlite
+      '@deepseek-ai/dsh-audit':
+        specifier: workspace:*
+        version: link:../../access/audit
+      '@deepseek-ai/dsh-audit-sqlite':
+        specifier: workspace:*
+        version: link:../../access/audit-sqlite
+      '@deepseek-ai/dsh-governed-catalog-sqlite':
+        specifier: workspace:*
+        version: link:../../access/governed-catalog-sqlite
+      '@deepseek-ai/dsh-knowledge':
+        specifier: workspace:*
+        version: link:../knowledge
+      '@deepseek-ai/dsh-knowledge-gateway':
+        specifier: workspace:*
+        version: link:../knowledge-gateway
+      '@deepseek-ai/dsh-knowledge-source':
+        specifier: workspace:*
+        version: link:../knowledge-source
+
+  packages/knowledge/knowledge-source:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-knowledge':
+        specifier: workspace:*
+        version: link:../knowledge
+
+  packages/knowledge/knowledge-team:
+    dependencies:
+      '@deepseek-ai/dsh-team-account-client':
+        specifier: workspace:*
+        version: link:../../team/team-account-client
+      '@deepseek-ai/dsh-team-governed-wire':
+        specifier: workspace:*
+        version: link:../../team/team-governed-wire
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-knowledge':
+        specifier: workspace:*
+        version: link:../knowledge
+      '@deepseek-ai/dsh-knowledge-gateway-http':
+        specifier: workspace:*
+        version: link:../knowledge-gateway-http
+
+  packages/knowledge/knowledge-weknora:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-credentials':
+        specifier: workspace:*
+        version: link:../../credentials/credentials
+      '@deepseek-ai/dsh-knowledge':
+        specifier: workspace:*
+        version: link:../knowledge
+      '@deepseek-ai/dsh-knowledge-source':
+        specifier: workspace:*
+        version: link:../knowledge-source
+      '@deepseek-ai/dsh-util-crypto':
+        specifier: workspace:*
+        version: link:../../util/crypto
+
+  packages/knowledge/tool-knowledge:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:*
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-knowledge':
+        specifier: workspace:*
+        version: link:../knowledge
+      '@deepseek-ai/dsh-llm':
+        specifier: workspace:*
+        version: link:../../llm/llm
+      '@deepseek-ai/dsh-scope':
+        specifier: workspace:*
+        version: link:../../core/scope
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-session-projection':
+        specifier: workspace:*
+        version: link:../../session/session-projection
+      '@deepseek-ai/dsh-system-prompt':
+        specifier: workspace:*
+        version: link:../../core/system-prompt
+      '@deepseek-ai/dsh-tools':
+        specifier: workspace:*
+        version: link:../../core/tools
+
   packages/llm/deepseek-llm-api-extensions:
     devDependencies:
       '@deepseek-ai/cordis':
@@ -11062,6 +12632,9 @@ importers:
       '@deepseek-ai/dsh-llm-deepseek-api-key':
         specifier: workspace:*
         version: link:../llm-deepseek-api-key
+      '@deepseek-ai/dsh-llm-http-transport':
+        specifier: workspace:*
+        version: link:../llm-http-transport
       '@deepseek-ai/dsh-plugin-package-inventory-deepseek':
         specifier: workspace:*
         version: link:../plugin-package-inventory-deepseek
@@ -11132,6 +12705,9 @@ importers:
 
   packages/llm/llm-deepseek-api-key:
     dependencies:
+      '@deepseek-ai/dsh-util-values':
+        specifier: workspace:*
+        version: link:../../util/values
       '@deepseek-ai/schemastery':
         specifier: link:../../../vendor/schemastery
         version: link:../../../vendor/schemastery
@@ -11154,6 +12730,34 @@ importers:
       '@deepseek-ai/dsh-llm-deepseek':
         specifier: workspace:*
         version: link:../llm-deepseek
+      '@deepseek-ai/dsh-llm-http-transport':
+        specifier: workspace:*
+        version: link:../llm-http-transport
+
+  packages/llm/llm-http-transport:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
+  packages/llm/llm-http-transport-team:
+    dependencies:
+      '@deepseek-ai/dsh-llm-http-transport':
+        specifier: workspace:*
+        version: link:../llm-http-transport
+      '@deepseek-ai/dsh-model-gateway-http':
+        specifier: workspace:*
+        version: link:../model-gateway-http
+      '@deepseek-ai/dsh-team-account-client':
+        specifier: workspace:*
+        version: link:../../team/team-account-client
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
 
   packages/llm/llm-pi-ai:
     dependencies:
@@ -11270,6 +12874,75 @@ importers:
       '@deepseek-ai/dsh-tools':
         specifier: workspace:*
         version: link:../../core/tools
+
+  packages/llm/model-gateway:
+    dependencies:
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-credentials':
+        specifier: workspace:*
+        version: link:../../credentials/credentials
+      '@deepseek-ai/dsh-llm-http-transport':
+        specifier: workspace:*
+        version: link:../llm-http-transport
+      '@deepseek-ai/dsh-quota':
+        specifier: workspace:*
+        version: link:../../access/quota
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
+  packages/llm/model-gateway-http:
+    dependencies:
+      '@deepseek-ai/dsh-credentials':
+        specifier: workspace:*
+        version: link:../../credentials/credentials
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:*
+        version: link:../../account/device-authorization
+      '@deepseek-ai/dsh-llm-http-transport':
+        specifier: workspace:*
+        version: link:../llm-http-transport
+      '@deepseek-ai/dsh-model-gateway':
+        specifier: workspace:*
+        version: link:../model-gateway
+      '@deepseek-ai/dsh-quota':
+        specifier: workspace:*
+        version: link:../../access/quota
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:*
+        version: link:../../host/webserver
+
+  packages/llm/model-gateway-sqlite:
+    dependencies:
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-model-gateway':
+        specifier: workspace:*
+        version: link:../model-gateway
+      '@deepseek-ai/dsh-quota':
+        specifier: workspace:*
+        version: link:../../access/quota
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
 
   packages/llm/plugin-package-inventory-deepseek:
     dependencies:
@@ -11540,6 +13213,43 @@ importers:
       '@deepseek-ai/dsh-tools':
         specifier: workspace:*
         version: link:../../core/tools
+
+  packages/office/office:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+
+  packages/office/tool-office:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-agent':
+        specifier: workspace:*
+        version: link:../../core/agent
+      '@deepseek-ai/dsh-office':
+        specifier: workspace:*
+        version: link:../office
+      '@deepseek-ai/dsh-session':
+        specifier: workspace:*
+        version: link:../../core/session
+      '@deepseek-ai/dsh-session-projection':
+        specifier: workspace:*
+        version: link:../../session/session-projection
+      '@deepseek-ai/dsh-system-prompt':
+        specifier: workspace:*
+        version: link:../../core/system-prompt
 
   packages/plan/plan-mode:
     dependencies:
@@ -14440,6 +16150,428 @@ importers:
         specifier: workspace:~
         version: link:../../../vendor/cordis
 
+  packages/team/team-account-client:
+    dependencies:
+      '@deepseek-ai/dsh-credentials':
+        specifier: workspace:*
+        version: link:../../credentials/credentials
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:*
+        version: link:../../account/device-authorization
+      '@deepseek-ai/dsh-team-control-plane-http':
+        specifier: workspace:*
+        version: link:../team-control-plane-http
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+      undici:
+        specifier: ^8.10.0
+        version: 8.11.2
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-http-proxy':
+        specifier: workspace:*
+        version: link:../../util/http-proxy
+
+  packages/team/team-admin-api:
+    dependencies:
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-audit':
+        specifier: workspace:*
+        version: link:../../access/audit
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:*
+        version: link:../../account/device-authorization
+      '@deepseek-ai/dsh-model-gateway':
+        specifier: workspace:*
+        version: link:../../llm/model-gateway
+      '@deepseek-ai/dsh-team-browser-session':
+        specifier: workspace:*
+        version: link:../team-browser-session
+      '@deepseek-ai/dsh-team-console-menu':
+        specifier: workspace:*
+        version: link:../team-console-menu
+      '@deepseek-ai/dsh-team-release':
+        specifier: workspace:*
+        version: link:../team-release
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-account-auth':
+        specifier: workspace:*
+        version: link:../../account/account-auth
+      '@deepseek-ai/dsh-bi':
+        specifier: workspace:*
+        version: link:../../bi/bi
+      '@deepseek-ai/dsh-bi-gateway':
+        specifier: workspace:*
+        version: link:../../bi/bi-gateway
+      '@deepseek-ai/dsh-bi-gateway-sqlite':
+        specifier: workspace:*
+        version: link:../../bi/bi-gateway-sqlite
+      '@deepseek-ai/dsh-bi-source':
+        specifier: workspace:*
+        version: link:../../bi/bi-source
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../../gmo/gmo
+      '@deepseek-ai/dsh-gmo-gateway':
+        specifier: workspace:*
+        version: link:../../gmo/gmo-gateway
+      '@deepseek-ai/dsh-gmo-gateway-sqlite':
+        specifier: workspace:*
+        version: link:../../gmo/gmo-gateway-sqlite
+      '@deepseek-ai/dsh-gmo-source':
+        specifier: workspace:*
+        version: link:../../gmo/gmo-source
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:*
+        version: link:../../host/webserver
+      '@deepseek-ai/dsh-knowledge':
+        specifier: workspace:*
+        version: link:../../knowledge/knowledge
+      '@deepseek-ai/dsh-knowledge-gateway':
+        specifier: workspace:*
+        version: link:../../knowledge/knowledge-gateway
+      '@deepseek-ai/dsh-knowledge-gateway-sqlite':
+        specifier: workspace:*
+        version: link:../../knowledge/knowledge-gateway-sqlite
+      '@deepseek-ai/dsh-knowledge-source':
+        specifier: workspace:*
+        version: link:../../knowledge/knowledge-source
+      '@deepseek-ai/dsh-team-console-menu-sqlite':
+        specifier: workspace:*
+        version: link:../team-console-menu-sqlite
+
+  packages/team/team-admin-app:
+    dependencies:
+      '@deepseek-ai/dsh-host-frontend-static':
+        specifier: workspace:*
+        version: link:../../host/frontend-static
+      '@deepseek-ai/dsh-team-admin-frontend':
+        specifier: workspace:*
+        version: link:../../../apps/team-admin
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:*
+        version: link:../../host/webserver
+
+  packages/team/team-browser-session:
+    dependencies:
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
+  packages/team/team-console-menu:
+    dependencies:
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-brand':
+        specifier: workspace:*
+        version: link:../../util/brand
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
+  packages/team/team-console-menu-sqlite:
+    dependencies:
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-team-console-menu':
+        specifier: workspace:*
+        version: link:../team-console-menu
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
+  packages/team/team-control-plane-http:
+    dependencies:
+      '@deepseek-ai/dsh-account-auth':
+        specifier: workspace:*
+        version: link:../../account/account-auth
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-audit':
+        specifier: workspace:*
+        version: link:../../access/audit
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:*
+        version: link:../../account/device-authorization
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:*
+        version: link:../../host/webserver
+
+  packages/team/team-desktop-update:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-client-locale':
+        specifier: workspace:*
+        version: link:../../client/locale
+      '@deepseek-ai/dsh-client-test-runtime':
+        specifier: workspace:*
+        version: link:../../test-support/client-runtime
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: workspace:*
+        version: link:../../client/ui-primitives
+      '@deepseek-ai/dsh-client-ui-renderer':
+        specifier: workspace:*
+        version: link:../../client/ui-renderer
+      '@deepseek-ai/dsh-client-ui-slots':
+        specifier: workspace:*
+        version: link:../../client/ui-slots
+      '@deepseek-ai/dsh-team-local-login':
+        specifier: workspace:*
+        version: link:../team-local-login
+      '@testing-library/react':
+        specifier: ^16.1.0
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@types/react':
+        specifier: ~18.3.1
+        version: 18.3.31
+      '@types/react-dom':
+        specifier: ~18.3.1
+        version: 18.3.7(@types/react@18.3.31)
+      clsx:
+        specifier: ^2.0.0
+        version: 2.1.1
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+
+  packages/team/team-governed-wire:
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-team-account-client':
+        specifier: workspace:*
+        version: link:../team-account-client
+      undici:
+        specifier: ^8.10.0
+        version: 8.11.2
+
+  packages/team/team-local-handoff:
+    dependencies:
+      '@deepseek-ai/dsh-client-connection':
+        specifier: workspace:*
+        version: link:../../client/connection
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:*
+        version: link:../../account/device-authorization
+      '@deepseek-ai/dsh-team-account-client':
+        specifier: workspace:*
+        version: link:../team-account-client
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:*
+        version: link:../../host/webserver
+
+  packages/team/team-local-login:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-api-session-controller':
+        specifier: workspace:*
+        version: link:../../api/session-controller
+      '@deepseek-ai/dsh-client-connection':
+        specifier: workspace:*
+        version: link:../../client/connection
+      '@deepseek-ai/dsh-client-locale':
+        specifier: workspace:*
+        version: link:../../client/locale
+      '@deepseek-ai/dsh-client-test-runtime':
+        specifier: workspace:*
+        version: link:../../test-support/client-runtime
+      '@deepseek-ai/dsh-client-ui-chat':
+        specifier: workspace:*
+        version: link:../../client/ui-chat
+      '@deepseek-ai/dsh-client-ui-conversation':
+        specifier: workspace:*
+        version: link:../../client/ui-conversation
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: workspace:*
+        version: link:../../client/ui-primitives
+      '@deepseek-ai/dsh-client-ui-renderer':
+        specifier: workspace:*
+        version: link:../../client/ui-renderer
+      '@deepseek-ai/dsh-client-ui-settings':
+        specifier: workspace:*
+        version: link:../../client/ui-settings
+      '@deepseek-ai/dsh-client-ui-slots':
+        specifier: workspace:*
+        version: link:../../client/ui-slots
+      '@deepseek-ai/dsh-client-ui-workspace':
+        specifier: workspace:*
+        version: link:../../client/ui-workspace
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:*
+        version: link:../../host/webserver
+      '@deepseek-ai/dsh-team-account-client':
+        specifier: workspace:*
+        version: link:../team-account-client
+      '@testing-library/react':
+        specifier: ^16.1.0
+        version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@18.3.7(@types/react@18.3.31))(@types/react@18.3.31)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@types/react':
+        specifier: ~18.3.1
+        version: 18.3.31
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+
+  packages/team/team-release:
+    dependencies:
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-team-update':
+        specifier: workspace:*
+        version: link:../team-update
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
+  packages/team/team-release-http:
+    dependencies:
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:*
+        version: link:../../account/device-authorization
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:*
+        version: link:../../host/webserver
+      '@deepseek-ai/dsh-team-release':
+        specifier: workspace:*
+        version: link:../team-release
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
+  packages/team/team-shell:
+    dependencies:
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-audit':
+        specifier: workspace:*
+        version: link:../../access/audit
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:*
+        version: link:../../account/device-authorization
+      '@deepseek-ai/dsh-team-browser-session':
+        specifier: workspace:*
+        version: link:../team-browser-session
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:*
+        version: link:../../host/webserver
+
+  packages/team/team-update:
+    dependencies:
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:*
+        version: link:../../account/device-authorization
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
+  packages/team/team-update-source:
+    dependencies:
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:*
+        version: link:../../host/webserver
+      '@deepseek-ai/dsh-team-account-client':
+        specifier: workspace:*
+        version: link:../team-account-client
+      '@deepseek-ai/dsh-team-release-http':
+        specifier: workspace:*
+        version: link:../team-release-http
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+
   packages/telemetry/otel:
     dependencies:
       '@opentelemetry/api':
@@ -15093,6 +17225,9 @@ importers:
 
   packages/web/tool-web:
     dependencies:
+      '@deepseek-ai/dsh-brand':
+        specifier: workspace:*
+        version: link:../../util/brand
       '@deepseek-ai/dsh-util-values':
         specifier: workspace:*
         version: link:../../util/values
@@ -15105,6 +17240,9 @@ importers:
       turndown:
         specifier: ^7.2.4
         version: 7.2.4
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@deepseek-ai/cordis':
         specifier: workspace:~
@@ -15112,6 +17250,9 @@ importers:
       '@deepseek-ai/dsh-agent':
         specifier: workspace:*
         version: link:../../core/agent
+      '@deepseek-ai/dsh-commands':
+        specifier: workspace:*
+        version: link:../../interaction/commands
       '@deepseek-ai/dsh-llm':
         specifier: workspace:*
         version: link:../../llm/llm
@@ -15121,6 +17262,9 @@ importers:
       '@deepseek-ai/dsh-session':
         specifier: workspace:*
         version: link:../../core/session
+      '@deepseek-ai/dsh-session-projection':
+        specifier: workspace:*
+        version: link:../../session/session-projection
       '@deepseek-ai/dsh-spill-local':
         specifier: workspace:*
         version: link:../../spill/spill-local
@@ -15277,6 +17421,46 @@ importers:
         specifier: workspace:*
         version: link:../web
 
+  packages/web/web-search-gateway-http:
+    dependencies:
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../../access/access-control
+      '@deepseek-ai/dsh-access-control-sqlite':
+        specifier: workspace:*
+        version: link:../../access/access-control-sqlite
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../account/account-store
+      '@deepseek-ai/dsh-account-store-sqlite':
+        specifier: workspace:*
+        version: link:../../account/account-store-sqlite
+      '@deepseek-ai/dsh-audit':
+        specifier: workspace:*
+        version: link:../../access/audit
+      '@deepseek-ai/dsh-audit-sqlite':
+        specifier: workspace:*
+        version: link:../../access/audit-sqlite
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:*
+        version: link:../../account/device-authorization
+      '@deepseek-ai/dsh-device-authorization-sqlite':
+        specifier: workspace:*
+        version: link:../../account/device-authorization-sqlite
+      '@deepseek-ai/dsh-host-webserver':
+        specifier: workspace:*
+        version: link:../../host/webserver
+      '@deepseek-ai/dsh-web':
+        specifier: workspace:*
+        version: link:../web
+
   packages/web/web-search-perplexity:
     dependencies:
       '@deepseek-ai/schemastery':
@@ -15295,6 +17479,25 @@ importers:
       '@deepseek-ai/dsh-web':
         specifier: workspace:*
         version: link:../web
+
+  packages/web/web-search-team:
+    dependencies:
+      '@deepseek-ai/dsh-team-account-client':
+        specifier: workspace:*
+        version: link:../../team/team-account-client
+      '@deepseek-ai/schemastery':
+        specifier: link:../../../vendor/schemastery
+        version: link:../../../vendor/schemastery
+    devDependencies:
+      '@deepseek-ai/cordis':
+        specifier: workspace:~
+        version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-web':
+        specifier: workspace:*
+        version: link:../web
+      '@deepseek-ai/dsh-web-search-gateway-http':
+        specifier: workspace:*
+        version: link:../web-search-gateway-http
 
   packages/workflow/tool-workflow:
     dependencies:
@@ -15463,18 +17666,30 @@ importers:
       '@deepseek-ai/cordis':
         specifier: workspace:~
         version: link:../../../vendor/cordis
+      '@deepseek-ai/dsh-app-boot':
+        specifier: workspace:*
+        version: link:../../boot/app-boot
+      '@deepseek-ai/dsh-loader-smoke':
+        specifier: workspace:*
+        version: link:../../test-support/loader-smoke
       '@deepseek-ai/dsh-session':
         specifier: workspace:*
         version: link:../../core/session
       '@deepseek-ai/dsh-session-persistence':
         specifier: workspace:*
         version: link:../../session/session-persistence
+      '@deepseek-ai/dsh-session-persistence-jsonl':
+        specifier: workspace:*
+        version: link:../../session/session-persistence-jsonl
       '@deepseek-ai/dsh-storage':
         specifier: workspace:*
         version: link:../../storage/storage
       '@deepseek-ai/dsh-storage-domain':
         specifier: workspace:*
         version: link:../../storage/storage-domain
+      '@deepseek-ai/dsh-storage-json':
+        specifier: workspace:*
+        version: link:../../storage/storage-json
       '@deepseek-ai/dsh-typert-protocol':
         specifier: workspace:*
         version: link:../../typert/protocol
@@ -15502,6 +17717,15 @@ importers:
       '@deepseek-ai/dsh':
         specifier: workspace:*
         version: link:../../apps/cli
+      '@deepseek-ai/dsh-access-control':
+        specifier: workspace:*
+        version: link:../../packages/access/access-control
+      '@deepseek-ai/dsh-account-auth':
+        specifier: workspace:*
+        version: link:../../packages/account/account-auth
+      '@deepseek-ai/dsh-account-store':
+        specifier: workspace:*
+        version: link:../../packages/account/account-store
       '@deepseek-ai/dsh-acp':
         specifier: workspace:*
         version: link:../../packages/acp/acp
@@ -15529,6 +17753,9 @@ importers:
       '@deepseek-ai/dsh-api-gateway':
         specifier: workspace:*
         version: link:../../packages/api/gateway
+      '@deepseek-ai/dsh-api-remotes':
+        specifier: workspace:*
+        version: link:../../packages/api/remotes
       '@deepseek-ai/dsh-api-session-controller':
         specifier: workspace:*
         version: link:../../packages/api/session-controller
@@ -15541,6 +17768,9 @@ importers:
       '@deepseek-ai/dsh-attachment':
         specifier: workspace:*
         version: link:../../packages/attachment/attachment
+      '@deepseek-ai/dsh-audit':
+        specifier: workspace:*
+        version: link:../../packages/access/audit
       '@deepseek-ai/dsh-authorization':
         specifier: workspace:*
         version: link:../../packages/credentials/authorization
@@ -15550,6 +17780,18 @@ importers:
       '@deepseek-ai/dsh-bash-local':
         specifier: workspace:*
         version: link:../../packages/shell/bash-local
+      '@deepseek-ai/dsh-bi':
+        specifier: workspace:*
+        version: link:../../packages/bi/bi
+      '@deepseek-ai/dsh-bi-gateway':
+        specifier: workspace:*
+        version: link:../../packages/bi/bi-gateway
+      '@deepseek-ai/dsh-bi-gateway-http':
+        specifier: workspace:*
+        version: link:../../packages/bi/bi-gateway-http
+      '@deepseek-ai/dsh-bi-source':
+        specifier: workspace:*
+        version: link:../../packages/bi/bi-source
       '@deepseek-ai/dsh-brand':
         specifier: workspace:*
         version: link:../../packages/util/brand
@@ -15559,6 +17801,33 @@ importers:
       '@deepseek-ai/dsh-client-file-upload':
         specifier: workspace:*
         version: link:../../packages/client/file-upload
+      '@deepseek-ai/dsh-client-locale':
+        specifier: workspace:*
+        version: link:../../packages/client/locale
+      '@deepseek-ai/dsh-client-ui-conversation':
+        specifier: workspace:*
+        version: link:../../packages/client/ui-conversation
+      '@deepseek-ai/dsh-client-ui-directory-picker-browse':
+        specifier: workspace:*
+        version: link:../../packages/client/ui-directory-picker-browse
+      '@deepseek-ai/dsh-client-ui-directory-picker-native':
+        specifier: workspace:*
+        version: link:../../packages/client/ui-directory-picker-native
+      '@deepseek-ai/dsh-client-ui-primitives':
+        specifier: workspace:*
+        version: link:../../packages/client/ui-primitives
+      '@deepseek-ai/dsh-client-ui-renderer':
+        specifier: workspace:*
+        version: link:../../packages/client/ui-renderer
+      '@deepseek-ai/dsh-client-ui-session':
+        specifier: workspace:*
+        version: link:../../packages/client/ui-session
+      '@deepseek-ai/dsh-client-ui-slots':
+        specifier: workspace:*
+        version: link:../../packages/client/ui-slots
+      '@deepseek-ai/dsh-client-ui-workspace':
+        specifier: workspace:*
+        version: link:../../packages/client/ui-workspace
       '@deepseek-ai/dsh-cmdline':
         specifier: workspace:*
         version: link:../../packages/boot/cmdline
@@ -15601,6 +17870,9 @@ importers:
       '@deepseek-ai/dsh-deepseek-llm-api-extensions':
         specifier: workspace:*
         version: link:../../packages/llm/deepseek-llm-api-extensions
+      '@deepseek-ai/dsh-device-authorization':
+        specifier: workspace:*
+        version: link:../../packages/account/device-authorization
       '@deepseek-ai/dsh-file-reference':
         specifier: workspace:*
         version: link:../../packages/context/file-reference
@@ -15616,15 +17888,39 @@ importers:
       '@deepseek-ai/dsh-fs-sandbox':
         specifier: workspace:*
         version: link:../../packages/fs/fs-sandbox
+      '@deepseek-ai/dsh-gmo':
+        specifier: workspace:*
+        version: link:../../packages/gmo/gmo
+      '@deepseek-ai/dsh-gmo-gateway':
+        specifier: workspace:*
+        version: link:../../packages/gmo/gmo-gateway
+      '@deepseek-ai/dsh-gmo-gateway-http':
+        specifier: workspace:*
+        version: link:../../packages/gmo/gmo-gateway-http
+      '@deepseek-ai/dsh-gmo-source':
+        specifier: workspace:*
+        version: link:../../packages/gmo/gmo-source
       '@deepseek-ai/dsh-goal':
         specifier: workspace:*
         version: link:../../packages/goal/goal
       '@deepseek-ai/dsh-goal-round-driver':
         specifier: workspace:*
         version: link:../../packages/goal/goal-round-driver
+      '@deepseek-ai/dsh-governed-catalog-sqlite':
+        specifier: workspace:*
+        version: link:../../packages/access/governed-catalog-sqlite
       '@deepseek-ai/dsh-home-paths':
         specifier: workspace:*
         version: link:../../packages/util/home-paths
+      '@deepseek-ai/dsh-host-directory-picker':
+        specifier: workspace:*
+        version: link:../../packages/host/directory-picker
+      '@deepseek-ai/dsh-host-directory-picker-browse':
+        specifier: workspace:*
+        version: link:../../packages/host/directory-picker-browse
+      '@deepseek-ai/dsh-host-directory-picker-native':
+        specifier: workspace:*
+        version: link:../../packages/host/directory-picker-native
       '@deepseek-ai/dsh-host-plugin-inventory':
         specifier: workspace:*
         version: link:../../packages/host/plugin-inventory
@@ -15640,6 +17936,18 @@ importers:
       '@deepseek-ai/dsh-jobs-local':
         specifier: workspace:*
         version: link:../../packages/jobs/jobs-local
+      '@deepseek-ai/dsh-knowledge':
+        specifier: workspace:*
+        version: link:../../packages/knowledge/knowledge
+      '@deepseek-ai/dsh-knowledge-gateway':
+        specifier: workspace:*
+        version: link:../../packages/knowledge/knowledge-gateway
+      '@deepseek-ai/dsh-knowledge-gateway-http':
+        specifier: workspace:*
+        version: link:../../packages/knowledge/knowledge-gateway-http
+      '@deepseek-ai/dsh-knowledge-source':
+        specifier: workspace:*
+        version: link:../../packages/knowledge/knowledge-source
       '@deepseek-ai/dsh-launch-environment':
         specifier: workspace:*
         version: link:../../packages/util/launch-environment
@@ -15655,6 +17963,9 @@ importers:
       '@deepseek-ai/dsh-llm-deepseek-api-key':
         specifier: workspace:*
         version: link:../../packages/llm/llm-deepseek-api-key
+      '@deepseek-ai/dsh-llm-http-transport':
+        specifier: workspace:*
+        version: link:../../packages/llm/llm-http-transport
       '@deepseek-ai/dsh-llm-pi-ai':
         specifier: workspace:*
         version: link:../../packages/llm/llm-pi-ai
@@ -15670,6 +17981,9 @@ importers:
       '@deepseek-ai/dsh-native-command':
         specifier: workspace:*
         version: link:../../packages/util/native-command
+      '@deepseek-ai/dsh-office':
+        specifier: workspace:*
+        version: link:../../packages/office/office
       '@deepseek-ai/dsh-otel':
         specifier: workspace:*
         version: link:../../packages/telemetry/otel
@@ -15811,6 +18125,9 @@ importers:
       '@deepseek-ai/dsh-system-prompt':
         specifier: workspace:*
         version: link:../../packages/core/system-prompt
+      '@deepseek-ai/dsh-team-account-client':
+        specifier: workspace:*
+        version: link:../../packages/team/team-account-client
       '@deepseek-ai/dsh-terminal':
         specifier: workspace:*
         version: link:../../packages/terminal/terminal
@@ -15862,6 +18179,9 @@ importers:
       '@deepseek-ai/dsh-tool-pwsh-persistent':
         specifier: workspace:*
         version: link:../../packages/shell/tool-pwsh-persistent
+      '@deepseek-ai/dsh-tool-restriction':
+        specifier: workspace:*
+        version: link:../../packages/guard/tool-restriction
       '@deepseek-ai/dsh-tool-schedule':
         specifier: workspace:*
         version: link:../../packages/schedule/tool-schedule
@@ -15907,6 +18227,9 @@ importers:
       '@deepseek-ai/dsh-user-questions':
         specifier: workspace:*
         version: link:../../packages/interaction/user-questions
+      '@deepseek-ai/dsh-util-crypto':
+        specifier: workspace:*
+        version: link:../../packages/util/crypto
       '@deepseek-ai/dsh-util-time':
         specifier: workspace:*
         version: link:../../packages/util/time
@@ -15928,9 +18251,15 @@ importers:
       '@deepseek-ai/dsh-web-search-exa':
         specifier: workspace:*
         version: link:../../packages/web/web-search-exa
+      '@deepseek-ai/dsh-web-search-gateway-http':
+        specifier: workspace:*
+        version: link:../../packages/web/web-search-gateway-http
       '@deepseek-ai/dsh-web-search-perplexity':
         specifier: workspace:*
         version: link:../../packages/web/web-search-perplexity
+      '@deepseek-ai/dsh-webhook':
+        specifier: workspace:*
+        version: link:../../packages/experimental/webhook
       '@deepseek-ai/dsh-workflow':
         specifier: workspace:*
         version: link:../../packages/workflow/workflow
@@ -16188,6 +18517,41 @@ packages:
   '@algolia/requester-node-http@5.55.2':
     resolution: {integrity: sha512-Zc90xvKWUvxcNicvvTO9Pr/hT2TAnkixOIzJm/KMj5Ptm2pKjk71ngTsdkbRtJQvhZ2Kr9N1YdIjLrNHB5P2xw==}
     engines: {node: '>= 14.0.0'}
+
+  '@ant-design/colors@8.0.1':
+    resolution: {integrity: sha512-foPVl0+SWIslGUtD/xBr1p9U4AKzPhNYEseXYRRo5QSzGACYZrQbe11AYJbYfAWnWSpGBx6JjBmSeugUsD9vqQ==}
+
+  '@ant-design/cssinjs-utils@2.1.2':
+    resolution: {integrity: sha512-5fTHQ158jJJ5dC/ECeyIdZUzKxE/mpEMRZxthyG1sw/AKRHKgJBg00Yi6ACVXgycdje7KahRNvNET/uBccwCnA==}
+    peerDependencies:
+      react: '>=18'
+      react-dom: '>=18'
+
+  '@ant-design/cssinjs@2.1.2':
+    resolution: {integrity: sha512-2Hy8BnCEH31xPeSLbhhB2ctCPXE2ZnASdi+KbSeS79BNbUhL9hAEe20SkUk+BR8aKTmqb6+FKFruk7w8z0VoRQ==}
+    peerDependencies:
+      react: '>=16.0.0'
+      react-dom: '>=16.0.0'
+
+  '@ant-design/fast-color@3.0.1':
+    resolution: {integrity: sha512-esKJegpW4nckh0o6kV3Tkb7NPIZYbPnnFxmQDUmL08ukXZAvV85TZBr70eGuke/CIArLaP6aw8lt9KILjnWuOw==}
+    engines: {node: '>=8.x'}
+
+  '@ant-design/icons-svg@4.6.0':
+    resolution: {integrity: sha512-PRomU725ABMf/lnQp5HiB7my1kjEbFY0D10N4lXYxK6TIB1gKjIVD5MRThpDaezLgw1D774J8eOeeDB0M6wHrQ==}
+
+  '@ant-design/icons@6.3.4':
+    resolution: {integrity: sha512-kDoUlppczVyCUTFthF6cHmPzMBYqNZQhu9j6EyIX/YIdM9j9CZNZoJUjzVw7/1v1VO8WwVMmPp15r/uwIAS0AQ==}
+    engines: {node: '>=8'}
+    peerDependencies:
+      react: '>=16.0.0'
+      react-dom: '>=16.0.0'
+
+  '@ant-design/react-slick@2.0.0':
+    resolution: {integrity: sha512-HMS9sRoEmZey8LsE/Yo6+klhlzU12PisjrVcydW3So7RdklyEd2qehyU6a7Yp+OYN72mgsYs3NFCyP2lCPFVqg==}
+    peerDependencies:
+      react: ^0.14.0 || ^15.0.1 || ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^0.14.0 || ^15.0.1 || ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   '@antfu/install-pkg@1.1.0':
     resolution: {integrity: sha512-MGQsmw10ZyI+EJo45CdSER4zEb+p31LpDAFp2Z3gkSd1yqVZGi0Ebx++YTEMonJy4oChEMLsxZ64j8FH6sSqtQ==}
@@ -16454,6 +18818,9 @@ packages:
     resolution: {integrity: sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==}
     engines: {node: '>=6.9.0'}
 
+  '@babel/runtime@8.0.7':
+    resolution: {integrity: sha512-k0hagDDq/6w4v+0Sp4wFvIz/yswH5O7Va6aRTnD7N62Tnborp4X+YB+H3XUcWVSR4aE47WPEXiIIZchBs0GmYg==}
+
   '@babel/template@7.29.7':
     resolution: {integrity: sha512-puq+Gf35oI24FeN11LkoUQFqv9uwNeWpxXZi/Ji3rRIoKAzKnxRaZ+Gkj0vKS9ZCiTESfng1N9LyOyXvo+m+Gg==}
     engines: {node: '>=6.9.0'}
@@ -16664,6 +19031,12 @@ packages:
 
   '@emnapi/wasi-threads@1.2.2':
     resolution: {integrity: sha512-c95qOXkHdydNKhscBTebqEC1CVAZpyqOfVfBzQ1qgzyl3gfeldUjIggDbIZgDKsHLgnsM+igH7TJ/eAasaVuMA==}
+
+  '@emotion/hash@0.8.0':
+    resolution: {integrity: sha512-kBJtf7PH6aWwZ6fka3zQ0p6SBYzx4fl1LoZXE2RrnYST9Xljm7WfKJrU4g/Xr3Beg72MLrp1AWNUmuYJTL7Cow==}
+
+  '@emotion/unitless@0.7.5':
+    resolution: {integrity: sha512-OWORNpfjMsSSUBVrRBVGECkhWcULOAJz9ZW8uK9qgxD+87M7jHRcvh/A96XXNhXTLmKcoYSQtBEX7lHMO7YRwg==}
 
   '@esbuild/aix-ppc64@0.21.5':
     resolution: {integrity: sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ==}
@@ -18348,6 +20721,289 @@ packages:
   '@quansync/fs@1.0.0':
     resolution: {integrity: sha512-4TJ3DFtlf1L5LDMaM6CanJ/0lckGNtJcMjQ1NAV6zDmA0tEHKZtxNKin8EgPaVX1YzljbxckyT2tJrpQKAtngQ==}
 
+  '@rc-component/async-validator@6.0.0':
+    resolution: {integrity: sha512-D3AGQwdyE58gmvx6waVSXJ80JGO+IY5L2O8HDnSOex7JNlzB3GuN/4hyHNTdhy2qtOhkpbIjmeAN3tL993wKbA==}
+    engines: {node: '>=14.x'}
+
+  '@rc-component/cascader@1.22.0':
+    resolution: {integrity: sha512-SffrA57aS9oub3VuI7ajPhJTPtaNxngSvtRhD40Rd8dwJ5vfWPSrVanWgeepdWFGBt7EHftIK5RUU0u3rCTwWw==}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
+  '@rc-component/checkbox@2.0.0':
+    resolution: {integrity: sha512-3CXGPpAR9gsPKeO2N78HAPOzU30UdemD6HGJoWVJOpa6WleaGB5kzZj3v6bdTZab31YuWgY/RxV3VKPctn0DwQ==}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+
+  '@rc-component/collapse@1.2.0':
+    resolution: {integrity: sha512-ZRYSKSS39qsFx93p26bde7JUZJshsUBEQRlRXPuJYlAiNX0vyYlF5TsAm8JZN3LcF8XvKikdzPbgAtXSbkLUkw==}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
+  '@rc-component/color-picker@3.1.1':
+    resolution: {integrity: sha512-OHaCHLHszCegdXmIq2ZRIZBN/EtpT6Wm8SG/gpzLATHbVKc/avvuKi+zlOuk05FTWvgaMmpxAko44uRJ3M+2pg==}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+
+  '@rc-component/context@2.0.2':
+    resolution: {integrity: sha512-uiGpAlblCNlziHPwj4S4Iy/oemeuz/hR03mbiEjTCXwsqOIN3BOzsRMyDwpyO5Fm0vIEEJRUf9ZtbRLbhksuTA==}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
+  '@rc-component/dialog@1.10.0':
+    resolution: {integrity: sha512-eDukNlz9vNszAGv7i3zKXdxEd3wgVmNxuJijYt8zvTh17QwTu8KK/bdURRd/lU4qaMzhO1HKKmMrwOnkaw0BvQ==}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
+  '@rc-component/drawer@1.4.2':
+    resolution: {integrity: sha512-1ib+fZEp6FBu+YvcIktm+nCQ+Q+qIpwpoaJH6opGr4ofh2QMq+qdr5DLC4oCf5qf3pcWX9lUWPYX652k4ini8Q==}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
+  '@rc-component/dropdown@1.0.3':
+    resolution: {integrity: sha512-YTST/N6kpqpDz3IMuM/PSSZnrDpSOA6dgHv12gPA90ZTSLv2CoqkZ0+9NtwTY6BeO7dstPblSic2QJg7dSFy/g==}
+    peerDependencies:
+      react: '>=16.11.0'
+      react-dom: '>=16.11.0'
+
+  '@rc-component/form@1.8.6':
+    resolution: {integrity: sha512-1EXVsSKPZC6kGrIqxVck7kAWM6T65b6et/n5wIcyiaIa41VrDshD0nVLHoBDEIZr2ATQsOP6icb4XQkNFMLBAw==}
+    engines: {node: '>=8.x'}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+
+  '@rc-component/image@1.10.0':
+    resolution: {integrity: sha512-BjeZCRQ+hw+4WAhvrw8rJvy5fckA2xpf/X2XQEOABUHvLTNB9inB98X3Mp54jYQ7g10DfWERQWHXeC4ylxp1Uw==}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+
+  '@rc-component/input-number@1.6.2':
+    resolution: {integrity: sha512-Gjcq7meZlCOiWN1t1xCC+7/s85humHVokTBI7PJgTfoyw5OWF74y3e6P8PHX104g9+b54jsodFIzyaj6p8LI9w==}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+
+  '@rc-component/input@1.3.1':
+    resolution: {integrity: sha512-iFvTUT9W+JC/MSin2aGAk8NqsVlTzcExNC9DZariON1IWirju9NoNeEk47an4Q8iHazkoVI/y1LnDi88+CPcig==}
+    peerDependencies:
+      react: '>=16.0.0'
+      react-dom: '>=16.0.0'
+
+  '@rc-component/listy@1.2.3':
+    resolution: {integrity: sha512-IXiMjV5s0rczLBlfh7G5nB4M3365mrEeedjwKtf5I+Ns3PqRUsebR2h5u8CeFarsVfLUPC2I5p0h09TNoOWyvQ==}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
+  '@rc-component/mentions@1.12.0':
+    resolution: {integrity: sha512-v5MBx8zDcqCT+uybJgKpcx3Fgrvj0m3u+A/15RlSBaMx12lLoJZTTYggC3pbYYfohcKujWWUyBz6O6Gp2vGiNA==}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+
+  '@rc-component/menu@1.5.0':
+    resolution: {integrity: sha512-RjvzPsZkwVEg3xu+/jDDqDeUCBJAnWylONFlGeQgg5enlNAnlpybqhaMGE/UPEIvr6hL90PGhjFBguJqj0Qb2Q==}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
+  '@rc-component/mini-decimal@1.1.4':
+    resolution: {integrity: sha512-xiuXcaCwyOWpD8a8scdExFl+bntNphAW8XeenL1ig2en0AAZY0Pcp4pC0dI22qJ+NvxKn9RoNIoRdqYU3BLH4w==}
+    engines: {node: '>=8.x'}
+
+  '@rc-component/motion@1.3.3':
+    resolution: {integrity: sha512-Xh3IszxvlSv3/PLYFyC2UZi9LNB83yOnkB/LNmRzaypZLvkhqUIPS7MQpGZcCMWrNsXV2p6YTSWbSGvFpEle9A==}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+
+  '@rc-component/mutate-observer@2.0.1':
+    resolution: {integrity: sha512-AyarjoLU5YlxuValRi+w8JRH2Z84TBbFO2RoGWz9d8bSu0FqT8DtugH3xC3BV7mUwlmROFauyWuXFuq4IFbH+w==}
+    engines: {node: '>=8.x'}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+
+  '@rc-component/notification@2.1.1':
+    resolution: {integrity: sha512-HD+Gx/HUjivBI6GZtfPVLjvOJZybSEIoE2upnmoVg4w9vZQHMaIPWP6B52cHWOGg+u48HBbO+HnyVNN8AKQxgQ==}
+    engines: {node: '>=8.x'}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
+  '@rc-component/overflow@1.0.1':
+    resolution: {integrity: sha512-syfmgAABaHCnCDzPwHZ/2tuvIcpOO3jefYZMmfkN+pmo8HKTzsfhS57vxo4ksPdN0By+uWVJhJWNFozNBxi2eA==}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+
+  '@rc-component/pagination@1.4.0':
+    resolution: {integrity: sha512-CW1g7P9V8u+e8JQdUsl2RWg+GCsoee0mtJjZUCCxn/vb3jzOwDKm6hAdwddHCVBfWJ58eGUBZz3IvnU8rRktjw==}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+
+  '@rc-component/picker@1.12.2':
+    resolution: {integrity: sha512-ZB1A+tzTQkgtR4flPrAMvxIAOelIIOOOsp22fU2Nad6PbZcJacnyGJUJqUH7ZS9mwxeUwurf1pLMKXrVsK1tlA==}
+    engines: {node: '>=12.x'}
+    peerDependencies:
+      date-fns: '>= 2.x'
+      dayjs: '>= 1.x'
+      luxon: '>= 3.x'
+      moment: '>= 2.x'
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+    peerDependenciesMeta:
+      date-fns:
+        optional: true
+      dayjs:
+        optional: true
+      luxon:
+        optional: true
+      moment:
+        optional: true
+
+  '@rc-component/portal@2.2.1':
+    resolution: {integrity: sha512-ck+r1kW/JSv0wxPji3KN2ss9K6Z0qqwusw/mf/0JobXhZ8hC2ejZwCJObW/SvDi0uhA0VzmCnx0CaCci95tcmA==}
+    engines: {node: '>=12.x'}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
+  '@rc-component/progress@1.0.3':
+    resolution: {integrity: sha512-Q1nPLIvKr95el/q76yaBh5nv1hqCsWaHQb8U7vXEDMefEhHgM7n3CPoN+o4LHnTyANQHmMFgoS/naAT4Bhxuaw==}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+
+  '@rc-component/qrcode@2.0.0':
+    resolution: {integrity: sha512-aAv3QhPP1xyafuTZOxub6a54pCeBnN3IwQkpETrBtthq4BL5IgxnCbuoBWPDpdLw1y1j6BgBUCAKV92+yX06Dw==}
+    engines: {node: '>=8.x'}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+
+  '@rc-component/rate@1.0.1':
+    resolution: {integrity: sha512-bkXxeBqDpl5IOC7yL7GcSYjQx9G8H+6kLYQnNZWeBYq2OYIv1MONd6mqKTjnnJYpV0cQIU2z3atdW0j1kttpTw==}
+    engines: {node: '>=8.x'}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+
+  '@rc-component/resize-observer@1.1.2':
+    resolution: {integrity: sha512-t/Bb0W8uvL4PYKAB3YcChC+DlHh0Wt5kM7q/J+0qpVEUMLe7Hk5zuvc9km0hMnTFPSx5Z7Wu/fzCLN6erVLE8Q==}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+
+  '@rc-component/segmented@1.4.0':
+    resolution: {integrity: sha512-NZlpKGSplOYlmF5ukUF1fCLr0ns5WfjNoqMlMkf4AHP0iu90wyiP7hn2qZKRHEuRlG4CvEEz/lF9qRiYnLTofQ==}
+    peerDependencies:
+      react: '>=16.0.0'
+      react-dom: '>=16.0.0'
+
+  '@rc-component/select@1.10.1':
+    resolution: {integrity: sha512-H+yQsl+qED9NilQ3g6zdpsMwUgwVjrcMTkNHAWRVU/MoNCYgTbDgU+MIMgZDK+rVdd2JUfI/MkysMcZZ0cyQKw==}
+    engines: {node: '>=8.x'}
+    peerDependencies:
+      react: '*'
+      react-dom: '*'
+
+  '@rc-component/slider@1.1.1':
+    resolution: {integrity: sha512-LSzgWGYDgeCDgR4r1XlU29gbYws6HpLnvJd/uMhLeW/vQgxldeR+Wb4uzHDCHiYEbr1bnEHWdjkPxjJRHxuiig==}
+    engines: {node: '>=8.x'}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+
+  '@rc-component/steps@1.2.3':
+    resolution: {integrity: sha512-/b9gHcvDGjTDWJZW7+1kKFvzs0jrEeQ8mFvvIgX+h7xNT0FsOYODJYKjyJR4fPbvMBCfCOEqaBK66HBxov5BQA==}
+    engines: {node: '>=8.x'}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+
+  '@rc-component/switch@1.0.3':
+    resolution: {integrity: sha512-Jgi+EbOBquje/XNdofr7xbJQZPYJP+BlPfR0h+WN4zFkdtB2EWqEfvkXJWeipflwjWip0/17rNbxEAqs8hVHfw==}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+
+  '@rc-component/table@1.11.1':
+    resolution: {integrity: sha512-OWdS6DMmeWb7bJBGqPxYZpQbzBlBiXZUu2sqo6Ii7Sjs9GeK1IsrXrWk26SL2c6KEseabswdxrRj7WUm9LdECw==}
+    engines: {node: '>=8.x'}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
+  '@rc-component/tabs@1.13.0':
+    resolution: {integrity: sha512-3FXr+9ZII8tFLWuDWrgjRaxZd2mazkKJAGRFEfVmp4r1qnBglOlxQ78l54Td1aj6/iFaaEReKSAF2HToztU5uw==}
+    engines: {node: '>=8.x'}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+
+  '@rc-component/tooltip@1.5.2':
+    resolution: {integrity: sha512-VLq4BclU3LgRe46g2hTr2bdsM8tFYs7dVwpuD88rPNNg4lCGe8mBSS4FiRzYzS+ffnZ46y4SI8KYKo9K7qBnhw==}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
+  '@rc-component/tour@2.4.0':
+    resolution: {integrity: sha512-aui4r4TqmTzwaBgcQxHYep8kM8PTjZFufjokObpy35KfFeZ0k9ArquWFZqegQlH24P14t+F0qO0mGTgzlav1yg==}
+    engines: {node: '>=8.x'}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+
+  '@rc-component/tree-select@1.16.1':
+    resolution: {integrity: sha512-a1Oi6EJhqAhdOxxupdJi6fP0RPHMKn5TcfkX2+llaQ4lF4nwfH7b6SCHcnsybaa2s+pk1yZYwVyeOYkDnEBRdg==}
+    peerDependencies:
+      react: '*'
+      react-dom: '*'
+
+  '@rc-component/tree@1.4.0':
+    resolution: {integrity: sha512-dGsJGDJQedA0BqqVgj3F8BvHXTSZijyhTXdbAdkcx8lynzZkty/CV3Z3LOm/fxz+BCfl3dfGiAQpb7Q5XNvl0Q==}
+    engines: {node: '>=10.x'}
+    peerDependencies:
+      react: '*'
+      react-dom: '*'
+
+  '@rc-component/trigger@3.10.1':
+    resolution: {integrity: sha512-mXlDN0IXdtV8Yqqm8195ECCyrbmfvvfKvwVvSlH0+qvKD6BUF8gRhEjSy0FOcD1+CcDRHgTiX99LoxfQrmh3Cw==}
+    engines: {node: '>=8.x'}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
+  '@rc-component/upload@1.1.1':
+    resolution: {integrity: sha512-GvYWSKeaJTOxxC5p6+nOSadzfvXA1h8C/iHFPFZX+szH3JUXrvs+DLiW8YUTBgvMh8m63mJeHrlYlJzAlg+pDA==}
+    peerDependencies:
+      react: '>=16.9.0'
+      react-dom: '>=16.9.0'
+
+  '@rc-component/util@1.14.0':
+    resolution: {integrity: sha512-qFpkGBCiyN3NNAU+FOnZdcdz7A/rXCg3JdQk+bujUKAExZgRqzf2yy1f4YN63Lwctic5FcK9rgjQ6aWbykqwEw==}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
+  '@rc-component/virtual-list@1.5.2':
+    resolution: {integrity: sha512-igfe7NP9cOmDAhLy5z+Juz8fhjOMzMbF7TRoR/yqXIsbU6XZm4TU7ogcm5O553P0rLF6n0j5F6J+n15Izb1tqg==}
+    engines: {node: '>=8.x'}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
   '@roberts_lando/vfs@0.3.3':
     resolution: {integrity: sha512-YjkxVSLw5WMZQoARaryRAjcxA+GbBzWMJdwYZX5oLUt9cC/gew9as4Dn7tcLzPp7BPoR221VpTZ+78TRPawnjg==}
     engines: {node: '>= 22'}
@@ -19541,8 +22197,21 @@ packages:
     resolution: {integrity: sha512-BJ8/l4R5LRE7hW9WdSuGYrLSHi2ynxeFpDFbH0K/CgNeY/tyhk+vO6TYxXC5r5CpUhNVX310xzPsN/H9lCdfOA==}
     engines: {node: '>=14'}
 
+  antd@6.6.6:
+    resolution: {integrity: sha512-+x4M755a6kyZyxkN2vpfm3HbYkyytPBPSncXHKPHU2ZPs3Z1ctrWwWApe/4ek4O0eUGKNFCpb461yficetktYQ==}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
   anynum@1.0.1:
     resolution: {integrity: sha512-N6//FLET/tXYNM/F6ABca1oH6fWB+KlTt909Le28WMDBk8oaT4vY17DCrwg2MvmuqUKt3Ni4N5dGJ/EoBgcO6A==}
+
+  app-builder-lib@26.15.3:
+    resolution: {integrity: sha512-2VnyWkqsP5v5XbBhL3tD5Syx8iNPBYsoU7kY4S2fz7wg8Rj/nztWKCUzGKaFRTv0Xwf3/H058CR1Kvtd/3lRow==}
+    engines: {node: '>=14.0.0'}
+    peerDependencies:
+      dmg-builder: 26.15.3
+      electron-builder-squirrel-windows: 26.15.3
 
   app-builder-lib@26.17.0:
     resolution: {integrity: sha512-wfL7EhujuODDW3uMSD8RPcr/MLzmT0dmpVfWV0wFUWXI0rIdaukzAJ7EFUSyHXOpxuBZqaIGlQt6VeQhtHhetw==}
@@ -19773,6 +22442,10 @@ packages:
     resolution: {integrity: sha512-g/kR520giAFYkSXTzcmF3kqQq7wi8F6N6SzeDgZrqTBN+VHdmgWOyTdD1yD7AATDId/yXLvuP34CxW46/BwCdw==}
     engines: {node: '>=12.0.0'}
 
+  builder-util@26.15.3:
+    resolution: {integrity: sha512-q2hn7Mbo2nFNkVekPiHFx6Nfo3hURmES3tfBn+k5Pqxl2RkmP3QGqZUhH/q9Pch/4G05NRhPjDlVj1O8q4Txvw==}
+    engines: {node: '>=14.0.0'}
+
   builder-util@26.16.0:
     resolution: {integrity: sha512-RLyJhB7Si3YkzKR9ubQslWuXW3Vhs3CGe1i+SeixBZ0qTd1mk3XBmssvY22TlB6CS5blyko8Gu1JzpYk8UkYAg==}
     engines: {node: '>=14.0.0'}
@@ -19967,6 +22640,9 @@ packages:
   compression@1.8.2:
     resolution: {integrity: sha512-o8vI5RE5A6EVVOd9o41jKp41aJom+QTEO/Bx8MYNjexMo/Bv2WOjUfZr+aL0WnYSgymUy6zeguqLTsIhV0gMvQ==}
     engines: {node: '>= 0.8.0'}
+
+  compute-scroll-into-view@3.1.1:
+    resolution: {integrity: sha512-VRhuHOLoKYOy4UbilLbUzbYg93XLjv2PncJC50EuTWPA3gaja1UjBsUP/D/9/juV3vQFr6XBEzn9KCAHdUvOHw==}
 
   concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
@@ -20340,6 +23016,9 @@ packages:
   dir-compare@4.2.0:
     resolution: {integrity: sha512-2xMCmOoMrdQIPHdsTawECdNPwlVFB9zGcz3kuhmBO6U3oU+UQjsue0i8ayLKpgBcm+hcXPMVSGUN9d+pvJ6+VQ==}
 
+  dmg-builder@26.15.3:
+    resolution: {integrity: sha512-O3zJUFUYHJKgzPqioHxfxzBzlSC1eXCSr79gMSBKBP5AgjjpmrydMsMLotEg9fAJF36vdUncb+4ndRNxoPdlSQ==}
+
   dmg-builder@26.17.0:
     resolution: {integrity: sha512-EAw1f2iGkICmUvAVBOjm7v5mxJdB7/+OZSycHFhKBimiTkCXtvkCC6wBKzHo7ZQYi58C2MmwIleRbgRnROlK2Q==}
 
@@ -20387,13 +23066,24 @@ packages:
     engines: {node: '>=0.10.0'}
     hasBin: true
 
+  electron-builder-squirrel-windows@26.15.3:
+    resolution: {integrity: sha512-Jc19XPV9y9+2bAdZPkXuVNGNIEFBq9poHC61l8Kv6FdK7DRG3+Ic0rerC0DXOaeHNz8yW0fg/JnF8GQROOF5MA==}
+
   electron-builder-squirrel-windows@26.17.0:
     resolution: {integrity: sha512-uyh+D+B0m12qCRp9c/7dwBirHTh7JcvAzj5eTEbb4dXPPGAhYPx1nozzbu1fC6AdULfat6ZNqgWhipTFpb82lQ==}
+
+  electron-builder@26.15.3:
+    resolution: {integrity: sha512-a1KM5heqS3gQCZzizXEI8RjJy3QVogULPdeSknt76uLDpBIW/HDGsMg/XgP0riP6PI9COsRvFITKKGDqA8fJxA==}
+    engines: {node: '>=14.0.0'}
+    hasBin: true
 
   electron-builder@26.17.0:
     resolution: {integrity: sha512-iYHBRiagS9sDIbZx1ZD113f5rEGQvtpvTvHf70ovHKJ8mRvxwIkWX7JCwfmVQmVS4eX735p7TZmoxHnBPwF3vA==}
     engines: {node: '>=14.0.0'}
     hasBin: true
+
+  electron-publish@26.15.3:
+    resolution: {integrity: sha512-g/2bn8YTavY4cuS5F+jOS7zmZbXXBV8KZ8yHKfJjFPoKtzBqrpCdNPxBd3tqdBwP7BVd0lGzf7Bk2s0KesWZ4Q==}
 
   electron-publish@26.16.0:
     resolution: {integrity: sha512-Vt3KzQIiw9BImvNOYtndg9Mjki+tl4+1sQiC/+G5j8khWaENOJFWodiB+sUl6yyHwtd37avehskdtPw7f8y/+Q==}
@@ -20407,6 +23097,11 @@ packages:
   electron-winstaller@5.4.0:
     resolution: {integrity: sha512-bO3y10YikuUwUuDUQRM4KfwNkKhnpVO7IPdbsrejwN9/AABJzzTQ4GeHwyzNSrVO+tEH3/Np255a3sVZpZDjvg==}
     engines: {node: '>=8.0.0'}
+
+  electron@44.0.0:
+    resolution: {integrity: sha512-FkTqPrFPZYljdPI5b7KORGsJTd6FgUQDefl5MrU3Xz9R87pAj9JLreIjDqcRN8hJIkFHIou0o8kKzvcpT9qiRQ==}
+    engines: {node: '>= 22.12.0'}
+    hasBin: true
 
   electron@44.7.0:
     resolution: {integrity: sha512-aUq9/zLAAFYc+a9gy6cd0C3Y/N/RmovLCD8TV8LhIzNhuND6HEgsu96jJz9cbAxvckSPv+Trf2PKEjktoZgFkw==}
@@ -21134,6 +23829,9 @@ packages:
     engines: {node: '>=14.16'}
     hasBin: true
 
+  is-mobile@5.0.0:
+    resolution: {integrity: sha512-Tz/yndySvLAEXh+Uk8liFCxOwVH6YutuR74utvOcu7I9Di+DwM0mtdPVZNaVvvBUM2OXxne/NhOs1zAO7riusQ==}
+
   is-plain-obj@4.1.0:
     resolution: {integrity: sha512-+Pgi+vMuUNkJyExiMBt5IlFoMyKnr5zhJ4Uspz58WOhBF5QoIZkFyNHIbBAtHwzVAgk5RtndVNsDRN61/mmDqg==}
     engines: {node: '>=12'}
@@ -21321,6 +24019,9 @@ packages:
 
   json-stringify-safe@5.0.1:
     resolution: {integrity: sha512-ZClg6AaYvamvYEE82d3Iyd3vSSIjQ+odgjaTzRuO3s7toCdFKczob2i0zCh7JE8kWn17yvAWhUVxvqGwUalsRA==}
+
+  json2mq@0.2.0:
+    resolution: {integrity: sha512-SzoRg7ux5DWTII9J2qkrZrqV1gt+rTaoufMxEzXbS26Uid0NwaJd123HcoB80TgubEppxxIGdNxCx50fEoEWQA==}
 
   json5@2.2.3:
     resolution: {integrity: sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==}
@@ -22454,6 +25155,9 @@ packages:
   react-is@17.0.2:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
 
+  react-is@19.3.1:
+    resolution: {integrity: sha512-RRieF6IyxQBkcK6pP8xOHprLTPW6QjRkbGdImtqNme+/hYVwCZkLQLdlZGOhUqXwkS9IEynaGvPJtv6XB/cz0Q==}
+
   react-refresh@0.17.0:
     resolution: {integrity: sha512-z6F7K9bV85EfseRCp2bzrpyQ0Gkw1uLoCel9XBVWPg/TjRj94SkJzUTGfOa4bs7iJvBWtQG0Wq7wnI0syw3EBQ==}
     engines: {node: '>=0.10.0'}
@@ -22649,6 +25353,9 @@ packages:
 
   scheduler@0.23.2:
     resolution: {integrity: sha512-UOShsPwz7NrMUqhR6t0hWjFduvOzbtv7toDH1/hIrfRNIDBnnBWd0CwJTGvTpngVlmwGCdP9/Zl/tVrDqcuYzQ==}
+
+  scroll-into-view-if-needed@3.1.0:
+    resolution: {integrity: sha512-49oNpRjWRvnU8NyGVmUaYG4jtTkNonFZI86MmGRDqBphEK2EXT9gdEUoQPZhuBM8yWHxCWbobltqYO5M4XrUvQ==}
 
   scslre@0.3.0:
     resolution: {integrity: sha512-3A6sD0WYP7+QrjbfNA2FN3FsOaGGFoekCVgTyypy53gPxhbkCIjtO6YWgdrfM+n/8sI8JeXZOIxsHjMTNxQ4nQ==}
@@ -22865,6 +25572,9 @@ packages:
   strictdom@1.0.1:
     resolution: {integrity: sha512-cEmp9QeXXRmjj/rVp9oyiqcvyocWab/HaoN4+bwFeZ7QzykJD6L3yD4v12K1x0tHpqRqVpJevN3gW7kyM39Bqg==}
 
+  string-convert@0.2.1:
+    resolution: {integrity: sha512-u/1tdPl4yQnPBjnVrmdLo9gtuLvELKsAoRapekWggdiQNvvvum+jYF329d84NAa660KQw7pB2n36KrIKVoXa3A==}
+
   string-width@4.2.3:
     resolution: {integrity: sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==}
     engines: {node: '>=8'}
@@ -22966,6 +25676,10 @@ packages:
 
   text-decoder@1.2.7:
     resolution: {integrity: sha512-vlLytXkeP4xvEq2otHeJfSQIRyWxo/oZGEbXrtEEF9Hnmrdly59sUbzZ/QgyWuLYHctCHxFF4tRQZNQ9k60ExQ==}
+
+  throttle-debounce@5.0.2:
+    resolution: {integrity: sha512-B71/4oyj61iNH0KeCamLuE2rmKuTO5byTOSVwECM5FA7TiAiAW+UqTKZ9ERueC4qvgSttUhdmq1mXC3kJqGX7A==}
+    engines: {node: '>=12.22'}
 
   tiny-async-pool@1.3.0:
     resolution: {integrity: sha512-01EAw5EDrcVrdgyCLgoSPvqznC0sVxDSVeiOz09FUpjh71G79VCqneOr+xvt7T1r76CF6ZZfPjHorN2+d+3mqA==}
@@ -23824,6 +26538,52 @@ snapshots:
     dependencies:
       '@algolia/client-common': 5.55.2
 
+  '@ant-design/colors@8.0.1':
+    dependencies:
+      '@ant-design/fast-color': 3.0.1
+
+  '@ant-design/cssinjs-utils@2.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@ant-design/cssinjs': 2.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@babel/runtime': 7.29.7
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@ant-design/cssinjs@2.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      '@emotion/hash': 0.8.0
+      '@emotion/unitless': 0.7.5
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      csstype: 3.2.3
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      stylis: 4.4.0
+
+  '@ant-design/fast-color@3.0.1': {}
+
+  '@ant-design/icons-svg@4.6.0': {}
+
+  '@ant-design/icons@6.3.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@ant-design/colors': 8.0.1
+      '@ant-design/icons-svg': 4.6.0
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@ant-design/react-slick@2.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      clsx: 2.1.1
+      json2mq: 0.2.0
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      throttle-debounce: 5.0.2
+
   '@antfu/install-pkg@1.1.0':
     dependencies:
       package-manager-detector: 1.6.0
@@ -24195,6 +26955,8 @@ snapshots:
 
   '@babel/runtime@7.29.7': {}
 
+  '@babel/runtime@8.0.7': {}
+
   '@babel/template@7.29.7':
     dependencies:
       '@babel/code-frame': 7.29.7
@@ -24499,6 +27261,10 @@ snapshots:
     dependencies:
       tslib: 2.8.1
     optional: true
+
+  '@emotion/hash@0.8.0': {}
+
+  '@emotion/unitless@0.7.5': {}
 
   '@esbuild/aix-ppc64@0.21.5':
     optional: true
@@ -25701,6 +28467,354 @@ snapshots:
     dependencies:
       quansync: 1.0.0
 
+  '@rc-component/async-validator@6.0.0':
+    dependencies:
+      '@babel/runtime': 7.29.7
+
+  '@rc-component/cascader@1.22.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/select': 1.10.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/tree': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/checkbox@2.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/collapse@1.2.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      '@rc-component/motion': 1.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/color-picker@3.1.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@ant-design/fast-color': 3.0.1
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/context@2.0.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/dialog@1.10.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/motion': 1.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/portal': 2.2.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/drawer@1.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/motion': 1.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/portal': 2.2.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/dropdown@1.0.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/trigger': 3.10.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/form@1.8.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/async-validator': 6.0.0
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/image@1.10.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/motion': 1.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/portal': 2.2.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/input-number@1.6.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/mini-decimal': 1.1.4
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/input@1.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/resize-observer': 1.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/listy@1.2.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/motion': 1.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/portal': 2.2.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/resize-observer': 1.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/virtual-list': 1.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/mentions@1.12.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/input': 1.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/menu': 1.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/trigger': 3.10.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/menu@1.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/motion': 1.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/overflow': 1.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/trigger': 3.10.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/mini-decimal@1.1.4':
+    dependencies:
+      '@babel/runtime': 7.29.7
+
+  '@rc-component/motion@1.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/mutate-observer@2.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/notification@2.1.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/motion': 1.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/overflow@1.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      '@rc-component/resize-observer': 1.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/pagination@1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/picker@1.12.2(dayjs@1.11.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/overflow': 1.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/resize-observer': 1.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/trigger': 3.10.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+    optionalDependencies:
+      dayjs: 1.11.23
+
+  '@rc-component/portal@2.2.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/progress@1.0.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/qrcode@2.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@babel/runtime': 7.29.7
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/rate@1.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/resize-observer@1.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/segmented@1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@babel/runtime': 8.0.7
+      '@rc-component/motion': 1.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/select@1.10.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/overflow': 1.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/trigger': 3.10.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/virtual-list': 1.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/slider@1.1.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/steps@1.2.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/switch@1.0.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/table@1.11.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/context': 2.0.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/resize-observer': 1.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/virtual-list': 1.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/tabs@1.13.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/dropdown': 1.0.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/menu': 1.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/motion': 1.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/resize-observer': 1.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/tooltip@1.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/trigger': 3.10.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/tour@2.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/portal': 2.2.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/trigger': 3.10.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/tree-select@1.16.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/select': 1.10.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/tree': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/tree@1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/motion': 1.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/virtual-list': 1.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/trigger@3.10.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/motion': 1.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/portal': 2.2.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/resize-observer': 1.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/upload@1.1.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  '@rc-component/util@1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      is-mobile: 5.0.0
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-is: 19.3.1
+
+  '@rc-component/virtual-list@1.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+    dependencies:
+      '@babel/runtime': 8.0.7
+      '@rc-component/resize-observer': 1.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
   '@roberts_lando/vfs@0.3.3': {}
 
   '@rolldown/binding-android-arm-eabi@1.2.7':
@@ -26111,7 +29225,7 @@ snapshots:
   '@types/body-parser@1.19.6':
     dependencies:
       '@types/connect': 3.4.38
-      '@types/node': 22.20.1
+      '@types/node': 26.4.1
 
   '@types/cacheable-request@6.0.3':
     dependencies:
@@ -26128,11 +29242,11 @@ snapshots:
   '@types/compression@1.8.1':
     dependencies:
       '@types/express': 5.0.6
-      '@types/node': 22.20.1
+      '@types/node': 26.4.1
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 22.20.1
+      '@types/node': 26.4.1
 
   '@types/d3-array@3.2.2': {}
 
@@ -26263,7 +29377,7 @@ snapshots:
 
   '@types/express-serve-static-core@5.1.3':
     dependencies:
-      '@types/node': 22.20.1
+      '@types/node': 26.4.1
       '@types/qs': 6.15.1
       '@types/range-parser': 1.2.7
       '@types/send': 1.2.1
@@ -26330,7 +29444,7 @@ snapshots:
 
   '@types/node-fetch@2.6.13':
     dependencies:
-      '@types/node': 22.20.1
+      '@types/node': 26.4.1
       form-data: 4.0.6
 
   '@types/node@14.18.63': {}
@@ -26380,7 +29494,7 @@ snapshots:
 
   '@types/readable-stream@4.0.24':
     dependencies:
-      '@types/node': 22.20.1
+      '@types/node': 26.4.1
 
   '@types/regenerator-runtime@0.13.8': {}
 
@@ -26394,12 +29508,12 @@ snapshots:
 
   '@types/send@1.2.1':
     dependencies:
-      '@types/node': 22.20.1
+      '@types/node': 26.4.1
 
   '@types/serve-static@2.2.0':
     dependencies:
       '@types/http-errors': 2.0.5
-      '@types/node': 22.20.1
+      '@types/node': 26.4.1
 
   '@types/spdx-expression-parse@4.0.0': {}
 
@@ -26839,7 +29953,112 @@ snapshots:
 
   ansis@4.3.1: {}
 
+  antd@6.6.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+    dependencies:
+      '@ant-design/colors': 8.0.1
+      '@ant-design/cssinjs': 2.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@ant-design/cssinjs-utils': 2.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@ant-design/fast-color': 3.0.1
+      '@ant-design/icons': 6.3.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@ant-design/react-slick': 2.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@babel/runtime': 7.29.7
+      '@rc-component/cascader': 1.22.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/checkbox': 2.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/collapse': 1.2.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/color-picker': 3.1.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/dialog': 1.10.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/drawer': 1.4.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/dropdown': 1.0.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/form': 1.8.6(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/image': 1.10.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/input': 1.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/input-number': 1.6.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/listy': 1.2.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/mentions': 1.12.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/menu': 1.5.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/motion': 1.3.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/mutate-observer': 2.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/notification': 2.1.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/pagination': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/picker': 1.12.2(dayjs@1.11.23)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/progress': 1.0.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/qrcode': 2.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/rate': 1.0.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/resize-observer': 1.1.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/segmented': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/select': 1.10.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/slider': 1.1.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/steps': 1.2.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/switch': 1.0.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/table': 1.11.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/tabs': 1.13.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/tooltip': 1.5.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/tour': 2.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/tree': 1.4.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/tree-select': 1.16.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/trigger': 3.10.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/upload': 1.1.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@rc-component/util': 1.14.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      clsx: 2.1.1
+      dayjs: 1.11.23
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      scroll-into-view-if-needed: 3.1.0
+      throttle-debounce: 5.0.2
+    transitivePeerDependencies:
+      - date-fns
+      - luxon
+      - moment
+
   anynum@1.0.1: {}
+
+  app-builder-lib@26.15.3(dmg-builder@26.15.3)(electron-builder-squirrel-windows@26.15.3)(supports-color@9.4.0):
+    dependencies:
+      '@electron/asar': 3.4.1
+      '@electron/fuses': 1.8.0
+      '@electron/get': 3.1.0(supports-color@9.4.0)
+      '@electron/notarize': 2.5.0(supports-color@9.4.0)
+      '@electron/osx-sign': 1.3.3(patch_hash=280e7b2816caf01423097d24e79107a66afeb563a348630ce9928ae8499a5861)(supports-color@9.4.0)
+      '@electron/rebuild': 4.2.0(supports-color@9.4.0)
+      '@electron/universal': 2.0.3(supports-color@9.4.0)
+      '@malept/flatpak-bundler': 0.4.0(supports-color@9.4.0)
+      '@noble/hashes': 2.4.0
+      '@peculiar/webcrypto': 1.7.1
+      '@types/fs-extra': 9.0.13
+      ajv: 8.20.0
+      asn1js: 3.0.10
+      async-exit-hook: 2.0.1
+      builder-util: 26.15.3(supports-color@9.4.0)
+      builder-util-runtime: 9.7.0(supports-color@9.4.0)
+      chromium-pickle-js: 0.2.0
+      ci-info: 4.3.1
+      debug: 4.4.3(supports-color@9.4.0)
+      dmg-builder: 26.15.3(electron-builder-squirrel-windows@26.15.3)(supports-color@9.4.0)
+      dotenv: 16.6.1
+      dotenv-expand: 11.0.7
+      ejs: 3.1.10
+      electron-builder-squirrel-windows: 26.15.3(dmg-builder@26.15.3)(supports-color@9.4.0)
+      electron-publish: 26.15.3(supports-color@9.4.0)
+      fs-extra: 10.1.0
+      hosted-git-info: 4.1.0
+      isbinaryfile: 5.0.7
+      jiti: 2.7.0
+      js-yaml: 4.3.2
+      json5: 2.2.3
+      lazy-val: 1.0.5
+      minimatch: 10.2.5
+      pkijs: 3.4.0
+      plist: 3.1.0
+      proper-lockfile: 4.1.2
+      resedit: 1.7.2
+      semver: 7.7.4
+      tar: 7.5.22
+      temp-file: 3.4.0
+      tiny-async-pool: 1.3.0
+      unzipper: 0.12.5
+      which: 5.0.0
+    transitivePeerDependencies:
+      - supports-color
 
   app-builder-lib@26.17.0(patch_hash=b70dc2a2a78ffabb80a4f14fafc7c103237f2b0a207e1f296fa1c1387ea29348)(dmg-builder@26.17.0)(electron-builder-squirrel-windows@26.17.0)(supports-color@9.4.0):
     dependencies:
@@ -27122,6 +30341,25 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  builder-util@26.15.3(supports-color@9.4.0):
+    dependencies:
+      '@types/debug': 4.1.13
+      builder-util-runtime: 9.7.0(supports-color@9.4.0)
+      chalk: 4.1.2
+      cross-spawn: 7.0.6
+      debug: 4.4.3(supports-color@9.4.0)
+      fs-extra: 10.1.0
+      http-proxy-agent: 7.0.2(supports-color@9.4.0)
+      https-proxy-agent: 7.0.6(supports-color@9.4.0)
+      js-yaml: 4.3.2
+      sanitize-filename: 1.6.4
+      source-map-support: 0.5.21
+      stat-mode: 1.0.0
+      temp-file: 3.4.0
+      tiny-async-pool: 1.3.0
+    transitivePeerDependencies:
+      - supports-color
+
   builder-util@26.16.0(supports-color@9.4.0):
     dependencies:
       '@types/debug': 4.1.13
@@ -27307,6 +30545,8 @@ snapshots:
       vary: 1.1.2
     transitivePeerDependencies:
       - supports-color
+
+  compute-scroll-into-view@3.1.1: {}
 
   concat-map@0.0.1: {}
 
@@ -27702,6 +30942,16 @@ snapshots:
       minimatch: 3.1.5
       p-limit: 3.1.0
 
+  dmg-builder@26.15.3(electron-builder-squirrel-windows@26.15.3)(supports-color@9.4.0):
+    dependencies:
+      app-builder-lib: 26.15.3(dmg-builder@26.15.3)(electron-builder-squirrel-windows@26.15.3)(supports-color@9.4.0)
+      builder-util: 26.15.3(supports-color@9.4.0)
+      fs-extra: 10.1.0
+      js-yaml: 4.3.2
+    transitivePeerDependencies:
+      - electron-builder-squirrel-windows
+      - supports-color
+
   dmg-builder@26.17.0(electron-builder-squirrel-windows@26.17.0)(supports-color@9.4.0):
     dependencies:
       app-builder-lib: 26.17.0(patch_hash=b70dc2a2a78ffabb80a4f14fafc7c103237f2b0a207e1f296fa1c1387ea29348)(dmg-builder@26.17.0)(electron-builder-squirrel-windows@26.17.0)(supports-color@9.4.0)
@@ -27753,6 +31003,15 @@ snapshots:
     dependencies:
       jake: 10.9.4
 
+  electron-builder-squirrel-windows@26.15.3(dmg-builder@26.15.3)(supports-color@9.4.0):
+    dependencies:
+      app-builder-lib: 26.15.3(dmg-builder@26.15.3)(electron-builder-squirrel-windows@26.15.3)(supports-color@9.4.0)
+      builder-util: 26.15.3(supports-color@9.4.0)
+      electron-winstaller: 5.4.0(supports-color@9.4.0)
+    transitivePeerDependencies:
+      - dmg-builder
+      - supports-color
+
   electron-builder-squirrel-windows@26.17.0(dmg-builder@26.17.0)(supports-color@9.4.0):
     dependencies:
       app-builder-lib: 26.17.0(patch_hash=b70dc2a2a78ffabb80a4f14fafc7c103237f2b0a207e1f296fa1c1387ea29348)(dmg-builder@26.17.0)(electron-builder-squirrel-windows@26.17.0)(supports-color@9.4.0)
@@ -27760,6 +31019,22 @@ snapshots:
       electron-winstaller: 5.4.0(supports-color@9.4.0)
     transitivePeerDependencies:
       - dmg-builder
+      - supports-color
+
+  electron-builder@26.15.3(electron-builder-squirrel-windows@26.15.3)(supports-color@9.4.0):
+    dependencies:
+      app-builder-lib: 26.15.3(dmg-builder@26.15.3)(electron-builder-squirrel-windows@26.15.3)(supports-color@9.4.0)
+      builder-util: 26.15.3(supports-color@9.4.0)
+      builder-util-runtime: 9.7.0(supports-color@9.4.0)
+      chalk: 4.1.2
+      ci-info: 4.4.0
+      dmg-builder: 26.15.3(electron-builder-squirrel-windows@26.15.3)(supports-color@9.4.0)
+      fs-extra: 10.1.0
+      lazy-val: 1.0.5
+      simple-update-notifier: 2.0.0
+      yargs: 17.7.3
+    transitivePeerDependencies:
+      - electron-builder-squirrel-windows
       - supports-color
 
   electron-builder@26.17.0(electron-builder-squirrel-windows@26.17.0)(supports-color@9.4.0):
@@ -27776,6 +31051,20 @@ snapshots:
       yargs: 17.7.3
     transitivePeerDependencies:
       - electron-builder-squirrel-windows
+      - supports-color
+
+  electron-publish@26.15.3(supports-color@9.4.0):
+    dependencies:
+      '@types/fs-extra': 9.0.13
+      aws4: 1.13.2
+      builder-util: 26.15.3(supports-color@9.4.0)
+      builder-util-runtime: 9.7.0(supports-color@9.4.0)
+      chalk: 4.1.2
+      form-data: 4.0.6
+      fs-extra: 10.1.0
+      lazy-val: 1.0.5
+      mime: 2.6.0
+    transitivePeerDependencies:
       - supports-color
 
   electron-publish@26.16.0(supports-color@9.4.0):
@@ -27816,6 +31105,14 @@ snapshots:
       temp: 0.9.4
     optionalDependencies:
       '@electron/windows-sign': 1.2.2(supports-color@9.4.0)
+    transitivePeerDependencies:
+      - supports-color
+
+  electron@44.0.0(supports-color@9.4.0):
+    dependencies:
+      '@electron-internal/extract-zip': 1.0.5
+      '@electron/get': 5.1.0(supports-color@9.4.0)
+      '@types/node': 24.13.3
     transitivePeerDependencies:
       - supports-color
 
@@ -28777,6 +32074,8 @@ snapshots:
     dependencies:
       is-docker: 3.0.0
 
+  is-mobile@5.0.0: {}
+
   is-plain-obj@4.1.0: {}
 
   is-potential-custom-element-name@1.0.1: {}
@@ -28931,6 +32230,10 @@ snapshots:
   json-stable-stringify-without-jsonify@1.0.1: {}
 
   json-stringify-safe@5.0.1: {}
+
+  json2mq@0.2.0:
+    dependencies:
+      string-convert: 0.2.1
 
   json5@2.2.3: {}
 
@@ -30110,7 +33413,7 @@ snapshots:
       '@protobufjs/path': 1.1.2
       '@protobufjs/pool': 1.1.0
       '@protobufjs/utf8': 1.1.1
-      '@types/node': 22.20.1
+      '@types/node': 26.4.1
       long: 5.3.2
 
   proxy-addr@2.0.8:
@@ -30180,6 +33483,8 @@ snapshots:
       scheduler: 0.23.2
 
   react-is@17.0.2: {}
+
+  react-is@19.3.1: {}
 
   react-refresh@0.17.0: {}
 
@@ -30438,6 +33743,10 @@ snapshots:
   scheduler@0.23.2:
     dependencies:
       loose-envify: 1.4.0
+
+  scroll-into-view-if-needed@3.1.0:
+    dependencies:
+      compute-scroll-into-view: 3.1.1
 
   scslre@0.3.0:
     dependencies:
@@ -30701,6 +34010,8 @@ snapshots:
 
   strictdom@1.0.1: {}
 
+  string-convert@0.2.1: {}
+
   string-width@4.2.3:
     dependencies:
       emoji-regex: 8.0.0
@@ -30841,6 +34152,8 @@ snapshots:
       b4a: 1.8.1
     transitivePeerDependencies:
       - react-native-b4a
+
+  throttle-debounce@5.0.2: {}
 
   tiny-async-pool@1.3.0:
     dependencies:

@@ -231,7 +231,8 @@ export class AgentPresetSeatController {
     this.clearStage()
     const refuse = (reason: string) => {
       this.set({
-        error: { reason, preset: this.store.getSnapshot().options.find(option => option.id === staged) ?? { id: staged } },
+        // The chip stages only workspace presets, so an unlisted stage is one too.
+        error: { reason, preset: this.store.getSnapshot().options.find(option => option.id === staged) ?? { id: staged, workspace: 'required' } },
         current: this.staged.id ?? presetOf(session) ?? '',
       })
       return reason

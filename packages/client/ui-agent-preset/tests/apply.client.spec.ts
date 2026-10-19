@@ -39,7 +39,7 @@ function developerTools(enabled = true): { configForms: { developerTools: { enab
 const ROSTER_ONE = {
   ok: true as const,
   value: {
-    presets: [{ id: 'standard', isDefault: true, workspace: 'required' }],
+    presets: [{ id: 'standard', isDefault: true, workspace: 'required' as const }],
   },
 }
 
@@ -48,8 +48,8 @@ const ROSTER_AUTHORED = {
   ok: true as const,
   value: {
     presets: [
-      { id: 'standard', isDefault: true, workspace: 'required' },
-      { id: 'mine', isDefault: false, workspace: 'required' },
+      { id: 'standard', isDefault: true, workspace: 'required' as const },
+      { id: 'mine', isDefault: false, workspace: 'required' as const },
     ],
   },
 }
@@ -59,8 +59,8 @@ const ROSTER_MOVED = {
   ok: true as const,
   value: {
     presets: [
-      { id: 'standard', isDefault: false, workspace: 'required' },
-      { id: 'minimal', isDefault: true, workspace: 'required' },
+      { id: 'standard', isDefault: false, workspace: 'required' as const },
+      { id: 'minimal', isDefault: true, workspace: 'required' as const },
     ],
   },
 }
@@ -426,7 +426,7 @@ describe('ui-agent-preset apply', () => {
     await section.load()
     await section.makeDefault('standard')
     expect(section.hooks.agentPresetSection.getSnapshot().rows)
-      .toEqual([{ id: 'standard', isDefault: true, workspace: 'required' }])
+      .toEqual([{ id: 'standard', isDefault: true, workspace: 'required' as const }])
     await section.view('standard')
     expect(section.hooks.agentPresetSection.getSnapshot().view)
       .toEqual({ id: 'standard', title: 'standard', content: '# standard\n[]\n' })
@@ -698,7 +698,7 @@ describe('ui-agent-preset apply', () => {
       .inject as unknown as () => AgentPresetSectionInjected)()
     await section.load()
     expect(section.hooks.agentPresetSection.getSnapshot().rows)
-      .toEqual([{ id: 'standard', isDefault: true, workspace: 'required' }])
+      .toEqual([{ id: 'standard', isDefault: true, workspace: 'required' as const }])
 
     await section.makeDefault('minimal')
 
@@ -803,8 +803,8 @@ describe('ui-agent-preset apply', () => {
     .flatMap(preset => ['unbound', 'inactive bound'].map(source => ({ preset, source }))))(
     'clears the staged $preset choice on Coding Tools off without changing the Session ($source)', async ({ preset, source }) => {
       const { ctx, slots, calls, setDeveloperTools } = await bench({ presets: [
-        ...ROSTER_MOVED.value.presets, { id: 'ptc', isDefault: false },
-        { id: 'cordis', isDefault: false }, { id: 'mine', name: 'Mine', isDefault: false },
+        ...ROSTER_MOVED.value.presets, { id: 'ptc', isDefault: false, workspace: 'required' as const },
+        { id: 'cordis', isDefault: false, workspace: 'required' as const }, { id: 'mine', name: 'Mine', isDefault: false, workspace: 'required' as const },
       ] })
       declareRoot(slots)
       declareConversation(slots)
@@ -892,7 +892,7 @@ describe('ui-agent-preset apply', () => {
 
   it.each(['ptc', 'minimal'])('resets an accepted disabled %s default once, without restoring it on enable', async (id) => {
     const b = await bench({ developerToolsEnabled: false, presets: [
-      { id: 'standard', isDefault: false }, { id, isDefault: true },
+      { id: 'standard', isDefault: false, workspace: 'required' as const }, { id, isDefault: true, workspace: 'required' as const },
     ] })
     b.ctx.provide('sessions', sessionsDouble(b.ctx, { byId: {} }) as never)
     declareRoot(b.slots)
@@ -909,8 +909,8 @@ describe('ui-agent-preset apply', () => {
   it.each([['standard', undefined], ['cordis', undefined], ['mine', 'Mine'], ['ptc', 'Custom PTC'], ['minimal', 'Custom Minimal']] as const)(
     'keeps the allowed default %s (%s) when Coding Tools are disabled', async (id, name) => {
       const b = await bench({ developerToolsEnabled: false, presets: [
-        { id, isDefault: true, ...(name === undefined ? {} : { name }) },
-        ...(id === 'standard' ? [] : [{ id: 'standard', isDefault: false }]),
+        { id, isDefault: true, workspace: 'required' as const, ...(name === undefined ? {} : { name }) },
+        ...(id === 'standard' ? [] : [{ id: 'standard', isDefault: false, workspace: 'required' as const }]),
       ] })
       b.ctx.provide('sessions', sessionsDouble(b.ctx, { byId: {} }) as never)
       declareRoot(b.slots)
@@ -970,8 +970,8 @@ describe('ui-agent-preset apply', () => {
   it.each([['cordis', true], ['mine', true], ['ptc', true], ['minimal', true], ['ptc', false], ['minimal', false]] as const)(
     'resets only the default while the current task uses %s (blank: %s)', async (preset, blank) => {
       const b = await bench({ presets: [
-        { id: 'standard', isDefault: false }, { id: 'minimal', isDefault: true }, { id: 'ptc', isDefault: false },
-        { id: 'cordis', isDefault: false }, { id: 'mine', name: 'Mine', isDefault: false },
+        { id: 'standard', isDefault: false, workspace: 'required' as const }, { id: 'minimal', isDefault: true, workspace: 'required' as const }, { id: 'ptc', isDefault: false, workspace: 'required' as const },
+        { id: 'cordis', isDefault: false, workspace: 'required' as const }, { id: 'mine', name: 'Mine', isDefault: false, workspace: 'required' as const },
       ] })
       declareRoot(b.slots)
       declareConversation(b.slots)
@@ -1041,7 +1041,7 @@ describe('ui-agent-preset apply', () => {
 
     await label.load()
 
-    expect(label.hooks.agentPresets.getSnapshot().options).toEqual([{ id: 'standard', workspace: 'required' }])
+    expect(label.hooks.agentPresets.getSnapshot().options).toEqual([{ id: 'standard', workspace: 'required' as const }])
   })
 
   it('stages the creator preset and starts a session from the section', async () => {
@@ -1345,7 +1345,7 @@ describe('AgentPresetSeatController reconciliation', () => {
       ...developerTools(),
       remote: { agentPresets: {
         select,
-        list: () => Promise.resolve({ ok: true, value: { presets: [{ id: 'standard', isDefault: true, workspace: 'required' }] } }),
+        list: () => Promise.resolve({ ok: true, value: { presets: [{ id: 'standard', isDefault: true, workspace: 'required' as const }] } }),
       } },
     } as never, () => ({ id: SessionId('uncomposed'), kind: 'work' as const, blank: true }))
 

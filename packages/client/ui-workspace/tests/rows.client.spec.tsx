@@ -90,7 +90,7 @@ describe('Workspace and Session hover handoff', () => {
         sessionCount: 0, expanded: true, containsCurrent: false, sessions: [],
       })
       const session: SessionNode = {
-        id: sid('session'), title: 'Session', blank: false, running: false,
+        kind: 'work', id: sid('session'), title: 'Session', blank: false, running: false,
         runningSubagentCount: 0, completed: false, updatedAt: 0, pinned: false, archived: false,
       }
       render(<HoverCardGroup>
@@ -834,7 +834,7 @@ describe('workspace browser rows', () => {
     vi.useFakeTimers()
     try {
       const node: SessionNode = {
-        id: sid('more-hover'), title: 'More hover', blank: false, running: false,
+        kind: 'work', id: sid('more-hover'), title: 'More hover', blank: false, running: false,
         runningSubagentCount: 0, completed: false, updatedAt: 0, pinned: false, archived: false,
       }
       render(<SessionNodeItem node={node} currentId={undefined} now={0} onOpen={vi.fn()} t={t} />)
@@ -859,7 +859,7 @@ describe('workspace browser rows', () => {
     vi.useFakeTimers()
     try {
       const node: SessionNode = {
-        id: sid('action-hover'), title: 'Action hover', blank: false, running: false,
+        kind: 'work', id: sid('action-hover'), title: 'Action hover', blank: false, running: false,
         runningSubagentCount: 0, completed: false, updatedAt: 0, pinned: false, archived: false,
       }
       const renderSlot: RowRenderSlot = (name: RowSlotName) => name === 'sidebar.workspaces.session.row.action'
@@ -1267,7 +1267,7 @@ describe('session row schedule seats', () => {
 })
 
 it.each([['未命名', t], ['Untitled', tEn]])('labels unnamed history as %s', (label, translate) => {
-  const node: SessionNode = { id: sid('unnamed'), title: '', blank: false, running: false,
+  const node: SessionNode = { kind: 'work', id: sid('unnamed'), title: '', blank: false, running: false,
     runningSubagentCount: 0, completed: false, updatedAt: 0, pinned: false, archived: false }
   const onRenameRequest = vi.fn()
   render(<SessionNodeItem node={node} currentId={node.id} now={0} onOpen={vi.fn()}
@@ -1278,7 +1278,7 @@ it.each([['未命名', t], ['Untitled', tEn]])('labels unnamed history as %s', (
 })
 
 it.each([['未命名', t], ['Untitled', tEn]])('labels unnamed search results as %s', (label, translate) => {
-  const result: SearchResultNode = { id: sid('unnamed-search'), title: '', workspace: 'Project',
+  const result: SearchResultNode = { kind: 'work', id: sid('unnamed-search'), title: '', workspace: 'Project',
     running: false, runningSubagentCount: 0, completed: false, archived: false }
   const onOpen = vi.fn()
   render(<SearchResultItem result={result} currentId={undefined} onOpen={onOpen}

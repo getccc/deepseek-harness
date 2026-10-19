@@ -163,7 +163,8 @@ export class ApiSessionList {
       const live = this.ctx.sessions.get(record.header.id)
       if (live !== undefined) {
         items.push(this.summaryFor(live))
-      } else if (record.header.cwd !== undefined) {
+      } else {
+        // A header without a cwd is a Session composed without a Workspace; it lists like any other.
         cold.push(record)
       }
       if (performance.now() >= yieldDeadline) {
@@ -171,7 +172,6 @@ export class ApiSessionList {
         signal?.throwIfAborted()
         yieldDeadline = performance.now() + this.workSliceMs
       }
-      cold.push(record.header)
     }
     for (const record of cold) {
       signal?.throwIfAborted()
