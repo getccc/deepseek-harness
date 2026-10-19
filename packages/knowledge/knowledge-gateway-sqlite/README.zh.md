@@ -65,8 +65,9 @@ kind: "package-reference"
 
 | 文件 | 内容 |
 |---|---|
-| [`src/schema.ts`](src/schema.ts) | 两张表、它们的约束，以及 application id 和 schema 版本 |
-| [`src/index.ts`](src/index.ts) | 同步、授权、检索和审计 |
+| [`src/schema.ts`](src/schema.ts) | 两张表、它们的约束，以及 application id 和 schema 版本；检查本身由引擎负责 |
+| [`src/index.ts`](src/index.ts) | 网关、它的配置、交给共用引擎的目录 spec、检索、文档和审计用词 |
+| [`dsh-governed-catalog-sqlite`](../../access/governed-catalog-sqlite/README.zh.md) | 与另外两个受治理目录共用的同步、准入、目录视图与审计记录 |
 
 ### 一次检索记录什么
 

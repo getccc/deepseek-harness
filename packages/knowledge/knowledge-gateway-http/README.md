@@ -81,7 +81,8 @@ The routes decide nothing about knowledge. They establish who is asking, prove t
 | File | Holds |
 |---|---|
 | [`src/protocol.ts`](src/protocol.ts) | The paths, the version constants, and the bodies both sides import |
-| [`src/index.ts`](src/index.ts) | The routes, the shared opening sequence, and the refusal mapping |
+| [`src/index.ts`](src/index.ts) | The routes and how each decodes its fields |
+| [`dsh-team-governed-wire`](../../team/team-governed-wire/README.md) | The opening sequence, the route handler, the shared refusal statuses, and the Runner call |
 
 <a id="further-exploration"></a>
 ## Further Exploration

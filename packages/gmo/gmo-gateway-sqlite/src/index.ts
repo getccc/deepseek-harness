@@ -8,10 +8,13 @@
  * what a category is. Reconciliation is therefore idempotent and repeated: a
  * write that failed after the first of the pair is discovered and repaired by
  * the next synchronization rather than left as a permanent disagreement.
+ *
+ * The catalog mechanics belong to `dsh-governed-catalog-sqlite`, shared with
+ * the knowledge and BI gateways. This module supplies the category tables'
+ * description and the three member operations.
  * @module @deepseek-ai/dsh-gmo-gateway-sqlite
  */
 
-import { DatabaseSync } from 'node:sqlite'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type { ManagedResource } from '@deepseek-ai/dsh-access-control'
@@ -38,14 +41,14 @@ import {
   type GmoCatalogEntry,
   type GmoCatalogView,
   type GmoPrincipal,
-  type GmoSourceStatus,
   type GovernedAskRequest,
   type GovernedDescribeRequest,
   type GovernedResultsRequest,
 } from '@deepseek-ai/dsh-gmo-gateway'
 import type { UpstreamCategory, UpstreamResult, UpstreamStage } from '@deepseek-ai/dsh-gmo-source'
 import type {} from '@deepseek-ai/dsh-audit'
-import { applySchema, type CategoryRow, type SourceRow } from './schema.ts'
+import { GovernedCatalog } from '@deepseek-ai/dsh-governed-catalog-sqlite'
+import { applySchema, type CategoryRow } from './schema.ts'
 
 export {
   GMO_GATEWAY_SQLITE_APPLICATION_ID,
@@ -103,55 +106,59 @@ export default class SqliteGmoGateway extends GmoGateway {
     defaultResultPageSize: z.natural().min(1).default(DEFAULT_RESULT_PAGE_SIZE),
   })
 
-  private readonly db: DatabaseSync
   private readonly resolved: ResolvedConfig
-  /** The synchronization in flight, so concurrent callers join it. */
-  private running: Promise<GmoCatalogView> | undefined
+  private readonly catalog: GovernedCatalog<'category_ref', CategoryRow, GmoCatalogEntry, UpstreamCategory>
 
   constructor(ctx: Context, public config: Config) {
     super(ctx)
-    this.db = new DatabaseSync(config.path, { timeout: config.busyTimeoutMs })
-    applySchema(this.db)
-    this.db.exec(`PRAGMA journal_mode = ${(config as Required<Config>).journalMode}`)
-    // SQLite builds may default WAL to NORMAL, which can lose a resolved write to power loss.
-    this.db.exec('PRAGMA synchronous = FULL')
     // schemastery (Config) has already filled every defaulted field.
     this.resolved = config as ResolvedConfig
-    ctx.effect(() => () => { this.db.close() }, 'gmo-gateway-sqlite: close the catalog')
-  }
-
-  async sync(orgId: OrgId): Promise<GmoCatalogView> {
-    // Concurrent callers join the operation in flight rather than racing two
-    // reconciliations over the same rows.
-    this.running ??= this.reconcile(orgId).finally(() => { this.running = undefined })
-    return this.running
-  }
-
-  async catalogView(orgId: OrgId): Promise<GmoCatalogView> {
-    const resources = await this.resourcesByRef(orgId)
-    return {
-      source: this.sourceStatus(orgId),
-      entries: this.rows(orgId).flatMap((row) => {
-        const resource = resources.get(row.category_ref)
-        // A row whose managed resource is missing is an interrupted
-        // registration, which the next synchronization repairs. Showing it as
-        // governed would offer a role editor an id no grant could name.
-        return resource === undefined ? [] : [toEntry(row, resource)]
+    this.catalog = new GovernedCatalog(ctx, this.resolved, {
+      name,
+      table: 'gmo_category',
+      sourceTable: 'gmo_source',
+      refColumn: 'category_ref',
+      resourceType: GMO_RESOURCE_TYPE,
+      catalogResource: GMO_CATALOG_RESOURCE,
+      syncAction: 'gmo.catalog.sync',
+      failureKey: 'gmoFailure',
+      // A category seen for the first time starts switched off; a known one
+      // keeps whatever an administrator chose.
+      startsEnabled: false,
+      listedColumns: ['result_count'],
+      applySchema,
+      source: () => {
+        const source = ctx.gmoSource
+        return { sourceCode: source.sourceCode, providerKind: source.providerKind, list: () => source.listCategories() }
+      },
+      describe: (category, source) => ({
+        ref: formatGmoCategoryRef({
+          providerKind: source.providerKind, sourceCode: source.sourceCode, upstreamId: category.upstreamId,
+        }),
+        upstreamId: category.upstreamId,
+        displayName: category.name,
+        values: [category.resultCount ?? null],
       }),
-    }
+      failureReason: error => error instanceof GmoError ? error.reason : 'upstream-invalid',
+      unknownEntry: () => new GmoError('not-allowed', 'no such category'),
+      entry: toEntry,
+    })
   }
 
-  async setEnabled(orgId: OrgId, ref: GmoCategoryRef, enabled: boolean): Promise<void> {
-    const row = this.row(orgId, ref)
-    if (row === undefined) throw new GmoError('not-allowed', 'no such category')
-    this.db.prepare('UPDATE gmo_category SET admin_enabled = ? WHERE org_id = ? AND category_ref = ?')
-      .run(enabled ? 1 : 0, orgId, ref)
-    const resource = (await this.resourcesByRef(orgId)).get(ref)
-    if (resource !== undefined) await this.ctx.accessControl.setResourceEnabled(resource.id, enabled)
+  sync(orgId: OrgId): Promise<GmoCatalogView> {
+    return this.catalog.sync(orgId)
+  }
+
+  catalogView(orgId: OrgId): Promise<GmoCatalogView> {
+    return this.catalog.view(orgId)
+  }
+
+  setEnabled(orgId: OrgId, ref: GmoCategoryRef, enabled: boolean): Promise<void> {
+    return this.catalog.setEnabled(orgId, ref, enabled)
   }
 
   async directory(principal: GmoPrincipal): Promise<readonly GmoCategoryEntry[]> {
-    const entries = await this.authorizedEntries(principal)
+    const entries = await this.catalog.authorizedEntries(principal, GMO_QUERY_ACTION)
     return entries.map(entry => ({ ref: entry.ref, displayName: entry.displayName }))
   }
 
@@ -264,242 +271,12 @@ export default class SqliteGmoGateway extends GmoGateway {
    * the same way, so a member holding nothing cannot learn that one exists.
    */
   private async admitted(principal: GmoPrincipal, ref: GmoCategoryRef, action: MemberAction): Promise<CategoryRow> {
-    const row = this.row(principal.orgId, ref)
-    const usable = row !== undefined && row.admin_enabled === 1
-    const allowed = usable && await this.may(principal, ref)
-    if (!allowed) {
+    const row = await this.catalog.admit(principal, ref, GMO_QUERY_ACTION)
+    if (row === undefined) {
       await this.record(principal, ref, action, 'denied', undefined, undefined, undefined, 'no-grant')
       throw new GmoError('not-allowed', 'that category is not available')
     }
     return row
-  }
-
-  /** Every catalog entry this principal currently holds `gmo.query` on. */
-  private async authorizedEntries(principal: GmoPrincipal): Promise<readonly GmoCatalogEntry[]> {
-    const resources = await this.resourcesByRef(principal.orgId)
-    const entries: GmoCatalogEntry[] = []
-    // The durable catalog is enumerated, never `listResources`: the catalog
-    // administration resource shares this resource type, and an `all`-mode
-    // type grant on gmo.query would otherwise admit it as a category.
-    for (const row of this.rows(principal.orgId)) {
-      if (row.admin_enabled !== 1) continue
-      const resource = resources.get(row.category_ref)
-      if (resource === undefined) continue
-      if (!await this.may(principal, GmoCategoryRef(row.category_ref))) continue
-      entries.push(toEntry(row, resource))
-    }
-    return entries
-  }
-
-  /** One access decision, asked fresh so a revoked grant lands on this call. */
-  private async may(principal: GmoPrincipal, ref: GmoCategoryRef): Promise<boolean> {
-    const decision = await this.ctx.accessControl.authorize({
-      orgId: principal.orgId,
-      principalId: principal.principalId,
-      ...(principal.deviceId === undefined ? {} : { deviceId: principal.deviceId }),
-      action: GMO_QUERY_ACTION,
-      resourceType: GMO_RESOURCE_TYPE,
-      resourceId: ref,
-      ...(principal.correlationId === undefined
-        ? {}
-        : { context: { sessionCorrelationId: principal.correlationId } }),
-    })
-    return decision.allowed
-  }
-
-  /** Reconcile the catalog against one full listing, then access control. */
-  private async reconcile(orgId: OrgId): Promise<GmoCatalogView> {
-    const now = Date.now()
-    const source = this.ctx.gmoSource
-    this.touchSource(orgId, source.sourceCode, source.providerKind, now)
-    let listed: readonly UpstreamCategory[]
-    try {
-      listed = await source.listCategories()
-    } catch (error) {
-      // A failed listing leaves the last successful snapshot in place. One
-      // outage must not disable every category an organization governs.
-      const reason = error instanceof GmoError ? error.reason : 'upstream-invalid'
-      this.db.prepare('UPDATE gmo_source SET last_failure = ? WHERE org_id = ? AND source_code = ?')
-        .run(reason, orgId, source.sourceCode)
-      await this.recordSync(orgId, 'error', undefined, reason)
-      return this.catalogView(orgId)
-    }
-    // Every reference is minted before anything is written or retired: a
-    // listing this build cannot express changes nothing at all.
-    const named = listed.map(category => ({
-      ref: formatGmoCategoryRef({
-        providerKind: source.providerKind, sourceCode: source.sourceCode, upstreamId: category.upstreamId,
-      }) as string,
-      category,
-    }))
-    await this.retire(orgId, source.sourceCode, new Set(named.map(item => item.ref)))
-    this.applyListing(orgId, source.sourceCode, named, now)
-    await this.registerResources(orgId)
-    await this.recordSync(orgId, 'allowed', listed.length)
-    return this.catalogView(orgId)
-  }
-
-  /**
-   * Write one successful listing into the catalog in a single transaction.
-   * @param orgId - the organization being synchronized.
-   * @param sourceCode - the source whose listing this is.
-   * @param named - the listing, each entry beside the reference it was minted under.
-   * @param now - the discovery time to stamp.
-   */
-  private applyListing(
-    orgId: OrgId,
-    sourceCode: string,
-    named: readonly { readonly ref: string; readonly category: UpstreamCategory }[],
-    now: number,
-  ): void {
-    this.db.exec('BEGIN')
-    try {
-      for (const { ref, category } of named) {
-        // A category seen for the first time starts switched off; one already
-        // known keeps whatever an administrator chose, so the conflict arm
-        // leaves admin_enabled alone.
-        this.db.prepare(
-          `INSERT INTO gmo_category (
-             org_id, category_ref, source_code, upstream_id, display_name, result_count, admin_enabled, last_discovered_at
-           ) VALUES (?, ?, ?, ?, ?, ?, 0, ?)
-           ON CONFLICT (org_id, category_ref) DO UPDATE SET
-             display_name = excluded.display_name,
-             result_count = excluded.result_count,
-             last_discovered_at = excluded.last_discovered_at`,
-        ).run(orgId, ref, sourceCode, category.upstreamId, category.name, category.resultCount ?? null, now)
-      }
-      for (const ref of this.absent(orgId, sourceCode, new Set(named.map(item => item.ref)))) {
-        this.db.prepare('DELETE FROM gmo_category WHERE org_id = ? AND category_ref = ?').run(orgId, ref)
-      }
-      this.db.prepare('UPDATE gmo_source SET last_success_at = ?, last_failure = NULL WHERE org_id = ? AND source_code = ?')
-        .run(now, orgId, sourceCode)
-      this.db.exec('COMMIT')
-    } catch (error) {
-      this.db.exec('ROLLBACK')
-      throw error
-    }
-  }
-
-  /**
-   * The references this source governs that its listing no longer names.
-   *
-   * Scoped to one source: another source's categories are not missing from a
-   * listing that never covered them.
-   */
-  private absent(orgId: OrgId, sourceCode: string, seen: ReadonlySet<string>): readonly string[] {
-    return this.rows(orgId)
-      .filter(row => row.source_code === sourceCode && !seen.has(row.category_ref))
-      .map(row => row.category_ref)
-  }
-
-  /**
-   * Stop governing what the source has stopped listing.
-   *
-   * The governed resources go before the catalog rows, and their grants with
-   * them: a member cannot be granted a category that no longer exists, and an
-   * interrupted retirement leaves a row whose resource the next
-   * synchronization registers afresh, with no grants, which is the outcome
-   * either way.
-   */
-  private async retire(orgId: OrgId, sourceCode: string, seen: ReadonlySet<string>): Promise<void> {
-    const absent = this.absent(orgId, sourceCode, seen)
-    if (absent.length === 0) return
-    const resources = await this.resourcesByRef(orgId)
-    for (const ref of absent) {
-      const resource = resources.get(ref)
-      /* v8 ignore next -- every catalog row is registered before it can be retired; the lookup answers its optional type. */
-      if (resource === undefined) continue
-      await this.ctx.accessControl.deleteResource(resource.id)
-    }
-  }
-
-  /** Bring access control's governed resources up to the catalog. */
-  private async registerResources(orgId: OrgId): Promise<void> {
-    for (const row of this.rows(orgId)) {
-      const resource = await this.ctx.accessControl.registerResource({
-        orgId,
-        type: GMO_RESOURCE_TYPE,
-        externalRef: row.category_ref,
-        displayName: row.display_name,
-      })
-      const shouldEnable = row.admin_enabled === 1
-      if (resource.enabled !== shouldEnable) {
-        await this.ctx.accessControl.setResourceEnabled(resource.id, shouldEnable)
-      }
-    }
-  }
-
-  /** The governed GMO resources of one organization, keyed by reference. */
-  private async resourcesByRef(orgId: OrgId): Promise<ReadonlyMap<string, ManagedResource>> {
-    const resources = await this.ctx.accessControl.listResources(orgId, GMO_RESOURCE_TYPE)
-    return new Map(resources.map(resource => [resource.externalRef, resource]))
-  }
-
-  /** Every catalog row of one organization, in reference order. */
-  private rows(orgId: OrgId): readonly CategoryRow[] {
-    return this.db.prepare('SELECT * FROM gmo_category WHERE org_id = ? ORDER BY category_ref')
-      .all(orgId) as CategoryRow[]
-  }
-
-  /** One catalog row, or undefined when the catalog holds none. */
-  private row(orgId: OrgId, ref: string): CategoryRow | undefined {
-    return this.db.prepare('SELECT * FROM gmo_category WHERE org_id = ? AND category_ref = ?')
-      .get(orgId, ref) as CategoryRow | undefined
-  }
-
-  /** Record that an attempt happened, creating the source row on first sight. */
-  private touchSource(orgId: OrgId, sourceCode: string, providerKind: string, now: number): void {
-    this.db.prepare(
-      `INSERT INTO gmo_source (org_id, source_code, provider_kind, last_attempt_at)
-       VALUES (?, ?, ?, ?)
-       ON CONFLICT (org_id, source_code) DO UPDATE SET
-         provider_kind = excluded.provider_kind,
-         last_attempt_at = excluded.last_attempt_at`,
-    ).run(orgId, sourceCode, providerKind, now)
-  }
-
-  /** How the configured source is doing, as the administration page reads it. */
-  private sourceStatus(orgId: OrgId): GmoSourceStatus {
-    const row = this.db.prepare('SELECT * FROM gmo_source WHERE org_id = ? LIMIT 1')
-      .get(orgId) as SourceRow | undefined
-    const source = this.ctx.gmoSource
-    if (row === undefined) {
-      return {
-        sourceCode: source.sourceCode,
-        providerKind: source.providerKind,
-        health: 'never-synced',
-        lastAttemptAt: undefined,
-        lastSuccessAt: undefined,
-        lastFailure: undefined,
-      }
-    }
-    return {
-      sourceCode: row.source_code,
-      providerKind: row.provider_kind,
-      health: row.last_failure !== null ? 'failing' : 'healthy',
-      lastAttemptAt: row.last_attempt_at,
-      lastSuccessAt: row.last_success_at ?? undefined,
-      lastFailure: row.last_failure ?? undefined,
-    }
-  }
-
-  /** Record one synchronization against the catalog administration resource. */
-  private async recordSync(
-    orgId: OrgId,
-    outcome: 'allowed' | 'error',
-    itemCount: number | undefined,
-    failure?: string,
-  ): Promise<void> {
-    await this.ctx.audit.record({
-      orgId,
-      action: 'gmo.catalog.sync',
-      outcome,
-      resourceId: GMO_CATALOG_RESOURCE,
-      metadata: {
-        ...(itemCount === undefined ? {} : { itemCount }),
-        ...(failure === undefined ? {} : { gmoFailure: failure }),
-      },
-    })
   }
 
   /**
@@ -521,20 +298,12 @@ export default class SqliteGmoGateway extends GmoGateway {
     failure?: string,
     reason?: 'no-grant',
   ): Promise<void> {
-    await this.ctx.audit.record({
-      orgId: principal.orgId,
+    await this.catalog.record(principal, {
       action,
       outcome,
-      principalId: principal.principalId,
-      ...(ref === undefined ? {} : { resourceId: ref }),
-      ...(principal.deviceId === undefined ? {} : { deviceId: principal.deviceId }),
-      ...(principal.correlationId === undefined ? {} : { correlationId: principal.correlationId }),
-      ...(reason === undefined ? {} : { reason }),
-      metadata: {
-        ...(queryKind === undefined ? {} : { queryKind }),
-        ...(itemCount === undefined ? {} : { itemCount }),
-        ...(failure === undefined ? {} : { gmoFailure: failure }),
-      },
+      resourceId: ref,
+      reason,
+      metadata: { queryKind, itemCount, gmoFailure: failure },
     })
   }
 }

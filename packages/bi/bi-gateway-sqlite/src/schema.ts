@@ -14,6 +14,7 @@
  */
 
 import type { DatabaseSync } from 'node:sqlite'
+import { applyCatalogSchema } from '@deepseek-ai/dsh-governed-catalog-sqlite'
 
 /**
  * Current physical schema. Monotonic, and refused in both directions: a
@@ -24,16 +25,6 @@ export const SCHEMA_VERSION = 1
 
 /** Application id reserved for DeepSeek Harness SQLite BI-catalog databases. */
 export const BI_GATEWAY_SQLITE_APPLICATION_ID = 0x44534841 + 7
-
-/** One source row, as SQLite returns it. */
-export interface SourceRow {
-  readonly org_id: string
-  readonly source_code: string
-  readonly provider_kind: string
-  readonly last_attempt_at: number
-  readonly last_success_at: number | null
-  readonly last_failure: string | null
-}
 
 /** One project row, as SQLite returns it. */
 export interface ProjectRow {
@@ -98,36 +89,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS bi_project_upstream
  * @throws when the file belongs to another application or another schema version.
  */
 export function applySchema(db: DatabaseSync): void {
-  const appId = readPragma(db, 'application_id')
-  const version = readPragma(db, 'user_version')
-  if (appId !== 0 && appId !== BI_GATEWAY_SQLITE_APPLICATION_ID) {
-    throw new Error(`bi-gateway-sqlite: database belongs to another application (application_id ${appId})`)
-  }
-  if (version > SCHEMA_VERSION) {
-    throw new Error(`bi-gateway-sqlite: database schema ${version} is newer than this build's ${SCHEMA_VERSION}`)
-  }
-  // An older file is refused too, and for the same reason as a newer one: the
-  // DDL above only creates tables it does not find, so a column this build no
-  // longer writes would still be there and still be NOT NULL. Rebuilding the
-  // catalog costs one synchronization, and every administrator choice it holds
-  // is re-made in the console; nothing here is a record of anyone's work.
-  /* v8 ignore next 3 -- reachable only once SCHEMA_VERSION passes 1; kept so the
-     first bump refuses an older file without rediscovering the rule. */
-  if (version !== 0 && version < SCHEMA_VERSION) {
-    throw new Error(`bi-gateway-sqlite: database schema ${version} is older than this build's ${SCHEMA_VERSION}; delete the file and synchronize again`)
-  }
-  db.exec('PRAGMA foreign_keys = ON')
-  db.exec(DDL)
-  db.exec(`PRAGMA application_id = ${BI_GATEWAY_SQLITE_APPLICATION_ID}`)
-  db.exec(`PRAGMA user_version = ${SCHEMA_VERSION}`)
-}
-
-/**
- * Read one integer pragma. A PRAGMA read of `application_id` or `user_version`
- * always answers with exactly one row holding one integer, so the cast states
- * what SQLite guarantees rather than guarding a path that cannot happen.
- */
-function readPragma(db: DatabaseSync, name: string): number {
-  const [value] = Object.values(db.prepare(`PRAGMA ${name}`).get() as Record<string, number>)
-  return value as number
+  applyCatalogSchema(db, {
+    name: 'bi-gateway-sqlite',
+    applicationId: BI_GATEWAY_SQLITE_APPLICATION_ID,
+    version: SCHEMA_VERSION,
+    ddl: DDL,
+  })
 }

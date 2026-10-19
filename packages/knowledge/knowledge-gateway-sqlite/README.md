@@ -65,8 +65,9 @@ Access control stays authoritative for roles, grants, and resources; this catalo
 
 | File | Holds |
 |---|---|
-| [`src/schema.ts`](src/schema.ts) | The two tables, their constraints, and the application id and schema version |
-| [`src/index.ts`](src/index.ts) | Synchronization, authorization, search, and audit |
+| [`src/schema.ts`](src/schema.ts) | The two tables, their constraints, and the application id and schema version; the check itself is the engine's |
+| [`src/index.ts`](src/index.ts) | The gateway, its config, the catalog spec it hands the shared engine, search, documents, and the audit words |
+| [`dsh-governed-catalog-sqlite`](../../access/governed-catalog-sqlite/README.md) | Synchronization, admission, the catalog view, and the audit record, shared with the other two governed catalogs |
 
 ### What a search records
 

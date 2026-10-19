@@ -34,6 +34,7 @@
     "@deepseek-ai/dsh-knowledge-gateway": "workspace:*"
   },
   "dependencies": {
+    "@deepseek-ai/dsh-team-governed-wire": "workspace:*",
     "@deepseek-ai/schemastery": "workspace:~"
   },
   "devDependencies": {

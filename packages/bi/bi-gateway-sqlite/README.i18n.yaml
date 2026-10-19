@@ -33,8 +33,8 @@
   en: 81df7f47289e96d3
   zh: 43db5b9b00573e35
 /deepseek-ai-dsh-bi-gateway-sqlite/understand-the-implementation/source-map:
-  en: 2e41a03de51a868f
-  zh: 587102fa78963e0b
+  en: 0c53892b3cbd91db
+  zh: 614f62955027b93e
 /deepseek-ai-dsh-bi-gateway-sqlite/understand-the-implementation/what-an-operation-records:
   en: 98077277c46499bc
   zh: d2756b73cb958ab6
@@ -51,8 +51,5 @@
   en: c46328d2eef35d29
   zh: 7b30e6a14bb8974b
 /deepseek-ai-dsh-bi-gateway-sqlite/known-limitations-and-deferred-work/dev-note:
-  en: 64ee46559b704be8
-  zh: 7cf9d7a59aae526a
-/deepseek-ai-dsh-bi-gateway-sqlite/known-limitations-and-deferred-work/dev-note/the-reconciliation-shape-is-shared-with-the-knowledge-gateway:
-  en: 939c6d44001e5a81
-  zh: c8d3713b877071ca
+  en: 51618a7e1234fbde
+  zh: 0c012850b8448ed1

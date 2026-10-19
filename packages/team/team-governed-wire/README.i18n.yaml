@@ -1,0 +1,43 @@
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write packages/team/team-governed-wire/README.md
+/:
+  en: e5fab50b19eb6887
+  zh: 97e422f59d5b5f83
+/deepseek-ai-dsh-team-governed-wire:
+  en: 36f1636d603aca08
+  zh: a30f1c490feead00
+/deepseek-ai-dsh-team-governed-wire/summary:
+  en: c5b2d9b3073d7caa
+  zh: 1a3c0b74597e7596
+/deepseek-ai-dsh-team-governed-wire/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 9f0336825ccdaacd
+/deepseek-ai-dsh-team-governed-wire/use-this-package:
+  en: bbff250eba0f1b89
+  zh: 0a618f05cc88ee2b
+/deepseek-ai-dsh-team-governed-wire/use-this-package/when-to-use-it:
+  en: ec573637fc0904c4
+  zh: 7ca14e3d478cd2fb
+/deepseek-ai-dsh-team-governed-wire/use-this-package/entry-point:
+  en: 7fd63b3617a0c2c8
+  zh: 7a354261a6eaa40b
+/deepseek-ai-dsh-team-governed-wire/understand-the-implementation:
+  en: 66d53d85dd4f8cf0
+  zh: 3b73101dfa721b97
+/deepseek-ai-dsh-team-governed-wire/further-exploration:
+  en: b207809d013deb3d
+  zh: fd2cc270d15aa029
+/deepseek-ai-dsh-team-governed-wire/model-experience:
+  en: 96fe6746eeab4044
+  zh: 2f108d45a49539bd
+/deepseek-ai-dsh-team-governed-wire/model-experience/kv-cache-effect:
+  en: 261da582d5593849
+  zh: cb565a7552fa315b
+/deepseek-ai-dsh-team-governed-wire/known-limitations-and-deferred-work:
+  en: 2d803343b1a3a9d8
+  zh: cd7bcaa3c4c2a751
+/deepseek-ai-dsh-team-governed-wire/known-limitations-and-deferred-work/dev-note:
+  en: 6ff901983fab37a0
+  zh: ca086c24e53ff05e

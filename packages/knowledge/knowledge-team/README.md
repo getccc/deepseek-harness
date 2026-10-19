@@ -66,7 +66,8 @@ Every field of an answer is validated at the wire before it becomes a knowledge 
 
 | File | Holds |
 |---|---|
-| [`src/index.ts`](src/index.ts) | The provider: the calls, the wire validation, and the failure mapping |
+| [`src/index.ts`](src/index.ts) | The provider: the calls and the wire validation |
+| [`dsh-team-governed-wire`](../../team/team-governed-wire/README.md) | The opening sequence, the route handler, the shared refusal statuses, and the Runner call |
 
 <a id="further-exploration"></a>
 ## Further Exploration

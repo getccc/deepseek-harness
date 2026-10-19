@@ -14,6 +14,7 @@
  */
 
 import type { DatabaseSync } from 'node:sqlite'
+import { applyCatalogSchema } from '@deepseek-ai/dsh-governed-catalog-sqlite'
 
 /**
  * Current physical schema. Monotonic, and refused in both directions: a
@@ -24,16 +25,6 @@ export const SCHEMA_VERSION = 4
 
 /** Application id reserved for DeepSeek Harness SQLite knowledge-catalog databases. */
 export const KNOWLEDGE_GATEWAY_SQLITE_APPLICATION_ID = 0x44534841 + 6
-
-/** One source row, as SQLite returns it. */
-export interface SourceRow {
-  readonly org_id: string
-  readonly source_code: string
-  readonly provider_kind: string
-  readonly last_attempt_at: number
-  readonly last_success_at: number | null
-  readonly last_failure: string | null
-}
 
 /** One knowledge-base row, as SQLite returns it. */
 export interface KnowledgeBaseRow {
@@ -101,39 +92,15 @@ CREATE UNIQUE INDEX IF NOT EXISTS knowledge_base_upstream
 
 /**
  * Bring a connection to {@link SCHEMA_VERSION}, refusing a database written by
- * a build that knew more than this one.
+ * any other build.
  * @param db - an open SQLite connection.
- * @throws when the file belongs to another application or a newer schema.
+ * @throws when the file belongs to another application or another schema version.
  */
 export function applySchema(db: DatabaseSync): void {
-  const appId = readPragma(db, 'application_id')
-  const version = readPragma(db, 'user_version')
-  if (appId !== 0 && appId !== KNOWLEDGE_GATEWAY_SQLITE_APPLICATION_ID) {
-    throw new Error(`knowledge-gateway-sqlite: database belongs to another application (application_id ${appId})`)
-  }
-  if (version > SCHEMA_VERSION) {
-    throw new Error(`knowledge-gateway-sqlite: database schema ${version} is newer than this build's ${SCHEMA_VERSION}`)
-  }
-  // An older file is refused too, and for the same reason as a newer one: the
-  // DDL below only creates tables it does not find, so a column this build no
-  // longer writes would still be there and still be NOT NULL. Rebuilding the
-  // catalog costs one synchronization, and every administrator choice it holds
-  // is re-made in the console; nothing here is a record of anyone's work.
-  if (version !== 0 && version < SCHEMA_VERSION) {
-    throw new Error(`knowledge-gateway-sqlite: database schema ${version} is older than this build's ${SCHEMA_VERSION}; delete the file and synchronize again`)
-  }
-  db.exec('PRAGMA foreign_keys = ON')
-  db.exec(DDL)
-  db.exec(`PRAGMA application_id = ${KNOWLEDGE_GATEWAY_SQLITE_APPLICATION_ID}`)
-  db.exec(`PRAGMA user_version = ${SCHEMA_VERSION}`)
-}
-
-/**
- * Read one integer pragma. A PRAGMA read of `application_id` or `user_version`
- * always answers with exactly one row holding one integer, so the cast states
- * what SQLite guarantees rather than guarding a path that cannot happen.
- */
-function readPragma(db: DatabaseSync, name: string): number {
-  const [value] = Object.values(db.prepare(`PRAGMA ${name}`).get() as Record<string, number>)
-  return value as number
+  applyCatalogSchema(db, {
+    name: 'knowledge-gateway-sqlite',
+    applicationId: KNOWLEDGE_GATEWAY_SQLITE_APPLICATION_ID,
+    version: SCHEMA_VERSION,
+    ddl: DDL,
+  })
 }

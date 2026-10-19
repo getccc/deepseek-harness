@@ -375,11 +375,6 @@
   "packages/attachment/attachment/tests/admission.spec.ts": {
     "d7dc9c349af8699fefcaffed26377443dd73ef95f1dc985f4de542ec133869f5": 1
   },
-  "packages/bi/bi-gateway-sqlite/src/index.ts": {
-    "413686069027d331818faee4e4ab2e32cc210e43b26f72068de126fe9b483870": 1,
-    "98519d195c98344489169460ff78de61b3e9c5539a97e7fb4f3e263b2c09a3fc": 1,
-    "b2a9f834a7ed9a641059645a347ea4036268964c9fe6490ace1916a3d6b0b815": 1
-  },
   "packages/bi/bi-gateway-sqlite/tests/gateway.spec.ts": {
     "c9da2bbd63d402c70f1ef8ac2bc892a22ad9fda0222c548916ee3399b2642ba4": 1
   },
@@ -1485,11 +1480,6 @@
     "0683cfd7f792f1b6333bc8c419d8ce32a7a630179280a31083a8f664e26e0ec0": 1,
     "0cf18056bb99a9f7435d55db31bed426d69b9973f7e15ebbca466f9e08ac9ee3": 1,
     "52faf4558fcd91bd27dbdfa7e497843e8eeb75ea5f68ee231335018d5b3f2053": 2
-  },
-  "packages/knowledge/knowledge-gateway-sqlite/src/index.ts": {
-    "4880c3ec69117f0e6d4e297997a49f9c4c981dc4c22c3239d75b131d220f6dc3": 1,
-    "6cc3c13093d17ebe5c532090014ec8783a68df7d7f34a73a59352e0d195f071c": 1,
-    "fa1cab620fa04502ac8ae7eb3a5850b2e19e051e0edfd2e184277217d174e045": 1
   },
   "packages/knowledge/knowledge-weknora/src/index.ts": {
     "29db38ee7bb893b6225ad8720d80fbf02222d6566562848aa0d0cbd671d6d1c8": 1,

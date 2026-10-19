@@ -64,8 +64,9 @@ Access control stays authoritative for roles, grants, and resources; this catalo
 
 | File | Holds |
 |---|---|
-| [`src/schema.ts`](src/schema.ts) | The two tables, their constraints, and the application id and schema version |
-| [`src/index.ts`](src/index.ts) | Synchronization, authorization, the listing, the run, and audit |
+| [`src/schema.ts`](src/schema.ts) | The two tables, their constraints, and the application id and schema version; the check itself is the engine's |
+| [`src/index.ts`](src/index.ts) | The gateway, its config, the catalog spec it hands the shared engine, the listing, the run, and the audit words |
+| [`dsh-governed-catalog-sqlite`](../../access/governed-catalog-sqlite/README.md) | Synchronization, admission, the catalog view, and the audit record, shared with the other two governed catalogs |
 
 ### What an operation records
 
@@ -106,11 +107,7 @@ These limits define when the provider is incomplete on its own. They are current
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-This Dev Note is working context for maintainers: open questions and undecided directions. It is explicitly non-authoritative — shipped behavior, limits, and rationale live in the sections above.
-
-#### The reconciliation shape is shared with the knowledge gateway
-
-Source row, serialized sync, all-or-nothing listing, retirement before rows, resource registration, and the audit record are the same mechanics `dsh-knowledge-gateway-sqlite` carries, written here against a project catalog rather than a knowledge-base catalog. The clone detector reports the shared stretches. Extracting one governed-catalog helper the two gateways parameterize is the follow-up; it touches the knowledge gateway and its tests, which is why it did not ride the change that added this package.
+None.
 
 </details>
 

@@ -179,7 +179,7 @@ Dependent changes, each with focused checks:
 
 **Enter the token in the console.** Rejected as BI rejected a key field: `credentialRef` plus the credential store is the existing path.
 
-**Share one catalog helper across knowledge, BI, and GMO before adding GMO.** The three catalogs now duplicate reconciliation and authorization code. Extracting it first would touch shipped knowledge and BI code that no recorded-session test covers; the duplication is documented in the package Dev Notes and is the first follow-up.
+**Share one catalog helper across knowledge, BI, and GMO before adding GMO.** The three catalogs now duplicate reconciliation and authorization code. Extracting it first would touch shipped knowledge and BI code that no recorded-session test covers, so the extraction followed this stack as [its own decision](../../implemented/architecture/2026-10-17-shared-governed-catalog-engine.md).
 
 ## Acceptance criteria
 
@@ -203,4 +203,4 @@ Dependent changes, each with focused checks:
 - A result is a snapshot of one processing run; a question across periods needs two answers the model combines itself, and no comparison tool exists in the first delivery.
 - The gateway token's reach is excel-tools' whole read surface. It cannot write or export, but it can read every category, so the Control Plane's per-category authorization is the only separation between categories; the token must not leave the Control Plane.
 - A deployment must state `sourceCode`, `baseUrl`, and `credentialRef` before the Control Plane starts, as BI does; a Control Plane upgraded without them fails to load the row.
-- The stack adds a package group with README, subsystem-page, and per-file coverage obligations, and a third copy of catalog reconciliation.
+- The stack adds a package group with README, subsystem-page, and per-file coverage obligations, and, until the extraction in [the shared engine decision](../../implemented/architecture/2026-10-17-shared-governed-catalog-engine.md) lands, a third copy of catalog reconciliation.

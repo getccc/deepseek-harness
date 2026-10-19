@@ -31,7 +31,6 @@ import {
   type BiQueryResult,
 } from '@deepseek-ai/dsh-bi'
 import {
-  ACCESS_TOKEN_HEADER,
   BI_CATALOG_PATH,
   BI_CHARTS_PATH,
   BI_PROTOCOL_VERSION,
@@ -40,15 +39,15 @@ import {
 import {
   controlPlaneConfigFields,
   controlPlaneFetch,
-  type ControlPlaneFetch,
-  type Response,
 } from '@deepseek-ai/dsh-team-account-client'
+import {
+  COMMON_REFUSAL_REASONS,
+  governedClient,
+  type GovernedClient,
+} from '@deepseek-ai/dsh-team-governed-wire'
 
-/** Every reason the Control Plane may answer with, for decoding one back. */
-const KNOWN_REASONS: readonly string[] = [
-  'unauthenticated', 'not-allowed', 'scope-unavailable', 'chart-unavailable', 'query-failed',
-  'upstream-unavailable', 'upstream-invalid', 'control-plane-unreachable', 'update-required', 'cancelled',
-]
+/** Every reason the Control Plane may answer with, for decoding one back: the shared words and this capability's own. */
+const KNOWN_REASONS: readonly BiFailureReason[] = [...COMMON_REFUSAL_REASONS, 'chart-unavailable', 'query-failed']
 
 /** Every chart kind the Control Plane may answer with, for decoding one back. */
 const KNOWN_KINDS: readonly string[] = [
@@ -90,23 +89,29 @@ export default class TeamBi extends Bi {
 
   static Config: z<Config> = z.object({ ...controlPlaneConfigFields })
 
-  /** The fetch every Control Plane call goes through, carrying this deployment's trust. */
-  private readonly fetch: ControlPlaneFetch
+  /** One call to this capability's Control Plane endpoints, carrying this deployment's trust. */
+  private readonly call: GovernedClient
 
   constructor(ctx: Context, public config: Config) {
     super(ctx)
-    this.fetch = controlPlaneFetch(ctx, config.controlPlaneCa)
+    this.call = governedClient({
+      fail: (reason, message) => new BiError(reason, message),
+      reasons: KNOWN_REASONS,
+      fetch: controlPlaneFetch(ctx, config.controlPlaneCa),
+      baseUrl: config.controlPlaneUrl,
+      account: ctx.teamAccountClient,
+    })
   }
 
   async catalog(signal?: AbortSignal): Promise<readonly BiProjectEntry[]> {
-    const body = await this.call(BI_CATALOG_PATH, {}, signal)
+    const body = await this.call(BI_CATALOG_PATH, BI_PROTOCOL_VERSION, {}, signal)
     const entries = body['entries']
     if (!Array.isArray(entries)) throw new BiError('upstream-invalid', 'directory is not a list')
     return entries.map(entry => readEntry(entry))
   }
 
   async charts(request: BiChartsRequest): Promise<BiChartPage> {
-    const body = await this.call(BI_CHARTS_PATH, {
+    const body = await this.call(BI_CHARTS_PATH, BI_PROTOCOL_VERSION, {
       ref: request.ref,
       ...(request.query === undefined ? {} : { query: request.query }),
       ...(request.page === undefined ? {} : { page: request.page }),
@@ -131,7 +136,7 @@ export default class TeamBi extends Bi {
   }
 
   async query(request: BiQueryRequest): Promise<BiQueryResult> {
-    const body = await this.call(BI_QUERY_PATH, {
+    const body = await this.call(BI_QUERY_PATH, BI_PROTOCOL_VERSION, {
       chartRef: request.chartRef,
       ...(request.limit === undefined ? {} : { limit: request.limit }),
     }, request.signal)
@@ -157,78 +162,6 @@ export default class TeamBi extends Bi {
       cellsTruncated: body['cellsTruncated'] === true,
     }
   }
-
-  /**
-   * Perform one Control Plane call and return its decoded object.
-   *
-   * Every failure that is not an answer this build can read becomes
-   * `control-plane-unreachable`: from a member's seat, a DNS failure, a TLS
-   * failure, a proxy that ate the request, and a Control Plane that is down
-   * are the same fact, and none of them is something they can act on
-   * differently.
-   */
-  private async call(
-    path: string,
-    fields: Record<string, unknown>,
-    signal: AbortSignal | undefined,
-  ): Promise<Record<string, unknown>> {
-    const token = await this.accessToken()
-    let response: Response
-    try {
-      response = await this.fetch(new URL(path, this.config.controlPlaneUrl), {
-        method: 'POST',
-        headers: {
-          [ACCESS_TOKEN_HEADER]: `Bearer ${token}`,
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify({ protocolVersion: BI_PROTOCOL_VERSION, ...fields }),
-        ...(signal === undefined ? {} : { signal }),
-      })
-    } catch {
-      // Includes the caller's own abort, which reaches the tool as a
-      // cancellation through its execution signal rather than through here.
-      throw new BiError('control-plane-unreachable', 'the Control Plane did not answer')
-    }
-    let decoded: unknown
-    try {
-      decoded = await response.json()
-    } catch {
-      // A reverse proxy error page rather than a Control Plane answer.
-      throw new BiError('control-plane-unreachable', 'the answer was not a Control Plane answer')
-    }
-    if (typeof decoded !== 'object' || decoded === null || Array.isArray(decoded)) {
-      throw new BiError('control-plane-unreachable', 'the answer was not an object')
-    }
-    const body = decoded as Record<string, unknown>
-    if (response.ok) return body
-    throw new BiError(refusalOf(body), `the Control Plane answered HTTP ${String(response.status)}`)
-  }
-
-  /** The Runner's current access token, or the reason there is none. */
-  private async accessToken(): Promise<string> {
-    try {
-      return await this.ctx.teamAccountClient.accessToken()
-    } catch {
-      // Not bound and refused are the same to a BI caller: neither is a BI
-      // failure, and both are answered by signing this computer in.
-      throw new BiError('unauthenticated', 'this computer is not signed in')
-    }
-  }
-}
-
-/**
- * Read the reason out of a refusal.
- *
- * An unknown word is treated as unreachable rather than passed through: a
- * Control Plane speaking reasons this build does not know is one this build
- * cannot act on, and inventing a meaning would tell a member to do something
- * that may not help.
- */
-function refusalOf(body: Record<string, unknown>): BiFailureReason {
-  const reason = body['reason']
-  return typeof reason === 'string' && KNOWN_REASONS.includes(reason)
-    ? reason as BiFailureReason
-    : 'control-plane-unreachable'
 }
 
 /** Validate one directory entry at the wire. */

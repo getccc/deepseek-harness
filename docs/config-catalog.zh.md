@@ -590,7 +590,7 @@ export type Config = LocalConfig
 ## `@deepseek-ai/dsh-bi-gateway-http`
 
 - `inject`: `webServer` · `biGateway` · `deviceAuthorization`
-- `source`: [`packages/bi/bi-gateway-http/src/index.ts:51`](../packages/bi/bi-gateway-http/src/index.ts)
+- `source`: [`packages/bi/bi-gateway-http/src/index.ts:57`](../packages/bi/bi-gateway-http/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: how much of a request the endpoints read. */
@@ -607,7 +607,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-bi-gateway-sqlite`
 
 - `inject`: `accessControl` · `audit` · `biSource`
-- `source`: [`packages/bi/bi-gateway-sqlite/src/index.ts:52`](../packages/bi/bi-gateway-sqlite/src/index.ts)
+- `source`: [`packages/bi/bi-gateway-sqlite/src/index.ts:55`](../packages/bi/bi-gateway-sqlite/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: where the catalog lives, and what one operation may return. */
@@ -641,7 +641,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-bi-team`
 
 - `inject`: `teamAccountClient`
-- `source`: [`packages/bi/bi-team/src/index.ts:60`](../packages/bi/bi-team/src/index.ts)
+- `source`: [`packages/bi/bi-team/src/index.ts:59`](../packages/bi/bi-team/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: which Control Plane this Runner belongs to. */
@@ -1591,7 +1591,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-gmo-gateway-http`
 
 - `inject`: `webServer` · `gmoGateway` · `deviceAuthorization`
-- `source`: [`packages/gmo/gmo-gateway-http/src/index.ts:68`](../packages/gmo/gmo-gateway-http/src/index.ts)
+- `source`: [`packages/gmo/gmo-gateway-http/src/index.ts:72`](../packages/gmo/gmo-gateway-http/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: how much of a request the endpoints read. */
@@ -1608,7 +1608,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-gmo-gateway-sqlite`
 
 - `inject`: `accessControl` · `audit` · `gmoSource`
-- `source`: [`packages/gmo/gmo-gateway-sqlite/src/index.ts:56`](../packages/gmo/gmo-gateway-sqlite/src/index.ts)
+- `source`: [`packages/gmo/gmo-gateway-sqlite/src/index.ts:59`](../packages/gmo/gmo-gateway-sqlite/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: where the catalog lives, and what one operation may return. */
@@ -1640,7 +1640,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-gmo-team`
 
 - `inject`: `teamAccountClient`
-- `source`: [`packages/gmo/gmo-team/src/index.ts:59`](../packages/gmo/gmo-team/src/index.ts)
+- `source`: [`packages/gmo/gmo-team/src/index.ts:58`](../packages/gmo/gmo-team/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: which Control Plane this Runner belongs to. */
@@ -1972,7 +1972,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-knowledge-gateway-http`
 
 - `inject`: `webServer` · `knowledgeGateway` · `deviceAuthorization`
-- `source`: [`packages/knowledge/knowledge-gateway-http/src/index.ts:70`](../packages/knowledge/knowledge-gateway-http/src/index.ts)
+- `source`: [`packages/knowledge/knowledge-gateway-http/src/index.ts:76`](../packages/knowledge/knowledge-gateway-http/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: how much of a request the endpoints read. */
@@ -1989,7 +1989,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-knowledge-gateway-sqlite`
 
 - `inject`: `accessControl` · `audit` · `knowledgeSource`
-- `source`: [`packages/knowledge/knowledge-gateway-sqlite/src/index.ts:60`](../packages/knowledge/knowledge-gateway-sqlite/src/index.ts)
+- `source`: [`packages/knowledge/knowledge-gateway-sqlite/src/index.ts:63`](../packages/knowledge/knowledge-gateway-sqlite/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: where the catalog lives, and what one operation may return. */
@@ -2027,7 +2027,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-knowledge-team`
 
 - `inject`: `teamAccountClient`
-- `source`: [`packages/knowledge/knowledge-team/src/index.ts:62`](../packages/knowledge/knowledge-team/src/index.ts)
+- `source`: [`packages/knowledge/knowledge-team/src/index.ts:60`](../packages/knowledge/knowledge-team/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: which Control Plane this Runner belongs to. */
@@ -5575,6 +5575,7 @@ export interface Config {
 | `@deepseek-ai/dsh-gmo` | — | [`packages/gmo/gmo/src/index.ts`](../packages/gmo/gmo/src/index.ts) |
 | `@deepseek-ai/dsh-gmo-gateway` | — | [`packages/gmo/gmo-gateway/src/index.ts`](../packages/gmo/gmo-gateway/src/index.ts) |
 | `@deepseek-ai/dsh-gmo-source` | — | [`packages/gmo/gmo-source/src/index.ts`](../packages/gmo/gmo-source/src/index.ts) |
+| `@deepseek-ai/dsh-governed-catalog-sqlite` | — | [`packages/access/governed-catalog-sqlite/src/index.ts`](../packages/access/governed-catalog-sqlite/src/index.ts) |
 | `@deepseek-ai/dsh-home-paths` | — | [`packages/util/home-paths/src/index.ts`](../packages/util/home-paths/src/index.ts) |
 | `@deepseek-ai/dsh-hook-protocol` | — | [`packages/hooks/hook-protocol/src/index.ts`](../packages/hooks/hook-protocol/src/index.ts) |
 | `@deepseek-ai/dsh-http-proxy` | — | [`packages/util/http-proxy/src/index.ts`](../packages/util/http-proxy/src/index.ts) |
@@ -5613,6 +5614,7 @@ export interface Config {
 | `@deepseek-ai/dsh-team-browser-session` | — | [`packages/team/team-browser-session/src/index.ts`](../packages/team/team-browser-session/src/index.ts) |
 | `@deepseek-ai/dsh-team-console-menu` | — | [`packages/team/team-console-menu/src/index.ts`](../packages/team/team-console-menu/src/index.ts) |
 | `@deepseek-ai/dsh-team-control-plane` | — | [`packages/bundle/team-control-plane/src/index.ts`](../packages/bundle/team-control-plane/src/index.ts) |
+| `@deepseek-ai/dsh-team-governed-wire` | — | [`packages/team/team-governed-wire/src/index.ts`](../packages/team/team-governed-wire/src/index.ts) |
 | `@deepseek-ai/dsh-team-update` | — | [`packages/team/team-update/src/index.ts`](../packages/team/team-update/src/index.ts) |
 | `@deepseek-ai/dsh-timeout` | — | [`packages/util/timeout/src/index.ts`](../packages/util/timeout/src/index.ts) |
 | `@deepseek-ai/dsh-typert-generator` | — | [`packages/typert/generator/src/index.ts`](../packages/typert/generator/src/index.ts) |

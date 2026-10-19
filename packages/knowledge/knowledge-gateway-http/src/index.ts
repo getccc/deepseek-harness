@@ -13,7 +13,6 @@
  * @module @deepseek-ai/dsh-knowledge-gateway-http
  */
 
-import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-device-authorization'
@@ -28,9 +27,15 @@ import {
   type KnowledgeFailureReason,
   type KnowledgeScopeSelection,
 } from '@deepseek-ai/dsh-knowledge'
-import type { KnowledgePrincipal } from '@deepseek-ai/dsh-knowledge-gateway'
+import type {} from '@deepseek-ai/dsh-knowledge-gateway'
 import {
-  ACCESS_TOKEN_HEADER,
+  COMMON_REFUSAL_STATUS,
+  governedHandler,
+  readCount,
+  type GovernedProtocol,
+  type ParseRoute,
+} from '@deepseek-ai/dsh-team-governed-wire'
+import {
   KNOWLEDGE_CATALOG_PATH,
   KNOWLEDGE_DOCUMENTS_PATH,
   KNOWLEDGE_DOCUMENT_PATH,
@@ -39,6 +44,7 @@ import {
   MINIMUM_KNOWLEDGE_PROTOCOL_VERSION,
 } from './protocol.ts'
 
+export { readCount } from '@deepseek-ai/dsh-team-governed-wire'
 export {
   ACCESS_TOKEN_HEADER,
   KNOWLEDGE_CATALOG_PATH,
@@ -83,79 +89,19 @@ export const Config: z<Config> = z.object({
 /** {@link Config} once schemastery has filled every defaulted field. */
 type ResolvedConfig = Required<Config>
 
-/** The HTTP status one closed refusal reason answers with. */
+/** The HTTP status one closed refusal reason answers with; the shared words keep the governed wire's statuses. */
 const STATUS_BY_REASON: Readonly<Record<KnowledgeFailureReason, number>> = {
-  'unauthenticated': 401,
-  'not-allowed': 403,
+  ...COMMON_REFUSAL_STATUS,
   'document-unavailable': 409,
-  'scope-unavailable': 409,
   'scope-incompatible': 409,
-  'upstream-unavailable': 502,
-  'upstream-invalid': 502,
-  'control-plane-unreachable': 503,
-  'update-required': 426,
-  'cancelled': 499,
 }
 
-/** Write one JSON response. */
-function json(res: ServerResponse, status: number, body: unknown): void {
-  res.writeHead(status, { 'cache-control': 'no-store', 'content-type': 'application/json; charset=utf-8' })
-  res.end(JSON.stringify(body))
-}
-
-/** Refuse with a closed knowledge reason and the status it maps to. */
-function refuse(res: ServerResponse, reason: KnowledgeFailureReason): void {
-  json(res, STATUS_BY_REASON[reason], { error: 'knowledge', reason })
-}
-
-/**
- * The bearer token a request carries, when it carries one.
- *
- * `node:http` joins repeated `authorization` headers into one comma-separated
- * string rather than an array, so a request that sent two does not match the
- * prefix and reads as carrying none.
- */
-function bearer(req: IncomingMessage): string | undefined {
-  const value = req.headers[ACCESS_TOKEN_HEADER]
-  return typeof value === 'string' && value.startsWith('Bearer ') ? value.slice(7) : undefined
-}
-
-/** Read a bounded JSON object body, or undefined when it is not one. */
-async function readJson(req: IncomingMessage, limit: number): Promise<Record<string, unknown> | undefined> {
-  const chunks: Buffer[] = []
-  let size = 0
-  for await (const chunk of req) {
-    const buffer = chunk as Buffer
-    size += buffer.byteLength
-    if (size > limit) return undefined
-    chunks.push(buffer)
-  }
-  try {
-    const parsed: unknown = JSON.parse(Buffer.concat(chunks).toString('utf8'))
-    return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
-      ? parsed as Record<string, unknown>
-      : undefined
-  } catch {
-    // A body that is not JSON is a proxy error page or a truncated request;
-    // either way this build cannot read it, and the parser's own message
-    // describes our parse rather than the caller's mistake.
-    return undefined
-  }
-}
-
-/**
- * Read a whole page number or page size, when the field carries one.
- *
- * Absent is a valid request — the gateway supplies its own default — so the
- * answer distinguishes "not given" from "not a number this build accepts",
- * which is a protocol error rather than an authorization outcome.
- * @param value - the decoded field.
- * @returns the number, `undefined` when the field is absent, or `'invalid'`.
- */
-export function readCount(value: unknown): number | undefined | 'invalid' {
-  if (value === undefined) return undefined
-  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 1) return 'invalid'
-  return value
+/** The wire facts this Control Plane answers knowledge requests under. */
+const PROTOCOL: GovernedProtocol<KnowledgeFailureReason> = {
+  scope: 'knowledge',
+  minimum: MINIMUM_KNOWLEDGE_PROTOCOL_VERSION,
+  current: KNOWLEDGE_PROTOCOL_VERSION,
+  statusByReason: STATUS_BY_REASON,
 }
 
 /**
@@ -216,111 +162,51 @@ export function apply(ctx: Context, config: Config): void {
   // schemastery (Config) has already filled every defaulted field.
   const { maxRequestBodyBytes: limit } = config as ResolvedConfig
 
-  /**
-   * Everything both routes do before they diverge: method, body, protocol
-   * version, then identity. The version is checked before any other field is
-   * read, and identity before any operation is attempted.
-   */
-  async function open(
-    req: IncomingMessage,
-    res: ServerResponse,
-  ): Promise<{ body: Record<string, unknown>; principal: KnowledgePrincipal } | undefined> {
-    if (req.method !== 'POST') {
-      json(res, 405, { error: 'method not allowed' })
-      return undefined
-    }
-    const body = await readJson(req, limit)
-    if (body === undefined) {
-      json(res, 400, { error: 'malformed' })
-      return undefined
-    }
-    const version = body['protocolVersion']
-    if (typeof version !== 'number'
-      || version < MINIMUM_KNOWLEDGE_PROTOCOL_VERSION
-      || version > KNOWLEDGE_PROTOCOL_VERSION) {
-      json(res, 426, {
-        error: 'knowledge',
-        reason: 'update-required',
-        minimum: MINIMUM_KNOWLEDGE_PROTOCOL_VERSION,
-        current: KNOWLEDGE_PROTOCOL_VERSION,
-      })
-      return undefined
-    }
-    const token = bearer(req)
-    const claims = token === undefined ? undefined : await ctx.deviceAuthorization.verifyAccessToken(token)
-    if (claims === undefined) {
-      refuse(res, 'unauthenticated')
-      return undefined
-    }
-    return {
-      body,
-      principal: {
-        orgId: claims.orgId,
-        principalId: claims.principalId,
-        deviceId: claims.deviceId,
-      },
-    }
-  }
+  /** Serve one route under this capability's protocol. */
+  const serve = (parse: ParseRoute) => governedHandler({
+    reasonOf: error => error instanceof KnowledgeError ? error.reason : undefined,
+    protocol: PROTOCOL,
+    limit,
+    verify: token => ctx.deviceAuthorization.verifyAccessToken(token),
+  }, parse)
 
   const catalog: WebRoute = {
     kind: 'exact',
     path: KNOWLEDGE_CATALOG_PATH,
-    handler: async (req, res) => {
-      const opened = await open(req, res)
-      if (opened === undefined) return
-      try {
-        json(res, 200, { entries: await ctx.knowledgeGateway.directory(opened.principal) })
-      } catch (error) {
-        answerFailure(res, error)
-      }
-    },
+    handler: serve(opened => async () => ({ entries: await ctx.knowledgeGateway.directory(opened.principal) })),
   }
 
   const documents: WebRoute = {
     kind: 'exact',
     path: KNOWLEDGE_DOCUMENTS_PATH,
-    handler: async (req, res) => {
-      const opened = await open(req, res)
-      if (opened === undefined) return
+    handler: serve((opened) => {
       const ref = opened.body['ref']
       const page = readCount(opened.body['page'])
       const pageSize = readCount(opened.body['pageSize'])
-      if (typeof ref !== 'string' || !isKnowledgeRef(ref) || page === 'invalid' || pageSize === 'invalid') {
-        json(res, 400, { error: 'malformed' })
-        return
-      }
-      try {
-        json(res, 200, await ctx.knowledgeGateway.documents({
-          ...opened.principal,
-          ref: KnowledgeRef(ref),
-          ...(page === undefined ? {} : { page }),
-          ...(pageSize === undefined ? {} : { pageSize }),
-        }))
-      } catch (error) {
-        answerFailure(res, error)
-      }
-    },
+      if (typeof ref !== 'string' || !isKnowledgeRef(ref) || page === 'invalid' || pageSize === 'invalid') return undefined
+      return () => ctx.knowledgeGateway.documents({
+        ...opened.principal,
+        ref: KnowledgeRef(ref),
+        ...(page === undefined ? {} : { page }),
+        ...(pageSize === undefined ? {} : { pageSize }),
+      })
+    }),
   }
 
   const document: WebRoute = {
     kind: 'exact',
     path: KNOWLEDGE_DOCUMENT_PATH,
-    handler: async (req, res) => {
-      const opened = await open(req, res)
-      if (opened === undefined) return
+    handler: serve((opened) => {
       const docRef = opened.body['docRef']
       const maxBytes = readCount(opened.body['maxBytes'])
-      if (typeof docRef !== 'string' || !isKnowledgeDocRef(docRef) || maxBytes === 'invalid') {
-        json(res, 400, { error: 'malformed' })
-        return
-      }
-      try {
+      if (typeof docRef !== 'string' || !isKnowledgeDocRef(docRef) || maxBytes === 'invalid') return undefined
+      return async () => {
         const content = await ctx.knowledgeGateway.documentContent({
           ...opened.principal,
           docRef: KnowledgeDocRef(docRef),
           ...(maxBytes === undefined ? {} : { maxBytes }),
         })
-        json(res, 200, content.kind === 'bytes'
+        return content.kind === 'bytes'
           ? {
             kind: 'bytes',
             docRef: content.docRef,
@@ -328,58 +214,34 @@ export function apply(ctx: Context, config: Config): void {
             contentType: content.contentType,
             base64: Buffer.from(content.bytes).toString('base64'),
           }
-          : content)
-      } catch (error) {
-        answerFailure(res, error)
+          : content
       }
-    },
+    }),
   }
 
   const search: WebRoute = {
     kind: 'exact',
     path: KNOWLEDGE_SEARCH_PATH,
-    handler: async (req, res) => {
-      const opened = await open(req, res)
-      if (opened === undefined) return
+    handler: serve((opened) => {
       const query = opened.body['query']
       const scope = readScope(opened.body['scope'])
       const maxResults = readCount(opened.body['maxResults'])
       const maxDocuments = readCount(opened.body['maxDocuments'])
       if (typeof query !== 'string' || query === '' || scope === undefined || maxResults === 'invalid' || maxDocuments === 'invalid') {
-        json(res, 400, { error: 'malformed' })
-        return
+        return undefined
       }
-      try {
-        json(res, 200, await ctx.knowledgeGateway.search({
-          ...opened.principal,
-          scope,
-          query,
-          ...(maxResults === undefined ? {} : { maxResults }),
-          ...(maxDocuments === undefined ? {} : { maxDocuments }),
-        }))
-      } catch (error) {
-        answerFailure(res, error)
-      }
-    },
+      return () => ctx.knowledgeGateway.search({
+        ...opened.principal,
+        scope,
+        query,
+        ...(maxResults === undefined ? {} : { maxResults }),
+        ...(maxDocuments === undefined ? {} : { maxDocuments }),
+      })
+    }),
   }
 
   ctx.effect(() => ctx.webServer.register(catalog), 'knowledge-gateway-http: catalog route')
   ctx.effect(() => ctx.webServer.register(documents), 'knowledge-gateway-http: documents route')
   ctx.effect(() => ctx.webServer.register(document), 'knowledge-gateway-http: document content route')
   ctx.effect(() => ctx.webServer.register(search), 'knowledge-gateway-http: search route')
-}
-
-/**
- * Answer a failed operation with its closed reason.
- *
- * A failure that is not a `KnowledgeError` is this deployment's own defect
- * rather than anything the Runner did, so it answers 500 with no reason word:
- * inventing one would tell a member to take an action that cannot help.
- */
-function answerFailure(res: ServerResponse, error: unknown): void {
-  if (error instanceof KnowledgeError) {
-    refuse(res, error.reason)
-    return
-  }
-  json(res, 500, { error: 'internal' })
 }

@@ -1,0 +1,22 @@
+# Bilingual-pair consistency record for 2026-10-17-shared-governed-catalog-engine.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-10-17-shared-governed-catalog-engine.md
+/agent-note-one-governed-catalog-engine-and-one-governed-wire-for-knowledge-bi-and-gmo:
+  en: 9511244d36daadec
+  zh: 118091b972508115
+/agent-note-one-governed-catalog-engine-and-one-governed-wire-for-knowledge-bi-and-gmo/problem:
+  en: c78b4fc2f2ec2b9d
+  zh: d5fe841887d3af24
+/agent-note-one-governed-catalog-engine-and-one-governed-wire-for-knowledge-bi-and-gmo/decision:
+  en: e601f9ee6eccb96c
+  zh: fbcbdd760eb2a518
+/agent-note-one-governed-catalog-engine-and-one-governed-wire-for-knowledge-bi-and-gmo/recorded-evidence:
+  en: dafb9b55fdb31147
+  zh: c933c582dc003bd1
+/agent-note-one-governed-catalog-engine-and-one-governed-wire-for-knowledge-bi-and-gmo/alternatives-considered:
+  en: 80787b80579649ef
+  zh: a8a3b46004c9c8f2
+/agent-note-one-governed-catalog-engine-and-one-governed-wire-for-knowledge-bi-and-gmo/consequences:
+  en: ade71b062c50d150
+  zh: c4410caccb48f196

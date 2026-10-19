@@ -34,6 +34,9 @@
     },
     {
       "path": "../../account/account-store"
+    },
+    {
+      "path": "../../access/governed-catalog-sqlite"
     }
   ]
 }

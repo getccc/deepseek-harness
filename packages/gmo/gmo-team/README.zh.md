@@ -59,7 +59,8 @@ kind: "package-reference"
 
 | 文件 | 内容 |
 |---|---|
-| [`src/index.ts`](src/index.ts) | 提供方、它的配置、调用，以及 Control Plane 答案的读取器 |
+| [`src/index.ts`](src/index.ts) | 提供方、它的配置，以及 Control Plane 答案的读取器 |
+| [`dsh-team-governed-wire`](../../team/team-governed-wire/README.zh.md) | 开场序列、路由处理函数、共用的拒绝状态，以及 Runner 的调用 |
 
 <a id="further-exploration"></a>
 ## 延伸阅读
@@ -91,7 +92,7 @@ kind: "package-reference"
 <details>
 <summary>维护者工作上下文——点击展开</summary>
 
-同步、目录与授权的代码是知识库和 BI 网关的第三份副本，`pnpm run duplication` 会报告这些重复。抽取共用的受治理目录助手是后续项：它会动到已发布、且没有任何已录制会话测试覆盖的知识库与 BI 代码，所以本次变更没有做。
+无。
 
 </details>
 

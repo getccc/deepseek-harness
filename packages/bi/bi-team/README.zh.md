@@ -66,7 +66,8 @@ kind: "package-reference"
 
 | 文件 | 内容 |
 |---|---|
-| [`src/index.ts`](src/index.ts) | 提供方：三个调用、线路校验与失败映射 |
+| [`src/index.ts`](src/index.ts) | 提供方：三个调用与线路校验 |
+| [`dsh-team-governed-wire`](../../team/team-governed-wire/README.zh.md) | 开场序列、路由处理函数、共用的拒绝状态，以及 Runner 的调用 |
 
 <a id="further-exploration"></a>
 ## 延伸阅读
@@ -100,11 +101,7 @@ kind: "package-reference"
 <details>
 <summary>维护者工作上下文——点击展开</summary>
 
-本开发备注是维护者的工作上下文：开放问题与未定方向。它明确不具权威性——已交付的行为、限制与理由在上面的章节中。
-
-#### 调用形态与知识提供方共享
-
-构造函数、按调用读取令牌，以及请求并解码的那一段，与 `dsh-knowledge-team` 携带的是同一套机制，只是在这里针对三条 BI 路由而不是知识路由书写。克隆检测器会报告这些共享片段。抽取一个由两个提供方参数化的 Control Plane 调用辅助函数是后续工作；它会触及知识提供方及其测试，这正是它没有随添加本包的变更一起进行的原因。
+无。
 
 </details>
 

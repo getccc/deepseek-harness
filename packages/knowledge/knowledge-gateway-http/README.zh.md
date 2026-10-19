@@ -81,7 +81,8 @@ kind: "package-reference"
 | 文件 | 内容 |
 |---|---|
 | [`src/protocol.ts`](src/protocol.ts) | 路径、版本常量，以及双方共同 import 的请求体 |
-| [`src/index.ts`](src/index.ts) | 这些路由、共享的开场序列，以及拒绝映射 |
+| [`src/index.ts`](src/index.ts) | 这些路由，以及每条路由如何解码自己的字段 |
+| [`dsh-team-governed-wire`](../../team/team-governed-wire/README.zh.md) | 开场序列、路由处理函数、共用的拒绝状态，以及 Runner 的调用 |
 
 <a id="further-exploration"></a>
 ## 延伸阅读

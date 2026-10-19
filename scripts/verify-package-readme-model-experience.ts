@@ -84,6 +84,8 @@ const SENTENCE_MODEL_EXPERIENCE: Readonly<Record<string, SentenceContract>> = {
   'packages/gmo/gmo-gateway-http': { kind: 'none', reason: 'Control Plane routes; figures become model-visible only after a Runner-side tool renders them.' },
   'packages/gmo/gmo-team': { kind: 'indirect', reason: 'The transport registers no prompt or schema; dsh-tool-gmo renders results and answers and owns the scope prompt section.' },
   'packages/gmo/gmo-excel-tools': { kind: 'none', reason: 'Control Plane provider; figures become model-visible only after a gateway authorizes them and a Runner-side tool renders them.' },
+  'packages/access/governed-catalog-sqlite': { kind: 'none', reason: 'Control Plane library; catalog contents become model-visible only after a gateway authorizes them and a Runner-side tool renders them.' },
+  'packages/team/team-governed-wire': { kind: 'none', reason: 'Transports closed words, references, and a version over HTTP; the Runner-side tools own everything the model sees.' },
   'packages/api/gmo-controller': { kind: 'indirect', reason: 'The Remote records the category choice the browser makes; dsh-tool-gmo is what names it to the model.' },
   'packages/client/ui-gmo': { kind: 'indirect', reason: 'Browser-side composer control; the category it records is what dsh-tool-gmo names in the prompt and gates the tools on.' },
   'packages/knowledge/knowledge': { kind: 'indirect', reason: 'The seam registers no prompt or schema; the knowledge tool package renders passages and owns the scope prompt section.' },

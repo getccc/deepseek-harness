@@ -66,7 +66,8 @@ kind: "package-reference"
 
 | 文件 | 内容 |
 |---|---|
-| [`src/index.ts`](src/index.ts) | 提供方：这些调用、wire 校验和失败映射 |
+| [`src/index.ts`](src/index.ts) | 提供方：这些调用和 wire 校验 |
+| [`dsh-team-governed-wire`](../../team/team-governed-wire/README.zh.md) | 开场序列、路由处理函数、共用的拒绝状态，以及 Runner 的调用 |
 
 <a id="further-exploration"></a>
 ## 延伸阅读

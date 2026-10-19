@@ -65,8 +65,9 @@ Two databases cannot commit together. Access control stays authoritative for rol
 
 | File | Holds |
 |---|---|
-| [`src/index.ts`](src/index.ts) | The gateway, its config, synchronization, authorization, and audit |
-| [`src/schema.ts`](src/schema.ts) | The tables, the schema version, and the application id check |
+| [`src/index.ts`](src/index.ts) | The gateway, its config, the catalog spec it hands the shared engine, and its three operations |
+| [`src/schema.ts`](src/schema.ts) | The tables, the schema version, and the application id; the check itself is the engine's |
+| [`dsh-governed-catalog-sqlite`](../../access/governed-catalog-sqlite/README.md) | Synchronization, admission, the catalog view, and the audit record, shared with the other two governed catalogs |
 
 ### Data model
 
@@ -103,7 +104,7 @@ These limits define when the package is incomplete on its own. They are current 
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-The reconciliation, catalog, and authorization code is a third copy of the knowledge and BI gateways', and `pnpm run duplication` reports the clones. Extracting a shared governed-catalog helper is the follow-up: it touches shipped knowledge and BI code that no recorded-session test covers, which is why this change did not.
+None.
 
 </details>
 

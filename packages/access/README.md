@@ -22,7 +22,7 @@ The `access/` group decides whether a principal may perform an action on a resou
 <a id="packages"></a>
 ## Packages
 
-Three capability seams, six packages; each child README owns the full contract.
+Three capability seams, six packages, and one library; each child README owns the full contract.
 
 | Package | Role | ctx key |
 |---|---|---|
@@ -32,6 +32,7 @@ Three capability seams, six packages; each child README owns the full contract.
 | [`audit-sqlite/`](audit-sqlite/README.md) | Stores the append-only trail and declares the same rules to the database | registers `ctx.audit` |
 | [`quota/`](quota/README.md) | Service Definition: reserve before an upstream call, settle once afterwards | `ctx.quota` |
 | [`quota-sqlite/`](quota-sqlite/README.md) | Keeps the ledger and reconciles what nobody settled | registers `ctx.quota` |
+| [`governed-catalog-sqlite/`](governed-catalog-sqlite/README.md) | Library: the catalog the knowledge, BI, and GMO gateways share | — |
 
 -----
 
