@@ -73,7 +73,7 @@ interface ViewProps {
  * says so where the page would go.
  */
 const VIEWS: Record<ConsoleComponent, (props: ViewProps) => ReactNode> = {
-  'dashboard/OverviewPage': () => <Overview />,
+  'dashboard/OverviewPage': ({ held }) => <Overview held={held} />,
   'system/DepartmentsPage': ({ held }) => <Departments held={held} />,
   'system/UsersPage': ({ held, signedInId, secretPolicy }) => (
     <Members held={held} signedInId={signedInId} secretPolicy={secretPolicy} />

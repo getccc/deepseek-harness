@@ -471,6 +471,19 @@ export const zh = {
   'usage.kind.estimatedTip': '上游没有回报用量，账本按估算值计入。',
   'usage.kind.reconciledTip': '请求超时后由对账任务结算，按预留额度全额计入，可能高于实际消耗。',
   'refuse.usage-query': '时间范围、页码或时区不符合要求。',
+  'overview.usage.heading': 'Token 消耗',
+  'overview.usage.today': '今日消耗',
+  'overview.usage.vsYesterday': '较昨日 {change}',
+  'overview.usage.noYesterday': '昨日无调用',
+  'overview.usage.week': '近 7 天消耗',
+  'overview.usage.weekNote': '共 {n} 次调用',
+  'overview.usage.todayCalls': '今日调用次数',
+  'overview.usage.todayActive': '今日活跃用户',
+  'overview.usage.todayActiveNote': '近 7 天共 {n} 人',
+  'overview.usage.weekTrend': '近 7 天消耗趋势',
+  'overview.usage.todayTrend': '今日分时消耗',
+  'overview.usage.top': '近 7 天用户消耗 Top {n}',
+  'overview.usage.share': '占 {pct}%',
 } as const
 
 /** English dictionary; every key of {@link zh}. */
@@ -952,6 +965,19 @@ export const en: Record<keyof typeof zh, string> = {
   'usage.kind.estimatedTip': 'The upstream reported no usage, so the ledger charged its estimate.',
   'usage.kind.reconciledTip': 'Settled by the reconciler after the request timed out; the whole reservation is charged, which can exceed what was actually spent.',
   'refuse.usage-query': 'The time range, page, or time zone is not acceptable.',
+  'overview.usage.heading': 'Token spending',
+  'overview.usage.today': 'Spent today',
+  'overview.usage.vsYesterday': '{change} vs. yesterday',
+  'overview.usage.noYesterday': 'No calls yesterday',
+  'overview.usage.week': 'Spent in the last 7 days',
+  'overview.usage.weekNote': '{n} calls',
+  'overview.usage.todayCalls': 'Calls today',
+  'overview.usage.todayActive': 'Active members today',
+  'overview.usage.todayActiveNote': '{n} in the last 7 days',
+  'overview.usage.weekTrend': 'Spending over the last 7 days',
+  'overview.usage.todayTrend': 'Spending today, by hour',
+  'overview.usage.top': 'Top {n} members, last 7 days',
+  'overview.usage.share': '{pct}% of total',
 }
 
 /** Every copy key the console can ask for. */

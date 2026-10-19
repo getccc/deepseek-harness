@@ -499,6 +499,40 @@ body {
   opacity: 0.65;
 }
 
+.rank-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.rank-row:last-child {
+  margin-bottom: 0;
+}
+
+.rank-index {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rank-body {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.rank-line {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
 .usage-row-selected > td {
   background: rgb(22 119 255 / 6%);
 }
