@@ -158,6 +158,17 @@ describe('Session working directories', () => {
     }))
   })
 
+  it('gives a Session without origin metadata no directory context until a directory is set', async () => {
+    await using f = await fixture()
+    const agent = await f.harness.create(SessionId('chat-without-location'))
+    const before = await f.ctx.systemPrompt.assemble({ agent, scope: agent })
+    expect(renderContextSnapshot(before)).toBe('')
+    expect(agent.session.snapshotEvents().some(event => event.type === 'working-directory/change')).toBe(false)
+    await f.ctx.workingDirectory.set(agent, f.root)
+    const after = await f.ctx.systemPrompt.assemble({ agent, scope: agent })
+    expect(renderContextSnapshot(after)).toContain(`Current working directory: ${JSON.stringify(f.root)}.`)
+  })
+
   it('rejects a relative deployment default before accepting Sessions', async () => {
     await expect(fixture(() => ({ defaultDirectory: 'relative/project' }))).rejects.toThrow('defaultDirectory must be absolute')
   })

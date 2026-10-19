@@ -14,7 +14,7 @@ Status: implemented
 
 在上游新结构上重新落位的 fork 行为：
 
-- **对话 Session。** `ApiSessionCreateRequest.cwd` 可以缺省。`createSession`、`claim` 与 `createAgent` 会创建没有 cwd 的 Session，并经 `resolveFor` 组合 roster 的 `chatDefault`；`session.create` 回显 Session 拥有的 cwd。未组合 roster 的部署以 `session/location-required` 拒绝不带位置的创建。冷列表保留没有 cwd 的 Session。
+- **对话 Session。** `ApiSessionCreateRequest.cwd` 可以缺省。`createSession`、`claim` 与 `createAgent` 会创建没有 cwd 的 Session，并经 `resolveFor` 组合 roster 的 `chatDefault`；`session.create` 回显 Session 拥有的 cwd。未组合 roster 的部署以 `session/location-required` 拒绝不带位置的创建。冷列表保留没有 cwd 的 Session。上游的 working-directory 服务会把启动目录交给这类 Session 并告知模型；现在提示词组装不会为既无原始项目、也无已记录变更的 Session 写入目录事件或上下文。
 - **默认模型。** `settleDefaultSelection` 仍在提示词准入前，把没有自身选择的 Session 绑定到模型目录的默认模型。
 - **身份头部。** `conversation.chat.assistant-identity` 成为 `conversation.chat.flow` 的子 slot；`ChatFlow` 构造 `renderIdentity`，由轮次的首个 `ChatNodeSeat` 渲染 `TurnActivityHeader`。
 - **Web 界面上下文。** `web-app` 在 `publicUrl` 旁保留 `entryPath`、`surfaceAudience` 与 `surfaceName`。开发者受众的定位来自 `harness-dev-context`；`member` 受众注册自己的 `app:web-surface` 分节，Team bundle 禁用 `harness-dev-context`。

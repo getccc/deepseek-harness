@@ -8,8 +8,8 @@
     - tab "Trajectory"
 - text: Reply exactly CHAT_PRESET_REQUEST_OK and stop. {{clock}}
 - button "Copy"
-- status: Xiaowei worked
-- button "Xiaowei took {{duration}}" [disabled]
+- status: Xiaowei completed
+- button "Xiaowei completed in {{duration}}" [disabled]
 - paragraph: CHAT_PRESET_REQUEST_OK
 - button "Copy"
 - button "Good response"

@@ -95,7 +95,7 @@ export class WorkingDirectoryService extends Service {
       text: context => context.agent === undefined ? '' : this.contextText(context.agent.session),
     })
     ctx.on('system-prompt/assemble', async (_assembly, context, next) => {
-      if (context.agent === undefined) return next()
+      if (context.agent === undefined || !this.located(context.agent.session)) return next()
       await this.ensure(context.agent, context.signal)
       const assembly = await next()
       this.lifecycle.signal.throwIfAborted()
@@ -169,8 +169,16 @@ export class WorkingDirectoryService extends Service {
     })
   }
 
+  /**
+   * Whether a Session has a directory of its own: an original project or a recorded change.
+   * A Session created without a location receives no directory context until a tool sets one.
+   */
+  private located(session: Session): boolean {
+    return this.ctx.sessionProjections.stateOf(session, 'workingDirectory') !== null
+  }
+
   private contextText(session: Session): string {
-    return `Current working directory: ${JSON.stringify(this.get(session))}.`
+    return this.located(session) ? `Current working directory: ${JSON.stringify(this.get(session))}.` : ''
   }
 
   private async directory(path: string, cwd: string, signal: AbortSignal): Promise<string> {
