@@ -7,6 +7,8 @@ kind: "package-reference"
 
 [English](README.md) | 中文
 
+桌面端产品事件使用可选的[产品埋点服务](../product-analytics/README.zh.md)，不包含普通 Web 交互。
+
 ## 概述
 
 dsh Web 客户端的侧边栏让用户识别当前构建、开始新对话或新工作任务、将导航折叠为 56px 轨道、浏览 Workspace、Session 与最近对话，以及打开 Settings。它把 Settings 入口固定在底部，并在隐藏空闲滚动条时避免浏览器行发生位移。新对话打开一个没有 Workspace 的 Session；新工作任务优先使用显式选择的 Workspace，其次使用当前 Session 所属的 Workspace，再其次使用最近活跃的那个，都没有时则打开空白的 New Session 页面。部署可以替换品牌标记或名称，同时保留导航控件和轨道几何。
@@ -29,7 +31,7 @@ dsh Web 客户端的侧边栏让用户识别当前构建、开始新对话或新
 
 ### 品牌、新对话与新工作任务
 
-展开的品牌行把 `sidebar.brand.mark` 与 `sidebar.brand.name` 渲染为两个独立的 single slot；收起轨道则渲染同一个 mark slot。没有占位者时，外壳使用 WeWork 标志和本地化的本地构建标签。品牌行之后以面板行样式排着两个入口：**新对话**通过 `uiWorkspace.startChat()` 开始一个没有 Workspace 的对话，**新工作任务**优先使用作用域操作明确指定的 Workspace，否则使用当前 Session 所属 Workspace，再否则使用最近活跃 Workspace，一个 Workspace 都没有时则清空选择，进入空白 New Session 页面；品牌行本身保留工作任务动作。新工作任务承载 New Session 命令的当前有效绑定：它的轨道 tooltip、品牌 tooltip 以及常驻的 macOS 窗口 chrome 控件都以平台键位样式显示该绑定，这些控件均提供 `aria-keyshortcuts`。新对话没有命令绑定。
+展开的品牌行把 `sidebar.brand.mark` 与 `sidebar.brand.name` 渲染为两个独立的 single slot；收起轨道则渲染同一个 mark slot。在 Web 和 Windows 桌面端，点击展开态的品牌会新建会话，悬停或聚焦时不显示 tooltip。没有占位者时，外壳使用 WeWork 标志和本地化的本地构建标签。品牌行之后以面板行样式排着两个入口：**新对话**通过 `uiWorkspace.startChat()` 开始一个没有 Workspace 的对话，**新工作任务**优先使用作用域操作明确指定的 Workspace，否则使用当前 Session 所属 Workspace，再否则使用最近活跃 Workspace，一个 Workspace 都没有时则清空选择，进入空白 New Session 页面；品牌行本身保留工作任务动作。新工作任务承载 New Session 命令的当前有效绑定：它的轨道 tooltip、品牌 tooltip 以及常驻的 macOS 窗口 chrome 控件都以平台键位样式显示该绑定，这些控件均提供 `aria-keyshortcuts`。新对话没有命令绑定。
 
 ### 全局面板入口
 
@@ -43,11 +45,11 @@ dsh Web 客户端的侧边栏让用户识别当前构建、开始新对话或新
 
 实时收起时，展开内容在当前宽度淡出，上方控件共用同一段透明度渐变，并向左平移进入 56px 轨道，由布局的栏滑动结束整段动画。页面初始即为收起状态时会静态渲染轨道；减少动态效果模式会禁用两段过渡。固定在底部的 `sidebar.settings` 控件共用相同的透明度渐变时序，但不发生横向位移。
 
-在 Windows Electron 中，`html[data-windows-titlebar]` 将两种状态下的侧栏开关固定在顶栏左上角。展开态品牌位于顶栏下方、新对话与新工作任务入口上方。收起后，品牌和全部侧栏内容隐藏，只在顶栏留下侧栏开关。侧栏在收起态将根元素的 `--dsh-windows-menu-start` 设为 84px；Desktop preload 使用它定位菜单，展开态默认为 48px。顶栏图标按钮采用 28px 圆形控件中的居中 16px 图标，并从窗口拖拽区域中排除。侧栏开关的悬停提示在顶栏下方展开，Desktop 菜单文字不会盖住它；占用 `sidebar.toggle.badge` 的控件自行决定气泡展开方向。
+在 Windows Electron 中，`html[data-windows-titlebar]` 将两种状态下的侧栏开关固定在顶栏左上角。展开态品牌位于顶栏下方、新对话与新工作任务入口上方。收起后，品牌和全部侧栏内容隐藏，只在顶栏留下侧栏开关。侧栏在收起态将根元素的 `--dsh-windows-menu-start` 设为 84px；Desktop preload 使用它定位菜单，展开态默认为 48px。顶栏图标按钮采用紧凑控件圆角的 28px 控件，图标为居中 16px，并从窗口拖拽区域中排除。侧栏开关的悬停提示在顶栏下方展开，Desktop 菜单文字不会盖住它；占用 `sidebar.toggle.badge` 的控件自行决定气泡展开方向。
 
 ### macOS 桌面
 
-在 `html[data-platform='darwin']`（仅由桌面 preload 设置）下，展开的侧边栏列顶部有一条 52px 的顶部条：避开 hiddenInset 红绿灯并承载收起按钮；顶部条与其下的 logo 行各自打上 `data-window-drag`，于是每行自己的盒子就是窗口的拖拽区（唯一的 darwin drag 规则由 ui-web base.css 声明），因此品牌 wordmark 在 macOS 上不再是新工作任务快捷入口——新工作任务入口保留该操作；收起时整列隐藏而非保留轨道。本包向框架的 `shell.leading` 窗口 chrome 座（ui-layout）注册 `HeaderLeadingControls`——打开侧边栏、新对话与新工作任务三个控件，由框架仅在列隐藏时挂载于红绿灯旁，覆盖所有主面板。设计依据与窗口集成约定见 [macOS 隐藏标题栏 Agent Note](../../../.agents/notes/implemented/feature/2026-09-13-macos-hidden-titlebar-vibrancy.zh.md)。
+在 `html[data-platform='darwin']`（仅由桌面 preload 设置）下，展开的侧边栏列顶部有一条 52px 的顶部条：避开 hiddenInset 红绿灯并承载收起按钮；顶部条与其下的 logo 行各自打上 `data-window-drag`，于是每行自己的盒子就是窗口的拖拽区（唯一的 darwin drag 规则由 ui-web base.css 声明），因此品牌 wordmark 在 macOS 上不再是新工作任务快捷入口——新工作任务入口保留该操作；收起时整列隐藏而非保留轨道。本包向框架的 `shell.leading` 窗口 chrome 座（ui-layout）注册 `HeaderLeadingControls`——打开侧边栏、新对话与新工作任务三个控件，由框架仅在列隐藏时挂载于红绿灯旁，覆盖所有主面板。[Desktop 参考](../../../apps/desktop/README.zh.md)负责窗口集成。
 
 ### 滚动条
 
@@ -113,5 +115,3 @@ dsh Web 客户端的侧边栏让用户识别当前构建、开始新对话或新
 无。
 
 </details>
-
-**运行时不变式：** 不发布伴生入口。面板元数据是 Slot 注册表与 locale 的只读呈现投影，没有独立写入 API。注册表负责条目身份与资源释放；本包的装配测试在注册和 locale 通知完成后断言该投影。外壳没有需要与这些来源协调的独立导航状态。

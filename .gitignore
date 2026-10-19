@@ -42,6 +42,7 @@ apps/team-runner-desktop/dist/
 apps/team-runner-desktop/release/
 .artifacts/
 .dsh-build/
+.dsh-report/
 .playwright-mcp/
 .orig
 .worktrees/

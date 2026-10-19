@@ -44,7 +44,7 @@ While `ctx.llmHttpTransport` is mounted, the plugin also registers the `built-in
 <a id="understand-the-implementation"></a>
 ## Understand the implementation
 
-Registrations and listeners dispose with the plugin. Shared Host wiring supplies attachments, request extensions, anonymous identity, and atomic retry-policy updates; this plugin registers only its own routes, and each registration re-registers in place when its route set or retry policy changes. No invariant companion is published: discovery derives directly from configuration without an independent copy.
+Registrations and listeners dispose with the plugin. Shared Host wiring supplies attachments, request extensions, anonymous identity, and atomic retry-policy updates; this plugin registers only its own routes, and each registration re-registers in place when its route set or retry policy changes.
 
 <a id="further-exploration"></a>
 ## Further Exploration

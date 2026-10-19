@@ -1,12 +1,25 @@
 /** One retained Markdown renderer over the document owner's accumulated text. */
-import { useMemo } from 'react'
+import { lazy, Suspense, useMemo } from 'react'
 import type { ReactNode } from 'react'
 import { MarkdownText, type MarkdownLabels, type MarkdownPathImages } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { DocumentPreviewProps } from '../document/contract.ts'
+import { splitFrontmatter } from './frontmatter.ts'
+import type { FrontmatterFieldsProps } from './frontmatter-fields.tsx'
 import { markdownImageUrl } from './path-images.ts'
 import type {} from './locales.ts'
 import css from './MarkdownBody.module.css'
+
+/** Show the verbatim frontmatter when the field-list chunk cannot load. */
+function FrontmatterFallback({ fallback }: FrontmatterFieldsProps): ReactNode {
+  return fallback
+}
+
+const FrontmatterFields = lazy(() => import('./frontmatter-fields.tsx').then(
+  module => ({ default: module.FrontmatterFields }),
+  // The failed chunk only removes the field layout; the body and verbatim metadata stay usable.
+  () => ({ default: FrontmatterFallback }),
+))
 
 /** Standard document inputs and this implementation's locale. */
 export type MarkdownBodyProps = DocumentPreviewProps & PropsLocale<'documentMarkdown'>
@@ -19,6 +32,8 @@ export type MarkdownViewProps = { readonly matched: string } & PropsLocale<'docu
 
 /**
  * Render Markdown text with this implementation's localized primitive chrome.
+ * A leading YAML frontmatter block renders as a field list instead of Markdown; its
+ * verbatim source stands in while the field-list chunk loads or when it fails.
  * @param props - the text, whether more of it is still arriving, the local
  * image rewriting when the text has a file location, and the locale seat.
  * @returns the Markdown document.
@@ -37,9 +52,11 @@ function MarkdownDocument({ text, streaming, pathImages, t }: {
   const labels = useMemo<MarkdownLabels>(() => ({
     code: { copyLabel, copiedLabel, toolbarLabels: { codeLabel, wrapLabel, unwrapLabel } }, footnotes,
   }), [copyLabel, copiedLabel, footnotes, codeLabel, wrapLabel, unwrapLabel])
+  const split = useMemo(() => splitFrontmatter(text), [text])
   return (
     <div className={css.document} data-document-markdown>
-      <MarkdownText text={text} streaming={streaming} labels={labels} pathImages={pathImages} />
+      {split === undefined ? null : <FrontmatterBox source={split.source} />}
+      <MarkdownText text={split?.body ?? text} streaming={streaming} labels={labels} pathImages={pathImages} />
     </div>
   )
 }
@@ -66,4 +83,18 @@ export function MarkdownBody({ content, resourceAddress, useResource, t }: Markd
  */
 export function MarkdownView({ matched, t }: MarkdownViewProps): ReactNode {
   return <MarkdownDocument text={matched} streaming={false} t={t} />
+}
+
+/**
+ * Frame one frontmatter block and choose its field list or verbatim source.
+ * @param props - YAML between the frontmatter delimiters.
+ * @returns the metadata box; it collapses when the document has no content.
+ */
+function FrontmatterBox({ source }: { source: string }): ReactNode {
+  const verbatim = <pre className={css.frontmatterSource}>{source}</pre>
+  return (
+    <div className={css.frontmatter} data-document-frontmatter>
+      <Suspense fallback={verbatim}><FrontmatterFields source={source} fallback={verbatim} /></Suspense>
+    </div>
+  )
 }

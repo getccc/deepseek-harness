@@ -1,7 +1,5 @@
 - menu:
-  - menuitem "只读"
-  - menuitem "工作区可写"
-  - menuitem "完全访问"
-  - menuitem "Auto review EXP":
-    - text: Auto review
-    - superscript: EXP
+  - menuitem "仅可查看"
+  - menuitem "工作区内修改"
+  - menuitem "完全权限"
+  - menuitem "自动审查 EXP"

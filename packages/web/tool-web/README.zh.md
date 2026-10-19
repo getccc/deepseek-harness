@@ -110,7 +110,6 @@ schema 校验会在执行前拒绝缺失或非数组的 `queries` 字段、非�
 | [`src/fetch.ts`](src/fetch.ts) | `web_fetch` 工具：HTML→markdown 转换、输出上限、格式化、呈现元数据 |
 | [`src/access.ts`](src/access.ts) | 按会话开关：`/web` 命令、`webAccess` 投影与按 agent 的实时限制 |
 | [`src/types.ts`](src/types.ts) | `web/access` 事件与 `webAccess` 投影声明，经 `./client` 投射到浏览器 |
-| — | 不发布运行时不变量配套入口；这个面向模型的适配器没有独立的生命周期事件流；执行关系由它调用的能力 seam 负责。 |
 
 ### 搜索流程
 

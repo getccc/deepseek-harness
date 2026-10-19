@@ -1,9 +1,9 @@
-- button "New work task"
+- button "New session"
 - button "Collapse sidebar"
-- button "New chat"
-- button "New work task"
+- button "New session": New Session
 - navigation "Global panels":
   - button "Plugins"
+  - button "Automation tasks"
 - text: Workspaces
 - button "Search sessions"
 - textbox "Search session names"
@@ -12,13 +12,10 @@
 - tree "Sessions":
   - treeitem "workspace" [expanded]
   - treeitem "New Session" [selected]
-- text: Recent
-- button "Filter"
-- tree "Recent": No conversations yet
-- button "Settings"
+- button "Account menu": More
 - banner:
   - button "Open right sidebar"
-- text: What is the plan today?
+- text: Into the Unknown Preview
 - button "Choose workspace": workspace
 - button "Standard mode"
 - textbox "Describe what you want to build, / commands, @ files or sessions"

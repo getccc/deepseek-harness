@@ -39,10 +39,15 @@
     openBrowser: !!js ctx.webStartup.openBrowser
     printUrl: true
     entryPath: /team/open
+    publicUrl: !!js ctx.webStartup.publicUrl
     surfaceContext: true
     surfaceAudience: member
     surfaceName: WeWork
-    trustedHosts: !!js ctx.webStartup.trustedHosts
+
+# The developer context names the dsh checkout and how GUI changes reach the
+# open page; a member has neither, so the member orientation above replaces it.
+- id: harness-dev-context
+  disabled: true
 
 # Company models use a distinct provider route from a member's own DeepSeek
 # configuration. The model ref remains the deployment default, while the Team

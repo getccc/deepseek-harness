@@ -32,3 +32,16 @@ it('advertises no models while the API key is empty', async () => {
   const ctx = await boot('')
   await expect(ctx.llm.listModels('deepseek-official')).rejects.toMatchObject({ code: 'NO_ADAPTER' })
 })
+
+it('reports malformed credentials during discovery', async () => {
+  vi.stubEnv('DEEPSEEK_API_KEY', 'invalid\nheader')
+  const ctx = new Context()
+  try {
+    await ctx.plugin(LlmRuntime)
+    await ctx.plugin(ApiKey, {})
+    await expect(ctx.llm.listModels('deepseek-official')).rejects.toMatchObject({ code: 'INVALID_CREDENTIAL' })
+  } finally {
+    await ctx.fiber.dispose()
+    vi.unstubAllEnvs()
+  }
+})
