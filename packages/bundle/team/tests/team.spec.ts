@@ -19,6 +19,7 @@ interface PatchRow {
   name?: string
   config?: Record<string, unknown>
   inject?: string[]
+  disabled?: boolean
   insert?: PatchRow[]
 }
 
@@ -79,6 +80,7 @@ describe('dsh-team bundle', () => {
     // searches with the company credential the Control Plane holds instead.
     const patch = patchRows()
     expect(patch.find(row => row.id === 'web')?.config).toEqual({ searchProvider: 'team', fetchProvider: 'http' })
+    expect(patch.find(row => row.id === 'ui-web-access')?.disabled).toBe(true)
     const inserted = new Map(patch.flatMap(row => row.insert ?? []).map(row => [row.id as string, row.name as string]))
     const manifest = JSON.parse(
       readFileSync(resolve(root, 'package.json'), 'utf8'),

@@ -206,6 +206,7 @@
     "apps/web/tests/bi-composer.e2e.ts",
     "apps/web/tests/gmo-composer.e2e.ts",
     "apps/web/tests/knowledge-panels.e2e.ts",
+    "apps/web/tests/team-conversation.e2e.ts",
     "apps/web/stress-tests/reasoning-chunks.stress.ts",
     "apps/cli/tests/**/*.ts",
     "apps/plugin-market-generator/tests/**/*.ts",

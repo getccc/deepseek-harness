@@ -111,6 +111,10 @@
 - id: ui-plugin-manager
   disabled: true
 
+# Team conversations start with web access enabled; members need no composer switch.
+- id: ui-web-access
+  disabled: true
+
 # Web search leaves this computer through the Control Plane, which holds the
 # company search credential and decides per member; the base row's
 # `deepseek-official` selection would spend a member's own key. Fetch stays

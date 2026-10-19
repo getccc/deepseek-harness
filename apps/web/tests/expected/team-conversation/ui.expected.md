@@ -1,0 +1,28 @@
+- banner:
+  - navigation "会话层级": Reply exactly CHAT_PRESET_REQUEST_OK and
+  - text: 聊天模式
+  - button "更多操作"
+  - button "打开右侧边栏"
+  - tablist:
+    - tab "对话" [selected]
+    - tab "轨迹"
+- text: Reply exactly CHAT_PRESET_REQUEST_OK and stop. {{clock}}
+- button "复制"
+- text: 小微 Agent {{clock}}
+- status: 小微已完成
+- button "小微已完成，用时 {{duration}}" [disabled]
+- paragraph: CHAT_PRESET_REQUEST_OK
+- button "复制"
+- button "好的回答"
+- button "有问题的回答"
+- button "在新对话中分支"
+- text: {{clock}}
+- textbox "发消息或创建任务, / 调用指令, @ 文件或对话"
+- button "添加文件或调用指令"
+- button "录音转写" [disabled]
+- button "选择模型，当前 DeepSeek-V4-Flash": DeepSeek-V4-Flash
+- button "语音输入" [disabled]
+- button "发送消息" [disabled]
+- button "1 轮 1 步 · {{throughput}} tok/s": 1 轮 1 步{{throughput}} tok/s
+- button "14 tok · 缓存命中 0%": 14 tok缓存命中 0%
+- button "上下文已用 0%": 0%

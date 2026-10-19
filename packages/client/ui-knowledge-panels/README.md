@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-client-ui-knowledge-panels` is private knowledge outside a conversation: two rows under the sidebar's New work task entry, the authorized knowledge bases with their documents and the one a member opens, and a retrieval they run for themselves and read ranked. A retrieval here starts no model turn and costs no tokens; what reaches a model is only what a member asks for by selecting a result, which opens a conversation narrowed to that document with the passage in its composer. The panels mount in the Team browser composition alone, beside the `/knowledge` picker whose Remote namespace they share.
+`dsh-client-ui-knowledge-panels` is private knowledge outside a conversation: two rows after Automations under the sidebar's New work task entry, the authorized knowledge bases with their documents and the one a member opens, and a retrieval they run for themselves and read ranked. A retrieval here starts no model turn and costs no tokens; what reaches a model is only what a member asks for by selecting a result, which opens a conversation narrowed to that document with the passage in its composer. The panels mount in the Team browser composition alone, beside the `/knowledge` picker whose Remote namespace they share.
 
 ## Table of Contents
 
