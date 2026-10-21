@@ -19,6 +19,7 @@ import SqliteAccountStore from '@deepseek-ai/dsh-account-store-sqlite'
 import SqliteAudit from '@deepseek-ai/dsh-audit-sqlite'
 import SqliteDeviceAuthorization from '@deepseek-ai/dsh-device-authorization-sqlite'
 import type { AccountStore, OrgId, UserId } from '@deepseek-ai/dsh-account-store'
+import type { Audit } from '@deepseek-ai/dsh-audit'
 import type { DeviceAuthorization } from '@deepseek-ai/dsh-device-authorization'
 import * as endpoints from '@deepseek-ai/dsh-team-control-plane-http'
 import TeamAccountClient, {
@@ -257,6 +258,85 @@ describe('holding the credential', () => {
   })
 })
 
+describe('changing the password', () => {
+  const NEXT = 'Another-Horse-Battery-2'
+
+  it('replaces the password and keeps this device bound', async () => {
+    await client.signIn('alice', PASSWORD)
+    await client.changePassword(PASSWORD, NEXT)
+
+    expect((await cp.accountAuth.authenticate(orgId, 'alice', NEXT)).ok).toBe(true)
+    expect((await cp.accountAuth.authenticate(orgId, 'alice', PASSWORD)).ok).toBe(false)
+    // The credential that asked for the change still works.
+    expect(await auth.verifyAccessToken(await client.accessToken())).toMatchObject({ orgId })
+    const [record] = await (cp.get('audit') as Audit).query({ orgId, action: 'member.password.change' })
+    expect(record).toMatchObject({ outcome: 'allowed', principalId: alice })
+  })
+
+  it('signs the member out of their other devices', async () => {
+    await client.signIn('alice', PASSWORD)
+    const otherHome = await mkdtemp(join(tmpdir(), 'dsh-account-client-other-'))
+    const mine = home
+    home = otherHome
+    const other = await bootRunner(cp)
+    home = mine
+    try {
+      const otherClient = other.get('teamAccountClient') as TeamAccountClient
+      await otherClient.signIn('alice', PASSWORD)
+      const otherToken = await otherClient.accessToken()
+
+      await client.changePassword(PASSWORD, NEXT)
+
+      expect(await auth.verifyAccessToken(otherToken)).toBeUndefined()
+      expect(await auth.verifyAccessToken(await client.accessToken())).toBeDefined()
+    } finally {
+      await other.fiber.dispose()
+      await rm(otherHome, { recursive: true, force: true })
+    }
+  })
+
+  it('refuses a wrong current password and leaves the password alone', async () => {
+    await client.signIn('alice', PASSWORD)
+    await expect(client.changePassword('Wrong-Horse-Battery-9', NEXT)).rejects.toMatchObject({
+      reason: 'current-secret-incorrect', status: 403,
+    })
+    expect((await cp.accountAuth.authenticate(orgId, 'alice', PASSWORD)).ok).toBe(true)
+    const [record] = await (cp.get('audit') as Audit).query({ orgId, action: 'member.password.change' })
+    expect(record).toMatchObject({ outcome: 'denied', reason: 'invalid-credentials' })
+  })
+
+  it('carries the rules of a password the deployment refuses', async () => {
+    await client.signIn('alice', PASSWORD)
+    const refusal = await client.changePassword(PASSWORD, 'short').catch((error: unknown) => error)
+    expect(refusal).toBeInstanceOf(ControlPlaneRefusedError)
+    expect(refusal).toMatchObject({
+      reason: 'weak-secret',
+      status: 400,
+      policy: { minLength: 8, requiredClasses: ['uppercase', 'lowercase', 'digit'] },
+    })
+    expect((await cp.accountAuth.authenticate(orgId, 'alice', PASSWORD)).ok).toBe(true)
+  })
+
+  it('refuses to set the password it already is', async () => {
+    await client.signIn('alice', PASSWORD)
+    await expect(client.changePassword(PASSWORD, PASSWORD)).rejects.toMatchObject({
+      reason: 'secret-unchanged', status: 400,
+    })
+  })
+
+  it('needs a credential on this computer', async () => {
+    await expect(client.changePassword(PASSWORD, NEXT)).rejects.toBeInstanceOf(NotBoundError)
+  })
+
+  it('is refused for a device the Control Plane has revoked, while its token has not lapsed', async () => {
+    await client.signIn('alice', PASSWORD)
+    const [device] = await auth.listDevices(orgId)
+    await auth.revokeDevice(device?.id as never)
+    await expect(client.changePassword(PASSWORD, NEXT)).rejects.toMatchObject({ reason: 'unauthorized', status: 401 })
+    expect((await cp.accountAuth.authenticate(orgId, 'alice', PASSWORD)).ok).toBe(true)
+  })
+})
+
 describe('the platform it reports', () => {
   it('names the three families the device word list governs', () => {
     expect(platformWord('darwin')).toBe('darwin')
@@ -295,6 +375,26 @@ describe('a refusal this Runner cannot read', () => {
       .rejects.toMatchObject({ reason: 'unknown', status: 503 })
     await expect((lonely.get('teamAccountClient') as TeamAccountClient).begin())
       .rejects.toBeInstanceOf(ControlPlaneRefusedError)
+    await lonely.fiber.dispose()
+    await bare.fiber.dispose()
+  })
+})
+
+describe('an answer that is not JSON', () => {
+  it('reads as a refusal with no word, as from a Control Plane that predates the endpoint', async () => {
+    const bare = new Context()
+    await bare.plugin(HttpServer, { host: '127.0.0.1', port: 0 }).await()
+    bare.webServer.register({
+      kind: 'prefix',
+      path: '/team/device',
+      handler: (_req, res) => {
+        res.writeHead(404, { 'content-type': 'text/plain' })
+        res.end('not found')
+      },
+    })
+    const lonely = await bootRunner(bare)
+    await expect((lonely.get('teamAccountClient') as TeamAccountClient).begin())
+      .rejects.toMatchObject({ reason: 'unknown', status: 404 })
     await lonely.fiber.dispose()
     await bare.fiber.dispose()
   })

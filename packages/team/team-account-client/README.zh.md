@@ -37,7 +37,7 @@ plugins:
 
 `controlPlaneCa` 指向一个 PEM 文件，供证书未经公共机构签发的 Control Plane 部署使用。文件中的证书**仅**对 Control Plane 连接取代公共信任机构，因此它固定的是这个部署自己的证书，而不是往这台 Runner 到处生效的信任里再添一个机构。不填时，Control Plane 与其他主机一样按默认信任校验。文件读不出来会在加载期抛错——若悄悄退回公共信任，一个配置错误的部署要到很久以后才会以一次普通的 TLS 失败暴露出来。当启动环境为 Control Plane 地址配置了代理（`HTTPS_PROXY`、`ALL_PROXY`，扣除 `NO_PROXY`）时，调用会经该代理建立隧道，固定的信任仍在隧道远端校验 Control Plane；不填证书时，调用走进程级已配置代理的调度器。固定信任的连接只使用 HTTP/1.1：Undici 8 在流被取消后会把已销毁的 HTTP/2 会话留在连接池里，此后每次模型调用都以 `transport failed: unreachable (fetch failed)` 失败，直到 Runner 重启。
 
-默认 Team 流程调用 `signIn(loginName, secret)`：它开启设备 Transaction，经 Control Plane 认证，用 PKCE 与设备签名兑换一次性 Code，再把结果与返回的成员身份一起存储。`begin()` 与 `complete()` 继续供可选浏览器 Handoff 组合使用。`accessToken()` 提供已存 Token，并在它临近过期到会输掉自身竞态时先行刷新，同时保留成员字段；相互重叠的调用共享同一次读取与刷新，因为 Control Plane 在 Refresh Token 第一次出示时就将其用掉，第二次出示则吊销整个 Family。
+默认 Team 流程调用 `signIn(loginName, secret)`：它开启设备 Transaction，经 Control Plane 认证，用 PKCE 与设备签名兑换一次性 Code，再把结果与返回的成员身份一起存储。`begin()` 与 `complete()` 继续供可选浏览器 Handoff 组合使用。`changePassword(currentSecret, newSecret)` 向 Control Plane 的 `/password` 端点出示访问 Token 和两个密码；拒绝以 `ControlPlaneRefusedError` 抵达，其 `reason` 为 `current-secret-incorrect`、`secret-unchanged` 或 `weak-secret`（附带 `policy`），成功后设备保持绑定。`accessToken()` 提供已存 Token，并在它临近过期到会输掉自身竞态时先行刷新，同时保留成员字段；相互重叠的调用共享同一次读取与刷新，因为 Control Plane 在 Refresh Token 第一次出示时就将其用掉，第二次出示则吊销整个 Family。
 
 -----
 
@@ -60,7 +60,7 @@ plugins:
 
 | 路径 | 角色 |
 |---|---|
-| [`src/index.ts`](src/index.ts) | 服务本体：begin、complete、state、accessToken、signOut |
+| [`src/index.ts`](src/index.ts) | 服务本体：begin、complete、state、accessToken、changePassword、signOut |
 | [`src/storage.ts`](src/storage.ts) | 设备密钥与凭据存放在哪里 |
 | [`src/types.ts`](src/types.ts) | Runner 所保管的内容，仅类型 |
 

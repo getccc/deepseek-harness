@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-`dsh-team-control-plane-http` 提供 Team Runner 调用的四个端点：开启设备 Transaction、认证组织账户并批准该 Transaction、兑换一次性 Code，以及刷新设备凭据。成员浏览器始终留在 Runner 源上，不参与任何 Control Plane 浏览器 Session。
+`dsh-team-control-plane-http` 提供 Team Runner 调用的五个端点：开启设备 Transaction、认证组织账户并批准该 Transaction、兑换一次性 Code、刷新设备凭据，以及修改已登录成员自己的密码。成员浏览器始终留在 Runner 源上，不参与任何 Control Plane 浏览器 Session。
 
 ## 目录
 
@@ -33,7 +33,9 @@ plugins:
     maxRequestBodyBytes: 16384
 ```
 
-四个路径是 `POST {pathPrefix}/start`、`/login`、`/redeem` 和 `/refresh`。`organizationId` 没有默认值，因为这个单组织端点不能猜测要认证哪个账户命名空间。成功的 `/login` 响应会携带一次性 Code，以及已认证账户的 `loginName` 与 `displayName`；它绝不会携带密码或设备凭据。无效账户凭据得到同一个不带原因的 401；设备接缝拒绝回答 403 并携带接缝自己的词；畸形请求体回答 400。
+五个路径是 `POST {pathPrefix}/start`、`/login`、`/redeem`、`/refresh` 和 `/password`。`organizationId` 没有默认值，因为这个单组织端点不能猜测要认证哪个账户命名空间。成功的 `/login` 响应会携带一次性 Code，以及已认证账户的 `loginName` 与 `displayName`；它绝不会携带密码或设备凭据。无效账户凭据得到同一个不带原因的 401；设备接缝拒绝回答 403 并携带接缝自己的词；畸形请求体回答 400。
+
+`/password` 需要 `Authorization: Bearer <访问 Token>`，请求体为 `currentSecret` 与 `newSecret`。Token 说明是哪个账户、哪台设备在请求；当前密码经 `accountAuth.authenticate` 再次校验，说明持有 Runner 的人就是该账户的主人。缺失、过期、已吊销或属于其他组织的 Token 回答 401；当前密码错误回答 403 `current-secret-incorrect`；新旧密码相同回答 400 `secret-unchanged`；不满足部署策略的新密码回答 400 `weak-secret`，并携带 `policy`（`minLength`、`requiredClasses`），让 Runner 用自己的语言陈述规则。成功后，该账户的 Control Plane 浏览器 Session 全部结束，该账户其余所有有效设备被吊销，发起请求的设备保持绑定。每次尝试都以 `member.password.change` 记入审计，允许或拒绝皆记。输错当前密码与登录失败共用同一个锁定计数。
 
 -----
 

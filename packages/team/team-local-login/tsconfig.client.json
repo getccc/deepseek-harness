@@ -7,6 +7,7 @@
   },
   "files": [
     "src/client/AssistantIdentity.tsx",
+    "src/client/ChangePasswordDialog.tsx",
     "src/client/HeroGreeting.tsx",
     "src/client/ProductVersionRow.tsx",
     "src/client/TeamAccountLauncher.tsx",

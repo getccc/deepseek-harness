@@ -9,13 +9,14 @@
  */
 
 import { Context } from '@deepseek-ai/cordis'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest'
 import PasswordAccountAuth from '@deepseek-ai/dsh-account-auth-password'
 import type { AccountStore, OrgId, UserId } from '@deepseek-ai/dsh-account-store'
 import HttpServer from '@deepseek-ai/dsh-host-webserver'
 import SqliteAccountStore from '@deepseek-ai/dsh-account-store-sqlite'
 import type { Audit } from '@deepseek-ai/dsh-audit'
 import SqliteAudit from '@deepseek-ai/dsh-audit-sqlite'
+import type { DeviceAuthorization } from '@deepseek-ai/dsh-device-authorization'
 import SqliteDeviceAuthorization from '@deepseek-ai/dsh-device-authorization-sqlite'
 import { newSecret, pkceChallenge } from '@deepseek-ai/dsh-device-authorization'
 import * as endpoints from '../src/index.ts'
@@ -23,6 +24,7 @@ import {
   DEVICE_PATH_PREFIX,
   LOGIN_PATH,
   MINIMUM_PROTOCOL_VERSION,
+  PASSWORD_PATH,
   PROTOCOL_VERSION,
   REDEEM_PATH,
   REFRESH_PATH,
@@ -52,13 +54,13 @@ function startBody(): Record<string, unknown> {
 }
 
 /** POST one JSON body and read the status and the parsed answer. */
-async function post(path: string, body: unknown, method = 'POST'): Promise<{
+async function post(path: string, body: unknown, method = 'POST', headers: Record<string, string> = {}): Promise<{
   status: number
   answer: Record<string, unknown>
 }> {
   const response = await fetch(`${origin}${DEVICE_PATH_PREFIX}${path}`, {
     method,
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', ...headers },
     ...(method === 'POST' ? { body: typeof body === 'string' ? body : JSON.stringify(body) } : {}),
   })
   return { status: response.status, answer: await response.json() as Record<string, unknown> }
@@ -159,7 +161,7 @@ describe('opening a transaction', () => {
   })
 
   it('answers a method other than POST without reading a body', async () => {
-    for (const path of [START_PATH, REDEEM_PATH, REFRESH_PATH]) {
+    for (const path of [START_PATH, REDEEM_PATH, REFRESH_PATH, PASSWORD_PATH]) {
       expect((await post(path, undefined, 'GET')).status, path).toBe(405)
     }
   })
@@ -225,6 +227,101 @@ describe('redeeming and refreshing', () => {
     })
     expect(status).toBe(403)
     expect(answer.reason).toBe('unknown')
+  })
+})
+
+describe('changing a password', () => {
+  const NEXT = 'Another-Horse-Battery-2'
+  const TOKEN = 'a-device-access-token'
+  let claims: { orgId: OrgId; principalId: UserId; deviceId: string; issuedAt: number; expiresAt: number }
+  let listDevices: MockInstance<DeviceAuthorization['listDevices']>
+
+  const change = (body: unknown, authorization: string | null = `Bearer ${TOKEN}`) =>
+    post(PASSWORD_PATH, body, 'POST', authorization === null ? {} : { authorization })
+
+  beforeEach(() => {
+    claims = { orgId, principalId: alice, deviceId: 'device-1', issuedAt: 0, expiresAt: Date.now() + 60_000 }
+    vi.spyOn(ctx.deviceAuthorization, 'verifyAccessToken')
+      .mockImplementation(token => Promise.resolve(token === TOKEN ? claims as never : undefined))
+    listDevices = vi.spyOn(ctx.deviceAuthorization, 'listDevices').mockResolvedValue([])
+  })
+
+  it('replaces the password of the account the access token belongs to', async () => {
+    const answer = await change({ currentSecret: PASSWORD, newSecret: NEXT, protocolVersion: PROTOCOL_VERSION })
+    expect(answer).toEqual({ status: 200, answer: { changed: true } })
+    expect((await ctx.accountAuth.authenticate(orgId, 'alice', NEXT)).ok).toBe(true)
+    expect((await ctx.accountAuth.authenticate(orgId, 'alice', PASSWORD)).ok).toBe(false)
+  })
+
+  it('revokes the account\'s other active devices and keeps the requesting one', async () => {
+    const device = (id: string, ownerId: UserId, status: 'active' | 'revoked') => ({ id, ownerId, status }) as never
+    listDevices.mockResolvedValue([
+      device('device-1', alice, 'active'),
+      device('device-2', alice, 'active'),
+      device('device-3', alice, 'revoked'),
+      device('device-4', 'someone-else' as UserId, 'active'),
+    ])
+    const revoke = vi.spyOn(ctx.deviceAuthorization, 'revokeDevice').mockResolvedValue()
+    const revokeSessions = vi.spyOn(store, 'revokeBrowserSessions')
+    await change({ currentSecret: PASSWORD, newSecret: NEXT })
+    expect(revoke.mock.calls).toEqual([['device-2']])
+    expect(revokeSessions).toHaveBeenCalledWith(alice)
+  })
+
+  it('refuses a request without a usable bearer token', async () => {
+    const body = { currentSecret: PASSWORD, newSecret: NEXT }
+    for (const authorization of [null, TOKEN, `Basic ${TOKEN}`, 'Bearer', `Bearer ${TOKEN} extra`, 'Bearer wrong']) {
+      expect(await change(body, authorization), String(authorization)).toEqual({
+        status: 401, answer: { error: 'unauthorized' },
+      })
+    }
+    expect((await ctx.accountAuth.authenticate(orgId, 'alice', PASSWORD)).ok).toBe(true)
+  })
+
+  it('refuses a token that belongs to another organization or to no account', async () => {
+    const body = { currentSecret: PASSWORD, newSecret: NEXT }
+    claims = { ...claims, orgId: 'other-org' as OrgId }
+    expect((await change(body)).status).toBe(401)
+    claims = { ...claims, orgId, principalId: 'nobody' as UserId }
+    expect((await change(body)).status).toBe(401)
+  })
+
+  it('refuses a wrong current password and records the denial', async () => {
+    const answer = await change({ currentSecret: 'Wrong-Horse-Battery-9', newSecret: NEXT })
+    expect(answer).toEqual({ status: 403, answer: { error: 'refused', reason: 'current-secret-incorrect' } })
+    const [record] = await audit.query({ orgId, action: 'member.password.change' })
+    expect(record).toMatchObject({ outcome: 'denied', reason: 'invalid-credentials', principalId: alice })
+  })
+
+  it('refuses the password it already is, before the policy sees it', async () => {
+    expect(await change({ currentSecret: PASSWORD, newSecret: PASSWORD })).toEqual({
+      status: 400, answer: { error: 'refused', reason: 'secret-unchanged' },
+    })
+  })
+
+  it('answers the rules of a password the deployment refuses, as fields', async () => {
+    const { status, answer } = await change({ currentSecret: PASSWORD, newSecret: 'short' })
+    expect(status).toBe(400)
+    expect(answer).toEqual({
+      error: 'refused',
+      reason: 'weak-secret',
+      policy: { minLength: 8, requiredClasses: ['uppercase', 'lowercase', 'digit'] },
+    })
+  })
+
+  it('refuses a body missing a password', async () => {
+    for (const body of [{ newSecret: NEXT }, { currentSecret: PASSWORD }, { currentSecret: PASSWORD, newSecret: 7 }]) {
+      const { status, answer } = await change(body)
+      expect(status).toBe(400)
+      expect(answer.reason).toBe('malformed-body')
+    }
+  })
+
+  it('says nothing about a failure of the account provider', async () => {
+    vi.spyOn(ctx.accountAuth, 'setSecret').mockRejectedValue(new Error('the hash function is on fire'))
+    expect(await change({ currentSecret: PASSWORD, newSecret: NEXT })).toEqual({
+      status: 500, answer: { error: 'internal' },
+    })
   })
 })
 
@@ -305,7 +402,7 @@ describe('speaking the same protocol', () => {
   it('decides the version before reading anything else, on every endpoint', async () => {
     // A body that is otherwise empty still gets the protocol answer, so a
     // Runner too old to know a field exists is not told about that field.
-    for (const path of [START_PATH, REDEEM_PATH, REFRESH_PATH]) {
+    for (const path of [START_PATH, REDEEM_PATH, REFRESH_PATH, PASSWORD_PATH]) {
       const { status, answer } = await post(path, { protocolVersion: PROTOCOL_VERSION + 1 })
       expect(status, path).toBe(426)
       expect(answer.reason, path).toBe('protocol-unsupported')

@@ -12,10 +12,11 @@ import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {} from '@deepseek-ai/dsh-client-ui-chat/client'
 // Type-only: pulls ctx.uiWorkspace into the client Context.
 import type {} from '@deepseek-ai/dsh-client-ui-workspace/client'
-import { ACCOUNT_PATH, LOGOUT_PATH, PRODUCT_PATH, SIGNED_IN_PARAM } from '../paths.ts'
+import { ACCOUNT_PATH, LOGOUT_PATH, PASSWORD_PATH, PRODUCT_PATH, SIGNED_IN_PARAM } from '../paths.ts'
 import { AssistantIdentity } from './AssistantIdentity.tsx'
 import { HeroGreeting } from './HeroGreeting.tsx'
 import { ProductVersionRow } from './ProductVersionRow.tsx'
+import type { ChangePasswordResult, PasswordPolicy } from './ChangePasswordDialog.tsx'
 import {
   TeamAccountLauncher, type TeamAccountLauncherInjected, type TeamMemberIdentity,
 } from './TeamAccountLauncher.tsx'
@@ -70,6 +71,49 @@ async function loadProductVersion(): Promise<string | undefined> {
   return body.version
 }
 
+/** Failure words the local Host answers a password change with, and the reason each means. */
+const PASSWORD_FAILURES = {
+  'current-secret-incorrect': 'current-incorrect',
+  'secret-unchanged': 'unchanged',
+  'weak-secret': 'weak',
+  'unauthorized': 'expired',
+  'unreachable': 'unreachable',
+  'update-required': 'update-required',
+  'unsupported': 'unsupported',
+} as const
+
+/** Whether a refusal's `policy` carries the fields the dialog states to the member. */
+function isPasswordPolicy(value: unknown): value is PasswordPolicy {
+  if (typeof value !== 'object' || value === null) return false
+  const candidate = value as Partial<PasswordPolicy>
+  return typeof candidate.minLength === 'number' && Array.isArray(candidate.requiredClasses)
+}
+
+/** Ask the local Host to replace the signed-in member's password. */
+async function changePassword(currentSecret: string, newSecret: string): Promise<ChangePasswordResult> {
+  let response: Response
+  try {
+    response = await fetch(PASSWORD_PATH.slice(1), {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'accept': 'application/json', 'content-type': 'application/json' },
+      body: JSON.stringify({ currentSecret, newSecret }),
+    })
+  } catch {
+    // The local Host itself did not answer, which reads as a network failure.
+    return { ok: false, reason: 'unreachable' }
+  }
+  if (response.ok) return { ok: true }
+  const body: unknown = await response.json().catch(() => undefined)
+  const word = typeof body === 'object' && body !== null && 'error' in body ? body.error : undefined
+  const reason = typeof word === 'string' && Object.hasOwn(PASSWORD_FAILURES, word)
+    ? PASSWORD_FAILURES[word as keyof typeof PASSWORD_FAILURES]
+    : 'failed'
+  if (reason !== 'weak') return { ok: false, reason }
+  const policy = typeof body === 'object' && body !== null && 'policy' in body ? body.policy : undefined
+  return isPasswordPolicy(policy) ? { ok: false, reason, policy } : { ok: false, reason }
+}
+
 /**
  * Land a member who has just signed in on an empty conversation.
  *
@@ -94,6 +138,7 @@ export function apply(ctx: ClientContext): void {
   const operations = (): TeamAccountLauncherInjected => ({
     loadAccount,
     signOut: () => { window.location.assign(LOGOUT_PATH) },
+    changePassword,
   })
 
   ctx.slots.inject('settings.launcher', () => ctx.slots.register({

@@ -50,6 +50,41 @@ export const REDEEM_PATH = '/redeem'
 /** Path segment that exchanges a refresh token for the next one. */
 export const REFRESH_PATH = '/refresh'
 
+/** Path segment where a signed-in member replaces their own password. */
+export const PASSWORD_PATH = '/password'
+
+/** Reason a password change answers when the current password is wrong. */
+export const CURRENT_SECRET_INCORRECT = 'current-secret-incorrect'
+/** Reason a password change answers when the new password breaks the deployment policy. */
+export const WEAK_SECRET = 'weak-secret'
+/** Reason a password change answers when the new password equals the current one. */
+export const SECRET_UNCHANGED = 'secret-unchanged'
+
+/** What a Runner sends to replace its member's password. */
+export interface PasswordChangeRequest {
+  /** The password in force now, typed again so a borrowed session cannot replace it. */
+  readonly currentSecret: string
+  /** The password the member chose. */
+  readonly newSecret: string
+  /** The binding protocol version this Runner speaks. */
+  readonly protocolVersion: number
+}
+
+/** The deployment's password rules as fields, so a Runner states them in its own language. */
+export interface PasswordPolicy {
+  /** Fewest characters a password may have. */
+  readonly minLength: number
+  /** Character classes a password must contain at least one of, each. */
+  readonly requiredClasses: readonly ('uppercase' | 'lowercase' | 'digit')[]
+}
+
+/** Refusal body of a password change whose new password breaks the policy. */
+export interface WeakSecretRefusal extends WireRefusal {
+  readonly reason: typeof WEAK_SECRET
+  /** The rules the new password failed to satisfy. */
+  readonly policy: PasswordPolicy
+}
+
 /** Member identity returned after a successful Runner-local sign-in. */
 export interface TeamMemberIdentity {
   /** Organization-local account name. */

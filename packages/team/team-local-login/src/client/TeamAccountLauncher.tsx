@@ -12,6 +12,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 // Type-only: pulls the team.account.action declaration into this program.
 import type {} from './account-slots.ts'
 import type { TeamAccountKey } from './locales.ts'
+import { ChangePasswordDialog, type ChangePasswordResult } from './ChangePasswordDialog.tsx'
 import css from './TeamAccountLauncher.module.css'
 
 /** Public identity fields safe to show in the local application. */
@@ -28,6 +29,8 @@ export interface TeamAccountLauncherInjected {
   loadAccount: () => Promise<TeamMemberIdentity>
   /** End the team credential and browser session through the local logout route. */
   signOut: () => void
+  /** Ask the Runner-local Host to replace the member's password. */
+  changePassword: (currentSecret: string, newSecret: string) => Promise<ChangePasswordResult>
 }
 
 /** Complete slot props for the account launcher. */
@@ -46,6 +49,16 @@ function SignOutIcon() {
   )
 }
 
+/** Padlock icon for the change-password row. */
+function PasswordIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <rect x="3" y="7" width="10" height="6.8" rx="1.8" stroke="currentColor" strokeWidth="1.35" />
+      <path d="M5.4 7V5.5a2.6 2.6 0 0 1 5.2 0V7" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 /** First visible character used when an account has no profile image. */
 export function accountInitial(name: string): string {
   return Array.from(name.trim())[0]?.toLocaleUpperCase() ?? ''
@@ -57,9 +70,10 @@ export function accountInitial(name: string): string {
  * @returns the sidebar account launcher.
  */
 export function TeamAccountLauncher({
-  wide, openSettings, loadAccount, signOut, renderSlot, t,
+  wide, openSettings, loadAccount, signOut, changePassword, renderSlot, t,
 }: TeamAccountLauncherProps) {
   const [open, setOpen] = useState(false)
+  const [passwordOpen, setPasswordOpen] = useState(false)
   const [member, setMember] = useState<TeamMemberIdentity | undefined>()
   // The menu lines up with the member row itself, whose negative margins make
   // it wider than the wrapper the Menu would otherwise measure.
@@ -92,11 +106,13 @@ export function TeamAccountLauncher({
         getAnchorRect={launcherRect}
         items={[
           { id: 'settings', label: t('settings'), icon: <IconSettingsOutlineRegular /> },
+          { id: 'change-password', label: t('changePassword'), icon: <PasswordIcon /> },
           { id: 'sign-out', label: t('signOut'), icon: <SignOutIcon />, danger: true },
         ]}
         onSelect={(id) => {
           setOpen(false)
           if (id === 'settings') openSettings()
+          else if (id === 'change-password') setPasswordOpen(true)
           else signOut()
         }}
         anchor={(
@@ -117,6 +133,12 @@ export function TeamAccountLauncher({
         )}
       />
       {renderSlot('team.account.action', { wide })}
+      <ChangePasswordDialog
+        open={passwordOpen}
+        onClose={() => { setPasswordOpen(false) }}
+        changePassword={changePassword}
+        t={t}
+      />
     </div>
   )
 }

@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-`dsh-team-control-plane-http` serves the four endpoints a Team Runner calls: open a device transaction, authenticate an organization account and approve that transaction, redeem its one-time code, and refresh the device credential. The member's browser remains on the Runner origin; no Control Plane browser session participates.
+`dsh-team-control-plane-http` serves the five endpoints a Team Runner calls: open a device transaction, authenticate an organization account and approve that transaction, redeem its one-time code, refresh the device credential, and change the signed-in member's own password. The member's browser remains on the Runner origin; no Control Plane browser session participates.
 
 ## Table of Contents
 
@@ -33,7 +33,9 @@ plugins:
     maxRequestBodyBytes: 16384
 ```
 
-The four paths are `POST {pathPrefix}/start`, `/login`, `/redeem`, and `/refresh`. `organizationId` has no default because this single-organization endpoint must not guess which account namespace it authenticates. A successful `/login` answer carries the one-time code plus the authenticated account's `loginName` and `displayName`; it never carries a password or device credential. Invalid account credentials answer the same reasonless 401; device-seam refusals answer 403 carrying the seam's word; malformed bodies answer 400.
+The five paths are `POST {pathPrefix}/start`, `/login`, `/redeem`, `/refresh`, and `/password`. `organizationId` has no default because this single-organization endpoint must not guess which account namespace it authenticates. A successful `/login` answer carries the one-time code plus the authenticated account's `loginName` and `displayName`; it never carries a password or device credential. Invalid account credentials answer the same reasonless 401; device-seam refusals answer 403 carrying the seam's word; malformed bodies answer 400.
+
+`/password` takes `Authorization: Bearer <access token>` and a body of `currentSecret` and `newSecret`. The token says which account and device is asking; the current password, checked again through `accountAuth.authenticate`, says the person holding the Runner is that account's holder. A missing, lapsed, revoked, or other-organization token answers 401; a wrong current password answers 403 `current-secret-incorrect`; an unchanged password answers 400 `secret-unchanged`; a password the deployment's policy refuses answers 400 `weak-secret` with `policy` (`minLength`, `requiredClasses`) so the Runner states the rules in its own language. On success the account's Control Plane browser sessions end and every other active device of that account is revoked; the requesting device stays bound. The attempt is audited as `member.password.change`, allowed or denied. Wrong-password attempts count toward the same lock as a failed sign-in.
 
 -----
 

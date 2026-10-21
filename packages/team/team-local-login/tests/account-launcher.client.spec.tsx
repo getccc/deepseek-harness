@@ -24,12 +24,13 @@ const COPY = {
   menu: '账户菜单',
   settings: '设置',
   signOut: '退出登录',
+  changePassword: '修改密码',
   memberFallback: '团队成员',
 } as const
 
 type DirectProps = Pick<
   TeamAccountLauncherProps,
-  'wide' | 'openSettings' | 'loadAccount' | 'signOut' | 'renderSlot' | 't'
+  'wide' | 'openSettings' | 'loadAccount' | 'signOut' | 'changePassword' | 'renderSlot' | 't'
 >
 
 /** Direct component props; the renderer-owned global seats are unused here. */
@@ -39,6 +40,7 @@ function props(overrides: Partial<DirectProps> = {}): TeamAccountLauncherProps {
     openSettings: vi.fn(),
     loadAccount: vi.fn().mockResolvedValue({ loginName: 'alice', displayName: 'Alice' }),
     signOut: vi.fn(),
+    changePassword: vi.fn().mockResolvedValue({ ok: true }),
     // No composition registers an action beside the member row in this suite.
     renderSlot: () => null,
     t: key => COPY[key as keyof typeof COPY] ?? key,
@@ -79,6 +81,22 @@ describe('Team account launcher', () => {
     fireEvent.click(screen.getByRole('button', { name: '账户菜单: Alice' }))
     fireEvent.click(screen.getByRole('menuitem', { name: '退出登录' }))
     expect(signOut).toHaveBeenCalledOnce()
+  })
+
+  it('opens the password dialog from the menu without leaving the page', async () => {
+    const openSettings = vi.fn()
+    const signOut = vi.fn()
+    render(<TeamAccountLauncher {...props({ openSettings, signOut })} />)
+
+    await screen.findByText('Alice')
+    fireEvent.click(screen.getByRole('button', { name: '账户菜单: Alice' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: '修改密码' }))
+    expect(screen.getByRole('dialog', { name: 'password.title' })).toBeTruthy()
+    expect(openSettings).not.toHaveBeenCalled()
+    expect(signOut).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'password.cancel' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('keeps a usable compact avatar when a legacy credential has no identity', async () => {
@@ -143,6 +161,80 @@ describe('Team local-login browser plugin', () => {
 
     await expect(injected.loadAccount()).rejects.toThrow('refused with 401')
     await expect(injected.loadAccount()).rejects.toThrow('invalid identity')
+    await ctx.fiber.dispose()
+  })
+})
+
+describe('changing the password through the local Host', () => {
+  /** The launcher's `changePassword` operation over a stubbed fetch. */
+  async function operation(fetch: ReturnType<typeof vi.fn>) {
+    const ctx = new Context()
+    await ctx.plugin(SlotRegistry).await()
+    ctx.provide('locale', new LocaleRuntime(ctx))
+    const slots = ctx.get('slots') as SlotRegistry
+    declare(slots)
+    provideNavigation(ctx)
+    vi.stubGlobal('fetch', fetch)
+    await ctx.plugin({ inject: [...inject], apply }).await()
+    const injected = (slots.entries('settings.launcher')[0]!.inject as unknown as () => TeamAccountLauncherInjected)()
+    return { ctx, change: injected.changePassword }
+  }
+
+  /** A Host answer with a status and a JSON body. */
+  const answer = (status: number, body: unknown) => ({
+    ok: status >= 200 && status < 300, status, json: async () => body,
+  })
+
+  it('posts both passwords to the same-origin password endpoint', async () => {
+    const fetch = vi.fn().mockResolvedValue(answer(200, { changed: true }))
+    const { ctx, change } = await operation(fetch)
+    await expect(change('old', 'new')).resolves.toEqual({ ok: true })
+    expect(fetch).toHaveBeenCalledWith('team/account/password', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'accept': 'application/json', 'content-type': 'application/json' },
+      body: JSON.stringify({ currentSecret: 'old', newSecret: 'new' }),
+    })
+    await ctx.fiber.dispose()
+  })
+
+  it('maps each Host failure word to a reason the dialog has copy for', async () => {
+    const policy = { minLength: 8, requiredClasses: ['digit'] }
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(answer(403, { error: 'current-secret-incorrect' }))
+      .mockResolvedValueOnce(answer(400, { error: 'secret-unchanged' }))
+      .mockResolvedValueOnce(answer(400, { error: 'weak-secret', policy }))
+      .mockResolvedValueOnce(answer(400, { error: 'weak-secret', policy: { minLength: 'eight' } }))
+      .mockResolvedValueOnce(answer(400, { error: 'weak-secret' }))
+      .mockResolvedValueOnce(answer(401, { error: 'unauthorized' }))
+      .mockResolvedValueOnce(answer(502, { error: 'unreachable' }))
+      .mockResolvedValueOnce(answer(426, { error: 'update-required' }))
+      .mockResolvedValueOnce(answer(501, { error: 'unsupported' }))
+      .mockResolvedValueOnce(answer(500, { error: 'internal' }))
+      .mockResolvedValueOnce(answer(500, { error: 7 }))
+      .mockResolvedValueOnce({ ok: false, status: 502, json: async () => { throw new Error('html') } })
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+    const { ctx, change } = await operation(fetch)
+    const reasons = []
+    for (let index = 0; index < 13; index += 1) {
+      const result = await change('old', 'new')
+      reasons.push(result.ok ? 'ok' : result.reason)
+    }
+    expect(reasons).toEqual([
+      'current-incorrect', 'unchanged', 'weak', 'weak', 'weak', 'expired',
+      'unreachable', 'update-required', 'unsupported', 'failed', 'failed', 'failed', 'unreachable',
+    ])
+    await ctx.fiber.dispose()
+  })
+
+  it('hands the dialog the rules only when the Host sent usable ones', async () => {
+    const policy = { minLength: 8, requiredClasses: ['digit'] }
+    const fetch = vi.fn()
+      .mockResolvedValueOnce(answer(400, { error: 'weak-secret', policy }))
+      .mockResolvedValueOnce(answer(400, { error: 'weak-secret', policy: null }))
+    const { ctx, change } = await operation(fetch)
+    await expect(change('old', 'new')).resolves.toEqual({ ok: false, reason: 'weak', policy })
+    await expect(change('old', 'new')).resolves.toEqual({ ok: false, reason: 'weak' })
     await ctx.fiber.dispose()
   })
 })

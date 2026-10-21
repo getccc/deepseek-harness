@@ -17,6 +17,7 @@ let origin: string
 let authenticated: boolean
 let signIn: ReturnType<typeof vi.fn>
 let signOut: ReturnType<typeof vi.fn>
+let changePassword: ReturnType<typeof vi.fn>
 
 /** Send one request with exactly the browser facts under test. */
 function send(
@@ -51,6 +52,7 @@ async function mount(config: Partial<login.Config>): Promise<void> {
   ctx.provide('teamAccountClient', {
     signIn,
     signOut,
+    changePassword,
     state: () => Promise.resolve({
       bound: true,
       member: { loginName: 'alice', displayName: 'Alice' },
@@ -78,6 +80,7 @@ beforeEach(async () => {
   authenticated = false
   signIn = vi.fn(() => Promise.resolve({ bound: true }))
   signOut = vi.fn(() => Promise.resolve())
+  changePassword = vi.fn(() => Promise.resolve())
   await mount({ applicationPath: '/app' })
 })
 
@@ -213,6 +216,104 @@ describe('submitting the account form', () => {
       expect(refused.status).toBe(403)
       expect(signIn).not.toHaveBeenCalled()
     }
+  })
+})
+
+describe('changing the password', () => {
+  const body = JSON.stringify({ currentSecret: 'old-Secret-1', newSecret: 'new-Secret-2' })
+  const submit = (
+    init: { headers?: Record<string, string>; body?: string; method?: string } = {},
+  ) => send(login.PASSWORD_PATH, {
+    method: init.method ?? 'POST',
+    headers: { origin, 'content-type': 'application/json', ...init.headers },
+    body: init.body ?? body,
+  })
+  /** A Control Plane refusal as the account client reports it. */
+  const refused = (reason: string, status: number, policy?: object) =>
+    Object.assign(new Error(`control plane refused: ${reason}`), {
+      name: 'ControlPlaneRefusedError', reason, status, policy,
+    })
+
+  it('hands both passwords to the Control Plane for an authenticated browser', async () => {
+    authenticated = true
+    const answer = await submit()
+    expect(answer.status).toBe(200)
+    expect(JSON.parse(answer.body)).toEqual({ changed: true })
+    expect(changePassword).toHaveBeenCalledWith('old-Secret-1', 'new-Secret-2')
+    expect(answer.headers['cache-control']).toBe('no-store')
+  })
+
+  it('refuses a locked browser, another origin, and any method but POST', async () => {
+    expect((await submit()).status).toBe(401)
+    authenticated = true
+    expect((await submit({ headers: { origin: 'https://attacker.example' } })).status).toBe(403)
+    expect((await submit({ method: 'GET', body: '' })).status).toBe(405)
+    expect(changePassword).not.toHaveBeenCalled()
+  })
+
+  it('refuses a body without both passwords', async () => {
+    authenticated = true
+    for (const bad of ['not json', '[1]', '{}', JSON.stringify({ currentSecret: 'a' }),
+      JSON.stringify({ currentSecret: '', newSecret: 'b' }), JSON.stringify({ currentSecret: 'a', newSecret: 2 })]) {
+      const answer = await submit({ body: bad })
+      expect(answer.status, bad).toBe(400)
+      expect(JSON.parse(answer.body)).toEqual({ error: 'malformed' })
+    }
+    expect((await submit({ body: JSON.stringify({ currentSecret: 'a'.repeat(20_000), newSecret: 'b' }) })).status)
+      .toBe(400)
+    expect(changePassword).not.toHaveBeenCalled()
+  })
+
+  it('passes on the Control Plane words a member can act on', async () => {
+    authenticated = true
+    const cases: [Error, number, unknown][] = [
+      [refused('current-secret-incorrect', 403), 403, { error: 'current-secret-incorrect' }],
+      [refused('secret-unchanged', 400), 400, { error: 'secret-unchanged' }],
+      [refused('weak-secret', 400, { minLength: 8, requiredClasses: ['digit'] }), 400,
+        { error: 'weak-secret', policy: { minLength: 8, requiredClasses: ['digit'] } }],
+      [refused('weak-secret', 400), 400, { error: 'weak-secret' }],
+    ]
+    for (const [error, status, expected] of cases) {
+      changePassword.mockRejectedValueOnce(error)
+      const answer = await submit()
+      expect(answer.status).toBe(status)
+      expect(JSON.parse(answer.body)).toEqual(expected)
+    }
+  })
+
+  it('says a Control Plane that predates the endpoint cannot do this', async () => {
+    authenticated = true
+    changePassword.mockRejectedValueOnce(refused('unknown', 404))
+    const answer = await submit()
+    expect(answer.status).toBe(501)
+    expect(JSON.parse(answer.body)).toEqual({ error: 'unsupported' })
+  })
+
+  it('reads every other refusal as an expired sign-in', async () => {
+    authenticated = true
+    for (const error of [refused('unauthorized', 401), refused('revoked', 403), refused('unknown', 500),
+      Object.assign(new Error('unbound'), { name: 'NotBoundError' })]) {
+      changePassword.mockRejectedValueOnce(error)
+      const answer = await submit()
+      expect(answer.status).toBe(401)
+      expect(JSON.parse(answer.body)).toEqual({ error: 'unauthorized' })
+    }
+  })
+
+  it('tells an unreachable Control Plane and an outdated Runner apart', async () => {
+    authenticated = true
+    changePassword.mockRejectedValueOnce(Object.assign(new Error('down'), { name: 'ControlPlaneUnreachableError' }))
+    expect((await submit()).status).toBe(502)
+    changePassword.mockRejectedValueOnce(Object.assign(new Error('old'), { name: 'ProtocolUnsupportedError' }))
+    expect((await submit()).status).toBe(426)
+  })
+
+  it('says nothing about a failure that is not a Control Plane answer', async () => {
+    authenticated = true
+    changePassword.mockRejectedValueOnce(new Error('disk on fire'))
+    const answer = await submit()
+    expect(answer.status).toBe(500)
+    expect(JSON.parse(answer.body)).toEqual({ error: 'internal' })
   })
 })
 

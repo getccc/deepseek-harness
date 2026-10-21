@@ -58,7 +58,11 @@ HTML 表单由回环地址上的 Runner 提供。提交后，Runner 开启一个
 
 ### 应用底部展示本地成员
 
-浏览器端占用设置 Shell 的可选 `settings.launcher` Slot。它携带本地浏览器 Cookie 读取 `/team/account`，展示返回的显示名与文字头像，并打开包含设置和退出登录的菜单。设置会调用 Shell 拥有的面板动作；退出登录会导航到 `/team/logout`。身份响应只包含 `loginName` 与 `displayName`。
+浏览器端占用设置 Shell 的可选 `settings.launcher` Slot。它携带本地浏览器 Cookie 读取 `/team/account`，展示返回的显示名与文字头像，并打开包含设置、修改密码和退出登录的菜单。设置会调用 Shell 拥有的面板动作；退出登录会导航到 `/team/logout`；修改密码会打开下文所述的对话框。身份响应只包含 `loginName` 与 `displayName`。
+
+### 成员自行修改密码
+
+对话框要求输入当前密码、新密码与确认密码，并且只检查三项都已填写、两次新密码一致。它把两个密码以 JSON 提交到 `/team/account/password`。该路由要求已认证的本地浏览器，以及登录表单同样要求的同源事实，然后调用 `teamAccountClient.changePassword`。当前密码是否正确、新密码是否满足部署规则由 Control Plane 判定；路由把它的结论转成 `current-secret-incorrect`、`secret-unchanged`、`weak-secret`（附带 `policy`，让对话框用成员的语言陈述规则）、其余拒绝与未绑定 Runner 对应的 `unauthorized`、`unreachable`、`update-required`，以及对应早于该端点的 Control Plane 构建的 `unsupported`（501）；其他情况回答 `500 internal`。成功后本 Runner 保持登录，成员在其他设备上的登录则必须重新进行。对话框把每条错误用红色文字显示在它所属的输入框下方：当前密码错误显示在当前密码框下，新旧密码相同或强度不足显示在新密码框下，两次输入不一致显示在确认框下。与任何输入框无关的失败（例如服务不可达或版本过旧）显示在按钮上方。字段一经编辑，它的错误随即消失。对话框关闭时会清空已输入的密码。
 
 ### 设置页显示已安装的发行版本
 
@@ -74,10 +78,10 @@ HTML 表单由回环地址上的 Runner 提供。提交后，Runner 开启一个
 
 | 路径 | 角色 |
 |---|---|
-| [`src/index.ts`](src/index.ts) | 请求验证与五条本地路由 |
+| [`src/index.ts`](src/index.ts) | 请求验证与六条本地路由 |
 | [`src/pages.ts`](src/pages.ts) | 应用解锁前提供的独立 HTML |
 | [`src/paths.ts`](src/paths.ts) | 固定本地路径 |
-| [`src/client/`](src/client/) | 本地化成员入口、账户菜单、欢迎标题与设置页版本行 |
+| [`src/client/`](src/client/) | 本地化成员入口、账户菜单、修改密码对话框、欢迎标题与设置页版本行 |
 | [`src/xiaowei-avatar.ts`](src/xiaowei-avatar.ts) | 小微的全身形象，内联供欢迎标题与回复署名行使用 |
 
 -----
@@ -103,7 +107,7 @@ HTML 表单由回环地址上的 Runner 提供。提交后，Runner 开启一个
 <a id="known-limitations-and-deferred-work"></a>
 
 - **每个 Runner 进程只有一个活跃账户**——再次登录会为使用该 Runner 的所有浏览器替换进程凭据。
-- **没有成员自助修改密码页面**——管理员在 Control Plane 中替换密码，这会撤销该账户的每个浏览器会话与设备凭据族。
+- **修改密码依赖 Control Plane**——没有离线路径；Control Plane 不可达时会报告并且不做任何改动。忘记当前密码的成员仍需管理员在 Control Plane 中替换密码，这会撤销该账户的每个浏览器会话与设备凭据族。
 - **两种应用前 Locale**——服务端渲染表单目前支持 `en-US` 与 `zh-CN`。
 
 <a id="dev-note"></a>
@@ -112,7 +116,7 @@ HTML 表单由回环地址上的 Runner 提供。提交后，Runner 开启一个
 <details>
 <summary>面向维护者的工作上下文——点击展开</summary>
 
-路由测试固定了干净的本地入口、同源表单要求、通用认证拒绝、Session 签发、已认证身份响应与退出顺序。浏览器测试固定了本地化账户入口及其设置和退出动作。账户客户端测试则对着真实 Control Plane 端点和设备认证 Provider 驱动密码流程。
+路由测试固定了干净的本地入口、同源表单要求、通用认证拒绝、Session 签发、已认证身份响应与退出顺序。浏览器测试固定了本地化账户入口、其设置、修改密码和退出动作，以及修改密码对话框的各个状态。账户客户端测试则对着真实 Control Plane 端点和设备认证 Provider 驱动密码流程。
 
 </details>
 

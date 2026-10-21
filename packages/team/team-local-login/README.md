@@ -58,7 +58,11 @@ The login document is a standalone responsive page with bilingual copy, keyboard
 
 ### The application footer shows the local member
 
-The browser half occupies the Settings shell's optional `settings.launcher` slot. It reads `/team/account` with the local browser cookie, shows the returned display name and text avatar, and opens a menu containing Settings and Sign out. Settings calls the shell-owned panel action; Sign out navigates to `/team/logout`. The identity response contains only `loginName` and `displayName`.
+The browser half occupies the Settings shell's optional `settings.launcher` slot. It reads `/team/account` with the local browser cookie, shows the returned display name and text avatar, and opens a menu containing Settings, Change password, and Sign out. Settings calls the shell-owned panel action; Sign out navigates to `/team/logout`; Change password opens a dialog described below. The identity response contains only `loginName` and `displayName`.
+
+### Members change their own password
+
+The dialog asks for the current password, the new password, and its confirmation, and checks only that all three are filled and the two new entries match. It posts the two passwords as JSON to `/team/account/password`. The route requires an authenticated local browser and the same-origin facts the login form requires, then calls `teamAccountClient.changePassword`. The Control Plane decides whether the current password is right and whether the new one satisfies the deployment's rules; the route passes its words on as `current-secret-incorrect`, `secret-unchanged`, `weak-secret` (with `policy`, so the dialog states the rules in the member's language), `unauthorized` for any other refusal or an unbound Runner, `unreachable`, `update-required`, and `unsupported` (501) for a Control Plane build that predates the endpoint. Anything else answers `500 internal`. On success this Runner stays signed in, while the member's other devices must sign in again. The dialog shows each error in red under the field it is about: a wrong current password under the current field, a repeated or too-weak password under the new field, a mismatch under the confirmation. A failure about no field, such as an unreachable or outdated service, appears above the buttons. An error disappears as soon as its field is edited. The dialog clears the typed passwords when it closes.
 
 ### Settings names the installed release
 
@@ -74,10 +78,10 @@ Every turn in the transcript then opens with a header from the same figure — h
 
 | Path | Role |
 |---|---|
-| [`src/index.ts`](src/index.ts) | Request validation and the five local routes |
+| [`src/index.ts`](src/index.ts) | Request validation and the six local routes |
 | [`src/pages.ts`](src/pages.ts) | Standalone HTML rendered before the application is unlocked |
 | [`src/paths.ts`](src/paths.ts) | Fixed local paths |
-| [`src/client/`](src/client/) | Localized member launcher, account menu, hero greeting, and Settings version row |
+| [`src/client/`](src/client/) | Localized member launcher, account menu, password dialog, hero greeting, and Settings version row |
 | [`src/xiaowei-avatar.ts`](src/xiaowei-avatar.ts) | 小微's whole figure, inlined for the hero and the reply row |
 
 -----
@@ -103,7 +107,7 @@ Nothing here joins a model request, so there is no cache effect.
 <a id="known-limitations-and-deferred-work"></a>
 
 - **One active account per Runner process** — signing in again replaces the process credential for every browser using that Runner.
-- **No member self-service password page** — an administrator replaces a password in the Control Plane, which revokes every browser session and device credential family for that account.
+- **Password changes need the Control Plane** — there is no offline path; an unreachable Control Plane is reported and nothing changes. A member who forgot the current password still needs an administrator to replace it in the Control Plane, which revokes every browser session and device credential family for that account.
 - **Two pre-application locales** — the server-rendered form currently supports `en-US` and `zh-CN`.
 
 <a id="dev-note"></a>
@@ -112,7 +116,7 @@ Nothing here joins a model request, so there is no cache effect.
 <details>
 <summary>Working context for maintainers — click to expand</summary>
 
-Route tests pin the clean local entry, same-origin form requirement, generic authentication refusal, session issuance, authenticated identity response, and sign-out ordering. Browser tests pin the localized account launcher and its Settings and sign-out actions. The account client tests drive the password flow against a real Control Plane endpoint and device-authorization provider.
+Route tests pin the clean local entry, same-origin form requirement, generic authentication refusal, session issuance, authenticated identity response, and sign-out ordering. Browser tests pin the localized account launcher, its Settings, password, and sign-out actions, and the password dialog's states. The account client tests drive the password flow against a real Control Plane endpoint and device-authorization provider.
 
 </details>
 

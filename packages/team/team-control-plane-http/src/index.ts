@@ -10,7 +10,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
-import type {} from '@deepseek-ai/dsh-account-auth'
+import { WeakSecretError } from '@deepseek-ai/dsh-account-auth'
 import { OrgId } from '@deepseek-ai/dsh-account-store'
 import type {} from '@deepseek-ai/dsh-audit'
 import {
@@ -26,28 +26,40 @@ import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
 import {
   DEVICE_PATH_PREFIX,
   MINIMUM_PROTOCOL_VERSION,
+  CURRENT_SECRET_INCORRECT,
   LOGIN_PATH,
+  PASSWORD_PATH,
   PROTOCOL_VERSION,
   REDEEM_PATH,
   REFRESH_PATH,
+  SECRET_UNCHANGED,
   START_PATH,
+  WEAK_SECRET,
   protocolSupport,
   type LoginSuccess,
+  type WeakSecretRefusal,
 } from './protocol.ts'
 
 export {
   DEVICE_PATH_PREFIX,
   MINIMUM_PROTOCOL_VERSION,
+  CURRENT_SECRET_INCORRECT,
   LOGIN_PATH,
+  PASSWORD_PATH,
   PROTOCOL_VERSION,
   REDEEM_PATH,
   REFRESH_PATH,
+  SECRET_UNCHANGED,
   START_PATH,
+  WEAK_SECRET,
   protocolSupport,
+  type PasswordChangeRequest,
+  type PasswordPolicy,
   type ProtocolRefusal,
   type ProtocolSupport,
   type LoginSuccess,
   type TeamMemberIdentity,
+  type WeakSecretRefusal,
   type WireRefusal,
 } from './protocol.ts'
 
@@ -113,6 +125,10 @@ function fail(res: ServerResponse, error: unknown): void {
     json(res, 401, { error: 'unauthorized' })
     return
   }
+  if (error instanceof PasswordChangeRefusal) {
+    json(res, error.status, error.body)
+    return
+  }
   const reason = error instanceof Error && 'reason' in error ? String(error.reason) : undefined
   if (reason === undefined) {
     json(res, 500, { error: 'internal' })
@@ -128,6 +144,14 @@ class InvalidCredentialsError extends Error {
   constructor() {
     super('the account credentials were refused')
     this.name = 'InvalidCredentialsError'
+  }
+}
+
+/** A password-change refusal that carries its own status and body. */
+class PasswordChangeRefusal extends Error {
+  constructor(readonly status: number, readonly body: Record<string, unknown>) {
+    super(`password change refused: ${String(body.reason)}`)
+    this.name = 'PasswordChangeRefusal'
   }
 }
 
@@ -194,6 +218,16 @@ function parseRefresh(body: Record<string, unknown>): RefreshRequest {
   }
 }
 
+/** Read the bearer token a request presents, or undefined when it presents none. */
+function bearerToken(req: IncomingMessage): string | undefined {
+  const header = req.headers.authorization
+  if (typeof header !== 'string') return undefined
+  const [scheme, token, ...rest] = header.split(' ')
+  return scheme?.toLowerCase() === 'bearer' && token !== undefined && token.length > 0 && rest.length === 0
+    ? token
+    : undefined
+}
+
 /**
  * Answer a Runner whose protocol version this build does not speak.
  *
@@ -231,7 +265,10 @@ export function apply(ctx: Context, config: Config): void {
   const prefix = config.pathPrefix
   const limit = config.maxRequestBodyBytes
 
-  const post = (path: string, run: (body: Record<string, unknown>) => Promise<unknown>): WebRoute => ({
+  const post = (
+    path: string,
+    run: (body: Record<string, unknown>, req: IncomingMessage) => Promise<unknown>,
+  ): WebRoute => ({
     kind: 'exact',
     path: `${prefix}${path}`,
     handler: async (req, res) => {
@@ -249,7 +286,7 @@ export function apply(ctx: Context, config: Config): void {
       // complaint about a field whose meaning changed underneath it.
       if (!answerUnsupportedProtocol(res, body)) return
       try {
-        json(res, 200, await run(body))
+        json(res, 200, await run(body, req))
       } catch (error) {
         fail(res, error)
       }
@@ -299,6 +336,52 @@ export function apply(ctx: Context, config: Config): void {
         ...confirmed,
         member: { loginName: member.loginName, displayName: member.displayName },
       } satisfies LoginSuccess
+    }),
+    post(PASSWORD_PATH, async (body, req) => {
+      // The access token says which account and device is asking; the current
+      // password says the person at the keyboard is that account's holder.
+      const token = bearerToken(req)
+      const claims = token === undefined ? undefined : await ctx.deviceAuthorization.verifyAccessToken(token)
+      if (claims === undefined || claims.orgId !== organizationId) throw new InvalidCredentialsError()
+      const member = await ctx.accountStore.getUser(claims.principalId)
+      if (member === undefined) throw new InvalidCredentialsError()
+      const currentSecret = str(body, 'currentSecret')
+      const newSecret = str(body, 'newSecret')
+      const record = (outcome: 'allowed' | 'denied') => ctx.audit.record({
+        orgId: organizationId,
+        principalId: member.id,
+        action: 'member.password.change',
+        outcome,
+        ...(outcome === 'denied' ? { reason: 'invalid-credentials' as const } : {}),
+        resourceId: member.id,
+      })
+      const authenticated = await ctx.accountAuth.authenticate(organizationId, member.loginName, currentSecret)
+      if (!authenticated.ok) {
+        await record('denied')
+        throw new PasswordChangeRefusal(403, { error: 'refused', reason: CURRENT_SECRET_INCORRECT })
+      }
+      if (newSecret === currentSecret) {
+        throw new PasswordChangeRefusal(400, { error: 'refused', reason: SECRET_UNCHANGED })
+      }
+      try {
+        await ctx.accountAuth.setSecret(member.id, newSecret)
+      } catch (error) {
+        if (!(error instanceof WeakSecretError)) throw error
+        throw new PasswordChangeRefusal(400, {
+          error: 'refused', reason: WEAK_SECRET, policy: ctx.accountAuth.secretPolicy(),
+        } satisfies WeakSecretRefusal)
+      }
+      // The new password is committed; what remains is ending every other way
+      // the old one still opens this account. This device stays bound, so the
+      // member who just changed it is not signed out of the Runner they used.
+      await ctx.accountStore.revokeBrowserSessions(member.id)
+      for (const device of await ctx.deviceAuthorization.listDevices(organizationId)) {
+        if (device.ownerId === member.id && device.status === 'active' && device.id !== claims.deviceId) {
+          await ctx.deviceAuthorization.revokeDevice(device.id)
+        }
+      }
+      await record('allowed')
+      return { changed: true }
     }),
     post(REDEEM_PATH, body => ctx.deviceAuthorization.redeem(parseRedeem(body))),
     post(REFRESH_PATH, body => ctx.deviceAuthorization.refresh(parseRefresh(body))),

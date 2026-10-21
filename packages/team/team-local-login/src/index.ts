@@ -15,9 +15,13 @@ import type {} from '@deepseek-ai/dsh-client-connection'
 import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
 import type {} from '@deepseek-ai/dsh-team-account-client'
 import { LOGIN_LOCALES, loginPage, pageCopy, problemPage, type LoginLocale } from './pages.ts'
-import { ACCOUNT_PATH, LOGIN_PATH, LOGOUT_PATH, OPEN_PATH, PRODUCT_PATH, SIGNED_IN_PARAM } from './paths.ts'
+import {
+  ACCOUNT_PATH, LOGIN_PATH, LOGOUT_PATH, OPEN_PATH, PASSWORD_PATH, PRODUCT_PATH, SIGNED_IN_PARAM,
+} from './paths.ts'
 
-export { ACCOUNT_PATH, LOGIN_PATH, LOGOUT_PATH, OPEN_PATH, PRODUCT_PATH, SIGNED_IN_PARAM } from './paths.ts'
+export {
+  ACCOUNT_PATH, LOGIN_PATH, LOGOUT_PATH, OPEN_PATH, PASSWORD_PATH, PRODUCT_PATH, SIGNED_IN_PARAM,
+} from './paths.ts'
 
 /** Stable Cordis plugin name. */
 export const name = 'team-local-login'
@@ -108,6 +112,70 @@ async function readForm(req: IncomingMessage, limit: number): Promise<URLSearchP
     chunks.push(buffer)
   }
   return new URLSearchParams(Buffer.concat(chunks).toString('utf8'))
+}
+
+/** Read a bounded JSON object body, or undefined when it is too large or not an object. */
+async function readJsonObject(req: IncomingMessage, limit: number): Promise<Record<string, unknown> | undefined> {
+  const chunks: Buffer[] = []
+  let size = 0
+  for await (const chunk of req) {
+    const buffer = chunk as Buffer
+    size += buffer.byteLength
+    if (size > limit) return undefined
+    chunks.push(buffer)
+  }
+  try {
+    const parsed: unknown = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+    return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)
+      ? parsed as Record<string, unknown>
+      : undefined
+  } catch {
+    // Unparsable JSON is answered like any other body this endpoint cannot use.
+    return undefined
+  }
+}
+
+/**
+ * Answer a failed password change in words the client can localize.
+ *
+ * The Control Plane's own refusal words pass through for the cases the member
+ * can act on; every other refusal reads as an expired sign-in, and anything
+ * that is not a Control Plane answer is this Runner's problem, which says nothing more.
+ */
+function passwordFailure(res: ServerResponse, error: unknown): void {
+  const name = error instanceof Error ? error.name : ''
+  if (name === 'ControlPlaneUnreachableError') {
+    json(res, 502, { error: 'unreachable' })
+    return
+  }
+  if (name === 'ProtocolUnsupportedError') {
+    json(res, 426, { error: 'update-required' })
+    return
+  }
+  if (name === 'NotBoundError') {
+    json(res, 401, { error: 'unauthorized' })
+    return
+  }
+  if (name === 'ControlPlaneRefusedError') {
+    const refusal = error as Error & { reason: string; status: number; policy?: unknown }
+    if (refusal.reason === 'current-secret-incorrect') {
+      json(res, 403, { error: 'current-secret-incorrect' })
+    } else if (refusal.reason === 'secret-unchanged') {
+      json(res, 400, { error: 'secret-unchanged' })
+    } else if (refusal.reason === 'weak-secret') {
+      json(res, 400, {
+        error: 'weak-secret',
+        ...(refusal.policy === undefined ? {} : { policy: refusal.policy }),
+      })
+    } else if (refusal.reason === 'unknown' && refusal.status === 404) {
+      // A Control Plane build that predates the endpoint.
+      json(res, 501, { error: 'unsupported' })
+    } else {
+      json(res, 401, { error: 'unauthorized' })
+    }
+    return
+  }
+  json(res, 500, { error: 'internal' })
 }
 
 /**
@@ -224,6 +292,40 @@ export function apply(ctx: Context, config: Config): void {
     },
   }
 
+  const password: WebRoute = {
+    kind: 'exact',
+    path: PASSWORD_PATH,
+    handler: async (req, res) => {
+      if (req.method !== 'POST') {
+        json(res, 405, { error: 'method not allowed' })
+        return
+      }
+      if (!ctx.browserSession.isAuthenticated(req)) {
+        json(res, 401, { error: 'unauthorized' })
+        return
+      }
+      if (!isSameOrigin(req)) {
+        json(res, 403, { error: 'different-origin' })
+        return
+      }
+      const body = await readJsonObject(req, config.maxRequestBodyBytes)
+      const currentSecret = body?.currentSecret
+      const newSecret = body?.newSecret
+      if (typeof currentSecret !== 'string' || currentSecret.length === 0
+        || typeof newSecret !== 'string' || newSecret.length === 0) {
+        json(res, 400, { error: 'malformed' })
+        return
+      }
+      try {
+        await ctx.teamAccountClient.changePassword(currentSecret, newSecret)
+      } catch (error) {
+        passwordFailure(res, error)
+        return
+      }
+      json(res, 200, { changed: true })
+    },
+  }
+
   const product: WebRoute = {
     kind: 'exact',
     path: PRODUCT_PATH,
@@ -244,7 +346,7 @@ export function apply(ctx: Context, config: Config): void {
     },
   }
 
-  for (const route of [login, open, logout, account, product]) {
+  for (const route of [login, open, logout, account, password, product]) {
     ctx.effect(() => ctx.webServer.register(route), `team-local-login: ${route.path}`)
   }
 }

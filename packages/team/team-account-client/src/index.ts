@@ -26,11 +26,13 @@ import {
 } from '@deepseek-ai/dsh-device-authorization'
 import {
   LOGIN_PATH,
+  PASSWORD_PATH,
   PROTOCOL_VERSION,
   REDEEM_PATH,
   REFRESH_PATH,
   START_PATH,
   type LoginSuccess,
+  type PasswordPolicy,
   type TeamMemberIdentity,
 } from '@deepseek-ai/dsh-team-control-plane-http'
 import { TEAM_CREDENTIAL_RECORD, readCredential, readDeviceKey, writeCredential } from './storage.ts'
@@ -48,9 +50,21 @@ declare module '@deepseek-ai/cordis' {
   }
 }
 
+/** Whether a refusal body's `policy` field has the fields the Runner states to the member. */
+function isPasswordPolicy(value: unknown): value is PasswordPolicy {
+  if (typeof value !== 'object' || value === null) return false
+  const candidate = value as Partial<PasswordPolicy>
+  return typeof candidate.minLength === 'number' && Array.isArray(candidate.requiredClasses)
+}
+
 /** Raised when the Control Plane refused, carrying the word it used. */
 export class ControlPlaneRefusedError extends Error {
-  constructor(readonly reason: string, readonly status: number) {
+  /**
+   * @param reason - the word the Control Plane used, or `unknown`.
+   * @param status - the HTTP status of the refusal.
+   * @param policy - the password rules a `weak-secret` refusal carries, for the member to read.
+   */
+  constructor(readonly reason: string, readonly status: number, readonly policy?: PasswordPolicy) {
     super(`control plane refused: ${reason}`)
     this.name = 'ControlPlaneRefusedError'
   }
@@ -319,6 +333,28 @@ export class TeamAccountClient extends Service {
   }
 
   /**
+   * Replace the signed-in member's password with one they chose.
+   *
+   * The Control Plane checks the current password again, so a Runner left
+   * unlocked cannot be used to take the account over. It keeps this device
+   * bound and ends the member's other devices and Control Plane sessions.
+   * @param currentSecret - the password in force now.
+   * @param newSecret - the password the member chose.
+   * @throws {NotBoundError} when this computer holds no credential.
+   * @throws {ControlPlaneRefusedError} with reason `current-secret-incorrect`, `weak-secret`
+   * (carrying `policy`), or `secret-unchanged`; or any refusal of the access token.
+   * @throws {ControlPlaneUnreachableError} when the Control Plane could not be reached.
+   */
+  async changePassword(currentSecret: string, newSecret: string): Promise<void> {
+    const token = await this.accessToken()
+    await this.post(PASSWORD_PATH, {
+      currentSecret,
+      newSecret,
+      protocolVersion: PROTOCOL_VERSION,
+    }, { authorization: `Bearer ${token}` })
+  }
+
+  /**
    * Forget the team credential, keeping the device key, the workspaces, and the
    * sessions. The computer stays the same computer; it just stops holding a
    * team account.
@@ -328,19 +364,22 @@ export class TeamAccountClient extends Service {
   }
 
   /** POST one JSON body to the Control Plane and read one JSON answer. */
-  private async post<T>(path: string, body: unknown): Promise<T> {
+  private async post<T>(path: string, body: unknown, headers: Record<string, string> = {}): Promise<T> {
     let response: Response
     try {
       response = await this.fetch(new URL(`/team/device${path}`, this.config.controlPlaneUrl), {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', ...headers },
         body: JSON.stringify(body),
       })
     } catch (error) {
       /* v8 ignore next -- fetch rejects with an Error; the guard is for the type */
       throw new ControlPlaneUnreachableError(error instanceof Error ? error.message : String(error), { cause: error })
     }
-    const answer = await response.json() as Record<string, unknown>
+    // An answer that is not JSON came from something other than this protocol,
+    // such as a Control Plane build that predates the endpoint and replies 404.
+    const answer = await response.json().catch(() => undefined) as Record<string, unknown> | undefined
+    if (answer === undefined) throw new ControlPlaneRefusedError('unknown', response.status)
     if (response.ok) return answer as T
     if (response.status === 426) {
       // The range travels with the refusal, because this Runner cannot ask for
@@ -353,7 +392,11 @@ export class TeamAccountClient extends Service {
     // A refusal names the seam's word when the Control Plane sent one; anything
     // else is a body this Runner has no agreement about.
     const reason = [answer.reason, answer.error].find(value => typeof value === 'string')
-    throw new ControlPlaneRefusedError(reason ?? 'unknown', response.status)
+    throw new ControlPlaneRefusedError(
+      reason ?? 'unknown',
+      response.status,
+      isPasswordPolicy(answer.policy) ? answer.policy : undefined,
+    )
   }
 }
 
