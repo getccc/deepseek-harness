@@ -18,6 +18,7 @@ import { pathToFileURL } from 'node:url'
 import { resolveLinuxNodePtyAddon, resolveWindowsNodePtyAddons } from './executable-native-pty.ts'
 import { officeSidecarArchives, runtimeNpmArchive, OFFICE_ASSET_IGNORES } from './build-exe-for-python-sdk-office.ts'
 import { syncPythonRuntimeProduct } from './build-exe-for-python-sdk-resources.ts'
+import { supportedArchitecturesFor, withTargetArchitectures } from './build-exe-for-python-sdk-architectures.ts'
 import { deduplicateStagedWorkspacePackages, materializeStagedLinks } from './build-exe-for-python-sdk-staging.ts'
 import { prepareOfficeSkillAssets } from './primary-runtime/prepare.ts'
 import primaryLock from './primary-runtime/lock.json' with { type: 'json' }
@@ -283,7 +284,9 @@ class SingleExeBuild {
     }
     if (this.cli.dryRun) console.log(`build-exe-for-python-sdk: [dry-run] rm -rf ${this.staging}`)
     else await rm(this.staging, { recursive: true, force: true })
-    try { await this.runPnpm('deploy', [
+    // A deploy installs the host's platform packages unless the workspace file selects the targets'.
+    const architectures = supportedArchitecturesFor(this.cli.targets, Target.host())
+    const deploy = () => this.runPnpm('deploy', [
       '--filter',
       DEPLOY_ROOT_PACKAGE,
       'deploy',
@@ -296,7 +299,17 @@ class SingleExeBuild {
       '--config.link-workspace-packages=true',
       '--config.hoist-workspace-packages=false',
       this.staging,
-    ]) } finally {
+    ])
+    try {
+      if (this.cli.dryRun) {
+        if (architectures !== undefined) {
+          console.log(`build-exe-for-python-sdk: [dry-run] supportedArchitectures os=${architectures.os.join(',')} cpu=${architectures.cpu.join(',')} in pnpm-workspace.yaml for the deploy`)
+        }
+        await deploy()
+      } else {
+        await withTargetArchitectures(resolve(root, 'pnpm-workspace.yaml'), architectures, deploy)
+      }
+    } finally {
       // Legacy deploy records production-only workspace state; restore the development installation before exec.
       await this.runPnpm('restore development dependencies', ['install', '--offline', '--frozen-lockfile', '--prod=false', '--ignore-scripts'])
     }
