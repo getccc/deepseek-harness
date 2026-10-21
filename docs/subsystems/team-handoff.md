@@ -82,6 +82,7 @@ async begin(): Promise<BindingHandle>
  * @param secret - the account password typed on the Runner.
  * @returns the state this installation is now in.
  * @throws {ControlPlaneRefusedError} when authentication or binding is refused.
+ * @throws {ControlPlaneUnreachableError} when the Control Plane could not be reached.
  */
 async signIn(loginName: string, secret: string): Promise<TeamAccountState>
 
@@ -93,6 +94,7 @@ async signIn(loginName: string, secret: string): Promise<TeamAccountState>
  * @returns the state this installation is now in.
  * @throws {NotBoundError} when no transaction is awaiting confirmation in this process.
  * @throws {ControlPlaneRefusedError} when the Control Plane refused the redemption.
+ * @throws {ControlPlaneUnreachableError} when the Control Plane could not be reached.
  */
 async complete( transactionId: TransactionId, code: string, member?: TeamMemberIdentity, ): Promise<TeamAccountState>
 
@@ -114,6 +116,7 @@ async state(): Promise<TeamAccountState>
  * @returns the access token to present to a company-resource entry.
  * @throws {NotBoundError} when this computer holds no credential.
  * @throws {ControlPlaneRefusedError} when the refresh was refused, including after a replay revoked the family.
+ * @throws {ControlPlaneUnreachableError} when the Control Plane could not be reached to refresh.
  */
 async accessToken(): Promise<string>
 

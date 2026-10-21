@@ -228,6 +228,16 @@ describe('when it cannot carry the request', () => {
       .rejects.toMatchObject({ reason: 'refused' })
   })
 
+  it('reports a token refresh that never reached the Control Plane as unreachable, not refused', async () => {
+    const offline = await mount(
+      `http://127.0.0.1:${String((plane.address() as { port: number }).port)}`,
+      () => Promise.reject(Object.assign(new Error('fetch failed'), { name: 'ControlPlaneUnreachableError' })),
+    )
+    await expect(offline.send({ operation: 'chat.completions', modelRef: 'm', body: {}, inputTokens: 1 }))
+      .rejects.toMatchObject({ reason: 'unreachable', detail: 'fetch failed' })
+    await expect(offline.listModels()).rejects.toMatchObject({ reason: 'unreachable', detail: 'fetch failed' })
+  })
+
   it('carries an abort signal, so cancelling the request cancels the call', async () => {
     answer = () => {
       // Never answers: the only way out is the caller's own signal.

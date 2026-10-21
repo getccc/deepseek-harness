@@ -136,6 +136,8 @@ export class TeamLlmHttpTransport extends LlmHttpTransport {
       /* v8 ignore next -- the account client rejects with Error; the guard is for the type */
       const name = error instanceof Error ? error.name : ''
       if (name === 'NotBoundError') throw new TransportFailedError('not-bound')
+      // A refresh that never reached the Control Plane is a network failure, not a refusal.
+      if (name === 'ControlPlaneUnreachableError') throw new TransportFailedError('unreachable', detailOf(error))
       throw new TransportFailedError('refused', detailOf(error))
     }
   }

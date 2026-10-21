@@ -34,7 +34,7 @@ import {
   type TeamMemberIdentity,
 } from '@deepseek-ai/dsh-team-control-plane-http'
 import { TEAM_CREDENTIAL_RECORD, readCredential, readDeviceKey, writeCredential } from './storage.ts'
-import { controlPlaneConfigFields, controlPlaneFetch, type ControlPlaneFetch } from './transport.ts'
+import { controlPlaneConfigFields, controlPlaneFetch, type ControlPlaneFetch, type Response } from './transport.ts'
 import type { BindingHandle, StoredCredential, TeamAccountState } from './types.ts'
 
 export { DEVICE_KEY_RECORD, TEAM_CREDENTIAL_RECORD } from './storage.ts'
@@ -53,6 +53,19 @@ export class ControlPlaneRefusedError extends Error {
   constructor(readonly reason: string, readonly status: number) {
     super(`control plane refused: ${reason}`)
     this.name = 'ControlPlaneRefusedError'
+  }
+}
+
+/**
+ * Raised when no answer arrived from the Control Plane: connection refused,
+ * DNS failure, TLS failure, or a timeout. Separate from a refusal because the
+ * Control Plane never spoke, and a member fixes it by checking the network
+ * rather than by contacting an administrator.
+ */
+export class ControlPlaneUnreachableError extends Error {
+  constructor(readonly detail: string, options?: ErrorOptions) {
+    super(`control plane unreachable: ${detail}`, options)
+    this.name = 'ControlPlaneUnreachableError'
   }
 }
 
@@ -188,6 +201,7 @@ export class TeamAccountClient extends Service {
    * @param secret - the account password typed on the Runner.
    * @returns the state this installation is now in.
    * @throws {ControlPlaneRefusedError} when authentication or binding is refused.
+   * @throws {ControlPlaneUnreachableError} when the Control Plane could not be reached.
    */
   async signIn(loginName: string, secret: string): Promise<TeamAccountState> {
     const pending = await this.begin()
@@ -208,6 +222,7 @@ export class TeamAccountClient extends Service {
    * @returns the state this installation is now in.
    * @throws {NotBoundError} when no transaction is awaiting confirmation in this process.
    * @throws {ControlPlaneRefusedError} when the Control Plane refused the redemption.
+   * @throws {ControlPlaneUnreachableError} when the Control Plane could not be reached.
    */
   async complete(
     transactionId: TransactionId,
@@ -267,6 +282,7 @@ export class TeamAccountClient extends Service {
    * @returns the access token to present to a company-resource entry.
    * @throws {NotBoundError} when this computer holds no credential.
    * @throws {ControlPlaneRefusedError} when the refresh was refused, including after a replay revoked the family.
+   * @throws {ControlPlaneUnreachableError} when the Control Plane could not be reached to refresh.
    */
   async accessToken(): Promise<string> {
     this.serving ??= this.serveAccessToken().finally(() => { this.serving = undefined })
@@ -313,11 +329,17 @@ export class TeamAccountClient extends Service {
 
   /** POST one JSON body to the Control Plane and read one JSON answer. */
   private async post<T>(path: string, body: unknown): Promise<T> {
-    const response = await this.fetch(new URL(`/team/device${path}`, this.config.controlPlaneUrl), {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    })
+    let response: Response
+    try {
+      response = await this.fetch(new URL(`/team/device${path}`, this.config.controlPlaneUrl), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+    } catch (error) {
+      /* v8 ignore next -- fetch rejects with an Error; the guard is for the type */
+      throw new ControlPlaneUnreachableError(error instanceof Error ? error.message : String(error), { cause: error })
+    }
     const answer = await response.json() as Record<string, unknown>
     if (response.ok) return answer as T
     if (response.status === 426) {

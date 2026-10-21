@@ -4227,14 +4227,14 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'Authenticate a member and bind this Runner without opening the Control Plane in a browser.',
         parameters: [{ name: 'loginName', description: 'the organization-local account name typed on the Runner.' }, { name: 'secret', description: 'the account password typed on the Runner.' }],
         returns: 'the state this installation is now in.',
-        throws: ['{ControlPlaneRefusedError} when authentication or binding is refused.'],
+        throws: ['{ControlPlaneRefusedError} when authentication or binding is refused.', '{ControlPlaneUnreachableError} when the Control Plane could not be reached.'],
       },
       {
         signature: 'async complete( transactionId: TransactionId, code: string, member?: TeamMemberIdentity, ): Promise<TeamAccountState>',
         description: 'Redeem the code the browser carried back, and keep the credential.',
         parameters: [{ name: 'transactionId', description: 'the transaction the code belongs to.' }, { name: 'code', description: 'the one-time authorization code.' }, { name: 'member', description: 'authenticated member identity returned by a local sign-in.' }],
         returns: 'the state this installation is now in.',
-        throws: ['{NotBoundError} when no transaction is awaiting confirmation in this process.', '{ControlPlaneRefusedError} when the Control Plane refused the redemption.'],
+        throws: ['{NotBoundError} when no transaction is awaiting confirmation in this process.', '{ControlPlaneRefusedError} when the Control Plane refused the redemption.', '{ControlPlaneUnreachableError} when the Control Plane could not be reached.'],
       },
       {
         signature: 'async state(): Promise<TeamAccountState>',
@@ -4247,7 +4247,7 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
         description: 'An access token that will still be valid when it arrives, refreshing first when the stored one is close enough to lapsing to lose the race.\n\nConcurrent callers share one refresh. The Control Plane spends a refresh token on its first presentation and reads a second presentation as a replay that revokes the whole family, so the model catalog and the knowledge search waking together must not each exchange the token they both read.',
         parameters: [],
         returns: 'the access token to present to a company-resource entry.',
-        throws: ['{NotBoundError} when this computer holds no credential.', '{ControlPlaneRefusedError} when the refresh was refused, including after a replay revoked the family.'],
+        throws: ['{NotBoundError} when this computer holds no credential.', '{ControlPlaneRefusedError} when the refresh was refused, including after a replay revoked the family.', '{ControlPlaneUnreachableError} when the Control Plane could not be reached to refresh.'],
       },
       {
         signature: 'async signOut(): Promise<void>',

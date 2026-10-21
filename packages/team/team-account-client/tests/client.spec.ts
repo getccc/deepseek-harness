@@ -23,6 +23,7 @@ import type { DeviceAuthorization } from '@deepseek-ai/dsh-device-authorization'
 import * as endpoints from '@deepseek-ai/dsh-team-control-plane-http'
 import TeamAccountClient, {
   ControlPlaneRefusedError,
+  ControlPlaneUnreachableError,
   NotBoundError,
   ProtocolUnsupportedError,
   platformWord,
@@ -133,6 +134,15 @@ describe('binding', () => {
   it('keeps invalid account credentials reasonless', async () => {
     await expect(client.signIn('alice', 'wrong-password'))
       .rejects.toMatchObject({ name: 'ControlPlaneRefusedError', reason: 'unauthorized', status: 401 })
+  })
+
+  it('reports a Control Plane that never answered as unreachable rather than refused', async () => {
+    const offline = await bootRunner(cp, { controlPlaneUrl: 'http://127.0.0.1:1' })
+    const unreachable = offline.get('teamAccountClient') as TeamAccountClient
+    const failure = await unreachable.signIn('alice', PASSWORD).catch((error: unknown) => error)
+    expect(failure).toBeInstanceOf(ControlPlaneUnreachableError)
+    expect(failure).not.toBeInstanceOf(ControlPlaneRefusedError)
+    await offline.fiber.dispose()
   })
 
   it('starts unbound, and knows it', async () => {

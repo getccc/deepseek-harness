@@ -26,7 +26,7 @@ import type {
   ImageAttachmentRef,
   RequestImageAttachment,
 } from '@deepseek-ai/dsh-attachment'
-import type { LlmHttpTransport, TransportModel } from '@deepseek-ai/dsh-llm-http-transport'
+import { TransportFailedError, type LlmHttpTransport, type TransportModel } from '@deepseek-ai/dsh-llm-http-transport'
 import { Readable } from 'node:stream'
 import { idleWatchdog, timeoutOf } from '@deepseek-ai/dsh-timeout'
 import type { DeepSeekLlmApiJson } from '@deepseek-ai/dsh-deepseek-llm-api-extensions'
@@ -207,7 +207,16 @@ export class ChatCompletionsAdapter extends LlmAdapter {
     provider: string,
     connection: DeepSeekConnectionOptions,
   ): Promise<DeepSeekConnectionOptions> {
-    const remote = await this.transport().listModels()
+    let remote: readonly TransportModel[] | undefined
+    try {
+      remote = await this.transport().listModels()
+    } catch (error: unknown) {
+      // A catalog listing that never reached its server fails like a request that never reached it.
+      if (error instanceof TransportFailedError && error.reason === 'unreachable') {
+        throw new LlmError('The model catalog could not be reached through the built-in model transport', 'TRANSPORT', { cause: error })
+      }
+      throw error
+    }
     const models = remote === undefined ? connection.models : remote.map(catalogModelOf)
     this.remoteCatalogs.set(provider, models)
     return { ...connection, models }

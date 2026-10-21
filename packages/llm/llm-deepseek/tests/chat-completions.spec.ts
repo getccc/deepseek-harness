@@ -534,6 +534,27 @@ describe('ChatCompletionsAdapter on the built-in route', () => {
     })
   })
 
+  it('reports a model catalog that never answered as TRANSPORT before any request is built', async () => {
+    const carrier = new TransportFailedError('unreachable', 'fetch failed')
+    const transport = new ScriptedTransport([COMPANY_TEXT])
+    vi.spyOn(transport, 'listModels').mockRejectedValue(carrier)
+
+    await expect(adapterOver(transport).prepareCall(BUILT_IN_PROVIDER, 'company-v4')).rejects.toMatchObject({
+      code: 'TRANSPORT',
+      message: 'The model catalog could not be reached through the built-in model transport',
+      cause: carrier,
+    })
+    expect(transport.requests).toHaveLength(0)
+  })
+
+  it('leaves a catalog refusal as the transport reported it', async () => {
+    const carrier = new TransportFailedError('refused', 'the family was revoked')
+    const transport = new ScriptedTransport([COMPANY_TEXT])
+    vi.spyOn(transport, 'listModels').mockRejectedValue(carrier)
+
+    await expect(adapterOver(transport).prepareCall(BUILT_IN_PROVIDER, 'company-v4')).rejects.toBe(carrier)
+  })
+
   it('reports a body that fails mid-stream as TRANSPORT', async () => {
     const transport = new ScriptedTransport([COMPANY_TEXT], (carried) => {
       const body = heldOpen(carried)
