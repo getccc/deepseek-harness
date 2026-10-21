@@ -18,6 +18,7 @@
   "scripts": {
     "build": "tsc -b && tsdown",
     "package:mac": "npm run build && electron-builder --config electron-builder.config.mjs --mac dmg zip --arm64",
+    "package:mac:x64": "npm run build && DSH_TEAM_MAC_ARCH=x64 electron-builder --config electron-builder.config.mjs --mac dmg zip --x64",
     "package:win": "npm run build && electron-builder --config electron-builder.config.mjs --win nsis --x64"
   },
   "license": "MIT",

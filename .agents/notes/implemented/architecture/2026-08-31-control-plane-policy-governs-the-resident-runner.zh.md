@@ -20,7 +20,7 @@ Team Edition 把服务器部署的管理应用与每位成员电脑上的 Runner
 
 **Electron 拥有桌面常驻，而不拥有授权。** 桌面外壳启动随附的 Team profile，在窗口关闭时隐藏、从托盘保持可用、注册用户级登录项以便后台启动，并在 Runner 意外退出十秒后重启。明确退出会终止两个进程。一份企业构建携带一个经过验证的 Control Plane 源，但不携带账户或提供方秘密。
 
-**桌面平台集合是 Windows x64 与 Apple 芯片 macOS。** macOS 打包器只生成 `arm64` DMG 产物。Intel 与 Universal 构建直接缺席，而不是把未经测试的变体展示为受支持平台。
+**桌面平台集合是 Windows x64 与 Apple 芯片或 Intel 的 macOS。** macOS 打包器每次运行生成一种架构，Runner 可执行文件、Office sidecar 与插件树都为该架构构建。Universal 构建直接缺席，而不是把未经测试的变体展示为受支持平台。
 
 ## 曾考虑的替代方案
 
@@ -30,7 +30,7 @@ Team Edition 把服务器部署的管理应用与每位成员电脑上的 Runner
 
 **把 Runner 作为特权系统服务运行。** 已否决，因为本机工具与工作空间属于操作系统用户。用户级登录项在不改变工作执行身份或权限的情况下提供后台可用性。
 
-**发布一份 Universal macOS 安装程序。** 已否决，因为不需要 Intel 支持，而 Universal 产物会为不受支持的架构增加构建、签名、下载与验证工作。
+**发布一份 Universal macOS 安装程序。** 已否决，因为每种架构一个安装程序已覆盖 Apple 芯片与 Intel，而 Universal 产物会使下载体积翻倍，并要求把 Runner 可执行文件与每个原生插件合并为 fat binary。
 
 ## 结果
 
@@ -40,4 +40,4 @@ Team Edition 把服务器部署的管理应用与每位成员电脑上的 Runner
 
 常驻外壳必须保持为普通成员进程。安装程序无需管理员权限即可启用登录启动，支持人员也可以区分关闭窗口与明确退出 Runner。
 
-企业分发会分别生成 Windows x64 与 macOS arm64 产物，并把部署的非秘密 Control Plane 源写入各个构建。更改该源需要重新构建。
+企业分发会分别生成 Windows x64、macOS arm64 与 macOS x64 产物，并把部署的非秘密 Control Plane 源写入各个构建。更改该源需要重新构建。

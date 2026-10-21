@@ -3,8 +3,8 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
-  APP_VERSION_ENV, OFFICE_SIDECAR_ENV, UPDATE_ORIGIN_ENV, pluginTreeFingerprint, resolveAppVersion,
-  resolveOfficeSidecar, resolveUpdateOrigin,
+  APP_VERSION_ENV, MAC_ARCHITECTURE_ENV, OFFICE_SIDECAR_ENV, UPDATE_ORIGIN_ENV, pluginTreeFingerprint, resolveAppVersion,
+  resolveMacArchitecture, resolveOfficeSidecar, resolveUpdateOrigin,
 } from '../scripts/packaging-inputs.mjs'
 
 const trees: string[] = []
@@ -108,27 +108,48 @@ describe('Office sidecar', () => {
 
   it('accepts the directory the Runner executable publishes for this platform', () => {
     const directory = tree(mac)
-    expect(resolveOfficeSidecar({ [OFFICE_SIDECAR_ENV]: directory }, false)).toBe(directory)
+    expect(resolveOfficeSidecar({ [OFFICE_SIDECAR_ENV]: directory }, false, 'arm64')).toBe(directory)
     const windows = tree({
       'node/bin/node.exe': '',
       'node_modules/@deepseek-ai/libreoffice-kit/package.json': '{}',
       'node_modules/@deepseek-ai/libreoffice-kit-win32-x64/package.json': '{}',
     })
-    expect(resolveOfficeSidecar({ [OFFICE_SIDECAR_ENV]: windows }, true)).toBe(windows)
+    expect(resolveOfficeSidecar({ [OFFICE_SIDECAR_ENV]: windows }, true, 'arm64')).toBe(windows)
+  })
+
+  it('requires the engine for the CPU the build targets', () => {
+    const directory = tree(mac)
+    expect(() => resolveOfficeSidecar({ [OFFICE_SIDECAR_ENV]: directory }, false, 'x64')).toThrow(/libreoffice-kit-darwin-x64/u)
+    const intel = tree({ ...mac, 'node_modules/@deepseek-ai/libreoffice-kit-darwin-x64/package.json': '{}' })
+    expect(resolveOfficeSidecar({ [OFFICE_SIDECAR_ENV]: intel }, false, 'x64')).toBe(intel)
   })
 
   it('refuses a build that names no sidecar', () => {
-    expect(() => resolveOfficeSidecar({}, false)).toThrow(/DSH_RUNTIME_DOWNLOAD=office/u)
-    expect(() => resolveOfficeSidecar({ [OFFICE_SIDECAR_ENV]: ' ' }, false)).toThrow(/must name the prepared Office sidecar/u)
+    expect(() => resolveOfficeSidecar({}, false, 'arm64')).toThrow(/DSH_RUNTIME_DOWNLOAD=office/u)
+    expect(() => resolveOfficeSidecar({ [OFFICE_SIDECAR_ENV]: ' ' }, false, 'arm64')).toThrow(/must name the prepared Office sidecar/u)
   })
 
   it('refuses a sidecar prepared for the other platform or missing its Node runtime', () => {
     const windows = tree({ ...mac, 'node/bin/node.exe': '' })
     // The engine package, not just the kit, decides whether a document converts.
-    expect(() => resolveOfficeSidecar({ [OFFICE_SIDECAR_ENV]: windows }, true)).toThrow(/libreoffice-kit-win32-x64/u)
+    expect(() => resolveOfficeSidecar({ [OFFICE_SIDECAR_ENV]: windows }, true, 'arm64')).toThrow(/libreoffice-kit-win32-x64/u)
     const { 'node/bin/node': _node, ...withoutNode } = mac
-    expect(() => resolveOfficeSidecar({ [OFFICE_SIDECAR_ENV]: tree(withoutNode) }, false)).toThrow(/Node runtime/u)
+    expect(() => resolveOfficeSidecar({ [OFFICE_SIDECAR_ENV]: tree(withoutNode) }, false, 'arm64')).toThrow(/Node runtime/u)
     const { 'node_modules/@deepseek-ai/libreoffice-kit/package.json': _kit, ...withoutKit } = mac
-    expect(() => resolveOfficeSidecar({ [OFFICE_SIDECAR_ENV]: tree(withoutKit) }, false)).toThrow(/libreoffice-kit at/u)
+    expect(() => resolveOfficeSidecar({ [OFFICE_SIDECAR_ENV]: tree(withoutKit) }, false, 'arm64')).toThrow(/libreoffice-kit at/u)
+  })
+})
+
+describe('macOS architecture', () => {
+  it('follows the variable, then the executable name, then Apple silicon', () => {
+    expect(resolveMacArchitecture({ [MAC_ARCHITECTURE_ENV]: 'x64' }, '/runner/dsh')).toBe('x64')
+    expect(resolveMacArchitecture({}, '/dist-exe/deepseek-harness-sdk-runtime-macos-x64')).toBe('x64')
+    expect(resolveMacArchitecture({}, '/dist-exe/deepseek-harness-sdk-runtime-macos-arm64')).toBe('arm64')
+    expect(resolveMacArchitecture({}, '/runner/dsh')).toBe('arm64')
+  })
+
+  it('refuses an architecture that is not built or that contradicts the Runner executable', () => {
+    expect(() => resolveMacArchitecture({ [MAC_ARCHITECTURE_ENV]: 'ia32' }, '/runner/dsh')).toThrow(/arm64 or x64/u)
+    expect(() => resolveMacArchitecture({ [MAC_ARCHITECTURE_ENV]: 'arm64' }, '/dist-exe/x-macos-x64')).toThrow(/built for x64/u)
   })
 })

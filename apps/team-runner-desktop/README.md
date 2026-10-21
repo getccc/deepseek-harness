@@ -36,7 +36,7 @@ DSH_TEAM_CONTROL_PLANE_URL=https://control.example.com \
 pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 ```
 
-`package:mac` produces an Apple silicon DMG and the zip an update installs from. It does not produce Intel or Universal artifacts. `package:win` produces an x64 NSIS installer and expects the Windows Runner executable, its ripgrep sidecar, and a Windows Office sidecar.
+`package:mac` produces an Apple silicon DMG and the zip an update installs from. `package:mac:x64` produces the Intel pair; it needs an Intel Runner executable (`node24-macos-x64`), an Intel Office sidecar, and an Intel plugin tree, because the Runner, sidecar, and shell must share one architecture (`DSH_TEAM_MAC_ARCH` states it and is checked against the executable's `-macos-<arch>` name). Neither produces Universal artifacts. `package:win` produces an x64 NSIS installer and expects the Windows Runner executable, its ripgrep sidecar, and a Windows Office sidecar.
 
 Pass the release version in the environment and nowhere else: an `--config.extraMetadata.version` override on the electron-builder command line replaces the validated value, and would silently restore a suffix that breaks updating.
 
@@ -179,10 +179,10 @@ location /updates/ {
 
 | Platform | Installer target | Architecture |
 |---|---|---|
-| macOS 12 or later | DMG to install, zip to update | Apple silicon (`arm64`) |
+| macOS 12 or later | DMG to install, zip to update | Apple silicon (`arm64`), Intel (`x64`) |
 | Windows | NSIS | x64 |
 
-Linux desktop packaging and macOS Intel support are outside this application's platform set.
+Linux desktop packaging and macOS Universal builds are outside this application's platform set.
 
 -----
 
@@ -190,6 +190,7 @@ Linux desktop packaging and macOS Intel support are outside this application's p
 ## Known limitations
 
 - An update replaces the whole application. Neither the Runner, the plugin tree, nor the shell is replaced on its own, so every release carries all three.
-- The Runner executable is built per platform on that platform: its native addon staging refuses a cross-platform target, so a Windows installer needs the Runner built on Windows x64 first.
+- The release manifest lists the macOS zip of each architecture that was built, and `latest-mac.yml` must list both zips for both to update. Build both architectures in one electron-builder run, or merge the `files` of the two metadata files before publishing; a second `latest-mac.yml` overwrites the first.
+- The Runner executable is built per platform on that platform: its native addon staging refuses a cross-platform target, so a Windows installer needs the Runner built on Windows x64 first. The one cross-platform exception is the macOS CPU: `build-exe-for-python-sdk --targets node24-macos-x64` on an Apple silicon Mac installs the Intel platform packages for the deploy itself and builds an Intel Runner.
 - Automatic login startup is per operating-system user, not a privileged system service. The Runner therefore executes work with that member's permissions.
 - The Runner log, shell log, and deployment patch live under the per-user application-data directory; support tooling must collect them from the affected computer.

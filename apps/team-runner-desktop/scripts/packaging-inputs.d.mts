@@ -39,6 +39,18 @@ export declare const UPDATE_ORIGIN_ENV: 'DSH_TEAM_UPDATE_ORIGIN'
  */
 export declare function resolveUpdateOrigin(env: NodeJS.ProcessEnv, controlPlaneUrl: string): string
 
+/** Environment variable naming the CPU architecture of a macOS build. */
+export declare const MAC_ARCHITECTURE_ENV: 'DSH_TEAM_MAC_ARCH'
+
+/**
+ * Decide which CPU architecture the macOS build is for.
+ * @param env - the packaging environment.
+ * @param runner - the Runner executable path.
+ * @returns the environment's architecture, else the one the executable's `-macos-<arch>` name states, else `arm64`.
+ * @throws when the variable is neither `arm64` nor `x64`, or disagrees with the executable's name.
+ */
+export declare function resolveMacArchitecture(env: NodeJS.ProcessEnv, runner: string): 'arm64' | 'x64'
+
 /** Environment variable naming the prepared Office sidecar directory this build carries. */
 export declare const OFFICE_SIDECAR_ENV: 'DSH_TEAM_OFFICE_SIDECAR'
 
@@ -46,7 +58,8 @@ export declare const OFFICE_SIDECAR_ENV: 'DSH_TEAM_OFFICE_SIDECAR'
  * Validate the Office sidecar directory the Runner converts Office documents with.
  * @param env - the packaging environment.
  * @param windows - whether the Runner executable is a Windows build.
+ * @param macArchitecture - the macOS architecture; ignored for Windows, which is x64 only.
  * @returns the validated sidecar directory.
  * @throws when the variable is absent or the directory lacks the Node runtime or this platform's LibreOffice packages.
  */
-export declare function resolveOfficeSidecar(env: NodeJS.ProcessEnv, windows: boolean): string
+export declare function resolveOfficeSidecar(env: NodeJS.ProcessEnv, windows: boolean, macArchitecture: 'arm64' | 'x64'): string

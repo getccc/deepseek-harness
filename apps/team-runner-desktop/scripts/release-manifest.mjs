@@ -19,8 +19,24 @@ import { MANIFEST_VERSION, canonicalManifestBytes } from '@deepseek-ai/dsh-team-
  */
 export const RELEASE_TARGETS = [
   { platform: 'darwin', architecture: 'arm64', metadata: 'latest-mac.yml', extension: '.zip' },
+  { platform: 'darwin', architecture: 'x64', metadata: 'latest-mac.yml', extension: '.zip' },
   { platform: 'win32', architecture: 'x64', metadata: 'latest.yml', extension: '.exe' },
 ]
+
+/**
+ * Whether an artifact is the one this target installs.
+ *
+ * `latest-mac.yml` lists the Apple silicon and Intel zips together, and
+ * `electron-updater` tells them apart by `arm64` appearing in the filename,
+ * so the manifest uses the same rule to agree with what the updater downloads.
+ * @param {{ platform: string, architecture: string }} target - the platform this artifact is for.
+ * @param {string} url - the artifact's filename in the update metadata.
+ * @returns {boolean} whether the artifact is built for the target's architecture.
+ */
+function builtFor(target, url) {
+  if (target.platform !== 'darwin') return true
+  return target.architecture === 'arm64' ? url.includes('arm64') : !url.includes('arm64')
+}
 
 /**
  * Read one electron-builder update metadata document.
@@ -84,8 +100,12 @@ export function releaseManifest(input) {
     if (metadata.version !== input.version) {
       throw new Error(`${target.metadata} describes ${metadata.version}, not ${input.version}`)
     }
-    const file = metadata.files.find(entry => entry.url.endsWith(target.extension))
-    if (file === undefined) throw new Error(`${target.metadata} lists no ${target.extension} artifact`)
+    const installable = metadata.files.filter(entry => entry.url.endsWith(target.extension))
+    if (installable.length === 0) throw new Error(`${target.metadata} lists no ${target.extension} artifact`)
+    // A release built for one macOS architecture only has no entry for the
+    // other; computers of that architecture then see no update.
+    const file = installable.find(entry => builtFor(target, entry.url))
+    if (file === undefined) continue
     artifacts.push(artifactOf(input.directory, target, file.url, input.baseUrl))
   }
   if (artifacts.length === 0) throw new Error('the release directory holds no update metadata for any platform')

@@ -116,6 +116,34 @@ export function resolveUpdateOrigin(env, controlPlaneUrl) {
   return url.href.endsWith('/') ? url.href : `${url.href}/`
 }
 
+/** Environment variable naming the CPU architecture of a macOS build. */
+export const MAC_ARCHITECTURE_ENV = 'DSH_TEAM_MAC_ARCH'
+
+/**
+ * Decide which CPU architecture the macOS build is for.
+ *
+ * The Runner executable, the Office sidecar, and the Electron shell must all
+ * be the same architecture; an Intel shell around an Apple silicon Runner
+ * installs and fails only when the Runner starts. The variable states the
+ * intent, and the executable's conventional `-macos-<arch>` name (the one
+ * `build-exe-for-python-sdk` writes) is checked against it. A build that
+ * states nothing and uses another executable name is an Apple silicon build.
+ * @param {NodeJS.ProcessEnv} env - the packaging environment.
+ * @param {string} runner - the Runner executable path.
+ * @returns {'arm64' | 'x64'} the architecture to package for.
+ */
+export function resolveMacArchitecture(env, runner) {
+  const value = env[MAC_ARCHITECTURE_ENV]?.trim()
+  if (value !== undefined && value !== '' && value !== 'arm64' && value !== 'x64') {
+    throw new Error(`${MAC_ARCHITECTURE_ENV} must be arm64 or x64; received ${value}`)
+  }
+  const named = /-macos-(arm64|x64)$/u.exec(runner)?.[1]
+  if (value !== undefined && value !== '' && named !== undefined && value !== named) {
+    throw new Error(`${MAC_ARCHITECTURE_ENV} is ${value} but the Runner executable ${runner} is built for ${named}`)
+  }
+  return /** @type {'arm64' | 'x64'} */ (value === undefined || value === '' ? named ?? 'arm64' : value)
+}
+
 /** Environment variable naming the prepared Office sidecar directory this build carries. */
 export const OFFICE_SIDECAR_ENV = 'DSH_TEAM_OFFICE_SIDECAR'
 
@@ -126,14 +154,15 @@ export const OFFICE_SIDECAR_ENV = 'DSH_TEAM_OFFICE_SIDECAR'
  * packages, the same layout `DSH_RUNTIME_DOWNLOAD=office <runner>` publishes
  * under the resource cache.
  *
- * A sidecar prepared for the other platform would install fine and fail only
- * when a member opens a document, so the engine package this build's platform
- * needs is checked here rather than discovered there.
+ * A sidecar prepared for the other platform or CPU would install fine and fail
+ * only when a member opens a document, so the engine package this build needs
+ * is checked here rather than discovered there.
  * @param {NodeJS.ProcessEnv} env - the packaging environment.
  * @param {boolean} windows - whether the Runner executable is a Windows build.
+ * @param {'arm64' | 'x64'} macArchitecture - the macOS architecture; ignored for Windows, which is x64 only.
  * @returns {string} the validated sidecar directory.
  */
-export function resolveOfficeSidecar(env, windows) {
+export function resolveOfficeSidecar(env, windows, macArchitecture) {
   const value = env[OFFICE_SIDECAR_ENV]?.trim()
   if (value === undefined || value === '') {
     throw new Error(
@@ -141,7 +170,7 @@ export function resolveOfficeSidecar(env, windows) {
       + 'run the Runner executable with DSH_RUNTIME_DOWNLOAD=office to publish one',
     )
   }
-  const engine = windows ? 'libreoffice-kit-win32-x64' : 'libreoffice-kit-darwin-arm64'
+  const engine = windows ? 'libreoffice-kit-win32-x64' : `libreoffice-kit-darwin-${macArchitecture}`
   const required = [
     ['Node runtime', join('node', 'bin', windows ? 'node.exe' : 'node')],
     ['@deepseek-ai/libreoffice-kit', join('node_modules', '@deepseek-ai', 'libreoffice-kit', 'package.json')],

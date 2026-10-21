@@ -20,7 +20,7 @@ Team Edition separates a server-deployed administration application from a Runne
 
 **Electron owns desktop residency, not authorization.** The desktop shell starts the bundled Team profile, hides on window close, remains reachable from a tray, registers a per-user login item for background startup, and restarts an unexpected Runner exit after ten seconds. Explicit Quit ends both processes. One enterprise build carries one validated Control Plane origin but no account or provider secret.
 
-**The desktop platform set is Windows x64 and Apple silicon macOS.** The macOS packager emits `arm64` DMG artifacts only. Intel and Universal builds are absent rather than untested variants presented as supported.
+**The desktop platform set is Windows x64 and macOS on Apple silicon or Intel.** The macOS packager emits one architecture per run, with the Runner executable, Office sidecar, and plugin tree built for that architecture. Universal builds are absent rather than untested variants presented as supported.
 
 ## Alternatives considered
 
@@ -30,7 +30,7 @@ Team Edition separates a server-deployed administration application from a Runne
 
 **Run the Runner as a privileged system service.** Rejected because local tools and workspaces belong to the operating-system user. A per-user login item supplies background availability without changing the identity or privileges under which work executes.
 
-**Ship one Universal macOS installer.** Rejected because Intel support was not required and a Universal artifact increases build, signing, download, and verification work for an unsupported architecture.
+**Ship one Universal macOS installer.** Rejected because one installer per architecture already covers Apple silicon and Intel, while a Universal artifact doubles the download and requires merging the Runner executable and every native addon into fat binaries.
 
 ## Consequences
 
@@ -40,4 +40,4 @@ Model display and model invocation use two explicit actions over the same resour
 
 The resident shell must remain an ordinary member process. Installers can enable login startup without administrator privileges, and support can distinguish closing the window from explicitly quitting the Runner.
 
-An enterprise distribution produces separate Windows x64 and macOS arm64 artifacts and bakes the deployment's non-secret Control Plane origin into each build. Changing that origin requires another build.
+An enterprise distribution produces separate Windows x64, macOS arm64, and macOS x64 artifacts and bakes the deployment's non-secret Control Plane origin into each build. Changing that origin requires another build.

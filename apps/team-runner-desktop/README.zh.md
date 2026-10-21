@@ -36,7 +36,7 @@ DSH_TEAM_CONTROL_PLANE_URL=https://control.example.com \
 pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 ```
 
-`package:mac` 生成 Apple 芯片 DMG 以及更新所安装的 zip，不生成 Intel 或 Universal 产物。`package:win` 生成 x64 NSIS 安装程序，并要求 Windows Runner 可执行文件、其 ripgrep 伴随程序与 Windows 版 Office sidecar。
+`package:mac` 生成 Apple 芯片 DMG 以及更新所安装的 zip。`package:mac:x64` 生成 Intel 版的同一组产物；它需要 Intel 版 Runner 可执行文件（`node24-macos-x64`）、Intel 版 Office sidecar 与 Intel 版插件树，因为 Runner、sidecar 与外壳必须是同一架构（`DSH_TEAM_MAC_ARCH` 声明架构，并与可执行文件名中的 `-macos-<arch>` 核对）。两者都不生成 Universal 产物。`package:win` 生成 x64 NSIS 安装程序，并要求 Windows Runner 可执行文件、其 ripgrep 伴随程序与 Windows 版 Office sidecar。
 
 发布版本只经环境变量传入，不要再从别处传：electron-builder 命令行上的 `--config.extraMetadata.version` 覆盖会替换掉已校验的值，并可能悄悄恢复一个破坏更新的后缀。
 
@@ -179,10 +179,10 @@ location /updates/ {
 
 | 平台 | 安装程序目标 | 架构 |
 |---|---|---|
-| macOS 12 或更高版本 | 安装用 DMG，更新用 zip | Apple 芯片（`arm64`） |
+| macOS 12 或更高版本 | 安装用 DMG，更新用 zip | Apple 芯片（`arm64`）、Intel（`x64`） |
 | Windows | NSIS | x64 |
 
-Linux 桌面打包与 macOS Intel 支持不在本应用的平台集合内。
+Linux 桌面打包与 macOS Universal 构建不在本应用的平台集合内。
 
 -----
 
@@ -190,6 +190,7 @@ Linux 桌面打包与 macOS Intel 支持不在本应用的平台集合内。
 ## 已知限制
 
 - 一次更新替换整个应用。Runner、插件树与外壳都不会被单独替换，因此每个版本都携带三者。
-- Runner 可执行文件按平台在该平台上构建：它的原生插件置入拒绝跨平台目标，因此 Windows 安装程序需要先在 Windows x64 上构建 Runner。
+- 发布清单列出每个已构建架构的 macOS zip，且 `latest-mac.yml` 必须同时列出两个 zip，两种架构才都能更新。请在同一次 electron-builder 运行中构建两种架构，或在发布前合并两份元数据的 `files`；第二份 `latest-mac.yml` 会覆盖第一份。
+- Runner 可执行文件按平台在该平台上构建：它的原生插件置入拒绝跨平台目标，因此 Windows 安装程序需要先在 Windows x64 上构建 Runner。唯一的跨平台例外是 macOS 的 CPU 架构：在 Apple 芯片 Mac 上运行 `build-exe-for-python-sdk --targets node24-macos-x64` 时，部署步骤自身会安装 Intel 平台包并构建 Intel 版 Runner。
 - 自动登录启动以操作系统用户为单位，而不是特权系统服务。因此 Runner 使用该成员的权限执行工作。
 - Runner 日志、外壳日志与部署补丁位于用户级应用数据目录下；支持工具需要从受影响的电脑收集它们。

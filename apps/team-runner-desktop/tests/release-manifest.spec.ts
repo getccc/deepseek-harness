@@ -12,6 +12,7 @@ const releaseKey = keys.publicKey.export({ format: 'der', type: 'spki' }).toStri
 
 const BASE_URL = 'https://control.test/updates/'
 const ZIP = Buffer.from('a notarized application bundle')
+const XZIP = Buffer.from('a notarized application bundle for Intel')
 const EXE = Buffer.from('a windows installer')
 
 const directories: string[] = []
@@ -20,21 +21,27 @@ afterEach(() => {
 })
 
 /** One release directory as electron-builder leaves it. */
-function release(version: string, platforms: { mac?: boolean; win?: boolean } = { mac: true, win: true }): string {
+function release(
+  version: string,
+  platforms: { mac?: boolean | 'arm64' | 'x64'; win?: boolean } = { mac: true, win: true },
+): string {
   const directory = mkdtempSync(join(tmpdir(), 'dsh-release-'))
   directories.push(directory)
-  if (platforms.mac === true) {
-    writeFileSync(join(directory, 'WeWork.zip'), ZIP)
-    writeFileSync(join(directory, 'WeWork.dmg'), Buffer.from('a disk image nothing updates from'))
-    writeFileSync(join(directory, 'latest-mac.yml'), [
-      `version: ${version}`,
-      'files:',
-      '  - url: WeWork.zip',
-      `    size: ${String(ZIP.length)}`,
-      '  - url: WeWork.dmg',
-      '    size: 33',
-      '',
-    ].join('\n'))
+  if (platforms.mac !== undefined && platforms.mac !== false) {
+    // `true` is a release built for both macOS architectures, as electron-builder
+    // writes it when one run produces both zips.
+    const built = platforms.mac === true ? ['arm64', 'x64'] : [platforms.mac]
+    const files = built.flatMap((architecture) => {
+      writeFileSync(join(directory, `WeWork-mac-${architecture}.zip`), architecture === 'arm64' ? ZIP : XZIP)
+      writeFileSync(join(directory, `WeWork-mac-${architecture}.dmg`), Buffer.from('a disk image nothing updates from'))
+      return [
+        `  - url: WeWork-mac-${architecture}.zip`,
+        `    size: ${String((architecture === 'arm64' ? ZIP : XZIP).length)}`,
+        `  - url: WeWork-mac-${architecture}.dmg`,
+        '    size: 33',
+      ]
+    })
+    writeFileSync(join(directory, 'latest-mac.yml'), [`version: ${version}`, 'files:', ...files, ''].join('\n'))
   }
   if (platforms.win === true) {
     writeFileSync(join(directory, 'WeWork.exe'), EXE)
@@ -58,9 +65,16 @@ describe('release manifest', () => {
       {
         platform: 'darwin',
         architecture: 'arm64',
-        url: 'https://control.test/updates/WeWork.zip',
+        url: 'https://control.test/updates/WeWork-mac-arm64.zip',
         digest: createHash('sha256').update(ZIP).digest('base64url'),
         sizeBytes: ZIP.length,
+      },
+      {
+        platform: 'darwin',
+        architecture: 'x64',
+        url: 'https://control.test/updates/WeWork-mac-x64.zip',
+        digest: createHash('sha256').update(XZIP).digest('base64url'),
+        sizeBytes: XZIP.length,
       },
       {
         platform: 'win32',
@@ -77,7 +91,31 @@ describe('release manifest', () => {
     const manifest = releaseManifest({
       directory: release('1.1.0', { mac: true }), version: '1.1.0', minimumFrom: '1.0.0', baseUrl: BASE_URL,
     })
-    expect(manifest.artifacts.map(artifact => artifact.platform)).toEqual(['darwin'])
+    expect(manifest.artifacts.map(artifact => artifact.platform)).toEqual(['darwin', 'darwin'])
+  })
+
+  it('publishes only the macOS architecture that was built', () => {
+    const intel = releaseManifest({
+      directory: release('1.1.0', { mac: 'x64' }), version: '1.1.0', minimumFrom: '1.0.0', baseUrl: BASE_URL,
+    })
+    expect(intel.artifacts.map(artifact => [artifact.architecture, artifact.url])).toEqual([
+      ['x64', 'https://control.test/updates/WeWork-mac-x64.zip'],
+    ])
+    const appleSilicon = releaseManifest({
+      directory: release('1.1.0', { mac: 'arm64' }), version: '1.1.0', minimumFrom: '1.0.0', baseUrl: BASE_URL,
+    })
+    expect(appleSilicon.artifacts.map(artifact => artifact.architecture)).toEqual(['arm64'])
+  })
+
+  it('is accepted by an Intel build and never offers it the Apple silicon zip', () => {
+    const manifest = releaseManifest({
+      directory: release('1.1.0'), version: '1.1.0', minimumFrom: '1.0.0', baseUrl: BASE_URL,
+    })
+    const document = signRelease(manifest, privateKeyPem)
+    const decision = decideUpdate(document.manifest, document.signature, {
+      releaseKey, installedVersion: '1.0.0', platform: 'darwin', architecture: 'x64',
+    })
+    expect(decision).toEqual({ install: manifest.artifacts[1] })
   })
 
   it('refuses a release directory built for another version', () => {

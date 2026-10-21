@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import {
-  pluginTreeFingerprint, resolveAppVersion, resolveOfficeSidecar, resolveReleaseKey, resolveUpdateOrigin,
+  pluginTreeFingerprint, resolveAppVersion, resolveMacArchitecture, resolveOfficeSidecar, resolveReleaseKey, resolveUpdateOrigin,
 } from './scripts/packaging-inputs.mjs'
 
 const runner = process.env.DSH_TEAM_RUNNER_EXECUTABLE
@@ -72,7 +72,8 @@ const windows = runner.endsWith('.exe')
 // neither can run from the executable's virtual filesystem. The executable
 // reads them from the directory `DSH_OFFICE_SIDECAR` names, which the shell
 // points at the staged copy.
-const officeSidecar = resolveOfficeSidecar(process.env, windows)
+const macArchitecture = resolveMacArchitecture(process.env, runner)
+const officeSidecar = resolveOfficeSidecar(process.env, windows, macArchitecture)
 // A menu bar template image is drawn at the bar's own scale, so macOS reads
 // the doubled variant from the same directory under the conventional name.
 const trayVariants = trayIcon === undefined
@@ -125,7 +126,7 @@ export default {
   mac: {
     // Squirrel.Mac replaces an installed application from a zip; the disk
     // image is the manual download and is never what an update reads.
-    target: [{ target: 'dmg', arch: ['arm64'] }, { target: 'zip', arch: ['arm64'] }],
+    target: [{ target: 'dmg', arch: [macArchitecture] }, { target: 'zip', arch: [macArchitecture] }],
     ...appIcon === undefined ? {} : { icon: appIcon },
     category: 'public.app-category.productivity',
     minimumSystemVersion: '12.0',
