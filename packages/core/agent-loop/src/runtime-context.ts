@@ -102,6 +102,16 @@ export class SystemPromptProjection {
     return [{ message: createSystemMessage(rendered), intent: { surfaceOp: 'append' } }]
   }
 
+  /**
+   * Reserve surface node 0 for a step that failed before its prompt was committed.
+   * @returns the empty head to append, or `undefined` when a system node already exists.
+   */
+  reserveHead(): SystemPromptCommit | undefined {
+    return this.systemNodes().length === 0
+      ? { message: createSystemMessage(''), intent: { surfaceOp: 'append' } }
+      : undefined
+  }
+
   private replace(seq: SessionSeq, text: string): SystemPromptCommit {
     return {
       message: createSystemMessage(text),

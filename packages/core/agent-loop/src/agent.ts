@@ -331,18 +331,23 @@ export class ReactLoopAgent implements Agent {
         this.session.append('step/start', { turn, step })
         phase.step = step
         const toolRecovery = new ToolCallRecovery()
+        const admission = { admitted: false }
         const stopRecovery = this.ctx.on('session/event', (session, event) => {
           if (session === this.session) toolRecovery.observe(event)
         })
         try {
           // max-tokens is sticky: once any step hits the ceiling, later steps
           // that complete normally must not downgrade the turn outcome.
-          const stepEnd = await this.step(decision)
+          const stepEnd = await this.step(decision, admission)
           // max-tokens stays sticky: a later completed step must not
           // downgrade the turn outcome.
           if (turnEnds === null || turnEnds.kind !== 'max-tokens') turnEnds = stepEnd
         } catch (error: unknown) {
           try {
+            // A failure before the request (route preparation, request middleware)
+            // leaves the claimed human input unlogged; admit it so the Turn keeps the
+            // message its error belongs to. Cancellation commits neither prompt nor input.
+            if (!admission.admitted && !signal.aborted) this.admitClaimed(turn, step, decision.messages)
             for (const event of toolRecovery.results()) {
               this.session.append('tool/result', event.data, {
                 surfaceOp: 'append',
@@ -397,7 +402,23 @@ export class ReactLoopAgent implements Agent {
     return true
   }
 
-  private async step(decision: Extract<PreparedStep, { kind: 'enter' }>): Promise<StepEndReason | null> {
+  /**
+   * Append claimed non-runtime-context messages that no request admitted before its
+   * step failed, behind an empty system head so a later request still places its
+   * prompt before the input.
+   */
+  private admitClaimed(turn: number, step: number, messages: readonly UserMessage[]): void {
+    const head = this.systemPrompt.reserveHead()
+    if (head !== undefined) this.session.append('system/message', { turn, step, message: head.message }, head.intent)
+    for (const message of messages.filter(candidate => candidate.source.kind !== 'runtime-context')) {
+      this.session.append('user/message', message, { surfaceOp: 'append' })
+    }
+  }
+
+  private async step(
+    decision: Extract<PreparedStep, { kind: 'enter' }>,
+    admission: { admitted: boolean },
+  ): Promise<StepEndReason | null> {
     /* v8 ignore next -- private callers establish the running phase before executing a step */
     if (this.phase.kind !== 'running') throw new Error(`agent "${this.id}": step outside running phase`)
     const { turn, step, abort: { signal } } = this.phase
@@ -438,6 +459,7 @@ export class ReactLoopAgent implements Agent {
       if (context !== undefined && !contextAdmitted) {
         this.session.append('user/message', context, { surfaceOp: 'append' })
       }
+      admission.admitted = true
       firstAttempt = false
       const request = this.buildRequest(config, preparedCall, assembly.tools, { turn, step }, startsRequestSeries, signal)
       const live = new AssistantStreamAttempt(

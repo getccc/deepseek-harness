@@ -49,6 +49,59 @@ describe('agent/request-error', () => {
     expect(adapter.requests).toHaveLength(0)
   })
 
+  it('logs the human message when request preparation fails before any model request', async () => {
+    const adapter = new MockAdapter([textResponse('unused')])
+    const ctx = await harness(adapter)
+    const agent = await ctx.agentLoop.create(SessionId('request-error-unlogged-input'), { provider: 'mock', model: 'mock' })
+    let offline = true
+    ctx.on('agent/request', (_request, next) => {
+      if (offline) throw new Error('transport failed: refused (fetch failed)')
+      return next()
+    })
+
+    agent.followup(createUserMessage({ content: [{ type: 'text', text: 'keep me' }], source: { kind: 'user' } }))
+    await agent.whenIdle()
+
+    const events = agent.session.snapshotEvents()
+    expect(adapter.requests).toHaveLength(0)
+    expect(events.filter(event => event.type === 'user/message')).toMatchObject([
+      { data: { content: [{ type: 'text', text: 'keep me' }] } },
+    ])
+    expect(events.find(event => event.type === 'turn/end')).toMatchObject({
+      data: { reason: { kind: 'error', error: { code: 'UNKNOWN' } } },
+    })
+
+    // The next request still leads with the system prompt, then carries the kept message.
+    offline = false
+    agent.followup(createUserMessage({ content: [{ type: 'text', text: 'again' }], source: { kind: 'user' } }))
+    await agent.whenIdle()
+
+    const [sent] = adapter.requests
+    expect(sent?.messages.map(message => message.role)).toEqual(['system', 'user', 'user'])
+    expect(sent?.messages.slice(1).map(message => message.content)).toMatchObject([
+      [{ text: 'keep me' }],
+      [{ text: 'again' }],
+    ])
+  })
+
+  it('keeps the existing system head when a later turn fails before its request', async () => {
+    const adapter = new MockAdapter([textResponse('first')])
+    const ctx = await harness(adapter)
+    const agent = await ctx.agentLoop.create(SessionId('request-error-later-turn'), { provider: 'mock', model: 'mock' })
+    agent.followup(createUserMessage({ content: [{ type: 'text', text: 'one' }], source: { kind: 'user' } }))
+    await agent.whenIdle()
+    ctx.on('agent/request', () => {
+      throw new Error('transport failed: refused (fetch failed)')
+    })
+
+    agent.followup(createUserMessage({ content: [{ type: 'text', text: 'two' }], source: { kind: 'user' } }))
+    await agent.whenIdle()
+
+    const events = agent.session.snapshotEvents()
+    expect(events.filter(event => event.type === 'system/message')).toHaveLength(1)
+    expect(events.filter(event => event.type === 'user/message')).toHaveLength(2)
+  })
+
   it('lets each failed request return a retry action before its turn closes', async () => {
     const adapter = new MockAdapter([
       fail('busy', 'RATE_LIMIT'),
