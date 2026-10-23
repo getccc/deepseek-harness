@@ -32,7 +32,7 @@ Linux x64/arm64 packages contain the static Landlock executable and separate gli
 
 ## Development
 
-From this directory, `pnpm build:ts` builds the entry, `pnpm build:native` builds the host's declared native payload, and `pnpm build:test-oracle` builds an independent flock syscall fixture. Then `pnpm test` exercises entry, lock, packaging, and available kernel behavior. Linux requires musl-gcc for a complete build; macOS uses cc. The root `pnpm run build:native-system` builds only the current host addon for source tests.
+From this directory, `pnpm build:ts` builds the entry, `pnpm build:native` builds the host's declared native payload, and `pnpm build:test-oracle` builds an independent flock syscall fixture. Then `pnpm test` exercises entry, lock, packaging, and available kernel behavior. Linux requires musl-gcc for a complete build; macOS uses cc. The root `pnpm run build:native-system` builds only the current host addon for source tests. On macOS, `pnpm build:native -- --target darwin-x64` (or `darwin-arm64`) builds the other CPU's addon with `cc -arch`, which an executable for that CPU must carry; the single-executable build runs it and rejects a missing or wrong-CPU addon.
 
 The [architecture](docs/architecture.md), [packaging](docs/packaging.md), and [release procedure](docs/release.md) own implementation and publication details.
 

@@ -102,3 +102,16 @@ export async function withTargetArchitectures(
     await writeFile(file, original)
   }
 }
+
+/**
+ * Read the CPU a 64-bit Mach-O file is built for.
+ * @param header - at least the first 8 bytes of the file.
+ * @returns the CPU, or undefined when the bytes are not a little-endian 64-bit Mach-O of a supported CPU.
+ */
+export function machOArchitecture(header: Uint8Array): DeployTarget['arch'] | undefined {
+  if (header.byteLength < 8) return undefined
+  const view = new DataView(header.buffer, header.byteOffset, header.byteLength)
+  if (view.getUint32(0, true) !== 0xfeedfacf) return undefined
+  const cpu = view.getUint32(4, true)
+  return cpu === 0x01000007 ? 'x64' : cpu === 0x0100000c ? 'arm64' : undefined
+}

@@ -18,7 +18,7 @@ import { pathToFileURL } from 'node:url'
 import { resolveLinuxNodePtyAddon, resolveWindowsNodePtyAddons } from './executable-native-pty.ts'
 import { officeSidecarArchives, runtimeNpmArchive, OFFICE_ASSET_IGNORES } from './build-exe-for-python-sdk-office.ts'
 import { syncPythonRuntimeProduct } from './build-exe-for-python-sdk-resources.ts'
-import { supportedArchitecturesFor, withTargetArchitectures } from './build-exe-for-python-sdk-architectures.ts'
+import { machOArchitecture, supportedArchitecturesFor, withTargetArchitectures } from './build-exe-for-python-sdk-architectures.ts'
 import { deduplicateStagedWorkspacePackages, materializeStagedLinks } from './build-exe-for-python-sdk-staging.ts'
 import { prepareOfficeSkillAssets } from './primary-runtime/prepare.ts'
 import primaryLock from './primary-runtime/lock.json' with { type: 'json' }
@@ -277,6 +277,40 @@ class SingleExeBuild {
     await this.runPnpm('build', args)
   }
 
+  /**
+   * Compile the system addon of every macOS CPU other than the host's. The addon is a build output that the
+   * workspace package holds only for the CPU the last native build ran on, and the deploy copies it from there.
+   */
+  private async buildTargetNativeAddons(): Promise<void> {
+    const host = Target.host()
+    for (const target of this.cli.targets) {
+      if (target.platform !== 'macos' || target.arch === host.arch) continue
+      await this.runPnpm(`native system addon darwin-${target.arch}`, [
+        'exec', 'tsx', 'native/system/scripts/build.ts', '--target', `darwin-${target.arch}`,
+      ])
+    }
+  }
+
+  /**
+   * Fail the build when the staged macOS system addon is missing or built for another CPU. Without it every
+   * Session lock fails at run time with "Cannot find module ... system.node".
+   */
+  private async verifyNativeSystemAddon(target: Target): Promise<void> {
+    if (target.platform !== 'macos') return
+    const addon = join(this.staging, 'node_modules', '@deepseek-ai', `node-addon-system-darwin-${target.arch}`, 'bin', 'system.node')
+    if (this.cli.dryRun) {
+      console.log(`build-exe-for-python-sdk: [dry-run] verify ${addon} is a ${target.arch} Mach-O file`)
+      return
+    }
+    if (!existsSync(addon)) {
+      throw new Error(`build-exe-for-python-sdk: ${addon} is missing; build it with \`tsx native/system/scripts/build.ts --target darwin-${target.arch}\` before the deploy.`)
+    }
+    const actual = machOArchitecture((await readFile(addon)).subarray(0, 8))
+    if (actual !== target.arch) {
+      throw new Error(`build-exe-for-python-sdk: ${addon} is built for ${actual ?? 'an unknown CPU'}, not ${target.arch}.`)
+    }
+  }
+
   /** Clear and deploy the runtime closure into the node carrier. */
   async deployStaging(): Promise<void> {
     if (this.staging === root || root.startsWith(this.staging + sep)) {
@@ -284,6 +318,7 @@ class SingleExeBuild {
     }
     if (this.cli.dryRun) console.log(`build-exe-for-python-sdk: [dry-run] rm -rf ${this.staging}`)
     else await rm(this.staging, { recursive: true, force: true })
+    await this.buildTargetNativeAddons()
     // A deploy installs the host's platform packages unless the workspace file selects the targets'.
     const architectures = supportedArchitecturesFor(this.cli.targets, Target.host())
     const deploy = () => this.runPnpm('deploy', [
@@ -405,6 +440,7 @@ class SingleExeBuild {
     const productBase = join(this.outDir, `${OUTPUT_BASENAME}-${target.platform}-${target.arch}`)
     const product = target.platform === 'win' ? `${productBase}.exe` : productBase
     await this.prepareNativePty(target)
+    await this.verifyNativeSystemAddon(target)
     const platform = target.platform === 'macos' ? 'darwin' : target.platform === 'win' ? 'win32' : target.platform
     if (!this.cli.dryRun) await mkdir(this.outDir, { recursive: true })
     await this.runPnpm(`pkg ${target.spec}`, [

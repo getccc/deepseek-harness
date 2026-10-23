@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
-  stripSupportedArchitectures, supportedArchitecturesFor, withSupportedArchitectures, withTargetArchitectures,
+  machOArchitecture, stripSupportedArchitectures, supportedArchitecturesFor, withSupportedArchitectures, withTargetArchitectures,
 } from './build-exe-for-python-sdk-architectures.ts'
 
 const appleSilicon = { platform: 'macos', arch: 'arm64' } as const
@@ -78,5 +78,26 @@ describe('withTargetArchitectures', () => {
     let during = ''
     await withTargetArchitectures(file, undefined, async () => { during = await readFile(file, 'utf8') })
     expect(during).toBe(WORKSPACE)
+  })
+})
+
+describe('machOArchitecture', () => {
+  const header = (magic: number, cpu: number): Uint8Array => {
+    const bytes = new Uint8Array(8)
+    const view = new DataView(bytes.buffer)
+    view.setUint32(0, magic, true)
+    view.setUint32(4, cpu, true)
+    return bytes
+  }
+
+  it('names the CPU of a 64-bit Mach-O file', () => {
+    expect(machOArchitecture(header(0xfeedfacf, 0x01000007))).toBe('x64')
+    expect(machOArchitecture(header(0xfeedfacf, 0x0100000c))).toBe('arm64')
+  })
+
+  it('rejects other files and CPUs', () => {
+    expect(machOArchitecture(header(0x464c457f, 0x01000007))).toBeUndefined()
+    expect(machOArchitecture(header(0xfeedfacf, 0x00000012))).toBeUndefined()
+    expect(machOArchitecture(new Uint8Array(4))).toBeUndefined()
   })
 })
