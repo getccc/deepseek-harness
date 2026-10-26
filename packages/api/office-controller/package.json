@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-api-office-controller",
   "description": "Host Remote owner for the Session office-deliverable choice: read what a conversation chose, and record a new choice from the browser",
-  "version": "0.2.1-rc.2",
+  "version": "0.2.1-rc.3",
   "publishConfig": {
     "access": "public"
   },

@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-api-bi-controller",
   "description": "Team-only Host Remote for BI analysis — the authorized project directory a browser reads and the Session project choice it records",
-  "version": "0.2.1-rc.2",
+  "version": "0.2.1-rc.3",
   "publishConfig": {
     "access": "public"
   },

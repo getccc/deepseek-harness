@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team-console-menu-sqlite",
   "description": "SQLite-backed console menus: one database file holding an organization's administration navigation and the shipped entries it starts from",
-  "version": "0.2.1-rc.2",
+  "version": "0.2.1-rc.3",
   "publishConfig": {
     "access": "public"
   },

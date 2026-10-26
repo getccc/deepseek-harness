@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-gmo-gateway",
   "description": "Governed GMO supply-chain gateway seam (ctx.gmoGateway) for the DeepSeek Harness Control Plane — the durable category catalog and the per-operation authorization in front of every member-facing result listing, description, and question",
-  "version": "0.2.1-rc.2",
+  "version": "0.2.1-rc.3",
   "publishConfig": {
     "access": "public"
   },

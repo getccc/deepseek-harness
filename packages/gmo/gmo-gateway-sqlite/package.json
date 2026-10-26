@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-gmo-gateway-sqlite",
   "description": "SQLite-backed governed GMO supply-chain gateway for the DeepSeek Harness Control Plane — the durable category catalog, its reconciliation against the source, access-control registration, per-operation authorization, and audit",
-  "version": "0.2.1-rc.2",
+  "version": "0.2.1-rc.3",
   "publishConfig": {
     "access": "public"
   },

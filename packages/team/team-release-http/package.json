@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team-release-http",
   "description": "The Control Plane's Runner-facing release route: which published release a member is offered, and the version floor this deployment enforces",
-  "version": "0.2.1-rc.2",
+  "version": "0.2.1-rc.3",
   "publishConfig": {
     "access": "public"
   },

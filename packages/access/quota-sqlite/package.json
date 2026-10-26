@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-quota-sqlite",
   "description": "SQLite-backed quota ledger: reservations, idempotent settlements, and the reconciler that closes the ones nobody settled",
-  "version": "0.2.1-rc.2",
+  "version": "0.2.1-rc.3",
   "publishConfig": {
     "access": "public"
   },
