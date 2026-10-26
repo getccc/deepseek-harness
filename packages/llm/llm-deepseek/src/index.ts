@@ -1,5 +1,8 @@
-/** DeepSeek Messages transport, the transport-carried Chat Completions route, request configuration, and model capabilities. */
-export { catalogModelFields, deepSeekConfigFields, Config, plainOptions, resolveAdapterOptions, PUBLIC_BASE_URL } from './config.ts'
+/**
+ * DeepSeek Messages transport, the transport-carried Chat Completions route,
+ * request configuration, model capabilities, and the official model listing.
+ */
+export { catalogModelFields, deepSeekConfigFields, Config, isBuiltInCatalog, plainOptions, resolveAdapterOptions, PUBLIC_BASE_URL } from './config.ts'
 export type { Options, ResolvedDeepSeekOptions } from './config.ts'
 export {
   DEFAULT_CONTEXT_WINDOW,
@@ -41,3 +44,11 @@ export { catalogModelInfo } from './model-info.ts'
 export { createBuiltInAdapter, createDeepSeekAdapter, registerDeepSeekProvider } from './host.ts'
 export { BUILT_IN_PROVIDER, ChatCompletionsAdapter, httpErrorCode } from './chat-completions/adapter.ts'
 export type { ChatCompletionsAdapterOptions } from './chat-completions/adapter.ts'
+export { LISTING_TIMEOUT, modelListingURL, parseModelListing, requestModelListing } from './listing.ts'
+export type { ClientRequirement, ListedCapabilities, ListedFacts, ListingEntry, ModelListing } from './listing.ts'
+export { DEFAULT_MODELS_MAX_AGE_MS, DEFAULT_MODELS_TIMEOUT_MS, modelListingConfigFields, resolveListingTiming } from './listing-config.ts'
+export type { ListingSettings, ListingTiming, ModelListingConfig, ModelListingOptions } from './listing-config.ts'
+export { ModelListingCache } from './listing-cache.ts'
+export type { ListingCacheDependencies, ListingView } from './listing-cache.ts'
+export { refuseListedModel, resolveListedCatalog } from './listed-catalog.ts'
+export type { CatalogRefusal, ListedCatalog, ListedCatalogInput, ModelOverride } from './listed-catalog.ts'

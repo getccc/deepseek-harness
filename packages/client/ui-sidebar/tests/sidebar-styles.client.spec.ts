@@ -26,6 +26,11 @@ function declarations(selector: string): Map<string, string> | undefined {
 }
 
 describe('SidebarRoot.module.css', () => {
+  it('uses a compact expanded navigation gap without shrinking the collapsed rail spacing', () => {
+    expect(declarations('.panelList')?.get('gap')).toBe('2px')
+    expect(declarations('.collapsed .panelList')?.get('gap')).toBe('12px')
+  })
+
   it('scrolls the region column as one and counts the themed scrollbar inside the shell trailing inset', () => {
     const root = declarations('.root')
     const region = declarations('.regionArea')

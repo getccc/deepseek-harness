@@ -51,6 +51,8 @@ export interface MenuItemButtonProps {
   shortcut?: MenuItem['shortcut']
   /** Leading icon (figma .Menu_cell gap 8). */
   icon?: ReactNode
+  /** Whether this row identifies the currently displayed page or view. */
+  current?: boolean
   /** Whether the row cannot be activated. */
   disabled?: boolean
   /** Destructive row: error-colored text/icon and danger hover fill. */
@@ -75,6 +77,7 @@ export interface MenuItemButtonProps {
  * @param props.children - visible row label.
  * @param props.shortcut - effective key labels and accessible combination.
  * @param props.icon - optional leading icon.
+ * @param props.current - whether the row identifies the currently displayed page or view.
  * @param props.disabled - whether the row cannot be activated.
  * @param props.danger - whether to use the destructive row colors.
  * @param props.separatorBefore - whether this row starts a new group (hairline above it).
@@ -82,7 +85,7 @@ export interface MenuItemButtonProps {
  * @returns one menu-item row.
  */
 export function MenuItemButton({
-  children, shortcut, icon, disabled = false, danger = false, separatorBefore = false, onSelect,
+  children, shortcut, icon, current, disabled = false, danger = false, separatorBefore = false, onSelect,
 }: MenuItemButtonProps) {
   return (
     <div className={css.itemWrap}>
@@ -93,6 +96,7 @@ export function MenuItemButton({
         className={clsx(css.item, danger && css.danger)}
         disabled={disabled}
         aria-keyshortcuts={shortcut?.aria}
+        aria-current={current === true ? 'page' : undefined}
         onClick={onSelect}
       >
         {icon !== undefined && <span className={css.itemIcon}>{icon}</span>}
@@ -154,6 +158,7 @@ const MEASURE_STYLE: CSSProperties = { visibility: 'hidden', left: 0, top: 0 }
  * the trigger (render-prop anchors, effect-positioned proxies — measuring the
  * wrapper there races the host's layout effects). Called on open, each animation
  * frame, and scroll/resize; return null to skip placement for that frame.
+ * @param props.minWidthFromAnchor - in portal mode, keep the menu at least as wide as its anchor, bounded by viewport margins.
  * @param props.footer - rows pinned below the scrolling items area, separated
  * by a hairline; they stay visible while the items above scroll.
  * @param props.children - component rows rendered after `items` in the same
@@ -170,7 +175,7 @@ const MEASURE_STYLE: CSSProperties = { visibility: 'hidden', left: 0, top: 0 }
  * document.body outside the owner's DOM subtree.
  * @returns anchor wrapper with the conditional list.
  */
-export function Menu({ open, anchor, items = [], children, selectedId, selectedIds, multiple = false, onSelect, onClose, align = 'start', side = 'bottom', portal = false, closeOnPointerLeave = false, dense = false, compact = false, autoFocus = false, selection = 'check', matchAnchorWidth = false, getAnchorRect, footer, className, listClassName }: {
+export function Menu({ open, anchor, items = [], children, selectedId, selectedIds, multiple = false, onSelect, onClose, align = 'start', side = 'bottom', portal = false, closeOnPointerLeave = false, dense = false, compact = false, autoFocus = false, selection = 'check', matchAnchorWidth = false, getAnchorRect, minWidthFromAnchor = false, footer, className, listClassName }: {
   open: boolean
   autoFocus?: boolean
   anchor: ReactNode
@@ -191,6 +196,7 @@ export function Menu({ open, anchor, items = [], children, selectedId, selectedI
   selection?: 'check' | 'fill'
   matchAnchorWidth?: boolean
   getAnchorRect?: () => DOMRect | null
+  minWidthFromAnchor?: boolean
   className?: string | undefined
   listClassName?: string | undefined
 }) {
@@ -263,6 +269,10 @@ export function Menu({ open, anchor, items = [], children, selectedId, selectedI
       const vw = window.innerWidth
       const vh = window.innerHeight
       const listEl = listRef.current
+      if (listEl !== null) {
+        const minimum = minWidthFromAnchor ? `${Math.min(r.width, Math.max(0, vw - MARGIN * 2))}px` : ''
+        if (listEl.style.minWidth !== minimum) listEl.style.minWidth = minimum
+      }
       const width = matchAnchorWidth ? r.width : undefined
       const lw = width ?? listEl?.offsetWidth ?? 0
       const lh = listEl?.offsetHeight ?? 0
@@ -304,7 +314,7 @@ export function Menu({ open, anchor, items = [], children, selectedId, selectedI
       window.removeEventListener('scroll', place, true)
       window.removeEventListener('resize', place)
     }
-  }, [open, portal, align, side, matchAnchorWidth, getAnchorRect])
+  }, [open, portal, align, side, matchAnchorWidth, getAnchorRect, minWidthFromAnchor])
 
   // Opening remembers where the keyboard was, so closing can hand it back to
   // that control — an anchor wrapping several (a split button) cannot be asked

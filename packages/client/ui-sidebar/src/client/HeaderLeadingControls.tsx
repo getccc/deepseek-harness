@@ -23,7 +23,9 @@ export type HeaderLeadingControlsProps =
  * @param props - Injected sidebar actions plus the sidebar locale seat.
  * @returns the three window-chrome controls.
  */
-export function HeaderLeadingControls({ toggleSidebar, startChat, startSession, useShortcuts, t }: HeaderLeadingControlsProps) {
+export function HeaderLeadingControls({
+  toggleSidebar, startChat, startSession, trackEntryClick, useShortcuts, t,
+}: HeaderLeadingControlsProps) {
   const shortcut = useShortcuts(rows => rows.find(row => row.id === 'sidebar.left.toggle'))
   const newShortcut = useShortcuts(rows => rows.find(row => row.id === 'session.new'))
   return (
@@ -45,7 +47,10 @@ export function HeaderLeadingControls({ toggleSidebar, startChat, startSession, 
           className={css.iconButton}
           aria-label={t('work.new.label')}
           aria-keyshortcuts={newShortcut?.aria}
-          onClick={() => { startSession() }}
+          onClick={() => {
+            trackEntryClick({ menu_name: 'new_session', position: 'titlebar' })
+            startSession()
+          }}
         >
           <IconFolderOpenOutlineRegular size={16} />
         </button>

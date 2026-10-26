@@ -21,8 +21,8 @@
   en: 9375ef93fdfca5ab
   zh: a6ffb2f210650f76
 /deepseek-ai-dsh-client-ui-sidebar/use-this-package/global-panel-entries:
-  en: 5d3300d3506254c5
-  zh: 541ae1ee1e10b921
+  en: e7f316023445511b
+  zh: 6271c8c011533877
 /deepseek-ai-dsh-client-ui-sidebar/use-this-package/collapse-behavior:
   en: 88a0367dd704f19c
   zh: 6b4cc8251756c7ec
@@ -30,11 +30,14 @@
   en: f6979fb988a25f67
   zh: 6fbacd268a235c9b
 /deepseek-ai-dsh-client-ui-sidebar/use-this-package/scrollbars:
-  en: 85cecf9588a9035f
-  zh: 2ad87a343eac484c
+  en: 3c89a41b3b264d88
+  zh: 3bacee39f797a462
+/deepseek-ai-dsh-client-ui-sidebar/use-this-package/click-analytics:
+  en: 2c5ed40a1fa51b91
+  zh: 4d1308bc839b2cea
 /deepseek-ai-dsh-client-ui-sidebar/understand-the-implementation:
-  en: 01ca2a2df6de64f1
-  zh: 9a0d008b5b26864f
+  en: de823ca1e434b897
+  zh: 9c47c58d56704d1c
 /deepseek-ai-dsh-client-ui-sidebar/understand-the-implementation/slot-discipline:
   en: 6eefc5c45abe8a8f
   zh: 20b651e48a0ea903

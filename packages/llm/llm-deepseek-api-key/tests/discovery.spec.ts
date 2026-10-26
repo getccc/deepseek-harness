@@ -32,3 +32,14 @@ it('advertises no models while the API key is empty', async () => {
   const ctx = await boot('')
   await expect(ctx.llm.listModels('deepseek-official')).rejects.toMatchObject({ code: 'NO_ADAPTER' })
 })
+
+it('advertises a customized catalog for a present API key', async () => {
+  vi.stubEnv('DEEPSEEK_API_KEY', 'fixture-api-key')
+  const ctx = new Context()
+  contexts.push(ctx)
+  await ctx.plugin(LlmRuntime)
+  await ctx.plugin(ApiKey, { models: [{ id: 'configured-model' }] })
+  expect(await ctx.llm.listModels('deepseek-official')).toEqual([
+    expect.objectContaining({ provider: 'deepseek-official', id: 'configured-model' }),
+  ])
+})

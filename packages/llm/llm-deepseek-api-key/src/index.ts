@@ -1,6 +1,7 @@
 /**
- * API-key authentication and discovery for the official DeepSeek route, plus
- * the `built-in` route a mounted LLM HTTP transport supplies. The member
+ * API-key authentication, discovery, and the official model listing for the
+ * official DeepSeek route, plus the `built-in` route a mounted LLM HTTP
+ * transport supplies. The member
  * route is registered only while its credential reference resolves, so a
  * keyless composition advertises no DeepSeek models and the route appears the
  * moment a key is stored; the built-in route follows the transport, whose
@@ -9,14 +10,18 @@
  * @module @deepseek-ai/dsh-llm-deepseek-api-key
  */
 import { FiberState, type Context } from '@deepseek-ai/cordis'
-import { assertUsableApiKey, LlmError } from '@deepseek-ai/dsh-llm'
+import { APP_IDENTITY, assertUsableApiKey, LlmError } from '@deepseek-ai/dsh-llm'
 import type { AdapterRegistrationHandle, LlmAdapter, ResolvedRetryPolicy } from '@deepseek-ai/dsh-llm'
 import type {} from '@deepseek-ai/cordis-plugin-loader'
 import type {} from '@deepseek-ai/dsh-credentials'
 import type {} from '@deepseek-ai/dsh-llm-http-transport'
 import { launchEnvironmentOf } from '@deepseek-ai/dsh-launch-environment'
 import { deepEqualJson } from '@deepseek-ai/dsh-util-values'
-import { BUILT_IN_PROVIDER, catalogModelInfo, createBuiltInAdapter, createDeepSeekAdapter } from '@deepseek-ai/dsh-llm-deepseek'
+import {
+  BUILT_IN_PROVIDER, catalogModelInfo, createBuiltInAdapter, createDeepSeekAdapter, ModelListingCache, refuseListedModel,
+  requestModelListing, resolveListedCatalog,
+} from '@deepseek-ai/dsh-llm-deepseek'
+import type { CatalogRefusal, DeepSeekCatalogModel, ListingView, ModelListing } from '@deepseek-ai/dsh-llm-deepseek'
 import { Config, plainOptions, resolveAdapterOptions } from './config.ts'
 import type { ResolvedDeepSeekOptions } from './config.ts'
 
@@ -32,6 +37,16 @@ const INACTIVE_STATES: ReadonlySet<FiberState> = new Set([
   FiberState.DISPOSED,
   FiberState.FAILED,
 ])
+/** Console tag of listing diagnostics; product profiles mount no console exporter for `ctx.logger`. */
+const LOG_TAG = '[llm-deepseek-api-key]'
+
+/** Connection facts of one operation: protocol settings plus the catalog resolved with them. */
+interface OfficialConnection extends ResolvedDeepSeekOptions {
+  /** Selectable models: the configured catalog, or the offered part of the followed listing. */
+  readonly offered: readonly DeepSeekCatalogModel[]
+  /** Listed models refused before network I/O, by id. */
+  readonly refusals: ReadonlyMap<string, CatalogRefusal>
+}
 
 /**
  * One adapter's registration, holding whatever route set it was last given.
@@ -76,6 +91,39 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
       'MISSING_CREDENTIAL',
     )
   }
+  /** The API key, or `undefined` when none is configured; other credential failures propagate. */
+  const presentApiKey = async (connection: ResolvedDeepSeekOptions): Promise<string | undefined> => {
+    try { return await resolveApiKey(connection) }
+    catch (error) {
+      if (error instanceof LlmError && error.code === 'MISSING_CREDENTIAL') return undefined
+      throw error
+    }
+  }
+  const listings = new ModelListingCache({
+    credential: async () => presentApiKey(options()),
+    load: (url, apiKey, signal) => requestModelListing(url, { 'x-api-key': apiKey }, signal),
+    now: () => Date.now(),
+    // ACP reserves stdout for protocol messages, including during successful catalog loads.
+    info: (message) => { console.error(LOG_TAG, message) },
+    warn: (message) => { console.warn(LOG_TAG, message) },
+  })
+  let reportedListing: ModelListing | undefined
+  /** Resolve the catalog of one operation, reporting each listing's hidden entries once. */
+  const connectionOf = (connection: ResolvedDeepSeekOptions, view: ListingView | undefined): OfficialConnection => {
+    if (view === undefined) return { ...connection, offered: connection.models, refusals: new Map() }
+    const catalog = resolveListedCatalog({
+      listing: view.listing?.entries,
+      supported: connection.models,
+      overrides: {},
+      routeMaxTokens: connection.maxTokens,
+      clientVersion: APP_IDENTITY.version,
+    })
+    if (view.listing !== reportedListing) {
+      reportedListing = view.listing
+      for (const problem of catalog.problems) console.warn(LOG_TAG, problem)
+    }
+    return { ...connection, models: catalog.resolution, offered: catalog.offered, refusals: catalog.refusals }
+  }
   // The declaration outlives the route: it is what keeps the Models card and
   // the first-run key prompt reachable while the route below is dormant.
   ctx.llm.registerConfigurableProviders([
@@ -83,12 +131,41 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   ])
   const retryPolicy = (): ResolvedRetryPolicy => options().retryPolicy
 
-  const member = routeRegistration(ctx, createDeepSeekAdapter(ctx, {
-    options, providerName: 'DeepSeek',
-    resolveAuth: async connection => ({ headers: { 'x-api-key': await resolveApiKey(connection) } }),
-    discoverModels: (provider) => {
+  const member = routeRegistration(ctx, createDeepSeekAdapter<OfficialConnection>(ctx, {
+    providerName: 'DeepSeek',
+    options: () => {
       const connection = options()
-      return Promise.resolve(connection.models.map(model => catalogModelInfo(provider, model)))
+      return connectionOf(connection, connection.listing === undefined ? undefined : listings.current())
+    },
+    connect: async (signal) => {
+      const connection = options()
+      if (connection.listing === undefined) return connectionOf(connection, undefined)
+      let view: ListingView
+      try { view = await listings.view(connection.listing, signal) }
+      catch (error) {
+        if (signal?.aborted === true) throw error
+        // The cache keeps the previous credential's listing when this lookup fails, so gate nothing;
+        // `resolveAuth` reports the failure on the model request, after the turn records the prompt.
+        return connectionOf(connection, undefined)
+      }
+      return connectionOf(connection, view)
+    },
+    resolveAuth: async connection => ({ headers: { 'x-api-key': await resolveApiKey(connection) } }),
+    admit: (connection, model) => { refuseListedModel(model, connection.refusals.get(model)) },
+    // The route is registered only while a key is present, so discovery lists the catalog without
+    // judging the key; a key no request header can carry is reported by the model request.
+    discoverModels: async (provider) => {
+      const connection = options()
+      if (connection.listing === undefined) return connection.models.map(model => catalogModelInfo(provider, model))
+      let view: ListingView
+      try { view = await listings.view(connection.listing) }
+      catch (error) {
+        if (error instanceof LlmError && error.code === 'INVALID_CREDENTIAL') {
+          return connection.models.map(model => catalogModelInfo(provider, model))
+        }
+        throw error
+      }
+      return view.authenticated ? connectionOf(connection, view).offered.map(model => catalogModelInfo(provider, model)) : []
     },
   }), retryPolicy)
   // Whether the member route's reference resolves right now, read from the
@@ -142,15 +219,22 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     scoped.effect(() => () => { syncBuiltIn = undefined }, 'llm-deepseek: built-in transport detached')
   })
 
+  // Starting or stopping to follow the listing discards it, so restoring the built-in
+  // catalog after a customization reloads the listing on the next access.
+  let following = options().listing !== undefined
   ctx.on('loader/volatile-update', () => {
-    try { options() }
+    let next: boolean
+    try { next = options().listing !== undefined }
     catch (error) { ctx.logger.warn(error); return }
+    if (next !== following) listings.invalidate()
+    following = next
     // A changed retry policy re-registers at once; a renamed reference is
     // re-judged behind it.
     syncMember()
     syncBuiltIn?.()
     reevaluateInBackground()
   })
+  ctx.effect(() => () => { listings.dispose() }, 'llm-deepseek-api-key: model listing')
   // Loading completes only once the route set is known, so a request issued
   // right after the plugin's own await never lands in an unregistered window.
   await reevaluateMemberRoute()

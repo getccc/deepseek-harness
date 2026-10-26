@@ -2311,25 +2311,15 @@ export interface Config {
 ## `@deepseek-ai/dsh-llm-deepseek-account`
 
 - `inject`: `llm`
-- `refs`: [`DeepSeekCatalogModel`](../packages/llm/llm-deepseek/src/index.ts) · [`ProtocolConfig`](../packages/llm/llm-deepseek/src/index.ts) · `Volatile` (`@deepseek-ai/cordis`)
-- `source`: [`packages/llm/llm-deepseek-account/src/config.ts:19`](../packages/llm/llm-deepseek-account/src/config.ts)
+- `refs`: [`ModelListingConfig`](../packages/llm/llm-deepseek/src/index.ts) · [`ModelOverride`](../packages/llm/llm-deepseek/src/index.ts) · [`ProtocolConfig`](../packages/llm/llm-deepseek/src/index.ts) · `Volatile` (`@deepseek-ai/cordis`)
+- `source`: [`packages/llm/llm-deepseek-account/src/config.ts:15`](../packages/llm/llm-deepseek-account/src/config.ts)
 
 ```ts config-catalog
 /** Account route configuration; authentication comes exclusively from the account service. */
-export interface Config extends Omit<ProtocolConfig, 'models'> {
-  /** Deadline of one listing request, which also bounds a first-use wait (default five seconds). */
-  modelsTimeoutMs: Volatile<number>
-  /**
-   * Listing age after which the next access refreshes it in the background;
-   * a failed load retries after the same age (default ten minutes).
-   */
-  modelsMaxAgeMs: Volatile<number>
+export interface Config extends Omit<ProtocolConfig, 'models'>, ModelListingConfig {
   /** Field overrides by model id, layered over the account listing and the built-in catalog. */
   modelOverrides: Volatile<Record<string, ModelOverride>>
 }
-
-/** Field overrides for one model; unset fields and empty lists inherit the underlying entry. */
-export type ModelOverride = Omit<DeepSeekCatalogModel, 'id'>
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-llm-deepseek-account -->
 
@@ -2339,12 +2329,12 @@ export type ModelOverride = Omit<DeepSeekCatalogModel, 'id'>
 ## `@deepseek-ai/dsh-llm-deepseek-api-key`
 
 - `inject`: `llm`
-- `refs`: [`ProtocolConfig`](../packages/llm/llm-deepseek/src/index.ts) · `Volatile` (`@deepseek-ai/cordis`)
-- `source`: [`packages/llm/llm-deepseek-api-key/src/config.ts:10`](../packages/llm/llm-deepseek-api-key/src/config.ts)
+- `refs`: [`ModelListingConfig`](../packages/llm/llm-deepseek/src/index.ts) · [`ProtocolConfig`](../packages/llm/llm-deepseek/src/index.ts) · `Volatile` (`@deepseek-ai/cordis`)
+- `source`: [`packages/llm/llm-deepseek-api-key/src/config.ts:18`](../packages/llm/llm-deepseek-api-key/src/config.ts)
 
 ```ts config-catalog
 /** Messages configuration with a per-request API-key reference. */
-export interface Config extends ProtocolConfig {
+export interface Config extends ProtocolConfig, ModelListingConfig {
   /** Credential reference resolved per request; defaults to DEEPSEEK_API_KEY. */
   apiKeyEnv: Volatile<string>
 }
@@ -3262,7 +3252,7 @@ export type Config = LocalConfig
 
 ## `@deepseek-ai/dsh-quota-sqlite`
 
-- `source`: [`packages/access/quota-sqlite/src/index.ts:37`](../packages/access/quota-sqlite/src/index.ts)
+- `source`: [`packages/access/quota-sqlite/src/index.ts:49`](../packages/access/quota-sqlite/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: where the ledger lives and how long a claim may be held. */
@@ -4271,7 +4261,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-team-account-client`
 
 - `inject`: `credentials`
-- `source`: [`packages/team/team-account-client/src/index.ts:82`](../packages/team/team-account-client/src/index.ts)
+- `source`: [`packages/team/team-account-client/src/index.ts:109`](../packages/team/team-account-client/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: which Control Plane, and how this Runner describes itself. */
@@ -4303,8 +4293,8 @@ export interface Config {
 
 ## `@deepseek-ai/dsh-team-admin-api`
 
-- `inject`: `webServer` · `accountStore` · `accountAuth` · `accessControl` · `audit` · `consoleMenu` · `deviceAuthorization` · `modelGateway`
-- `source`: [`packages/team/team-admin-api/src/index.ts:199`](../packages/team/team-admin-api/src/index.ts)
+- `inject`: `webServer` · `accountStore` · `accountAuth` · `accessControl` · `audit` · `consoleMenu` · `deviceAuthorization` · `modelGateway` · `quota`
+- `source`: [`packages/team/team-admin-api/src/index.ts:220`](../packages/team/team-admin-api/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: which organization, and how a browser session behaves. */
@@ -4381,7 +4371,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-team-control-plane-http`
 
 - `inject`: `webServer` · `accountStore` · `accountAuth` · `audit` · `deviceAuthorization`
-- `source`: [`packages/team/team-control-plane-http/src/index.ts:60`](../packages/team/team-control-plane-http/src/index.ts)
+- `source`: [`packages/team/team-control-plane-http/src/index.ts:72`](../packages/team/team-control-plane-http/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: account namespace, endpoint prefix, and request limit. */
@@ -4419,7 +4409,7 @@ export interface Config {
 ## `@deepseek-ai/dsh-team-local-login`
 
 - `inject`: `webServer` · `teamAccountClient` · `browserSession`
-- `source`: [`packages/team/team-local-login/src/index.ts:28`](../packages/team/team-local-login/src/index.ts)
+- `source`: [`packages/team/team-local-login/src/index.ts:32`](../packages/team/team-local-login/src/index.ts)
 
 ```ts config-catalog
 /** Plugin config: where a completed sign-in lands and how much form data is accepted. */
@@ -5761,6 +5751,7 @@ export interface Config {
 | `@deepseek-ai/dsh-client-ui-deliverables` | `systemPrompt` · `connection` · `sessionQuery` · `sessionController` · `workspaceFiles` · `fs` · `sandboxPolicy` · `workspaceChanges` | [`packages/client/ui-deliverables/src/index.ts`](../packages/client/ui-deliverables/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-directory-picker-browse` | — | [`packages/client/ui-directory-picker-browse/src/index.ts`](../packages/client/ui-directory-picker-browse/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-directory-picker-native` | — | [`packages/client/ui-directory-picker-native/src/index.ts`](../packages/client/ui-directory-picker-native/src/index.ts) |
+| `@deepseek-ai/dsh-client-ui-entry-customization` | — | [`packages/client/ui-entry-customization/src/index.ts`](../packages/client/ui-entry-customization/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-gmo` | — | [`packages/client/ui-gmo/src/index.ts`](../packages/client/ui-gmo/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-goal` | — | [`packages/client/ui-goal/src/index.ts`](../packages/client/ui-goal/src/index.ts) |
 | `@deepseek-ai/dsh-client-ui-input-trigger` | — | [`packages/client/ui-input-trigger/src/index.ts`](../packages/client/ui-input-trigger/src/index.ts) |

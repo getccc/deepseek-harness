@@ -121,6 +121,21 @@ async state(): Promise<TeamAccountState>
 async accessToken(): Promise<string>
 
 /**
+ * Replace the signed-in member's password with one they chose.
+ *
+ * The Control Plane checks the current password again, so a Runner left
+ * unlocked cannot be used to take the account over. It keeps this device
+ * bound and ends the member's other devices and Control Plane sessions.
+ * @param currentSecret - the password in force now.
+ * @param newSecret - the password the member chose.
+ * @throws {NotBoundError} when this computer holds no credential.
+ * @throws {ControlPlaneRefusedError} with reason `current-secret-incorrect`, `weak-secret`
+ * (carrying `policy`), or `secret-unchanged`; or any refusal of the access token.
+ * @throws {ControlPlaneUnreachableError} when the Control Plane could not be reached.
+ */
+async changePassword(currentSecret: string, newSecret: string): Promise<void>
+
+/**
  * Forget the team credential, keeping the device key, the workspaces, and the
  * sessions. The computer stays the same computer; it just stops holding a
  * team account.
