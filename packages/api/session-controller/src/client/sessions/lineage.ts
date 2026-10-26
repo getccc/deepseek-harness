@@ -24,7 +24,10 @@ export interface SessionListEntry {
    * `sessionListMetadata`; lists hide blank sessions (filtering stays with the consumer).
    */
   blank: boolean
-  /** Nothing-recorded bit mirrored from the summary; New Session reuses one of these. Absent means not pristine. */
+  /**
+   * Nothing-recorded bit mirrored from the summary and lowered with `blank` or by newer
+   * `sessionListMetadata`; New Session reuses one of these. Absent means not pristine.
+   */
   pristine?: boolean
   parentSessionId?: SessionId
   /** Coarse durable origin for navigation filtering; not a continuation capability. */

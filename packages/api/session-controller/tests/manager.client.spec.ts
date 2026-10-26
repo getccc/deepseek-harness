@@ -31,6 +31,7 @@ type SummaryOver = Partial<{
   running: boolean
   agentAvailable: boolean
   blank: boolean
+  pristine: boolean
   cwd: string
   parentSessionId: SessionId
   origin: 'subagent'
@@ -484,6 +485,22 @@ describe('list lifecycle', () => {
     }
   })
 
+  it('lowers a stale pristine hint when newer metadata records a choice on a blank Session', async ({ mock, remote }) => {
+    remote.session.list.mockResolvedValue(ok({ items: [summary(S1, { blank: true, pristine: true, cwd: '/workspace' })] as never[] }))
+    const manager = makeManager(mock, remote)
+    try {
+      await manager.refreshList()
+      expect(manager.getListSnapshot().items[0]).toMatchObject({ blank: true, pristine: true })
+      manager.handleControlFrame({ type: 'projection', sessionId: S1,
+        key: 'sessionListMetadata', value: { blank: true, pristine: false, lastPromptAt: null }, seq: 5 })
+      await vi.waitFor(() => {
+        expect(manager.getListSnapshot().items[0]).toMatchObject({ blank: true, pristine: false })
+      })
+    } finally {
+      await manager.dispose()
+    }
+  })
+
   it('keeps an opened conversation out of blank-session reuse after a stale list refresh', async ({ mock, remote }) => {
     const stale = {
       ...summary(S1, { blank: true, cwd: '/workspace' }),
@@ -503,12 +520,13 @@ describe('list lifecycle', () => {
         sessionListMetadata: { blank: false, lastPromptAt: 1200 },
       } })
       await vi.waitFor(() => {
-        expect(manager.getListSnapshot().items[0]).toMatchObject({ blank: false, updatedAt: 1200 })
+        // Reuse reads pristine, so it falls with blank rather than keeping the stale list hint.
+        expect(manager.getListSnapshot().items[0]).toMatchObject({ blank: false, pristine: false, updatedAt: 1200 })
         expect(session.getSnapshot().blank).toBe(false)
       })
 
       await manager.refreshList()
-      expect(manager.getListSnapshot().items[0]).toMatchObject({ blank: false, updatedAt: 1200 })
+      expect(manager.getListSnapshot().items[0]).toMatchObject({ blank: false, pristine: false, updatedAt: 1200 })
       expect(session.getSnapshot().blank).toBe(false)
       manager.handleSessionAdded(stale)
       expect(session.getSnapshot().blank).toBe(false)

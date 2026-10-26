@@ -59,10 +59,10 @@ export interface SessionSummary {
    */
   blank: boolean
   /**
-   * Nothing-recorded bit (host summary derivation mirror). New Session reuses
-   * a pristine one rather than a merely blank one: a conversation someone
-   * already chose a model or knowledge in is one they set up. Absent means
-   * not pristine.
+   * Nothing-recorded bit (host summary derivation mirror), lowered with
+   * `blank` and by newer `sessionListMetadata`. New Session reuses a pristine
+   * one rather than a merely blank one: a conversation someone already chose
+   * a model or knowledge in is one they set up. Absent means not pristine.
    */
   pristine?: boolean
   updatedAt: number

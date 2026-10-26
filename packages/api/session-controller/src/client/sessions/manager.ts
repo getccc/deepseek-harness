@@ -787,10 +787,14 @@ export class SessionManager {
       const title = projectionStore?.get('title')
       const projectionValues = projectionStore?.values()
       const metadata = projectionValues?.sessionListMetadata
+      // Cached list hints can precede a history opening or control update.
+      const blank = this.effectiveBlank(summary) && metadata?.blank !== false
       return {
         ...summary,
-        // Cached list hints can precede a history opening or control update.
-        blank: this.effectiveBlank(summary) && metadata?.blank !== false,
+        blank,
+        // Pristine follows the same corrections down: a Session that is no
+        // longer blank, or whose newer metadata records a choice, is not reusable.
+        pristine: summary.pristine === true && blank && metadata?.pristine !== false,
         updatedAt: Math.max(summary.updatedAt, metadata?.lastPromptAt ?? 0),
         ...(typeof title === 'string' && title !== '' ? { title } : {}),
         ...(projectionValues === undefined ? {} : { projectionValues }),
