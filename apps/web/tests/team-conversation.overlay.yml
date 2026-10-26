@@ -4,6 +4,9 @@
   disabled: true
 - id: ui-web-access
   disabled: true
+# The Team bundle disables the More menus with the Plugins page.
+- id: entry-customization
+  disabled: true
 - insert:
     - id: team-account-client
       name: '@deepseek-ai/dsh-team-account-client'

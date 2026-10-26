@@ -160,7 +160,7 @@ describe('web e2e: knowledge panels', () => {
     await page.goto(scaffold.authenticatedUrl, { waitUntil: 'load' })
     await page.waitForSelector('[class*="frame"]', { timeout: 30_000 })
     expect(await page.getByRole('navigation', { name: '全局面板' }).getByRole('button').allTextContents())
-      .toEqual(['插件', '定时任务', '知识库', '知识检索'])
+      .toEqual(['插件', '定时任务', '知识库', '知识检索', '更多'])
   }, 180_000)
 
   afterAll(async () => {
