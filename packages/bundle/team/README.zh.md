@@ -60,7 +60,7 @@ dsh --profile team --port 8080
 
 patch 会替换目标行的整个 `config`，因此这里的 `webserver` 与 `web-runtime` 覆盖会重述各自拥有的每一个键。Runtime 入口为 `/team/open`，它刻意不接收独立 Web 的进程 Token，因为 Team 解锁由本地账户认证负责。本层还关闭 `dsh-base` 默认启用的 `session-log-deepseek` 贡献，因此模型请求（包括 Control Plane 转发给公司提供方的请求）从不附带 Session 日志。
 
-输入框隐藏联网开关，新对话保留预设默认开启的联网功能。本层禁用 DeepSeek 账号服务、路由、Remote 与设置分区，因为成员使用公司路由和 Team 账号入口；禁用侧边栏的插件页，因为 Runner 的插件由部署组合；并把内测声明欢迎弹框组合为已确认，因为它面向的是 harness 开发者。
+输入框隐藏联网开关，新对话保留预设默认开启的联网功能。本层禁用 DeepSeek 账号服务、路由、Remote 与设置分区，因为成员使用公司路由和 Team 账号入口；禁用侧边栏的插件页，以及浏览插件或起草创造模式插件的“更多”菜单，因为 Runner 的插件由部署组合；并把内测声明欢迎弹框组合为已确认，因为它面向的是 harness 开发者。
 
 ### 源码地图
 

@@ -113,6 +113,12 @@
 - id: ui-plugin-manager
   disabled: true
 
+# The More menus of the sidebar, Conversation View tabs, and guide only browse
+# plugins and draft a Creator plugin, which the missing Plugins page backs.
+# Without their actions every panel and View stays visible in its region.
+- id: entry-customization
+  disabled: true
+
 # Team conversations start with web access enabled; members need no composer switch.
 - id: ui-web-access
   disabled: true

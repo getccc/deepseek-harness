@@ -127,11 +127,11 @@ it('lets a caller abandon the first listing wait', async () => {
   await expect(pending).rejects.toThrow('caller left')
 })
 
-it.each([[{}], [{ models: [{ id: 'custom' }] }]])('hides the route without a key and requests nothing for %j', async (config) => {
+it.each([[{}], [{ models: [{ id: 'custom' }] }]])('leaves the route unregistered without a key and requests nothing for %j', async (config) => {
   const requests = officialListing(listing(FLASH))
   const { ctx } = await host('')
   await ctx.plugin(ApiKey, config)
-  expect(await ids(ctx)).toEqual([])
+  await expect(ids(ctx)).rejects.toMatchObject({ code: 'NO_ADAPTER' })
   expect(requests).toEqual([])
 })
 

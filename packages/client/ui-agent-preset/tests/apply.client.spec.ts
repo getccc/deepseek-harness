@@ -1196,9 +1196,9 @@ describe('ui-agent-preset apply', () => {
 
 /** Official presets plus one custom preset whose id and name must not leave the Client. */
 const ANALYTICS_ROSTER: AgentPresetRow[] = [
-  { id: 'standard', isDefault: true }, { id: 'cordis', isDefault: false },
-  { id: 'ptc', isDefault: false }, { id: 'minimal', isDefault: false },
-  { id: 'private-id', name: 'Private name', isDefault: false },
+  { id: 'standard', isDefault: true, workspace: 'required' }, { id: 'cordis', isDefault: false, workspace: 'required' },
+  { id: 'ptc', isDefault: false, workspace: 'required' }, { id: 'minimal', isDefault: false, workspace: 'required' },
+  { id: 'private-id', name: 'Private name', isDefault: false, workspace: 'required' },
 ]
 
 /**
@@ -1560,9 +1560,9 @@ describe('AgentPresetSeatController reconciliation', () => {
 })
 
 describe('AgentPresetSeatController apply outcomes', () => {
-  type SessionView = { id: SessionId; blank: boolean; projectionValues?: { agentPreset?: string } }
+  type SessionView = { id: SessionId; kind: 'work'; blank: boolean; projectionValues?: { agentPreset?: string } }
   type SelectReply = { ok: true; value: string } | { ok: false; error: RemoteError }
-  const blankStandard: SessionView = { id: SessionId('blank'), blank: true, projectionValues: { agentPreset: 'standard' } }
+  const blankStandard: SessionView = { id: SessionId('blank'), kind: 'work', blank: true, projectionValues: { agentPreset: 'standard' } }
 
   function seatOver(current: () => SessionView | undefined, reply?: (preset: string) => Promise<SelectReply>) {
     const select = vi.fn((_id: SessionId, preset: string) => reply?.(preset) ?? Promise.resolve({ ok: true as const, value: preset }))
