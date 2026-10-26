@@ -6,6 +6,7 @@
   - tablist:
     - tab "Chat" [selected]
     - tab "Trajectory"
+  - button "More conversation views"
 - text: Reply exactly CHAT_PRESET_REQUEST_OK and stop. {{clock}}
 - button "Copy"
 - status: Xiaowei completed
