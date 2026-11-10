@@ -1,187 +1,26 @@
 {
   "formatVersion": 1,
   "roots": [
-    {
-      "key": "event:knowledge/scope",
-      "kind": "event",
-      "event": "knowledge/scope",
-      "surface": false,
-      "digest": "4ab10b0fffb11e82617ef098edb5bf856421740fd052f7ca55fbee3cad8aca65",
-      "schema": {
-        "root": 0,
-        "nodes": [
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "data",
-                "type": 1,
-                "optional": false
-              },
-              {
-                "name": "ignorable",
-                "type": 14,
-                "optional": true
-              },
-              {
-                "name": "seq",
-                "type": 15,
-                "optional": false
-              },
-              {
-                "name": "time",
-                "type": 15,
-                "optional": false
-              },
-              {
-                "name": "type",
-                "type": 16,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "union",
-            "types": [
-              2,
-              10,
-              12
-            ]
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "bases",
-                "type": 3,
-                "optional": false
-              },
-              {
-                "name": "mode",
-                "type": 8,
-                "optional": false
-              },
-              {
-                "name": "version",
-                "type": 9,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "array",
-            "element": 4
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "displayName",
-                "type": 5,
-                "optional": false
-              },
-              {
-                "name": "documents",
-                "type": 6,
-                "optional": true
-              },
-              {
-                "name": "ref",
-                "type": 5,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "primitive",
-            "type": "string"
-          },
-          {
-            "kind": "array",
-            "element": 7
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "ref",
-                "type": 5,
-                "optional": false
-              },
-              {
-                "name": "title",
-                "type": 5,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "literal",
-            "value": "selected"
-          },
-          {
-            "kind": "literal",
-            "value": 1
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "mode",
-                "type": 11,
-                "optional": false
-              },
-              {
-                "name": "version",
-                "type": 9,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "literal",
-            "value": "all"
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "mode",
-                "type": 13,
-                "optional": false
-              },
-              {
-                "name": "version",
-                "type": 9,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "literal",
-            "value": "off"
-          },
-          {
-            "kind": "literal",
-            "value": true
-          },
-          {
-            "kind": "primitive",
-            "type": "number"
-          },
-          {
-            "kind": "literal",
-            "value": "knowledge/scope"
-          }
-        ]
-      }
-    }
+    {"key":"event:knowledge/scope","kind":"event","event":"knowledge/scope","surface":false,"digest":"4ab10b0fffb11e82617ef098edb5bf856421740fd052f7ca55fbee3cad8aca65"}
   ],
-  "types": []
+  "types": [],
+  "nodes": {
+    "0657d3ca5ac4e7bf": {"kind":"primitive","type":"number"},
+    "31bab57e94a02787": {"kind":"literal","value":"knowledge/scope"},
+    "33f74f022c28c94b": {"kind":"literal","value":"selected"},
+    "48371635db47164f": {"kind":"object","properties":[{"name":"bases","type":"bdd617f7c4444d09","optional":false},{"name":"mode","type":"33f74f022c28c94b","optional":false},{"name":"version","type":"f88f1b7b6bb733f6","optional":false}],"indices":[]},
+    "48afb9ebc9ec5fe8": {"kind":"literal","value":"off"},
+    "4ab10b0fffb11e82": {"kind":"object","properties":[{"name":"data","type":"d9aa58ff3ab5a154","optional":false},{"name":"ignorable","type":"dacf3d5f3e4ff619","optional":true},{"name":"seq","type":"0657d3ca5ac4e7bf","optional":false},{"name":"time","type":"0657d3ca5ac4e7bf","optional":false},{"name":"type","type":"31bab57e94a02787","optional":false}],"indices":[]},
+    "4cd48f3e5108bd6e": {"kind":"primitive","type":"string"},
+    "567e79d4c5a85878": {"kind":"object","properties":[{"name":"ref","type":"4cd48f3e5108bd6e","optional":false},{"name":"title","type":"4cd48f3e5108bd6e","optional":false}],"indices":[]},
+    "732317a34b4fdb15": {"kind":"literal","value":"all"},
+    "736c9eedeafb1faf": {"kind":"object","properties":[{"name":"displayName","type":"4cd48f3e5108bd6e","optional":false},{"name":"documents","type":"853396af7dd76e89","optional":true},{"name":"ref","type":"4cd48f3e5108bd6e","optional":false}],"indices":[]},
+    "853396af7dd76e89": {"kind":"array","element":"567e79d4c5a85878"},
+    "911cb8dc287709be": {"kind":"object","properties":[{"name":"mode","type":"732317a34b4fdb15","optional":false},{"name":"version","type":"f88f1b7b6bb733f6","optional":false}],"indices":[]},
+    "ac44e4667f7f878b": {"kind":"object","properties":[{"name":"mode","type":"48afb9ebc9ec5fe8","optional":false},{"name":"version","type":"f88f1b7b6bb733f6","optional":false}],"indices":[]},
+    "bdd617f7c4444d09": {"kind":"array","element":"736c9eedeafb1faf"},
+    "d9aa58ff3ab5a154": {"kind":"union","types":["48371635db47164f","911cb8dc287709be","ac44e4667f7f878b"]},
+    "dacf3d5f3e4ff619": {"kind":"literal","value":true},
+    "f88f1b7b6bb733f6": {"kind":"literal","value":1}
+  }
 }

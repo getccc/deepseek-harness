@@ -9,6 +9,8 @@
   - button "More conversation views"
 - text: Reply with a one-sentence description of event sourcing, then stop. {{clock}}
 - button "Copy"
+- button "Context injection runtime-context"
+- button "Context injection time-context"
 - paragraph: partial
 - status: Xiaowei is deep diving
 - text: Xiaowei has been deep diving for {{duration}} ···
@@ -24,3 +26,4 @@
 - 'button "Access mode, current: Workspace Write"': Workspace Write
 - button "Select model, current DeepSeek-V4-Flash": DeepSeek-V4-Flash
 - button "Stop generating"
+- button "Sending message" [disabled]

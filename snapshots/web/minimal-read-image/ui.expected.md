@@ -12,6 +12,7 @@
 - status: Xiaowei completed
 - button "Xiaowei completed in {{duration}}" [expanded]
 - button "Read images" [expanded]
+- button "Context injection runtime-context"
 - button "Read image red.png" [expanded]:
   - text: Read image
   - button "red.png"

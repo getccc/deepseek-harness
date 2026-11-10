@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-client-ui-knowledge-panels",
   "description": "Member-facing knowledge panels: the left-navigation rows, the authorized knowledge-base list, and the ranked retrieval a member runs for themselves",
-  "version": "0.2.1-rc.3",
+  "version": "0.2.2-rc.1",
   "publishConfig": {
     "access": "public"
   },
@@ -67,7 +67,6 @@
     "@deepseek-ai/dsh-client-ui-workspace": "workspace:*",
     "@deepseek-ai/dsh-client-ui-slots": "workspace:*",
     "@deepseek-ai/dsh-session": "workspace:*",
-    "@types/react": "~18.3.1",
     "clsx": "^2.0.0",
     "react": "^18.2.0"
   },

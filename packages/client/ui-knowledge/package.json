@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-client-ui-knowledge",
   "description": "The /knowledge picker and the composer chip naming the knowledge this conversation may search",
-  "version": "0.2.1-rc.3",
+  "version": "0.2.2-rc.1",
   "publishConfig": {
     "access": "public"
   },
@@ -61,7 +61,6 @@
     "@deepseek-ai/dsh-knowledge": "workspace:*",
     "@deepseek-ai/dsh-session": "workspace:*",
     "@deepseek-ai/dsh-tool-knowledge": "workspace:*",
-    "@types/react": "~18.3.1",
     "react": "^18.2.0",
     "clsx": "^2.1.1"
   },

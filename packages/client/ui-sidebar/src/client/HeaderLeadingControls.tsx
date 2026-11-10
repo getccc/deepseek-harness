@@ -15,23 +15,23 @@ export type HeaderLeadingControlsProps =
   & PropsLocale<'sidebar'>
 
 /**
- * Sidebar-open, New work task, and New chat controls in the frame's
- * window-chrome seat. On macOS desktop a collapsed sidebar hides entirely (no
- * rail), taking these controls off screen; this occupant puts them back
- * beside the traffic lights. The frame mounts the seat only in that state and
- * owns its placement, so the occupant renders unconditionally.
+ * Sidebar opener in the frame's window chrome. Desktop also offers the work
+ * task and chat actions when the page can create Sessions.
  * @param props - Injected sidebar actions plus the sidebar locale seat.
  * @returns the three window-chrome controls.
  */
 export function HeaderLeadingControls({
-  toggleSidebar, startChat, startSession, trackEntryClick, useShortcuts, t,
+  toggleSidebar, startChat, startSession, trackEntryClick, useRemoteAccess, useShortcuts, t,
 }: HeaderLeadingControlsProps) {
+  const canStartSession = useRemoteAccess('session/create')
+  const desktop = document.documentElement.hasAttribute('data-platform')
   const shortcut = useShortcuts(rows => rows.find(row => row.id === 'sidebar.left.toggle'))
   const newShortcut = useShortcuts(rows => rows.find(row => row.id === 'session.new'))
   return (
     <div className={css.controls}>
       <Tooltip label={t('toggle.open')} shortcutKeys={shortcut?.keys} delayMs={500}>
         <button
+          data-sidebar-opener
           type="button"
           className={css.iconButton}
           aria-label={t('toggle.open')}
@@ -41,30 +41,32 @@ export function HeaderLeadingControls({
           <IconPanelLeftOutlineRegular size={16} />
         </button>
       </Tooltip>
-      <Tooltip label={t('work.new.label')} shortcutKeys={newShortcut?.keys} delayMs={500}>
-        <button
-          type="button"
-          className={css.iconButton}
-          aria-label={t('work.new.label')}
-          aria-keyshortcuts={newShortcut?.aria}
-          onClick={() => {
-            trackEntryClick({ menu_name: 'new_session', position: 'titlebar' })
-            startSession()
-          }}
-        >
-          <IconFolderOpenOutlineRegular size={16} />
-        </button>
-      </Tooltip>
-      <Tooltip label={t('chat.new.label')} delayMs={500}>
-        <button
-          type="button"
-          className={css.iconButton}
-          aria-label={t('chat.new.label')}
-          onClick={() => { startChat() }}
-        >
-          <IconNewChatOutlineRegular size={16} />
-        </button>
-      </Tooltip>
+      {desktop && canStartSession && <>
+        <Tooltip label={t('work.new.label')} shortcutKeys={newShortcut?.keys} delayMs={500}>
+          <button
+            type="button"
+            className={css.iconButton}
+            aria-label={t('work.new.label')}
+            aria-keyshortcuts={newShortcut?.aria}
+            onClick={() => {
+              trackEntryClick({ menu_name: 'new_session', position: 'titlebar' })
+              startSession()
+            }}
+          >
+            <IconFolderOpenOutlineRegular size={16} />
+          </button>
+        </Tooltip>
+        <Tooltip label={t('chat.new.label')} delayMs={500}>
+          <button
+            type="button"
+            className={css.iconButton}
+            aria-label={t('chat.new.label')}
+            onClick={() => { startChat() }}
+          >
+            <IconNewChatOutlineRegular size={16} />
+          </button>
+        </Tooltip>
+      </>}
     </div>
   )
 }

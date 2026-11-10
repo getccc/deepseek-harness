@@ -10,6 +10,7 @@ import type { CommandDefinition, CommandInvocation, CommandResult } from '@deeps
 import type { ProjectionDefinition } from '@deepseek-ai/dsh-session-projection'
 import SystemPrompt, { type SystemPrompt as SystemPromptRegistry } from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
+import * as NativeExecutor from '@deepseek-ai/dsh-tool-executor-native'
 import WebRuntime from '@deepseek-ai/dsh-web'
 import * as ToolWeb from '@deepseek-ai/dsh-tool-web'
 import { WEB_ACCESS_COMMAND, webAccessProjectionDefinition, type WebAccessProjection } from '@deepseek-ai/dsh-tool-web'
@@ -45,6 +46,7 @@ async function mountSwitch(config: ToolWeb.Config, seed: Logged[] = [], withComm
   const ctx = new Context()
   await ctx.plugin(SystemPrompt)
   await ctx.plugin(ToolRuntime)
+  await ctx.plugin(NativeExecutor)
   await ctx.plugin(WebRuntime, { searchProvider: 'stub' })
   const state: Mounted = {
     ctx, events: seed, scopeKey: { agent: 'session-1' }, noAgent: false,

@@ -11,11 +11,10 @@
  */
 import clsx from 'clsx'
 import { useMemo, useState } from 'react'
-import { IconPersonalizationOutlineRegular, Menu, Tooltip } from '@deepseek-ai/dsh-client-ui-primitives'
+import { AnimatedRows, IconPersonalizationOutlineRegular, Menu, Tooltip } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { RecentBrowserProps } from '../contract/slots.ts'
 import { deriveRecent, mainSessionId, type RecentFilter, type SessionRowState } from '../tree.ts'
-import { AnimatedRows } from './AnimatedRows.tsx'
 import { SessionNodeItem } from './Rows.tsx'
 import css from './RecentBrowser.module.css'
 
@@ -78,6 +77,7 @@ export function RecentBrowser({
   requestSessionRename,
   notifyArchivedNotOpenable,
   useRowSeats,
+  useSessionAccess, useContextMenu, useContextMenuTarget, renderFactorySlot,
   t,
 }: RecentBrowserProps) {
   const panelActive = usePanelInfo(info => info.activePanelId !== null)
@@ -118,6 +118,7 @@ export function RecentBrowser({
       </div>
       <div className={css.body}>
         <AnimatedRows
+          role="tree"
           className={clsx(css.list)}
           label={t('section.recent')}
           rowKeys={rows.length === 0 ? ['empty'] : rows.map(row => `session:${row.id}`)}
@@ -134,6 +135,10 @@ export function RecentBrowser({
               onOpen={guardedOpen}
               onRenameRequest={requestSessionRename}
               renderSlot={renderSlot}
+              renderFactorySlot={renderFactorySlot}
+              useContextMenu={useContextMenu}
+              useContextMenuTarget={useContextMenuTarget}
+              useSessionAccess={useSessionAccess}
               t={t}
             />
           ))}

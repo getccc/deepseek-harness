@@ -27,17 +27,17 @@ dsh Web 客户端的侧边栏让用户识别当前构建、开始新对话或新
 <a id="use-this-package"></a>
 ## 使用本包
 
-侧边栏是导航外壳：用户看到品牌、开始新对话与新工作任务、折叠轨道并到达 Settings。功能插件填充它的席位——ui-workspace 填充 `sidebar.workspaces` 与 `sidebar.recent`，ui-settings 在 `sidebar.settings` 注册触发行与设置面板。外壳为两个浏览席位拥有同一个滚动区域，因此 Workspace 树与最近列表作为一列一起滚动。
+侧边栏是导航外壳。用户可以看到品牌、开始新对话与新工作任务、折叠轨道并打开 Settings。ui-workspace 填充 `sidebar.workspaces` 与 `sidebar.recent`，ui-settings 在 `sidebar.settings` 注册入口和设置面板。两个浏览席位都位于导航视口内。Workspace 树有独立滚动区，最近列表在视口中紧随其后。
 
 ### 品牌、新对话与新工作任务
 
-展开的品牌行把 `sidebar.brand.mark` 与 `sidebar.brand.name` 渲染为两个独立的 single slot；收起轨道则渲染同一个 mark slot。在 Web 和 Windows 桌面端，点击展开态的品牌会新建会话，悬停或聚焦时不显示 tooltip。没有占位者时，外壳使用 WeWork 标志和本地化的本地构建标签。品牌行之后以面板行样式排着两个入口，新工作任务在前，新对话在后：**新对话**通过 `uiWorkspace.startChat()` 开始一个没有 Workspace 的对话，**新工作任务**优先使用作用域操作明确指定的 Workspace，否则使用当前 Session 所属 Workspace，再否则使用最近活跃 Workspace，一个 Workspace 都没有时则清空选择，进入空白 New Session 页面；品牌行本身保留工作任务动作。新工作任务承载 New Session 命令的当前有效绑定：它的轨道 tooltip、品牌 tooltip 以及常驻的 macOS 窗口 chrome 控件都以平台键位样式显示该绑定，这些控件均提供 `aria-keyshortcuts`。新对话没有命令绑定。
+展开的品牌行将 `sidebar.brand.mark` 与 `sidebar.brand.name` 渲染为两个独立的 single slot。收起轨道渲染同一个标志 slot。在 Web 和 Windows 桌面端，点击展开态的品牌会新建工作任务。席位默认使用企业微信标志及其本地化名称。新工作任务排在新对话之前。**新对话**通过 `uiWorkspace.startChat()` 开始一个没有 Workspace 的对话。**新工作任务**依次使用当前操作指定的 Workspace、当前 Session 所属的 Workspace 或最近活跃的 Workspace。没有可用的 Workspace 时，它会打开空白的 New Session 页面。品牌快捷入口、新工作任务行和 macOS 标题栏控件通过 `aria-keyshortcuts` 提供 New Session 命令当前有效的绑定。折叠轨道和 macOS 标题栏的提示按平台键位样式显示该绑定。
 
 ### 全局面板入口
 
-插件在 root 作用域的 `sidebar.panellist` list 中注册图标组件，提供 `id`、可选 `order`，以及字符串或 locale-aware 的 `label`。同一个 id 寻址布局中 root 作用域 `main` keyed slot 的组件；选择不存在的主面板条目会抛错，并保留当前选中态。标签提供普通可见文字、无障碍名称和折叠提示。展开态导航行的间距为 2px。每一行通过 `usePanelInfo` 读取自己的选中态；DOM 焦点移到搜索框或目录选择器时，显示的面板及其列表项选中态不变。没有面板注册项时，列表及其间距均不渲染。产品随附的组合不注册示例面板。
+插件在 root 作用域的 `sidebar.panellist` list 中注册图标组件，提供 `id`、可选 `order`，以及字符串或 locale-aware 的 `label`。同一个 id 寻址布局中 root 作用域 `main` keyed slot 的组件；选择不存在的主面板条目会抛错，并保留当前选中态。标签提供普通可见文字、无障碍名称和折叠提示。展开态导航行高 32px，间距为 2px；折叠窄栏控件保持 36px 高和 12px 间距。每一行通过 `usePanelInfo` 读取自己的选中态；DOM 焦点移到搜索框或目录选择器时，显示的面板及其列表项选中态不变。没有面板注册项时，列表及其间距均不渲染。产品随附的组合不注册示例面板。
 
-root 作用域的 `sidebar.panellist.actions` list 有注册项时，导航区域的面板行之后显示面板行样式的**更多**按钮；收起的窄栏以提示框显示其名称。它打开的菜单以该 list 的注册项为菜单行。每个注册项接收 `entries`（按注册顺序的可自定义面板，含 `id`、`label`、`pinned` 与 `active`；不含插件管理）、选中面板的 `onOpen(id)`、`onPinnedChange(id, pinned)`，以及关闭菜单的 `onDismiss()`。侧边栏在内存中保存所有会话共用的已收起面板 id 列表；插件管理入口始终显示。默认更多菜单只提供插件浏览和创建，不列出面板或 Pin 控件。其他注册项仍可调用 Pin 回调，但插件重新加载时选择重置，不读取旧 localStorage 值。收起只隐藏导航行，主面板、其注册和当前选中态不变。未注册面板的 id 保留在内存列表中，直到插件重新加载。
+root 作用域的 `sidebar.panellist.actions` list 有注册项时，导航区域的面板行之后显示面板行样式的**更多**按钮；收起的窄栏以提示框显示其名称。它打开的菜单以该 list 的注册项为菜单行。每个注册项接收 `entries`（按注册顺序的可自定义面板，含 `id`、`label`、`pinned` 与 `active`；不含插件管理）、选中面板的 `onOpen(id)`、`onPinnedChange(id, pinned)`，以及关闭菜单的 `onDismiss()`。侧边栏在内存中保存所有会话共用的已收起面板 id 列表；插件管理入口始终显示。更多按钮显示时，展开态中除插件管理外的面板行在悬停或键盘聚焦时显示取消固定操作；不支持悬停的设备始终显示该操作。图标默认颜色与会话置顶标记一致，提示为“从左侧栏取消固定”。侧栏和更多菜单入口遵循相同的注册排序，不按固定时间重排。默认更多菜单在插件浏览和创建之前仅列出未固定的面板；打开面板不会将其固定，独立的固定图标则将该行放回侧边栏并关闭菜单。插件重新加载时选择重置，不读取旧 localStorage 值。收起只隐藏导航行，且仅在更多按钮显示时生效；`sidebar.panellist.actions` 没有注册项时，所有已注册的面板行重新显示。主面板、其注册和当前选中态不变。未注册面板的 id 保留在内存列表中，直到插件重新加载。
 
 ### 折叠行为
 
@@ -45,7 +45,7 @@ root 作用域的 `sidebar.panellist.actions` list 有注册项时，导航区�
 
 侧栏收起时，顶部展开按钮承载可选、不可交互的 `sidebar.toggle.badge` slot。占用方提供状态和提示内容，不增加操作，也不改变按钮的导航行为。
 
-实时收起时，展开内容在当前宽度淡出，上方控件共用同一段透明度渐变，并向左平移进入 56px 轨道，由布局的栏滑动结束整段动画。页面初始即为收起状态时会静态渲染轨道；减少动态效果模式会禁用两段过渡。固定在底部的 `sidebar.settings` 控件共用相同的透明度渐变时序，但不发生横向位移。
+展开内容跟随框架的列宽及其过渡。实时收起时，内容固定在展开宽度淡出，上方控件共用同一段透明度渐变，并向左平移进入 56px 轨道，由布局的栏滑动结束整段动画。页面初始即为收起状态时会静态渲染轨道；减少动态效果模式会禁用两段过渡。固定在底部的 `sidebar.settings` 控件共用相同的透明度渐变时序，但不发生横向位移。
 
 在 Windows Electron 中，`html[data-windows-titlebar]` 将两种状态下的侧栏开关固定在顶栏左上角。展开态品牌位于顶栏下方、新对话与新工作任务入口上方。收起后，品牌和全部侧栏内容隐藏，只在顶栏留下侧栏开关。侧栏在收起态将根元素的 `--dsh-windows-menu-start` 设为 84px；Desktop preload 使用它定位菜单，展开态默认为 48px。顶栏图标按钮采用紧凑控件圆角的 28px 控件，图标为居中 16px，并从窗口拖拽区域中排除。侧栏开关的悬停提示在顶栏下方展开，Desktop 菜单文字不会盖住它；占用 `sidebar.toggle.badge` 的控件自行决定气泡展开方向。
 
@@ -64,7 +64,7 @@ root 作用域的 `sidebar.panellist.actions` list 有注册项时，导航区�
 - 展开态品牌与新建工作任务入口上报 `menu_name=new_session`、`position=sidebar`。Windows 顶栏承载收起态新建工作任务入口时，该入口上报 `position=titlebar`；macOS 红绿灯旁的新建工作任务控件同样上报 `position=titlebar`。新建对话不上报。
 - **插件**与**自动化任务**面板行分别上报 `menu_name=plugin` 与 `menu_name=cron`，`position=sidebar`。其他面板行不上报。
 - 每次点击**更多**按钮都上报 `menu_name=more`、`position=sidebar`，无论打开还是关闭菜单。
-- 第三方注册的更多菜单行通过 `onOpen(id)` 打开插件或自动化任务时，上报 `menu_name=plugin` 或 `menu_name=cron`，`position=sidebar_more`。随产品提供的更多菜单只浏览和创建插件，不会调用 `onOpen`。上报先于注册检查，因此所请求的面板已注销时仍会计数，但不会选中任何面板。
+- 更多菜单行通过 `onOpen(id)` 打开插件或自动化任务时，上报 `menu_name=plugin` 或 `menu_name=cron`，`position=sidebar_more`。随产品提供的更多菜单通过 `onOpen` 打开未固定的面板，包括自动化任务；固定和取消固定操作不上报导航点击。上报先于注册检查，因此所请求的面板已注销时仍会计数，但不会选中任何面板。
 
 -----
 
@@ -116,6 +116,7 @@ root 作用域的 `sidebar.panellist.actions` list 有注册项时，导航区�
 - **Session 状态点渲染由 ui-workspace 持有**：本外壳没有可用的 done/error 通知数据源。
 - **Workspace 浏览行为由组合持有**：分组、排序、搜索与行状态都属于 ui-workspace，不属于此外壳。
 - **「New task completed」未读标记是本地查看状态**：完成时间 > 上次查看时间这一事实永远不会到达宿主。
+- **只有滚轮和触控板输入能在一次手势中越过导航边界**：触摸拖动保持浏览器原生的嵌套滚动，在视口滚到底时停止；不支持滚动状态容器查询的浏览器会先滚动区块。由 JavaScript 分配的滚轮步进在主线程执行，没有平滑滚动动画，也没有越界回弹。
 
 <a id="dev-note"></a>
 ### 开发备注

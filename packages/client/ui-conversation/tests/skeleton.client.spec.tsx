@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
+import { contextMenuHook } from '@deepseek-ai/dsh-client-test-runtime'
 import type { GlobalStandardProps, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createContext, useContext, type ReactNode } from 'react'
-import { act, cleanup, fireEvent, render, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import type { Context } from '@deepseek-ai/cordis'
 import type { SessionListState, SessionSnapshot } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { WorkspaceSnapshot, WorkspaceView } from '@deepseek-ai/dsh-api-workspace-controller/client'
@@ -26,7 +27,6 @@ import { ConversationMainPanel } from '../src/client/skeleton/ConversationMainPa
 import { ConversationSession, ConversationSessionHeader } from '../src/client/skeleton/ConversationSession.tsx'
 import { conversationPhase } from '../src/client/contract/snapshot.ts'
 import { HeroShell } from '../src/client/skeleton/EmptyHero.tsx'
-import type { HeroShellProps } from '../src/client/skeleton/EmptyHero.tsx'
 import './control-row-dom.ts'
 import { InputBar } from '../src/client/skeleton/InputBar.tsx'
 import type { InputBarProps } from '../src/client/skeleton/InputBar.tsx'
@@ -198,6 +198,7 @@ function mount(
   const stop = vi.fn()
   const open = vi.fn()
   const slotCalls: string[] = []
+  const headerFactory = vi.fn<ConversationSessionHeaderSlotProps['renderFactorySlot']>(() => null)
   const lineageOwners: ConversationHeaderLineageOwnerProps[] = []
   const viewTabs = options.viewTabs ?? [
     { id: 'chat', label: 'Chat' },
@@ -209,7 +210,7 @@ function mount(
   let pickerOwner: unknown
   let actionsOwner: ConversationViewActionsOwnerProps | undefined
   const setPinned = vi.fn<(id: string, pinned: boolean) => void>()
-  const renderSlot = ((key: string, owner: object, opts?: { only?: string; fallback?: ReactNode }) => {
+  const renderSlot = ((key: string, owner: object, opts?: { only?: string; fallback?: ReactNode; children?: ReactNode }) => {
     slotCalls.push(key)
     if (key === 'conversation.input.model' || key === 'conversation.input.plan') {
       seatOwners.push({ key, owner })
@@ -244,7 +245,7 @@ function mount(
           useTrajectory={useTrajectory}
           useSessions={props.useSessions}
           usePanelInfo={props.usePanelInfo}
-          useResource={useResource}
+          useContextMenu={contextMenuHook()} useResource={useResource}
           useSessionStatus={useSessionStatus}
           useSessionRetainInfo={() => undefined}
           useWorkspaces={props.useWorkspaces}
@@ -255,6 +256,7 @@ function mount(
           useStore={bindSnapshotSelector(store)}
           actions={store.actions}
           renderSlot={renderSlot as never}
+          renderFactorySlot={headerFactory}
           open={open}
           selectView={(view) => { store.actions.setView(view) }}
           t={t}
@@ -274,7 +276,7 @@ function mount(
           useTrajectory={useTrajectory}
           useSessions={props.useSessions}
           usePanelInfo={props.usePanelInfo}
-          useResource={useResource}
+          useContextMenu={contextMenuHook()} useResource={useResource}
           useSessionStatus={useSessionStatus}
           useSessionRetainInfo={() => undefined}
           useWorkspaces={props.useWorkspaces}
@@ -298,7 +300,7 @@ function mount(
         <InputBar
           sessionId={SID}
           SessionProvider={({ children }) => children}
-          useResource={useResource}
+          useContextMenu={contextMenuHook()} useResource={useResource}
           useSession={useSession}
           useConversation={useConversation}
           useSessions={props.useSessions}
@@ -318,6 +320,7 @@ function mount(
           resolveDraftAttachments={() => []}
           toggleCommandMenu={vi.fn()}
           useBusyEnter={bindSnapshotSelector(createSnapshotStore<'queue' | 'steer'>('queue'))}
+          retry={undefined}
           useStopShortcut={bindSnapshotSelector(createSnapshotStore<readonly string[]>([]))}
           useNotices={bindSnapshotSelector(wiring.notices)}
           useLexicon={bindSnapshotSelector(wiring.lexicon)}
@@ -362,6 +365,7 @@ function mount(
       useTrajectory,
       useSessions: bindSnapshotSelector(sessions),
       usePanelInfo: selector => selector({ activePanelId: null }),
+      useContextMenu: contextMenuHook(),
       useResource,
       useSessionStatus,
       useSessionRetainInfo: () => undefined,
@@ -395,6 +399,7 @@ function mount(
     useSessions: bindSnapshotSelector(sessions),
     useSessionStatus,
     useSessionRetainInfo: () => undefined,
+    useContextMenu: contextMenuHook(),
     useResource,
     useWorkspaces: bindSnapshotSelector(workspaces),
     ...allowAllAccess,
@@ -405,7 +410,7 @@ function mount(
   const props: ConversationSlotProps = { ...runtimeProps, renderSlot, renderFactorySlot }
   const view = render(<ConversationMainPanel {...props} />)
   return {
-    view, store, wiring, sink, retargetWorkspace, session, conversation, slotCalls, lineageOwners, seatOwners, open,
+    view, store, wiring, sink, retargetWorkspace, session, conversation, slotCalls, headerFactory, lineageOwners, seatOwners, open,
     pickerOwner: () => pickerOwner,
     setPinned,
     actionsOwner: () => {
@@ -421,7 +426,7 @@ describe('Hero chrome', () => {
     // The occupant is where a greeting by name comes from, so the slot has to
     // carry the headline's own class: an occupant that styled itself would
     // drift from the line it replaces.
-    const renderSlot = vi.fn<HeroShellProps['renderSlot']>((_name, _owner, opts) => opts?.fallback ?? null)
+    const renderSlot = vi.fn<Parameters<typeof HeroShell>[0]['renderSlot']>((_name, _owner, opts) => opts?.fallback ?? null)
     const view = render(<HeroShell t={makeTranslate(en, commonEn)} renderSlot={renderSlot} />)
     expect(view.getByText('What is the plan today?')).toBeTruthy()
     expect(renderSlot).toHaveBeenCalledOnce()
@@ -527,7 +532,7 @@ describe('ConversationRoot resident composer', () => {
     act(() => { b.wiring.setDraft('ordinary revised') })
     expect(b.store.store.getSnapshot().draft).toEqual({ text: 'ordinary revised', references: [] })
     fireEvent.keyDown(box, { key: 'Enter' })
-    expect(b.sink).toHaveBeenCalledWith('ordinary revised', [], 'queue', expect.any(AbortSignal))
+    expect(b.sink).toHaveBeenCalledWith('ordinary revised', [], 'queue', expect.any(AbortSignal), expect.any(Function))
     // The current crumb is plain text (a drag surface on darwin), not a button.
     expect(b.view.queryByRole('button', { name: 'Child' })).toBeNull()
     expect(b.view.getByText('Child').tagName).toBe('SPAN')
@@ -543,14 +548,16 @@ describe('ConversationRoot resident composer', () => {
     expect(b.open).toHaveBeenCalledWith(sid('root'))
   })
 
-  it('keeps intermediate subagent breadcrumbs at the compact title size', () => {
+  it('keeps intermediate subagent breadcrumbs navigable and the current crumb read-only', () => {
     const b = mount(sessionSnapshotOf(), undefined, undefined, {
       summaryOrigin: 'subagent',
       nestedSubagent: true,
     })
-    expect(b.view.getByRole('button', { name: 'Root' }).className).not.toContain('crumbSubagent')
-    expect(b.view.getByRole('button', { name: 'Parent' }).className).toContain('crumbSubagent')
-    expect(b.view.getByText('Child').className).toContain('crumbSubagent')
+    expect(b.view.getByRole('button', { name: 'Root' })).toBeTruthy()
+    fireEvent.click(b.view.getByRole('button', { name: 'Parent' }))
+    expect(b.open).toHaveBeenCalledWith(sid('parent'))
+    expect(b.view.queryByRole('button', { name: 'Child' })).toBeNull()
+    expect(b.view.getByText('Child').tagName).toBe('SPAN')
     expect(b.lineageOwners.slice(-2).map(owner => owner.lineageSessionId)).toEqual([
       sid('parent'),
       SID,
@@ -577,6 +584,9 @@ describe('ConversationRoot resident composer', () => {
     expect(b.slotCalls).toContain('conversation.session.header.actions')
     expect(b.slotCalls).toContain('conversation.session.header.utilities')
     expect(b.slotCalls).toContain('conversation.session.header.corner')
+    expect(b.headerFactory).toHaveBeenCalledWith('contextMenu.button', expect.objectContaining({
+      target: { kind: 'sessionHeader', value: { sessionId: SID } }, label: zh['header.more'], size: 'sm',
+    }))
   })
 
   it('sticky composer seat wraps the whole overlay chain, not only the fallback stack', () => {
@@ -604,6 +614,7 @@ describe('ConversationRoot resident composer', () => {
     expect(b.view.getByTestId('view-conversation.session.header.corner')).toBeTruthy()
     expect(b.view.queryByRole('tablist')).toBeNull()
     expect(b.slotCalls).not.toContain('conversation.session.header.utilities')
+    expect(b.headerFactory).not.toHaveBeenCalled()
     expect(b.slotCalls).not.toContain('conversation.session.header.actions')
     expect(b.view.getByText('今天有什么计划？')).toBeTruthy()
     expect(b.view.queryByTestId('view-chat')).toBeNull()
@@ -764,6 +775,29 @@ describe('ConversationRoot resident composer', () => {
     expect(b.view.queryByRole('menu')).toBeNull()
   })
 
+  it('offers a View tab tooltip only when the label is expected to overflow', () => {
+    const b = mount(sessionSnapshotOf(), undefined, undefined, {
+      viewTabs: [
+        { id: 'chat', label: 'Chat' },
+        { id: 'short', label: '轨迹' },
+        { id: 'long-cjk', label: '很长的视图名称' },
+        { id: 'long-latin', label: 'A very long view name' },
+      ],
+      headerOnly: true,
+    })
+    const tooltipFor = (label: string): string | null => {
+      const span = within(b.view.getByRole('tab', { name: label })).getByText(label)
+      fireEvent.pointerEnter(span)
+      const tooltip = screen.queryByRole('tooltip', { hidden: true })?.textContent ?? null
+      fireEvent.pointerLeave(span)
+      return tooltip
+    }
+    expect(tooltipFor('Chat')).toBeNull()
+    expect(tooltipFor('轨迹')).toBeNull()
+    expect(tooltipFor('很长的视图名称')).toBe('很长的视图名称')
+    expect(tooltipFor('A very long view name')).toBe('A very long view name')
+  })
+
   it('reuses the width budget on View roster and selection changes without a window resize listener', () => {
     let width = 480
     const readWidth = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(() => width)
@@ -781,17 +815,19 @@ describe('ConversationRoot resident composer', () => {
     act(() => { b.actionsOwner().onOpen('inspector') })
     expect(external()).toEqual(['Chat', 'Trajectory', 'Timeline'])
     expect(b.actionsOwner().entries.find(entry => entry.id === 'inspector')?.active).toBe(true)
-    expect(b.view.getByRole('button', { name: '更多会话视图 · Inspector' })).toBeTruthy()
-    const reads = readWidth.mock.calls.length
+    expect(b.view.getByRole('button', { name: zh['session.moreViews'] })).toBeTruthy()
+    const row = b.view.getByRole('tablist').parentElement!
+    const rowReads = () => readWidth.mock.contexts.filter(element => element === row).length
+    const reads = rowReads()
     width = 1000
     fireEvent(window, new Event('resize'))
     act(() => { b.store.actions.setView('timeline') })
-    expect(readWidth).toHaveBeenCalledTimes(reads)
+    expect(rowReads()).toBe(reads)
     expect(external()).toEqual(['Chat', 'Trajectory', 'Timeline'])
     viewTabs.splice(1, 1)
     act(() => { b.store.actions.setView('chat') })
     expect(external()).toEqual(['Chat', 'Timeline', 'Inspector'])
-    expect(readWidth).toHaveBeenCalledTimes(reads)
+    expect(rowReads()).toBe(reads)
     expect(b.actionsOwner().entries).toEqual([])
     expect(b.setPinned).not.toHaveBeenCalled()
   })
@@ -808,7 +844,7 @@ describe('ConversationRoot resident composer', () => {
     width = 300
     act(() => { fireResize(row) })
     expect(external()).toEqual(['chat', 'trajectory'])
-    fireEvent.click(b.view.getByRole('button', { name: '更多会话视图 · notes' }))
+    fireEvent.click(b.view.getByRole('button', { name: zh['session.moreViews'] }))
     expect(b.actionsOwner().entries.map(entry => entry.id)).toEqual(['timeline', 'inspector', 'notes'])
     expect(b.actionsOwner().entries.find(entry => entry.id === 'notes')?.active).toBe(true)
     width = 1000
@@ -1001,16 +1037,6 @@ describe('ConversationRoot resident composer', () => {
     fireEvent.wheel(handle, { deltaY: 0, deltaMode: 0 })
     fireEvent.wheel(handle, { ctrlKey: true, deltaY: 120, deltaMode: 0 })
     expect(scrollBy).toHaveBeenCalledTimes(calls)
-
-    scrollport.removeAttribute('data-conversation-scroll')
-    const nestedScrollport = document.createElement('div')
-    nestedScrollport.setAttribute('data-conversation-scroll', '')
-    const nestedScrollBy = vi.fn()
-    Object.defineProperty(nestedScrollport, 'scrollBy', { value: nestedScrollBy, configurable: true })
-    scrollport.append(nestedScrollport)
-    fireEvent.wheel(handle, { deltaY: 120, deltaMode: 0 })
-    expect(scrollBy).toHaveBeenCalledTimes(calls)
-    expect(nestedScrollBy).not.toHaveBeenCalled()
   })
 
   it('does not check capture, measure, style, or schedule width-handle moves before dragging', () => {

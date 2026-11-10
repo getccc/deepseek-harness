@@ -30,7 +30,10 @@ describe.skipIf(MODE === 'record')('web e2e: refused New Session', () => {
       const page = await browser.newPage({ locale: 'zh-CN', timezoneId: 'Asia/Shanghai' })
       const tripwire = watchConsole(page)
       try {
-        await page.goto(scaffold.authenticatedUrl)
+        await Promise.all([
+          page.waitForEvent('console', message => message.text().startsWith('initial Session restoration failed:')),
+          page.goto(scaffold.authenticatedUrl),
+        ])
         // Startup prepares the default Workspace, and its own blank-Session
         // attempt is refused without a notice: the hero stays on the picker.
         await page.getByRole('button', { name: '选择工作区', exact: true }).waitFor()

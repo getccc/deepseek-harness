@@ -1,18 +1,15 @@
-/** Agent activation, composition, and model-selection policy owned by API Session. */
+/** Agent activation, composition, and initial model route owned by API Session. */
 
 import { randomUUID } from 'node:crypto'
 import { mkdir } from 'node:fs/promises'
 import type { Context } from '@deepseek-ai/cordis'
-import { installModelSelection } from '@deepseek-ai/dsh-agent'
-import type {
-  Agent, AgentOptions, AgentSetup, ModelSelection as AgentModelSelection, ModelSelectionRef,
-} from '@deepseek-ai/dsh-agent'
+import type { Agent, AgentOptions, AgentSetup, ModelSelection as AgentModelSelection } from '@deepseek-ai/dsh-agent'
 import type {} from '@deepseek-ai/dsh-agent-default-model'
+import { installModelSelection } from '@deepseek-ai/dsh-agent'
 import type {} from '@deepseek-ai/dsh-agent-preset-registry'
+import { ReasoningEffortId } from '@deepseek-ai/dsh-llm/brand'
 import { brandString } from '@deepseek-ai/dsh-brand'
-import { ReasoningEffortId } from '@deepseek-ai/dsh-llm'
 import type { Session, SessionId } from '@deepseek-ai/dsh-session'
-import type { SessionInspection } from '@deepseek-ai/dsh-session-persistence'
 import { SessionQueryError, type SessionObservation } from '@deepseek-ai/dsh-session-query'
 import { RemoteError, remoteErrorOf } from '@deepseek-ai/dsh-typert-protocol'
 import type {} from '@deepseek-ai/dsh-typert-registry'
@@ -98,36 +95,13 @@ export type ApiSessionAgentResult =
   | { readonly agent: Agent }
   | { readonly error: ApiSessionAgentError }
 
-type InstalledSelection = ModelSelectionRef & {
-  current: AgentModelSelection
-  /** Whether `current` is the deployment default rather than a selection this Session picked or logged. */
-  readonly defaulted: boolean
-  /**
-   * Install the default the model catalog offers as what the default tier
-   * returns, or clear it while the catalog and the deployment default agree.
-   * @param offered - the catalog's default, or undefined to read the deployment default live.
-   */
-  settle(offered: AgentModelSelection | undefined): void
-  consume(provider: string, model: string, reasoningEffort: string | undefined): boolean
-}
-
 /**
  * Test whether generic Session routing must leave an identity to subagent routing.
- * @param ctx - Host context carrying the Agent ownership registry.
- * @param session - attached or live Session whose ownership is tested.
- * @param agent - live Agent when one exists for the Session.
+ * @param session - Attached or live Session whose origin is tested.
  * @returns whether subagent routing owns the Session identity.
  */
-export function hasApiSessionSubagentOwner(
-  ctx: Context,
-  session: Pick<Session, 'header'>,
-  agent: Agent | undefined,
-): boolean {
-  if (session.header.origin === 'subagent') return true
-  const parentId = session.header.parentSession
-  if (parentId === undefined || agent === undefined) return false
-  const parent = ctx.agents.get(parentId)
-  return parent !== undefined && ctx.agents.isOwnedBy(agent.id, parent)
+export function hasApiSessionSubagentOwner(session: Pick<Session, 'header'>): boolean {
+  return session.header.origin === 'subagent'
 }
 
 /**
@@ -143,46 +117,20 @@ export function apiSessionSubagentOwnershipError(sessionId: SessionId): ApiSessi
   )
 }
 
-/**
- * Inspect one cold Session without repairing, resuming, or publishing it.
- * @param ctx - Host context carrying Session persistence.
- * @param sessionId - durable Session identity.
- * @param signal - optional cancellation for persistence reads.
- * @returns the persisted header and complete event prefix.
- */
-export async function inspectApiSession(
-  ctx: Context,
-  sessionId: SessionId,
-  signal?: AbortSignal,
-): Promise<SessionInspection> {
-  try {
-    using observation = await ctx.sessionQuery.observeSession(sessionId, {
-      ...(signal === undefined ? {} : { signal }),
-      projectionMode: 'none',
-    })
-    return {
-      meta: observation.header,
-      inheritedEventCount: observation.inheritedEventCount,
-      events: [...observation.events],
-    }
-  } catch (error: unknown) {
-    if (error instanceof SessionQueryError
-      && error.code === 'SESSION_QUERY_SESSION_NOT_FOUND') {
-      throw new ApiSessionNotFound(`session "${sessionId}" not found`)
-    }
-    throw error
-  }
-}
-
 /** Owns every operation that may create, resume, or configure a Web Agent. */
 export class ApiSessionAgentController {
   private readonly resumes = new Map<SessionId, Promise<Agent>>()
   private readonly claims = new Map<SessionId, Promise<void>>()
-  private readonly selections = new WeakMap<Agent, InstalledSelection>()
   private readonly imageAdmissionChains = new WeakMap<Agent, Promise<void>>()
 
   /** @param ctx - Host context carrying Agent, model, persistence, and Typert services. */
-  constructor(private readonly ctx: Context) {
+  constructor(private readonly ctx: Context) {}
+
+  /**
+   * Configure Session and Agent lookups for Typert.
+   */
+  initialize(): void {
+    const ctx = this.ctx
     ctx.typert.lookups.configure('agent', async (sessionId: SessionId) => {
       const found = await this.resolveAgent(sessionId)
       if ('error' in found) throw found.error
@@ -225,7 +173,7 @@ export class ApiSessionAgentController {
     const live = this.liveAgent(sessionId)
     if (live !== undefined) return live
     const attached = this.ctx.sessions.get(sessionId)
-    if (attached !== undefined && hasApiSessionSubagentOwner(this.ctx, attached, undefined)) {
+    if (attached !== undefined && hasApiSessionSubagentOwner(attached)) {
       return { error: apiSessionSubagentOwnershipError(sessionId) }
     }
 
@@ -250,7 +198,7 @@ export class ApiSessionAgentController {
       const raced = this.liveAgent(sessionId)
       if (raced !== undefined) return raced
       const racedSession = this.ctx.sessions.get(sessionId)
-      if (racedSession !== undefined && hasApiSessionSubagentOwner(this.ctx, racedSession, undefined)) {
+      if (racedSession !== undefined && hasApiSessionSubagentOwner(racedSession)) {
         return { error: apiSessionSubagentOwnershipError(sessionId) }
       }
       if (error instanceof Error && error.name === 'SessionAlreadyOwnedError') {
@@ -292,114 +240,24 @@ export class ApiSessionAgentController {
   }
 
   /**
-   * Install or return the Session-local model selection used by prompt assembly.
-   * @param agent - live Agent that owns the selection.
-   * @returns the installed mutable selection reference.
-   */
-  selectionFor(agent: Agent): InstalledSelection {
-    const installed = this.selections.get(agent)
-    if (installed !== undefined) return installed
-    const projectionState = this.ctx.sessionProjections.stateOf(agent.session, 'modelSelection')
-    if (projectionState === undefined) {
-      throw new Error('api-session: required modelSelection projection is not registered')
-    }
-    let picked = projectionState.pending === null
-      ? undefined
-      : agentModelSelection(projectionState.pending)
-    let settled: AgentModelSelection | undefined
-    const defaultModel = this.ctx.agentDefaultModel
-    const selection: InstalledSelection = {
-      get current(): AgentModelSelection {
-        if (picked !== undefined) return picked
-        const loggedHeader = agent.session.requestHeader()
-        if (loggedHeader === undefined) return settled ?? defaultModel.currentSelection()
-        const logged = loggedHeader.config
-        return {
-          provider: logged.provider,
-          model: logged.model,
-          // An effort the adapter defaulted is not a conversation choice: restoring
-          // it as one would make an unchanged default read as a request change.
-          ...(logged.reasoningEffort === undefined
-            || loggedHeader.adapterDefaults?.reasoningEffort === true
-            ? {}
-            : { reasoningEffort: logged.reasoningEffort }),
-        }
-      },
-      set current(next: AgentModelSelection) {
-        picked = next
-      },
-      get defaulted(): boolean {
-        return picked === undefined && agent.session.requestHeader() === undefined
-      },
-      settle(offered: AgentModelSelection | undefined): void {
-        settled = offered
-      },
-      consume(provider: string, model: string, reasoningEffort: string | undefined): boolean {
-        if (picked?.provider !== provider
-          || picked.model !== model
-          || picked.reasoningEffort !== reasoningEffort) return false
-        picked = undefined
-        return true
-      },
-      assembled: undefined,
-    }
-    installModelSelection(agent.ctx, selection)
-    this.selections.set(agent, selection)
-    return selection
-  }
-
-  /**
-   * Bind a Session that has no selection of its own to the default the model
-   * catalog offers, so its first request uses the model the composer names.
-   * That default is the deployment default whenever the catalog lists it and
-   * otherwise the first listed model; a picked or logged selection is left
-   * alone, because catalog membership stays advisory for a selection already
-   * made. Re-read on every prompt until a request is logged, so a catalog or
-   * default that moved between prompts reaches the Session.
+   * Refresh the fallback route before a prompt while the Session has no model
+   * selection or recorded request. The fallback matches the model catalog.
    * @param agent - live Agent about to admit a prompt.
    */
   async settleDefaultSelection(agent: Agent): Promise<void> {
-    const installed = this.selectionFor(agent)
-    if (!installed.defaulted) return
+    if (agent.session.requestHeader() !== undefined) return
     const stored = this.ctx.agentDefaultModel.currentSelection()
     const offered = (await buildModelCatalog(this.ctx, stored)).default
-    installed.settle(sameSelection(offered, stored) ? undefined : agentModelSelection(offered))
-  }
-
-  /**
-   * Commit and cache one validated selection for the next prompt assembly.
-   * @param agent - live Agent that owns the selection.
-   * @param selection - validated selection to record and apply.
-   */
-  selectForNextRequest(agent: Agent, selection: AgentModelSelection): void {
-    agent.session.append('model/selection', selection)
-    this.selectionFor(agent).current = selection
-  }
-
-  /**
-   * Let a matching durable request header retire the execution cache.
-   * @param agent - live Agent whose request was recorded.
-   * @param provider - provider route used by the request.
-   * @param model - provider-owned model used by the request.
-   * @param reasoningEffort - adapter-owned effort used by the request.
-   * @returns whether the pending selection was consumed.
-   */
-  consumeSelection(
-    agent: Agent,
-    provider: string,
-    model: string,
-    reasoningEffort: string | undefined,
-  ): boolean {
-    return this.selections.get(agent)?.consume(provider, model, reasoningEffort) ?? false
+    agent.model.setFallback(sameSelection(offered, stored) ? undefined : agentModelSelection(offered))
   }
 
   /**
    * Read the current Agent preset from the Session projection.
    * @param session - live Session whose projection state is available.
-   * @returns the current preset, or undefined when the capability is absent.
+   * @returns the current preset, or undefined without a preset service or recorded selection.
    */
   presetForSession(session: Session): string | undefined {
-    return this.ctx.sessionProjections.stateOf(session, 'agentPreset') ?? undefined
+    return this.ctx.get('agentPresets')?.presetForSession(session) ?? undefined
   }
 
   /**
@@ -427,13 +285,13 @@ export class ApiSessionAgentController {
   async composeAgent(presetId: string | undefined, cwd: string | undefined): Promise<ApiSessionComposition> {
     const presets = this.ctx.get('agentPresets')
     if (presets === undefined) {
-      return { setup: (_agentCtx, agent) => { this.installSelection(agent) } }
+      return { setup: (agentCtx) => { installModelSelection(agentCtx) } }
     }
     const resolvedId = (await presets.resolveFor(cwd === undefined ? 'none' : 'required', presetId)).id
     return {
       agentPreset: resolvedId,
-      setup: async (agentCtx, agent) => {
-        this.installSelection(agent)
+      setup: async (agentCtx) => {
+        installModelSelection(agentCtx)
         await presets.mount(agentCtx, resolvedId)
       },
     }
@@ -442,7 +300,7 @@ export class ApiSessionAgentController {
   private liveAgent(sessionId: SessionId): ApiSessionAgentResult | undefined {
     const agent = this.ctx.agents.get(sessionId)
     if (agent === undefined) return undefined
-    return hasApiSessionSubagentOwner(this.ctx, agent.session, agent)
+    return hasApiSessionSubagentOwner(agent.session)
       ? { error: apiSessionSubagentOwnershipError(sessionId) }
       : { agent }
   }
@@ -468,13 +326,12 @@ export class ApiSessionAgentController {
     if (observation.header.id !== sessionId) {
       throw new ApiSessionNotFound(`session "${sessionId}" not found`)
     }
-    if (hasApiSessionSubagentOwner(this.ctx, { header: observation.header }, undefined)) {
+    if (hasApiSessionSubagentOwner({ header: observation.header })) {
       throw new ApiSessionSubagentOwnership(sessionId)
     }
     const composition = await this.composeAgent(this.presetForObservation(observation), observation.header.cwd)
     const published = this.ctx.sessions.get(sessionId)
-    const live = this.ctx.agents.get(sessionId)
-    if (published !== undefined && hasApiSessionSubagentOwner(this.ctx, published, live)) {
+    if (published !== undefined && hasApiSessionSubagentOwner(published)) {
       throw new ApiSessionSubagentOwnership(sessionId)
     }
     return (await this.ctx.agents.resume({
@@ -499,7 +356,7 @@ export class ApiSessionAgentController {
   private async claim(sessionId: SessionId, request: ApiSessionCreateRequest): Promise<Agent> {
     const attached = this.ctx.sessions.get(sessionId)
     const live = this.ctx.agents.get(sessionId)
-    if (attached !== undefined && hasApiSessionSubagentOwner(this.ctx, attached, live)) {
+    if (attached !== undefined && hasApiSessionSubagentOwner(attached)) {
       throw new ApiSessionSubagentOwnership(sessionId)
     }
     if (live !== undefined) {
@@ -519,7 +376,7 @@ export class ApiSessionAgentController {
     let reusable: boolean
     {
       using observed = observation
-      if (hasApiSessionSubagentOwner(this.ctx, { header: observed.header }, undefined)) {
+      if (hasApiSessionSubagentOwner({ header: observed.header })) {
         throw new ApiSessionSubagentOwnership(sessionId)
       }
       if (observed.header.cwd !== request.cwd) {
@@ -582,8 +439,8 @@ export class ApiSessionAgentController {
 
   /** Whether no turn has started, by the predicate the preset registry's `select` enforces. */
   private isBlank(session: Session): boolean {
-    const boundary = this.ctx.sessionProjections.stateOf(session, 'turnBoundary')
-    return boundary === undefined || (boundary.openTurnStartSeq === null && boundary.lastTurn === 0)
+    const boundary = this.ctx.agents.turnBoundaryOf(session)
+    return boundary.openTurnStartSeq === null && boundary.lastTurn === 0
   }
 
   /** Without a roster, reuse cannot apply a named preset. */
@@ -620,12 +477,13 @@ export class ApiSessionAgentController {
   }
 
   private agentOptions(): AgentOptions {
-    const { provider, model } = this.ctx.agentDefaultModel.currentSelection()
-    return { provider, model }
-  }
-
-  private installSelection(agent: Agent): void {
-    this.selectionFor(agent)
+    const defaults = this.ctx.agentDefaultModel
+    // A Session that records no selection or request follows default changes.
+    return {
+      get provider() { return defaults.currentSelection().provider },
+      get model() { return defaults.currentSelection().model },
+      get reasoningEffort() { return defaults.currentSelection().reasoningEffort },
+    }
   }
 
   /**

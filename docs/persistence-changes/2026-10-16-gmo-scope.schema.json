@@ -1,137 +1,21 @@
 {
   "formatVersion": 2,
   "roots": [
-    {
-      "key": "event:gmo/scope",
-      "kind": "event",
-      "event": "gmo/scope",
-      "surface": false,
-      "digest": "05bb8105eb0fe4d3eec7cb103a8540bb4e8d5f07b0b59fbd96ab9835e946741f",
-      "schema": {
-        "root": 0,
-        "nodes": [
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "data",
-                "type": 1,
-                "optional": false
-              },
-              {
-                "name": "ignorable",
-                "type": 9,
-                "optional": true
-              },
-              {
-                "name": "seq",
-                "type": 10,
-                "optional": false
-              },
-              {
-                "name": "time",
-                "type": 10,
-                "optional": false
-              },
-              {
-                "name": "type",
-                "type": 11,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "union",
-            "types": [
-              2,
-              7
-            ]
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "category",
-                "type": 3,
-                "optional": false
-              },
-              {
-                "name": "mode",
-                "type": 5,
-                "optional": false
-              },
-              {
-                "name": "version",
-                "type": 6,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "displayName",
-                "type": 4,
-                "optional": false
-              },
-              {
-                "name": "ref",
-                "type": 4,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "primitive",
-            "type": "string"
-          },
-          {
-            "kind": "literal",
-            "value": "selected"
-          },
-          {
-            "kind": "literal",
-            "value": 1
-          },
-          {
-            "kind": "object",
-            "properties": [
-              {
-                "name": "mode",
-                "type": 8,
-                "optional": false
-              },
-              {
-                "name": "version",
-                "type": 6,
-                "optional": false
-              }
-            ],
-            "indices": []
-          },
-          {
-            "kind": "literal",
-            "value": "off"
-          },
-          {
-            "kind": "literal",
-            "value": true
-          },
-          {
-            "kind": "primitive",
-            "type": "number"
-          },
-          {
-            "kind": "literal",
-            "value": "gmo/scope"
-          }
-        ]
-      }
-    }
+    {"key":"event:gmo/scope","kind":"event","event":"gmo/scope","surface":false,"digest":"05bb8105eb0fe4d3eec7cb103a8540bb4e8d5f07b0b59fbd96ab9835e946741f"}
   ],
-  "types": []
+  "types": [],
+  "nodes": {
+    "05bb8105eb0fe4d3": {"kind":"object","properties":[{"name":"data","type":"8ba30620d0268250","optional":false},{"name":"ignorable","type":"dacf3d5f3e4ff619","optional":true},{"name":"seq","type":"0657d3ca5ac4e7bf","optional":false},{"name":"time","type":"0657d3ca5ac4e7bf","optional":false},{"name":"type","type":"c8c5ca0dc383bb37","optional":false}],"indices":[]},
+    "0657d3ca5ac4e7bf": {"kind":"primitive","type":"number"},
+    "33f74f022c28c94b": {"kind":"literal","value":"selected"},
+    "48afb9ebc9ec5fe8": {"kind":"literal","value":"off"},
+    "4cd48f3e5108bd6e": {"kind":"primitive","type":"string"},
+    "8ba30620d0268250": {"kind":"union","types":["ac44e4667f7f878b","c7f24ab6218cc955"]},
+    "ac44e4667f7f878b": {"kind":"object","properties":[{"name":"mode","type":"48afb9ebc9ec5fe8","optional":false},{"name":"version","type":"f88f1b7b6bb733f6","optional":false}],"indices":[]},
+    "c7f24ab6218cc955": {"kind":"object","properties":[{"name":"category","type":"e7b9271f26f0cae7","optional":false},{"name":"mode","type":"33f74f022c28c94b","optional":false},{"name":"version","type":"f88f1b7b6bb733f6","optional":false}],"indices":[]},
+    "c8c5ca0dc383bb37": {"kind":"literal","value":"gmo/scope"},
+    "dacf3d5f3e4ff619": {"kind":"literal","value":true},
+    "e7b9271f26f0cae7": {"kind":"object","properties":[{"name":"displayName","type":"4cd48f3e5108bd6e","optional":false},{"name":"ref","type":"4cd48f3e5108bd6e","optional":false}],"indices":[]},
+    "f88f1b7b6bb733f6": {"kind":"literal","value":1}
+  }
 }

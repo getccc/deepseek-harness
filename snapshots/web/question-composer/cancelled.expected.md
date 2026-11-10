@@ -11,6 +11,7 @@
 - status: Xiaowei completed
 - button "Xiaowei completed in {{duration}}" [expanded]
 - button "Asked questions" [expanded]
+- button "Context injection runtime-context"
 - button "Think The user wants me to use the ask_user_question tool with specific parameters. Let me do exactly that."
 - button "Ask question cancelled" [expanded]
 - paragraph: This question set was cancelled before answers were submitted.

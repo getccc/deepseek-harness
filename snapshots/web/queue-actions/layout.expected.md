@@ -12,6 +12,8 @@
 - button "Continuing goal {{clock}}":
   - text: Continuing goal
   - time: {{clock}}
+- button "Context injection runtime-context"
+- button "Context injection time-context"
 - paragraph: partial
 - status: Xiaowei is deep diving
 - text: Xiaowei has been deep diving for {{duration}} ···

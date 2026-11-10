@@ -31,6 +31,8 @@ Run `dsh --profile web` for browser chat, model and settings management, and ses
 
 Start the GUI, open your browser, and start talking to the agent. The flags fine-tune the invocation.
 
+[Agent Teams UI](../../client/ui-agent-team/README.md) loads with this bundle. Enable it per Session in the model and reasoning menu; shared tasks open below the member tree from the Subagent control.
+
 ### Starting the Web GUI
 
 ```sh
@@ -105,7 +107,7 @@ The bundle is one patch layer of five files plus one runtime glue plugin: `cordi
 
 ### Patch semantics
 
-A patch replaces the targeted row's whole `config`, so each web row restates every key it owns: the persona prefix template, the `DSH_TOOLS_MODE` PTC mode opt-in, and the `session-query-sqlite` values on the base rows, then `insert` adds the web host rows, transport, and browser roster. The `webserver`, `web-runtime`, and `connection` rows inject the `webStartup` provider and read their invocation values directly; Connection composes its accepted authorities from `ctx.webStartup.trustedHosts`, and the Host/Origin fence accepts the listener's bind IP independently of that list. The per-agent tool rows the base mounts process-wide are disabled here and the preset roster takes over; the reasoning for each host-plane versus preset-plane decision is inline in the patch.
+A patch replaces the targeted row's whole `config`, so each web row restates every key it owns: the persona prefix template and the `session-query-sqlite` values on the base rows, then `insert` adds the web host rows, transport, and browser roster. The `webserver`, `web-runtime`, and `connection` rows inject the `webStartup` provider and read their invocation values directly; Connection composes its accepted authorities from `ctx.webStartup.trustedHosts`, and the Host/Origin fence accepts the listener's bind IP independently of that list. The bundle inherits native tool execution; a [PTC overlay](../../../apps/cli/config/examples/ptc.yml) changes the deployment executor. The per-agent tool rows the base mounts process-wide are disabled here and the preset roster takes over; the reasoning for each host-plane versus preset-plane decision is inline in the patch.
 
 ### Advertised application URL
 

@@ -26,6 +26,7 @@ describe('Team conversation layout', () => {
   beforeAll(async () => {
     scaffold = await launchWebScaffold({
       replayFixture: join(ROOT, 'snapshots/web/chat-preset/session.v3.jsonl'),
+      paceMs: 20,
       // Browser submissions add RPC and time-zone fields absent from the Host-authored recording.
       compareReplaySession: false,
       extraOverlayPath: OVERLAY,

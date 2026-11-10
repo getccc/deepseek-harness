@@ -12,6 +12,8 @@
 - status: Xiaowei completed
 - button "Xiaowei completed in {{duration}}" [expanded]
 - button "Searched the web" [expanded]
+- button "Context injection runtime-context"
+- button "Context injection time-context"
 - button "Search DeepSeek Harness snapshot search, DeepSeek Harness multi-query search"
 - paragraph: SEARCH_DONE
 - button "Copy"

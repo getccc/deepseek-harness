@@ -4,7 +4,7 @@ import type {} from '../index.ts'
 import type { DocumentPreviewDefinition } from '../document/registry.ts'
 import { selectViewText } from '../document/view.ts'
 import { MarkdownBody, MarkdownView } from './MarkdownBody.tsx'
-import { en, zh } from './locales.ts'
+import { en, ja, es, fr, de, ru, pt, zh } from './locales.ts'
 
 /** Implementation identity shared by metadata and the document slot. */
 export const MARKDOWN_BODY_ID = '@deepseek-ai/dsh-client-ui-sidebar-documentpreview/markdown'
@@ -27,7 +27,7 @@ export function markdownDefinition(title: () => string): DocumentPreviewDefiniti
  */
 export function apply(ctx: Context): void {
   const t = ctx.locale.bind('documentMarkdown')
-  ctx.effect(() => ctx.locale.register('documentMarkdown', { zh, en }), 'document-markdown: dictionaries')
+  ctx.effect(() => ctx.locale.register('documentMarkdown', { zh, en, ja, es, fr, de, ru, pt }), 'document-markdown: dictionaries')
   ctx.effect(() => ctx.documentPreviews.register(markdownDefinition(() => t('viewer.label'))), 'document-markdown: metadata')
   ctx.effect(() => ctx.slots.inject('sidebar.right.tab.document', () => ctx.slots.register(
     { name: 'sidebar.right.tab.document', key: MARKDOWN_BODY_ID, locale: 'documentMarkdown' }, MarkdownBody,

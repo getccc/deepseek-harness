@@ -15,7 +15,7 @@ import { resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { isCordisGroupEntry, loadCordisYaml, presetDefinitions } from './cordis-yaml.ts'
 import { manifestPatterns, workspaceMembers } from './workspace-members.ts'
-import { OPTIONAL_BUNDLES } from '@deepseek-ai/dsh-app-boot'
+import { OPTIONAL_BUNDLES } from '../packages/util/official-bundles/src/bundles.ts'
 
 interface PackageManifest {
   name?: string

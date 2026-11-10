@@ -8,6 +8,8 @@
 
 import { describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
+import * as NativeExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeToolFixture } from '@deepseek-ai/dsh-tool-testkit'
 import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import { createScope, type ScopeKey } from '@deepseek-ai/dsh-scope'
 import SystemPrompt, { type SystemPrompt as SystemPromptRegistry } from '@deepseek-ai/dsh-system-prompt'
@@ -109,6 +111,7 @@ async function mountTool(scope: BiScope = SELECTED, config: ToolBi.Config = {}):
   const ctx = new Context()
   await ctx.plugin(SystemPrompt)
   await ctx.plugin(ToolRuntime)
+  await ctx.plugin(NativeExecutor)
   const state: Mounted = {
     ctx,
     pageAnswer: page(),
@@ -153,7 +156,7 @@ async function mountTool(scope: BiScope = SELECTED, config: ToolBi.Config = {}):
 
 /** Run one tool through the real registry. */
 function runTool(mounted: Mounted, name: string, args: unknown): Promise<ToolResult> {
-  return mounted.ctx.tools.execute({
+  return executeToolFixture(mounted.ctx, {
     signal: new AbortController().signal,
     callId: ToolCallId(`call-${String(++counter)}`),
     name,
@@ -233,12 +236,7 @@ describe('listing the charts a model may run', () => {
   it('is classified parallel, because a listing mutates nothing', async () => {
     const mounted = await mountTool()
     const tools = mounted.ctx.get('tools') as ToolRuntime
-    expect(tools.executionMode({
-      signal: new AbortController().signal,
-      callId: ToolCallId('call-mode'),
-      name: BI_LIST_CHARTS,
-      arguments: {},
-    })).toEqual({ kind: 'parallel' })
+    expect(tools.get(BI_LIST_CHARTS)?.isConcurrencySafe?.({})).toBe(true)
   })
 })
 
@@ -287,12 +285,7 @@ describe('running one chart', () => {
   it('is classified parallel, because a run mutates nothing', async () => {
     const mounted = await mountTool()
     const tools = mounted.ctx.get('tools') as ToolRuntime
-    expect(tools.executionMode({
-      signal: new AbortController().signal,
-      callId: ToolCallId('call-mode-2'),
-      name: BI_QUERY_CHART,
-      arguments: { chart: CHART },
-    })).toEqual({ kind: 'parallel' })
+    expect(tools.get(BI_QUERY_CHART)?.isConcurrencySafe?.({ chart: CHART })).toBe(true)
   })
 })
 
@@ -417,6 +410,7 @@ describe('the projection a client reads', () => {
     ctx.provide('agents', { currentInitiator: () => undefined, get: () => undefined })
     await ctx.plugin(SystemPrompt)
     await ctx.plugin(ToolRuntime)
+    await ctx.plugin(NativeExecutor)
     await ctx.plugin(ToolBi, ToolBi.Config({}))
     if (registered === undefined) throw new Error('the BI unit did not register')
     const definition = registered as {

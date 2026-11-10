@@ -31,6 +31,8 @@ kind: "package-bundle"
 
 启动 GUI、打开浏览器，然后开始与 agent（智能体）对话。flag 用于微调本次调用。
 
+[Agent Teams UI](../../client/ui-agent-team/README.zh.md) 随本 bundle 加载。在模型与推理等级菜单中按 Session 开启；通过 Subagent 控件打开成员树，下方显示共享任务。
+
 ### 启动 Web GUI
 
 ```sh
@@ -105,7 +107,7 @@ dsh --profile web --no-open --host "$(hostname -i | awk '{print $1}')" --public-
 
 ### patch 语义
 
-patch 会替换目标行的整个 `config`，因此每个 Web 行都重述自己拥有的每个键：基础行上的 persona 前缀模板、`DSH_TOOLS_MODE` PTC mode 开关与 `session-query-sqlite` 值，随后 `insert` 添加 Web 宿主行、传输层与浏览器名录。`webserver`、`web-runtime` 与 `connection` 行都注入 `webStartup` 提供方并直接读取本次调用的取值；Connection 的被接受 authority 全部来自 `ctx.webStartup.trustedHosts`，Host/Origin 栅栏则独立于该列表接受监听器的绑定 IP。base 以进程级挂载的按 agent 工具行在这里被禁用，由 preset 名录接管；每项宿主层与 preset 层归属决策的理由以行内注释写在 patch 里。
+patch 会替换目标行的整个 `config`，因此每个 Web 行都重述自己拥有的每个键：基础行上的 persona 前缀模板与 `session-query-sqlite` 值，随后 `insert` 添加 Web 宿主行、传输层与浏览器名录。`webserver`、`web-runtime` 与 `connection` 行都注入 `webStartup` 提供方并直接读取本次调用的取值；Connection 的被接受 authority 全部来自 `ctx.webStartup.trustedHosts`，Host/Origin 栅栏则独立于该列表接受监听器的绑定 IP。bundle 继承原生工具执行；[PTC overlay](../../../apps/cli/config/examples/ptc.yml) 可切换部署执行器。base 以进程级挂载的按 agent 工具行在这里被禁用，由 preset 名录接管；每项宿主层与 preset 层归属决策的理由以行内注释写在 patch 里。
 
 ### 公告应用 URL
 

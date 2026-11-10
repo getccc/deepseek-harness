@@ -15,35 +15,35 @@
   en: d152484eb41ac6b4
   zh: 09388d293f9be9cb
 /deepseek-ai-dsh-client-ui-workspace/use-this-package:
-  en: ac051ef2b47e23bd
-  zh: 1e5b215064e82b33
+  en: ed4749c79ef45472
+  zh: 33473e828379e8a9
 /deepseek-ai-dsh-client-ui-workspace/use-this-package/reordering-and-view-options:
-  en: 8673afc1d72ad077
-  zh: 9fbb83a4029c5d10
+  en: 55054408b8593c70
+  zh: 9fdf9861a48abba3
 /deepseek-ai-dsh-client-ui-workspace/use-this-package/workspace-hierarchy:
-  en: 5e049b90c55eddb3
-  zh: e06dc8d0d25c013f
+  en: cd8635fa6516441d
+  zh: c06e251fe3dd895b
 /deepseek-ai-dsh-client-ui-workspace/use-this-package/search:
-  en: 9eab3bfbaf98c987
-  zh: 54e7e141dae5c9e8
+  en: 148f2ab562fecc09
+  zh: 9ba7c07999705b31
 /deepseek-ai-dsh-client-ui-workspace/use-this-package/managing-sessions:
-  en: e96b714aeb6dcd03
-  zh: 75b63aa2cafbb57a
+  en: 29b6b357fc6be99a
+  zh: 182996efed35029c
 /deepseek-ai-dsh-client-ui-workspace/use-this-package/pending-interactions:
   en: 9fb88260380bf093
   zh: 3bace2b96ecd4a82
 /deepseek-ai-dsh-client-ui-workspace/use-this-package/active-schedule-markers:
-  en: 3ee673b5adf8dd0a
-  zh: a18d17da340fda87
+  en: 32a2a444e9653312
+  zh: d18e634ee7b9841a
 /deepseek-ai-dsh-client-ui-workspace/understand-the-implementation:
-  en: 8a2363dc2db87d29
-  zh: cdd8b77e880a3f15
+  en: 285a4bd8e56a063b
+  zh: 56d996aa50ab053e
 /deepseek-ai-dsh-client-ui-workspace/understand-the-implementation/the-directory-flow-hole:
   en: 868904dbfb5713f8
-  zh: 225906bfef7398bf
+  zh: 35d3c285ed770885
 /deepseek-ai-dsh-client-ui-workspace/understand-the-implementation/session-row-actions:
-  en: 3d0cd24b20292ffa
-  zh: 63463640329b519b
+  en: 74019916b78c3e5d
+  zh: 39fdf5e0de4cff17
 /deepseek-ai-dsh-client-ui-workspace/understand-the-implementation/session-row-actions/packaged-client-plugin:
   en: 36934671b80b11ae
   zh: 8e0aea6162e35e77
@@ -51,11 +51,11 @@
   en: ad4a333892f2fe92
   zh: 3a670fd401f4d7a7
 /deepseek-ai-dsh-client-ui-workspace/understand-the-implementation/view-state:
-  en: 3d065f390cb86d0a
-  zh: 78bb0cd05560a1c4
+  en: ec28709d60950808
+  zh: 9a0aa9f4d7ed800c
 /deepseek-ai-dsh-client-ui-workspace/understand-the-implementation/hover-cards:
-  en: ea89ec5a3ee1f167
-  zh: e11f350571bcfff7
+  en: 8bcb7bd90d7c5773
+  zh: 17663be926a099d2
 /deepseek-ai-dsh-client-ui-workspace/further-exploration:
   en: 3a15ed4e53f6647c
   zh: afb2352fdb6d36d1
@@ -66,8 +66,8 @@
   en: ca75c51c89c2c9b0
   zh: de54f3467ef3b9be
 /deepseek-ai-dsh-client-ui-workspace/known-limitations-and-deferred-work:
-  en: 00d7b1ddda7390f5
-  zh: 1e5a1055d1be4d1d
+  en: 8211860a1b10ac61
+  zh: 4ef11b1fce30cacd
 /deepseek-ai-dsh-client-ui-workspace/known-limitations-and-deferred-work/dev-note:
   en: e67f633dc6fe7773
   zh: 3bb0c20c93f16f98

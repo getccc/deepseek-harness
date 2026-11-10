@@ -8,6 +8,8 @@
 
 import { describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
+import * as NativeExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeToolFixture } from '@deepseek-ai/dsh-tool-testkit'
 import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import { createScope, type ScopeKey } from '@deepseek-ai/dsh-scope'
 import SystemPrompt, { type SystemPrompt as SystemPromptRegistry } from '@deepseek-ai/dsh-system-prompt'
@@ -78,6 +80,7 @@ async function mountTool(
   const ctx = new Context()
   await ctx.plugin(SystemPrompt)
   await ctx.plugin(ToolRuntime)
+  await ctx.plugin(NativeExecutor)
   const state: Mounted = {
     ctx,
     knowledgeAnswer: {
@@ -126,7 +129,7 @@ async function mountTool(
  * presentation payload the output declaration projected.
  */
 function runTool(mounted: Mounted, args: unknown): Promise<ToolResult> {
-  return mounted.ctx.tools.execute({
+  return executeToolFixture(mounted.ctx, {
     signal: new AbortController().signal,
     callId: ToolCallId(`call-${String(++counter)}`),
     name: KNOWLEDGE_SEARCH,
@@ -261,12 +264,7 @@ describe('the result a model reads', () => {
   it('is classified parallel, because a knowledge read mutates nothing', async () => {
     const mounted = await mountTool()
     const tools = mounted.ctx.get('tools') as ToolRuntime
-    expect(tools.executionMode({
-      signal: new AbortController().signal,
-      callId: ToolCallId('call-mode'),
-      name: KNOWLEDGE_SEARCH,
-      arguments: { query: '年假' },
-    })).toEqual({ kind: 'parallel' })
+    expect(tools.get(KNOWLEDGE_SEARCH)?.isConcurrencySafe?.({ query: '年假' })).toBe(true)
   })
 
   it('runs two searches concurrently, because a read mutates nothing', async () => {
@@ -418,6 +416,7 @@ describe('the projection a client reads', () => {
     ctx.provide('agents', { currentInitiator: () => undefined, get: () => undefined })
     await ctx.plugin(SystemPrompt)
     await ctx.plugin(ToolRuntime)
+    await ctx.plugin(NativeExecutor)
     await ctx.plugin(ToolKnowledge, ToolKnowledge.Config({}))
     if (registered === undefined) throw new Error('the knowledge unit did not register')
     const definition = registered as {

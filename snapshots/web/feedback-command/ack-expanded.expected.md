@@ -12,6 +12,8 @@
 - status: Xiaowei completed
 - button "Xiaowei completed in {{duration}}" [expanded]
 - button "Analysis completed" [expanded]
+- button "Context injection runtime-context"
+- button "Context injection time-context"
 - button "Think The user wants me to reply with a single word. Let me comply."
 - paragraph: LIGHTHOUSE
 - button "Copy"

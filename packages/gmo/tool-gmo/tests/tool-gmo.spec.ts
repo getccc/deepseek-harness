@@ -8,6 +8,8 @@
 
 import { describe, expect, it } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
+import * as NativeExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeToolFixture } from '@deepseek-ai/dsh-tool-testkit'
 import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import { createScope, type ScopeKey } from '@deepseek-ai/dsh-scope'
 import SystemPrompt, { type SystemPrompt as SystemPromptRegistry } from '@deepseek-ai/dsh-system-prompt'
@@ -136,6 +138,7 @@ async function mountTool(scope: GmoScope = SELECTED, config: ToolGmo.Config = {}
   const ctx = new Context()
   await ctx.plugin(SystemPrompt)
   await ctx.plugin(ToolRuntime)
+  await ctx.plugin(NativeExecutor)
   const state: Mounted = {
     ctx,
     pageAnswer: page(),
@@ -186,7 +189,7 @@ async function mountTool(scope: GmoScope = SELECTED, config: ToolGmo.Config = {}
 
 /** Run one tool through the real registry. */
 function runTool(mounted: Mounted, name: string, args: unknown): Promise<ToolResult> {
-  return mounted.ctx.tools.execute({
+  return executeToolFixture(mounted.ctx, {
     signal: new AbortController().signal,
     callId: ToolCallId(`call-${String(++counter)}`),
     name,
@@ -322,9 +325,7 @@ describe('listing the results a model may ask about', () => {
       [GMO_ROWS]: { result: RESULT },
     }
     for (const name of GMO_TOOLS) {
-      expect(tools.executionMode({
-        signal: new AbortController().signal, callId: ToolCallId(`call-mode-${name}`), name, arguments: valid[name],
-      }), name).toEqual({ kind: 'parallel' })
+      expect(tools.get(name)?.isConcurrencySafe?.(valid[name]), name).toBe(true)
     }
   })
 })
@@ -586,6 +587,7 @@ describe('the projection a client reads', () => {
     ctx.provide('agents', { currentInitiator: () => undefined, get: () => undefined })
     await ctx.plugin(SystemPrompt)
     await ctx.plugin(ToolRuntime)
+    await ctx.plugin(NativeExecutor)
     await ctx.plugin(ToolGmo, ToolGmo.Config({}))
     if (registered === undefined) throw new Error('the GMO unit did not register')
     const definition = registered as {

@@ -1,5 +1,5 @@
-/* Sidebar column (figma 133:7629): vertical stack, padding 12/6, sidebar
-   fill + 1px right border painted by the layout column. Collapse is a
+/* Sidebar column: vertical stack, padding 8/6, sidebar
+   fill and desktop divider painted by the layout column. Collapse is a
    slide + crossfade, not a morph: the content holds its frozen expanded
    layout (inline width set by the component) and fades in place (.fading)
    while the sliding column (AppFrame grid tracks) clips it; the rail layout
@@ -7,7 +7,10 @@
    mid-slide. */
 
 .root {
-  --dsh-sidebar-inline-padding: 12px;
+  --dsh-sidebar-inline-padding: 8px;
+  --dsh-sidebar-row-padding: 12px;
+  --dsh-sidebar-label-gap: 6px;
+  --dsh-sidebar-paint-inset: 3px;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -20,6 +23,10 @@
      scrollbar uses the l2 pair. .quietBars hides it without changing layout. */
   --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2);
   --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
+}
+
+:global([data-animating]:not([data-dragging])) .root {
+  transition: width var(--ds-transition-duration-slow) var(--ds-ease-in-out);
 }
 
 /* macOS desktop: the AppFrame column owns the translucent sidebar tint; an
@@ -55,7 +62,7 @@
 }
 
 :global([data-windows-titlebar]) .root:not(.collapsed) .brand {
-  padding-left: 4px;
+  padding-left: 8px;
 }
 
 :global([data-windows-titlebar]) .brandIdentity {
@@ -173,6 +180,10 @@
   padding: 0 12px 2px;
 }
 
+:global(html[data-platform='darwin']:not([data-fullscreen])) .root:not(.collapsed) > .topStrip > .toggle {
+  transform: translateX(4px);
+}
+
 /* Window fullscreen hides the traffic lights (html[data-fullscreen], desktop
    preload): the toggle takes their spot at the strip's left edge. */
 :global([data-fullscreen]) .topStrip {
@@ -186,7 +197,8 @@
   margin-top: -12px;
 }
 
-/* Logo row (figma pad (4,8,4,8)): expanded keeps the panel toggle at the
+/* Logo row: 8px vertical and leading padding, with no trailing padding or
+   bottom margin. Expanded keeps the panel toggle at the
    right edge; the rail gives every control the same base left anchor before
    the shared entry translation is applied. macOS hiddenInset titlebar: the row
    is marked `data-window-drag` in markup (SidebarRoot), so ui-web base.css's
@@ -204,8 +216,8 @@
   justify-content: flex-end;
   gap: 8px;
   height: 60px;
-  padding: 8px 0 8px 4px;
-  margin-bottom: 4px;
+  padding: 8px 0 8px 8px;
+  margin-bottom: 0;
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -294,8 +306,10 @@
   color: var(--dsw-alias-label-secondary);
 }
 
-.iconButton:hover {
-  background: var(--dsw-alias-interactive-bg-hover);
+@media (hover: hover) {
+  .iconButton:hover {
+    background-color: var(--dsw-alias-interactive-bg-hover);
+  }
 }
 
 /* The toggle is flush with .logoRow, which clips its own overflow, so an outward ring loses
@@ -319,12 +333,14 @@
   display: none;
 }
 
-.collapsed .toggle:hover .panelIcon {
-  display: inline;
-}
+@media (hover: hover) {
+  .collapsed .toggle:hover .panelIcon {
+    display: inline;
+  }
 
-.collapsed .toggle:hover .railMark {
-  display: none;
+  .collapsed .toggle:hover .railMark {
+    display: none;
+  }
 }
 
 .railMark {
@@ -340,6 +356,8 @@
 }
 
 .panelList {
+  grid-column: 2;
+  grid-row: 2;
   flex: none;
   display: flex;
   flex-direction: column;
@@ -353,14 +371,16 @@
 .panelRow {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 0 2px;
-  min-height: 36px;
-  padding: 7px 8px;
+  gap: var(--dsh-sidebar-label-gap);
+  margin: 0;
+  min-height: 32px;
+  padding: 5px calc(var(--dsh-sidebar-row-padding) - var(--dsh-sidebar-paint-inset));
   box-sizing: border-box;
   border: none;
+  border-inline: var(--dsh-sidebar-paint-inset) solid transparent;
   border-radius: var(--dsw-radius-md);
   background: transparent;
+  background-clip: padding-box;
   color: var(--dsw-alias-label-primary);
   font: inherit;
   line-height: 22px;
@@ -368,13 +388,10 @@
   cursor: pointer;
 }
 
-.panelRow:hover {
-  background: var(--dsw-alias-interactive-bg-hover);
-}
-
-.panelRow.panelActive {
-  background: var(--dsw-alias-interactive-bg-hover);
-  color: var(--dsw-alias-label-primary);
+@media (hover: hover) {
+  .panelRow:hover {
+    background-color: var(--dsw-alias-interactive-bg-hover);
+  }
 }
 
 .panelRow:focus-visible {
@@ -389,7 +406,7 @@
 }
 
 .panelRow[aria-expanded='true'] {
-  background: var(--dsw-alias-interactive-bg-hover);
+  background-color: var(--dsw-alias-interactive-bg-hover);
 }
 
 .moreMenu {
@@ -416,23 +433,107 @@
   margin-bottom: 12px;
 }
 
+.collapsed .panelEntry {
+  border-inline: 0;
+}
+
 .collapsed .panelRow {
   width: 36px;
   height: 36px;
   justify-content: center;
   margin: 0;
+  border-inline: 0;
+  background-clip: border-box;
   padding: 0;
   color: var(--dsw-alias-label-primary);
 }
 
-/* Region column: the one scroll region for the two browsing sections
-   (sidebar.workspaces, then sidebar.recent), always mounted so the foot never
-   moves. Its trailing margin cancels the wide shell inset so the scrollbar
-   sits 2px in from the sidebar edge; the stable gutter (ui-theme's
-   --dsh-scrollbar-width) plus the remaining padding restore that inset for
-   the rows, with or without overflow, so revealing the thumb never moves a
-   row. The frame keeps the bottom fade outside the scroll clip. */
-.regionFrame {
+/* macOS: the themed elevated fill reads as a foreign slab on the vibrancy
+   sidebar; a white wash sits in the glass like native macOS sidebar
+   controls. Dark keeps the same white ink at lower alpha. */
+:global([data-platform='darwin']) :where(.root:not([role='dialog'])) .newSession {
+  background: rgb(255 255 255 / 0.55);
+}
+
+@media (hover: hover) {
+  :global([data-platform='darwin']) :where(.root:not([role='dialog'])) .newSession:hover {
+    background: rgb(255 255 255 / 0.3);
+  }
+}
+
+:global([data-platform='darwin']) :global([data-ds-dark-theme]) :where(.root:not([role='dialog'])) .newSession {
+  background: rgb(255 255 255 / 0.15);
+}
+
+@media (hover: hover) {
+  :global([data-platform='darwin']) :global([data-ds-dark-theme]) :where(.root:not([role='dialog'])) .newSession:hover {
+    background: rgb(255 255 255 / 0.2);
+  }
+}
+
+.collapsed .newSession {
+  align-self: flex-start;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  margin: 0 0 12px;
+  gap: 0;
+  border-color: transparent;
+  background: transparent;
+}
+
+@media (hover: hover) {
+  .collapsed .newSession:hover {
+    background-color: var(--dsw-alias-interactive-bg-hover);
+  }
+}
+
+.newSessionLabel {
+  max-width: 200px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.collapsed .newSessionLabel {
+  max-width: 0;
+}
+
+.newSessionLabelMask { flex: 1; min-width: 0; }
+
+.newSession:focus-visible .newSessionLabelMask:has(+ .newSessionShortcut) {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, black calc(100% - 16px), transparent);
+}
+
+@media (hover: hover) {
+  .newSession:hover .newSessionLabelMask:has(+ .newSessionShortcut) {
+    overflow: hidden;
+    mask-image: linear-gradient(to right, black calc(100% - 16px), transparent);
+  }
+}
+.newSessionContent { display: flex; width: 100cqw; align-items: center; justify-content: center; gap: 6px; }
+.newSessionContent > svg { flex: none; }
+
+.newSessionShortcut {
+  opacity: 0;
+  display: inline-flex;
+  flex: none;
+  pointer-events: none;
+  font-weight: 400;
+}
+
+.newSession:focus-visible .newSessionShortcut {
+  opacity: 1;
+}
+
+@media (hover: hover) {
+  .newSession:hover .newSessionShortcut {
+    opacity: 1;
+  }
+}
+
+.scrollRegion {
+  margin-top: 4px;
   position: relative;
   flex: 1;
   min-height: 0;
@@ -440,60 +541,91 @@
   flex-direction: column;
 }
 
-.regionArea {
-  --dsh-sidebar-scrollbar-offset: 2px;
+/* The workspace section is `100cqh` of this bounded region, one viewport tall without a resize observer. */
+.root:not(.collapsed) .scrollRegion {
+  container-type: size;
+}
+
+/* Both gaps scroll away; ordinary rows do not force overflow when they fit. The
+   trailing column keeps content 8px from the sidebar edge; this viewport draws no
+   scrollbar of its own. */
+.scrollArea {
   flex: 1;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 4px minmax(0, 1fr) calc(var(--dsh-sidebar-inline-padding) - 2px);
+  grid-template-rows: 8px max-content 2px max-content;
+  align-content: start;
   margin-left: -4px;
-  margin-right: calc(var(--dsh-sidebar-scrollbar-offset) - var(--dsh-sidebar-inline-padding));
-  padding-left: 4px;
-  padding-right: calc(
-    var(--dsh-sidebar-inline-padding)
-    - var(--dsh-scrollbar-width)
-    - var(--dsh-sidebar-scrollbar-offset)
-  );
+  margin-right: calc(2px - var(--dsh-sidebar-inline-padding));
+  overflow-x: hidden;
   overflow-y: auto;
-  scrollbar-gutter: stable;
 }
 
-/* Clears the bottom fade: at scroll end the last row sits above the
-   gradient instead of under it. */
-.regionArea::after {
+/* Expanded, this viewport only scrolls the navigation away; the section below
+   scrolls its own rows and draws the only visible scrollbar. Descendants query
+   the scroll state to take scrolling once this viewport ends. */
+.root:not(.collapsed) .scrollArea {
+  container-type: scroll-state;
+  scrollbar-width: none;
+}
+
+/* Safari versions without `scrollbar-width` still use the WebKit scrollbar. */
+.root:not(.collapsed) .scrollArea::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollArea::before,
+.scrollArea::after {
   content: '';
-  flex: none;
-  height: 16px;
+  grid-column: 2;
+  pointer-events: none;
 }
 
-/* Bottom fade: compact overlay pinned to the region's visible bottom,
-   transparent -> sidebar fill so it tracks the theme. */
-.regionFade {
+.scrollArea::before { grid-row: 1; }
+.scrollArea::after { grid-row: 3; }
+
+.scrollFade {
   position: absolute;
-  left: 0;
-  right: 0;
+  inset-inline: 0;
   bottom: 0;
   height: 24px;
   background: linear-gradient(to bottom, transparent, var(--dsw-specific-sidebar-fill));
   pointer-events: none;
 }
 
+:global([data-platform='darwin']) .scrollFade,
+.collapsed .scrollFade,
+.collapsed .scrollArea::before,
+.collapsed .scrollArea::after {
+  display: none;
+}
+
+.collapsed .scrollRegion {
+  margin-top: 0;
+}
+
+.collapsed .scrollArea {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+}
+
+
+/* The workspace seat stays mounted while its wide and rail bodies change. */
+.regionArea {
+  grid-column: 2;
+  grid-row: 4;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .collapsed .regionArea {
-  margin-left: 0;
-  margin-right: 0;
-  padding-left: 0;
-  padding-right: 0;
-  scrollbar-gutter: auto;
-}
-
-/* macOS desktop: the sidebar is translucent over window vibrancy, so the
-   opaque fill gradient would paint a solid smear instead of a fade. */
-:global([data-platform='darwin']) .regionFade {
-  display: none;
-}
-
-.collapsed .regionFade {
-  display: none;
+  flex: 1;
 }
 
 /* Footer seats: additive actions stack above Settings. Each occupant owns its
@@ -527,6 +659,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  :global([data-animating]:not([data-dragging])) .root,
   .wide,
   .fading > *,
   .railIn .iconButton,

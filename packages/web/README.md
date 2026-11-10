@@ -27,8 +27,6 @@ Eight packages play the web roles; the subsystem reference owns the exhaustive v
 | Package | Role | ctx key |
 |---|---|---|
 | [`web/`](web/README.md) | Search/fetch service: search and fetch URLs through interchangeable backends, one selection and error policy | `ctx.web` |
-| [`web-search-exa/`](web-search-exa/README.md) | Searches the web through Exa | registers on `ctx.web` |
-| [`web-search-perplexity/`](web-search-perplexity/README.md) | Searches the web through Perplexity | registers on `ctx.web` |
 | [`web-search-deepseek/`](web-search-deepseek/README.md) | Searches through DeepSeek Messages | registers on `ctx.web` |
 | [`web-deepseek-api/`](web-deepseek-api/README.md) | Searches and fetches pages through the DeepSeek Search and Fetch APIs | registers on `ctx.web` |
 | [`web-search-team/`](web-search-team/README.md) | Team Runner: searches through the company Control Plane with the device token | registers on `ctx.web` |
@@ -43,7 +41,7 @@ Eight packages play the web roles; the subsystem reference owns the exhaustive v
 
 Start with the subsystem reference for the shared vocabulary, then the design decision behind the single provider-selection service.
 
-- [Web subsystem](../../docs/subsystems/web.md) — the search/fetch requests and results, provider availability, `WebError`, and public-address enforcement.
+- [Web subsystem](../../docs/subsystems/web.md) — the search/fetch requests and results, provider availability, `WebError`, and the fetch network policy.
 - [Web capability seam decision](../../.agents/notes/implemented/architecture/2026-06-24-web-capability-seam.md) — why search and fetch share one provider-selection service.
 
 <a id="dev-note"></a>

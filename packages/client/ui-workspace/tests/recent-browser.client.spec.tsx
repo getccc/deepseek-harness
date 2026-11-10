@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 import type { GlobalStandardProps, PropsRenderSlots } from '@deepseek-ai/dsh-client-ui-slots'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { createSnapshotStore } from '@deepseek-ai/dsh-client-store'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import {
-  allowAllAccess, bindSnapshotSelector, makeTranslate, SlotTestRuntime, usePinnedBrowserLanguages,
+  allowAllAccess, bindSnapshotSelector, contextMenuHook, makeTranslate, SlotTestRuntime, usePinnedBrowserLanguages,
 } from '@deepseek-ai/dsh-client-test-runtime'
+import * as ContextMenus from '@deepseek-ai/dsh-client-ui-context-menu/client'
 import { apply, inject } from '@deepseek-ai/dsh-client-ui-workspace/client'
 import type { SessionListState, SessionSummary } from '@deepseek-ai/dsh-api-session-controller/client'
 import type { WorkspaceSnapshot } from '@deepseek-ai/dsh-api-workspace-controller/client'
@@ -18,6 +19,7 @@ import type { RecentBrowserProps, SessionRowSeats } from '../src/client/contract
 import { createWorkspaceViewStore } from '../src/client/stores.ts'
 import { RecentBrowser } from '../src/client/rows/RecentBrowser.tsx'
 import { zh } from '../src/client/locales.ts'
+import { SECTION_HOOK_CONTEXT, SECTION_INJECT } from './section-scroller.client.ts'
 
 // The assembled case asserts the shipped Chinese copy through the locale service.
 usePinnedBrowserLanguages('zh-CN')
@@ -79,6 +81,9 @@ function mount(overrides: Partial<RecentBrowserProps> = {}) {
     requestSessionRename: vi.fn(),
     notifyArchivedNotOpenable: vi.fn(),
     useRowSeats: hook(noSeats),
+    useContextMenu: contextMenuHook(),
+    useContextMenuTarget: hook(null),
+    renderFactorySlot: () => null,
     t,
     ...overrides,
   }
@@ -170,17 +175,9 @@ describe('RecentBrowser', () => {
     expect(renderSlot).not.toHaveBeenCalledWith(
       'sidebar.workspaces.session.row.action', expect.objectContaining({ sessionId: sid('chat-blank') }),
     )
-    // The row menu renders the menu-item seat with the menu's open state as hook context.
-    fireEvent.click(screen.getByRole('button', { name: '会话“chat-a”的操作' }))
-    expect(screen.getByRole('menuitem', { name: 'Seat action' })).toBeTruthy()
-    expect(renderSlot).toHaveBeenCalledWith(
-      'sidebar.workspaces.session.menu.item',
-      { sessionId: sid('chat-a'), displayTitle: 'chat-a' },
-      { hookContext: [true, expect.any(Function)] },
-    )
-    expect(b.props.open).not.toHaveBeenCalled()
-
-    fireEvent.doubleClick(screen.getByText('chat-a'))
+    const title = screen.getByText('chat-a')
+    fireEvent.mouseDown(title, { detail: 1 })
+    fireEvent.doubleClick(title)
     expect(b.props.requestSessionRename).toHaveBeenCalledExactlyOnceWith(sid('chat-a'), 'chat-a')
   })
 
@@ -203,7 +200,7 @@ describe('RecentBrowser', () => {
 function SidebarFrame({ renderSlot }: PropsRenderSlots<'sidebar.workspaces' | 'sidebar.recent' | 'shell.overlay'>) {
   return (
     <>
-      {renderSlot('sidebar.workspaces', { wide: true, expandSidebar: () => {} })}
+      {renderSlot('sidebar.workspaces', { wide: true, expandSidebar: () => {} }, { hookContext: SECTION_HOOK_CONTEXT })}
       {renderSlot('sidebar.recent', { wide: true, expandSidebar: () => {} })}
       {renderSlot('shell.overlay', {})}
     </>
@@ -213,6 +210,7 @@ function SidebarFrame({ renderSlot }: PropsRenderSlots<'sidebar.workspaces' | 's
 describe('RecentBrowser assembled with the Workspace browser', () => {
   it('renders the shipped row actions through the seats the browser shares', async () => {
     const runtime = await SlotTestRuntime.create()
+    onTestFinished(() => runtime.dispose())
     runtime.ctx.provide('shortcuts', { register: () => () => {}, catalog: createSnapshotStore([]) })
     runtime.ctx.provide('layout', { selectPanel: vi.fn(), beginNavigation: () => new AbortController().signal })
     runtime.releaseWorkspaceSource()
@@ -224,23 +222,23 @@ describe('RecentBrowser assembled with the Workspace browser', () => {
     await runtime.sessions.add({ id: sid('c1'), summary: { title: 'Chat title', displayTitle: 'Chat title' } })
     await runtime.root.declare(
       {
-        'sidebar.workspaces': { kind: 'single', scope: 'root' },
+        'sidebar.workspaces': { kind: 'single', scope: 'root', inject: SECTION_INJECT },
         'sidebar.recent': { kind: 'single', scope: 'root' },
         'shell.overlay': { kind: 'list', scope: 'root' },
       } as never,
       SidebarFrame as never,
     )
+    await runtime.mount(ContextMenus)
     await runtime.mount({ inject: [...inject], apply })
     const view = runtime.renderRoot()
 
     const row = (await view.findByText('Chat title')).closest('[role="treeitem"]')!
     fireEvent.click(within(row as HTMLElement).getByLabelText('会话“Chat title”的操作'))
-    expect(view.getAllByRole('menuitem').map(item => item.textContent)).toEqual([
-      '置顶会话', '重命名', '分叉会话', '归档会话', '复制 Session ID',
+    expect((await view.findAllByRole('menuitem')).map(item => item.textContent)).toEqual([
+      '置顶会话', '重命名', '分叉会话', '复制 Session ID', '归档会话',
     ])
     // The rename row raises the overlay dialog the tree's rows use.
     fireEvent.click(view.getByRole('menuitem', { name: '重命名' }))
     expect(((await view.findByLabelText('会话名称')) as HTMLInputElement).value).toBe('Chat title')
-    await runtime.dispose()
   })
 })

@@ -1,6 +1,6 @@
 /** Team member identity and actions at the bottom of the Runner sidebar. */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   IconEllipsisOutlineRegular, IconSettingsOutlineRegular, Menu,
 } from '@deepseek-ai/dsh-client-ui-primitives'
@@ -78,7 +78,6 @@ export function TeamAccountLauncher({
   // The menu lines up with the member row itself, whose negative margins make
   // it wider than the wrapper the Menu would otherwise measure.
   const launcherRef = useRef<HTMLButtonElement>(null)
-  const launcherRect = useCallback(() => launcherRef.current?.getBoundingClientRect() ?? null, [])
 
   useEffect(() => {
     let live = true
@@ -103,7 +102,7 @@ export function TeamAccountLauncher({
         align="start"
         portal
         matchAnchorWidth={wide}
-        getAnchorRect={launcherRect}
+        anchorRef={launcherRef}
         items={[
           { id: 'settings', label: t('settings'), icon: <IconSettingsOutlineRegular /> },
           { id: 'change-password', label: t('changePassword'), icon: <PasswordIcon /> },

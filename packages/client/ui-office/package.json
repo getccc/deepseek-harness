@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-client-ui-office",
   "description": "The composer chip choosing which office deliverable this conversation should produce: Word, PowerPoint, the Welinkin PowerPoint template, or Excel",
-  "version": "0.2.1-rc.3",
+  "version": "0.2.2-rc.1",
   "publishConfig": {
     "access": "public"
   },
@@ -58,7 +58,6 @@
     "@deepseek-ai/dsh-office": "workspace:*",
     "@deepseek-ai/dsh-session": "workspace:*",
     "@deepseek-ai/dsh-tool-office": "workspace:*",
-    "@types/react": "~18.3.1",
     "react": "^18.2.0",
     "clsx": "^2.1.1"
   },

@@ -9,6 +9,32 @@ import { deepEqualJson } from '@deepseek-ai/dsh-util-values'
 import { DeepSeekAdapter } from './adapter.ts'
 import { ChatCompletionsAdapter, type ChatCompletionsAdapterOptions } from './chat-completions/adapter.ts'
 import type { DeepSeekAdapterOptions, DeepSeekConnectionOptions } from './types.ts'
+import { ModelListingCache, type ListingCacheDependencies } from './listing-cache.ts'
+
+/**
+ * Own a route's listing refreshes, stderr diagnostics, and catalog-change notifications.
+ * @param ctx - provider plugin lifetime.
+ * @param owner - plugin name used in diagnostics.
+ * @param provider - route whose catalog changes.
+ * @param dependencies - current configuration, credentials, and listing transport.
+ * @returns the cache, disposed with the provider after its active work settles.
+ */
+export function createModelListingCache(
+  ctx: Context, owner: string, provider: string,
+  dependencies: Pick<ListingCacheDependencies, 'settings' | 'credential' | 'load'>,
+): ModelListingCache {
+  const tag = `[${owner}]`
+  const cache = new ModelListingCache({
+    ...dependencies,
+    now: () => Date.now(),
+    // ACP reserves stdout for protocol messages, including during successful catalog loads.
+    info: (message) => { console.error(tag, message) },
+    warn: (message) => { console.warn(tag, message) },
+    changed: () => { ctx.emit('llm/models-updated', provider) },
+  })
+  ctx.effect(() => () => cache.dispose(), `${owner}: model listing`)
+  return cache
+}
 
 /** The Host services both adapters read per request: attachments, image access, and request extensions. */
 function hostServices(ctx: Context): Pick<DeepSeekAdapterOptions,

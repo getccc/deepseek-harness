@@ -10,11 +10,10 @@
  */
 
 import { createRequire } from 'node:module'
-import { readFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import type { Context } from '@deepseek-ai/cordis'
 import { serveStatic } from '@deepseek-ai/dsh-host-frontend-static'
-import type { WebRoute } from '@deepseek-ai/dsh-host-webserver'
+import type { WebResourceRoute } from '@deepseek-ai/dsh-host-webserver'
 
 /** Stable Cordis plugin name. */
 export const name = 'team-admin-app'
@@ -44,39 +43,18 @@ export function apply(ctx: Context): void {
   const distIndex = distIndexPath()
   const distRoot = dirname(distIndex)
 
-  /**
-   * The console's page, anchored at the address it is served under.
-   *
-   * The application is built with relative asset URLs so the same files mount
-   * anywhere; a request for the prefix without a trailing slash would resolve
-   * those one directory too high, and the base element settles it for both.
-   */
-  const renderIndex = async (): Promise<string> => {
-    const page = await readFile(distIndex, 'utf8')
-    return page.replace(/<head(?:\s[^>]*)?>/iu, open => `${open}<base href="${CONSOLE_PREFIX}/">`)
-  }
-
-  const console: WebRoute = {
+  const console: WebResourceRoute = {
     kind: 'prefix',
     path: CONSOLE_PREFIX,
-    handler: async (req, res) => {
-      if (req.method !== 'GET' && req.method !== 'HEAD') {
-        res.writeHead(405)
-        res.end()
-        return
-      }
-      /* v8 ignore next -- node:http always supplies url on server requests. */
-      const url = new URL(req.url ?? '/', 'http://dsh.invalid')
-      const within = decodeURIComponent(url.pathname).slice(CONSOLE_PREFIX.length)
-      await serveStatic(
-        within === '' ? '/' : within,
-        res,
+    resource: (request) => {
+      const url = new URL(request.url)
+      url.pathname = url.pathname.slice(CONSOLE_PREFIX.length) || '/'
+      return serveStatic(
+        new Request(url, { method: request.method, headers: request.headers }),
         distRoot,
         distIndex,
-        // The page is public; every view it renders asks the API, and the API
-        // is where a session is required.
-        () => true,
-        renderIndex,
+        () => undefined,
+        page => page.replace(/<head(?:\s[^>]*)?>/iu, open => `${open}<base href="${CONSOLE_PREFIX}/">`),
       )
     },
   }

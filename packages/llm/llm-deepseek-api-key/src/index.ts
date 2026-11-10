@@ -10,16 +10,16 @@
  * @module @deepseek-ai/dsh-llm-deepseek-api-key
  */
 import { FiberState, type Context } from '@deepseek-ai/cordis'
-import { APP_IDENTITY, assertUsableApiKey, LlmError } from '@deepseek-ai/dsh-llm'
-import type { AdapterRegistrationHandle, LlmAdapter, ResolvedRetryPolicy } from '@deepseek-ai/dsh-llm'
+import { APP_IDENTITY, LlmError } from '@deepseek-ai/dsh-llm'
+import type { AdapterRegistrationHandle, LlmAdapter, LlmModelBadge, ResolvedRetryPolicy } from '@deepseek-ai/dsh-llm'
 import type {} from '@deepseek-ai/cordis-plugin-loader'
 import type {} from '@deepseek-ai/dsh-credentials'
 import type {} from '@deepseek-ai/dsh-llm-http-transport'
 import { launchEnvironmentOf } from '@deepseek-ai/dsh-launch-environment'
 import { deepEqualJson } from '@deepseek-ai/dsh-util-values'
 import {
-  BUILT_IN_PROVIDER, catalogModelInfo, createBuiltInAdapter, createDeepSeekAdapter, ModelListingCache, refuseListedModel,
-  requestModelListing, resolveListedCatalog,
+  BUILT_IN_PROVIDER, catalogModelInfo, createBuiltInAdapter, createDeepSeekAdapter, createModelListingCache,
+  deepSeekApiKeyConfigured, refuseListedModel, requestModelListing, resolveDeepSeekApiKey, resolveListedCatalog,
 } from '@deepseek-ai/dsh-llm-deepseek'
 import type { CatalogRefusal, DeepSeekCatalogModel, ListingView, ModelListing } from '@deepseek-ai/dsh-llm-deepseek'
 import { Config, plainOptions, resolveAdapterOptions } from './config.ts'
@@ -46,6 +46,8 @@ interface OfficialConnection extends ResolvedDeepSeekOptions {
   readonly offered: readonly DeepSeekCatalogModel[]
   /** Listed models refused before network I/O, by id. */
   readonly refusals: ReadonlyMap<string, CatalogRefusal>
+  /** Listed badges of offered models, by id; empty without a followed listing. */
+  readonly badges: ReadonlyMap<string, LlmModelBadge>
 }
 
 /**
@@ -77,14 +79,8 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   options()
   const resolveApiKey = async (connection: ResolvedDeepSeekOptions): Promise<string> => {
     const ref = connection.apiKeyEnv
-    const credentials = ctx.get('credentials')
-    if (credentials !== undefined) {
-      const hit = await credentials.resolve(ref)
-      if (hit !== undefined) return assertUsableApiKey(hit.value, 'llm-deepseek', ref)
-    } else {
-      const ambient = launchEnvironmentOf(ctx).get(ref)
-      if (ambient !== undefined && ambient.value.length > 0) return assertUsableApiKey(ambient.value, 'llm-deepseek', ref)
-    }
+    const key = await resolveDeepSeekApiKey(ctx, ref)
+    if (key !== undefined) return key
     throw new LlmError(
       `llm-deepseek: no API key for provider route "${PROVIDER}"; store ${ref} through the credentials`
       + ` service (the web Models page writes it), or export ${ref} in the launching environment`,
@@ -99,18 +95,15 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
       throw error
     }
   }
-  const listings = new ModelListingCache({
+  const listings = createModelListingCache(ctx, name, PROVIDER, {
+    settings: () => options().listing,
     credential: async () => presentApiKey(options()),
     load: (url, apiKey, signal) => requestModelListing(url, { 'x-api-key': apiKey }, signal),
-    now: () => Date.now(),
-    // ACP reserves stdout for protocol messages, including during successful catalog loads.
-    info: (message) => { console.error(LOG_TAG, message) },
-    warn: (message) => { console.warn(LOG_TAG, message) },
   })
   let reportedListing: ModelListing | undefined
-  /** Resolve the catalog of one operation, reporting each listing's hidden entries once. */
+  /** Resolve the catalog, reporting each listing's hidden entries and dropped badges once. */
   const connectionOf = (connection: ResolvedDeepSeekOptions, view: ListingView | undefined): OfficialConnection => {
-    if (view === undefined) return { ...connection, offered: connection.models, refusals: new Map() }
+    if (view === undefined) return { ...connection, offered: connection.models, refusals: new Map(), badges: new Map() }
     const catalog = resolveListedCatalog({
       listing: view.listing?.entries,
       supported: connection.models,
@@ -122,7 +115,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
       reportedListing = view.listing
       for (const problem of catalog.problems) console.warn(LOG_TAG, problem)
     }
-    return { ...connection, models: catalog.resolution, offered: catalog.offered, refusals: catalog.refusals }
+    return { ...connection, models: catalog.resolution, offered: catalog.offered, refusals: catalog.refusals, badges: catalog.badges }
   }
   // The declaration outlives the route: it is what keeps the Models card and
   // the first-run key prompt reachable while the route below is dormant.
@@ -165,19 +158,14 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
         }
         throw error
       }
-      return view.authenticated ? connectionOf(connection, view).offered.map(model => catalogModelInfo(provider, model)) : []
+      if (!view.authenticated) return []
+      const { offered, badges } = connectionOf(connection, view)
+      return offered.map(model => catalogModelInfo(provider, model, badges.get(model.id)))
     },
   }), retryPolicy)
   // Whether the member route's reference resolves right now, read from the
   // same two planes `resolveApiKey` reads: the credentials seam when mounted,
   // otherwise the launching environment alone.
-  const keyConfigured = async (): Promise<boolean> => {
-    const ref = options().apiKeyEnv
-    const credentials = ctx.get('credentials')
-    if (credentials !== undefined) return (await credentials.describe(ref)).configured
-    const ambient = launchEnvironmentOf(ctx).get(ref)
-    return ambient !== undefined && ambient.value.length > 0
-  }
   let memberKeyConfigured = false
   const syncMember = (): void => { member(memberKeyConfigured ? [PROVIDER] : []) }
   // Credential lookups are asynchronous and may overlap: the latest one owns
@@ -185,7 +173,7 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
   let evaluation = 0
   const reevaluateMemberRoute = async (): Promise<void> => {
     const generation = ++evaluation
-    const configured = await keyConfigured()
+    const configured = await deepSeekApiKeyConfigured(ctx, options().apiKeyEnv)
     if (generation !== evaluation || INACTIVE_STATES.has(ctx.fiber.state)) return
     memberKeyConfigured = configured
     syncMember()
@@ -234,7 +222,6 @@ export async function apply(ctx: Context, config: Config): Promise<void> {
     syncBuiltIn?.()
     reevaluateInBackground()
   })
-  ctx.effect(() => () => { listings.dispose() }, 'llm-deepseek-api-key: model listing')
   // Loading completes only once the route set is known, so a request issued
   // right after the plugin's own await never lands in an unregistered window.
   await reevaluateMemberRoute()

@@ -163,7 +163,18 @@ describe('web e2e: experimental Auto and Full access confirmation', () => {
     const snapshot = await captureStableAria(page, '[role="dialog"]', scaffold.workspaceCwd)
     await compareOrRefreshGolden(UI_EXPECTED, snapshot, MODE)
 
-    await dialog.getByRole('checkbox', { name: '我已了解风险，并愿意继续' }).check()
+    const acknowledgement = dialog.getByRole('checkbox', { name: '我已了解风险，并愿意继续' })
+    expect(await acknowledgement.evaluate((input) => {
+      const label = input.closest('label')!
+      const textStyle = getComputedStyle(label)
+      const inputStyle = getComputedStyle(input)
+      return {
+        focused: document.activeElement === input,
+        fontSize: textStyle.fontSize, lineHeight: textStyle.lineHeight, weight: textStyle.fontWeight,
+        gap: textStyle.gap, width: inputStyle.width, height: inputStyle.height,
+      }
+    })).toEqual({ focused: true, fontSize: '14px', lineHeight: '20px', weight: '400', gap: '6px', width: '14px', height: '14px' })
+    await dialog.getByText('我已了解风险，并愿意继续', { exact: true }).click()
     expect(await enable.isEnabled()).toBe(true)
     await enable.click()
     await expect.poll(() => access.getAttribute('aria-label'), { timeout: 10_000 })
