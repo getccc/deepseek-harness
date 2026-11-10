@@ -6,12 +6,9 @@
  * mid-slide. At settle the wide-only content unmounts and the upper
  * controls enter the 56px rail from the same horizontal offset (one icon each,
  * same top-down order) on one fade that ends with the slide. The bottom-pinned
- * settings control only fades. The region column between global panel rows
- * and the foot is the shell's one scroll region: it stacks the
- * `sidebar.workspaces` registrant's Workspace tree over the `sidebar.recent`
- * registrant's Recent list, and the foot holds `sidebar.settings` plus
- * `sidebar.footer.action`; the shell hands them the wide flag (plus an
- * expand request callback for the two regions).
+ * settings control only fades. The outer viewport scrolls the navigation away
+ * before the workspace scroller moves. The shell places `sidebar.recent`
+ * after the workspace rows in that scroller when it has an outlet.
  *
  * The column also owns whether its scroll region draws a scrollbar at all:
  * the shell tracks the pointer and rebinds ui-theme's scrollbar indirection
@@ -19,6 +16,7 @@
  * no bar.
  */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import clsx from 'clsx'
 import {
   WeWorkLogo, IconAppsAddOutlineRegular, IconFolderOpenOutlineRegular, IconNewChatOutlineRegular, IconPanelLeftOutlineRegular,
@@ -212,10 +210,12 @@ export function SidebarRoot({
   const windowsTitlebar = document.documentElement.hasAttribute('data-windows-titlebar')
   const wide = drawer || (windowsTitlebar ? !collapsed : !collapsed || !settled)
   const [scrollHandoff] = useState(createScrollHandoff)
+  const [recentOutlet, bindRecentOutlet] = useState<HTMLDivElement | null>(null)
   const sectionHookContext = useMemo<SidebarSectionHookContext>(
     () => ({ useSectionScroller: scrollHandoff.useSectionScroller }), [scrollHandoff],
   )
   const expandSidebar = (): void => { if (collapsed) toggleSidebar() }
+  const recent = renderSlot('sidebar.recent', { wide, expandSidebar })
   // The Windows titlebar hosts the start controls while the sidebar is collapsed.
   const openNewSession = (): void => {
     trackEntryClick({ menu_name: 'new_session', position: windowsTitlebar && collapsed ? 'titlebar' : 'sidebar' })
@@ -446,9 +446,10 @@ export function SidebarRoot({
           <div className={css.regionArea}>
             {renderSlot('sidebar.workspaces', {
               wide,
-              expandSidebar: () => { if (collapsed) toggleSidebar() },
+              expandSidebar,
+              bindRecentOutlet,
             }, { hookContext: sectionHookContext })}
-            {renderSlot('sidebar.recent', { wide, expandSidebar })}
+            {recentOutlet === null ? recent : createPortal(recent, recentOutlet)}
           </div>
         </div>
         <span className={css.scrollFade} aria-hidden="true" />

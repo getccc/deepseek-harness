@@ -1,3 +1,6 @@
+- navigation "全局面板":
+  - button "定时任务"
+  - button "插件"
 - banner:
   - navigation "会话层级": Reply exactly CHAT_PRESET_REQUEST_OK and
   - text: 聊天模式

@@ -3,9 +3,9 @@
 - button "New work task"
 - button "New chat"
 - navigation "Global panels":
-  - button "Plugins"
   - button "Automation tasks"
   - button "Unpin Automation tasks from sidebar"
+  - button "Plugins"
   - button "More"
 - text: Workspaces
 - button "Search sessions"

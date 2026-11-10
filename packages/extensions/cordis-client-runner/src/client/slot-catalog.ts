@@ -4356,7 +4356,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     ],
     replaceRisk: 'none',
     example: 'return {\n  inject: [\'slots\'],\n  apply(ctx) {\n    ctx.slots.inject(\'sidebar.footer.action\', () => ctx.slots.register(\n      { name: \'sidebar.footer.action\', id: \'my-entry\', order: 100, label: \'My entry\' },\n      () => React.createElement(\'div\', null, \'hello\'),\n    ))\n  },\n}',
-    source: 'packages/client/ui-sidebar/src/client/contract/slots.ts:83',
+    source: 'packages/client/ui-sidebar/src/client/contract/slots.ts:82',
   },
   {
     key: 'sidebar.panellist',
@@ -4473,13 +4473,15 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     key: 'sidebar.recent',
     kind: 'single',
     scope: 'root',
-    summary: 'The Recent list below the Workspace tree, inside the same shell-owned scrolling region column.',
-    doc: 'The Recent list below the Workspace tree, inside the same shell-owned\nscrolling region column. Declared by this package\'s \'sidebar\' entry;\nui-workspace registers the list. Same owner share as the tree.',
+    summary: 'The Recent list after the Workspace rows.',
+    doc: 'The Recent list after the Workspace rows. The sidebar renders it in the\nworkspace occupant\'s scrollport when the occupant supplies an outlet.',
     registerOptions: [],
     ownerProps: [
-      '/**\n * Owner share of the browser and Recent holes — the only facts crossing the\n * shell/region boundary. Business data and actions arrive through each\n * region\'s own inject.\n */\nexport interface SidebarSectionOwnerProps {\n  /** Shell fold-state output: wide renders the full section, rail the icon column (or nothing). */\n  wide: boolean\n  /** Ensure the sidebar is visible; safe to call while already expanded. */\n  expandSidebar: () => void\n}',
+      '/**\n * Column state and expansion shared by the Workspace and Recent entries.\n */\nexport interface SidebarSectionOwnerProps {\n  /** Shell fold-state output: wide renders the full section, rail the icon column (or nothing). */\n  wide: boolean\n  /** Ensure the sidebar is visible; safe to call while already expanded. */\n  expandSidebar: () => void\n}',
     ],
-    ownerPropsReferences: [],
+    ownerPropsReferences: [
+      'Workspace',
+    ],
     standardProps: [
       'useRemoteAccess: (action: RemoteEndpoint) => boolean',
       'useResource: UseResource',
@@ -4501,7 +4503,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     ],
     replaceRisk: 'shadows-shipped-ui',
     example: 'return {\n  inject: [\'slots\'],\n  apply(ctx) {\n    ctx.slots.inject(\'sidebar.recent\', () => ctx.slots.register(\n      { name: \'sidebar.recent\' },\n      () => React.createElement(\'div\', null, \'hello\'),\n    ))\n  },\n}',
-    source: 'packages/client/ui-sidebar/src/client/contract/slots.ts:72',
+    source: 'packages/client/ui-sidebar/src/client/contract/slots.ts:71',
   },
   {
     key: 'sidebar.right.pane.tab',
@@ -5374,7 +5376,7 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     ],
     replaceRisk: 'shadows-shipped-ui',
     example: 'return {\n  inject: [\'slots\'],\n  apply(ctx) {\n    ctx.slots.inject(\'sidebar.settings\', () => ctx.slots.register(\n      { name: \'sidebar.settings\' },\n      () => React.createElement(\'div\', null, \'hello\'),\n    ))\n  },\n}',
-    source: 'packages/client/ui-sidebar/src/client/contract/slots.ts:78',
+    source: 'packages/client/ui-sidebar/src/client/contract/slots.ts:77',
   },
   {
     key: 'sidebar.toggle.badge',
@@ -5416,9 +5418,11 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     doc: 'The workspace/session browsing region: section header, search, the\ngrouped/flat session list, and every workspace dialog. Declared by this\npackage\'s \'sidebar\' entry (declaring is claiming); ui-workspace\nregisters the browser. The section renders inside the sidebar viewport,\nwhich is a size container one viewport tall and a scroll-state container,\nand binds its own vertical scroller through `useSectionScroller`.',
     registerOptions: [],
     ownerProps: [
-      '/**\n * Owner share of the browser and Recent holes — the only facts crossing the\n * shell/region boundary. Business data and actions arrive through each\n * region\'s own inject.\n */\nexport interface SidebarSectionOwnerProps {\n  /** Shell fold-state output: wide renders the full section, rail the icon column (or nothing). */\n  wide: boolean\n  /** Ensure the sidebar is visible; safe to call while already expanded. */\n  expandSidebar: () => void\n}',
+      '/** Owner share for the workspace browser. */\nexport interface SidebarWorkspaceOwnerProps extends SidebarSectionOwnerProps {\n  /** Attach an outlet after the workspace rows for the shell\'s Recent list. */\n  readonly bindRecentOutlet?: RefCallback<HTMLDivElement>\n}',
     ],
-    ownerPropsReferences: [],
+    ownerPropsReferences: [
+      'SidebarSectionOwnerProps',
+    ],
     standardProps: [
       'useRemoteAccess: (action: RemoteEndpoint) => boolean',
       'useResource: UseResource',

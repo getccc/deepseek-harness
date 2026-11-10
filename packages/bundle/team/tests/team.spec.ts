@@ -88,13 +88,10 @@ describe('dsh-team bundle', () => {
     }
   })
 
-  it('offers members no plugin browsing: neither the Plugins page nor the More menus', () => {
-    // The More menus need the Plugins page's navigation; left enabled they
-    // would wait for it forever instead of activating.
+  it('inherits the Plugins page and keeps navigation entries directly visible', () => {
     const patch = patchRows()
-    for (const id of ['ui-plugin-manager', 'entry-customization']) {
-      expect(patch.find(row => row.id === id)?.disabled, id).toBe(true)
-    }
+    expect(patch.find(row => row.id === 'ui-plugin-manager')?.disabled).not.toBe(true)
+    expect(patch.find(row => row.id === 'entry-customization')?.disabled).toBe(true)
   })
 
   it('sends web search through the Control Plane and keeps fetch local', () => {

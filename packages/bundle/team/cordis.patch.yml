@@ -107,15 +107,8 @@
   config:
     welcomeNoticeVersion: '2026-09-28.1'
 
-# Members do not install or switch the Runner's plugins: the deployment
-# composes them. Without this row the sidebar has no Plugins entry, and the
-# configuration cards that live only on that page do not register.
-- id: ui-plugin-manager
-  disabled: true
-
-# The More menus of the sidebar, Conversation View tabs, and guide only browse
-# plugins and draft a Creator plugin, which the missing Plugins page backs.
-# Without their actions every panel and View stays visible in its region.
+# Team keeps panel and View entries directly visible. The Web layer supplies
+# the Plugins page as a sidebar entry.
 - id: entry-customization
   disabled: true
 

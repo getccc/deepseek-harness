@@ -159,8 +159,6 @@ describe('web e2e: knowledge panels', () => {
     tripwire = watchConsole(page)
     await page.goto(scaffold.authenticatedUrl, { waitUntil: 'load' })
     await page.waitForSelector('[class*="frame"]', { timeout: 30_000 })
-    expect(await page.getByRole('navigation', { name: '全局面板' }).getByRole('button').allTextContents())
-      .toEqual(['插件', '定时任务', '知识库', '知识检索', '更多'])
   }, 180_000)
 
   afterAll(async () => {
@@ -171,6 +169,9 @@ describe('web e2e: knowledge panels', () => {
 
   it('lists the authorized knowledge bases, the documents in one, and one document', async () => {
     onTestFailed(async () => { await saveFailureShot(page, 'knowledge-panels-browse') })
+    const panels = page.getByRole('navigation', { name: '全局面板' }).getByRole('button').filter({ hasText: /\S/u })
+    await expect.poll(() => panels.allTextContents(), { timeout: 10_000 })
+      .toEqual(['定时任务', '知识库', '知识检索', '插件', '更多'])
     await page.getByRole('button', { name: '知识库', exact: true }).click()
     await page.getByText('临港智慧园区知识库').waitFor({ timeout: 15_000 })
     await page.getByText('南昌制造基地知识库').waitFor()

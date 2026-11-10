@@ -167,7 +167,7 @@ export function apply(ctx: ClientContext): void {
     yield ctx.slots.inject('sidebar.panellist', () => ctx.slots.register({
       name: 'sidebar.panellist',
       id: PANEL_ID,
-      order: 0,
+      order: 40,
       label: () => t('panel'),
       locale: NS,
     }, PluginsPanelIcon))

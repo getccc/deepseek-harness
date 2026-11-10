@@ -1,5 +1,7 @@
 # Sidebar session list scrollbar
 
+- Section order inside the scroll area: Sessions → Recent
+
 ## Light palette
 
 - --dsh-scrollbar-thumb, pointer outside the sidebar: rgba(0, 0, 0, 0)

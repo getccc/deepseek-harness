@@ -3,8 +3,9 @@
 - button "新建工作任务": 新工作任务
 - button "新建对话": 新对话
 - navigation "全局面板":
-  - button "插件"
   - button "定时任务"
+  - button "从侧边栏取消固定定时任务"
+  - button "插件"
   - button "更多"
 - text: 工作区
 - button "搜索会话"

@@ -2,7 +2,7 @@
  * Sidebar slot contract: the registrant-side props composition for the
  * layout-owned `sidebar` slot, plus the holes this shell declares. The shell
  * owns column geometry, the brand row, the New chat and New work task
- * entries, global panel rows, and the one scrolling region column; the
+ * entries, global panel rows, and the outer scrolling viewport; the
  * Workspace tree in that column is the `sidebar.workspaces` registrant's
  * (ui-workspace), the Recent list below it is the `sidebar.recent`
  * registrant's (ui-workspace), and the foot is the `sidebar.settings`
@@ -60,14 +60,13 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
     'sidebar.workspaces': {
       kind: 'single'
       scope: 'root'
-      owner: SidebarSectionOwnerProps
+      owner: SidebarWorkspaceOwnerProps
       hookContext: SidebarSectionHookContext
       inject: SidebarSectionInjected
     }
     /**
-     * The Recent list below the Workspace tree, inside the same shell-owned
-     * scrolling region column. Declared by this package's 'sidebar' entry;
-     * ui-workspace registers the list. Same owner share as the tree.
+     * The Recent list after the Workspace rows. The sidebar renders it in the
+     * workspace occupant's scrollport when the occupant supplies an outlet.
      */
     'sidebar.recent': { kind: 'single'; scope: 'root'; owner: SidebarSectionOwnerProps }
     /**
@@ -146,15 +145,19 @@ export interface SidebarPanelActionsOwnerProps {
 }
 
 /**
- * Owner share of the browser and Recent holes — the only facts crossing the
- * shell/region boundary. Business data and actions arrive through each
- * region's own inject.
+ * Column state and expansion shared by the Workspace and Recent entries.
  */
 export interface SidebarSectionOwnerProps {
   /** Shell fold-state output: wide renders the full section, rail the icon column (or nothing). */
   wide: boolean
   /** Ensure the sidebar is visible; safe to call while already expanded. */
   expandSidebar: () => void
+}
+
+/** Owner share for the workspace browser. */
+export interface SidebarWorkspaceOwnerProps extends SidebarSectionOwnerProps {
+  /** Attach an outlet after the workspace rows for the shell's Recent list. */
+  readonly bindRecentOutlet?: RefCallback<HTMLDivElement>
 }
 
 /** Sidebar viewport capability handed to the `sidebar.workspaces` occupant. */

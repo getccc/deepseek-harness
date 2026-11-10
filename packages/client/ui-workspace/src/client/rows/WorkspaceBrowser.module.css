@@ -1,11 +1,22 @@
-/* The region takes its natural height inside the shell's scrolling region
-   column (SidebarRoot.module.css .regionArea owns the scroll clip, the
-   scrollbar gutter, and the bottom fade). */
 .root {
+  --workspace-toolbar-height: 36px;
+  --workspace-toolbar-gap: 0px;
+  position: relative;
   flex: none;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+}
+
+/* One viewport leaves only the navigation to scroll in the outer region. */
+.root:not(.rail) {
+  max-height: 100cqh;
+}
+
+/* Empty results keep the toolbar docked when search is open. */
+.root:not(.rail):has(.searchExpanded) {
+  height: 100cqh;
 }
 
 .iconButton {
@@ -336,6 +347,7 @@
   margin-right: calc(2px - var(--dsh-sidebar-inline-padding));
   padding-left: 4px;
   padding-right: calc(var(--dsh-sidebar-inline-padding) - var(--dsh-scrollbar-width) - 2px);
+  padding-bottom: 16px;
   overflow-x: hidden;
   overflow-y: auto;
   scrollbar-gutter: stable;
@@ -367,9 +379,7 @@
   from { opacity: 0; }
 }
 
-/* List: natural height; the shell's region column is the one scroll clip
-   and reserves the scrollbar gutter, so rows end at the shell's right inset
-   with or without overflow. */
+/* Workspace rows precede Recent in the section scroller. */
 .list {
   flex: none;
 }

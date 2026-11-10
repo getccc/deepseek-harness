@@ -27,15 +27,15 @@ dsh Web 客户端的侧边栏让用户识别当前构建、开始新对话或新
 <a id="use-this-package"></a>
 ## 使用本包
 
-侧边栏是导航外壳。用户可以看到品牌、开始新对话与新工作任务、折叠轨道并打开 Settings。ui-workspace 填充 `sidebar.workspaces` 与 `sidebar.recent`，ui-settings 在 `sidebar.settings` 注册入口和设置面板。两个浏览席位都位于导航视口内。Workspace 树有独立滚动区，最近列表在视口中紧随其后。
+侧边栏是导航外壳。用户可以看到品牌、开始新对话与新工作任务、折叠轨道并打开 Settings。ui-workspace 填充 `sidebar.workspaces` 与 `sidebar.recent`，ui-settings 在 `sidebar.settings` 注册入口和设置面板。外层视口先滚走面板导航，随后在工作区工具栏下滚动工作区会话和紧随其后的「最近」列表。「最近」有独立的标题和筛选。向上滚动时，共用列表先回到顶部，面板导航随后重新出现。
 
 ### 品牌、新对话与新工作任务
 
-展开的品牌行将 `sidebar.brand.mark` 与 `sidebar.brand.name` 渲染为两个独立的 single slot。收起轨道渲染同一个标志 slot。在 Web 和 Windows 桌面端，点击展开态的品牌会新建工作任务。席位默认使用企业微信标志及其本地化名称。新工作任务排在新对话之前。**新对话**通过 `uiWorkspace.startChat()` 开始一个没有 Workspace 的对话。**新工作任务**依次使用当前操作指定的 Workspace、当前 Session 所属的 Workspace 或最近活跃的 Workspace。没有可用的 Workspace 时，它会打开空白的 New Session 页面。品牌快捷入口、新工作任务行和 macOS 标题栏控件通过 `aria-keyshortcuts` 提供 New Session 命令当前有效的绑定。折叠轨道和 macOS 标题栏的提示按平台键位样式显示该绑定。
+展开的品牌行将 `sidebar.brand.mark` 与 `sidebar.brand.name` 渲染为两个独立的 single slot。收起轨道渲染同一个标志 slot。在 Web 和 Windows 桌面端，点击展开态的品牌会新建工作任务。各语言的席位均默认使用 WeWork 标志和名称。新工作任务排在新对话之前。**新对话**通过 `uiWorkspace.startChat()` 开始一个没有 Workspace 的对话。**新工作任务**依次使用当前操作指定的 Workspace、当前 Session 所属的 Workspace 或最近活跃的 Workspace。没有可用的 Workspace 时，它会打开空白的 New Session 页面。品牌快捷入口、新工作任务行和 macOS 标题栏控件通过 `aria-keyshortcuts` 提供 New Session 命令当前有效的绑定。折叠轨道和 macOS 标题栏的提示按平台键位样式显示该绑定。
 
 ### 全局面板入口
 
-插件在 root 作用域的 `sidebar.panellist` list 中注册图标组件，提供 `id`、可选 `order`，以及字符串或 locale-aware 的 `label`。同一个 id 寻址布局中 root 作用域 `main` keyed slot 的组件；选择不存在的主面板条目会抛错，并保留当前选中态。标签提供普通可见文字、无障碍名称和折叠提示。展开态导航行高 32px，间距为 2px；折叠窄栏控件保持 36px 高和 12px 间距。每一行通过 `usePanelInfo` 读取自己的选中态；DOM 焦点移到搜索框或目录选择器时，显示的面板及其列表项选中态不变。没有面板注册项时，列表及其间距均不渲染。产品随附的组合不注册示例面板。
+插件在 root 作用域的 `sidebar.panellist` list 中注册图标组件，提供 `id`、可选 `order`，以及字符串或 locale-aware 的 `label`。同一个 id 寻址布局中 root 作用域 `main` keyed slot 的组件；选择不存在的主面板条目会抛错，并保留当前选中态。标签提供普通可见文字、无障碍名称和折叠提示。展开态导航行高 32px，间距为 2px，包括新建会话控件与第一个面板之间的间距；折叠窄栏控件保持 36px 高和 12px 间距。每一行通过 `usePanelInfo` 读取自己的选中态；DOM 焦点移到搜索框或目录选择器时，显示的面板及其列表项选中态不变。没有面板注册项时，列表及其间距均不渲染。产品随附的组合不注册示例面板。
 
 root 作用域的 `sidebar.panellist.actions` list 有注册项时，导航区域的面板行之后显示面板行样式的**更多**按钮；收起的窄栏以提示框显示其名称。它打开的菜单以该 list 的注册项为菜单行。每个注册项接收 `entries`（按注册顺序的可自定义面板，含 `id`、`label`、`pinned` 与 `active`；不含插件管理）、选中面板的 `onOpen(id)`、`onPinnedChange(id, pinned)`，以及关闭菜单的 `onDismiss()`。侧边栏在内存中保存所有会话共用的已收起面板 id 列表；插件管理入口始终显示。更多按钮显示时，展开态中除插件管理外的面板行在悬停或键盘聚焦时显示取消固定操作；不支持悬停的设备始终显示该操作。图标默认颜色与会话置顶标记一致，提示为“从左侧栏取消固定”。侧栏和更多菜单入口遵循相同的注册排序，不按固定时间重排。默认更多菜单在插件浏览和创建之前仅列出未固定的面板；打开面板不会将其固定，独立的固定图标则将该行放回侧边栏并关闭菜单。插件重新加载时选择重置，不读取旧 localStorage 值。收起只隐藏导航行，且仅在更多按钮显示时生效；`sidebar.panellist.actions` 没有注册项时，所有已注册的面板行重新显示。主面板、其注册和当前选中态不变。未注册面板的 id 保留在内存列表中，直到插件重新加载。
 
@@ -55,7 +55,7 @@ root 作用域的 `sidebar.panellist.actions` list 有注册项时，导航区�
 
 ### 滚动条
 
-栏内的滚动条是一种指针可供性：只要指针不在栏内，外壳就把滚动条间接层重新绑定为 `transparent`；指针离开后滑块再保留 2 秒，因此没人指向的列表不会带着滚动条。避免行位移的空间预留属于外壳的区域列，所以显示滑块不会引起重排。
+指针离开侧栏 2 秒后，外壳把滚动条颜色绑定为 `transparent`，隐藏滑块。列表滚动区始终预留滚动条槽位，滑块显示时行的位置保持稳定。
 
 ### 点击埋点
 
@@ -79,6 +79,8 @@ root 作用域的 `sidebar.panellist.actions` list 有注册项时，导航区�
 ### slot 纪律
 
 声明感知的 `slots.inject()` 让替换包无论先于还是后于侧边栏激活都能生效。页脚承载 `sidebar.settings` 席位：侧边栏只渲染固定在底部的布局 slot，并共享其栏状态（`wide`）。`/client` 导出接口只包含插件主体（`apply`/`inject`）及约定类型；SidebarRoot、行组件与树派生仍由 slot 注册封装在包内。
+
+`sidebar.workspaces` 的注册项可以把可选的 `bindRecentOutlet` ref 绑定到列表行后面的元素。元素挂载期间，侧边栏在其中渲染 `sidebar.recent`。没有这个元素时，侧边栏把「最近」放在外层视口的工作区 slot 之后。
 
 </details>
 

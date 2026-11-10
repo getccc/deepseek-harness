@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import type { Browser, Page } from 'playwright'
 import { chromium } from 'playwright'
-import { afterAll, beforeAll, describe, expect, it, onTestFailed } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, onTestFailed, onTestFinished } from 'vitest'
 import {
   assertFixtureInventory, compareOrRefreshGolden, launchWebScaffold, seedSession, watchConsole,
   webSnapshotMode, type WebScaffold,
@@ -25,6 +25,7 @@ const SEED_COUNT = 24
 
 /** Geometry and resolved scrollbar style of one scroll container, measured in the page. */
 interface ListMetrics {
+  sectionNames: string[]
   gutter: string
   width: string
   track: string
@@ -56,15 +57,11 @@ interface ListMetrics {
  */
 function measureList(page: Page): Promise<ListMetrics> {
   return page.evaluate(() => {
-    // The sidebar shell owns the one scroll region above the session tree
-    // and the Recent list; the tree locates it, the region is what scrolls.
-    const tree = document.querySelector<HTMLElement>('[role="tree"][aria-label="Sessions"]')
-    if (tree === null) throw new Error('sidebar session list not in the DOM')
-    const list = tree.closest<HTMLElement>('[class*="regionArea"]')
-    if (list === null) throw new Error('sidebar scroll region not in the DOM')
-    const time = tree.querySelector<HTMLElement>('[class*="time"]')
+    const list = document.querySelector<HTMLElement>('[data-sidebar-list-area]')
+    if (list === null) throw new Error('sidebar session list not in the DOM')
+    const time = list.querySelector<HTMLElement>('[class*="time"]')
     if (time === null) throw new Error('no row relative-time element in the sidebar list')
-    const row = tree.querySelector<HTMLElement>('[role="treeitem"]')
+    const row = list.querySelector<HTMLElement>('[role="treeitem"]')
     if (row === null) throw new Error('no row in the sidebar list')
     // Use one probe per variable because computed style declarations are live;
     // the color property also normalizes palette syntax.
@@ -98,9 +95,10 @@ function measureList(page: Page): Promise<ListMetrics> {
     const pseudoWidth = getComputedStyle(list, '::-webkit-scrollbar').width
     const barWidth = pseudoWidth === 'auto' ? 15 : Number.parseFloat(pseudoWidth)
     const listRect = list.getBoundingClientRect()
-    const sidebarEdge = list.closest<HTMLElement>('[class*="root"]')?.getBoundingClientRect().right
+    const sidebarEdge = list.closest('[class*="sidebarCol"]')?.getBoundingClientRect().right
     if (sidebarEdge === undefined) throw new Error('sidebar session list has no layout parent')
     return {
+      sectionNames: [...list.querySelectorAll('[role="tree"]')].map(section => section.getAttribute('aria-label') ?? ''),
       gutter: style.scrollbarGutter,
       width: pseudoWidth,
       track: getComputedStyle(list, '::-webkit-scrollbar-track').backgroundColor,
@@ -137,14 +135,12 @@ function measureList(page: Page): Promise<ListMetrics> {
  */
 function measureRowInset(page: Page): Promise<Pick<ListMetrics, 'overflows' | 'rowEdgeInset' | 'rowPaintInset'>> {
   return page.evaluate(() => {
-    const tree = document.querySelector<HTMLElement>('[role="tree"][aria-label="Sessions"]')
-    if (tree === null) throw new Error('sidebar session list not in the DOM')
-    const list = tree.closest<HTMLElement>('[class*="regionArea"]')
-    if (list === null) throw new Error('sidebar scroll region not in the DOM')
-    const row = tree.querySelector<HTMLElement>('[role="treeitem"]')
+    const list = document.querySelector<HTMLElement>('[data-sidebar-list-area]')
+    if (list === null) throw new Error('sidebar session list not in the DOM')
+    const row = list.querySelector<HTMLElement>('[role="treeitem"]')
     if (row === null) throw new Error('no row in the sidebar list')
-    const sidebarEdge = list.closest<HTMLElement>('[class*="root"]')?.getBoundingClientRect().right
-    if (sidebarEdge === undefined) throw new Error('sidebar scroll region has no sidebar column')
+    const sidebarEdge = list.closest('[class*="sidebarCol"]')?.getBoundingClientRect().right
+    if (sidebarEdge === undefined) throw new Error('sidebar session list has no layout parent')
     return {
       overflows: list.scrollHeight > list.clientHeight,
       rowEdgeInset: sidebarEdge - row.getBoundingClientRect().right,
@@ -212,6 +208,8 @@ function renderGeometry(light: PaletteMetrics, dark: PaletteMetrics): string {
   return [
     '# Sidebar session list scrollbar',
     '',
+    `- Section order inside the scroll area: ${light.hovered.sectionNames.join(' → ')}`,
+    '',
     ...palette('Light palette', light),
     ...palette('Dark palette', dark),
   ].join('\n').trimEnd()
@@ -226,8 +224,8 @@ function renderGeometry(light: PaletteMetrics, dark: PaletteMetrics): string {
  */
 function resolveThumb(page: Page): Promise<string> {
   return page.evaluate(() => {
-    const list = document.querySelector<HTMLElement>('[role="tree"][aria-label="Sessions"]')?.closest<HTMLElement>('[class*="regionArea"]')
-    if (list === null || list === undefined) throw new Error('sidebar scroll region not in the DOM')
+    const list = document.querySelector<HTMLElement>('[data-sidebar-list-area]')
+    if (list === null) throw new Error('sidebar session list not in the DOM')
     const probe = document.createElement('span')
     probe.style.color = 'var(--dsh-scrollbar-thumb)'
     list.append(probe)
@@ -245,12 +243,12 @@ const NO_THUMB = 'rgba(0, 0, 0, 0)'
  * column reveals its scrollbars from real pointer movement, so a scenario that
  * never moves the mouse measures the quiet state whatever it intended to.
  * @param page - the page under test.
- * @param where - `list` to point at the sidebar scroll region, `away` for the far side
+ * @param where - `list` to point at the session list, `away` for the far side
  * of the viewport (the conversation column).
  */
 async function pointAt(page: Page, where: 'list' | 'away'): Promise<void> {
-  const box = await page.locator('[class*="regionArea"]').boundingBox()
-  if (box === null) throw new Error('sidebar scroll region has no layout box')
+  const box = await page.locator('[data-sidebar-list-area]').boundingBox()
+  if (box === null) throw new Error('sidebar session list has no layout box')
   const viewport = page.viewportSize()
   if (viewport === null) throw new Error('page has no viewport')
   const target = where === 'list'
@@ -308,8 +306,8 @@ function nestedScrollGeometry(page: Page) {
       listScroll: list.scrollTop,
       listRange: list.scrollHeight - list.clientHeight,
       headerTop: edge('[data-sidebar-workspace-header]').top,
-      navBottom: edge('[class*="panelList"]').bottom,
-      buttonTop: edge('button[class*="newSession"]').top,
+      navBottom: viewport.querySelector('nav')!.getBoundingClientRect().bottom,
+      buttonTop: edge('button[aria-label="New chat"]').top,
       footerTop: edge('[class*="footArea"]').top,
     }
   })
@@ -411,7 +409,7 @@ describe('web e2e: sidebar session list scrollbar (reserved gutter / themed thum
     // leaves the column quiet. This is the one deliberate loss, and
     // it is pinned here rather than only described, so making a scroll
     // re-reveal the bar has to be a decision rather than a side effect.
-    await page.locator('[class*="regionArea"]').evaluate((el) => { el.scrollTop += 200 })
+    await page.locator('[data-sidebar-list-area]').evaluate((el) => { el.scrollTop += 200 })
     await page.waitForTimeout(500)
     expect(await resolveThumb(page)).toBe(NO_THUMB)
     await pointAt(page, 'list')
@@ -475,7 +473,7 @@ describe('web e2e: sidebar session list scrollbar (reserved gutter / themed thum
       await page.setViewportSize({ width: size.width, height: 500 })
       await resetNestedScroll(page)
       const before = await nestedScrollGeometry(page)
-      await pointInto(page, '[data-sidebar-scrollport] [class*="panelList"]')
+      await pointInto(page, '[data-sidebar-scrollport] nav')
       await page.mouse.wheel(0, before.viewportRange + 30)
       await expect.poll(async () => (await nestedScrollGeometry(page)).listScroll).toBe(30)
       expect((await nestedScrollGeometry(page)).viewportScroll).toBe(before.viewportRange)
@@ -484,6 +482,69 @@ describe('web e2e: sidebar session list scrollbar (reserved gutter / themed thum
       await resetNestedScroll(page)
     }
     expect(tripwire.pageErrors).toEqual([])
+  }, 60_000)
+
+  it('keeps Recent after the workspace rows and reaches it in the same scroll area', async () => {
+    const view = await newEnglishPage(browser, 500)
+    onTestFinished(() => view.close())
+    onTestFailed(() => saveFailureShot(view, 'web-e2e-sidebar-scrollbar-recent'))
+    await view.goto(scaffold.authenticatedUrl, { waitUntil: 'load' })
+    await expandSeededSessions(view)
+    const list = view.locator('[data-sidebar-list-area]')
+    const workspaces = list.getByRole('tree', { name: 'Sessions', exact: true })
+    const recent = list.getByRole('tree', { name: 'Recent', exact: true })
+    await list.getByRole('button', { name: 'Filter', exact: true }).click()
+    await view.getByRole('menuitem', { name: 'All', exact: true }).click()
+    await expect.poll(() => recent.getByRole('treeitem').count()).toBe(SEED_COUNT)
+    await resetNestedScroll(view)
+    const before = await nestedScrollGeometry(view)
+    expect(before.viewportRange).toBeGreaterThan(0)
+    expect(before.listRange).toBeGreaterThan(0)
+    const workspaceBox = (await workspaces.boundingBox())!
+    expect((await recent.boundingBox())!.y).toBeGreaterThanOrEqual(workspaceBox.y + workspaceBox.height)
+    await pointInto(view, '[data-sidebar-scrollport] nav')
+    await view.mouse.wheel(0, before.viewportRange + before.listRange)
+    await expect.poll(async () => (await nestedScrollGeometry(view)).listScroll).toBe(before.listRange)
+    const atBottom = await nestedScrollGeometry(view)
+    expect(atBottom.headerTop).toBe(atBottom.viewportTop)
+    const lastRecent = (await recent.getByRole('treeitem').last().boundingBox())!
+    const listBox = (await list.boundingBox())!
+    expect(lastRecent.y).toBeGreaterThanOrEqual(listBox.y)
+    expect(lastRecent.y + lastRecent.height).toBeLessThanOrEqual(listBox.y + listBox.height)
+  }, 60_000)
+
+  it('moves the navigation away before a touch scroll moves the workspace rows', async () => {
+    const view = await browser.newPage({
+      viewport: { width: 390, height: 600 }, locale: 'en-US', isMobile: true, hasTouch: true, reducedMotion: 'reduce',
+    })
+    onTestFinished(() => view.close())
+    onTestFailed(() => saveFailureShot(view, 'web-e2e-sidebar-scroll-touch'))
+    await view.goto(scaffold.authenticatedUrl, { waitUntil: 'load' })
+    await view.getByRole('button', { name: 'Open sidebar', exact: true }).tap()
+    await expandSeededSessions(view)
+    await resetNestedScroll(view)
+    const before = await nestedScrollGeometry(view)
+    expect(before.viewportRange).toBeGreaterThan(60)
+    expect(before.listRange).toBeGreaterThan(100)
+    const list = (await view.locator('[data-sidebar-list-area]').boundingBox())!
+    const viewport = (await view.locator('[data-sidebar-scrollport]').boundingBox())!
+    const cdp = await view.context().newCDPSession(view)
+    const swipe = (distance: number) => cdp.send('Input.synthesizeScrollGesture', {
+      x: list.x + list.width / 2,
+      y: (list.y + viewport.y + viewport.height) / 2,
+      yDistance: -distance,
+      gestureSourceType: 'touch',
+      preventFling: true,
+    })
+    await swipe(40)
+    await expect.poll(async () => (await nestedScrollGeometry(view)).viewportScroll).toBeGreaterThan(0)
+    expect((await nestedScrollGeometry(view)).listScroll).toBe(0)
+    await swipe(before.viewportRange + 30)
+    await expect.poll(async () => (await nestedScrollGeometry(view)).viewportScroll).toBe(before.viewportRange)
+    const docked = await nestedScrollGeometry(view)
+    expect(docked.headerTop).toBe(docked.viewportTop)
+    await swipe(100)
+    await expect.poll(async () => (await nestedScrollGeometry(view)).listScroll).toBeGreaterThan(docked.listScroll)
   }, 60_000)
 
   it('keeps the toolbar at the top through empty search results', async () => {

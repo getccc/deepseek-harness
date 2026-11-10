@@ -2,7 +2,6 @@
 
 /** Simplified Chinese dictionary (the key-set source of truth). */
 export const zh = {
-  'brand.localBuild': '企业微信',
   'panels.unpinTooltip': '从左侧栏取消固定',
   'panels.unpin': '从侧边栏取消固定{name}',
   'chat.new': '新对话',
@@ -21,7 +20,6 @@ export type SidebarKey = keyof typeof zh
 
 /** English dictionary, checked complete against the zh key set. */
 export const en = {
-  'brand.localBuild': 'WeWork',
   'panels.unpinTooltip': 'Unpin from left sidebar',
   'panels.unpin': 'Unpin {name} from sidebar',
   'chat.new': 'New chat',
@@ -37,7 +35,6 @@ export const en = {
 
 /** Japanese copy, checked against the English keys. */
 export const ja = {
-  'brand.localBuild': 'WeWork',
   'work.new': '新しい作業タスク',
   'work.new.label': '新しい作業タスク',
   'chat.new': '新しいチャット',
@@ -53,7 +50,6 @@ export const ja = {
 
 /** Spanish dictionary, checked against the English keys. */
 export const es = {
-  'brand.localBuild': 'WeWork',
   'work.new': 'Nueva tarea de trabajo',
   'work.new.label': 'Nueva tarea de trabajo',
   'chat.new': 'Nuevo chat',
@@ -69,7 +65,6 @@ export const es = {
 
 /** French dictionary, checked against the English keys. */
 export const fr = {
-  'brand.localBuild': 'WeWork',
   'work.new': 'Nouvelle tâche',
   'work.new.label': 'Nouvelle tâche',
   'chat.new': 'Nouvelle discussion',
@@ -85,7 +80,6 @@ export const fr = {
 
 /** German dictionary, checked against the English keys. */
 export const de = {
-  'brand.localBuild': 'WeWork',
   'work.new': 'Neue Arbeitsaufgabe',
   'work.new.label': 'Neue Arbeitsaufgabe',
   'chat.new': 'Neuer Chat',
@@ -101,7 +95,6 @@ export const de = {
 
 /** Russian dictionary, checked against the English keys. */
 export const ru = {
-  'brand.localBuild': 'WeWork',
   'work.new': 'Новая рабочая задача',
   'work.new.label': 'Новая рабочая задача',
   'chat.new': 'Новый чат',
@@ -117,7 +110,6 @@ export const ru = {
 
 /** Portuguese dictionary, checked against the English keys. */
 export const pt = {
-  'brand.localBuild': 'WeWork',
   'work.new': 'Nova tarefa de trabalho',
   'work.new.label': 'Nova tarefa de trabalho',
   'chat.new': 'Nova conversa',

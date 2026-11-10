@@ -2,8 +2,8 @@
  * The workspace/session browsing region filling the sidebar shell's
  * `sidebar.workspaces` hole: section header (title + view options + add
  * workspace), search, the grouped tree or flat list, and the workspace
- * dialogs. The region takes its natural height: the shell's region column
- * scrolls it together with the Recent list below. Wide state renders the
+ * dialogs. The expanded list scroller includes the Recent section after the
+ * workspace rows and keeps the toolbar above both. Wide state renders the
  * full browser; rail state renders the two region icons (search / add
  * workspace) as 36px controls on the shell's shared rail entry path, each
  * requesting expansion through the owner share. Adding is the header
@@ -900,6 +900,7 @@ export function WorkspaceBrowser({
   wide,
   usePanelInfo,
   expandSidebar,
+  bindRecentOutlet,
   useSectionScroller,
   useSessions,
   useSessionStatus,
@@ -1362,8 +1363,7 @@ export function WorkspaceBrowser({
         </Tooltip>
       </div>}
 
-      {/* Always-mounted seat keeps the region's place in the shell's scroll
-          column while the list itself is wide-only. */}
+      {/* The workspace rows and Recent share the scrollbar below the toolbar. */}
       <div ref={wide ? bindScrollerRef : undefined} className={css.listArea} data-sidebar-list-area="">
         {wide && (normalizedQuery !== ''
           ? (
@@ -1439,6 +1439,7 @@ export function WorkspaceBrowser({
                 t={t}
               />
             ))}
+        {wide && bindRecentOutlet !== undefined && <div ref={bindRecentOutlet} />}
       </div>
 
       {workspaceActionRequest !== null && <WorkspaceDialogs key={`${workspaceActionRequest.action}/${workspaceActionRequest.workspaceId}`}

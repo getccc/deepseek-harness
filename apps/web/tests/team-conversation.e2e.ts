@@ -2,7 +2,7 @@
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { chromium, type Browser, type Page } from 'playwright'
-import { afterAll, beforeAll, describe, expect, it, onTestFailed, vi } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, onTestFailed, onTestFinished, vi } from 'vitest'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import type {} from '@deepseek-ai/dsh-agent-preset-registry'
 import type {} from '@deepseek-ai/dsh-tool-web'
@@ -72,6 +72,35 @@ describe('Team conversation layout', () => {
     if (failures.length > 0) throw new AggregateError(failures, 'Team conversation teardown failed')
   })
 
+  it('shows WeWork, aligns the panel list, and opens Plugins on desktop and mobile', async () => {
+    const view = await browser!.newPage({ locale: 'zh-CN', viewport: { width: 1500, height: 940 } })
+    onTestFinished(() => view.close())
+    onTestFailed(() => saveFailureShot(view, 'team-sidebar-navigation'))
+    await view.route('**/team/account', route => route.fulfill({
+      json: { loginName: 'layout-member', displayName: 'Layout Member' },
+    }))
+    for (const width of [1500, 390]) {
+      await view.setViewportSize({ width, height: 940 })
+      await view.goto(scaffold!.authenticatedUrl, { waitUntil: 'load' })
+      if (width === 390) await view.getByRole('button', { name: '打开侧边栏', exact: true }).click()
+      await view.getByText('WeWork', { exact: true }).waitFor()
+      const chat = view.getByRole('button', { name: '新建对话', exact: true })
+      const panels = view.getByRole('navigation', { name: '全局面板' })
+      const tasks = panels.getByRole('button', { name: '定时任务', exact: true })
+      await expect.poll(async () => {
+        const [chatBox, tasksBox] = await Promise.all([chat.boundingBox(), tasks.boundingBox()])
+        if (chatBox === null || tasksBox === null) return null
+        return {
+          visible: tasksBox.x >= 0 && tasksBox.x + tasksBox.width <= width,
+          aligned: tasksBox.x === chatBox.x,
+          gap: tasksBox.y - chatBox.y - chatBox.height,
+        }
+      }).toEqual({ visible: true, aligned: true, gap: 2 })
+      await panels.getByRole('button', { name: '插件', exact: true }).click()
+      await view.getByRole('heading', { name: '插件', exact: true }).waitFor()
+    }
+  })
+
   it('keeps the opening identity above the running status on wide and narrow screens', async () => {
     const view = page!
     onTestFailed(() => saveFailureShot(view, 'team-conversation-layout'))
@@ -105,7 +134,8 @@ describe('Team conversation layout', () => {
     expect(request?.data.header.tools?.map(tool => tool.name).sort()).toEqual(['web_fetch', 'web_search'])
     await view.getByText('CHAT_PRESET_REQUEST_OK', { exact: true }).waitFor()
     expect(await view.getByRole('button', { name: /联网/u }).count()).toBe(0)
-    const snapshot = await captureStableAria(view, '[class*="centerCol"]', scaffold!.workspaceCwd)
-    await compareOrRefreshGolden(EXPECTED, snapshot, webSnapshotMode())
+    const panels = await captureStableAria(view, '[data-sidebar-scrollport] > nav', scaffold!.workspaceCwd)
+    const conversation = await captureStableAria(view, '[class*="centerCol"]', scaffold!.workspaceCwd)
+    await compareOrRefreshGolden(EXPECTED, `${panels}\n${conversation}`, webSnapshotMode())
   })
 })

@@ -1,7 +1,4 @@
-/* Recent section: natural height below the Workspace browser inside the
-   shell's scrolling region column (SidebarRoot.module.css .regionArea owns
-   the scroll clip, the scrollbar gutter, and the bottom fade). The header
-   mirrors the browser's section header geometry so both titles align. */
+/* Recent follows the Workspace rows and keeps its own heading and filter. */
 .root {
   flex: none;
   display: flex;

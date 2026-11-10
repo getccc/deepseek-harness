@@ -4,7 +4,7 @@
   disabled: true
 - id: ui-web-access
   disabled: true
-# The Team bundle disables the More menus with the Plugins page.
+# The Team bundle keeps panel and View entries directly visible.
 - id: entry-customization
   disabled: true
 - insert:
