@@ -104,7 +104,7 @@ Prefix-stable while the choice is unchanged. Choosing a kind, changing it, or cl
 
 - **The section instructs; it does not enforce** — producing the named format is the model's work with the univer office tools the deployment installs, and a model may still choose otherwise; the section is guidance, not a gate.
 - **The univer office tools are a deployment dependency** — the section names tools that `dsh-univer-office`, installed into the Team profile, registers; a profile without that plugin gets instructions its model cannot follow.
-- **Raster images need a patched univer export** — `dsh-univer-office` 0.2.14 stores imported and inserted PNG and JPEG images as assets its exporter cannot read, so a deck imported from a company template fails `univer_export` until the plugin inlines them before export ([office builds take few tool calls](../../../.agents/notes/implemented/feature/2026-09-15-office-builds-take-few-tool-calls.md)).
+- **Raster images need a patched univer export** — `univer_export` needs inline data for imported and inserted PNG and JPEG images. The [Team Runner plugin tree](../../../apps/team-runner-desktop/README.md) carries the patch that supplies the stored images during export.
 - **Charts need the ECharts plugin** — the chart kind asks for `echarts` fences that `@dsh-external/dsh-echarts`, installed into the Team profile, renders; a profile without it shows the fence as code.
 
 <a id="dev-note"></a>

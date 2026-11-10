@@ -1,0 +1,60 @@
+diff --git a/artifacts/unit-content-worker.mjs b/artifacts/unit-content-worker.mjs
+--- a/artifacts/unit-content-worker.mjs
++++ b/artifacts/unit-content-worker.mjs
+@@ -429,7 +429,7 @@
+         };
+       }
+       case "export": {
+-        const unitData = await collaboration.exportUnitData();
++        const unitData = await inlineStoredImages(await collaboration.exportUnitData(), request);
+         await exportUnit(request, unitData);
+         return {
+           filePath: request.filePath,
+@@ -450,6 +450,47 @@
+   } finally {
+     await collaboration.close();
+   }
++}
++// The collaboration snapshot uses asset IDs. The native Office exporter needs inline image data.
++async function inlineStoredImages(unitData, request) {
++  const imageFields = [
++    ["source", "imageSourceType"],
++    ["fillImageSource", "fillImageSourceType"],
++    ["source", "sourceType"]
++  ];
++  const scope = request.worktreeId === void 0 ? "" : `/worktrees/${encodeURIComponent(request.worktreeId)}`;
++  const assetRoot = `${request.gatewayOrigin}/uf/${encodeURIComponent(request.fileKey)}${scope}/universer-api/file`;
++  const dataUris = new Map();
++  const visited = new WeakSet();
++  async function visit(node) {
++    if (typeof node !== "object" || node === null || visited.has(node)) return;
++    visited.add(node);
++    for (const child of Object.values(node)) await visit(child);
++    if (Array.isArray(node)) return;
++    for (const [sourceKey, typeKey] of imageFields) {
++      const assetId = node[sourceKey];
++      if (node[typeKey] !== "UUID" || typeof assetId !== "string" || assetId.length === 0) continue;
++      let dataUri = dataUris.get(assetId);
++      if (dataUri === void 0) {
++        const response = await fetch(`${assetRoot}/${encodeURIComponent(assetId)}/content`, { redirect: "error" });
++        if (!response.ok) {
++          await response.body?.cancel();
++          throw unitContentError(
++            "EXPORT_ASSET_UNAVAILABLE",
++            `Stored image ${assetId} could not be read for export (HTTP ${response.status})`
++          );
++        }
++        const mediaType = (response.headers.get("content-type") ?? "").split(";")[0].trim();
++        const bytes = Buffer.from(await response.arrayBuffer());
++        dataUri = `data:${mediaType};base64,${bytes.toString("base64")}`;
++        dataUris.set(assetId, dataUri);
++      }
++      node[sourceKey] = dataUri;
++      node[typeKey] = "BASE64";
++    }
++  }
++  await visit(unitData);
++  return unitData;
+ }
+ async function exportUnit(request, unitData) {
+   const extension = extname2(request.outputPath).toLowerCase();

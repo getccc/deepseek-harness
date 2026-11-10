@@ -104,7 +104,7 @@ Produce the deliverable as interactive charts in the answer itself. Write one fe
 
 - **分节是指示，不是强制** —— 生成所命名的格式是模型用部署所安装的 univer 办公工具完成的工作，模型仍可能另作选择；分节是引导，而非门禁。
 - **univer 办公工具是部署依赖** —— 分节点名的工具由安装进 Team profile 的 `dsh-univer-office` 注册；没有该插件的 profile 得到的是其模型无法执行的指令。
-- **位图需要打过补丁的 univer 导出** —— `dsh-univer-office` 0.2.14 把导入与插入的 PNG、JPEG 图片存为其导出器无法读取的资源，因此从公司模版导入的演示文稿在插件于导出前把它们内联之前，`univer_export` 都会失败（[办公构建只用少量工具调用](../../../.agents/notes/implemented/feature/2026-09-15-office-builds-take-few-tool-calls.zh.md)）。
+- **位图需要打过补丁的 univer 导出** —— `univer_export` 需要导入和插入的 PNG、JPEG 图片的内联数据。[Team Runner 插件树](../../../apps/team-runner-desktop/README.zh.md)随附补丁，在导出时读出已保存的图片并提供其内联数据。
 - **图表需要 ECharts 插件** —— 图表类型要求的 `echarts` 围栏由安装进 Team profile 的 `@dsh-external/dsh-echarts` 渲染；没有它的 profile 只会把围栏显示为代码。
 
 <a id="dev-note"></a>

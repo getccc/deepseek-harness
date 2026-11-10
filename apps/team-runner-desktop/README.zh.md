@@ -72,6 +72,8 @@ Runner 是一个 Node 进程，不读取操作系统信任库，因此位于企�
 
 位于 Runner 自身安装之外的插件以真实目录而非打包可执行文件内部的形式随附，因为它们的原生插件无法从打包可执行文件的虚拟文件系统中加载，而它们运行时的依赖复制需要真实文件。用 `dsh plugin --profile <name> add <package>` 把它们装进一个 profile，再让 `DSH_TEAM_PLUGIN_TREE` 指向该 profile 的 `node_modules`。层列表从这棵树挂载 `dsh-univer-office` 与 `@dsh-external/dsh-echarts`，因此树中必须同时带有两者；暂存 profile 中记录的 pnpm 补丁会随打过补丁的文件一同随附。Runner 会跳过 `@deepseek-ai/dsh-*` peer 范围不包含其自身版本的 bundle，而这个 profile 不带任何 `compatibility.json` 豁免，因此树中必须带有声明了 Runner 所在版本线的插件发布版本。
 
+DSH `0.2.2-rc.1` 的暂存 profile 使用 `dsh-univer-office@0.4.0` 及其 [Office 图片导出补丁](patches/dsh-univer-office@0.4.0.patch)。暂存 profile 的 `pnpm-workspace.yaml` 中，`patchedDependencies` 将确切的插件版本映射到本地补丁文件。导出时，补丁从文档对应的 Gateway 读取已保存的图片，使公司 PowerPoint 模板中的位图写入导出文件。
+
 外壳拥有这个私有 profile 的清单：它在每次启动时写入层列表，并按随附的树把它物化为该 profile 自己的 `node_modules`，该树由打包时记录的内容指纹标识。这些包必须是那里的真实文件，而不是指向应用资源的链接——插件通过自己的真实位置解析依赖，而 `dsh` 会在它们旁边补上插件作为 peer 从 Runner 安装取用的包。macOS 在写时复制卷上克隆这棵树，因此这份副本几乎不花时间也几乎不占磁盘空间。成员从不向这个 profile 安装插件，因此改变层列表的应用升级会在下次启动时生效。成员自己的 `cordis.patch.yml` 不会被触碰。
 
 ### 准备 Office sidecar
