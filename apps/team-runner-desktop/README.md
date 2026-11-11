@@ -80,6 +80,8 @@ The shell initializes the private profile's manifest once. Plugin selections, de
 
 An enterprise plugin tree can also carry `@wework/company-plugins`. The shell projects it alongside the required plugins and selects it for new profiles and the first upgrade that introduces the directory. Later launches retain a member’s disabled selection; other bundle choices, dependencies and patches are preserved. This bundle provides the company directory and a read-only download proxy using the Runner's configured Control Plane certificate. Business plugins such as EHS reports remain member-installed.
 
+Missing profile package-manager settings are initialized with the hoisted linker and peer auto-installation disabled, so plugins share the Runner’s bundled services. Existing workspace settings are retained.
+
 The installer also carries the repository-pinned pnpm distribution in `runner/pnpm`. The shell passes its entry as `DSH_BUNDLED_PLUGIN_PNPM`; the private Runner dispatcher supplies the Office sidecar’s standalone Node for plugin installation and build scripts. Members do not need Node or pnpm on their `PATH`. Ordinary tools keep their original `PATH`, and explicitly selected primary runtimes retain precedence.
 
 ### Preparing the Office sidecar

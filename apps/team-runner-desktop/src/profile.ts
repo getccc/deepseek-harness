@@ -131,6 +131,11 @@ export function provisionProfile(home: string, plugins: ShippedPlugins | undefin
   const companyPlugins = plugins !== undefined && existsSync(join(plugins.directory, COMPANY_PLUGIN_BUNDLE, 'package.json'))
   if (!existsSync(manifest)) writeFileSync(manifest, profileManifest(plugins !== undefined, companyPlugins), { flag: 'wx' })
   const managed = managedPackages(manifest)
+  const workspace = join(profile, 'pnpm-workspace.yaml')
+  if (!existsSync(workspace)) {
+    // Plugin peers use the bundled Runner; npm must not install another copy of its services.
+    writeFileSync(workspace, 'packages:\n  - .\n\nnodeLinker: hoisted\nautoInstallPeers: false\n', { flag: 'wx', mode: 0o600 })
+  }
   if (plugins === undefined) return
   const projectedBundles = [...SHIPPED_PLUGIN_BUNDLES, ...companyPlugins ? [COMPANY_PLUGIN_BUNDLE] : []]
   for (const name of projectedBundles) {

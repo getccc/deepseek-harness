@@ -80,6 +80,8 @@ DSH `0.2.2-rc.1` 的暂存 profile 使用 `dsh-univer-office@0.4.0` 及其 [Offi
 
 企业插件树还可以携带 `@wework/company-plugins`。Shell 会将它与必需插件一起映射，并在新建 profile 或首次引入公司目录的升级中默认启用。此后保留成员停用目录的选择，其他插件选择、依赖和用户补丁均保留。该 bundle 提供公司插件目录和使用 Runner 已配置的 Control Plane 证书的只读下载代理；EHS 报告等业务插件仍由成员自行安装。
 
+缺少 profile 包管理设置时，会初始化扁平依赖布局并关闭 peer 依赖自动安装，使插件复用 Runner 内置的服务。现有工作区设置保持不变。
+
 安装程序还把仓库锁定版本的 pnpm 随附到 `runner/pnpm`。外壳通过 `DSH_BUNDLED_PLUGIN_PNPM` 传入其入口，Runner 私有分派器使用 Office sidecar 的独立 Node 安装插件并运行构建脚本。成员的 `PATH` 中无需存在 Node 或 pnpm。普通工具保留原有 `PATH`，显式选择的创作运行时仍然优先。
 
 ### 准备 Office sidecar

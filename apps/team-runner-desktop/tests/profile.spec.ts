@@ -30,18 +30,23 @@ it('retains enabled and disabled bundles, dependencies and user patches after a 
   const f = fixture()
   const plugins = f.shipped('first')
   provisionProfile(f.home, plugins)
+  expect(readFileSync(join(f.profile, 'pnpm-workspace.yaml'), 'utf8'))
+    .toContain('autoInstallPeers: false')
   const manifest = join(f.profile, 'package.json')
   const selected = `${JSON.stringify({
     name: 'member-profile', private: true, dependencies: { 'member-plugin': '1.0.0' },
     dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', '@deepseek-ai/dsh-cua-bundle'] } },
   }, null, 4)}\n`
   writeFileSync(manifest, selected)
+  const workspace = 'packages:\n  - .\nnodeLinker: hoisted\nautoInstallPeers: false\nminimumReleaseAge: 1440\n'
+  writeFileSync(join(f.profile, 'pnpm-workspace.yaml'), workspace)
   writeFileSync(join(f.profile, 'cordis.patch.yml'), '- id: member-setting\n  disabled: true\n')
   mkdirSync(join(f.profile, 'node_modules/member-plugin'), { recursive: true })
   writeFileSync(join(f.profile, 'node_modules/member-plugin/local.txt'), 'member data')
   provisionProfile(f.home, plugins)
   expect(readFileSync(manifest, 'utf8')).toBe(selected)
   expect(readFileSync(join(f.profile, 'cordis.patch.yml'), 'utf8')).toContain('member-setting')
+  expect(readFileSync(join(f.profile, 'pnpm-workspace.yaml'), 'utf8')).toBe(workspace)
   expect(readFileSync(join(f.profile, 'node_modules/member-plugin/local.txt'), 'utf8')).toBe('member data')
   const require = createRequire(join(f.profile, 'package.json'))
   expect(require('dsh-univer-office')).toBe('first')
