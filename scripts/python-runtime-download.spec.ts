@@ -75,7 +75,8 @@ async function fixture() {
   function run(resource?: string, extra: NodeJS.ProcessEnv = {}, args: string[] = []) {
     const child = spawn(process.execPath, [bootstrap, ...args], {
       env: { ...process.env, DSH_RESOURCE_CACHE: cache, DSH_RUNTIME_DOWNLOAD: resource, DSH_BUNDLED_PRIMARY_RUNTIME: undefined,
-        DSH_PRIMARY_RUNTIME: undefined, DSH_OFFICE_SIDECAR: undefined, DSH_BUNDLED_OFFICE_CLI: undefined, ...extra },
+        DSH_PRIMARY_RUNTIME: undefined, DSH_OFFICE_SIDECAR: undefined, DSH_BUNDLED_OFFICE_CLI: undefined,
+        DSH_BUNDLED_PLUGIN_PNPM: undefined, ...extra },
       stdio: ['pipe', 'pipe', 'pipe'],
     })
     let stdout = '', stderr = ''
@@ -129,6 +130,29 @@ it('uses an explicit primary runtime instead of the cache and honors its empty d
     const missing = await run(undefined, { DSH_PRIMARY_RUNTIME: join(root, 'missing') }).done
     expect(missing.code).toBe(1)
     expect(missing.stderr).toContain('ENOENT')
+  } finally { await rm(root, { recursive: true, force: true }) }
+})
+
+it('supplies the desktop installer with standalone Office Node and bundled pnpm without changing the host PATH', async () => {
+  const { root, run, file } = await fixture()
+  try {
+    const office = await run('office').done
+    expect(office.code, office.stderr).toBe(0)
+    const sidecar = JSON.parse(office.stdout) as string
+    const pnpm = join(root, 'pnpm/bin/pnpm.mjs')
+    await file(pnpm, '')
+    const node = join(sidecar, 'node/bin', process.platform === 'win32' ? 'node.exe' : 'node')
+    const result = await run(undefined, { PATH: '', DSH_BUNDLED_PLUGIN_PNPM: pnpm }).done
+    expect(result.code, result.stderr).toBe(0)
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      packageManager: { command: node, args: [pnpm], env: { PATH: `${dirname(node)}${delimiter}` } }, hostPath: '',
+    })
+    const missing = await run(undefined, { DSH_BUNDLED_PLUGIN_PNPM: join(root, 'missing.mjs') }).done
+    expect(missing.code).toBe(1)
+    expect(missing.stderr).toContain('reinstall the application')
+    const relative = await run(undefined, { DSH_BUNDLED_PLUGIN_PNPM: 'pnpm.mjs' }).done
+    expect(relative.code).toBe(1)
+    expect(relative.stderr).toContain('bundled plugin package manager')
   } finally { await rm(root, { recursive: true, force: true }) }
 })
 

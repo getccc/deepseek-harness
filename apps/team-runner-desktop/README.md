@@ -31,6 +31,7 @@ Build the Runner executable and its sidecars first, then supply the executable a
 
 ```sh
 DSH_TEAM_APP_VERSION=1.0.0 \
+DSH_TEAM_CUA_HELPER=/absolute/path/to/cua-payload \
 DSH_TEAM_RUNNER_EXECUTABLE=/absolute/path/to/dsh \
 DSH_TEAM_CONTROL_PLANE_URL=https://control.example.com \
 pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
@@ -53,6 +54,7 @@ Every deployment-varying fact is a packaging environment variable, so one source
 | `DSH_TEAM_UPDATE_ORIGIN` | no | Where release artifacts are fetched from, when that is not the Control Plane itself: object storage or a CDN, for a deployment whose own bandwidth a few hundred megabytes per member would exhaust. |
 | `DSH_TEAM_RUNNER_EXECUTABLE` | yes | The built Runner executable; its ripgrep and macOS spawn-helper sidecars are read from the neighbouring `-rg` and `-spawn-helper` names. |
 | `DSH_TEAM_OFFICE_SIDECAR` | yes | The prepared Office sidecar directory: a Node runtime at `node/bin/node` (`node.exe` on Windows) and the `@deepseek-ai/libreoffice-kit` packages, including this platform's engine, under `node_modules`. Packaging fails when any is missing. See Preparing the Office sidecar below. |
+| `DSH_TEAM_CUA_HELPER` | macOS | Extracted official `cua-helper.tgz` artifact containing `native/bin` and `cua-helper.json`, built from the current helper sources; both CPU variants and all application bytes are verified. Windows ignores it. |
 | `DSH_TEAM_CONTROL_PLANE_URL` | yes | The Control Plane origin this build belongs to. |
 | `DSH_TEAM_CONTROL_PLANE_CA` | no | The certificate that signed the Control Plane's TLS certificate. |
 | `DSH_TEAM_RELEASE_KEY` | no | Base64url DER SPKI of the Ed25519 release public key. A build without it never checks for an update, because it has no trust root for one. |
@@ -74,7 +76,9 @@ Plugins outside the Runner's own installation ship as a real directory rather th
 
 For DSH `0.2.2-rc.1`, the staging profile uses `dsh-univer-office@0.4.0` with the [Office image export patch](patches/dsh-univer-office@0.4.0.patch). The `patchedDependencies` entry in the staging profile's `pnpm-workspace.yaml` maps the exact version to the local copy of that patch. The patch reads stored images from the document's Gateway scope during export so raster images in company PowerPoint templates reach the output file.
 
-The shell owns the private profile's manifest: it writes the layer list on every launch and materializes the shipped tree as that profile's own `node_modules` once per shipped tree, identified by a fingerprint of its contents that packaging records. The packages have to be real files there rather than links into application resources — a plugin reaches its dependencies through its own real location, and `dsh` adds links beside them for the packages these plugins take as peers from the Runner installation. macOS clones the tree on a copy-on-write volume, so the duplicate costs little time and little disk space. A member never installs plugins into this profile, so an application upgrade that changes the layer list takes effect on the next launch. The member's own `cordis.patch.yml` is never touched.
+The shell initializes the private profile's manifest once. Plugin selections, dependencies and the member's `cordis.patch.yml` survive restarts and upgrades. Shipped plugins are copied into a writable, fingerprinted directory under `DSH_HOME/desktop-plugins`, with copy-on-write where supported; only their top-level package links are projected into the profile. Their dependencies resolve from that private directory, separately from member-installed packages. A profile-declared dependency takes precedence over the shipped projection. Legacy copied trees migrate without replacing other packages. Completed generations remain available for existing local references.
+
+The installer also carries the repository-pinned pnpm distribution in `runner/pnpm`. The shell passes its entry as `DSH_BUNDLED_PLUGIN_PNPM`; the private Runner dispatcher supplies the Office sidecar’s standalone Node for plugin installation and build scripts. Members do not need Node or pnpm on their `PATH`. Ordinary tools keep their original `PATH`, and explicitly selected primary runtimes retain precedence.
 
 ### Preparing the Office sidecar
 
@@ -87,6 +91,21 @@ DSH_RESOURCE_CACHE=/absolute/cache DSH_RUNTIME_DOWNLOAD=office /absolute/path/to
 ```
 
 The archives are the ones pinned in the `downloads.json` beside the executable, so a new executable can need a new sidecar. The Windows sidecar must be prepared for Windows x64; the macOS Runner cannot publish it.
+
+<a id="preparing-computer-use"></a>
+### Preparing Computer Use
+
+Build the signed and notarized helper with the [official helper producer](../../scripts/cua-helper/package.ts), using the macOS release credentials described in [Desktop packaging](../desktop/README.md). Extract its artifact before building either Team desktop architecture:
+
+```sh
+node --import tsx/esm scripts/cua-helper/package.ts --out /absolute/path/to/cua-artifact
+mkdir /absolute/path/to/cua-payload
+tar -xzf /absolute/path/to/cua-artifact/cua-helper.tgz -C /absolute/path/to/cua-payload
+```
+
+Set `DSH_TEAM_CUA_HELPER` to that extracted directory. Packaging rejects missing, stale or altered artifacts, selects the matching CPU application, and stages it as `runner/cua/DSH Computer Use.app`. Electron signing excludes that application; a post-sign check verifies its bytes remain intact. The Runner receives its executable through `DSH_BUNDLED_CUA_HELPER`, which the optional Computer Use bundle reads only when enabled. Installed users need no Swift compiler or developer signing setup.
+
+Computer Use requires macOS 14 or later and a PTC session. Enable it in Plugins, then use its permission page to grant Accessibility and Screen Recording to `DSH Computer Use.app`. These grants remain user-controlled. Voice input uses the WeWork microphone permission; the macOS shell declares its usage and carries the audio-input entitlement. Its models are prepared on first use. GitHub, Codex and Claude Code integrations still need their respective host tools and authentication.
 
 ### Signing and notarizing the macOS build
 
@@ -101,6 +120,7 @@ export APPLE_ID="you@example.com"
 export APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx"
 DSH_TEAM_APPLE_TEAM_ID="YOURTEAMID" \
 DSH_TEAM_APP_VERSION=1.0.0 \
+DSH_TEAM_CUA_HELPER=/absolute/path/to/cua-payload \
 DSH_TEAM_RUNNER_EXECUTABLE=/absolute/path/to/dsh \
 DSH_TEAM_CONTROL_PLANE_URL=https://control.example.com \
 pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac

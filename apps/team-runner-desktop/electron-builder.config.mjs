@@ -1,7 +1,12 @@
 import { existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { execFileSync } from 'node:child_process'
+import { dirname, join } from 'node:path'
+import { createRequire } from 'node:module'
+import { fileURLToPath } from 'node:url'
+import { cuaHelperSourceDigest } from '../../scripts/cua-helper/build-inputs.ts'
+import { cuaApplicationDigest } from '../../scripts/cua-helper/payload.ts'
 import {
-  pluginTreeFingerprint, resolveAppVersion, resolveMacArchitecture, resolveOfficeSidecar, resolveReleaseKey, resolveUpdateOrigin,
+  pluginTreeFingerprint, resolveAppVersion, resolveCuaHelper, resolveMacArchitecture, resolveOfficeSidecar, resolveReleaseKey, resolveUpdateOrigin,
 } from './scripts/packaging-inputs.mjs'
 
 const runner = process.env.DSH_TEAM_RUNNER_EXECUTABLE
@@ -74,6 +79,17 @@ const windows = runner.endsWith('.exe')
 // points at the staged copy.
 const macArchitecture = resolveMacArchitecture(process.env, runner)
 const officeSidecar = resolveOfficeSidecar(process.env, windows, macArchitecture)
+const pnpmDirectory = dirname(createRequire(import.meta.url).resolve('pnpm'))
+const cuaHelper = resolveCuaHelper(process.env, windows, macArchitecture,
+  windows ? '' : cuaHelperSourceDigest(fileURLToPath(new URL('../..', import.meta.url))))
+const cuaDigest = cuaHelper === undefined ? undefined : cuaApplicationDigest(cuaHelper)
+if (cuaHelper !== undefined) {
+  execFileSync('/usr/bin/codesign', ['--verify', '--deep', '--strict', '--all-architectures', cuaHelper], { stdio: 'inherit' })
+  execFileSync('/usr/bin/lipo', ['-verify_arch', macArchitecture === 'x64' ? 'x86_64' : 'arm64',
+    join(cuaHelper, 'Contents/MacOS/dsh-cua-native')], { stdio: 'inherit' })
+  execFileSync('/usr/bin/xcrun', ['stapler', 'validate', cuaHelper], { stdio: 'inherit' })
+  execFileSync('/usr/sbin/spctl', ['--assess', '--type', 'execute', cuaHelper], { stdio: 'inherit' })
+}
 // A menu bar template image is drawn at the bar's own scale, so macOS reads
 // the doubled variant from the same directory under the conventional name.
 const trayVariants = trayIcon === undefined
@@ -95,6 +111,9 @@ const extraResources = [
   // each entry of the Office sidecar is staged as a source of its own.
   { from: join(officeSidecar, 'node'), to: 'runner/dsh-office/node' },
   { from: join(officeSidecar, 'node_modules'), to: 'runner/dsh-office/node_modules' },
+  { from: pnpmDirectory, to: 'runner/pnpm' },
+  { from: join(pnpmDirectory, 'dist/node_modules'), to: 'runner/pnpm/dist/node_modules' },
+  ...cuaHelper === undefined ? [] : [{ from: cuaHelper, to: 'runner/cua/DSH Computer Use.app', filter: ['**/*'] }],
   ...controlPlaneCa === undefined ? [] : [{ from: controlPlaneCa, to: 'runner/control-plane-ca.crt' }],
   ...pluginTree === undefined ? [] : [{ from: pluginTree, to: 'runner/plugins' }],
   ...pptTemplate === undefined ? [] : [{ from: pptTemplate, to: 'runner/templates/welinkin-ppt.pptx' }],
@@ -138,7 +157,20 @@ export default {
     gatekeeperAssess: false,
     entitlements: 'build/entitlements.mac.plist',
     entitlementsInherit: 'build/entitlements.mac.plist',
+    extendInfo: {
+      NSMicrophoneUsageDescription: 'WeWork uses your microphone to transcribe speech into message drafts.',
+    },
+    // The helper receipt includes its signature and notarization ticket bytes.
+    signIgnore: ['/Contents/Resources/runner/cua(?:/|$)'],
     ...appleTeamId === undefined ? {} : { notarize: { teamId: appleTeamId } },
+  },
+  afterSign: async context => {
+    if (cuaDigest === undefined || context.electronPlatformName !== 'darwin') return
+    const application = join(context.appOutDir, `${context.packager.appInfo.productFilename}.app`,
+      'Contents/Resources/runner/cua/DSH Computer Use.app')
+    if (cuaApplicationDigest(application) !== cuaDigest) {
+      throw new Error('The packaged Computer Use helper changed; retain the original signed application bytes')
+    }
   },
   win: {
     target: [{ target: 'nsis', arch: ['x64'] }],

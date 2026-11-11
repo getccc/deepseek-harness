@@ -18,17 +18,20 @@
   en: ec2696e0b1a86c13
   zh: 86d436076f7e1c0b
 /deepseek-ai-dsh-team-runner-desktop/deployment-inputs:
-  en: 4b1dfa51b68f3b9b
-  zh: d8d6695a47e22b8d
+  en: 1211543f73ef6556
+  zh: 4f2e2441f8b7ad67
 /deepseek-ai-dsh-team-runner-desktop/deployment-inputs/pinning-a-private-certificate-authority:
   en: 4c2a576a6372a090
   zh: fd7b435b6b3d22c1
 /deepseek-ai-dsh-team-runner-desktop/deployment-inputs/carrying-out-of-tree-plugins:
-  en: c5f452714bac9f33
-  zh: ecdaa375e724a14b
+  en: 8fd828a45daf85ff
+  zh: 1265c825a83d9e74
 /deepseek-ai-dsh-team-runner-desktop/deployment-inputs/preparing-the-office-sidecar:
-  en: c73a9408632de581
-  zh: 7978a6c31f10852c
+  en: 4d1e5f2cf322d326
+  zh: e062a255e8a36507
+/deepseek-ai-dsh-team-runner-desktop/deployment-inputs/preparing-computer-use:
+  en: 3ee32bb0600bd2cc
+  zh: f9dca3794374ad4f
 /deepseek-ai-dsh-team-runner-desktop/deployment-inputs/signing-and-notarizing-the-macos-build:
   en: f153fe39f5a03025
   zh: 26256cf705785af6

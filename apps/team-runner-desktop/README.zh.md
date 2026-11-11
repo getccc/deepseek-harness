@@ -31,6 +31,7 @@ kind: "package-reference"
 
 ```sh
 DSH_TEAM_APP_VERSION=1.0.0 \
+DSH_TEAM_CUA_HELPER=/absolute/path/to/cua-payload \
 DSH_TEAM_RUNNER_EXECUTABLE=/absolute/path/to/dsh \
 DSH_TEAM_CONTROL_PLANE_URL=https://control.example.com \
 pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
@@ -53,6 +54,7 @@ pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 | `DSH_TEAM_UPDATE_ORIGIN` | 否 | 版本产物的获取地址，当它不是 Control Plane 本身时：对象存储或 CDN，适用于自身带宽撑不住每位成员几百兆下载的部署。 |
 | `DSH_TEAM_RUNNER_EXECUTABLE` | 是 | 构建好的 Runner 可执行文件；其 ripgrep 与 macOS spawn-helper 伴随程序按相邻的 `-rg` 与 `-spawn-helper` 名称读取。 |
 | `DSH_TEAM_OFFICE_SIDECAR` | 是 | 已准备好的 Office sidecar 目录：`node/bin/node`（Windows 为 `node.exe`）处的 Node 运行时，以及 `node_modules` 下的 `@deepseek-ai/libreoffice-kit` 软件包，其中包括本平台的引擎包。缺少任何一项时打包失败。见下文“准备 Office sidecar”。 |
+| `DSH_TEAM_CUA_HELPER` | macOS 必需 | 官方 `cua-helper.tgz` 解压后的目录，包含 `native/bin` 和 `cua-helper.json`，必须与当前 helper 源码匹配；校验两个 CPU 版本及全部应用文件。Windows 忽略此变量。 |
 | `DSH_TEAM_CONTROL_PLANE_URL` | 是 | 这份构建所属的 Control Plane 源。 |
 | `DSH_TEAM_CONTROL_PLANE_CA` | 否 | 签发 Control Plane TLS 证书的那份证书。 |
 | `DSH_TEAM_RELEASE_KEY` | 否 | Ed25519 发布公钥的 base64url DER SPKI 编码。没有它的构建从不检查更新，因为它没有可据以判断更新的信任根。 |
@@ -74,7 +76,9 @@ Runner 是一个 Node 进程，不读取操作系统信任库，因此位于企�
 
 DSH `0.2.2-rc.1` 的暂存 profile 使用 `dsh-univer-office@0.4.0` 及其 [Office 图片导出补丁](patches/dsh-univer-office@0.4.0.patch)。暂存 profile 的 `pnpm-workspace.yaml` 中，`patchedDependencies` 将确切的插件版本映射到本地补丁文件。导出时，补丁从文档对应的 Gateway 读取已保存的图片，使公司 PowerPoint 模板中的位图写入导出文件。
 
-外壳拥有这个私有 profile 的清单：它在每次启动时写入层列表，并按随附的树把它物化为该 profile 自己的 `node_modules`，该树由打包时记录的内容指纹标识。这些包必须是那里的真实文件，而不是指向应用资源的链接——插件通过自己的真实位置解析依赖，而 `dsh` 会在它们旁边补上插件作为 peer 从 Runner 安装取用的包。macOS 在写时复制卷上克隆这棵树，因此这份副本几乎不花时间也几乎不占磁盘空间。成员从不向这个 profile 安装插件，因此改变层列表的应用升级会在下次启动时生效。成员自己的 `cordis.patch.yml` 不会被触碰。
+外壳仅在首次启动时初始化私有 profile 清单。插件选择、依赖和成员的 `cordis.patch.yml` 在重启和升级后保留。随附插件复制到 `DSH_HOME/desktop-plugins` 下按内容指纹划分的可写目录，在支持时使用写时复制；profile 中仅建立这些插件顶层包的链接。它们从私有目录解析依赖，与成员安装的包分离。profile 声明的依赖优先于随附链接。旧版复制的目录在迁移时保留其他包。完整的历史版本目录保留，供已有本地引用继续使用。
+
+安装程序还把仓库锁定版本的 pnpm 随附到 `runner/pnpm`。外壳通过 `DSH_BUNDLED_PLUGIN_PNPM` 传入其入口，Runner 私有分派器使用 Office sidecar 的独立 Node 安装插件并运行构建脚本。成员的 `PATH` 中无需存在 Node 或 pnpm。普通工具保留原有 `PATH`，显式选择的创作运行时仍然优先。
 
 ### 准备 Office sidecar
 
@@ -87,6 +91,21 @@ DSH_RESOURCE_CACHE=/absolute/cache DSH_RUNTIME_DOWNLOAD=office /absolute/path/to
 ```
 
 所下载的归档是可执行文件旁 `downloads.json` 中固定的那些，因此换用新的可执行文件可能需要新的 sidecar。Windows 的 sidecar 必须为 Windows x64 准备；macOS 上的 Runner 无法发布它。
+
+<a id="preparing-computer-use"></a>
+### 准备 Computer Use
+
+使用[官方 helper 构建程序](../../scripts/cua-helper/package.ts)生成已签名并公证的辅助应用，发布凭据配置见[桌面打包说明](../desktop/README.zh.md)。构建任一 Team 桌面 CPU 版本之前，先解压其产物：
+
+```sh
+node --import tsx/esm scripts/cua-helper/package.ts --out /absolute/path/to/cua-artifact
+mkdir /absolute/path/to/cua-payload
+tar -xzf /absolute/path/to/cua-artifact/cua-helper.tgz -C /absolute/path/to/cua-payload
+```
+
+把 `DSH_TEAM_CUA_HELPER` 指向解压后的目录。打包会拒绝缺失、源码不匹配或文件被改动的产物，选择对应 CPU 的应用，并随附为 `runner/cua/DSH Computer Use.app`。Electron 签名排除该辅助应用，签名后再次校验其文件未变。Runner 通过 `DSH_BUNDLED_CUA_HELPER` 接收可执行文件路径，可选 Computer Use 组合包仅在启用时读取它。安装版用户不需要 Swift 编译器或开发者签名配置。
+
+Computer Use 要求 macOS 14 或更高版本及 PTC 会话。在插件页启用后，通过其权限页为 `DSH Computer Use.app` 授予辅助功能和屏幕录制权限。这些权限由用户决定。语音输入使用 WeWork 的麦克风权限，macOS 外壳声明了用途并带有 audio-input 权限，模型在首次使用时准备。GitHub、Codex 和 Claude Code 集成仍需相应宿主工具及认证。
 
 ### 签名与公证 macOS 构建
 
@@ -101,6 +120,7 @@ export APPLE_ID="you@example.com"
 export APPLE_APP_SPECIFIC_PASSWORD="xxxx-xxxx-xxxx-xxxx"
 DSH_TEAM_APPLE_TEAM_ID="YOURTEAMID" \
 DSH_TEAM_APP_VERSION=1.0.0 \
+DSH_TEAM_CUA_HELPER=/absolute/path/to/cua-payload \
 DSH_TEAM_RUNNER_EXECUTABLE=/absolute/path/to/dsh \
 DSH_TEAM_CONTROL_PLANE_URL=https://control.example.com \
 pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac

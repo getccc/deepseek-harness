@@ -1,11 +1,13 @@
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
-  APP_VERSION_ENV, MAC_ARCHITECTURE_ENV, OFFICE_SIDECAR_ENV, UPDATE_ORIGIN_ENV, pluginTreeFingerprint, resolveAppVersion,
+  APP_VERSION_ENV, CUA_HELPER_ENV, MAC_ARCHITECTURE_ENV, OFFICE_SIDECAR_ENV, UPDATE_ORIGIN_ENV,
+  pluginTreeFingerprint, resolveAppVersion, resolveCuaHelper,
   resolveMacArchitecture, resolveOfficeSidecar, resolveUpdateOrigin,
 } from '../scripts/packaging-inputs.mjs'
+import { CUA_APPLICATION, readCuaApplication, sealCuaApplication } from '../../../scripts/cua-helper/payload.ts'
 
 const trees: string[] = []
 
@@ -78,18 +80,18 @@ describe('where releases are fetched from', () => {
 describe('plugin tree fingerprint', () => {
   it('is the same for two installs of one dependency set', () => {
     const first = tree({ 'a/package.json': '{"name":"a"}', 'a/index.js': 'x'.repeat(40) })
-    const second = tree({ 'a/index.js': 'y'.repeat(40), 'a/package.json': '{"name":"b"}' })
-    // Same paths and sizes, different contents and modification times: the
-    // fingerprint exists to skip recopying, not to verify the tree.
+    const second = tree({ 'a/index.js': 'x'.repeat(40), 'a/package.json': '{"name":"a"}' })
     expect(pluginTreeFingerprint(first)).toBe(pluginTreeFingerprint(second))
   })
 
-  it('changes when a package is added, removed, or resized', () => {
+  it('changes when a package is added, removed, resized or edited without changing its size', () => {
     const base = tree({ 'a/index.js': 'x' })
     const added = tree({ 'a/index.js': 'x', 'b/index.js': 'x' })
     const resized = tree({ 'a/index.js': 'xx' })
+    const edited = tree({ 'a/index.js': 'y' })
     expect(pluginTreeFingerprint(added)).not.toBe(pluginTreeFingerprint(base))
     expect(pluginTreeFingerprint(resized)).not.toBe(pluginTreeFingerprint(base))
+    expect(pluginTreeFingerprint(edited)).not.toBe(pluginTreeFingerprint(base))
   })
 
   it('records a link without following it', () => {
@@ -151,5 +153,47 @@ describe('macOS architecture', () => {
   it('refuses an architecture that is not built or that contradicts the Runner executable', () => {
     expect(() => resolveMacArchitecture({ [MAC_ARCHITECTURE_ENV]: 'ia32' }, '/runner/dsh')).toThrow(/arm64 or x64/u)
     expect(() => resolveMacArchitecture({ [MAC_ARCHITECTURE_ENV]: 'arm64' }, '/dist-exe/x-macos-x64')).toThrow(/built for x64/u)
+  })
+})
+
+describe('Computer Use helper', () => {
+  it('keeps Windows packaging independent of macOS artifacts', () => {
+    expect(resolveCuaHelper({}, true, 'arm64', '')).toBeUndefined()
+  })
+
+  it('requires the signed artifact for macOS packaging', () => {
+    expect(() => resolveCuaHelper({}, false, 'arm64', 'a'.repeat(64))).toThrow(CUA_HELPER_ENV)
+    expect(() => resolveCuaHelper({ [CUA_HELPER_ENV]: ' ' }, false, 'x64', 'a'.repeat(64)))
+      .toThrow('scripts/cua-helper/package.ts')
+  })
+
+  it.skipIf(process.platform === 'win32')('selects the target CPU and refuses stale sources or modified application bytes', () => {
+    const root = tree({})
+    const sourceDigest = 'a'.repeat(64)
+    const applications = (['arm64', 'x64'] as const).map((architecture) => {
+      const directory = join(root, 'native/bin', `darwin-${architecture}`)
+      const application = join(directory, 'unsigned', CUA_APPLICATION)
+      for (const path of ['Contents/Info.plist', 'Contents/MacOS/dsh-cua-native',
+        'Contents/Resources/DSHComputerUse.icns', 'Contents/_CodeSignature/CodeResources']) {
+        const file = join(application, path)
+        mkdirSync(join(file, '..'), { recursive: true })
+        writeFileSync(file, `${architecture} ${path}`)
+      }
+      chmodSync(join(application, 'Contents/MacOS/dsh-cua-native'), 0o755)
+      return { architecture, bundle: sealCuaApplication(directory, application) }
+    })
+    writeFileSync(join(root, 'cua-helper.json'), JSON.stringify({
+      schemaVersion: 2, sourceDigest, buildKey: 'b'.repeat(64), version: '1.0.0',
+      commit: 'c'.repeat(40), teamId: 'ABCDEFGHIJ', applications,
+    }))
+    const environment = { [CUA_HELPER_ENV]: root }
+    for (const architecture of ['arm64', 'x64'] as const) {
+      expect(resolveCuaHelper(environment, false, architecture, sourceDigest))
+        .toBe(readCuaApplication(join(root, 'native/bin', `darwin-${architecture}`)).application)
+    }
+    expect(() => resolveCuaHelper(environment, false, 'arm64', 'd'.repeat(64))).toThrow('source bytes')
+    const app = resolveCuaHelper(environment, false, 'arm64', sourceDigest)!
+    writeFileSync(join(app, 'Contents/MacOS/dsh-cua-native'), 'modified')
+    expect(() => resolveCuaHelper(environment, false, 'arm64', sourceDigest)).toThrow('digest')
   })
 })

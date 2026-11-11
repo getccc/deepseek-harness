@@ -6,5 +6,6 @@
       disabled: !!js process.platform !== 'darwin'
       config:
         agentPreset: ptc
+        helperPath: !!js process.env.DSH_BUNDLED_CUA_HELPER
     - id: ui-cua
       name: '@deepseek-ai/dsh-cua'

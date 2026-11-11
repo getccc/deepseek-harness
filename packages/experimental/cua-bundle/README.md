@@ -33,6 +33,8 @@ pnpm dsh web
 
 For the source Desktop launcher and its separate development profile, follow [Desktop development](../../../apps/desktop/README.md). Enable Computer Use in each profile that needs it.
 
+Desktop shells that stage the signed helper separately can set `DSH_BUNDLED_CUA_HELPER` to its absolute executable path before starting DSH. The bundle passes this path as the provider’s `helperPath`; an unset variable keeps the ordinary source or installed-package preparation. The shell owns distribution and signature verification.
+
 The switch saves bundle selection in the profile’s `package.json`. Computer Use is installed only in PTC sessions. Enabling through its card or detail page offers setup guidance when system permissions need attention. The detail page offers **Set to PTC** for the new-session default; existing sessions keep their preset. The switch leaves PTC execution mode and other settings unchanged. The detail page’s **Use persistent mode** action separately enables in-memory state across PTC calls; its effects and reload behavior are described in the [permission page](../cua/README.md). Native preparation runs when the provider loads and reuses the source-hashed executable when available.
 
 Disabling unloads the provider and withdraws CUA tools from its Agent scopes. Runtime configuration, the new-session default and saved grants remain.

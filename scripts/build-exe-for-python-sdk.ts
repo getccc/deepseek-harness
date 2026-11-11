@@ -405,6 +405,7 @@ class SingleExeBuild {
       throw new Error(`build-exe-for-python-sdk: staged bootstrap ${join(this.staging, ENTRY_BIN)} is missing.`)
     }
     const helpers = [
+      { name: 'node-carrier', source: 'apps/cli/src/node-carrier.ts', exports: 'carriedScript' },
       { name: 'primary-runtime', source: 'scripts/primary-runtime/prepare.ts', exports: 'downloadNodeRuntime, preparePrimaryRuntime' },
       { name: 'office-sidecar', source: 'scripts/build-exe-for-python-sdk-office.ts', exports: 'downloadOfficeSidecar' },
     ]
@@ -425,7 +426,8 @@ class SingleExeBuild {
     const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as Record<string, unknown>
     await writeFile(manifestPath, `${JSON.stringify({ ...manifest, ...patch }, null, 2)}\n`)
     await this.run('resource helper imports', process.execPath, ['--input-type=module', '--eval',
-      ['primary-runtime.mjs', 'office-sidecar.mjs'].map(file => `await import(${JSON.stringify(pathToFileURL(join(this.staging, file)).href)})`).join('\n')])
+      ['primary-runtime.mjs', 'office-sidecar.mjs', 'node-carrier.mjs']
+        .map(file => `await import(${JSON.stringify(pathToFileURL(join(this.staging, file)).href)})`).join('\n')])
     console.log(`build-exe-for-python-sdk: injected pkg config into ${manifestPath}`)
   }
 

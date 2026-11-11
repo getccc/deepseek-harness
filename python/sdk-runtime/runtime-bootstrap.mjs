@@ -3,7 +3,7 @@
 import { existsSync } from 'node:fs'
 import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
-import { registerHooks } from 'node:module'
+import { createRequire, registerHooks } from 'node:module'
 import { delimiter, dirname, isAbsolute, join } from 'node:path'
 import { isSea } from 'node:sea'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -93,13 +93,38 @@ if (resource !== undefined) {
   Reflect.deleteProperty(process.env, 'DSH_PTC_RUNTIME_NODE')
   await import('@deepseek-ai/dsh-ptc-runtime-node/process')
 } else if (selection === undefined) {
-  if (cache !== undefined && existsSync(join(cache, 'primary', 'complete'))) {
-    process.env.DSH_BUNDLED_PRIMARY_RUNTIME = join(cache, 'primary', 'primary-runtime')
+  // Plugin workers re-enter this private executable through process.execPath.
+  const carried = isSea()
+    ? (await import('./node-carrier.mjs')).carriedScript(process.argv.slice(2), existsSync)
+    : undefined
+  if (carried !== undefined) {
+    process.argv.splice(1, 1)
+    createRequire(import.meta.url)('node:module').runMain()
+  } else {
+    if (cache !== undefined && existsSync(join(cache, 'primary', 'complete'))) {
+      process.env.DSH_BUNDLED_PRIMARY_RUNTIME = join(cache, 'primary', 'primary-runtime')
+    }
+    let packageManager
+    const primary = process.env.DSH_PRIMARY_RUNTIME ?? process.env.DSH_BUNDLED_PRIMARY_RUNTIME
+    if (primary !== undefined && primary !== '') {
+      const { resolvePrimaryRuntime } = await import('@deepseek-ai/dsh-tool-workspace-dependencies')
+      const { node, pnpm } = await resolvePrimaryRuntime(primary)
+      if (node !== undefined && pnpm !== undefined) {
+        packageManager = { command: node, args: [pnpm],
+          env: { PATH: `${dirname(node)}${delimiter}${process.env.PATH ?? ''}` } }
+      }
+    } else if (process.env.DSH_BUNDLED_PLUGIN_PNPM !== undefined) {
+      const pnpm = process.env.DSH_BUNDLED_PLUGIN_PNPM
+      const node = process.env.DSH_BUNDLED_OFFICE_NODE
+      if (!isAbsolute(pnpm) || !existsSync(pnpm) || node === undefined || !existsSync(node)) {
+        throw new Error('the bundled plugin package manager requires its pnpm entry and Office Node runtime; reinstall the application')
+      }
+      packageManager = { command: node, args: [pnpm],
+        env: { PATH: `${dirname(node)}${delimiter}${process.env.PATH ?? ''}` } }
+    }
+    const { runCli } = await import('@deepseek-ai/dsh/lib/bin.js')
+    await runCli({ packageManager })
   }
-  // runExecutable serves a plugin child that spawned process.execPath with its
-  // own script before falling back to the dsh CLI.
-  const { runExecutable } = await import('@deepseek-ai/dsh/lib/bin.js')
-  await runExecutable()
 } else {
   Reflect.deleteProperty(process.env, selectorName)
   const { runSelectedSubprocessRunner } = await import('@deepseek-ai/dsh-subprocess-local/runner')

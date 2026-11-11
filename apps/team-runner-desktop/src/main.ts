@@ -2,7 +2,7 @@
 
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process'
 import {
-  appendFileSync, closeSync, cpSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync,
+  appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync,
 } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -23,7 +23,7 @@ import {
 } from './control-plane-certificate.ts'
 import { acceptRelease, readManifest, verifyDownload, type ReleaseGate } from './release-gate.ts'
 import { deploymentPatch, resolveDeployment, runnerEnvironment, type LoginLocale, type OfficeSkills } from './deployment.ts'
-import { profileManifest } from './profile.ts'
+import { provisionProfile } from './profile.ts'
 import { runnerPageNeedsRecovery, runnerReady } from './readiness.ts'
 import { TeamUpdateCoordinator } from './update-coordinator.ts'
 import { UPDATE_IPC, type TeamUpdateState } from './update-state.ts'
@@ -49,8 +49,10 @@ const PPT_TEMPLATE = 'templates/welinkin-ppt.pptx'
 const SKILL_DIR = 'skills'
 /** The Node runtime and LibreOffice packages the Runner converts Office documents with. */
 const OFFICE_SIDECAR = 'dsh-office'
-/** Records which plugin tree the profile's `node_modules` was materialized from. */
-const PLUGIN_TREE_STAMP = '.dsh-plugin-tree'
+/** Signed native application copied outside the executable's virtual filesystem. */
+const CUA_HELPER = 'cua/DSH Computer Use.app/Contents/MacOS/dsh-cua-native'
+/** Package installer run with the Office sidecar's standalone Node. */
+const PLUGIN_PNPM = 'pnpm/bin/pnpm.mjs'
 /** The deployment's menu bar mark, drawn in the bar's own colour. */
 const TRAY_ICON = 'trayTemplate.png'
 /** The live Runner's process id, so the next launch can retire a survivor. */
@@ -227,49 +229,6 @@ function loginLocale(): LoginLocale {
 }
 
 /**
- * Materialize the shipped plugin tree as the profile's own `node_modules`.
- *
- * The packages have to be real files in that directory rather than links into
- * application resources, for two reasons that both come from how Node resolves.
- * A plugin reaches its dependencies through its own real location, so a linked
- * package would look for them inside the read-only resource directory instead
- * of beside itself; and `dsh` adds links there for the packages these plugins
- * take as peers from the Runner installation, which needs the directory
- * writable. macOS clones the tree on a copy-on-write volume, so the duplicate
- * costs neither the time nor the disk space its size suggests.
- * @param source - the shipped tree staged in application resources.
- * @param target - the private profile's `node_modules` directory.
- */
-function materializePluginTree(source: string, target: string): void {
-  rmSync(target, { recursive: true, force: true })
-  const cloned = process.platform === 'darwin'
-    && spawnSync('/bin/cp', ['-Rc', source, target]).status === 0
-  if (!cloned) cpSync(source, target, { recursive: true, verbatimSymlinks: true })
-}
-
-/**
- * Write the deployment's own Team profile into the private Harness home. The
- * manifest is rewritten on every launch so an application upgrade that changes
- * the layer list takes effect; the member's `cordis.patch.yml` is never touched.
- * The plugin tree is materialized once per shipped tree, because a member
- * cannot change it and `dsh` heals its own links there on every boot.
- * @param home - the private `DSH_HOME` given to the Runner.
- */
-function provisionProfile(home: string): void {
-  const dir = join(home, 'profiles', 'team')
-  mkdirSync(dir, { recursive: true })
-  const plugins = stagedResource(PLUGIN_TREE, 'DSH_TEAM_PLUGIN_TREE')
-  writeFileSync(join(dir, 'package.json'), profileManifest(plugins !== undefined))
-  if (plugins === undefined) return
-  const stamp = join(dir, PLUGIN_TREE_STAMP)
-  const generation = `${pluginTreeGeneration()} ${plugins}\n`
-  if (existsSync(stamp) && readFileSync(stamp, 'utf8') === generation) return
-  log('materializing plugin tree')
-  materializePluginTree(plugins, join(dir, 'node_modules'))
-  writeFileSync(stamp, generation)
-}
-
-/**
  * Retire a Runner left by a previous instance of this application. Its port
  * is fixed, so a survivor — the application was replaced while running, or
  * force-quit — makes the new Runner fail to bind and restart every ten
@@ -301,6 +260,7 @@ function retireStaleRunner(executable: string): void {
     }
     spawnSync('/bin/sleep', ['0.1'])
   }
+  throw new Error('The previous Runner has not stopped; quit the previous WeWork instance and retry')
 }
 
 /** Start the Runner and restart unexpected exits while the desktop app lives. */
@@ -312,6 +272,14 @@ function startRunner(): void {
   const pptTemplate = stagedResource(PPT_TEMPLATE, 'DSH_TEAM_PPT_TEMPLATE')
   const skillDir = stagedResource(SKILL_DIR, 'DSH_TEAM_SKILLS')
   const officeSidecar = stagedResource(OFFICE_SIDECAR, 'DSH_TEAM_OFFICE_SIDECAR')
+  const pluginPnpm = stagedResource(PLUGIN_PNPM, 'DSH_BUNDLED_PLUGIN_PNPM')
+  if (app.isPackaged && pluginPnpm === undefined) {
+    throw new Error('The plugin package manager is missing; reinstall the complete WeWork application')
+  }
+  const cuaHelper = process.platform === 'darwin' ? stagedResource(CUA_HELPER, 'DSH_BUNDLED_CUA_HELPER') : undefined
+  if (app.isPackaged && process.platform === 'darwin' && cuaHelper === undefined) {
+    throw new Error('The Computer Use helper is missing; reinstall the complete WeWork application')
+  }
   const skills = officeSkills()
   const deployment = resolveDeployment({
     controlPlaneUrl: app.isPackaged
@@ -327,12 +295,13 @@ function startRunner(): void {
   })
   writeFileSync(patchPath, deploymentPatch(deployment), { encoding: 'utf8', mode: 0o600 })
   const home = join(data, 'home')
-  provisionProfile(home)
   const executable = runnerExecutable()
   retireStaleRunner(executable)
+  const plugins = stagedResource(PLUGIN_TREE, 'DSH_TEAM_PLUGIN_TREE')
+  provisionProfile(home, plugins === undefined ? undefined : { directory: plugins, fingerprint: pluginTreeGeneration() })
   const logFd = openSync(join(data, 'runner.log'), 'a', 0o600)
   runner = spawn(executable, ['--profile', 'team', '--patch', patchPath, '--no-open'], {
-    env: runnerEnvironment(process.env, home, officeSidecar),
+    env: runnerEnvironment(process.env, home, officeSidecar, cuaHelper, pluginPnpm),
     stdio: ['ignore', logFd, logFd],
     windowsHide: true,
   })

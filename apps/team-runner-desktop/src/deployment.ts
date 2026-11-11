@@ -160,16 +160,22 @@ export function deploymentPatch(deployment: DesktopDeployment): string {
  * @param base - the environment the shell runs in.
  * @param home - the private `DSH_HOME` of the Runner.
  * @param officeSidecar - absolute path of the staged Office sidecar, when this build carries one.
+ * @param cuaHelper - absolute path of the staged Computer Use executable, when available.
+ * @param pluginPnpm - absolute path of the bundled pnpm entry, when available.
  * @returns the Runner's environment.
  */
 export function runnerEnvironment(
   base: NodeJS.ProcessEnv,
   home: string,
   officeSidecar: string | undefined,
+  cuaHelper?: string,
+  pluginPnpm?: string,
 ): NodeJS.ProcessEnv {
   return {
     ...base,
     DSH_HOME: home,
     ...officeSidecar === undefined ? {} : { DSH_OFFICE_SIDECAR: officeSidecar },
+    ...cuaHelper === undefined ? {} : { DSH_BUNDLED_CUA_HELPER: cuaHelper },
+    ...pluginPnpm === undefined ? {} : { DSH_BUNDLED_PLUGIN_PNPM: pluginPnpm },
   }
 }

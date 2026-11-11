@@ -161,6 +161,20 @@ describe('runner readiness', () => {
 })
 
 describe('Runner environment', () => {
+  it('passes the staged Computer Use helper without changing Office or the member profile', () => {
+    const helper = '/Applications/WeWork.app/Contents/Resources/runner/cua/DSH Computer Use.app/Contents/MacOS/dsh-cua-native'
+    expect(runnerEnvironment({ DSH_BUNDLED_CUA_HELPER: '/old/helper' }, '/home', '/office', helper)).toEqual({
+      DSH_HOME: '/home', DSH_OFFICE_SIDECAR: '/office', DSH_BUNDLED_CUA_HELPER: helper,
+    })
+    expect(runnerEnvironment({ DSH_BUNDLED_CUA_HELPER: '/source/helper' }, '/home', undefined))
+      .toEqual({ DSH_HOME: '/home', DSH_BUNDLED_CUA_HELPER: '/source/helper' })
+  })
+
+  it('replaces an inherited plugin installer with the packaged pnpm entry', () => {
+    expect(runnerEnvironment({ DSH_BUNDLED_PLUGIN_PNPM: '/old/pnpm' }, '/home', '/office', undefined, '/app/pnpm.mjs'))
+      .toEqual({ DSH_HOME: '/home', DSH_OFFICE_SIDECAR: '/office', DSH_BUNDLED_PLUGIN_PNPM: '/app/pnpm.mjs' })
+  })
+
   it('names the staged Office sidecar and the private home, replacing inherited values', () => {
     const environment = runnerEnvironment(
       { PATH: '/usr/bin', DSH_HOME: '/member/home', DSH_OFFICE_SIDECAR: '/inherited/sidecar' },

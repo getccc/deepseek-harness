@@ -63,3 +63,18 @@ export declare const OFFICE_SIDECAR_ENV: 'DSH_TEAM_OFFICE_SIDECAR'
  * @throws when the variable is absent or the directory lacks the Node runtime or this platform's LibreOffice packages.
  */
 export declare function resolveOfficeSidecar(env: NodeJS.ProcessEnv, windows: boolean, macArchitecture: 'arm64' | 'x64'): string
+
+/** Environment variable naming the extracted, notarized Computer Use artifact. */
+export declare const CUA_HELPER_ENV: 'DSH_TEAM_CUA_HELPER'
+
+/**
+ * Select a signed helper from the official producer's verified artifact.
+ * @param env - Packaging environment.
+ * @param windows - Whether this is a Windows build, which carries no helper.
+ * @param architecture - Target macOS CPU architecture.
+ * @param sourceDigest - Expected digest of the current helper's build inputs.
+ * @returns Complete application to stage, or undefined on Windows.
+ */
+export declare function resolveCuaHelper(
+  env: NodeJS.ProcessEnv, windows: boolean, architecture: 'arm64' | 'x64', sourceDigest: string,
+): string | undefined

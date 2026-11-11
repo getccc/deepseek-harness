@@ -1,8 +1,9 @@
 /** Packaging-time inputs an installed build carries: the release version and the plugin tree's identity. */
 
 import { createHash, createPublicKey } from 'node:crypto'
-import { existsSync, readdirSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, readlinkSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
+import { readCuaApplication, verifyCuaHelperPayload } from '../../../scripts/cua-helper/payload.ts'
 
 /** Environment variable naming the release this build is. */
 export const APP_VERSION_ENV = 'DSH_TEAM_APP_VERSION'
@@ -38,9 +39,8 @@ export function resolveAppVersion(env) {
 
 /**
  * Identify the plugin tree by its content, so an upgrade that ships the same
- * plugins does not recopy them. Paths and sizes are what the walk reads:
- * modification times differ between two installs of one dependency set, and
- * reading 959 MB to hash it would cost more than the copy it saves.
+ * plugins does not recopy them. File bytes, executable bits and link targets
+ * participate; modification times do not.
  * @param {string} directory - the staged plugin tree.
  * @returns {string} a stable short digest of the tree's contents.
  */
@@ -50,9 +50,12 @@ export function pluginTreeFingerprint(directory) {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const path = join(dir, entry.name)
       const name = relative(directory, path).split(sep).join('/')
-      if (entry.isSymbolicLink()) entries.push(`${name}\0link`)
+      if (entry.isSymbolicLink()) entries.push(`${name}\0link\0${readlinkSync(path)}`)
       else if (entry.isDirectory()) walk(path)
-      else if (entry.isFile()) entries.push(`${name}\0${String(statSync(path).size)}`)
+      else if (entry.isFile()) {
+        const digest = createHash('sha256').update(readFileSync(path)).digest('hex')
+        entries.push(`${name}\0${String(statSync(path).mode & 0o111)}\0${digest}`)
+      }
     }
   }
   walk(directory)
@@ -182,4 +185,25 @@ export function resolveOfficeSidecar(env, windows, macArchitecture) {
     }
   }
   return value
+}
+
+/** Environment variable naming the extracted, notarized Computer Use artifact. */
+export const CUA_HELPER_ENV = 'DSH_TEAM_CUA_HELPER'
+
+/**
+ * Select a signed helper from the official producer's verified artifact.
+ * @param {NodeJS.ProcessEnv} env - Packaging environment.
+ * @param {boolean} windows - Whether this is a Windows build, which carries no helper.
+ * @param {'arm64' | 'x64'} architecture - Target macOS CPU architecture.
+ * @param {string} sourceDigest - Expected digest of the current helper's build inputs.
+ * @returns {string | undefined} Complete application to stage, or undefined on Windows.
+ */
+export function resolveCuaHelper(env, windows, architecture, sourceDigest) {
+  if (windows) return undefined
+  const root = env[CUA_HELPER_ENV]?.trim()
+  if (root === undefined || root === '') {
+    throw new Error(`${CUA_HELPER_ENV} must name the extracted artifact from scripts/cua-helper/package.ts`)
+  }
+  verifyCuaHelperPayload(root, { sourceDigest })
+  return readCuaApplication(join(root, 'native/bin', `darwin-${architecture}`)).application
 }

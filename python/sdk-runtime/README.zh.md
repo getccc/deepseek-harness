@@ -60,6 +60,8 @@ Python 与打包的 bootstrap 共享资源布局：`<cache>/<identity>/office/`�
 
 外部 profile 管理使用 `dsh plugin --profile <name> ...`。显式调用 `download_primary_runtime()` 准备资源后，打包启动器会将所选载荷的独立 Node 和 pnpm 提供给该命令及 SDK `plugin_manager` 工具。独立 Node 目录仅加入包操作子进程（包括构建脚本）的环境；普通工具保留原有 `PATH`。`DSH_PRIMARY_RUNTIME` 覆盖缓存选择，空值禁用它。所选载荷格式错误或不完整时启动失败，不会静默改用系统 pnpm。没有选中包含 Node/pnpm 的载荷时，包操作使用 `PATH` 中的 pnpm 或显式 `plugin-manager.pnpmCommand`。不会隐式触发下载。普通 SDK／profile 运行及列举/切换现有插件不需要 pnpm。每个面向模型的管理操作仍要求完整权限或客户端审批应答方；保存的变更影响后续启动使用的共享 SDK profile。
 
+私有单文件分派器调用已安装 CLI 的 `runCli` 入口。插件通过 `process.execPath` 启动的 worker 使用私有 Node 载体，应用仍通过 profile 启动。桌面载体可同时提供绝对路径的 `DSH_BUNDLED_PLUGIN_PNPM` 入口及 `DSH_OFFICE_SIDECAR`。未选择创作运行时时，包操作使用该 pnpm 和 sidecar 的独立 Node。安装器文件缺失时，启动失败并提示重新安装；普通进程环境保持不变。
+
 ## 构建与分发
 
 生产部署按工作区锁文件安装固定的依赖图，不重新解析版本。部署允许工作区中不属于运行时闭包的补丁保持未使用；闭包内包的补丁仍必须成功应用。此例外仅用于部署命令，仓库安装仍拒绝未使用的补丁。
