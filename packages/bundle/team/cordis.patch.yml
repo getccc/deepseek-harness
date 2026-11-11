@@ -107,10 +107,10 @@
   config:
     welcomeNoticeVersion: '2026-09-28.1'
 
-# Team keeps panel and View entries directly visible. The Web layer supplies
-# the Plugins page as a sidebar entry.
+# Team shares the Web layer's More menus and panel pin controls. Business
+# plugins can contribute menu rows while Plugins remains in the main sidebar.
 - id: entry-customization
-  disabled: true
+  disabled: false
 
 # Team conversations start with web access enabled; members need no composer switch.
 - id: ui-web-access

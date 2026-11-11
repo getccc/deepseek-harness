@@ -97,10 +97,10 @@ describe('dsh-team bundle', () => {
     }
   })
 
-  it('inherits the Plugins page and keeps navigation entries directly visible', () => {
+  it('inherits the Plugins page and enables More menus', () => {
     const patch = patchRows()
     expect(patch.find(row => row.id === 'ui-plugin-manager')?.disabled).not.toBe(true)
-    expect(patch.find(row => row.id === 'entry-customization')?.disabled).toBe(true)
+    expect(patch.find(row => row.id === 'entry-customization')?.disabled).toBe(false)
   })
 
   it('sends web search through the Control Plane and keeps fetch local', () => {

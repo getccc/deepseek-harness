@@ -62,7 +62,7 @@ The package's substance is `cordis.patch.yml`, named by the `dsh.bundle.patch` m
 
 A patch replaces the targeted row's whole `config`, so the `webserver` and `web-runtime` overrides restate every key they own. The runtime entry is `/team/open`, which deliberately receives no standalone Web process token because local account authentication owns Team unlock. The layer also turns off the `session-log-deepseek` contribution that `dsh-base` enables by default, so model requests, including those the Control Plane carries to the company provider, never attach the Session log.
 
-The composer hides the web-access switch while new conversations retain the preset’s default enabled web access. Members use the company route and the Team account launcher. The layer disables the DeepSeek account service, route, Remote, and settings section. The sidebar shows all registered panel entries directly, with Plugins below Knowledge Search. The layer marks the developer welcome notice as acknowledged.
+The composer hides the web-access switch while new conversations retain the preset’s default enabled web access. Members use the company route and the Team account launcher. The layer disables the DeepSeek account service, route, Remote, and settings section. The sidebar keeps Plugins below Knowledge Search and enables the shared More menus; business plugins can add their launchers to More. The layer marks the developer welcome notice as acknowledged.
 
 ### Source map
 

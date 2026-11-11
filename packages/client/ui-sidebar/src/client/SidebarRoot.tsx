@@ -116,7 +116,7 @@ function PanelMoreMenu({ wide, label, entries, onOpen, onPinnedChange, trackEntr
   const [open, setOpen] = useState(false)
   const onDismiss = (): void => { setOpen(false) }
   return (
-    <Menu open={open} onClose={onDismiss} portal autoFocus className={css.moreAnchor} listClassName={css.moreMenu}
+    <Menu open={open} onClose={onDismiss} portal autoFocus side="right" className={css.moreAnchor} listClassName={css.moreMenu}
       anchor={(
         <Tooltip label={label} delayMs={500} disabled={wide}>
           <button type="button" className={css.panelRow} aria-label={label} aria-haspopup="menu" aria-expanded={open}
