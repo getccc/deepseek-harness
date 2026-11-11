@@ -544,7 +544,7 @@ export function Members({
                   />
                 ),
               }
-              : undefined}
+              : {}}
           />
         </div>
       </div>

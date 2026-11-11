@@ -11,6 +11,13 @@ const facts = {
 } as const
 
 describe('desktop deployment facts', () => {
+  it('offers a shipped company directory without preinstalling business plugins', () => {
+    const manifest = JSON.parse(profileManifest(true, true)) as { dsh: { profile: { bundles: string[] } } }
+    expect(manifest.dsh.profile.bundles).toContain('@wework/company-plugins')
+    expect(manifest.dsh.profile.bundles).not.toContain('@wework/ehs-environment-reports')
+    expect(profileManifest(true)).not.toContain('@wework/company-plugins')
+    expect(profileManifest(false, true)).not.toContain('@wework/company-plugins')
+  })
   it('writes the Control Plane into every Runner consumer without secret material', () => {
     const deployment = resolveDeployment(facts)
     const patch = JSON.parse(deploymentPatch(deployment)) as Record<string, unknown>[]

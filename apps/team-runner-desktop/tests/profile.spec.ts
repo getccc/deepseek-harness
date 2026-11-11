@@ -48,6 +48,68 @@ it('retains enabled and disabled bundles, dependencies and user patches after a 
   expect(require('@dsh-external/dsh-echarts')).toBe('first')
 })
 
+it('projects a carried company directory for a new profile and preserves an existing selection', () => {
+  const f = fixture()
+  const plugins = f.shipped('company-directory')
+  const name = '@wework/company-plugins'
+  const directory = join(plugins.directory, name)
+  mkdirSync(directory, { recursive: true })
+  writeFileSync(join(directory, 'package.json'), JSON.stringify({ name, main: 'index.cjs' }))
+  writeFileSync(join(directory, 'index.cjs'), "module.exports = 'company directory'")
+  provisionProfile(f.home, plugins)
+  const manifest = join(f.profile, 'package.json')
+  const first = JSON.parse(readFileSync(manifest, 'utf8')) as { dsh: { profile: { bundles: string[] } } }
+  expect(first.dsh.profile.bundles).toContain(name)
+  expect(createRequire(manifest)(name)).toBe('company directory')
+  first.dsh.profile.bundles = first.dsh.profile.bundles.filter(bundle => bundle !== name)
+  const selection = `${JSON.stringify(first)}\n`
+  writeFileSync(manifest, selection)
+  provisionProfile(f.home, plugins)
+  expect(readFileSync(manifest, 'utf8')).toBe(selection)
+})
+
+it('adds the company directory on upgrade once while retaining business plugin choices and patches', () => {
+  const f = fixture()
+  provisionProfile(f.home, f.shipped('before-directory'))
+  const manifest = join(f.profile, 'package.json')
+  const selected = { name: 'member-profile', private: true, dependencies: { 'member-plugin': '1.0.0' },
+    dsh: { profile: { bundles: ['@deepseek-ai/dsh-base', 'member-plugin'] } } }
+  writeFileSync(manifest, `${JSON.stringify(selected)}\n`)
+  writeFileSync(join(f.profile, 'cordis.patch.yml'), '- id: member-setting\n  disabled: true\n')
+  const plugins = f.shipped('with-directory')
+  const name = '@wework/company-plugins'
+  const directory = join(plugins.directory, name)
+  mkdirSync(directory, { recursive: true })
+  writeFileSync(join(directory, 'package.json'), JSON.stringify({ name, main: 'index.cjs' }))
+  writeFileSync(join(directory, 'index.cjs'), "module.exports = 'company directory'")
+  provisionProfile(f.home, plugins)
+  const upgraded = JSON.parse(readFileSync(manifest, 'utf8')) as typeof selected
+  expect(upgraded.dependencies).toEqual(selected.dependencies)
+  expect(upgraded.dsh.profile.bundles).toEqual([...selected.dsh.profile.bundles, name])
+  expect(upgraded.dsh.profile.bundles).not.toContain('@wework/ehs-environment-reports')
+  expect(readFileSync(join(f.profile, 'cordis.patch.yml'), 'utf8')).toContain('member-setting')
+  upgraded.dsh.profile.bundles = upgraded.dsh.profile.bundles.filter(bundle => bundle !== name)
+  const disabled = `${JSON.stringify(upgraded)}\n`
+  writeFileSync(manifest, disabled)
+  provisionProfile(f.home, plugins)
+  expect(readFileSync(manifest, 'utf8')).toBe(disabled)
+})
+
+it('rejects malformed bundle selections without rewriting the member manifest', () => {
+  const f = fixture()
+  const plugins = f.shipped('company-directory')
+  const directory = join(plugins.directory, '@wework/company-plugins')
+  mkdirSync(directory, { recursive: true })
+  writeFileSync(join(directory, 'package.json'), '{"name":"@wework/company-plugins"}')
+  mkdirSync(f.profile, { recursive: true })
+  const manifest = join(f.profile, 'package.json')
+  for (const content of ['{"dsh":42}', '{"dsh":{"profile":[]}}', '{"dsh":{"profile":{"bundles":[42]}}}']) {
+    writeFileSync(manifest, content)
+    expect(() => { provisionProfile(f.home, plugins) }).toThrow('Invalid Team profile')
+    expect(readFileSync(manifest, 'utf8')).toBe(content)
+  }
+})
+
 it('upgrades shipped plugins and their private dependencies without overwriting installed packages', () => {
   const f = fixture()
   provisionProfile(f.home, f.shipped('first'))

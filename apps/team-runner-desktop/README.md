@@ -78,6 +78,8 @@ For DSH `0.2.2-rc.1`, the staging profile uses `dsh-univer-office@0.4.0` with th
 
 The shell initializes the private profile's manifest once. Plugin selections, dependencies and the member's `cordis.patch.yml` survive restarts and upgrades. Shipped plugins are copied into a writable, fingerprinted directory under `DSH_HOME/desktop-plugins`, with copy-on-write where supported; only their top-level package links are projected into the profile. Their dependencies resolve from that private directory, separately from member-installed packages. A profile-declared dependency takes precedence over the shipped projection. Legacy copied trees migrate without replacing other packages. Completed generations remain available for existing local references.
 
+An enterprise plugin tree can also carry `@wework/company-plugins`. The shell projects it alongside the required plugins and selects it for new profiles and the first upgrade that introduces the directory. Later launches retain a member’s disabled selection; other bundle choices, dependencies and patches are preserved. This bundle provides the company directory and a read-only download proxy using the Runner's configured Control Plane certificate. Business plugins such as EHS reports remain member-installed.
+
 The installer also carries the repository-pinned pnpm distribution in `runner/pnpm`. The shell passes its entry as `DSH_BUNDLED_PLUGIN_PNPM`; the private Runner dispatcher supplies the Office sidecar’s standalone Node for plugin installation and build scripts. Members do not need Node or pnpm on their `PATH`. Ordinary tools keep their original `PATH`, and explicitly selected primary runtimes retain precedence.
 
 ### Preparing the Office sidecar
