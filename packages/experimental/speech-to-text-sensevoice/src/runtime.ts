@@ -55,7 +55,9 @@ async function matchesAsset(path: string, asset: Asset, signal: AbortSignal): Pr
 function resolveRuntime(config: Config) {
   const supported = ['darwin-arm64', 'darwin-x64', 'linux-arm64', 'linux-x64', 'win32-x64']
   if (!supported.includes(`${process.platform}-${process.arch}`)) throw new Error(`Local speech is unavailable for ${process.platform}-${process.arch}`)
-  const lock = JSON.parse(readFileSync(new URL('../runtime/assets.json', import.meta.url), 'utf8')) as RuntimeLock
+  // Frozen runtimes expose embedded assets through string-path filesystem hooks.
+  const manifestPath = fileURLToPath(new URL('../runtime/assets.json', import.meta.url))
+  const lock = JSON.parse(readFileSync(manifestPath, 'utf8')) as RuntimeLock
   const modelRoot = config.modelDirectory ?? join(config.dataRoot, 'models', 'sensevoice-onnx')
   const paths: RuntimePaths = {
     model: join(modelRoot, lock.models[config.precision].name), tokens: join(modelRoot, lock.tokens.name),

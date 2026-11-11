@@ -47,6 +47,8 @@ One managed Node subprocess serializes inference. Recordings submitted during wa
 
 The Host owns preparation across page and Session changes: check resources, download recognition weights and tokens, download VAD, verify files, and load the worker. Explicit model paths omit their download steps. Downloads report bytes; other steps report elapsed time. An idle worker retains prepared paths and needs only model loading on wake-up. Cancellation after a preparation result is published waits for cleanup without replacing that result.
 
+The pinned model manifest at `runtime/assets.json` ships with the package. The Host reads it through a filesystem path so embedded assets remain accessible in frozen runtimes.
+
 </details>
 
 -----

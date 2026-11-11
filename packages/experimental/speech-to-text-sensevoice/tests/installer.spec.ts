@@ -24,7 +24,7 @@ vi.mock('node:fs/promises', async (importOriginal) => {
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>()
   return { ...actual, readFileSync: (...args: Parameters<typeof actual.readFileSync>) => {
-    if (args[0] instanceof URL && args[0].pathname.endsWith('/runtime/assets.json')) return JSON.stringify(fake.lock)
+    if (typeof args[0] === 'string' && /[/\\]runtime[/\\]assets\.json$/.test(args[0])) return JSON.stringify(fake.lock)
     return actual.readFileSync(...args)
   } }
 })
