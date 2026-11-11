@@ -31,6 +31,7 @@ export const SHIPPED_PLUGIN_BUNDLES = ['dsh-univer-office', '@dsh-external/dsh-e
 
 /** Optional company directory carried by an enterprise plugin tree. */
 const COMPANY_PLUGIN_BUNDLE = '@wework/company-plugins'
+const COMPANY_INDEX_BUNDLE = '@deepseek-ai/dsh-experimental-plugin-market-bundle'
 
 /**
  * Render the initial Team profile manifest.
@@ -46,7 +47,7 @@ export function profileManifest(shippedPlugins: boolean, companyPlugins = false)
     dsh: {
       profile: {
         bundles: [...RUNNER_BUNDLES, ...shippedPlugins ? SHIPPED_PLUGIN_BUNDLES : [],
-          ...shippedPlugins && companyPlugins ? [COMPANY_PLUGIN_BUNDLE] : []],
+          ...shippedPlugins && companyPlugins ? [COMPANY_INDEX_BUNDLE, COMPANY_PLUGIN_BUNDLE] : []],
       },
     },
   }, null, 2)}\n`
@@ -91,7 +92,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /** Select a newly carried company directory without replacing other profile settings. */
-function selectCompanyDirectory(manifestPath: string): void {
+function selectCompanyDirectory(manifestPath: string, addCompany: boolean, initializeIndex: boolean): void {
   const manifest: unknown = JSON.parse(readFileSync(manifestPath, 'utf8'))
   if (!isRecord(manifest)) throw new Error(`Invalid Team profile manifest: ${manifestPath}`)
   const dsh = manifest.dsh ?? {}
@@ -99,15 +100,23 @@ function selectCompanyDirectory(manifestPath: string): void {
   const profile = dsh.profile ?? {}
   if (!isRecord(profile)) throw new Error(`Invalid Team profile dsh.profile: ${manifestPath}`)
   const bundles = profile.bundles ?? []
-  if (!Array.isArray(bundles) || bundles.some(value => typeof value !== 'string')) {
+  if (!Array.isArray(bundles)) {
     throw new Error(`Invalid Team profile bundles: ${manifestPath}`)
   }
-  if (bundles.includes(COMPANY_PLUGIN_BUNDLE)) return
+  const selected = bundles.map((value: unknown) => {
+    if (typeof value !== 'string') throw new Error(`Invalid Team profile bundles: ${manifestPath}`)
+    return value
+  })
+  if (addCompany && !selected.includes(COMPANY_PLUGIN_BUNDLE)) selected.push(COMPANY_PLUGIN_BUNDLE)
+  if (initializeIndex && selected.includes(COMPANY_PLUGIN_BUNDLE) && !selected.includes(COMPANY_INDEX_BUNDLE)) {
+    selected.splice(selected.indexOf(COMPANY_PLUGIN_BUNDLE), 0, COMPANY_INDEX_BUNDLE)
+  }
+  if (selected.length === bundles.length) return
   const staging = mkdtempSync(join(dirname(manifestPath), '.company-directory-'))
   try {
     const path = join(staging, 'package.json')
     writeFileSync(path, `${JSON.stringify({ ...manifest, dsh: { ...dsh,
-      profile: { ...profile, bundles: [...bundles, COMPANY_PLUGIN_BUNDLE] },
+      profile: { ...profile, bundles: selected },
     } }, null, 2)}\n`, { flag: 'wx', mode: 0o600 })
     renameSync(path, manifestPath)
   } finally {
@@ -143,9 +152,11 @@ export function provisionProfile(home: string, plugins: ShippedPlugins | undefin
       throw new Error(`The shipped plugin tree omits ${name}; rebuild the Team desktop installer`)
     }
   }
-  if (companyPlugins && !managed.has(COMPANY_PLUGIN_BUNDLE)
-    && lstatSync(join(profile, 'node_modules', COMPANY_PLUGIN_BUNDLE), { throwIfNoEntry: false }) === undefined) {
-    selectCompanyDirectory(manifest)
+  const indexInitialization = join(profile, '.company-plugin-index-initialized')
+  if (companyPlugins) {
+    const addCompany = !managed.has(COMPANY_PLUGIN_BUNDLE)
+      && lstatSync(join(profile, 'node_modules', COMPANY_PLUGIN_BUNDLE), { throwIfNoEntry: false }) === undefined
+    selectCompanyDirectory(manifest, addCompany, !existsSync(indexInitialization))
   }
   const cache = join(home, 'desktop-plugins')
   mkdirSync(cache, { recursive: true })
@@ -182,4 +193,5 @@ export function provisionProfile(home: string, plugins: ShippedPlugins | undefin
     }
   }
   rmSync(join(profile, '.dsh-plugin-tree'), { force: true })
+  if (companyPlugins && !existsSync(indexInitialization)) writeFileSync(indexInitialization, '\n', { flag: 'wx', mode: 0o600 })
 }

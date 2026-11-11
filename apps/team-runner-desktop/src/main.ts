@@ -280,6 +280,10 @@ function startRunner(): void {
   const pptTemplate = stagedResource(PPT_TEMPLATE, 'DSH_TEAM_PPT_TEMPLATE')
   const skillDir = stagedResource(SKILL_DIR, 'DSH_TEAM_SKILLS')
   const officeSidecar = stagedResource(OFFICE_SIDECAR, 'DSH_TEAM_OFFICE_SIDECAR')
+  const ptcBootstrap = stagedResource('ptc/process.mjs', 'DSH_TEAM_PTC_BOOTSTRAP')
+  if (app.isPackaged && (ptcBootstrap === undefined || officeSidecar === undefined)) {
+    throw new Error('The PTC runtime is missing; reinstall the complete WeWork application')
+  }
   const pluginPnpm = stagedResource(PLUGIN_PNPM, 'DSH_BUNDLED_PLUGIN_PNPM')
   if (app.isPackaged && pluginPnpm === undefined) {
     throw new Error('The plugin package manager is missing; reinstall the complete WeWork application')
@@ -300,6 +304,9 @@ function startRunner(): void {
     ...pptTemplate === undefined ? {} : { welinkinTemplatePath: pptTemplate },
     ...skillDir === undefined ? {} : { skillDir },
     ...Object.keys(skills).length === 0 ? {} : { officeSkills: skills },
+    ...ptcBootstrap === undefined || officeSidecar === undefined ? {} : {
+      ptcLaunch: { executable: join(officeSidecar, 'node', ...process.platform === 'win32' ? ['node.exe'] : ['bin', 'node']), bootstrapPath: ptcBootstrap },
+    },
   })
   writeFileSync(patchPath, deploymentPatch(deployment), { encoding: 'utf8', mode: 0o600 })
   const home = join(data, 'home')
@@ -312,7 +319,7 @@ function startRunner(): void {
   }
   const runnerLog = join(data, 'runner.log')
   const child = spawn(executable, ['--profile', 'team', '--patch', patchPath, '--no-open'], {
-    env: runnerEnvironment(process.env, home, officeSidecar, cuaHelper, pluginPnpm),
+    env: runnerEnvironment(process.env, home, officeSidecar, cuaHelper, pluginPnpm, deployment.ptcLaunch),
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   })

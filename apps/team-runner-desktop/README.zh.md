@@ -80,7 +80,7 @@ DSH `0.2.2-rc.1` 的暂存 profile 使用 `dsh-univer-office@0.4.0` 及其 [Offi
 
 外壳仅在首次启动时初始化私有 profile 清单。插件选择、依赖和成员的 `cordis.patch.yml` 在重启和升级后保留。随附插件复制到 `DSH_HOME/desktop-plugins` 下按内容指纹划分的可写目录，在支持时使用写时复制；profile 中仅建立这些插件顶层包的链接。它们从私有目录解析依赖，与成员安装的包分离。profile 声明的依赖优先于随附链接。旧版复制的目录在迁移时保留其他包。完整的历史版本目录保留，供已有本地引用继续使用。
 
-企业插件树还可以携带 `@wework/company-plugins`。Shell 会将它与必需插件一起映射，并在新建 profile 或首次引入公司目录的升级中默认启用。此后保留成员停用目录的选择，其他插件选择、依赖和用户补丁均保留。该 bundle 提供公司插件目录和使用 Runner 已配置的 Control Plane 证书的只读下载代理；EHS 报告等业务插件仍由成员自行安装。
+企业插件树还可以携带 `@wework/company-plugins`。Shell 在新 profile 中启用公司入口和自定义插件索引组合包，并在升级已有公司 profile 时一次性初始化索引组合包。后续启动保留停用选择，其他组合包、依赖和用户补丁均保留。公司入口使用已配置的证书直连账户服务器的目录。插件安装和更新检查使用同一服务器的 `/npm/` 仓库，不回退到公网源。EHS 报告等业务插件仍由成员自行安装。
 
 缺少 profile 包管理设置时，会初始化扁平依赖布局并关闭 peer 依赖自动安装，使插件复用 Runner 内置的服务。现有工作区设置保持不变。
 
@@ -112,6 +112,8 @@ tar -xzf /absolute/path/to/cua-artifact/cua-helper.tgz -C /absolute/path/to/cua-
 把 `DSH_TEAM_CUA_HELPER` 指向解压后的目录。打包会拒绝缺失、源码不匹配或文件被改动的产物，选择对应 CPU 的应用，并随附为 `runner/cua/DSH Computer Use.app`。Electron 签名排除该辅助应用，签名后再次校验其文件未变。Runner 通过 `DSH_BUNDLED_CUA_HELPER` 接收可执行文件路径，可选 Computer Use 组合包仅在启用时读取它。安装版用户不需要 Swift 编译器或开发者签名配置。
 
 Computer Use 要求 macOS 14 或更高版本及 PTC 会话。在插件页启用后，通过其权限页为 `DSH Computer Use.app` 授予辅助功能和屏幕录制权限。这些权限由用户决定。语音输入使用 WeWork 的麦克风权限，macOS 外壳声明了用途并带有 audio-input 权限，模型在首次使用时准备。GitHub、Codex 和 Claude Code 集成仍需相应宿主工具及认证。
+
+安装器将自包含的 Node PTC 启动文件随附为 `runner/ptc/process.mjs`。Shell 通过 `DSH_TEAM_PTC_BOOTSTRAP` 和 `DSH_TEAM_PTC_NODE` 传入该文件与 Office sidecar 独立 Node 的路径。Team 组合包用这些文件以 `node-script` 方式启动，使打包客户端可以切换到保留状态的执行方式，成员仍可在自己的 profile 中修改配置。
 
 ### 签名与公证 macOS 构建
 

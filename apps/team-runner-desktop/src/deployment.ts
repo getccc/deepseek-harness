@@ -26,6 +26,8 @@ export interface DesktopDeployment {
   readonly skillDir?: string
   /** Session-catalog skill names each office kind starts from; absent kinds name none. */
   readonly officeSkills?: OfficeSkills
+  /** Real Node executable and self-contained PTC bootstrap carried by the installer. */
+  readonly ptcLaunch?: { readonly executable: string; readonly bootstrapPath: string }
 }
 
 /** The skill each office deliverable kind loads before building, by kind. */
@@ -70,6 +72,10 @@ export function resolveDeployment(input: DesktopDeployment): DesktopDeployment {
   if (input.skillDir !== undefined && !isFullyQualifiedPath(input.skillDir)) {
     throw new Error('the staged skill directory must be an absolute path')
   }
+  if (input.ptcLaunch !== undefined && (!isFullyQualifiedPath(input.ptcLaunch.executable)
+    || !isFullyQualifiedPath(input.ptcLaunch.bootstrapPath))) {
+    throw new Error('the PTC executable and bootstrap must be absolute paths')
+  }
   const officeSkills = Object.entries(input.officeSkills ?? {})
   if (officeSkills.some(([, skill]) => typeof skill !== 'string' || skill.trim() === '')) {
     throw new Error('an office skill name must not be empty')
@@ -88,6 +94,7 @@ export function resolveDeployment(input: DesktopDeployment): DesktopDeployment {
     ...input.welinkinTemplatePath === undefined ? {} : { welinkinTemplatePath: input.welinkinTemplatePath },
     ...input.skillDir === undefined ? {} : { skillDir: input.skillDir },
     ...officeSkills.length === 0 ? {} : { officeSkills: input.officeSkills },
+    ...input.ptcLaunch === undefined ? {} : { ptcLaunch: input.ptcLaunch },
   }
 }
 
@@ -135,6 +142,7 @@ export function deploymentPatch(deployment: DesktopDeployment): string {
     { id: 'bi', config: address },
     { id: 'gmo', config: address },
     { id: 'web-search-team', config: address },
+    { id: 'plugin-manager', config: { registry: new URL('/npm/', deployment.controlPlaneUrl).href, fallbackRegistries: [] } },
     ...Object.keys(office).length === 0 ? [] : [{ id: 'office', config: office }],
     // `dsh-web-app` disables the host `skill-filesystem` row because presets own
     // local discovery; a deployment-level skill directory belongs in the host's
@@ -162,6 +170,7 @@ export function deploymentPatch(deployment: DesktopDeployment): string {
  * @param officeSidecar - absolute path of the staged Office sidecar, when this build carries one.
  * @param cuaHelper - absolute path of the staged Computer Use executable, when available.
  * @param pluginPnpm - absolute path of the bundled pnpm entry, when available.
+ * @param ptcLaunch - real Node executable and PTC bootstrap used by the Team bundle.
  * @returns the Runner's environment.
  */
 export function runnerEnvironment(
@@ -170,6 +179,7 @@ export function runnerEnvironment(
   officeSidecar: string | undefined,
   cuaHelper?: string,
   pluginPnpm?: string,
+  ptcLaunch?: DesktopDeployment['ptcLaunch'],
 ): NodeJS.ProcessEnv {
   return {
     ...base,
@@ -177,5 +187,8 @@ export function runnerEnvironment(
     ...officeSidecar === undefined ? {} : { DSH_OFFICE_SIDECAR: officeSidecar },
     ...cuaHelper === undefined ? {} : { DSH_BUNDLED_CUA_HELPER: cuaHelper },
     ...pluginPnpm === undefined ? {} : { DSH_BUNDLED_PLUGIN_PNPM: pluginPnpm },
+    ...ptcLaunch === undefined ? {} : {
+      DSH_TEAM_PTC_NODE: ptcLaunch.executable, DSH_TEAM_PTC_BOOTSTRAP: ptcLaunch.bootstrapPath,
+    },
   }
 }

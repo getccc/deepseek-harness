@@ -14,6 +14,7 @@ describe('desktop deployment facts', () => {
   it('offers a shipped company directory without preinstalling business plugins', () => {
     const manifest = JSON.parse(profileManifest(true, true)) as { dsh: { profile: { bundles: string[] } } }
     expect(manifest.dsh.profile.bundles).toContain('@wework/company-plugins')
+    expect(manifest.dsh.profile.bundles).toContain('@deepseek-ai/dsh-experimental-plugin-market-bundle')
     expect(manifest.dsh.profile.bundles).not.toContain('@wework/ehs-environment-reports')
     expect(profileManifest(true)).not.toContain('@wework/company-plugins')
     expect(profileManifest(false, true)).not.toContain('@wework/company-plugins')
@@ -36,6 +37,7 @@ describe('desktop deployment facts', () => {
       { id: 'bi', config: { controlPlaneUrl: 'https://control.acme.example' } },
       { id: 'gmo', config: { controlPlaneUrl: 'https://control.acme.example' } },
       { id: 'web-search-team', config: { controlPlaneUrl: 'https://control.acme.example' } },
+      { id: 'plugin-manager', config: { registry: 'https://control.acme.example/npm/', fallbackRegistries: [] } },
     ])
     expect(deploymentPatch(deployment)).not.toMatch(/weknora|webi|knowledgeBase|apiKey/iu)
     expect(deploymentPatch(deployment)).not.toMatch(/password|credential/iu)
@@ -46,6 +48,17 @@ describe('desktop deployment facts', () => {
       .toThrow(/HTTPS/u)
     expect(() => resolveDeployment({ ...facts, callbackUrl: 'http://127.0.0.1:3091/team/callback' }))
       .toThrow(/fixed Runner origin/u)
+  })
+
+  it('supplies real PTC launch files without overriding the editable execution mode', () => {
+    const ptcLaunch = { executable: '/Applications/WeWork.app/runner/node', bootstrapPath: '/Applications/WeWork.app/runner/ptc/process.mjs' }
+    const deployment = resolveDeployment({ ...facts, ptcLaunch })
+    expect(runnerEnvironment({}, '/home', undefined, undefined, undefined, deployment.ptcLaunch)).toEqual({
+      DSH_HOME: '/home', DSH_TEAM_PTC_NODE: ptcLaunch.executable, DSH_TEAM_PTC_BOOTSTRAP: ptcLaunch.bootstrapPath,
+    })
+    expect(deploymentPatch(deployment)).not.toContain('ptc-runtime')
+    expect(() => resolveDeployment({ ...facts, ptcLaunch: { ...ptcLaunch, executable: 'node' } })).toThrow('absolute paths')
+    expect(() => resolveDeployment({ ...facts, ptcLaunch: { ...ptcLaunch, bootstrapPath: 'process.js' } })).toThrow('absolute paths')
   })
 
   it('pins a private certificate authority on every Control Plane consumer', () => {

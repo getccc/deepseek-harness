@@ -33,6 +33,15 @@ function patchRows(): PatchRow[] {
 }
 
 describe('dsh-team bundle', () => {
+  it('takes the packaged PTC files from the carrier while leaving ordinary Node launches unchanged', () => {
+    const row = patchRows().find(candidate => candidate.id === 'ptc-runtime')
+    const expression = (row?.config?.['launch'] as { __jsExpr: string }).__jsExpr
+    expect(evaluate({ process: { env: {} } }, expression)).toBeUndefined()
+    expect(evaluate({ process: { env: { DSH_TEAM_PTC_NODE: '/app/node', DSH_TEAM_PTC_BOOTSTRAP: '/app/process.mjs' } } }, expression))
+      .toEqual({ kind: 'node-script', executable: '/app/node', bootstrapPath: '/app/process.mjs' })
+    expect(evaluate({ process: { env: { DSH_TEAM_PTC_NODE: '/app/node' } } }, expression))
+      .toEqual({ kind: 'node-script', executable: '/app/node', bootstrapPath: '' })
+  })
   it('starts with the current welcome notice acknowledged', () => {
     // Upstream bumps the notice version to show it to everyone again; a stale
     // seed would put a developer-facing dialog in front of every member.

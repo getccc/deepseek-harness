@@ -35,6 +35,8 @@ dsh --profile team
 
 该 profile 依次组合 `dsh-base`、`dsh-web-app` 与本层，并打开 `http://127.0.0.1:3090/team/open`。未解锁的浏览器会看到本地账户表单，绝不会被送到 Control Plane 管理端源。
 
+打包载体可同时提供 `DSH_TEAM_PTC_NODE` 和 `DSH_TEAM_PTC_BOOTSTRAP`，指定真实 Node 可执行文件和自包含的 PTC 进程文件。`ptc-runtime` 行将其作为经过验证的 `launch` 配置，用户 profile 中的修改仍然优先，包括持久化执行设置。两项变量都未设置时，Node 提供方选择正常的本地启动方式。只提供其中一项会导致配置验证失败。
+
 ### 与 `dsh web` 并行运行
 
 两者都是普通的回环服务器，因此不能共用端口：后绑定的那个会失败。让 Team Runner 使用自己的默认端口，意味着你可以在 `3080` 上保留开发用的 `dsh web`，同时让 Team Runner 服务 `3090`，两边都不需要改配置。

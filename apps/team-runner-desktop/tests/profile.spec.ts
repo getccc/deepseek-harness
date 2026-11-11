@@ -107,10 +107,34 @@ it('adds the company directory on upgrade once while retaining business plugin c
   provisionProfile(f.home, plugins)
   const upgraded = JSON.parse(readFileSync(manifest, 'utf8')) as typeof selected
   expect(upgraded.dependencies).toEqual(selected.dependencies)
-  expect(upgraded.dsh.profile.bundles).toEqual([...selected.dsh.profile.bundles, name])
+  expect(upgraded.dsh.profile.bundles).toEqual([...selected.dsh.profile.bundles, '@deepseek-ai/dsh-experimental-plugin-market-bundle', name])
   expect(upgraded.dsh.profile.bundles).not.toContain('@wework/ehs-environment-reports')
   expect(readFileSync(join(f.profile, 'cordis.patch.yml'), 'utf8')).toContain('member-setting')
   upgraded.dsh.profile.bundles = upgraded.dsh.profile.bundles.filter(bundle => bundle !== name)
+  const disabled = `${JSON.stringify(upgraded)}\n`
+  writeFileSync(manifest, disabled)
+  provisionProfile(f.home, plugins)
+  expect(readFileSync(manifest, 'utf8')).toBe(disabled)
+})
+
+it('selects the catalog bundle once for an older company profile and then retains a disabled choice', () => {
+  const f = fixture()
+  const plugins = f.shipped('catalog-upgrade')
+  const directory = join(plugins.directory, '@wework/company-plugins')
+  mkdirSync(directory, { recursive: true })
+  writeFileSync(join(directory, 'package.json'), '{"name":"@wework/company-plugins"}')
+  provisionProfile(f.home, plugins)
+  const manifest = join(f.profile, 'package.json')
+  const marker = join(f.profile, '.company-plugin-index-initialized')
+  const selected = JSON.parse(readFileSync(manifest, 'utf8')) as { dsh: { profile: { bundles: string[] } } }
+  const market = '@deepseek-ai/dsh-experimental-plugin-market-bundle'
+  selected.dsh.profile.bundles = selected.dsh.profile.bundles.filter(name => name !== market)
+  writeFileSync(manifest, JSON.stringify(selected))
+  rmSync(marker)
+  provisionProfile(f.home, plugins)
+  const upgraded = JSON.parse(readFileSync(manifest, 'utf8')) as typeof selected
+  expect(upgraded.dsh.profile.bundles).toContain(market)
+  upgraded.dsh.profile.bundles = upgraded.dsh.profile.bundles.filter(name => name !== market)
   const disabled = `${JSON.stringify(upgraded)}\n`
   writeFileSync(manifest, disabled)
   provisionProfile(f.home, plugins)

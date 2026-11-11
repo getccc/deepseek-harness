@@ -22,6 +22,9 @@ const officeSkills = Object.fromEntries([
 ].filter(([, skill]) => skill !== undefined))
 const appIcon = process.env.DSH_TEAM_APP_ICON
 const trayIcon = process.env.DSH_TEAM_TRAY_ICON
+const ptcBootstrap = process.env.DSH_TEAM_PTC_BOOTSTRAP
+  ?? fileURLToPath(new URL('../../packages/ptc-runtime/ptc-runtime-node/lib/process.js', import.meta.url))
+if (!existsSync(ptcBootstrap)) throw new Error('The built Node PTC process bootstrap is missing; build artifacts before packaging')
 // Apple Developer Team ID; when set (with APPLE_ID + APPLE_APP_SPECIFIC_PASSWORD
 // in the environment), the mac build is notarized. Signing itself needs a
 // "Developer ID Application" identity in the login keychain.
@@ -97,6 +100,7 @@ const trayVariants = trayIcon === undefined
   : [trayIcon, trayIcon.replace(/\.png$/u, '@2x.png')].filter(path => existsSync(path))
 
 const extraResources = [
+  { from: ptcBootstrap, to: 'runner/ptc/process.mjs' },
   ...windows
     ? [
         { from: runner, to: 'runner/dsh.exe' },

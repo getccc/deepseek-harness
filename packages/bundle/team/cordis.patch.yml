@@ -137,6 +137,12 @@
 # `callbackUri` restates the loopback port above. It has to be a literal the
 # Control Plane can be told in advance, because it is bound into every
 # authorization code and compared on redemption.
+# The desktop carrier supplies real files for retained PTC execution. Keeping
+# this default in the bundle lets the member's profile retain its mode edits.
+- id: ptc-runtime
+  config:
+    launch: !!js "process.env.DSH_TEAM_PTC_NODE === undefined && process.env.DSH_TEAM_PTC_BOOTSTRAP === undefined ? undefined : { kind: 'node-script', executable: process.env.DSH_TEAM_PTC_NODE ?? '', bootstrapPath: process.env.DSH_TEAM_PTC_BOOTSTRAP ?? '' }"
+
 - insert:
     - id: team-account-client
       name: '@deepseek-ai/dsh-team-account-client'

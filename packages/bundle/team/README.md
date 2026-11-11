@@ -35,6 +35,8 @@ dsh --profile team
 
 The profile composes `dsh-base`, then `dsh-web-app`, then this layer, and opens `http://127.0.0.1:3090/team/open`. A locked browser sees the local account form; it is never sent to the Control Plane administration origin.
 
+A packaged carrier can supply `DSH_TEAM_PTC_NODE` and `DSH_TEAM_PTC_BOOTSTRAP` together to select a real Node executable and self-contained PTC process file. The `ptc-runtime` row passes them as its validated `launch` configuration; user profile edits retain precedence, including persistent execution settings. With neither variable set, the Node provider selects its normal local launch. An incomplete pair fails configuration validation.
+
 ### Running alongside `dsh web`
 
 Both are ordinary loopback servers, so they cannot share a port: whichever binds second fails. Keeping the Team Runner on its own default means you can leave a development `dsh web` on `3080` running while the Team Runner serves `3090`, with no configuration edit on either side.
