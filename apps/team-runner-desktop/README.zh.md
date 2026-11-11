@@ -70,6 +70,8 @@ pnpm --filter @deepseek-ai/dsh-team-runner-desktop package:mac
 
 Runner 是一个 Node 进程，不读取操作系统信任库，因此位于企业自签证书颁发机构之后的 Control Plane 在构建携带该机构证书之前不可达：把证书装进钥匙串只能修好浏览器。`DSH_TEAM_CONTROL_PLANE_CA` 把证书置于 Runner 旁，部署补丁则在每一行与 Control Plane 通信的插件上固定它——账号客户端、模型传输、知识与网页搜索。它只对那一个源受信任。使用公开受信任证书的 Control Plane 省略该变量，补丁也就不写这项固定。
 
+桌面壳还会在私有 Team profile 的 `.npmrc` 中，为 Control Plane 的 `/npm/` 端点写入仅针对该仓库的 `cafile` 条目。包查询和下载使用随附的公司证书，不更改其他仓库设置或全局 TLS 信任。
+
 ### 携带树外插件
 
 位于 Runner 自身安装之外的插件以真实目录而非打包可执行文件内部的形式随附，因为它们的原生插件无法从打包可执行文件的虚拟文件系统中加载，而它们运行时的依赖复制需要真实文件。用 `dsh plugin --profile <name> add <package>` 把它们装进一个 profile，再让 `DSH_TEAM_PLUGIN_TREE` 指向该 profile 的 `node_modules`。层列表从这棵树挂载 `dsh-univer-office` 与 `@dsh-external/dsh-echarts`，因此树中必须同时带有两者；暂存 profile 中记录的 pnpm 补丁会随打过补丁的文件一同随附。Runner 会跳过 `@deepseek-ai/dsh-*` peer 范围不包含其自身版本的 bundle，而这个 profile 不带任何 `compatibility.json` 豁免，因此树中必须带有声明了 Runner 所在版本线的插件发布版本。

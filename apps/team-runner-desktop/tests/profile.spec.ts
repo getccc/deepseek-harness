@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { expect, it, onTestFinished } from 'vitest'
 import { provisionProfile, SHIPPED_PLUGIN_BUNDLES } from '../src/profile.ts'
+import { writeRegistryTrust } from '../src/registry-trust.ts'
 
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), 'dsh-desktop-profile-'))
@@ -25,6 +26,22 @@ function fixture() {
   }
   return { root, home, profile, shipped }
 }
+
+it('pins only the company registry while retaining other npm settings through an application upgrade', () => {
+  const f = fixture()
+  provisionProfile(f.home, undefined)
+  const npmrc = join(f.profile, '.npmrc')
+  const user = 'registry=https://registry.npmjs.org/\n//other.example/:_authToken=fixture-only\n'
+  writeFileSync(npmrc, user)
+  const registry = 'https://control.example:3095/npm/'
+  writeRegistryTrust(f.profile, registry, '/Applications/WeWork.app/Contents/Resources/company ca.crt')
+  expect(readFileSync(npmrc, 'utf8')).toBe(`${user}//control.example:3095/npm/:cafile="/Applications/WeWork.app/Contents/Resources/company ca.crt"\n`)
+  writeRegistryTrust(f.profile, registry, '/new/company-ca.crt')
+  writeRegistryTrust(f.profile, registry, '/new/company-ca.crt')
+  expect(readFileSync(npmrc, 'utf8')).toBe(`${user}//control.example:3095/npm/:cafile="/new/company-ca.crt"\n`)
+  expect(() => { writeRegistryTrust(f.profile, 'http://control.example/npm/', '/ca.crt') }).toThrow(/HTTPS/u)
+  expect(() => { writeRegistryTrust(f.profile, 'https://user:password@control.example/npm/', '/ca.crt') }).toThrow(/credentials/u)
+})
 
 it('retains enabled and disabled bundles, dependencies and user patches after a restart', () => {
   const f = fixture()

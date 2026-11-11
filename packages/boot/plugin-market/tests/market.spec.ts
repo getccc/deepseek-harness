@@ -4,7 +4,7 @@ import { getDshRuntimeVersion } from '@deepseek-ai/dsh-app-boot'
 import type { BundleInfo } from '@deepseek-ai/dsh-plugin-manager/types'
 import { remoteErrorOf } from '@deepseek-ai/dsh-typert-protocol'
 import { afterEach, expect, it, onTestFinished, vi } from 'vitest'
-import PluginMarket, { type Config, type MarketQuery } from '../src/index.ts'
+import PluginMarket, { type Config, type MarketQuery, type MarketIndexFetch } from '../src/index.ts'
 import { parseIndexBody } from '../src/parse.ts'
 
 /** Clone cache directory of services whose tests read no repository; nothing creates it. */
@@ -98,6 +98,31 @@ function read(market: PluginMarket, url: string, refresh = false) {
 async function failure(promise: Promise<unknown>) {
   return remoteErrorOf(await promise.then(() => { throw new Error('resolved') }, (error: unknown) => error))
 }
+
+it('uses registered trust only for its exact origin and restores the default fetcher on disposal', async () => {
+  const fallback = serve(json(index([entry('other')])), json(index([entry('default')])))
+  const { ctx, market } = await mount({ indexes: [URL_A, URL_B] })
+  const transport = vi.fn<MarketIndexFetch>(async () => json(index([entry('private')])))
+  const dispose = market.registerIndexTransport(new URL(URL_A).origin, transport)
+  ctx.effect(() => dispose)
+  expect((await read(market, URL_A)).entries.map(item => item.name)).toEqual(['private'])
+  expect(transport.mock.calls[0]?.[0]).toEqual(new URL(URL_A))
+  expect(transport.mock.calls[0]?.[1].redirect).toBe('error')
+  expect(transport.mock.calls[0]?.[1].signal).toBeInstanceOf(AbortSignal)
+  expect(fallback).not.toHaveBeenCalled()
+  expect((await read(market, URL_B)).entries.map(item => item.name)).toEqual(['other'])
+  expect(() => market.registerIndexTransport(new URL(URL_A).origin, transport)).toThrow(/already registered/u)
+  expect(() => market.registerIndexTransport(URL_A, transport)).toThrow(/origin/u)
+  dispose()
+  expect((await read(market, URL_A, true)).entries.map(item => item.name)).toEqual(['default'])
+})
+
+it('applies the same byte limit to a registered index transport', async () => {
+  const { ctx, market } = await mount({ maxBytes: 1 })
+  const dispose = market.registerIndexTransport(new URL(URL_A).origin, async () => json(index()))
+  ctx.effect(() => dispose)
+  expect(await failure(read(market, URL_A))).toMatchObject({ code: 'plugin-market/fetch-failed' })
+})
 
 it('reads an index with installation status, compatibility, and install arguments', async () => {
   const runtime = getDshRuntimeVersion()

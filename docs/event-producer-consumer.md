@@ -67,7 +67,7 @@ Application listeners are outside this package matrix. Desktop Host subscribes t
 | `plugin-manager/install-state` | `emit` | [`packages/boot/plugin-manager/src/types.ts:445`](../packages/boot/plugin-manager/src/types.ts) | [`plugin-manager`](../packages/boot/plugin-manager) (`emit`) | `remotes` |
 | `plugin-manager/operation` | `parallel` | [`packages/boot/plugin-manager/src/types.ts:424`](../packages/boot/plugin-manager/src/types.ts) | [`plugin-manager`](../packages/boot/plugin-manager) (`parallel`) | - |
 | `plugin-manager/update-state` | `emit` | [`packages/boot/plugin-manager/src/types.ts:452`](../packages/boot/plugin-manager/src/types.ts) | [`plugin-manager`](../packages/boot/plugin-manager) (`emit`) | `remotes` |
-| `plugin-market/changed` | `emit` | [`packages/boot/plugin-market/src/types.ts:168`](../packages/boot/plugin-market/src/types.ts) | [`plugin-market`](../packages/boot/plugin-market) (`emit`) | `remotes` |
+| `plugin-market/changed` | `emit` | [`packages/boot/plugin-market/src/types.ts:188`](../packages/boot/plugin-market/src/types.ts) | [`plugin-market`](../packages/boot/plugin-market) (`emit`) | `remotes` |
 | `schedule/changed` | `emit` | [`packages/schedule/schedule/src/types.ts:634`](../packages/schedule/schedule/src/types.ts) | [`schedule`](../packages/schedule/schedule) (`emit`) | `remotes` |
 | `schedule/resolve-agent` | `waterfall` | [`packages/schedule/schedule/src/index.ts:71`](../packages/schedule/schedule/src/index.ts) | [`schedule`](../packages/schedule/schedule) (`waterfall`) | `server` |
 | `session-telemetry/record` | `waterfall` | [`packages/session/session-telemetry/src/index.ts:44`](../packages/session/session-telemetry/src/index.ts) | [`session-telemetry`](../packages/session/session-telemetry) (`waterfall`) | - |

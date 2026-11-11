@@ -26,6 +26,8 @@
 
 `MarketIndexSummary` 携带一个已配置的索引 URL，以及最近一次成功读取得到的 `title` 和 `description`；最近一次读取失败时，还携带其 `error`。
 
+`MarketIndexFetch` 使用市场服务提供的中止信号、拒绝重定向策略和 JSON accept 头读取索引 URL。它返回 `MarketIndexResponse`，包含 HTTP 状态、成功标志、头读取器，以及可为空、可取消的异步字节流。Host 提供者通过 `pluginMarket.registerIndexTransport` 为一个精确的源注册它；市场服务保留响应体上限和索引校验。注册返回清理函数，提供者在关闭传输前取消未完成的请求。
+
 `MarketQuery` 选择索引的一页：模糊匹配的 `text`、一个 `category`、必须全部具备的 `labels`、一个 `MarketSort`、`offset`、不超过 100 的 `limit`、表示重新获取而不使用缓存文档的 `refresh`，以及用于继续读取同一文档后续页的 `fetchedAt`。`MarketSearchResult` 携带索引 URL、`title`、可选的 `description`、市场 `metadata`、该文档的 `fetchedAt`、本页的 `entries`、匹配总数 `total` 和 `nextOffset`。每个 `MarketListingEntry` 额外携带 `defaultVersion`，即默认安装的版本，以及 `installation`，即该包名在当前 profile 中的状态；其 `versions` 中的每个版本额外携带 `install`，即交给 `installBundle` 的精确 spec 和可选的首选 registry，以及 `compatibility`，即包含版本豁免在内的 `engines.dsh` 评估结果。
 
 `PluginDetail` 是市场条目的详细介绍：`{ status: 'found' }` 携带其 `origin`（`locale`、`readme` 或 `repository`）、`markdown`，以及一个 `document` id，该文档中的图片由 `GET /api/plugin-market/detail-file` 提供；否则为 `{ status: 'none' }`。读取其来源的顺序见[插件市场的说明](../../packages/boot/plugin-market/README.zh.md#plugin-detail-documents)。
@@ -341,6 +343,16 @@ Source: [`packages/boot/plugin-manager/src/index.ts`](../../packages/boot/plugin
 Fetches, validates, and caches configured market indexes; annotates entries with the profile's installation facts.
 
 ```ts cordis-catalog
+/**
+ * Register an index fetcher for one exact HTTP(S) origin; other origins retain the default fetcher.
+ * The provider owns cancellation of its in-flight requests and disposes the registration before closing its transport.
+ * @param origin - HTTP(S) origin with no path, credentials, query or fragment.
+ * @param fetcher - fetch implementation carrying that origin's authentication or TLS trust.
+ * @returns the disposer removing this registration.
+ * @throws {Error} for an invalid or already registered origin.
+ */
+registerIndexTransport(origin: string, fetcher: MarketIndexFetch): () => void
+
 /**
  * List the configured index sources without fetching them.
  * @returns every source in order, with the title of its last successful read and, when the last read failed, its error.

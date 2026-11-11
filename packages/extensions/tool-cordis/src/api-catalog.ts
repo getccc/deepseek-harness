@@ -3285,6 +3285,13 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     description: 'Fetches, validates, and caches configured market indexes; annotates entries with the profile\'s installation facts.',
     methods: [
       {
+        signature: 'registerIndexTransport(origin: string, fetcher: MarketIndexFetch): () => void',
+        description: 'Register an index fetcher for one exact HTTP(S) origin; other origins retain the default fetcher. The provider owns cancellation of its in-flight requests and disposes the registration before closing its transport.',
+        parameters: [{ name: 'origin', description: 'HTTP(S) origin with no path, credentials, query or fragment.' }, { name: 'fetcher', description: 'fetch implementation carrying that origin\'s authentication or TLS trust.' }],
+        returns: 'the disposer removing this registration.',
+        throws: ['{Error} for an invalid or already registered origin.'],
+      },
+      {
         signature: '@Remote listIndexes(): MarketIndexSummary[]',
         description: 'List the configured index sources without fetching them.',
         parameters: [],
@@ -8647,8 +8654,16 @@ export const TYPE_API: readonly TypeApiEntry[] = [
     declaration: 'export interface MarketEngines {\n    readonly dsh?: string;\n}',
   },
   {
+    name: 'MarketIndexFetch',
+    declaration: 'export type MarketIndexFetch = (url: URL, init: {\n    signal: AbortSignal;\n    redirect: \'error\';\n    headers: {\n        accept: string;\n    };\n}) => Promise<MarketIndexResponse>;',
+  },
+  {
     name: 'MarketIndexMetadata',
     declaration: 'export interface MarketIndexMetadata {\n    readonly categories: Readonly<Record<string, MarketDeclaration>>;\n    readonly labels: Readonly<Record<string, MarketDeclaration>>;\n    readonly sortKeys: Readonly<Record<string, MarketSortKeyDeclaration>>;\n}',
+  },
+  {
+    name: 'MarketIndexResponse',
+    declaration: 'export interface MarketIndexResponse {\n    readonly ok: boolean;\n    readonly status: number;\n    readonly headers: {\n        get(name: string): string | null;\n    };\n    readonly body: (AsyncIterable<Uint8Array> & {\n        cancel(): Promise<void>;\n    }) | null;\n}',
   },
   {
     name: 'MarketIndexSummary',

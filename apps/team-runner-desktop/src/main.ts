@@ -25,6 +25,7 @@ import {
 import { acceptRelease, readManifest, verifyDownload, type ReleaseGate } from './release-gate.ts'
 import { deploymentPatch, resolveDeployment, runnerEnvironment, type LoginLocale, type OfficeSkills } from './deployment.ts'
 import { provisionProfile } from './profile.ts'
+import { writeRegistryTrust } from './registry-trust.ts'
 import { RunnerReadiness, runnerPageNeedsRecovery } from './readiness.ts'
 import { TeamUpdateCoordinator } from './update-coordinator.ts'
 import { UPDATE_IPC, type TeamUpdateState } from './update-state.ts'
@@ -306,6 +307,9 @@ function startRunner(): void {
   retireStaleRunner(executable)
   const plugins = stagedResource(PLUGIN_TREE, 'DSH_TEAM_PLUGIN_TREE')
   provisionProfile(home, plugins === undefined ? undefined : { directory: plugins, fingerprint: pluginTreeGeneration() })
+  if (certificateAuthority !== undefined) {
+    writeRegistryTrust(join(home, 'profiles/team'), new URL('/npm/', deployment.controlPlaneUrl).href, certificateAuthority)
+  }
   const runnerLog = join(data, 'runner.log')
   const child = spawn(executable, ['--profile', 'team', '--patch', patchPath, '--no-open'], {
     env: runnerEnvironment(process.env, home, officeSidecar, cuaHelper, pluginPnpm),

@@ -5,6 +5,26 @@ import type { Branded } from '@deepseek-ai/dsh-brand'
 import type {} from '@deepseek-ai/dsh-typert-protocol'
 import type { DetailFailureReason } from '@deepseek-ai/dsh-plugin-detail/types'
 
+/** Streaming HTTP fields needed to validate and bound an index response. */
+export interface MarketIndexResponse {
+  readonly ok: boolean
+  readonly status: number
+  readonly headers: { get(name: string): string | null }
+  readonly body: (AsyncIterable<Uint8Array> & { cancel(): Promise<void> }) | null
+}
+
+/**
+ * Read an index with origin-specific trust, retaining the market's cancellation and redirect policy.
+ * @param url - configured index URL within the registered origin.
+ * @param init - deadline signal and HTTP request options owned by the market.
+ * @returns a streaming HTTP response; the market owns reading and size validation.
+ */
+export type MarketIndexFetch = (url: URL, init: {
+  signal: AbortSignal
+  redirect: 'error'
+  headers: { accept: string }
+}) => Promise<MarketIndexResponse>
+
 declare module '@deepseek-ai/dsh-typert-protocol' {
   interface RemoteErrorDetailsMap {
     /** An index URL is not http(s), or carries credentials or a fragment. */

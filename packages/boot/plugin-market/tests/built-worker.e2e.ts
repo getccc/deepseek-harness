@@ -4,6 +4,7 @@
  * both artifacts.
  */
 import { existsSync } from 'node:fs'
+import { mkdtemp, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execa } from 'execa'
@@ -22,6 +23,48 @@ async function node(script: string): Promise<unknown> {
 }
 
 describe.skipIf(!built)('built index parsing (plain node)', () => {
+  it('reads a virtual Worker asset without asking the Worker to load a file entry', async () => {
+    const directory = await mkdtemp(join(packageRoot, '.virtual-worker-'))
+    try {
+      const result = await node(`
+        import fs from 'node:fs'
+        import { pathToFileURL, fileURLToPath } from 'node:url'
+        import { join } from 'node:path'
+        import { syncBuiltinESMExports } from 'node:module'
+        import { Context, Service } from '@deepseek-ai/cordis'
+        const directory = ${JSON.stringify(directory)}
+        const modulePath = join(directory, 'index.mjs')
+        const workerPath = pathToFileURL(join(directory, 'worker.cjs')).href
+        const source = fs.readFileSync('lib/worker.cjs', 'utf8')
+        fs.copyFileSync('lib/index.js', modulePath)
+        const original = fs.readFileSync
+        fs.readFileSync = (path, ...args) => path === fileURLToPath(workerPath) ? source : original(path, ...args)
+        syncBuiltinESMExports()
+        const ctx = new Context()
+        try {
+          const { default: PluginMarket } = await import(pathToFileURL(modulePath).href)
+          class Manager extends Service {
+            constructor(ctx) { super(ctx, 'pluginManager') }
+            listBundles() { return Promise.resolve([]) }
+            listVersionExemptions() { return { exemptions: {}, warnings: [] } }
+          }
+          globalThis.fetch = async () => new Response(JSON.stringify({ format: 1, title: 'Virtual', plugins: [] }))
+          await ctx.plugin(Manager)
+          await ctx.plugin(PluginMarket, { indexes: ['https://virtual.example/index.json'], detailCacheDir: join(directory, 'cache') })
+          const result = await ctx.pluginMarket.search('https://virtual.example/index.json', { sort: { kind: 'index' }, offset: 0, limit: 10 })
+          console.log(JSON.stringify({ title: result.title, entries: result.entries, fileExists: fs.existsSync(new URL(workerPath)) }))
+        } finally {
+          await ctx.fiber.dispose()
+          fs.readFileSync = original
+          syncBuiltinESMExports()
+        }
+      `)
+      expect(result).toEqual({ title: 'Virtual', entries: [], fileExists: false })
+    } finally {
+      await rm(directory, { recursive: true, force: true })
+    }
+  })
+
   it('searches a valid index and reports an invalid one through the bundled Worker', async () => {
     const result = await node(`
       import { Context, Service } from '@deepseek-ai/cordis'

@@ -52,6 +52,8 @@ Remote 方法如下：
 
 服务方法 `entry(url, name)` 不是 Remote 方法，它以相同形式返回已配置索引中的一个插件；索引未列出该插件时返回 `undefined`。
 
+Host 插件可通过 `registerIndexTransport(origin, fetcher)` 为一个精确的 HTTP(S) origin 注册索引读取器。读取器携带该源的认证或 TLS 信任，其他源仍使用默认读取器。市场服务保留时限、重定向策略、字节上限和索引校验。注册拒绝重复的源，并返回清理函数。提供者通过 `ctx.effect` 注册，在卸载时取消未完成的请求，并先移除注册，再关闭传输。
+
 查询选出同时满足其全部条件的插件：
 
 | 字段 | 含义 |
@@ -88,7 +90,7 @@ Remote 方法如下：
 <a id="understand-the-implementation"></a>
 ## 理解实现
 
-Host 使用进程的 `fetch` 获取，因此配置的出站代理生效，并拒绝重定向。响应体最多读取 `maxBytes`，随后由一个新的 Worker Thread 按严格 UTF-8 解码、解析为 JSON 并校验；相对图标引用基于配置的 URL 解析。响应体的缓冲区转移给 Worker，校验后的索引通过 structured clone 返回 Host。Worker 是自包含的 `lib/worker.cjs` bundle；销毁时终止它，Worker 失败报告为 `plugin-market/fetch-failed`。
+Host 使用已注册的源读取器或进程的 `fetch` 获取，并拒绝重定向。响应体最多读取 `maxBytes`，随后由一个新的 Worker Thread 按严格 UTF-8 解码、解析为 JSON 并校验；相对图标引用基于配置的 URL 解析。响应体的缓冲区转移给 Worker，校验后的索引通过 structured clone 返回 Host。Host 读取自包含的 `lib/worker.cjs` bundle 并在 Worker 中执行其代码，bundle 位于可执行文件的虚拟文件系统中时也采用此方式；销毁时终止它，Worker 失败报告为 `plugin-market/fetch-failed`。
 
 对同一 URL 的并发读取共享一次获取。成功的文档缓存 `cacheTtlMs`；`refresh` 绕过缓存。每份获取到的文档都有新的 `fetchedAt`，缓存的文档在被之后的获取替换前，都可以按其 `fetchedAt` 回答。失败的读取为 `listIndexes` 记录错误消息，不保留文档。读取完成时其 URL 已不在配置中的，既不更新缓存也不更新错误。收到 `loader/volatile-update` 时，服务丢弃已移除 URL 的状态并发出 `plugin-market/changed`。销毁时中止进行中的获取。
 

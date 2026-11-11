@@ -26,6 +26,8 @@ The [boot package group](../../packages/boot/README.md) owns launcher-provided p
 
 `MarketIndexSummary` carries one configured index URL with the `title` and `description` of its last successful read and, when the last read failed, its `error`.
 
+`MarketIndexFetch` reads an index URL with the market's abort signal, redirect refusal and JSON accept header. It returns `MarketIndexResponse`: the HTTP status, success flag, header reader and a nullable, cancellable async stream of bytes. Host providers register it for one exact origin through `pluginMarket.registerIndexTransport`; the market retains body limits and index validation. The registration returns a disposer, and the provider cancels pending requests before closing its transport.
+
 `MarketQuery` selects one page of an index: fuzzy `text`, a `category`, `labels` that must all be present, a `MarketSort`, `offset`, `limit` up to 100, `refresh` to fetch again instead of using a cached document, and `fetchedAt` to continue the pages of one document. `MarketSearchResult` carries the index URL, `title`, optional `description`, market `metadata`, the document's `fetchedAt`, the page's `entries`, the `total` number of matches, and the `nextOffset`. Each `MarketListingEntry` adds `defaultVersion`, the version installed by default, and `installation`, the profile's status for the package name; each of its `versions` adds `install`, the exact spec and optional first registry for `installBundle`, and `compatibility`, the evaluation of its `engines.dsh` including a version exemption.
 
 `PluginDetail` is a market entry's long description: `{ status: 'found' }` with its `origin` (`locale`, `readme`, or `repository`), its `markdown`, and a `document` id whose images `GET /api/plugin-market/detail-file` serves, or `{ status: 'none' }`. The [plugin market documents the order](../../packages/boot/plugin-market/README.md#plugin-detail-documents) its sources are read in.
@@ -341,6 +343,16 @@ Source: [`packages/boot/plugin-manager/src/index.ts`](../../packages/boot/plugin
 Fetches, validates, and caches configured market indexes; annotates entries with the profile's installation facts.
 
 ```ts cordis-catalog
+/**
+ * Register an index fetcher for one exact HTTP(S) origin; other origins retain the default fetcher.
+ * The provider owns cancellation of its in-flight requests and disposes the registration before closing its transport.
+ * @param origin - HTTP(S) origin with no path, credentials, query or fragment.
+ * @param fetcher - fetch implementation carrying that origin's authentication or TLS trust.
+ * @returns the disposer removing this registration.
+ * @throws {Error} for an invalid or already registered origin.
+ */
+registerIndexTransport(origin: string, fetcher: MarketIndexFetch): () => void
+
 /**
  * List the configured index sources without fetching them.
  * @returns every source in order, with the title of its last successful read and, when the last read failed, its error.

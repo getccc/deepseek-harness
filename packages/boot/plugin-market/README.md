@@ -52,6 +52,8 @@ The Remote methods are:
 
 The service method `entry(url, name)`, which is not a Remote method, returns one plugin of a configured index in the same form, or `undefined` when the index does not list it.
 
+Host plugins can register an index fetcher for one exact HTTP(S) origin with `registerIndexTransport(origin, fetcher)`. The fetcher carries that origin's authentication or TLS trust; other origins retain the default fetcher. The market retains its deadline, redirect policy, byte limit and index validation. Registrations reject duplicate origins and return a disposer. Providers register through `ctx.effect`, cancel their pending requests on unload, and remove the registration before closing their transport.
+
 A query selects plugins with every one of its conditions:
 
 | Field | Meaning |
@@ -87,7 +89,7 @@ The `plugin_market` tool lists the configured indexes, pages the plugins of one 
 <a id="understand-the-implementation"></a>
 ## Understand the implementation
 
-The Host fetches with the process `fetch`, so the configured outbound proxy applies, and refuses redirects. The body is read up to `maxBytes`, then a fresh Worker Thread decodes it as strict UTF-8, parses it as JSON, and validates it; relative icon references resolve against the configured URL. The body's buffer moves to the Worker, and the validated index returns to the Host by structured clone. The Worker is the self-contained `lib/worker.cjs` bundle; disposal terminates it, and a Worker failure is reported as `plugin-market/fetch-failed`.
+The Host uses the registered origin fetcher or the process `fetch`, and refuses redirects. The body is read up to `maxBytes`, then a fresh Worker Thread decodes it as strict UTF-8, parses it as JSON, and validates it; relative icon references resolve against the configured URL. The body's buffer moves to the Worker, and the validated index returns to the Host by structured clone. The Host reads the self-contained `lib/worker.cjs` bundle and evaluates its code in the Worker, including when the bundle is inside an executable's virtual filesystem; disposal terminates it, and a Worker failure is reported as `plugin-market/fetch-failed`.
 
 Concurrent reads of one URL share one fetch. A successful document is cached for `cacheTtlMs`; `refresh` bypasses the cache. Each fetched document gets a new `fetchedAt`, and the cached document stays answerable by its `fetchedAt` until a later fetch replaces it. A failed read records its message for `listIndexes` and keeps no document. A read that finishes after its URL left the configuration updates neither cache nor error. On `loader/volatile-update` the service drops state of removed URLs and emits `plugin-market/changed`. Disposal aborts in-flight fetches.
 

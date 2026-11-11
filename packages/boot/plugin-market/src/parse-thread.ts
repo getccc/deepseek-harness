@@ -1,10 +1,14 @@
 /** Runs index parsing in a fresh Worker Thread, so a large index does not block the Host event loop. */
 import { Worker, type WorkerOptions } from 'node:worker_threads'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import type { IndexParseRequest, IndexParseResult } from './parse.ts'
 
-function workerSpawn(): { readonly entry: URL; readonly options: WorkerOptions } {
-  /* v8 ignore next -- built-artifact runs own the bundled path. */
-  if (!import.meta.url.endsWith('.ts')) return { entry: new URL('./worker.cjs', import.meta.url), options: { execArgv: [] } }
+function workerSpawn(): { readonly entry: string | URL; readonly options: WorkerOptions } {
+  /* v8 ignore next 3 -- built-artifact runs own the bundled path. */
+  if (!import.meta.url.endsWith('.ts')) {
+    return { entry: readFileSync(fileURLToPath(new URL('./worker.cjs', import.meta.url)), 'utf8'), options: { eval: true, execArgv: [] } }
+  }
   const bootstrap = [
     `import { register as registerEsm } from ${JSON.stringify(import.meta.resolve('tsx/esm/api'))}`,
     `import { register as registerCjs } from ${JSON.stringify(import.meta.resolve('tsx/cjs/api'))}`,

@@ -27,7 +27,7 @@ import type {} from '@deepseek-ai/cordis-plugin-loader'
 import type {} from '@deepseek-ai/dsh-client-connection'
 import type {
   MarketCompatibility, MarketIndexSummary, MarketInstallation, MarketListingEntry, MarketListingVersion, MarketQuery, MarketSearchResult,
-  PluginDetail,
+  PluginDetail, MarketIndexFetch, MarketIndexResponse,
 } from './types.ts'
 
 export type * from './types.ts'
@@ -130,6 +130,7 @@ export default class PluginMarket extends TypertRemoteService {
   private readonly entryId: string | undefined
   private readonly repositories: RepositoryCache
   private readonly details: DetailReader
+  private readonly indexTransports = new Map<string, { readonly fetch: MarketIndexFetch }>()
 
   constructor(ctx: Context, private readonly config: Config) {
     super(ctx, 'pluginMarket')
@@ -170,6 +171,23 @@ export default class PluginMarket extends TypertRemoteService {
       this.lifetime.abort(new Error('Plugin market disposed'))
       await Promise.allSettled([...this.pending.values(), this.repositories.settled()])
     })
+  }
+
+  /**
+   * Register an index fetcher for one exact HTTP(S) origin; other origins retain the default fetcher.
+   * The provider owns cancellation of its in-flight requests and disposes the registration before closing its transport.
+   * @param origin - HTTP(S) origin with no path, credentials, query or fragment.
+   * @param fetcher - fetch implementation carrying that origin's authentication or TLS trust.
+   * @returns the disposer removing this registration.
+   * @throws {Error} for an invalid or already registered origin.
+   */
+  registerIndexTransport(origin: string, fetcher: MarketIndexFetch): () => void {
+    const url = new URL(origin)
+    if (!['http:', 'https:'].includes(url.protocol) || url.origin !== origin) throw new Error('Index transport requires an HTTP(S) origin')
+    if (this.indexTransports.has(origin)) throw new Error(`Index transport already registered: ${origin}`)
+    const registration = { fetch: fetcher }
+    this.indexTransports.set(origin, registration)
+    return () => { if (this.indexTransports.get(origin) === registration) this.indexTransports.delete(origin) }
   }
 
   /**
@@ -425,9 +443,11 @@ export default class PluginMarket extends TypertRemoteService {
     const signal = AbortSignal.any([this.lifetime.signal, AbortSignal.timeout(this.config.fetchTimeoutMs)])
     const failed = (reason: string, cause?: unknown): RemoteError =>
       new RemoteError('plugin-market/fetch-failed', `Could not fetch ${url}: ${reason}`, { url, reason }, { cause })
-    let response: Response
+    let response: MarketIndexResponse
     try {
-      response = await fetch(url, { signal, redirect: 'error', headers: { accept: 'application/json' } })
+      const transport = this.indexTransports.get(new URL(url).origin)
+      const init = { signal, redirect: 'error' as const, headers: { accept: 'application/json' } }
+      response = transport === undefined ? await fetch(url, init) : await transport.fetch(new URL(url), init)
     } catch (error) {
       throw failed(causeChainOf(error), error)
     }
@@ -444,7 +464,7 @@ export default class PluginMarket extends TypertRemoteService {
   }
 
   /** Read the whole body, refusing it as soon as it exceeds `maxBytes`. */
-  private async readBody(response: Response, failed: (reason: string, cause?: unknown) => RemoteError): Promise<Uint8Array> {
+  private async readBody(response: MarketIndexResponse, failed: (reason: string, cause?: unknown) => RemoteError): Promise<Uint8Array> {
     const limit = this.config.maxBytes
     const tooLarge = `body exceeds ${String(limit)} bytes`
     if (Number(response.headers.get('content-length') ?? 0) > limit) {
