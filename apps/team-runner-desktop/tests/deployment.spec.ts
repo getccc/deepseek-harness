@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { deploymentPatch, resolveDeployment, runnerEnvironment } from '../src/deployment.ts'
 import { profileManifest } from '../src/profile.ts'
-import { runnerPageNeedsRecovery, runnerReady } from '../src/readiness.ts'
+import { RunnerReadiness, runnerPageNeedsRecovery, runnerReady } from '../src/readiness.ts'
 
 const facts = {
   controlPlaneUrl: 'https://control.acme.example/path',
@@ -144,6 +144,29 @@ describe('desktop profile composition', () => {
 })
 
 describe('runner readiness', () => {
+  it('ignores a foreign listener until its own child announces startup', () => {
+    const startup = new RunnerReadiness('http://127.0.0.1:3090/team/open')
+    for (const status of [200, 303, 405]) expect(startup.ready(status)).toBe(false)
+    startup.observe('dsh web: http://127.0.0.1:9000/team/open')
+    expect(startup.ready(405)).toBe(false)
+    startup.observe('dsh web: http://127.0.0.1:3090/team/open')
+    expect(startup.ready(404)).toBe(false)
+    expect(startup.ready(405)).toBe(true)
+    startup.stop()
+    startup.observe('dsh web: http://127.0.0.1:3090/team/open')
+    expect(startup.ready(405)).toBe(false)
+  })
+
+  it('retains the port conflict after child exit and never accepts the other listener', () => {
+    const startup = new RunnerReadiness('http://127.0.0.1:3090/team/open')
+    startup.observe('Error: listen EADDRINUSE: address already in use 127.0.0.1:3090')
+    startup.stop()
+    startup.observe('dsh web: http://127.0.0.1:3090/team/open')
+    expect(startup.portInUse).toBe(true)
+    expect(startup.ready(405)).toBe(false)
+    expect(new RunnerReadiness('http://127.0.0.1:3090/team/open').portInUse).toBe(false)
+  })
+
   it('waits through the pre-mount 404 and accepts the login redirect, the route refusal, or a signed-in page', () => {
     // The Runner binds its port before the login route mounts and answers 404
     // with an empty body in between; loading that page left a blank window.
@@ -183,12 +206,11 @@ describe('Runner environment', () => {
   })
 
   it('names the staged Office sidecar and the private home, replacing inherited values', () => {
-    const environment = runnerEnvironment(
+    expect(runnerEnvironment(
       { PATH: '/usr/bin', DSH_HOME: '/member/home', DSH_OFFICE_SIDECAR: '/inherited/sidecar' },
       '/app/runner/home',
       '/app/Resources/runner/dsh-office',
-    )
-    expect(environment).toEqual({
+    )).toEqual({
       PATH: '/usr/bin',
       DSH_HOME: '/app/runner/home',
       DSH_OFFICE_SIDECAR: '/app/Resources/runner/dsh-office',

@@ -2,9 +2,10 @@
 
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process'
 import {
-  appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, writeFileSync,
+  appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync,
 } from 'node:fs'
 import { join } from 'node:path'
+import { createInterface } from 'node:readline'
 import { fileURLToPath } from 'node:url'
 import {
   app,
@@ -24,7 +25,7 @@ import {
 import { acceptRelease, readManifest, verifyDownload, type ReleaseGate } from './release-gate.ts'
 import { deploymentPatch, resolveDeployment, runnerEnvironment, type LoginLocale, type OfficeSkills } from './deployment.ts'
 import { provisionProfile } from './profile.ts'
-import { runnerPageNeedsRecovery, runnerReady } from './readiness.ts'
+import { RunnerReadiness, runnerPageNeedsRecovery } from './readiness.ts'
 import { TeamUpdateCoordinator } from './update-coordinator.ts'
 import { UPDATE_IPC, type TeamUpdateState } from './update-state.ts'
 
@@ -92,6 +93,9 @@ const copy = {
     starting: (name: string): string => `正在启动 ${name}…`,
     failedTitle: 'Runner 无法启动',
     failedBody: '请联系管理员并提供 Runner 日志。',
+    portInUse: '另一个本地服务正在占用 WeWork 所需的端口。请先退出旧版 WeWork 或开发服务，再点击重试。',
+    retry: '重试',
+    cancel: '取消',
   },
   en: {
     show: (name: string): string => `Open ${name}`,
@@ -99,12 +103,15 @@ const copy = {
     starting: (name: string): string => `Starting ${name}…`,
     failedTitle: 'Runner could not start',
     failedBody: 'Contact your administrator and provide the Runner log.',
+    portInUse: 'Another local service is using the port WeWork needs. Quit the previous WeWork or development service, then retry.',
+    retry: 'Retry',
+    cancel: 'Cancel',
   },
 } as const
 
 let window: BrowserWindow | undefined
 let tray: Tray | undefined
-let runner: ChildProcess | undefined
+let runner: { child: ChildProcess; startup: RunnerReadiness } | undefined
 let restart: NodeJS.Timeout | undefined
 let quitting = false
 let updates: TeamUpdateCoordinator | undefined
@@ -299,21 +306,40 @@ function startRunner(): void {
   retireStaleRunner(executable)
   const plugins = stagedResource(PLUGIN_TREE, 'DSH_TEAM_PLUGIN_TREE')
   provisionProfile(home, plugins === undefined ? undefined : { directory: plugins, fingerprint: pluginTreeGeneration() })
-  const logFd = openSync(join(data, 'runner.log'), 'a', 0o600)
-  runner = spawn(executable, ['--profile', 'team', '--patch', patchPath, '--no-open'], {
+  const runnerLog = join(data, 'runner.log')
+  const child = spawn(executable, ['--profile', 'team', '--patch', patchPath, '--no-open'], {
     env: runnerEnvironment(process.env, home, officeSidecar, cuaHelper, pluginPnpm),
-    stdio: ['ignore', logFd, logFd],
+    stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   })
-  closeSync(logFd)
-  if (runner.pid !== undefined) writeFileSync(join(data, RUNNER_PID_FILE), `${String(runner.pid)}\n`, { mode: 0o600 })
-  log(`runner spawned pid ${String(runner.pid)}`)
-  runner.once('exit', (code, signal) => {
+  const owned = { child, startup: new RunnerReadiness(RUNNER_URL) }
+  runner = owned
+  for (const stream of [child.stdout, child.stderr]) {
+    stream.on('data', (chunk: Buffer) => {
+      try { appendFileSync(runnerLog, chunk, { mode: 0o600 }) }
+      catch (error) { log(`runner log could not be written: ${String(error)}`) }
+    })
+    const lines = createInterface({ input: stream })
+    lines.on('line', (line) => { owned.startup.observe(line) })
+    child.once('close', () => { lines.close() })
+  }
+  if (child.pid !== undefined) writeFileSync(join(data, RUNNER_PID_FILE), `${String(child.pid)}\n`, { mode: 0o600 })
+  log(`runner spawned pid ${String(child.pid)}`)
+  child.once('close', (code, signal) => {
     log(`runner exited code=${String(code)} signal=${String(signal)}`)
-    runner = undefined
-    scheduleRunnerRestart()
+    owned.startup.stop()
+    if (quitting || runner !== owned) return
+    if (!owned.startup.portInUse) { scheduleRunnerRestart(); return }
+    void dialog.showMessageBox({
+      type: 'error', title: language().failedTitle, message: language().portInUse,
+      buttons: [language().retry, language().cancel], cancelId: 1,
+    }).then((result) => {
+      if (result.response !== 0 || quitting || runner !== owned) return
+      launchRunner()
+      void showRunner()
+    }).catch((error: unknown) => { log(`startup dialog failed: ${String(error)}`) })
   })
-  runner.once('error', (error) => {
+  child.once('error', (error) => {
     reportRunnerFailure(error)
   })
 }
@@ -345,7 +371,7 @@ async function stopRunner(): Promise<void> {
     clearTimeout(restart)
     restart = undefined
   }
-  const child = runner
+  const child = runner?.child
   if (child === undefined || child.exitCode !== null || child.signalCode !== null) return
   log('stopping runner before replacement')
   const exited = new Promise<boolean>((resolve) => { child.once('exit', () => { resolve(false) }) })
@@ -427,7 +453,10 @@ function releaseGate(): ReleaseGate | undefined {
     architecture: process.arch,
   }
   return {
-    accept: async offered => acceptRelease(offered, target, async () => readManifest(MANIFEST_URL, url => net.fetch(url))),
+    accept: async offered => acceptRelease(offered, target, async () => {
+      if (runner?.startup.announced !== true) throw new Error('The owned Runner is not ready')
+      return readManifest(MANIFEST_URL, url => net.fetch(url))
+    }),
     verify: verifyDownload,
   }
 }
@@ -479,9 +508,9 @@ let connecting: Promise<void> | undefined
  * Show the local web surface when it becomes reachable. One attempt runs at a
  * time; a second request while it polls only re-shows the window. The first
  * launch materializes the plugin tree and the Runner heals a few hundred
- * module links before it listens, and a Runner that lost its port to an
- * earlier instance restarts every ten seconds, so the wait is minutes, not
- * the half minute a warm start needs. A navigation that fails after the poll
+ * module links before it listens, so the wait can take several minutes.
+ * The child must announce startup before an HTTP answer can authorize a
+ * navigation. A navigation that fails after the poll
  * succeeded — the Runner exited between the two — goes back to polling
  * instead of leaving an empty window behind.
  */
@@ -495,9 +524,10 @@ function showRunner(): Promise<void> {
 async function connectWindow(): Promise<void> {
   for (let attempt = 0; attempt < CONNECT_ATTEMPTS; attempt += 1) {
     if (window === undefined || quitting) return
+    if (runner?.startup.portInUse === true) return
     try {
       const response = await fetch(RUNNER_URL, { redirect: 'manual', signal: AbortSignal.timeout(PROBE_TIMEOUT_MS) })
-      if (runnerReady(response.status)) {
+      if (runner?.startup.ready(response.status) === true) {
         log(`runner ready (status ${String(response.status)}) after ${String(attempt + 1)} probes`)
         await window.loadURL(RUNNER_URL)
         return
@@ -645,7 +675,7 @@ if (!app.requestSingleInstanceLock()) {
     quitting = true
     if (restart !== undefined) clearTimeout(restart)
     log('quitting; stopping runner')
-    if (runner !== undefined) signalRunner(runner, 'SIGTERM')
+    if (runner !== undefined) signalRunner(runner.child, 'SIGTERM')
     tray?.destroy()
     tray = undefined
   })
