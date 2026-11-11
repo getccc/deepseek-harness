@@ -49,6 +49,7 @@ import { Menus } from './pages/Menus.tsx'
 import { BiProjects } from './pages/BiProjects.tsx'
 import { GmoCategories } from './pages/GmoCategories.tsx'
 import { Releases } from './pages/Releases.tsx'
+import { Plugins } from './pages/Plugins.tsx'
 import { KnowledgeBases } from './pages/KnowledgeBases.tsx'
 import { Models } from './pages/Models.tsx'
 import { TokenUsage } from './pages/TokenUsage.tsx'
@@ -85,6 +86,7 @@ const VIEWS: Record<ConsoleComponent, (props: ViewProps) => ReactNode> = {
   'resources/BiProjectsPage': ({ held }) => <BiProjects held={held} />,
   'resources/GmoCategoriesPage': ({ held }) => <GmoCategories held={held} />,
   'resources/ReleasesPage': ({ held }) => <Releases held={held} />,
+  'resources/PluginsPage': ({ held }) => <Plugins held={held} />,
   'monitoring/TokenUsagePage': () => <TokenUsage />,
 }
 

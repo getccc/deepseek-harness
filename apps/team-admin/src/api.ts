@@ -99,6 +99,33 @@ export interface UsageRange {
   member?: string
 }
 
+/** One version registered in the independently deployed WeWork plugin center. */
+export interface WirePluginVersion {
+  readonly name: string
+  readonly version: string
+  readonly title: string
+  readonly description: string
+  readonly author: string
+  readonly state: 'draft' | 'published' | 'withdrawn'
+  readonly updatedAt: number
+  readonly engines: { readonly dsh?: string }
+}
+
+/** The administrator's catalog, including versions hidden from member discovery. */
+export interface WirePluginCatalog {
+  readonly versions: readonly WirePluginVersion[]
+  readonly registry: string
+  readonly indexPath: string
+}
+
+/** The package version and display text an administrator registers. */
+export interface PluginRegistration {
+  readonly name: string
+  readonly version: string
+  readonly title: string
+  readonly description?: string
+}
+
 /** The account fields an administrator may edit after issuing the account. */
 export interface MemberProfileInput {
   displayName?: string
@@ -125,6 +152,8 @@ export class ApiError extends Error {
     readonly error: WireRefusal['error'],
     readonly reason?: WireRefusalReason,
     readonly detail?: string,
+    /** An extension's stable refusal code, used for localized feedback. */
+    readonly code?: string,
   ) {
     super(detail ?? error)
     this.name = 'ApiError'
@@ -172,8 +201,8 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
   }
   const answer: unknown = await response.json().catch(() => ({ error: 'unavailable' }))
   if (response.ok) return answer as T
-  const refusal = answer as WireRefusal
-  throw new ApiError(refusal.error, refusal.reason, refusal.detail)
+  const refusal = answer as WireRefusal & { readonly code?: string }
+  throw new ApiError(refusal.error, refusal.reason, refusal.detail, refusal.code)
 }
 
 /** The query string a usage read carries. */
@@ -189,6 +218,13 @@ function usageQuery(range: UsageRange): string {
 
 /** Everything the console asks the Control Plane for. */
 export const api = {
+  /** Read the catalog from the deployment's independent plugin-center extension. */
+  pluginCatalog: (): Promise<WirePluginCatalog> => call('GET', '/plugin-catalog'),
+  /** Verify an internal npm bundle and save its version as a draft. */
+  registerPlugin: (input: PluginRegistration): Promise<WirePluginCatalog> => call('POST', '/plugin-catalog', input),
+  /** Publish or withdraw a version without changing members' installed packages. */
+  setPluginState: (name: string, version: string, state: 'published' | 'withdrawn'): Promise<WirePluginCatalog> =>
+    call('PATCH', '/plugin-catalog/state', { name, version, state }),
   /** Who is signed in, what they hold, and the CSRF value writes must echo. */
   session: (): Promise<WireSession> => call('GET', '/session'),
   /** Sign in with a member name and password. */

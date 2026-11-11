@@ -33,6 +33,8 @@ kind: "package-reference"
 
 文件来自 `@deepseek-ai/dsh-team-admin-frontend`，由 `pnpm run build` 产出。一个没有构建过的检出在这里什么也提供不了。
 
+控制台还识别可选的 `resources/PluginsPage` 组件。独立部署的插件中心扩展提供它的菜单与 `/team/api/plugin-catalog` 接口。插件空间以卡片展示版本的名称、作者、简介、兼容范围与发布状态；管理员可搜索卡片并按状态筛选。该页面将确切的 npm 版本登记为草稿，并使用 `release.manage` 权限上架或下架；扩展重新检查管理员会话、权限、来源和 CSRF 值。下架只改变发现目录，不卸载成员的插件。
+
 -----
 
 <a id="understand-the-implementation"></a>

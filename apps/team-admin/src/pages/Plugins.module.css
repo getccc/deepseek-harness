@@ -1,0 +1,168 @@
+.toolbar,
+.filters,
+.actions,
+.heading,
+.author,
+.tags {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toolbar {
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.search {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.actions {
+  flex-wrap: wrap;
+}
+
+.filters {
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.filters :global(.ant-radio-group) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.filters :global(.ant-radio-button-wrapper) {
+  border: 0;
+  border-radius: 20px;
+  background: transparent;
+}
+
+.filters :global(.ant-radio-button-wrapper)::before {
+  display: none;
+}
+
+.filters :global(.ant-radio-button-wrapper-checked) {
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.count {
+  margin-inline-start: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  gap: 20px;
+}
+
+.card {
+  min-width: 0;
+  border-radius: 16px;
+}
+
+.card :global(.ant-card-body) {
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 240px;
+  height: 100%;
+}
+
+.heading {
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.identity {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.title:global(.ant-typography) {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.package,
+.author,
+.description,
+.compatibility,
+.index {
+  overflow-wrap: anywhere;
+}
+
+.author {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.description:global(.ant-typography) {
+  margin: 0;
+  line-height: 1.7;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: auto;
+}
+
+.tags {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tags :global(.ant-tag) {
+  margin: 0;
+  max-width: 100%;
+  white-space: normal;
+  border-radius: 8px;
+}
+
+.updated,
+.index {
+  font-size: 12px;
+}
+
+.index:global(.ant-typography) {
+  margin: 20px 0 0;
+}
+
+.error,
+.empty {
+  margin-bottom: 20px;
+}
+
+@media (max-width: 600px) {
+  .toolbar {
+    align-items: stretch;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .card :global(.ant-card-body) {
+    padding: 20px;
+  }
+}
+
+@media (pointer: coarse) {
+  .search input {
+    font-size: 16px;
+  }
+}

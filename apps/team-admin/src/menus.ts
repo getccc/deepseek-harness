@@ -23,6 +23,7 @@ export const CONSOLE_COMPONENTS = [
   'resources/BiProjectsPage',
   'resources/GmoCategoriesPage',
   'resources/ReleasesPage',
+  'resources/PluginsPage',
   'monitoring/TokenUsagePage',
 ] as const
 

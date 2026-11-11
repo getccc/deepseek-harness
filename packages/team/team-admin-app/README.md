@@ -33,6 +33,8 @@ No configuration. The console is served at `/team/admin`, and a deployment canno
 
 The files come from `@deepseek-ai/dsh-team-admin-frontend`, which `pnpm run build` produces. A checkout that has not been built serves nothing here.
 
+The console also recognizes the optional `resources/PluginsPage` component. An independently deployed plugin-center extension supplies its menu and `/team/api/plugin-catalog` endpoints. Plugin space displays version cards with name, author, description, compatibility, and publication status; administrators can search the cards and filter them by status. The page registers exact npm versions as drafts and publishes or withdraws them under `release.manage`; the extension rechecks the administrator session, permission, origin, and CSRF value. Withdrawal changes discovery without uninstalling members' packages.
+
 -----
 
 <a id="understand-the-implementation"></a>
