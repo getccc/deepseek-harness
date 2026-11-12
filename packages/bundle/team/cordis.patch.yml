@@ -91,7 +91,7 @@
 - id: llm-deepseek-account
   disabled: true
 
-- id: account-controller
+- id: ui-account-notifications
   disabled: true
 
 - id: ui-settings-account

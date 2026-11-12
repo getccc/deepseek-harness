@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team-shell",
   "description": "The Control Plane's device-confirmation page: what a member compares before a computer is bound to their account",
-  "version": "0.2.2-rc.1",
+  "version": "0.2.2-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -22,7 +22,10 @@
   },
   "files": [
     "lib/index.js",
-    "lib/types/**/*.d.ts"
+    "lib/types/**/*.d.ts",
+    "lib/types/**/*.d.ts.map",
+    "lib/**/*.js.map",
+    "src"
   ],
   "license": "MIT",
   "dependencies": {

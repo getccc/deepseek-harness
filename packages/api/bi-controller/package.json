@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-api-bi-controller",
   "description": "Team-only Host Remote for BI analysis — the authorized project directory a browser reads and the Session project choice it records",
-  "version": "0.2.2-rc.1",
+  "version": "0.2.2-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -37,10 +37,14 @@
     "lib/index.js",
     "lib/types/**/*.js",
     "lib/types/**/*.d.ts",
+    "lib/types/**/*.d.ts.map",
+    "lib/**/*.js.map",
     "lib/typert.host.js",
     "lib/typert.host.d.ts",
     "lib/typert.remote-client.js",
-    "lib/typert.remote-client.d.ts"
+    "lib/typert.remote-client.d.ts",
+    "lib/typert.remote-client.d.ts.map",
+    "src"
   ],
   "license": "MIT",
   "peerDependencies": {

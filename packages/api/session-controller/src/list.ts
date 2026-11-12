@@ -152,8 +152,8 @@ export class ApiSessionList {
       agentAvailable: this.ctx.agents.get(session.id)?.session === session,
       formatStatus: 'current',
       running: this.ctx.agents.get(session.id)?.status === 'running',
-      blank: metadata?.blank ?? session.seq === 0,
-      pristine: metadata?.pristine ?? session.seq === 0,
+      blank: metadata.blank,
+      pristine: metadata.pristine,
       ...listFields(session.header),
       ...(projections === undefined ? {} : { projections }),
     }

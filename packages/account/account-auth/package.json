@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-account-auth",
   "description": "Authentication Service Definition: turn a login name and a secret into an account, independently of how the secret is verified",
-  "version": "0.2.2-rc.1",
+  "version": "0.2.2-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -22,7 +22,10 @@
   },
   "files": [
     "lib/index.js",
-    "lib/types/**/*.d.ts"
+    "lib/types/**/*.d.ts",
+    "lib/types/**/*.d.ts.map",
+    "lib/**/*.js.map",
+    "src"
   ],
   "license": "MIT",
   "dependencies": {

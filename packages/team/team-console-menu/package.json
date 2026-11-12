@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team-console-menu",
   "description": "Console-menu Service Definition: the administration console's navigation tree, the permission each entry names, and the shipped catalog an organization starts from",
-  "version": "0.2.2-rc.1",
+  "version": "0.2.2-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -22,7 +22,10 @@
   },
   "files": [
     "lib/index.js",
-    "lib/types/**/*.d.ts"
+    "lib/types/**/*.d.ts",
+    "lib/types/**/*.d.ts.map",
+    "lib/**/*.js.map",
+    "src"
   ],
   "license": "MIT",
   "dependencies": {

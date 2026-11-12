@@ -173,8 +173,8 @@ export function apply(ctx: Context, config: Config): void {
     },
   }), 'tool-office: kind prompt section')
 
-  ctx.inject(['sessionProjections'], (projectionCtx) => {
-    projectionCtx.sessionProjections.register<'office', OfficeChoice>({
+  ctx.inject(['sessionProjections'], async (projectionCtx) => {
+    await projectionCtx.sessionProjections.register<'office', OfficeChoice>({
       key: 'office',
       stateSchema: officeChoiceSchema,
       init: () => DEFAULT_OFFICE_CHOICE,

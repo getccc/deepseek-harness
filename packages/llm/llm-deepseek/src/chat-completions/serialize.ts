@@ -58,7 +58,7 @@ function reasoningEffort(effort: NonNullable<GenerateOptions['reasoningEffort']>
 }
 
 /** Resolve one legal thinking/effort pair without exposing `off` as a wire effort. */
-function resolveThinking(options: GenerateOptions, defaults: RequestDefaults): ResolvedThinking {
+function resolveThinking(options: GenerateOptions<string>, defaults: RequestDefaults): ResolvedThinking {
   if (options.purpose === 'session-title') return { thinking: 'disabled' }
   const effort = options.reasoningEffort === undefined
     ? defaults.reasoningEffort
@@ -305,7 +305,7 @@ export function serializeMessagesWithImages(
 
 /** Assemble request fields shared by text-only and image-capable conversion. */
 function requestWithMessages(
-  options: GenerateOptions,
+  options: GenerateOptions<string>,
   messages: WireMessage[],
   defaults: RequestDefaults,
 ): WireRequest {
@@ -343,7 +343,7 @@ function requestWithMessages(
  * @returns the chat-completions request body.
  */
 export function serializeRequest(
-  options: GenerateOptions,
+  options: GenerateOptions<string>,
   defaults: RequestDefaults = {},
 ): WireRequest {
   const messages: WireMessage[] = []
@@ -394,7 +394,7 @@ function assertRetainedImagesFit(messages: readonly RequestMessage[], images: Im
  * @returns the fully materialized DeepSeek request body.
  */
 export function serializeRequestWithImages(
-  options: GenerateOptions,
+  options: GenerateOptions<string>,
   images: ImageSerializationOptions,
   defaults: RequestDefaults = {},
 ): WireRequest {

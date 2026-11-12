@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-api-web-access-controller",
   "description": "Host Remote owner for the Session web switch: read whether a conversation's agent is offered the web tools, and set it from the browser without a command in the transcript",
-  "version": "0.2.2-rc.1",
+  "version": "0.2.2-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -37,10 +37,14 @@
     "lib/index.js",
     "lib/types/**/*.js",
     "lib/types/**/*.d.ts",
+    "lib/types/**/*.d.ts.map",
+    "lib/**/*.js.map",
     "lib/typert.host.js",
     "lib/typert.host.d.ts",
     "lib/typert.remote-client.js",
-    "lib/typert.remote-client.d.ts"
+    "lib/typert.remote-client.d.ts",
+    "lib/typert.remote-client.d.ts.map",
+    "src"
   ],
   "license": "MIT",
   "peerDependencies": {

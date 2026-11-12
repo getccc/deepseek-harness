@@ -69,7 +69,7 @@ describe('ui-sidebar apply', () => {
     expect(b.slots.spec('sidebar.brand.mark')).toEqual({ kind: 'single', scope: 'root' })
     expect(b.slots.spec('sidebar.brand.name')).toEqual({ kind: 'single', scope: 'root' })
     expect(b.slots.spec('sidebar.workspaces')).toEqual({
-      kind: 'single', scope: 'root', inject: { hooks: { sectionScroller: expect.any(Function) } },
+      kind: 'single', scope: 'root', inject: { hooks: { sectionScroller: expect.any(Function) as (...args: never[]) => unknown } },
     })
     expect(b.slots.spec('sidebar.recent')).toEqual({ kind: 'single', scope: 'root' })
     expect(b.slots.spec('sidebar.settings')).toEqual({ kind: 'single', scope: 'root' })

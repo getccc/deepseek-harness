@@ -36,6 +36,7 @@ import type {
   ConversationViewActionsOwnerProps, ConversationViewsProps,
 } from '../src/client/contract/slots.ts'
 import type { ViewTab } from '../src/client/contract/views.ts'
+import { createComposerFileIntake } from '../src/client/input/file-intake.ts'
 
 // Every session-scope fixture carries the resource hook the resources plugin merges into GlobalStandardProps.
 const useResource = (() => ({ status: 'none' as const, value: undefined, failure: undefined })) as GlobalStandardProps['useResource']
@@ -316,6 +317,7 @@ function mount(
           addFiles={() => null}
           useFileUploads={bindSnapshotSelector(createSnapshotStore({}))}
           retryFileUpload={undefined}
+          registerFileIntake={createComposerFileIntake()}
           removeAttachment={() => {}}
           resolveDraftAttachments={() => []}
           toggleCommandMenu={vi.fn()}
@@ -518,7 +520,7 @@ describe('ConversationRoot resident composer', () => {
     expect(box.getAttribute('aria-haspopup')).toBeNull()
     expect(box.getAttribute('data-placeholder')).toBe('和小微聊点什么…')
     fireEvent.keyDown(box, { key: 'Enter' })
-    expect(b.sink).toHaveBeenCalledWith('ordinary draft', [], 'queue', expect.any(AbortSignal))
+    expect(b.sink).toHaveBeenCalledWith('ordinary draft', [], 'queue', expect.any(AbortSignal), expect.any(Function))
     // The bar received the kind and dropped the plan seat; the model seat stays.
     expect(b.seatOwners.some(call => call.key === 'conversation.input.plan')).toBe(false)
     const modelSeat = b.seatOwners.filter(call => call.key === 'conversation.input.model').at(-1)?.owner

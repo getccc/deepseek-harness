@@ -840,7 +840,7 @@ describe('Session control projection frames', () => {
         type: 'projection', seq: 0, changes: [
           { key: 'test/last-user', val: { text: 'm0' } },
           { key: 'conversationContinuation', val: null },
-          { key: 'sessionListMetadata', val: { blank: true, lastPromptAt: 100 } },
+          { key: 'sessionListMetadata', val: { blank: true, pristine: false, lastPromptAt: 100 } },
         ],
       },
     })

@@ -12,6 +12,7 @@ import { contentHasImage, CONTEXT_WINDOW_EXCEEDED_CODE, isContextWindowExceededE
 import type {
   ContentBlock,
   GenerateOptions,
+  BuiltinLlmFailureCode,
   ImageAttachmentAccess,
   LlmModelInfo,
   LlmProviderInfo,
@@ -62,7 +63,7 @@ function collectImageRefs(
 }
 
 async function prepareRequestImages(
-  options: GenerateOptions,
+  options: GenerateOptions<string>,
   attachments: AttachmentStore,
   model: DeepSeekCatalogModel,
   signal: AbortSignal,
@@ -108,7 +109,7 @@ function requestId(headers: Headers): ReturnType<typeof ProviderRequestId> | und
  * @param error - parsed provider error body, when available.
  * @returns the normalized harness error code.
  */
-export function httpErrorCode(status: number, error?: WireError['error']): string {
+export function httpErrorCode(status: number, error?: WireError['error']): BuiltinLlmFailureCode {
   if (status === 401 || status === 403) return 'AUTH'
   if (status === 413) return 'INVALID_REQUEST'
   const detail = [error?.code, error?.type, error?.message].filter(Boolean).join(' ')
@@ -186,7 +187,7 @@ export class ChatCompletionsAdapter extends LlmAdapter {
     }
   }
 
-  stream(options: GenerateOptions): AsyncIterable<StreamChunk> {
+  stream(options: GenerateOptions<string>): AsyncIterable<StreamChunk> {
     return this.streamResolving(options, this.config.options())
   }
 
@@ -224,14 +225,14 @@ export class ChatCompletionsAdapter extends LlmAdapter {
 
   /** Resolve the route's catalog, then stream with it. */
   private async * streamResolving(
-    options: GenerateOptions,
+    options: GenerateOptions<string>,
     connection: DeepSeekConnectionOptions,
   ): AsyncIterable<StreamChunk> {
     yield* this.streamWithConnection(options, await this.routeConnection(options.provider, connection))
   }
 
   private async * streamWithConnection(
-    options: GenerateOptions,
+    options: GenerateOptions<string>,
     connection: DeepSeekConnectionOptions,
   ): AsyncIterable<StreamChunk> {
     // Connection facts freeze here and hold for this whole request, so an
@@ -306,7 +307,7 @@ export class ChatCompletionsAdapter extends LlmAdapter {
   }
 
   private async * request(
-    options: GenerateOptions,
+    options: GenerateOptions<string>,
     signal: AbortSignal,
     connection: DeepSeekConnectionOptions,
     transport: LlmHttpTransport,

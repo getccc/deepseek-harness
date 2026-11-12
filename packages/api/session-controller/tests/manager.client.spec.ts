@@ -1283,7 +1283,7 @@ describe('remaining branches', () => {
     expect(remote.session.fork).toHaveBeenCalledExactlyOnceWith({ sessionId: S1, atSeq: 7, ...permission })
     expect(remote.session.follow).not.toHaveBeenCalled()
     expect(manager.getListSnapshot().items[0]).toMatchObject({ sessionId: S2 })
-    expect(manager.getListSnapshot().items[0]).not.toHaveProperty('parentSessionId')
+    expect(manager.getListSnapshot().items[0]).toHaveProperty('parentSessionId', 'fk-m1')
   })
 
   it('reconciles a fork child published before workspace attachment fails', async ({ mock, remote }) => {

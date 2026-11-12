@@ -345,7 +345,7 @@ export function SidebarRoot({
       <div className={css.logoRow} data-window-drag>
         {/* Expanded, the brand doubles as a New work task shortcut — except on
             macOS, where it stays part of the logo row's window-drag surface
-            (a button would subtract itself through the global no-drag rule);
+            (the drag-row controls rule would subtract a button);
             the collapsed rail's logo is the expand toggle below instead.
             */}
         {wide && (() => {

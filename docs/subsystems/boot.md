@@ -10,9 +10,9 @@ The [boot package group](../../packages/boot/README.md) owns launcher-provided p
 
 `PluginInfo` carries module identity, effective enablement, fiber phase and optional display `meta`, plus a unique `patchId` or a `readOnlyReason`.
 
-`BundleInfo.official` identifies project-maintained shipped optional bundles and on-demand catalog entries independently of installation. `availability` identifies a readable installation-provided or profile package, or `missing`; on-demand catalog entries exclude undeclared transitive copies. `installed` records the profile dependency declaration. An on-demand `installTarget` carries the host-derived exact spec and version. `BundleInfo` also carries the package name, optional installed version, selected enablement, removal availability, update eligibility (`updatable`), optional resolution or unsupported-platform error, and, for a bundle the profile's own dependency supplies and the installation does not, `source`: that dependency as a spec `pnpm add` accepts. Its optional `meta` and each `BundleRowInfo.meta` contain display text or a metadata diagnostic; Clients select a language at render time.
+`BundleInfo.official` identifies project-maintained shipped optional bundles and on-demand catalog entries independently of installation. `availability` identifies a readable installation-provided or profile package, or `missing`; on-demand catalog entries exclude undeclared transitive copies. `installed` records the profile dependency declaration. An on-demand `installTarget` carries the host-derived exact spec and version. `BundleInfo` also carries the package name, optional installed version, selected enablement, removal availability, update method (`update`: `registry` or `git`, absent when the bundle cannot be updated), optional resolution or unsupported-platform error, and, for a bundle the profile's own dependency supplies and the installation does not, `source`: that dependency as a spec `pnpm add` accepts. Its optional `meta` and each `BundleRowInfo.meta` contain display text or a metadata diagnostic; Clients select a language at render time.
 
-`InstallBundleOptions.saveExact` passes `--save-exact` to the shared package installer. `InstallBundleOptions.enabled` defaults to true. False installs without selecting the bundle layer. `approvedBuilds` grants persistent script permission to the supplied pending package names before installation. `registry` names the registry asked first; absent, the configured one.
+`InstallBundleOptions.saveExact` passes `--save-exact` to the shared package installer. `InstallBundleOptions.enabled` defaults to true. False installs without selecting the bundle layer. `approvedBuilds` grants persistent script permission to the supplied pending package names before installation. `registry` names the registry asked first; absent, the configured one. `expected` names the package and manifest version the spec must install; a run that installs anything else is undone with its profile files and modules and fails with `unexpected-package`, one whose package declares no bundle fails with `not-bundle`, and one whose bundle patches cannot load fails as an operation error.
 
 `BundleDetail` is a profile bundle's long description: `{ status: 'found' }` with its `origin` (`locale` or `readme`), its `path` inside the package, and its `markdown`, or `{ status: 'none' }`; [`readBundleDetail`](../../packages/boot/plugin-manager/README.md#bundle-detail-documents) documents the order and the image route. `NpmFileSource` names a public npm file CDN, `jsdelivr`, `unpkg`, or `npmmirror`; a read's `npmFileSources` lists the ones to ask first.
 
@@ -269,15 +269,21 @@ Manage profile files and apply their declared reload lifecycle.
 @Remote async listVersions(name: string, options?: ListVersionsOptions, signal?: AbortSignal): Promise<PluginVersionList>
 
 /**
- * Replace an installed registry bundle with a newer published version. The target is checked on the registry first:
- * it must exist, declare a bundle, and accept the running DSH version, or nothing changes. With HMR the installed
- * version is removed, so its plugins stop, and the target is installed with the same selection; when that
- * installation fails or is cancelled, the removed version is installed again from the registry it came from.
- * Without HMR the target is installed over the running version and the result reports the restart.
+ * Replace an installed bundle with a newer version. A registry copy updates to `name@version`, checked on the registry
+ * first: it must exist, declare a bundle, and accept the running DSH version, or nothing changes. A Git copy updates
+ * to the Git spec `options.spec` names, which must pin a full commit of the repository directory the copy came from;
+ * with HMR, a network failure or timeout reaching its repository stops the update before anything changes. pnpm reads
+ * a Git package only while installing it, so its bundle and compatibility are checked then. Either target
+ * installation is undone, profile files and modules included, before its bundle loads unless it installs `name` at
+ * `version`. With HMR the installed version is removed, so its plugins stop, and the target is installed with the same
+ * selection; when that installation fails or is cancelled, the removed version is installed again: a registry copy
+ * from the registry it came from, a Git copy from its saved spec. Without HMR the target is installed over the running
+ * version and the result reports the restart.
  * @param name Installed profile dependency name.
- * @param version Exact published version newer than the installed one.
- * @param options The registry asked first, as for `listVersions`, and the request id naming the progress and the
- * target installation's logs and cancellation.
+ * @param version Exact version newer than the installed one.
+ * @param options The registry asked first, as for `listVersions`; the Git spec of `version`, required for and accepted
+ * only by a bundle `listBundles` lists with `update: 'git'`; and the request id naming the progress and the target
+ * installation's logs and cancellation.
  * @returns The versions, the last step that ran with its result, and the reinstallation when one ran.
  */
 @Remote async updateBundle(name: string, version: string, options?: UpdateBundleOptions): Promise<PluginUpdateResult>

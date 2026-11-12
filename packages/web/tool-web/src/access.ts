@@ -77,8 +77,8 @@ export const webAccessProjectionDefinition = {
  * @param names - the web tool names this composition registered; every one is withheld while the switch is off.
  */
 export function installSessionSwitch(ctx: Context, initial: boolean, names: readonly string[]): void {
-  ctx.inject(['sessionProjections'], (projectionCtx) => {
-    projectionCtx.sessionProjections.register(webAccessProjectionDefinition)
+  ctx.inject(['sessionProjections'], async (projectionCtx) => {
+    await projectionCtx.sessionProjections.register(webAccessProjectionDefinition)
   })
 
   /** The `/web` command, registered on each permitted agent's own scope. */

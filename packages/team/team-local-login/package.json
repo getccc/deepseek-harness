@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team-local-login",
   "description": "The Team Runner's local member sign-in and application-entry endpoints",
-  "version": "0.2.2-rc.1",
+  "version": "0.2.2-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -45,7 +45,10 @@
   "files": [
     "lib/index.js",
     "lib/client.js",
-    "lib/types/**/*.d.ts"
+    "lib/types/**/*.d.ts",
+    "lib/types/**/*.d.ts.map",
+    "lib/**/*.js.map",
+    "src"
   ],
   "license": "MIT",
   "dependencies": {

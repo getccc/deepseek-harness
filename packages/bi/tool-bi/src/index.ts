@@ -278,8 +278,8 @@ export function apply(ctx: Context, config: Config): void {
   // the model never disagree about what this Session chose. The child
   // activates only when a projection registry is composed, leaving headless
   // assemblies unaffected.
-  ctx.inject(['sessionProjections'], (projectionCtx) => {
-    projectionCtx.sessionProjections.register<'bi', BiScope>({
+  ctx.inject(['sessionProjections'], async (projectionCtx) => {
+    await projectionCtx.sessionProjections.register<'bi', BiScope>({
       key: 'bi',
       stateSchema: biScopeSchema,
       init: () => DEFAULT_BI_SCOPE,

@@ -487,8 +487,8 @@ export function apply(ctx: Context, config: Config): void {
   // the model never disagree about what this Session chose. The child
   // activates only when a projection registry is composed, leaving headless
   // assemblies unaffected.
-  ctx.inject(['sessionProjections'], (projectionCtx) => {
-    projectionCtx.sessionProjections.register<'gmo', GmoScope>({
+  ctx.inject(['sessionProjections'], async (projectionCtx) => {
+    await projectionCtx.sessionProjections.register<'gmo', GmoScope>({
       key: 'gmo',
       stateSchema: gmoScopeSchema,
       init: () => DEFAULT_GMO_SCOPE,

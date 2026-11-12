@@ -95,7 +95,7 @@ describe('StateController', () => {
     expect(lookups).toBeGreaterThan(1)
   })
 
-  it('rejects a live state read whose Session records no cwd', async () => {
+  it('reads live chat state without a working directory', async () => {
     const f = await fixture()
     const session = f.ctx.sessions.create(SessionId('no-cwd-live'))
     const partial: Partial<Agent> = {
@@ -103,10 +103,10 @@ describe('StateController', () => {
     }
     f.setAgent(partial as Agent)
     await expect(f.controller.state({ sessionId: session.id }, new AbortController().signal))
-      .rejects.toMatchObject({ code: 'session/not-found' })
+      .resolves.toMatchObject({ running: false, pendingInput: [] })
   })
 
-  it('rejects a cold state read whose stored header records no cwd', async () => {
+  it('reads persisted chat state without a working directory', async () => {
     const f = await fixture()
     const header: SessionHeader = {
       version: SESSION_FORMAT_VERSION, id: f.session.id, createdAt: 1, isSeeded: false,
@@ -124,7 +124,7 @@ describe('StateController', () => {
     vi.spyOn(f.history, 'usingObservation').mockImplementation(async (_request, _signal, callback) =>
       callback?.(observation))
     await expect(f.controller.state(f.request, new AbortController().signal))
-      .rejects.toMatchObject({ code: 'session/not-found' })
+      .resolves.toMatchObject({ running: false, pendingInput: [] })
   })
 
   it('reads cold state without projections and reports classified, deduplicated pending input', async () => {

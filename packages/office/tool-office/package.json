@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-tool-office",
   "description": "What a model sees of the office-deliverable choice: the prompt section naming the document kind to produce (with the Welinkin template path when configured), and the projection a composer chip reads",
-  "version": "0.2.2-rc.1",
+  "version": "0.2.2-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -32,7 +32,10 @@
   "files": [
     "lib/index.js",
     "lib/types/**/*.js",
-    "lib/types/**/*.d.ts"
+    "lib/types/**/*.d.ts",
+    "lib/types/**/*.d.ts.map",
+    "lib/**/*.js.map",
+    "src"
   ],
   "license": "MIT",
   "peerDependencies": {

@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-team-console-menu-sqlite",
   "description": "SQLite-backed console menus: one database file holding an organization's administration navigation and the shipped entries it starts from",
-  "version": "0.2.2-rc.1",
+  "version": "0.2.2-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -22,7 +22,10 @@
   },
   "files": [
     "lib/index.js",
-    "lib/types/**/*.d.ts"
+    "lib/types/**/*.d.ts",
+    "lib/types/**/*.d.ts.map",
+    "lib/**/*.js.map",
+    "src"
   ],
   "license": "MIT",
   "dependencies": {

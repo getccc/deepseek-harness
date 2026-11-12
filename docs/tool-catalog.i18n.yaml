@@ -9,8 +9,8 @@
   en: 6cc2cd9ced70bb09
   zh: 1c0e6cb4ba2ed637
 /tool-schema-catalog/tool-package-map:
-  en: e89328cdf2221039
-  zh: 46e1ff29dc2f80e2
+  en: a393b2290bcc8711
+  zh: ce14182f44e49d7c
 /tool-schema-catalog/deepseek-ai-dsh-plugin-manager:
   en: e0143916bb634762
   zh: e0143916bb634762
@@ -84,8 +84,20 @@
   en: 408ff0a5189bd7ec
   zh: 408ff0a5189bd7ec
 /tool-schema-catalog/deepseek-ai-dsh-tool-bash/bash:
-  en: 5efe055aae48993c
-  zh: e0653e51ef1344ce
+  en: 2b7825164fd1b145
+  zh: 7ec2604f73b23a31
+/tool-schema-catalog/deepseek-ai-dsh-tool-office-operations:
+  en: 8af4499e3547df04
+  zh: 8b0373f31520efe7
+/tool-schema-catalog/deepseek-ai-dsh-tool-office-operations/office-convert:
+  en: 3366ad38070bd346
+  zh: f25b6c166a3c7986
+/tool-schema-catalog/deepseek-ai-dsh-tool-office-operations/office-recalculate:
+  en: ea8e9d751ee6d661
+  zh: c8b21eeb5177e03a
+/tool-schema-catalog/deepseek-ai-dsh-tool-office-operations/office-render:
+  en: 324a3cda3cc09532
+  zh: e9a8510fed682653
 /tool-schema-catalog/deepseek-ai-dsh-tool-present:
   en: f656575e6df094f6
   zh: f656575e6df094f6
@@ -171,8 +183,17 @@
   en: 60a8805611533884
   zh: 50e4ac6e7f7b9b0a
 /tool-schema-catalog/deepseek-ai-dsh-tool-terminal/terminal-signal:
-  en: 0191964f5be70426
-  zh: 501c2769633a2a0b
+  en: cc58c5bcfdc3c04e
+  zh: e673447f4afb0ae5
+/tool-schema-catalog/deepseek-ai-dsh-terminal-panel:
+  en: 45676c90640a8237
+  zh: 45676c90640a8237
+/tool-schema-catalog/deepseek-ai-dsh-terminal-panel/user-terminal-list:
+  en: cf8134d5a4b5205e
+  zh: 4c435304529c4fcd
+/tool-schema-catalog/deepseek-ai-dsh-terminal-panel/user-terminal-read:
+  en: 9eb7cfe5a529a229
+  zh: ecf550e2ad8615cb
 /tool-schema-catalog/deepseek-ai-dsh-tool-goal:
   en: 74fff3741e7c13de
   zh: 74fff3741e7c13de

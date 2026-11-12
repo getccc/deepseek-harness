@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-client-ui-knowledge",
   "description": "The /knowledge picker and the composer chip naming the knowledge this conversation may search",
-  "version": "0.2.2-rc.1",
+  "version": "0.2.2-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -67,6 +67,9 @@
   "files": [
     "lib/index.js",
     "lib/client.js",
-    "lib/types/**/*.d.ts"
+    "lib/types/**/*.d.ts",
+    "lib/types/**/*.d.ts.map",
+    "lib/**/*.js.map",
+    "src"
   ]
 }

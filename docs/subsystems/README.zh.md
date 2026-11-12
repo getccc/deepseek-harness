@@ -40,7 +40,7 @@
 | [audit.md](audit.zh.md) | 只追加的审计：封闭的动作与 Metadata 目录、Token 规则，以及把任务内容挡在外面的存储约束 |
 | [account.md](account.zh.md) | 组织、成员账户、登录状态，以及让身份与认证方式保持分离的存储 seam |
 | [approval.md](approval.zh.md) | 一次性用户审批 seam：`ApprovalRequest`、`ApprovalOutcome`、逐会话策略、审计事件和 answerer 约定 |
-| [office-to-pdf.md](office-to-pdf.zh.md) | 已授权的 Office 到 PDF 转换、原生/WASM 引擎与有界共享复用 |
+| [office-kit.md](office-kit.zh.md) | 已授权的 Office 渲染、转换与重算、原生/WASM 引擎与有界共享复用 |
 | [attachment.md](attachment.zh.md) | 持久图片标识与元数据、校验输入、经校验读取，以及 `AttachmentStore` seam |
 | [shell.md](shell.zh.md) | shell 执行器 seam：`ShellExecRequest`/`Spec`、`ShellRunResult`、后台 `ShellProcess` 句柄 |
 | [subprocess.md](subprocess.zh.md) | 子进程 seam：完全显式的 `SubprocessSpawnSpec`、基于偏移的输出读取器、不含分类的 `SubprocessOutcome`，以及受管 `DSH_*` 环境词汇 |

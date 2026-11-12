@@ -64,7 +64,7 @@ Every package lives in exactly one group; new packages join existing groups, and
 | [`gmo/`](gmo/README.md) | GMO supply-chain family: category directory, results and questions, Session scope |
 | [`office/`](office/README.md) | Office-deliverable choice family: the document kind a conversation should produce, its prompt section and picker |
 | [`web/`](web/README.md) | Web capability family: seam, search/fetch providers, model-facing web tools |
-| [`document/`](document/README.md) | Shared Host Office-to-PDF conversion |
+| [`document/`](document/README.md) | Shared Host Office rendering, conversion, and recalculation, the Office tools, and Kit engine resolution |
 | [`attachment/`](attachment/README.md) | Durable attachment identity, validation, local content-addressed storage |
 | [`spill/`](spill/README.md) | Spill capability family: storage seam, local impl, tool-result spill policy |
 | [`todo/`](todo/README.md) | The model-facing `todo_write` tool |

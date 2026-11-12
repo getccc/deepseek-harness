@@ -137,11 +137,9 @@ async function uploadHarness(
     listProviders: () => [{ id: 'fixture', name: 'Fixture' }],
     resolveModelInfo,
   } as never)
-  const agents = {
-    resolveAgent: () => Promise.resolve({ agent }),
-    settleDefaultSelection: () => Promise.resolve(),
-    serializeImageAdmission: <Value>(_agent: Agent, operation: () => Promise<Value>) => operation(),
-  } as unknown as ApiSessionAgentController
+  const agents = new ApiSessionAgentController(ctx)
+  vi.spyOn(agents, 'resolveAgent').mockResolvedValue({ agent })
+  vi.spyOn(agents, 'settleDefaultSelection').mockResolvedValue(undefined)
   const uploads = new FileUploads(ctx)
   if (uploadRoute === undefined) throw new Error('file upload route was not registered')
   return {

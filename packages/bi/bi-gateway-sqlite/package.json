@@ -1,7 +1,7 @@
 {
   "name": "@deepseek-ai/dsh-bi-gateway-sqlite",
   "description": "SQLite-backed governed BI gateway (ctx.biGateway) for the DeepSeek Harness Control Plane — the durable project catalog, synchronization against a BI source, per-project authorization, and audit",
-  "version": "0.2.2-rc.1",
+  "version": "0.2.2-rc.2",
   "publishConfig": {
     "access": "public"
   },
@@ -23,7 +23,10 @@
   },
   "files": [
     "lib/index.js",
-    "lib/types/**/*.d.ts"
+    "lib/types/**/*.d.ts",
+    "lib/types/**/*.d.ts.map",
+    "lib/**/*.js.map",
+    "src"
   ],
   "license": "MIT",
   "peerDependencies": {
