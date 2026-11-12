@@ -84,13 +84,13 @@ describe('web e2e: plugin manager', () => {
   /** Select the sidebar's Plugins entry and wait for the management page in the main column. */
   async function openPluginsPanel() {
     await closeSettings()
-    await page.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件', exact: true }).click()
+    await page.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件空间', exact: true }).click()
     const panel = page.locator('[data-plugin-panel]')
     await panel.waitFor({ timeout: 10_000 })
     while (await panel.getByRole('button', { name: /^返回/ }).count() > 0) {
       await panel.getByRole('button', { name: /^返回/ }).first().click()
     }
-    await panel.getByRole('heading', { name: '插件', exact: true }).waitFor({ timeout: 10_000 })
+    await panel.getByRole('heading', { name: '插件空间', exact: true }).waitFor({ timeout: 10_000 })
     return panel
   }
 
@@ -429,7 +429,7 @@ describe('web e2e: plugin manager', () => {
         const consoleWatch = watchConsole(probe)
         await probe.goto(scaffold.authenticatedUrl, { waitUntil: 'load' })
         await probe.waitForSelector('[class*="frame"]', { timeout: 30_000 })
-        await probe.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件', exact: true }).click()
+        await probe.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件空间', exact: true }).click()
         await expect.poll(() => spy.mock.calls.length, { timeout: 10_000 }).toBeGreaterThan(0)
         const panel = probe.locator('[data-plugin-panel]')
         const skeleton = panel.locator('[data-plugin-loading]')
@@ -548,7 +548,7 @@ describe('web e2e: plugin manager', () => {
       onTestFailed(() => saveFailureShot(probe, 'web-e2e-plugin-manager-refresh'))
       await probe.clock.install()
       await probe.goto(scaffold.authenticatedUrl, { waitUntil: 'load' })
-      await probe.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件', exact: true }).click()
+      await probe.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件空间', exact: true }).click()
       const panel = probe.locator('[data-plugin-panel]')
       const refresh = panel.getByRole('button', { name: '刷新', exact: true })
       const add = panel.getByRole('button', { name: '添加插件', exact: true })
@@ -685,7 +685,7 @@ describe('web e2e: plugin manager', () => {
       onTestFailed(() => saveFailureShot(probe, 'web-e2e-touch-tooltips'))
       await probe.clock.install()
       await probe.goto(scaffold.authenticatedUrl, { waitUntil: 'load' })
-      await probe.getByRole('button', { name: '插件', exact: true }).click()
+      await probe.getByRole('button', { name: '插件空间', exact: true }).click()
       const panel = probe.locator('[data-plugin-panel]')
       const refresh = panel.getByRole('button', { name: '刷新', exact: true })
       const info = panel.getByRole('button', { name: '插件说明', exact: true })
@@ -719,7 +719,7 @@ describe('web e2e: plugin manager', () => {
       expect(await help.count()).toBe(0)
       await tap(info)
       await help.waitFor()
-      await tap(panel.getByRole('heading', { name: '插件', exact: true }))
+      await tap(panel.getByRole('heading', { name: '插件空间', exact: true }))
       expect(await help.count()).toBe(0)
       facts.push('Explanation closes on another tap or an outside touch')
 
@@ -792,7 +792,7 @@ describe('web e2e: plugin manager', () => {
     const hoverHelp = page.getByRole('tooltip')
     await hoverHelp.waitFor()
     expect(await hoverHelp.textContent()).toBe('在这里配置官方插件，安装和管理其他插件。内置插件列表及运行状态可在「设置 → 内置插件」中查看')
-    await panel.getByRole('heading', { name: '插件', exact: true }).hover()
+    await panel.getByRole('heading', { name: '插件空间', exact: true }).hover()
     await hoverHelp.waitFor({ state: 'hidden' })
     await info.focus()
     await page.keyboard.press('Enter')
@@ -803,10 +803,10 @@ describe('web e2e: plugin manager', () => {
     expect(await help.count()).toBe(0)
     expect(await info.evaluate(element => element === document.activeElement)).toBe(true)
     await info.click()
-    await panel.getByRole('heading', { name: '插件', exact: true }).hover()
+    await panel.getByRole('heading', { name: '插件空间', exact: true }).hover()
     await help.hover()
     expect(await help.isVisible()).toBe(true)
-    await panel.getByRole('heading', { name: '插件', exact: true }).click()
+    await panel.getByRole('heading', { name: '插件空间', exact: true }).click()
     expect(await help.count()).toBe(0)
 
     await panel.getByRole('button', { name: '查看 @fixture/bundle', exact: true }).waitFor({ timeout: 20_000 })
@@ -1238,7 +1238,7 @@ describe('web e2e: plugin manager', () => {
       onTestFailed(() => saveFailureShot(probe, 'web-e2e-plugin-manager-ime-enter'))
       await probe.clock.install()
       await probe.goto(scaffold.authenticatedUrl, { waitUntil: 'load' })
-      await probe.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件', exact: true }).click()
+      await probe.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件空间', exact: true }).click()
       const panel = probe.locator('[data-plugin-panel]')
       await panel.getByRole('button', { name: '查看 @fixture/bundle', exact: true }).waitFor({ timeout: 20_000 })
       const trace: string[] = ['Synthetic browser KeyboardEvents, not an OS input-method test.']
@@ -1473,9 +1473,9 @@ describe('web e2e: plugin manager', () => {
       onTestFailed(() => saveFailureShot(probe, 'web-e2e-plugin-manager-liveshare-visibility'))
       const consoleWatch = watchConsole(probe)
       await probe.goto(visibilityScaffold.authenticatedUrl, { waitUntil: 'load' })
-      await probe.getByRole('button', { name: '插件', exact: true }).click()
+      await probe.getByRole('button', { name: '插件空间', exact: true }).click()
       const panel = probe.locator('[data-plugin-panel]')
-      await panel.getByRole('heading', { name: '插件', exact: true }).waitFor({ timeout: 20_000 })
+      await panel.getByRole('heading', { name: '插件空间', exact: true }).waitFor({ timeout: 20_000 })
       const liveShare = '@deepseek-ai/dsh-experimental-liveshare'
       const card = panel.locator(`[data-plugin-package="${liveShare}"]`)
       // The profile is a managed one (the plugin manager lists its bundles) whose base bundle keeps HMR
@@ -1558,7 +1558,7 @@ describe('web e2e: startup-applied plugin management', () => {
       const tripwire = watchConsole(page)
       onTestFailed(() => saveFailureShot(page, 'web-e2e-plugin-manager-live'))
       await page.goto(scaffold.authenticatedUrl, { waitUntil: 'load' })
-      await page.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件', exact: true }).click()
+      await page.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件空间', exact: true }).click()
       const panel = page.locator('[data-plugin-panel]')
       const toggle = panel.getByRole('switch', { name: '启用 @fixture/bundle' })
       await toggle.waitFor({ timeout: 20_000 })

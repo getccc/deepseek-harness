@@ -1,5 +1,5 @@
 ---
-description: "Composer voice controls for the Web GUI: the transcribe chip and the voice-input button, seated and inert ahead of the recording capability; for maintainers building that capability."
+description: "The recording and transcription placeholder in the chat composer."
 kind: "package-reference"
 ---
 
@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-This package holds the Web GUI's two voice controls: a 录音转写 chip in the composer tool row beside the web switch, and a microphone button between the context meter and the send action. Both are placed and inert — they settle the seats, the order among the sibling chips, and the copy, and each states through `aria-disabled` and its tooltip that the capability is not built. Neither holds state, reads a projection, or calls a Remote; the recording and dictation behavior arrives here later.
+This package provides the Transcribe placeholder in the chat composer tool row. It reports that recording and transcription is not built yet and does not record audio or modify drafts. A separate voice input plugin provides functional dictation.
 
 ## Table of Contents
 
@@ -25,11 +25,11 @@ This package holds the Web GUI's two voice controls: a 录音转写 chip in the 
 <a id="use-this-package"></a>
 ## Use this package
 
-Mount this plugin alongside `ui-conversation`; the two controls then appear in every chat conversation. Nothing to configure: a deployment that does not want the seats shown leaves the plugin out of its composition.
+Mount this plugin alongside `ui-conversation` to show the transcription chip in chat composers. It has no configuration fields.
 
 ### What a member sees
 
-The chip carries the waveform glyph and the label in the composer's own ink, next to the web switch and before the knowledge and office chips; below a 460px composer it collapses to its glyph, as the sibling chips do. The microphone button is a quiet circle in the trailing group, after the context meter and before the send circle. Both name themselves for assistive technology, both are announced as unavailable, and both carry a tooltip saying the feature is still being built. Clicking either does nothing. Neither appears in a work session: the capability is being built for the chat composer.
+The chip displays a waveform and Transcribe beside the web switch, before the knowledge and office chips. Below a 460px composer it shows only its glyph. Its accessible name, `aria-disabled` state and tooltip identify the unavailable capability. It does not appear in work sessions.
 
 -----
 
@@ -39,7 +39,7 @@ The chip carries the waveform glyph and the label in the composer's own ink, nex
 <details>
 <summary>Implementation internals — click to expand</summary>
 
-The chip joins the conversation-declared `conversation.input.left` list at order 60 — after the web switch at 50, before the knowledge and office chips at 100. The button occupies `conversation.input.voice`, the single seat `ui-conversation` declares between its context meter and the send circle, and takes `locked` from that seat so it dims with its neighbors while the composer refuses interaction. Both read the Session kind through the standard-kit `useSessions` and render nothing outside a chat Session. The node half is an empty apply (the roster row).
+The chip registers in `conversation.input.left` at order 60 and reads the Session kind through `useSessions`. The plugin leaves `conversation.input.voice` free for functional voice input. Its node apply is empty.
 
 </details>
 
@@ -48,11 +48,11 @@ The chip joins the conversation-declared `conversation.input.left` list at order
 <a id="further-exploration"></a>
 ## Further Exploration
 
-Read these pages when the controls are not enough. They move from the seats to the composer that declares them.
+These pages describe the composer and its slots.
 
 - [ui-conversation](../ui-conversation/README.md) — declares the composer's `conversation.input.left` zone and the `conversation.input.voice` seat.
 - [ui-web-access](../ui-web-access/README.md) — the chip the transcribe chip sits beside, and the shape a live composer control takes.
-- [Web Client Slots](../../../docs/subsystems/slots.md) — the seat hierarchy both controls join.
+- [Web Client Slots](../../../docs/subsystems/slots.md) — the seat hierarchy the chip joins.
 - [Client package map](../README.md) — adjacent browser UI packages.
 
 -----
@@ -60,7 +60,7 @@ Read these pages when the controls are not enough. They move from the seats to t
 <a id="model-experience"></a>
 ## Model Experience
 
-None, as both controls are inert placeholders that render no model-facing text and record nothing in the Session log.
+None, as the placeholder produces no model-visible text or Session events.
 
 #### KV Cache effect
 
@@ -70,11 +70,11 @@ The controls add no prompt content and change no request prefix, so no request p
 
 <a id="known-limitations-and-deferred-work"></a>
 
-These limits define the current package. They state what the seats do not yet carry.
+This package provides a placeholder only.
 
-- **No recording and no dictation** — the capability behind both controls is unbuilt: no microphone permission is requested, no audio is captured, and no transcript reaches the draft. Building it belongs in this package, over a Host seam that owns the transcription provider.
-- **Chat conversations only** — a work session shows neither control, so a member dictating a task has to type it.
-- **The controls belong to the default composer** — a pending whole-composer interaction such as plan review temporarily replaces the InputBar and both of its seats.
+- **No recording or transcription** — the chip requests no microphone permission, captures no audio and inserts no draft text.
+- **Chat conversations only** — work sessions do not show the chip.
+- **Default composer** — interactions such as plan review can temporarily replace the InputBar containing the chip.
 
 <a id="dev-note"></a>
 ### Dev Note
@@ -86,4 +86,4 @@ None.
 
 </details>
 
-**Runtime invariant:** No companion is published. The package owns two slot effects whose declaration, registration, and teardown are exercised by this package's own tests, and no relationship two observers could see differently.
+**Runtime invariant:** The package owns one slot effect; package tests cover its registration and disposal.

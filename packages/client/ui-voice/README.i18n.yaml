@@ -3,38 +3,38 @@
 # After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/client/ui-voice/README.md
 /:
-  en: c2f457b2d193dc74
-  zh: 04c6077f5d0dd1e9
+  en: 22f6ac4a7c51d355
+  zh: c850bd82994a73ff
 /deepseek-ai-dsh-client-ui-voice:
   en: 6cbac9cbb64ddd90
   zh: a614426e5c238d0b
 /deepseek-ai-dsh-client-ui-voice/summary:
-  en: ead7a3e37d8f2a0e
-  zh: 7b4e695f3be849b4
+  en: a4c65f8b134e057c
+  zh: 37053c95ce85c483
 /deepseek-ai-dsh-client-ui-voice/table-of-contents:
   en: d152484eb41ac6b4
   zh: 09388d293f9be9cb
 /deepseek-ai-dsh-client-ui-voice/use-this-package:
-  en: 6b064554ebec3ec7
-  zh: 5eadad353618220a
+  en: 028f93ef1cc1a800
+  zh: b663faa8cd53f5c1
 /deepseek-ai-dsh-client-ui-voice/use-this-package/what-a-member-sees:
-  en: 094549748bff49f2
-  zh: a9f5b54c08505014
+  en: 73027e2434031b61
+  zh: f89bbcb282608d90
 /deepseek-ai-dsh-client-ui-voice/understand-the-implementation:
-  en: 93e1dd842a786754
-  zh: b6f33628e6682486
+  en: 1ce92fd64dd8afba
+  zh: 3b4d8f6bdfb2cbc9
 /deepseek-ai-dsh-client-ui-voice/further-exploration:
-  en: d86b9c9a957b52b9
-  zh: 1886b4a56d2519a6
+  en: f18c604ebceb372d
+  zh: 6946a17ac369f94f
 /deepseek-ai-dsh-client-ui-voice/model-experience:
-  en: ce74a896218855ad
-  zh: 18411ea562c21925
+  en: fad4d3688a2f03c3
+  zh: 07eb1b563d1a89b0
 /deepseek-ai-dsh-client-ui-voice/model-experience/kv-cache-effect:
   en: 38ede2757feacc96
   zh: 29633174f351a1b5
 /deepseek-ai-dsh-client-ui-voice/known-limitations-and-deferred-work:
-  en: 0c2bbad6d6641bbe
-  zh: 83ada14ab2b60a0b
+  en: 4bac7a67251ebd47
+  zh: 3ff8efb37fe6898b
 /deepseek-ai-dsh-client-ui-voice/known-limitations-and-deferred-work/dev-note:
-  en: a73fea4f4d4449e5
-  zh: ae1a003c42aace2b
+  en: 4e8bb902e8e0bb6a
+  zh: b67a57b2afa554cd

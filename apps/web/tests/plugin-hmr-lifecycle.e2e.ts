@@ -77,10 +77,10 @@ export function apply(ctx) {
   async function openPanel(): Promise<Locator> {
     if (await page.getByRole('dialog', { name: '设置' }).count() > 0) await page.keyboard.press('Escape')
     const panel = page.locator('[data-plugin-panel]')
-    const list = panel.getByRole('heading', { name: '插件', exact: true })
+    const list = panel.getByRole('heading', { name: '插件空间', exact: true })
     // The sidebar entry toggles the page, so it is pressed only while the page is closed.
     if (await panel.count() === 0) {
-      await page.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件', exact: true }).click()
+      await page.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件空间', exact: true }).click()
     } else if (!await list.isVisible()) {
       await panel.getByRole('button', { name: '返回插件', exact: true }).click()
     }
@@ -105,7 +105,7 @@ export function apply(ctx) {
     await panel.getByRole('button', { name: `卸载 ${NAME}`, exact: true }).click()
     await page.getByRole('dialog', { name: `卸载「${NAME}」？` }).getByRole('button', { name: '卸载', exact: true }).click()
     // The page leaves the removed package's details for the list.
-    await panel.getByRole('heading', { name: '插件', exact: true }).waitFor({ timeout: 30_000 })
+    await panel.getByRole('heading', { name: '插件空间', exact: true }).waitFor({ timeout: 30_000 })
     await expect.poll(() => panel.locator(`[data-plugin-package="${NAME}"]`).count(), { timeout: 30_000 }).toBe(0)
   }
 
@@ -237,7 +237,7 @@ describe('web e2e: plugin installation without HMR', () => {
       await page.goto(scaffold.authenticatedUrl)
       await page.waitForSelector('[class*="frame"]')
       if (await page.getByRole('dialog', { name: '设置' }).count() > 0) await page.keyboard.press('Escape')
-      await page.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件', exact: true }).click()
+      await page.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件空间', exact: true }).click()
       const panel = page.locator('[data-plugin-panel]')
       await panel.getByRole('button', { name: '添加插件', exact: true }).click()
       const dialog = page.getByRole('dialog')

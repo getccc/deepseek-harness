@@ -1,14 +1,12 @@
 /**
  * The browser half on a real cordis Context with fake slot and locale faces:
- * the plugin seats both voice controls where the composer expects them and
- * gives both seats back on teardown (HMR safety).
+ * the plugin contributes the transcription chip and leaves the microphone seat free.
  */
 import { Context } from '@deepseek-ai/cordis'
 import { describe, expect, it } from 'vitest'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { SlotRegistry } from '@deepseek-ai/dsh-client-ui-renderer/client'
 import { TranscribeChip } from '../src/client/TranscribeChip.tsx'
-import { VoiceInputButton } from '../src/client/VoiceInputButton.tsx'
 import { apply, inject } from '../src/client/index.ts'
 import { apply as nodeApply } from '../src/index.ts'
 
@@ -43,14 +41,12 @@ describe('what the plugin installs', () => {
     expect(() => { nodeApply() }).not.toThrow()
   })
 
-  it('seats the chip beside the web switch and the button in the voice seat, and gives both back', async () => {
+  it('seats the chip beside the web switch, leaves voice input free, and removes the chip on disposal', async () => {
     const b = await bench()
     const chip = b.slots.entries('conversation.input.left')[0]!
     expect(chip).toMatchObject({ locale: 'voice', options: { id: 'voice', order: 60 } })
     expect(chip.component).toBe(TranscribeChip)
-    const button = b.slots.entries('conversation.input.voice')[0]!
-    expect(button).toMatchObject({ locale: 'voice' })
-    expect(button.component).toBe(VoiceInputButton)
+    expect(b.slots.entries('conversation.input.voice')).toHaveLength(0)
     await b.fiber.dispose()
     expect(b.slots.entries('conversation.input.left')).toHaveLength(0)
     expect(b.slots.entries('conversation.input.voice')).toHaveLength(0)

@@ -943,7 +943,7 @@ function registryList(registries: readonly Registry[], t: Translate, resolved: s
 /** An option's name with its host in tertiary text, unless the host is the name. */
 function registryOption(registry: Registry, t: Translate, resolved: string | null): ReactNode {
   const { name, host } = registryText(registry, t, resolved)
-  return name === host ? name : <>{name}{' '}<span className={css.registryHint}>{host}</span></>
+  return host === '' || name === host ? name : <>{name}{' '}<span className={css.registryHint}>{host}</span></>
 }
 
 /**

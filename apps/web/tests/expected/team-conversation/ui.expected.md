@@ -1,6 +1,6 @@
 - navigation "全局面板":
   - button "定时任务"
-  - button "插件"
+  - button "插件空间"
 - banner:
   - navigation "会话层级": Reply exactly CHAT_PRESET_REQUEST_OK and
   - text: 聊天模式
@@ -24,7 +24,6 @@
 - button "添加文件或调用指令"
 - button "录音转写" [disabled]
 - button "选择模型，当前 DeepSeek-V4-Flash": DeepSeek-V4-Flash
-- button "语音输入" [disabled]
 - button "发送消息" [disabled]
 - button "1 轮 1 步 · {{throughput}} tok/s": 1 轮 1 步{{throughput}} tok/s
 - button "14 tok · 缓存命中 0%": 14 tok缓存命中 0%

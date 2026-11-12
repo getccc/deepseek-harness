@@ -1,4 +1,4 @@
-- heading "插件" [level=1]
+- heading "插件空间" [level=1]
 - text: 安装、启用和配置插件
 - button "插件说明"
 - button "刷新"

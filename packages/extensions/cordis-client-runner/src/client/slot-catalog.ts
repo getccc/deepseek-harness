@@ -1984,10 +1984,8 @@ export const CLIENT_SLOT_API: readonly ClientSlotEntry[] = [
     hookContext: '',
     slotInject: '',
     declaredBy: 'an entry in \'conversation.composer.bar\' (client-ui-conversation), so it exists while that entry is mounted',
-    occupants: [
-      'client-ui-voice VoiceInputButton',
-    ],
-    replaceRisk: 'shadows-shipped-ui',
+    occupants: [],
+    replaceRisk: 'none',
     example: 'return {\n  inject: [\'slots\'],\n  apply(ctx) {\n    ctx.slots.inject(\'conversation.input.voice\', () => ctx.slots.register(\n      { name: \'conversation.input.voice\' },\n      () => React.createElement(\'div\', null, \'hello\'),\n    ))\n  },\n}',
     source: 'packages/client/ui-conversation/src/client/contract/slots.ts:366',
   },

@@ -2400,6 +2400,9 @@ describe('PluginManagerPage', () => {
     const mirrorLabels = screen.getAllByRole('radio').map(radio => radio.parentElement?.textContent)
     expect(mirrorLabels).toEqual([MIRROR_OPTION, en.registryCustom])
     expect(new Set(mirrorLabels).size).toBe(mirrorLabels.length)
+    set({ install: { ...open, registryOpen: true, registries: { ...REGISTRIES, resolved: 'https://10.1.120.90:3095/npm/' } } })
+    expect(screen.getByRole('button', { name: `${en.registryToggle} ${en.registryWeWork}` })).toBeTruthy()
+    expect(screen.getByRole('radio', { name: en.registryWeWork })).toBeTruthy()
     // A configuration the Host could not read keeps the neutral default name.
     set({ install: { ...open, registryOpen: true, registries: { ...REGISTRIES, resolved: null } } })
     expect(screen.getByRole('button', { name: `${en.registryToggle} ${en.registryDefault}` })).toBeTruthy()

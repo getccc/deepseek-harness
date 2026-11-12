@@ -78,7 +78,7 @@ it('keeps Discover controls reachable when the toolbar wraps and retains search 
         const page = await browser.newPage({ viewport: { width: 1280, height: 844 }, locale: ZH_BROWSER_LOCALE, reducedMotion: 'reduce' })
         const consoleWatch = watchConsole(page)
         await page.goto(scaffold.authenticatedUrl, { waitUntil: 'load' })
-        await page.getByRole('button', { name: '插件', exact: true }).click()
+        await page.getByRole('button', { name: '插件空间', exact: true }).click()
         await page.getByRole('tab', { name: '发现', exact: true }).click()
         await page.locator('[data-market-entry="dsh-toolbar-layout-fixture"]').waitFor()
         await page.getByRole('button', { name: '收起侧边栏', exact: true }).click()

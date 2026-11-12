@@ -96,8 +96,8 @@ describe('Team conversation layout', () => {
           gap: tasksBox.y - chatBox.y - chatBox.height,
         }
       }).toEqual({ visible: true, aligned: true, gap: 2 })
-      await panels.getByRole('button', { name: '插件', exact: true }).click()
-      await view.getByRole('heading', { name: '插件', exact: true }).waitFor()
+      await panels.getByRole('button', { name: '插件空间', exact: true }).click()
+      await view.getByRole('heading', { name: '插件空间', exact: true }).waitFor()
     }
   })
 

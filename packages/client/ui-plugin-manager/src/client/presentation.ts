@@ -12,19 +12,20 @@ export type Translate = PropsLocale<'pluginManager'>['t']
 /** The registries with a name of their own, by host. */
 const REGISTRY_COPY = new Map<string, PluginManagerLocaleKey>([
   ['registry.npmmirror.com', 'registryNpmmirror'],
+  ['10.1.120.90:3095', 'registryWeWork'],
 ])
 
 /** npm's own registry, which reads by name rather than by host. */
 const OFFICIAL_NPM_HOST = 'registry.npmjs.org'
 
 /**
- * What a registry reads as: npm's own by its name, a known mirror by its name, any other registry by its host;
- * and the host each names, for where the name alone would leave it unsaid. The registry pnpm's own configuration
- * names reads by the registry it names, so the label never claims npm's own for another one.
+ * Resolve a registry's display name and address hint. Known registries use localized names;
+ * other registries use their host. The company registry displays only its alias.
+ * The default registry uses the URL read from pnpm's configuration.
  * @param registry - the registry, null for the one pnpm's own configuration names.
  * @param t - the manager's translate seat.
  * @param resolved - the URL pnpm's own configuration names, null while the Host could not read it.
- * @returns the name and the host.
+ * @returns the display name and an optional host hint; the company registry uses its alias alone.
  */
 export function registryText(registry: Registry, t: Translate, resolved: string | null): { name: string; host: string } {
   const url = registry ?? resolved
@@ -32,7 +33,7 @@ export function registryText(registry: Registry, t: Translate, resolved: string 
   if (url === null) return { name: t('registryDefault'), host: OFFICIAL_NPM_HOST }
   const host = registryHost(url)
   const key = host === OFFICIAL_NPM_HOST ? 'registryOfficial' : REGISTRY_COPY.get(host)
-  return { name: key === undefined ? host : t(key), host }
+  return { name: key === undefined ? host : t(key), host: key === 'registryWeWork' ? '' : host }
 }
 
 /** The host of a registry URL; the URL as written when it does not parse. */

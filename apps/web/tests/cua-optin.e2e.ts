@@ -48,7 +48,7 @@ it.skipIf(process.platform !== 'darwin').each([
     const page = await browser.newPage({ viewport: { width: 1680, height: 1000 }, locale: ZH_BROWSER_LOCALE })
     await page.goto(scaffold.authenticatedUrl, { waitUntil: 'load' })
     await connectFreshWorkspaceZh(page, scaffold.workspaceCwd)
-    await page.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件', exact: true }).click()
+    await page.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件空间', exact: true }).click()
     const plugins = page.locator('[data-plugin-panel]')
     await plugins.getByRole('button', { name: '更多', exact: true }).waitFor()
     expect(await page.locator('[data-plugin-package="@deepseek-ai/dsh-cua-bundle"]').count()).toBe(0)

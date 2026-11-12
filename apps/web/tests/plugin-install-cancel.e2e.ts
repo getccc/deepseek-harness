@@ -109,7 +109,7 @@ it('cancels installation, retries and highlights the enabled plugin at 40% alpha
       await page.goto(scaffold.authenticatedUrl)
       await page.waitForSelector('[class*="frame"]')
       if (await page.getByRole('dialog', { name: '设置' }).count() > 0) await page.keyboard.press('Escape')
-      await page.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件', exact: true }).click()
+      await page.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件空间', exact: true }).click()
       const panel = page.locator('[data-plugin-panel]')
       await panel.getByRole('button', { name: '添加插件', exact: true }).click()
       // The dialog is named after its current screen, so it is found by role alone.

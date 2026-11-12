@@ -1,15 +1,4 @@
-/**
- * Composer voice plugin, browser half — the two controls the coming
- * record-and-transcribe and voice-input capability will drive: a chip in the
- * composer tool row beside the web switch, and a microphone button between the
- * model selector and the send action.
- *
- * Both are placed and inert. The seats, the order among the sibling chips, and
- * the copy are what this plugin settles now; each control says through
- * `aria-disabled` and its tooltip that the capability is not built, so the row
- * a member sees is the row the feature will arrive into. Neither control holds
- * state, reads a projection, or calls a Remote.
- */
+/** Composer transcription chip registration and localized copy. */
 import type { Context as ClientContext } from '@deepseek-ai/cordis'
 // Type-only: pulls the ui-conversation SlotMap merge (the composer left zone and voice seat).
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
@@ -18,7 +7,6 @@ import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import { TranscribeChip } from './TranscribeChip.tsx'
-import { VoiceInputButton } from './VoiceInputButton.tsx'
 import { en, zh, type VoiceKey } from './locales.ts'
 
 export type { VoiceKey } from './locales.ts'
@@ -39,7 +27,7 @@ const NS = 'voice'
 export const inject = ['locale', 'slots']
 
 /**
- * Client plugin body: register the transcribe chip and the voice-input button.
+ * Register the transcription chip; the voice seat is reserved for functional input plugins.
  * @param ctx - client root context.
  */
 export function apply(ctx: ClientContext): void {
@@ -55,8 +43,4 @@ export function apply(ctx: ClientContext): void {
     locale: NS,
   }, TranscribeChip))
 
-  ctx.slots.inject('conversation.input.voice', () => ctx.slots.register({
-    name: 'conversation.input.voice',
-    locale: NS,
-  }, VoiceInputButton))
 }

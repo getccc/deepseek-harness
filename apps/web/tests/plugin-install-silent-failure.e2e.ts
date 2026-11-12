@@ -29,7 +29,7 @@ it('reports a failed install whose pnpm printed nothing with its command line, o
       await page.goto(scaffold.authenticatedUrl)
       await page.waitForSelector('[class*="frame"]')
       if (await page.getByRole('dialog', { name: '设置' }).count() > 0) await page.keyboard.press('Escape')
-      await page.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件', exact: true }).click()
+      await page.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件空间', exact: true }).click()
       await page.getByRole('button', { name: '添加插件', exact: true }).click()
       const dialog = page.getByRole('dialog')
       await dialog.getByRole('textbox').fill('silent-package')

@@ -66,7 +66,7 @@ describe('web e2e: plugin configuration pages', () => {
       await page.keyboard.press('Escape')
       await expect.poll(() => page.getByRole('dialog', { name: '设置' }).count(), { timeout: 5_000 }).toBe(0)
     }
-    await page.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件', exact: true }).click()
+    await page.getByRole('navigation', { name: '全局面板' }).getByRole('button', { name: '插件空间', exact: true }).click()
     const panel = page.locator('[data-plugin-panel]')
     await panel.waitFor({ timeout: 10_000 })
     while (await panel.getByRole('button', { name: /^返回/ }).count() > 0) {
