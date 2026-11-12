@@ -1,8 +1,9 @@
 /** Desktop restarts and upgrades preserve member-owned plugin state and package resolution. */
 import { createRequire } from 'node:module'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
+import { execa } from 'execa'
 import { expect, it, onTestFinished } from 'vitest'
 import { provisionProfile, SHIPPED_PLUGIN_BUNDLES } from '../src/profile.ts'
 import { writeRegistryTrust } from '../src/registry-trust.ts'
@@ -194,6 +195,92 @@ it('keeps existing local plugin directories that the shell does not own', () => 
   provisionProfile(f.home, f.shipped('new'))
   expect(readFileSync(join(f.profile, 'node_modules/dsh-univer-office/package.json'), 'utf8'))
     .toContain('local-office')
+})
+
+it.each([true, false])('archives unowned pnpm metadata before a first install (legacy marker=%s)', (legacy) => {
+  const f = fixture()
+  const plugins = f.shipped('new')
+  provisionProfile(f.home, plugins)
+  const files = ['.modules.yaml', '.pnpm/lock.yaml', '.pnpm-workspace-state-v1.json']
+  for (const file of files) {
+    const path = join(f.profile, 'node_modules', file)
+    mkdirSync(dirname(path), { recursive: true })
+    writeFileSync(path, `copied ${file}\n`)
+  }
+  if (legacy) writeFileSync(join(f.profile, '.dsh-plugin-tree'), 'old tree\n')
+  provisionProfile(f.home, plugins)
+  const backups = readdirSync(f.profile).filter(name => name.startsWith('.dsh-pnpm-backup-'))
+  expect(backups).toHaveLength(1)
+  for (const file of files) {
+    expect(existsSync(join(f.profile, 'node_modules', file))).toBe(false)
+    expect(readFileSync(join(f.profile, backups[0]!, file), 'utf8')).toBe(`copied ${file}\n`)
+  }
+  provisionProfile(f.home, plugins)
+  expect(readdirSync(f.profile).filter(name => name.startsWith('.dsh-pnpm-backup-'))).toEqual(backups)
+  expect(createRequire(join(f.profile, 'package.json'))('dsh-univer-office')).toBe('new')
+})
+
+it.each(['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies', 'lockfile'])(
+  'retains pnpm metadata owned by member %s', (owner) => {
+    const f = fixture()
+    const plugins = f.shipped('new')
+    provisionProfile(f.home, plugins)
+    if (owner === 'lockfile') writeFileSync(join(f.profile, 'pnpm-lock.yaml'), 'member lockfile\n')
+    else writeFileSync(join(f.profile, 'package.json'), JSON.stringify({ [owner]: { 'member-plugin': '1.0.0' } }))
+    const metadata = join(f.profile, 'node_modules/.modules.yaml')
+    writeFileSync(metadata, 'member metadata\n')
+    provisionProfile(f.home, plugins)
+    expect(readFileSync(metadata, 'utf8')).toBe('member metadata\n')
+    expect(readdirSync(f.profile).some(name => name.startsWith('.dsh-pnpm-backup-'))).toBe(false)
+  },
+)
+
+it('installs a member plugin after migrating a copied pnpm tree with different layout settings', async () => {
+  const f = fixture()
+  const plugins = f.shipped('staged')
+  const staging = join(f.root, 'packaging-profile')
+  mkdirSync(staging)
+  const member = join(f.root, 'member-plugin')
+  mkdirSync(member)
+  writeFileSync(join(member, 'package.json'), '{"name":"member-plugin","version":"1.0.0","main":"index.cjs"}')
+  writeFileSync(join(member, 'index.cjs'), "module.exports = 'installed member plugin'")
+  writeFileSync(join(staging, 'package.json'), '{"private":true,"dependencies":{"member-plugin":"file:../member-plugin"}}')
+  writeFileSync(join(staging, 'pnpm-workspace.yaml'), 'nodeLinker: hoisted\nautoInstallPeers: false\n')
+  const config = join(f.root, 'npmrc')
+  writeFileSync(config, '')
+  const pnpm = join(dirname(createRequire(import.meta.url).resolve('pnpm')), 'bin/pnpm.mjs')
+  const environment = Object.fromEntries(Object.entries(process.env).filter(([key]) =>
+    /^(?:path|systemroot|windir|comspec|temp|tmp)$/iu.test(key)))
+  const run = async (cwd: string, length: number, args: string[]) => {
+    const result = await execa(process.execPath, [pnpm, ...args, '--offline', '--ignore-scripts',
+      `--config.userconfig=${config}`, `--config.globalconfig=${config}`,
+      `--config.store-dir=${join(cwd, 'store')}`, `--config.virtual-store-dir-max-length=${String(length)}`,
+      '--config.manage-package-manager-versions=false', '--config.enable-global-virtual-store=false'], {
+      cwd, env: { ...environment, CI: 'true' }, extendEnv: false, reject: false, timeout: 30_000,
+    })
+    expect(result.timedOut, result.stderr).toBe(false)
+    expect(result.signal, result.stderr).toBeUndefined()
+    return result
+  }
+  const staged = await run(staging, 120, ['install'])
+  expect(staged.exitCode, `${staged.stdout}\n${staged.stderr}`).toBe(0)
+  provisionProfile(f.home, plugins)
+  // Older installers copied the build machine's pnpm state into the member profile.
+  cpSync(join(staging, 'node_modules'), join(f.profile, 'node_modules'), { recursive: true })
+  const add = ['add', `file:${member}`]
+  const rejected = await run(f.profile, 60, add)
+  expect(rejected.exitCode).toBe(1)
+  expect(`${rejected.stdout}\n${rejected.stderr}`).toContain('ERR_PNPM_VIRTUAL_STORE_DIR_MAX_LENGTH_DIFF')
+  provisionProfile(f.home, plugins)
+  const installed = await run(f.profile, 60, add)
+  expect(installed.exitCode, `${installed.stdout}\n${installed.stderr}`).toBe(0)
+  const require = createRequire(join(f.profile, 'package.json'))
+  expect(require('member-plugin')).toBe('installed member plugin')
+  expect(require('dsh-univer-office')).toBe('staged')
+  expect(require('@dsh-external/dsh-echarts')).toBe('staged')
+  const metadata = readFileSync(join(f.profile, 'node_modules/.modules.yaml'), 'utf8')
+  provisionProfile(f.home, plugins)
+  expect(readFileSync(join(f.profile, 'node_modules/.modules.yaml'), 'utf8')).toBe(metadata)
 })
 
 it('reports malformed manifests and incomplete shipped trees without replacing user data', () => {

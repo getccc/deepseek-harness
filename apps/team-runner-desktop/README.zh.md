@@ -82,7 +82,7 @@ DSH `0.2.2-rc.1` 的暂存 profile 使用 `dsh-univer-office@0.4.0` 及其 [Offi
 
 企业插件树还可以携带 `@wework/company-plugins`。Shell 在新 profile 中启用公司入口和自定义插件索引组合包，并在升级已有公司 profile 时一次性初始化索引组合包。后续启动保留停用选择，其他组合包、依赖和用户补丁均保留。公司入口使用已配置的证书直连账户服务器的目录。插件安装和更新检查使用同一服务器的 `/npm/` 仓库，不回退到公网源。EHS 报告等业务插件仍由成员自行安装。
 
-缺少 profile 包管理设置时，会初始化扁平依赖布局并关闭 peer 依赖自动安装，使插件复用 Runner 内置的服务。现有工作区设置保持不变。
+缺少 profile 包管理设置时，会初始化扁平依赖布局并关闭 peer 依赖自动安装，使插件复用 Runner 内置的服务。现有工作区设置保持不变。当随附插件可用，且 profile 既未声明依赖、根目录也没有 `pnpm-lock.yaml` 时，复制而来的 pnpm 元数据会移入 profile 下的 `.dsh-pnpm-backup-*`。包文件和链接保留原位；成员首次安装插件时，pnpm 会创建本机安装元数据，不再使用构建机器的存储路径和目录长度设置。移动失败会停止启动；下次启动重试剩余文件，已完成的备份保留。
 
 安装程序还把仓库锁定版本的 pnpm 随附到 `runner/pnpm`。外壳通过 `DSH_BUNDLED_PLUGIN_PNPM` 传入其入口，Runner 私有分派器使用 Office sidecar 的独立 Node 安装插件并运行构建脚本。成员的 `PATH` 中无需存在 Node 或 pnpm。普通工具保留原有 `PATH`，显式选择的创作运行时仍然优先。
 

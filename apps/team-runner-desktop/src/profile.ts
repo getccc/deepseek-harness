@@ -86,6 +86,23 @@ function ownedLink(path: string, cache: string): boolean {
     && resolve(dirname(path), readlinkSync(path)).startsWith(cache + sep)
 }
 
+/** Preserve copied build-machine pnpm state outside a profile that owns no installed dependencies. */
+function archiveUnmanagedPnpmState(profile: string, managed: ReadonlySet<string>): void {
+  if (managed.size > 0 || existsSync(join(profile, 'pnpm-lock.yaml'))) return
+  const modules = join(profile, 'node_modules')
+  const files = ['.modules.yaml', '.pnpm/lock.yaml', '.pnpm-workspace-state-v1.json']
+    .filter(file => existsSync(join(modules, file)))
+  if (files.length === 0) return
+  // Copied metadata retains the build host's store path and layout settings, even after
+  // the old .dsh-plugin-tree marker is gone. Package files and links remain in place.
+  const backup = mkdtempSync(join(profile, '.dsh-pnpm-backup-'))
+  for (const file of files) {
+    const target = join(backup, file)
+    mkdirSync(dirname(target), { recursive: true })
+    renameSync(join(modules, file), target)
+  }
+}
+
 /** Whether a parsed JSON value contains named fields. */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -130,6 +147,8 @@ function selectCompanyDirectory(manifestPath: string, addCompany: boolean, initi
  * subsequent launches preserve its selection. Other bundles, dependencies, and user patches are retained.
  * Complete generations are published by rename; a failed link replacement stops startup and is retried
  * on the next launch. Only undeclared, application-owned package entries can be replaced.
+ * Profiles with neither declared dependencies nor a root lockfile archive copied pnpm metadata before installation.
+ * A failed archive stops startup; completed moves remain in the backup and the next launch retries the rest.
  * @param home - Private Harness home of this desktop installation.
  * @param plugins - Shipped plugins, or undefined when this build carries none.
  */
@@ -192,6 +211,7 @@ export function provisionProfile(home: string, plugins: ShippedPlugins | undefin
       rmSync(temporary, { recursive: true, force: true })
     }
   }
+  archiveUnmanagedPnpmState(profile, managed)
   rmSync(join(profile, '.dsh-plugin-tree'), { force: true })
   if (companyPlugins && !existsSync(indexInitialization)) writeFileSync(indexInitialization, '\n', { flag: 'wx', mode: 0o600 })
 }

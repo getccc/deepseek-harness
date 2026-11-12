@@ -256,6 +256,7 @@
     "apps/desktop/scripts/**/*.ts",
     "apps/desktop/tests/**/*.ts",
     "apps/desktop-host/tests/**/*.ts",
+    "apps/team-runner-desktop/tests/profile.spec.ts",
     "benchmarks/**/*.ts",
     "packages/*/*/tests/**/*.ts",
     "packages/experimental/cua-macos/native/generate-protocol.ts",
