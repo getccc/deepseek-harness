@@ -628,10 +628,14 @@ describe('Host task editor on the existing manager', () => {
     expect(within(detail).queryByText(dictionary['host.latestConversation'])).toBeNull()
   })
 
-  it.each([en, zh])('names an empty status filter and opens the manual form from its action', (dictionary) => {
+  it.each([
+    { dictionary: en, active: 'No active automation tasks', paused: 'No paused automation tasks' },
+    { dictionary: zh, active: '没有已开启的定时任务', paused: '没有已暂停的定时任务' },
+  ])('names an empty status filter and opens the manual form from its action', ({ dictionary, active, paused }) => {
     const h = mount([], { t: makeTranslate(dictionary) })
+    expect(screen.getByRole('status').textContent).toContain(active)
     fireEvent.click(screen.getByRole('button', { name: dictionary['status.paused'] }))
-    expect(screen.getByRole('status').textContent).toContain(dictionary['list.emptyPaused'])
+    expect(screen.getByRole('status').textContent).toContain(paused)
     expect(screen.getByRole('status').textContent).not.toContain(dictionary['list.noMatches'])
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'news' } })
     expect(screen.getByRole('status').textContent).toContain(dictionary['list.noMatches'])
